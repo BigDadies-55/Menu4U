@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { loginAction } from "./actions";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,19 +14,11 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
+    const result = await loginAction(email, password);
     if (result?.error) {
-      setError("אימייל או סיסמה שגויים");
+      setError(result.error);
       setLoading(false);
-      return;
     }
-
-    router.push("/admin");
   }
 
   return (
@@ -53,7 +43,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="admin@restaurant.com"
+              placeholder="admin@menu4u.com"
               dir="ltr"
             />
           </div>
