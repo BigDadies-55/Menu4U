@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { isAdmin } from "@/lib/permissions";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/generated/prisma";
 
 export async function POST(req: Request) {
   const session = await auth();

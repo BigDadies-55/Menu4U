@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { Role } from "@/generated/prisma";
 
 export const ROLE_HIERARCHY: Record<Role, number> = {
   SUPER_ADMIN: 4,

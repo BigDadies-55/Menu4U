@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/generated/prisma";
 
 const navItems = [
   { href: "/admin", label: "דשבורד", icon: "📊", exact: true },
