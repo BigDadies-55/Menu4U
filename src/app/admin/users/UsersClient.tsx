@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 import { formatDate } from "@/lib/utils";
-import type { Role } from "@/generated/prisma";
+import type { Role } from "@/generated/prisma/client";
 
 type UserWithRestaurants = {
   id: string;
