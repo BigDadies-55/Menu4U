@@ -29,6 +29,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [showMenuForm, setShowMenuForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
+  const [editItem, setEditItem] = useState<Item | null>(null);
 
   const [menuForm, setMenuForm] = useState({ name: "", description: "" });
   const [categoryForm, setCategoryForm] = useState(emptyCategoryForm);
@@ -137,29 +138,6 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   }
 
   // ── Item CRUD ─────────────────────────────────────────────────────────────
-  async function createItem(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedCategory) return;
-    setLoading(true);
-    const res = await fetch("/api/admin/items", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...itemForm, price: parseFloat(itemForm.price), categoryId: selectedCategory.id }),
-    });
-    if (res.ok) {
-      const newItem = await res.json();
-      updateMenu(m => ({
-        ...m,
-        categories: m.categories.map(c =>
-          c.id === selectedCategory.id ? { ...c, items: [...c.items, newItem] } : c
-        ),
-      }));
-      setShowItemForm(false);
-      setItemForm(emptyItemForm);
-      setTagInput("");
-    }
-    setLoading(false);
-  }
 
   async function deleteItem(catId: string, itemId: string) {
     if (!confirm("למחוק את הפריט?")) return;
@@ -184,6 +162,70 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
         c.id === catId ? { ...c, items: c.items.map(i => i.id === itemId ? { ...i, isActive: !isActive } : i) } : c
       ),
     }));
+  }
+
+  function openEditItem(cat: Category, item: Item) {
+    setSelectedCategory(cat);
+    setEditItem(item);
+    setItemForm({
+      name: item.name,
+      description: item.description ?? "",
+      price: String(item.price),
+      image: item.image ?? "",
+      isVegetarian: item.isVegetarian,
+      isVegan: item.isVegan,
+      isGlutenFree: item.isGlutenFree,
+      tags: item.tags ?? [],
+    });
+    setTagInput("");
+    setShowItemForm(true);
+  }
+
+  async function handleItemSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCategory) return;
+    setLoading(true);
+    const body = { ...itemForm, price: parseFloat(itemForm.price) };
+
+    if (editItem) {
+      const res = await fetch(`/api/admin/items/${editItem.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        updateMenu(m => ({
+          ...m,
+          categories: m.categories.map(c =>
+            c.id === selectedCategory.id
+              ? { ...c, items: c.items.map(i => i.id === editItem.id ? { ...i, ...updated } : i) }
+              : c
+          ),
+        }));
+      }
+    } else {
+      const res = await fetch("/api/admin/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...body, categoryId: selectedCategory.id }),
+      });
+      if (res.ok) {
+        const newItem = await res.json();
+        updateMenu(m => ({
+          ...m,
+          categories: m.categories.map(c =>
+            c.id === selectedCategory.id ? { ...c, items: [...c.items, newItem] } : c
+          ),
+        }));
+      }
+    }
+
+    setShowItemForm(false);
+    setEditItem(null);
+    setItemForm(emptyItemForm);
+    setTagInput("");
+    setLoading(false);
   }
 
   const sortedCategories = selectedMenu
@@ -270,7 +312,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                               <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1}
                                 className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none">▼</button>
                             </div>
-                            <button onClick={() => { setSelectedCategory(cat); setShowItemForm(true); }}
+                            <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
                               className="text-sm text-amber-600 hover:text-amber-700 font-medium">+ פריט</button>
                             <button onClick={() => deleteCategory(cat.id)} className="text-sm text-red-400 hover:text-red-600">מחק</button>
                           </div>
@@ -299,6 +341,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                                 <span className="font-semibold text-gray-900">{formatPrice(item.price)}</span>
                                 {canEdit && (
                                   <>
+                                    <button onClick={() => openEditItem(cat, item)} className="text-xs text-blue-500 hover:text-blue-700">ערוך</button>
                                     <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
                                       className={`text-xs ${item.isActive ? "text-gray-400 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}>
                                       {item.isActive ? "השבת" : "הפעל"}
@@ -373,8 +416,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       {showItemForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">פריט חדש — {selectedCategory?.name}</h2>
-            <form onSubmit={createItem} className="space-y-4">
+            <h2 className="text-xl font-bold mb-4">{editItem ? `ערוך פריט — ${editItem.name}` : `פריט חדש — ${selectedCategory?.name}`}</h2>
+            <form onSubmit={handleItemSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם הפריט *</label>
                 <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })}
@@ -431,9 +474,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               </div>
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
-                  {loading ? "יוצר..." : "הוסף פריט"}
+                  {loading ? "שומר..." : editItem ? "שמור שינויים" : "הוסף פריט"}
                 </button>
-                <button type="button" onClick={() => { setShowItemForm(false); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
+                <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
               </div>
             </form>
           </div>
