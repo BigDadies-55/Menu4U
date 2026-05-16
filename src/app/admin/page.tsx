@@ -130,21 +130,6 @@ export default async function AdminDashboard() {
   const restaurantIds = (stats.restaurantDetails ?? []).map(r => r.id);
   const menuViewStats = await getMenuViewStats(restaurantIds);
 
-  let recentOrdersWhere = {};
-  if (session.user.role !== "SUPER_ADMIN") {
-    const userRestaurants = await prisma.restaurantUser.findMany({
-      where: { userId: session.user.id },
-      select: { restaurantId: true },
-    });
-    recentOrdersWhere = { restaurantId: { in: userRestaurants.map((r) => r.restaurantId) } };
-  }
-  const recentOrders = await prisma.order.findMany({
-    where: recentOrdersWhere,
-    take: 5,
-    orderBy: { createdAt: "desc" },
-    include: { restaurant: { select: { name: true } } },
-  });
-
   const cards = [
     { label: "מסעדות", value: stats.restaurants, icon: "🍽️", color: "bg-amber-50 text-amber-700" },
     ...(stats.users !== null
@@ -154,24 +139,6 @@ export default async function AdminDashboard() {
     { label: "פריטים בתפריט", value: stats.items, icon: "🍕", color: "bg-green-50 text-green-600" },
     { label: "הכנסות", value: formatPrice(stats.revenue), icon: "💰", color: "bg-yellow-50 text-yellow-600" },
   ];
-
-  const statusLabels: Record<string, string> = {
-    PENDING: "ממתין",
-    CONFIRMED: "אושר",
-    PREPARING: "בהכנה",
-    READY: "מוכן",
-    DELIVERED: "נמסר",
-    CANCELLED: "בוטל",
-  };
-
-  const statusColors: Record<string, string> = {
-    PENDING: "bg-yellow-100 text-yellow-800",
-    CONFIRMED: "bg-blue-100 text-blue-800",
-    PREPARING: "bg-amber-100 text-amber-800",
-    READY: "bg-green-100 text-green-800",
-    DELIVERED: "bg-gray-100 text-gray-800",
-    CANCELLED: "bg-red-100 text-red-800",
-  };
 
   return (
     <div className="p-4 md:p-8">
@@ -273,36 +240,6 @@ export default async function AdminDashboard() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">הזמנות אחרונות</h2>
-        </div>
-        {recentOrders.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">אין הזמנות עדיין</div>
-        ) : (
-          <div className="divide-y divide-gray-50">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900">
-                    {order.customerName ?? "לקוח אנונימי"}
-                    {order.tableNumber && (
-                      <span className="text-gray-400 text-sm mr-2">שולחן {order.tableNumber}</span>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-500">{order.restaurant.name}</div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColors[order.status]}`}>
-                    {statusLabels[order.status]}
-                  </span>
-                  <span className="font-semibold text-gray-900">{formatPrice(order.totalAmount)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
