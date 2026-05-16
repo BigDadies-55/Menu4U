@@ -276,7 +276,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                       <div className="flex items-center gap-3">
                         <button onClick={() => openEdit(r)} className="text-xs text-blue-600 hover:underline">ערוך</button>
                         <a href={`/menu/${r.id}`} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-amber-600 hover:underline">תפריט ציבורי</a>
+                          title="תפריט ציבורי" className="text-base hover:scale-110 transition-transform inline-block">🔗</a>
                         <button onClick={() => toggleActive(r.id, r.isActive)} className="text-xs text-gray-500 hover:underline">
                           {r.isActive ? "השבת" : "הפעל"}
                         </button>
