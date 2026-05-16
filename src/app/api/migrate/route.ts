@@ -14,6 +14,9 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "orderPhone" TEXT;
     `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "tags" TEXT[] DEFAULT '{}';
+    `);
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
