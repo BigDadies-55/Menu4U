@@ -2,19 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-export async function POST(req: Request) {
-  const { secret } = await req.json();
-
-  if (secret !== process.env.SETUP_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function runSetup() {
   const existing = await prisma.user.findUnique({
     where: { email: "admin@menu4u.com" },
   });
 
   if (existing) {
-    return NextResponse.json({ message: "Admin already exists" });
+    return { message: "Admin already exists", email: "admin@menu4u.com" };
   }
 
   const password = await bcrypt.hash("admin123", 12);
@@ -28,19 +22,42 @@ export async function POST(req: Request) {
     },
   });
 
-  await prisma.restaurant.create({
-    data: {
-      id: "demo-restaurant",
-      name: "מסעדת הדגמה",
-      email: "demo@menu4u.com",
-      phone: "03-1234567",
-      address: "רחוב הדגמה 1, תל אביב",
-    },
-  });
+  try {
+    await prisma.restaurant.create({
+      data: {
+        id: "demo-restaurant",
+        name: "מסעדת הדגמה",
+        email: "demo@menu4u.com",
+        phone: "03-1234567",
+        address: "רחוב הדגמה 1, תל אביב",
+      },
+    });
+  } catch {
+    // restaurant might already exist
+  }
 
-  return NextResponse.json({
-    success: true,
-    message: "Setup complete",
-    credentials: { email: "admin@menu4u.com", password: "admin123" },
-  });
+  return { success: true, email: "admin@menu4u.com", password: "admin123" };
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const secret = searchParams.get("secret");
+
+  if (secret !== process.env.SETUP_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const result = await runSetup();
+  return NextResponse.json(result);
+}
+
+export async function POST(req: Request) {
+  const { secret } = await req.json();
+
+  if (secret !== process.env.SETUP_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const result = await runSetup();
+  return NextResponse.json(result);
 }
