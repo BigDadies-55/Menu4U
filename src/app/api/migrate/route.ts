@@ -28,6 +28,18 @@ export async function GET(req: Request) {
       ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "locationUrl" TEXT;
     `);
     await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Menu" ADD COLUMN IF NOT EXISTS "isPrimary" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Menu" ADD COLUMN IF NOT EXISTS "scheduleDays" TEXT[] DEFAULT '{}';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Menu" ADD COLUMN IF NOT EXISTS "scheduleFrom" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Menu" ADD COLUMN IF NOT EXISTS "scheduleTo" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "MenuView" (
         "id" TEXT NOT NULL,
         "restaurantId" TEXT NOT NULL,

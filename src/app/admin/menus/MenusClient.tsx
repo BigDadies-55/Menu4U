@@ -15,8 +15,15 @@ type Category = {
   items: Item[]; isActive: boolean; sortOrder: number;
 };
 
-type Menu = { id: string; name: string; isActive: boolean; categories: Category[] };
+type Menu = {
+  id: string; name: string; isActive: boolean; isPrimary: boolean;
+  scheduleDays: string[]; scheduleFrom: string | null; scheduleTo: string | null;
+  categories: Category[];
+};
 type Restaurant = { id: string; name: string; menus: Menu[] };
+
+const DAYS_HE = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const emptyScheduleForm = { isPrimary: false, scheduleDays: [] as string[], scheduleFrom: "", scheduleTo: "" };
 
 const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[] };
 const emptyCategoryForm = { name: "", description: "", image: "" };
@@ -30,6 +37,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
   const [editItem, setEditItem] = useState<Item | null>(null);
+  const [scheduleMenu, setScheduleMenu] = useState<Menu | null>(null);
+  const [scheduleForm, setScheduleForm] = useState(emptyScheduleForm);
 
   const [menuForm, setMenuForm] = useState({ name: "", description: "" });
   const [categoryForm, setCategoryForm] = useState(emptyCategoryForm);
@@ -91,6 +100,47 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       setSelectedRestaurant(updated);
       setSelectedMenu(updated.menus[0] ?? null);
     }
+  }
+
+  // ── Menu schedule / primary ───────────────────────────────────────────────
+  function openSchedule(menu: Menu) {
+    setScheduleMenu(menu);
+    setScheduleForm({
+      isPrimary: menu.isPrimary,
+      scheduleDays: menu.scheduleDays ?? [],
+      scheduleFrom: menu.scheduleFrom ?? "",
+      scheduleTo: menu.scheduleTo ?? "",
+    });
+  }
+
+  async function saveSchedule(e: React.FormEvent) {
+    e.preventDefault();
+    if (!scheduleMenu) return;
+    setLoading(true);
+    const body = {
+      isPrimary: scheduleForm.isPrimary,
+      scheduleDays: scheduleForm.scheduleDays,
+      scheduleFrom: scheduleForm.scheduleFrom || null,
+      scheduleTo: scheduleForm.scheduleTo || null,
+    };
+    const res = await fetch(`/api/admin/menus/${scheduleMenu.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.ok && selectedRestaurant) {
+      const updated = await res.json();
+      const updatedMenus = selectedRestaurant.menus.map(m =>
+        m.id === scheduleMenu.id
+          ? { ...m, ...updated }
+          : scheduleForm.isPrimary ? { ...m, isPrimary: false } : m
+      );
+      const updatedRestaurant = { ...selectedRestaurant, menus: updatedMenus };
+      setSelectedRestaurant(updatedRestaurant);
+      if (selectedMenu?.id === scheduleMenu.id) setSelectedMenu({ ...selectedMenu, ...updated });
+      setScheduleMenu(null);
+    }
+    setLoading(false);
   }
 
   // ── Category CRUD ─────────────────────────────────────────────────────────
@@ -265,10 +315,17 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 {selectedRestaurant.menus.map(menu => (
                   <div key={menu.id} className={`flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors ${selectedMenu?.id === menu.id ? "bg-amber-50" : "hover:bg-gray-50"}`}>
                     <button onClick={() => setSelectedMenu(menu)} className={`flex-1 text-right text-sm ${selectedMenu?.id === menu.id ? "text-amber-700 font-medium" : "text-gray-600"}`}>
-                      {menu.name}
+                      <span className="flex items-center gap-1.5">
+                        {menu.isPrimary && <span title="תפריט ראשי" className="text-amber-500 text-xs">★</span>}
+                        {menu.scheduleDays?.length > 0 && <span title="עם תזמון" className="text-blue-400 text-xs">⏰</span>}
+                        {menu.name}
+                      </span>
                     </button>
                     {canEdit && (
-                      <button onClick={() => deleteMenu(menu.id)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
+                      <div className="flex items-center gap-0.5">
+                        <button onClick={() => openSchedule(menu)} className="text-gray-300 hover:text-amber-500 text-xs px-1" title="הגדרות תזמון">⚙</button>
+                        <button onClick={() => deleteMenu(menu.id)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -477,6 +534,91 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   {loading ? "שומר..." : editItem ? "שמור שינויים" : "הוסף פריט"}
                 </button>
                 <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule / Primary Modal */}
+      {scheduleMenu && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-5">הגדרות תפריט — {scheduleMenu.name}</h2>
+            <form onSubmit={saveSchedule} className="space-y-5">
+
+              {/* Primary toggle */}
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input type="checkbox" className="sr-only" checked={scheduleForm.isPrimary}
+                    onChange={e => setScheduleForm({ ...scheduleForm, isPrimary: e.target.checked })} />
+                  <div className={`w-11 h-6 rounded-full transition-colors ${scheduleForm.isPrimary ? "bg-amber-400" : "bg-gray-200"}`} />
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${scheduleForm.isPrimary ? "translate-x-5 right-0.5" : "right-5"}`} />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">תפריט ראשי ★</div>
+                  <div className="text-xs text-gray-400">רק תפריט ראשי מוצג בדף הציבורי</div>
+                </div>
+              </label>
+
+              {/* Days */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ימי הצגה <span className="text-gray-400 font-normal">(ריק = כל הימים)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {DAYS_HE.map((day, i) => {
+                    const val = String(i);
+                    const checked = scheduleForm.scheduleDays.includes(val);
+                    return (
+                      <button key={i} type="button"
+                        onClick={() => setScheduleForm({
+                          ...scheduleForm,
+                          scheduleDays: checked
+                            ? scheduleForm.scheduleDays.filter(d => d !== val)
+                            : [...scheduleForm.scheduleDays, val],
+                        })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                          checked ? "border-amber-400 bg-amber-50 text-amber-700" : "border-gray-200 text-gray-500 hover:border-gray-300"
+                        }`}>
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Time range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  שעות הצגה <span className="text-gray-400 font-normal">(ריק = כל שעות)</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">משעה</label>
+                    <input type="time" value={scheduleForm.scheduleFrom}
+                      onChange={e => setScheduleForm({ ...scheduleForm, scheduleFrom: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm" dir="ltr" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">עד שעה</label>
+                    <input type="time" value={scheduleForm.scheduleTo}
+                      onChange={e => setScheduleForm({ ...scheduleForm, scheduleTo: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm" dir="ltr" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button type="submit" disabled={loading}
+                  className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                  {loading ? "שומר..." : "שמור"}
+                </button>
+                <button type="button" onClick={() => setScheduleMenu(null)}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">
+                  ביטול
+                </button>
               </div>
             </form>
           </div>

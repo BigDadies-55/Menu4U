@@ -170,6 +170,10 @@ export const MenuScalarFieldEnum = {
   name: 'name',
   description: 'description',
   isActive: 'isActive',
+  isPrimary: 'isPrimary',
+  scheduleDays: 'scheduleDays',
+  scheduleFrom: 'scheduleFrom',
+  scheduleTo: 'scheduleTo',
   sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

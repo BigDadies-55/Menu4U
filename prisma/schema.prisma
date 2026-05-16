@@ -116,6 +116,10 @@ model Menu {
   name         String
   description  String?
   isActive     Boolean  @default(true)
+  isPrimary    Boolean  @default(false)
+  scheduleDays String[] @default([])
+  scheduleFrom String?
+  scheduleTo   String?
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
