@@ -27,6 +27,19 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "locationUrl" TEXT;
     `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "MenuView" (
+        "id" TEXT NOT NULL,
+        "restaurantId" TEXT NOT NULL,
+        "type" TEXT NOT NULL,
+        "refId" TEXT,
+        "refName" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "MenuView_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "MenuView_restaurantId_fkey" FOREIGN KEY ("restaurantId")
+          REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `);
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

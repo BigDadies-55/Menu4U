@@ -19,7 +19,7 @@ export default async function PublicMenuPage(
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId, isActive: true },
     select: {
-      name: true, logo: true, address: true,
+      id: true, name: true, logo: true, address: true,
       phone: true, orderPhone: true, website: true, locationUrl: true,
       menus: {
         where: { isActive: true },

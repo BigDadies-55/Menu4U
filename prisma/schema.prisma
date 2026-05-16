@@ -94,6 +94,7 @@ model Restaurant {
   restaurantUsers RestaurantUser[]
   menus           Menu[]
   orders          Order[]
+  menuViews       MenuView[]
 }
 
 model RestaurantUser {
@@ -184,4 +185,15 @@ model OrderItem {
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   item  Item  @relation(fields: [itemId], references: [id])
+}
+
+model MenuView {
+  id           String   @id @default(cuid())
+  restaurantId String
+  type         String
+  refId        String?
+  refName      String?
+  createdAt    DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }

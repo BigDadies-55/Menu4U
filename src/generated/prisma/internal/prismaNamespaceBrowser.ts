@@ -61,7 +61,8 @@ export const ModelName = {
   Category: 'Category',
   Item: 'Item',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  MenuView: 'MenuView'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -238,6 +239,18 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const MenuViewScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  type: 'type',
+  refId: 'refId',
+  refName: 'refName',
+  createdAt: 'createdAt'
+} as const
+
+export type MenuViewScalarFieldEnum = (typeof MenuViewScalarFieldEnum)[keyof typeof MenuViewScalarFieldEnum]
 
 
 export const SortOrder = {

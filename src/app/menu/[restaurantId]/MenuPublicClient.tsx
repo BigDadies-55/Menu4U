@@ -23,6 +23,7 @@ type Category = {
 };
 
 type Restaurant = {
+  id: string;
   name: string;
   logo: string | null;
   address: string | null;
@@ -49,7 +50,19 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
 
   const categories = restaurant.menus.flatMap(m => m.categories);
 
+  function track(type: string, refId?: string, refName?: string) {
+    fetch(`/api/menu/${restaurant.id}/track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, refId, refName }),
+      keepalive: true,
+    }).catch(() => {});
+  }
+
+  useEffect(() => { track("page"); }, []);
+
   function openCategory(cat: Category) {
+    track("category", cat.id, cat.name);
     setSelectedCat(cat);
     setView("category");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -140,7 +153,7 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
                 <p style={{ gridColumn: "1/-1", opacity: 0.5, padding: 40 }}>אין מנות בקטגוריה זו.</p>
               ) : (
                 selectedCat.items.map(item => (
-                  <div key={item.id} className="menu-card" onClick={() => setModalItem(item)}>
+                  <div key={item.id} className="menu-card" onClick={() => { track("item", item.id, item.name); setModalItem(item); }}>
                     <div className="menu-img-box">
                       {item.image
                         ? <img src={item.image} alt={item.name} loading="lazy" />
