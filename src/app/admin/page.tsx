@@ -2,6 +2,13 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 
+type RestaurantDetail = {
+  id: string;
+  name: string;
+  _count: { orders: number; menus: number };
+  orders: { totalAmount: number }[];
+};
+
 async function getStats(userId: string, role: string) {
   if (role === "SUPER_ADMIN") {
     const [restaurants, users, orders, items] = await Promise.all([
@@ -17,6 +24,7 @@ async function getStats(userId: string, role: string) {
       orders,
       items,
       revenue: revenue._sum.totalAmount ?? 0,
+      restaurantDetails: undefined as RestaurantDetail[] | undefined,
     };
   }
 
@@ -37,12 +45,23 @@ async function getStats(userId: string, role: string) {
     _sum: { totalAmount: true },
   });
 
+  const restaurantDetails = await prisma.restaurant.findMany({
+    where: { id: { in: restaurantIds } },
+    select: {
+      id: true,
+      name: true,
+      _count: { select: { orders: true, menus: true } },
+      orders: { select: { totalAmount: true } },
+    },
+  });
+
   return {
     restaurants: restaurantIds.length,
     users: null,
     orders,
     items,
     revenue: revenue._sum.totalAmount ?? 0,
+    restaurantDetails: restaurantDetails as RestaurantDetail[],
   };
 }
 
@@ -68,7 +87,7 @@ export default async function AdminDashboard() {
   });
 
   const cards = [
-    { label: "מסעדות", value: stats.restaurants, icon: "🍽️", color: "bg-emerald-50 text-emerald-700" },
+    { label: "מסעדות", value: stats.restaurants, icon: "🍽️", color: "bg-amber-50 text-amber-700" },
     ...(stats.users !== null
       ? [{ label: "משתמשים", value: stats.users, icon: "👥", color: "bg-purple-50 text-purple-600" }]
       : []),
@@ -115,6 +134,41 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {stats.restaurantDetails && stats.restaurantDetails.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">המסעדות שלי</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stats.restaurantDetails.map((r) => {
+              const rev = r.orders.reduce((s, o) => s + o.totalAmount, 0);
+              return (
+                <div key={r.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                      {r.name[0]}
+                    </div>
+                    <div className="font-semibold text-gray-900">{r.name}</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="text-lg font-bold text-gray-900">{r._count.orders}</div>
+                      <div className="text-xs text-gray-400">הזמנות</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-gray-900">{r._count.menus}</div>
+                      <div className="text-xs text-gray-400">תפריטים</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-gray-900">₪{Math.round(rev)}</div>
+                      <div className="text-xs text-gray-400">הכנסות</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="p-6 border-b border-gray-100">

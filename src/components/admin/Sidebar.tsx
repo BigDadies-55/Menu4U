@@ -18,9 +18,10 @@ interface SidebarProps {
   user: { name?: string | null; email?: string | null; role: Role };
   isOpen?: boolean;
   onClose?: () => void;
+  onChangePassword?: () => void;
 }
 
-export default function Sidebar({ user, isOpen = false, onClose }: SidebarProps) {
+export default function Sidebar({ user, isOpen = false, onClose, onChangePassword }: SidebarProps) {
   const pathname = usePathname();
   const visibleItems = navItems.filter((item) => {
     if (item.superAdmin && user.role !== "SUPER_ADMIN") return false;
@@ -30,7 +31,7 @@ export default function Sidebar({ user, isOpen = false, onClose }: SidebarProps)
   const initials = (user.name ?? user.email ?? "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   const sidebarContent = (
-    <aside className="w-64 flex flex-col min-h-screen relative" style={{ background: "linear-gradient(180deg,#0f172a 0%,#1e293b 100%)" }}>
+    <aside className="w-64 flex flex-col min-h-screen relative" style={{ background: "linear-gradient(180deg,#0a0a0a 0%,#151515 100%)" }}>
       {/* Close button - mobile only */}
       <button onClick={onClose} className="md:hidden absolute top-4 left-4 text-slate-400 hover:text-white p-1 rounded transition-colors">
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -39,7 +40,7 @@ export default function Sidebar({ user, isOpen = false, onClose }: SidebarProps)
       {/* Logo */}
       <div className="px-6 py-7 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-lg" style={{ background: "linear-gradient(135deg,#d97706,#f59e0b)" }}>M</div>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-lg" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>M</div>
           <div>
             <div className="font-bold text-white text-lg tracking-wide">Menu4U</div>
             <div className="text-slate-400 text-xs tracking-wider uppercase">Management</div>
@@ -56,7 +57,7 @@ export default function Sidebar({ user, isOpen = false, onClose }: SidebarProps)
             <Link key={item.href} href={item.href} onClick={onClose}
               className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
                 isActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
-              style={isActive ? { background: "linear-gradient(90deg,#d97706,#f59e0b)" } : undefined}>
+              style={isActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
               <span className={cn("text-base transition-transform duration-150", isActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>{item.icon}</span>
               {item.label}
             </Link>
@@ -73,6 +74,9 @@ export default function Sidebar({ user, isOpen = false, onClose }: SidebarProps)
             <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", ROLE_COLORS[user.role])}>{ROLE_LABELS[user.role]}</span>
           </div>
         </div>
+        <button onClick={onChangePassword} className="w-full text-xs text-slate-500 hover:text-amber-400 hover:bg-white/5 py-2 rounded-lg transition-colors mb-1">
+          🔑 שנה סיסמה
+        </button>
         <button onClick={() => signOut({ callbackUrl: "/login" })} className="w-full text-xs text-slate-500 hover:text-white hover:bg-white/5 py-2 rounded-lg transition-colors">
           יציאה מהמערכת
         </button>

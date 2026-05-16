@@ -51,7 +51,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                 placeholder="admin@menu4u.com"
                 dir="ltr"
               />
@@ -66,7 +66,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -80,8 +80,8 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold text-white transition-all shadow-lg hover:shadow-emerald-900/50 disabled:opacity-60 active:scale-98"
-              style={{ background: "linear-gradient(135deg, #059669 0%, #047857 100%)" }}
+              className="w-full py-3 rounded-xl font-semibold text-white transition-all shadow-lg hover:shadow-amber-900/30 disabled:opacity-60 active:scale-98"
+              style={{ background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 100%)" }}
             >
               {loading ? "מתחבר..." : "כניסה למערכת"}
             </button>

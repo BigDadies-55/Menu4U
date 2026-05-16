@@ -26,7 +26,7 @@ interface Props {
   currentUserRole: Role;
 }
 
-const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "EDITOR", "VIEWER"];
+const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "VIEWER"];
 
 export default function UsersClient({ users: initial, restaurants, currentUserRole }: Props) {
   const [users, setUsers] = useState(initial);
@@ -159,7 +159,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         <button
           onClick={() => setShowForm(true)}
           className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white shadow-md transition-all hover:shadow-lg active:scale-95"
-          style={{ background: "linear-gradient(135deg, #d97706, #f59e0b)" }}
+          style={{ background: "linear-gradient(135deg, #8B6914, #C9A84C)" }}
         >
           + הוסף משתמש
         </button>
@@ -172,7 +172,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           placeholder="חיפוש לפי שם או אימייל..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white shadow-sm"
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white shadow-sm"
         />
       </div>
 
@@ -248,7 +248,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
-                          className="text-xs text-emerald-600 hover:text-emerald-800 font-medium transition-colors"
+                          className="text-xs text-amber-600 hover:text-amber-800 font-medium transition-colors"
                         >
                           🔑 סיסמה
                         </button>
@@ -303,7 +303,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   <button onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
                     className="text-xs text-amber-600 font-medium">✎ מסעדות</button>
                   <button onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
-                    className="text-xs text-emerald-600 font-medium">🔑 סיסמה</button>
+                    className="text-xs text-amber-600 font-medium">🔑 סיסמה</button>
                   <button onClick={() => handleDelete(user.id)}
                     className="text-xs text-red-400 font-medium">מחק</button>
                 </div>
@@ -366,7 +366,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   type="submit"
                   disabled={loading}
                   className="flex-1 text-white py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #d97706, #f59e0b)" }}
+                  style={{ background: "linear-gradient(135deg, #8B6914, #C9A84C)" }}
                 >
                   {loading ? "יוצר..." : "צור משתמש"}
                 </button>
@@ -434,7 +434,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     onClick={handleAddRestaurant}
                     disabled={!addRestaurantId || restLoading}
                     className="px-4 py-2.5 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
-                    style={{ background: "linear-gradient(135deg, #d97706, #f59e0b)" }}
+                    style={{ background: "linear-gradient(135deg, #8B6914, #C9A84C)" }}
                   >
                     הוסף
                   </button>
@@ -467,7 +467,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   minLength={6}
                   value={resetPassword}
                   onChange={(e) => setResetPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                   placeholder="מינימום 6 תווים"
                 />
               </div>
@@ -475,7 +475,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               <div className="flex gap-3 pt-1">
                 <button type="submit" disabled={resetLoading}
                   className="flex-1 text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg,#059669,#047857)" }}>
+                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
                   {resetLoading ? "מאפס..." : "אפס סיסמה"}
                 </button>
                 <button type="button" onClick={() => setResetTarget(null)}

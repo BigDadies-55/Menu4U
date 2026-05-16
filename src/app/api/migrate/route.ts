@@ -9,6 +9,13 @@ export async function GET(req: Request) {
 
   try {
     await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'OWNER' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'Role')) THEN
+          ALTER TYPE "Role" ADD VALUE 'OWNER';
+        END IF;
+      END $$;
+    `);
+    await prisma.$executeRawUnsafe(`
       ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "phone2" TEXT;
     `);
     await prisma.$executeRawUnsafe(`

@@ -3,6 +3,7 @@ import type { Role } from "@/generated/prisma/client";
 export const ROLE_HIERARCHY: Record<Role, number> = {
   SUPER_ADMIN: 4,
   ADMIN: 3,
+  OWNER: 2,
   EDITOR: 2,
   VIEWER: 1,
 };
@@ -19,13 +20,18 @@ export function isAdmin(role: Role): boolean {
   return hasPermission(role, "ADMIN");
 }
 
+export function isOwner(role: Role): boolean {
+  return hasPermission(role, "OWNER");
+}
+
 export function isEditor(role: Role): boolean {
-  return hasPermission(role, "EDITOR");
+  return isOwner(role);
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
-  ADMIN: "Admin",
+  ADMIN: "מנהל",
+  OWNER: "בעל מסעדה",
   EDITOR: "עורך",
   VIEWER: "צופה",
 };
@@ -33,6 +39,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const ROLE_COLORS: Record<Role, string> = {
   SUPER_ADMIN: "bg-red-100 text-red-800",
   ADMIN: "bg-purple-100 text-purple-800",
+  OWNER: "bg-amber-100 text-amber-800",
   EDITOR: "bg-blue-100 text-blue-800",
   VIEWER: "bg-gray-100 text-gray-800",
 };
