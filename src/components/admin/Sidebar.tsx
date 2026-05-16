@@ -10,7 +10,6 @@ const navItems = [
   { href: "/admin", label: "דשבורד", icon: "▣", exact: true },
   { href: "/admin/restaurants", label: "מסעדות", icon: "◈", superAdmin: true },
   { href: "/admin/menus", label: "תפריטים", icon: "◉" },
-  { href: "/admin/orders", label: "הזמנות", icon: "◎" },
   { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true },
 ];
 

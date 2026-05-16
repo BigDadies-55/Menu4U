@@ -1,12 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatPrice } from "@/lib/utils";
 
 type RestaurantDetail = {
   id: string;
   name: string;
-  _count: { orders: number; menus: number };
-  orders: { totalAmount: number }[];
+  _count: { menus: number };
 };
 
 type MenuViewStats = {
@@ -18,30 +16,20 @@ type MenuViewStats = {
 
 async function getStats(userId: string, role: string) {
   if (role === "SUPER_ADMIN") {
-    const [restaurants, users, orders, items] = await Promise.all([
+    const [restaurants, users, items] = await Promise.all([
       prisma.restaurant.count(),
       prisma.user.count(),
-      prisma.order.count(),
       prisma.item.count(),
     ]);
-    const revenue = await prisma.order.aggregate({ _sum: { totalAmount: true } });
     const restaurantDetails = await prisma.restaurant.findMany({
       orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
-        _count: { select: { orders: true, menus: true } },
-        orders: { select: { totalAmount: true } },
+        _count: { select: { menus: true } },
       },
     });
-    return {
-      restaurants,
-      users,
-      orders,
-      items,
-      revenue: revenue._sum.totalAmount ?? 0,
-      restaurantDetails: restaurantDetails as RestaurantDetail[],
-    };
+    return { restaurants, users, items, restaurantDetails };
   }
 
   const userRestaurants = await prisma.restaurantUser.findMany({
@@ -50,15 +38,8 @@ async function getStats(userId: string, role: string) {
   });
   const restaurantIds = userRestaurants.map((r) => r.restaurantId);
 
-  const [orders, items] = await Promise.all([
-    prisma.order.count({ where: { restaurantId: { in: restaurantIds } } }),
-    prisma.item.count({
-      where: { category: { menu: { restaurantId: { in: restaurantIds } } } },
-    }),
-  ]);
-  const revenue = await prisma.order.aggregate({
-    where: { restaurantId: { in: restaurantIds } },
-    _sum: { totalAmount: true },
+  const items = await prisma.item.count({
+    where: { category: { menu: { restaurantId: { in: restaurantIds } } } },
   });
 
   const restaurantDetails = await prisma.restaurant.findMany({
@@ -66,19 +47,11 @@ async function getStats(userId: string, role: string) {
     select: {
       id: true,
       name: true,
-      _count: { select: { orders: true, menus: true } },
-      orders: { select: { totalAmount: true } },
+      _count: { select: { menus: true } },
     },
   });
 
-  return {
-    restaurants: restaurantIds.length,
-    users: null,
-    orders,
-    items,
-    revenue: revenue._sum.totalAmount ?? 0,
-    restaurantDetails: restaurantDetails as RestaurantDetail[],
-  };
+  return { restaurants: restaurantIds.length, users: null, items, restaurantDetails };
 }
 
 async function getMenuViewStats(restaurantIds: string[]): Promise<Record<string, MenuViewStats>> {
@@ -135,9 +108,7 @@ export default async function AdminDashboard() {
     ...(stats.users !== null
       ? [{ label: "משתמשים", value: stats.users, icon: "👥", color: "bg-purple-50 text-purple-600" }]
       : []),
-    { label: "הזמנות", value: stats.orders, icon: "🛒", color: "bg-blue-50 text-blue-600" },
     { label: "פריטים בתפריט", value: stats.items, icon: "🍕", color: "bg-green-50 text-green-600" },
-    { label: "הכנסות", value: formatPrice(stats.revenue), icon: "💰", color: "bg-yellow-50 text-yellow-600" },
   ];
 
   return (
@@ -166,7 +137,6 @@ export default async function AdminDashboard() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">המסעדות שלי</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.restaurantDetails.map((r) => {
-              const rev = r.orders.reduce((s, o) => s + o.totalAmount, 0);
               const mv = menuViewStats[r.id];
               return (
                 <div key={r.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
@@ -177,20 +147,9 @@ export default async function AdminDashboard() {
                     <div className="font-semibold text-gray-900">{r.name}</div>
                   </div>
 
-                  {/* order / menu / revenue */}
-                  <div className="grid grid-cols-3 gap-2 text-center mb-4">
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">{r._count.orders}</div>
-                      <div className="text-xs text-gray-400">הזמנות</div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">{r._count.menus}</div>
-                      <div className="text-xs text-gray-400">תפריטים</div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">₪{Math.round(rev)}</div>
-                      <div className="text-xs text-gray-400">הכנסות</div>
-                    </div>
+                  <div className="text-center mb-4">
+                    <div className="text-lg font-bold text-gray-900">{r._count.menus}</div>
+                    <div className="text-xs text-gray-400">תפריטים</div>
                   </div>
 
                   {/* menu views analytics */}
