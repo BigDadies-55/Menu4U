@@ -323,7 +323,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     </button>
                     {canEdit && (
                       <div className="flex items-center gap-0.5">
-                        <button onClick={() => openSchedule(menu)} className="text-gray-300 hover:text-amber-500 text-xs px-1" title="הגדרות תזמון">⚙</button>
+                        <button onClick={() => openSchedule(menu)} className="text-gray-300 hover:text-amber-500 text-xs px-1" title="הגדרות תזמון">🕐</button>
                         <button onClick={() => deleteMenu(menu.id)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
                       </div>
                     )}
