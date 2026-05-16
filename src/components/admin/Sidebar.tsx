@@ -8,11 +8,11 @@ import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 
 const navItems = [
-  { href: "/admin", label: "דשבורד", icon: "📊", exact: true },
-  { href: "/admin/restaurants", label: "מסעדות", icon: "🍽️", superAdmin: true },
-  { href: "/admin/menus", label: "תפריטים", icon: "📋" },
-  { href: "/admin/orders", label: "הזמנות", icon: "🛒" },
-  { href: "/admin/users", label: "משתמשים", icon: "👥", adminOnly: true },
+  { href: "/admin", label: "דשבורד", icon: "▣", exact: true },
+  { href: "/admin/restaurants", label: "מסעדות", icon: "◈", superAdmin: true },
+  { href: "/admin/menus", label: "תפריטים", icon: "◉" },
+  { href: "/admin/orders", label: "הזמנות", icon: "◎" },
+  { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true },
 ];
 
 interface SidebarProps {
@@ -32,21 +32,34 @@ export default function Sidebar({ user }: SidebarProps) {
     return true;
   });
 
+  const initials = (user.name ?? user.email ?? "?")
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col min-h-screen">
-      <div className="p-6 border-b border-gray-700">
+    <aside className="w-64 flex flex-col min-h-screen" style={{ background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)" }}>
+      {/* Logo */}
+      <div className="px-6 py-7 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center font-bold text-lg">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-lg"
+            style={{ background: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)" }}
+          >
             M
           </div>
           <div>
-            <div className="font-bold text-lg">Menu4U</div>
-            <div className="text-gray-400 text-xs">ממשק ניהול</div>
+            <div className="font-bold text-white text-lg tracking-wide">Menu4U</div>
+            <div className="text-slate-400 text-xs tracking-wider uppercase">Management</div>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-5 space-y-0.5">
+        <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest px-3 mb-3">ניווט</p>
         {visibleItems.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
@@ -56,43 +69,45 @@ export default function Sidebar({ user }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium",
+                "group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
                 isActive
-                  ? "bg-orange-500 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "text-white shadow-md"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
               )}
+              style={isActive ? { background: "linear-gradient(90deg, #d97706 0%, #f59e0b 100%)" } : undefined}
             >
-              <span className="text-base">{item.icon}</span>
+              <span className={cn("text-base transition-transform duration-150", isActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>
+                {item.icon}
+              </span>
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-700">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 bg-gray-600 rounded-full flex items-center justify-center text-sm font-bold">
-            {user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
+      {/* User */}
+      <div className="px-3 py-4 border-t border-white/10">
+        <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5 mb-2">
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)" }}
+          >
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">
+            <div className="text-sm font-semibold text-white truncate">
               {user.name ?? user.email}
             </div>
-            <span
-              className={cn(
-                "text-xs px-2 py-0.5 rounded-full font-medium",
-                ROLE_COLORS[user.role]
-              )}
-            >
+            <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", ROLE_COLORS[user.role])}>
               {ROLE_LABELS[user.role]}
             </span>
           </div>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full text-sm text-gray-400 hover:text-white hover:bg-gray-800 py-2 rounded-lg transition-colors"
+          className="w-full text-xs text-slate-500 hover:text-white hover:bg-white/5 py-2 rounded-lg transition-colors"
         >
-          יציאה
+          יציאה מהמערכת
         </button>
       </div>
     </aside>
