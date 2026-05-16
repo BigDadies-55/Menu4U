@@ -79,6 +79,7 @@ export type ItemCountAggregateOutputType = {
   isVegetarian: number
   isVegan: number
   isGlutenFree: number
+  tags: number
   sortOrder: number
   createdAt: number
   updatedAt: number
@@ -139,6 +140,7 @@ export type ItemCountAggregateInputType = {
   isVegetarian?: true
   isVegan?: true
   isGlutenFree?: true
+  tags?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -242,6 +244,7 @@ export type ItemGroupByOutputType = {
   isVegetarian: boolean
   isVegan: boolean
   isGlutenFree: boolean
+  tags: string[]
   sortOrder: number
   createdAt: Date
   updatedAt: Date
@@ -281,6 +284,7 @@ export type ItemWhereInput = {
   isVegetarian?: Prisma.BoolFilter<"Item"> | boolean
   isVegan?: Prisma.BoolFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolFilter<"Item"> | boolean
+  tags?: Prisma.StringNullableListFilter<"Item">
   sortOrder?: Prisma.IntFilter<"Item"> | number
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
@@ -299,6 +303,7 @@ export type ItemOrderByWithRelationInput = {
   isVegetarian?: Prisma.SortOrder
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
+  tags?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -320,6 +325,7 @@ export type ItemWhereUniqueInput = Prisma.AtLeast<{
   isVegetarian?: Prisma.BoolFilter<"Item"> | boolean
   isVegan?: Prisma.BoolFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolFilter<"Item"> | boolean
+  tags?: Prisma.StringNullableListFilter<"Item">
   sortOrder?: Prisma.IntFilter<"Item"> | number
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
@@ -338,6 +344,7 @@ export type ItemOrderByWithAggregationInput = {
   isVegetarian?: Prisma.SortOrder
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
+  tags?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -362,6 +369,7 @@ export type ItemScalarWhereWithAggregatesInput = {
   isVegetarian?: Prisma.BoolWithAggregatesFilter<"Item"> | boolean
   isVegan?: Prisma.BoolWithAggregatesFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolWithAggregatesFilter<"Item"> | boolean
+  tags?: Prisma.StringNullableListFilter<"Item">
   sortOrder?: Prisma.IntWithAggregatesFilter<"Item"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
@@ -377,6 +385,7 @@ export type ItemCreateInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -395,6 +404,7 @@ export type ItemUncheckedCreateInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -411,6 +421,7 @@ export type ItemUpdateInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -429,6 +440,7 @@ export type ItemUncheckedUpdateInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -446,6 +458,7 @@ export type ItemCreateManyInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -461,6 +474,7 @@ export type ItemUpdateManyMutationInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -477,6 +491,7 @@ export type ItemUncheckedUpdateManyInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -492,6 +507,14 @@ export type ItemOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
+}
+
 export type ItemCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
@@ -503,6 +526,7 @@ export type ItemCountOrderByAggregateInput = {
   isVegetarian?: Prisma.SortOrder
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
+  tags?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -597,12 +621,21 @@ export type ItemUncheckedUpdateManyWithoutCategoryNestedInput = {
   deleteMany?: Prisma.ItemScalarWhereInput | Prisma.ItemScalarWhereInput[]
 }
 
+export type ItemCreatetagsInput = {
+  set: string[]
+}
+
 export type FloatFieldUpdateOperationsInput = {
   set?: number
   increment?: number
   decrement?: number
   multiply?: number
   divide?: number
+}
+
+export type ItemUpdatetagsInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 export type ItemCreateNestedOneWithoutOrderItemsInput = {
@@ -629,6 +662,7 @@ export type ItemCreateWithoutCategoryInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -645,6 +679,7 @@ export type ItemUncheckedCreateWithoutCategoryInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -691,6 +726,7 @@ export type ItemScalarWhereInput = {
   isVegetarian?: Prisma.BoolFilter<"Item"> | boolean
   isVegan?: Prisma.BoolFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolFilter<"Item"> | boolean
+  tags?: Prisma.StringNullableListFilter<"Item">
   sortOrder?: Prisma.IntFilter<"Item"> | number
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
@@ -706,6 +742,7 @@ export type ItemCreateWithoutOrderItemsInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -723,6 +760,7 @@ export type ItemUncheckedCreateWithoutOrderItemsInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -754,6 +792,7 @@ export type ItemUpdateWithoutOrderItemsInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -771,6 +810,7 @@ export type ItemUncheckedUpdateWithoutOrderItemsInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -786,6 +826,7 @@ export type ItemCreateManyCategoryInput = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -801,6 +842,7 @@ export type ItemUpdateWithoutCategoryInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -817,6 +859,7 @@ export type ItemUncheckedUpdateWithoutCategoryInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -833,6 +876,7 @@ export type ItemUncheckedUpdateManyWithoutCategoryInput = {
   isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -880,6 +924,7 @@ export type ItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -899,6 +944,7 @@ export type ItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -916,6 +962,7 @@ export type ItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -933,12 +980,13 @@ export type ItemSelectScalar = {
   isVegetarian?: boolean
   isVegan?: boolean
   isGlutenFree?: boolean
+  tags?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "name" | "description" | "price" | "image" | "isActive" | "isVegetarian" | "isVegan" | "isGlutenFree" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["item"]>
+export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "name" | "description" | "price" | "image" | "isActive" | "isVegetarian" | "isVegan" | "isGlutenFree" | "tags" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["item"]>
 export type ItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
   orderItems?: boolean | Prisma.Item$orderItemsArgs<ExtArgs>
@@ -968,6 +1016,7 @@ export type $ItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     isVegetarian: boolean
     isVegan: boolean
     isGlutenFree: boolean
+    tags: string[]
     sortOrder: number
     createdAt: Date
     updatedAt: Date
@@ -1406,6 +1455,7 @@ export interface ItemFieldRefs {
   readonly isVegetarian: Prisma.FieldRef<"Item", 'Boolean'>
   readonly isVegan: Prisma.FieldRef<"Item", 'Boolean'>
   readonly isGlutenFree: Prisma.FieldRef<"Item", 'Boolean'>
+  readonly tags: Prisma.FieldRef<"Item", 'String[]'>
   readonly sortOrder: Prisma.FieldRef<"Item", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Item", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Item", 'DateTime'>

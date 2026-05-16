@@ -1389,6 +1389,7 @@ export const ItemScalarFieldEnum = {
   isVegetarian: 'isVegetarian',
   isVegan: 'isVegan',
   isGlutenFree: 'isGlutenFree',
+  tags: 'tags',
   sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
