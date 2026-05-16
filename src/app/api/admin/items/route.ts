@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   if (!session?.user || !isEditor(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { name, description, price, categoryId, isVegetarian, isVegan, isGlutenFree } = await req.json();
+  const { name, description, price, categoryId, image, isVegetarian, isVegan, isGlutenFree, tags } = await req.json();
   if (!name || !categoryId || price === undefined) {
     return NextResponse.json({ error: "Name, categoryId and price are required" }, { status: 400 });
   }
@@ -18,9 +18,11 @@ export async function POST(req: Request) {
       description: description || null,
       price: parseFloat(price),
       categoryId,
+      image: image || null,
       isVegetarian: !!isVegetarian,
       isVegan: !!isVegan,
       isGlutenFree: !!isGlutenFree,
+      tags: Array.isArray(tags) ? tags : [],
     },
   });
   return NextResponse.json(item, { status: 201 });

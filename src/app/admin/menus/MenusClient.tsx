@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { formatPrice } from "@/lib/utils";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 type Item = {
   id: string; name: string; description: string | null; price: number;
   image: string | null; isActive: boolean; isVegetarian: boolean;
-  isVegan: boolean; isGlutenFree: boolean; sortOrder: number;
+  isVegan: boolean; isGlutenFree: boolean; tags: string[]; sortOrder: number;
 };
 
 type Category = {
@@ -17,7 +18,7 @@ type Category = {
 type Menu = { id: string; name: string; isActive: boolean; categories: Category[] };
 type Restaurant = { id: string; name: string; menus: Menu[] };
 
-const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false };
+const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[] };
 const emptyCategoryForm = { name: "", description: "", image: "" };
 
 export default function MenusClient({ restaurants, canEdit }: { restaurants: Restaurant[]; canEdit: boolean }) {
@@ -32,6 +33,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [menuForm, setMenuForm] = useState({ name: "", description: "" });
   const [categoryForm, setCategoryForm] = useState(emptyCategoryForm);
   const [itemForm, setItemForm] = useState(emptyItemForm);
+  const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -45,6 +47,18 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
         menus: selectedRestaurant.menus.map(m => m.id === updated.id ? updated : m),
       });
     }
+  }
+
+  function addTag() {
+    const t = tagInput.trim();
+    if (t && !itemForm.tags.includes(t)) {
+      setItemForm({ ...itemForm, tags: [...itemForm.tags, t] });
+    }
+    setTagInput("");
+  }
+
+  function removeTag(tag: string) {
+    setItemForm({ ...itemForm, tags: itemForm.tags.filter(t => t !== tag) });
   }
 
   // ── Menu CRUD ─────────────────────────────────────────────────────────────
@@ -110,15 +124,14 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= cats.length) return;
 
-    const newOrder = cats.map((c, i) => {
-      if (i === idx) return { ...c, sortOrder: cats[swapIdx].sortOrder };
-      if (i === swapIdx) return { ...c, sortOrder: cats[idx].sortOrder };
-      return c;
-    });
+    // assign new sequential sort orders based on array positions
+    const reordered = [...cats];
+    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+    const newOrder = reordered.map((c, i) => ({ ...c, sortOrder: i }));
 
     await Promise.all([
-      fetch(`/api/admin/categories/${cats[idx].id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sortOrder: cats[swapIdx].sortOrder }) }),
-      fetch(`/api/admin/categories/${cats[swapIdx].id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sortOrder: cats[idx].sortOrder }) }),
+      fetch(`/api/admin/categories/${newOrder[idx].id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sortOrder: newOrder[idx].sortOrder }) }),
+      fetch(`/api/admin/categories/${newOrder[swapIdx].id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sortOrder: newOrder[swapIdx].sortOrder }) }),
     ]);
     updateMenu(m => ({ ...m, categories: newOrder }));
   }
@@ -143,6 +156,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       }));
       setShowItemForm(false);
       setItemForm(emptyItemForm);
+      setTagInput("");
     }
     setLoading(false);
   }
@@ -269,11 +283,14 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                             <div key={item.id} className="p-4 flex items-center gap-4">
                               {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
                               <div className="flex-1">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <span className={`font-medium ${!item.isActive ? "text-gray-400 line-through" : "text-gray-900"}`}>{item.name}</span>
                                   {item.isVegetarian && <span title="צמחוני" className="text-green-500 text-xs">🌿</span>}
                                   {item.isVegan && <span title="טבעוני" className="text-green-600 text-xs">🌱</span>}
                                   {item.isGlutenFree && <span title="ללא גלוטן" className="text-yellow-500 text-xs font-bold">GF</span>}
+                                  {item.tags?.map(tag => (
+                                    <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{tag}</span>
+                                  ))}
                                 </div>
                                 {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
                               </div>
@@ -335,13 +352,11 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 <input required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">תמונה (URL)</label>
-                <input type="url" value={categoryForm.image} onChange={e => setCategoryForm({ ...categoryForm, image: e.target.value })}
-                  placeholder="https://..." dir="ltr"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-                {categoryForm.image && <img src={categoryForm.image} alt="preview" className="mt-2 h-16 object-cover rounded-lg" />}
-              </div>
+              <ImageUpload
+                label="תמונת קטגוריה"
+                value={categoryForm.image}
+                onChange={url => setCategoryForm({ ...categoryForm, image: url })}
+              />
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
                   {loading ? "יוצר..." : "צור"}
@@ -356,7 +371,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       {/* Item Form Modal */}
       {showItemForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">פריט חדש — {selectedCategory?.name}</h2>
             <form onSubmit={createItem} className="space-y-4">
               <div>
@@ -375,14 +390,12 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" dir="ltr" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">תמונה (URL)</label>
-                <input type="url" value={itemForm.image} onChange={e => setItemForm({ ...itemForm, image: e.target.value })}
-                  placeholder="https://..." dir="ltr"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-                {itemForm.image && <img src={itemForm.image} alt="preview" className="mt-2 h-16 object-cover rounded-lg" />}
-              </div>
-              <div className="flex gap-4">
+              <ImageUpload
+                label="תמונת פריט"
+                value={itemForm.image}
+                onChange={url => setItemForm({ ...itemForm, image: url })}
+              />
+              <div className="flex gap-4 flex-wrap">
                 {[{ key: "isVegetarian", label: "צמחוני 🌿" }, { key: "isVegan", label: "טבעוני 🌱" }, { key: "isGlutenFree", label: "ללא גלוטן" }].map(({ key, label }) => (
                   <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={itemForm[key as keyof typeof itemForm] as boolean}
@@ -391,11 +404,35 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   </label>
                 ))}
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">תגיות נוספות</label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                    placeholder="הוסף תגית..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                  <button type="button" onClick={addTag}
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium">הוסף</button>
+                </div>
+                {itemForm.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {itemForm.tags.map(tag => (
+                      <span key={tag} className="flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
+                        {tag}
+                        <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-600 font-bold leading-none">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
                   {loading ? "יוצר..." : "הוסף פריט"}
                 </button>
-                <button type="button" onClick={() => setShowItemForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
+                <button type="button" onClick={() => { setShowItemForm(false); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
               </div>
             </form>
           </div>

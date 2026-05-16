@@ -144,10 +144,11 @@ model Item {
   price        Float
   image        String?
   isActive     Boolean @default(true)
-  isVegetarian Boolean @default(false)
-  isVegan      Boolean @default(false)
-  isGlutenFree Boolean @default(false)
-  sortOrder    Int     @default(0)
+  isVegetarian Boolean  @default(false)
+  isVegan      Boolean  @default(false)
+  isGlutenFree Boolean  @default(false)
+  tags         String[]
+  sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
