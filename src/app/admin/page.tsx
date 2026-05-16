@@ -52,14 +52,23 @@ export default async function AdminDashboard() {
 
   const stats = await getStats(session.user.id, session.user.role);
 
+  let recentOrdersWhere = {};
+  if (session.user.role !== "SUPER_ADMIN") {
+    const userRestaurants = await prisma.restaurantUser.findMany({
+      where: { userId: session.user.id },
+      select: { restaurantId: true },
+    });
+    recentOrdersWhere = { restaurantId: { in: userRestaurants.map((r) => r.restaurantId) } };
+  }
   const recentOrders = await prisma.order.findMany({
+    where: recentOrdersWhere,
     take: 5,
     orderBy: { createdAt: "desc" },
     include: { restaurant: { select: { name: true } } },
   });
 
   const cards = [
-    { label: "מסעדות", value: stats.restaurants, icon: "🍽️", color: "bg-orange-50 text-orange-600" },
+    { label: "מסעדות", value: stats.restaurants, icon: "🍽️", color: "bg-emerald-50 text-emerald-700" },
     ...(stats.users !== null
       ? [{ label: "משתמשים", value: stats.users, icon: "👥", color: "bg-purple-50 text-purple-600" }]
       : []),
@@ -80,7 +89,7 @@ export default async function AdminDashboard() {
   const statusColors: Record<string, string> = {
     PENDING: "bg-yellow-100 text-yellow-800",
     CONFIRMED: "bg-blue-100 text-blue-800",
-    PREPARING: "bg-orange-100 text-orange-800",
+    PREPARING: "bg-amber-100 text-amber-800",
     READY: "bg-green-100 text-green-800",
     DELIVERED: "bg-gray-100 text-gray-800",
     CANCELLED: "bg-red-100 text-red-800",

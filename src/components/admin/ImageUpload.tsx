@@ -44,7 +44,7 @@ export default function ImageUpload({ value, onChange, label = "תמונה" }: P
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-orange-400 hover:text-orange-500 transition-colors disabled:opacity-50"
+          className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-emerald-500 hover:text-emerald-600 transition-colors disabled:opacity-50"
         >
           {uploading ? "מעלה..." : value ? "החלף תמונה" : "📷 בחר תמונה"}
         </button>

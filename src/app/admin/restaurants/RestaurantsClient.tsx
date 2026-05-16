@@ -113,7 +113,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
         value={form[key]}
         onChange={e => setForm({ ...form, [key]: e.target.value })}
         dir={opts?.dir}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
       />
     </div>
   );
@@ -125,7 +125,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
           <h1 className="text-2xl font-bold text-gray-900">ניהול מסעדות</h1>
           <p className="text-gray-500 mt-1">{restaurants.length} מסעדות במערכת</p>
         </div>
-        <button onClick={openCreate} className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg font-medium transition-colors">
+        <button onClick={openCreate} className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-lg font-medium transition-colors">
           + הוסף מסעדה
         </button>
       </div>
@@ -147,7 +147,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   onChange={e => setForm({ ...form, logo: e.target.value })}
                   placeholder="https://..."
                   dir="ltr"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 {form.logo && (
                   <img src={form.logo} alt="preview" className="mt-2 h-16 w-16 object-cover rounded-lg border" />
@@ -168,13 +168,13 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
               {error && <p className="text-red-600 text-sm">{error}</p>}
               <div className="flex gap-3 pt-2">
                 <button type="submit" disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
+                  className="flex-1 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white py-2.5 rounded-lg font-medium">
                   {loading ? "שומר..." : editTarget ? "שמור שינויים" : "צור מסעדה"}
                 </button>
                 <button type="button" onClick={() => setShowForm(false)}
@@ -214,7 +214,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                       {r.logo ? (
                         <img src={r.logo} alt={r.name} className="w-10 h-10 rounded-xl object-cover border" />
                       ) : (
-                        <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 font-bold">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-700 font-bold">
                           {r.name[0]}
                         </div>
                       )}

@@ -12,6 +12,14 @@ export async function POST(req: Request) {
   if (!name || !restaurantId) {
     return NextResponse.json({ error: "Name and restaurantId are required" }, { status: 400 });
   }
+
+  if (session.user.role !== "SUPER_ADMIN") {
+    const access = await prisma.restaurantUser.findUnique({
+      where: { userId_restaurantId: { userId: session.user.id, restaurantId } },
+    });
+    if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const menu = await prisma.menu.create({ data: { name, description: description || null, restaurantId } });
   return NextResponse.json(menu, { status: 201 });
 }

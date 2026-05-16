@@ -206,7 +206,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <div className="p-4 border-b border-gray-100 font-semibold text-sm text-gray-700">מסעדות</div>
               {restaurants.map(rest => (
                 <button key={rest.id} onClick={() => { setSelectedRestaurant(rest); setSelectedMenu(rest.menus[0] ?? null); }}
-                  className={`w-full text-right px-4 py-3 text-sm transition-colors ${selectedRestaurant?.id === rest.id ? "bg-orange-50 text-orange-700 font-medium" : "text-gray-600 hover:bg-gray-50"}`}>
+                  className={`w-full text-right px-4 py-3 text-sm transition-colors ${selectedRestaurant?.id === rest.id ? "bg-emerald-50 text-emerald-700 font-medium" : "text-gray-600 hover:bg-gray-50"}`}>
                   {rest.name}
                 </button>
               ))}
@@ -217,12 +217,12 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                   <span className="font-semibold text-sm text-gray-700">תפריטים</span>
                   {canEdit && (
-                    <button onClick={() => setShowMenuForm(true)} className="text-xs text-orange-500 hover:text-orange-600 font-medium">+ חדש</button>
+                    <button onClick={() => setShowMenuForm(true)} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">+ חדש</button>
                   )}
                 </div>
                 {selectedRestaurant.menus.map(menu => (
-                  <div key={menu.id} className={`flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors ${selectedMenu?.id === menu.id ? "bg-orange-50" : "hover:bg-gray-50"}`}>
-                    <button onClick={() => setSelectedMenu(menu)} className={`flex-1 text-right text-sm ${selectedMenu?.id === menu.id ? "text-orange-700 font-medium" : "text-gray-600"}`}>
+                  <div key={menu.id} className={`flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors ${selectedMenu?.id === menu.id ? "bg-emerald-50" : "hover:bg-gray-50"}`}>
+                    <button onClick={() => setSelectedMenu(menu)} className={`flex-1 text-right text-sm ${selectedMenu?.id === menu.id ? "text-emerald-700 font-medium" : "text-gray-600"}`}>
                       {menu.name}
                     </button>
                     {canEdit && (
@@ -245,7 +245,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   <h2 className="text-xl font-bold text-gray-900">{selectedMenu.name}</h2>
                   {canEdit && (
                     <button onClick={() => setShowCategoryForm(true)}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium">
                       + קטגוריה חדשה
                     </button>
                   )}
@@ -270,7 +270,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                                 className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none">▼</button>
                             </div>
                             <button onClick={() => { setSelectedCategory(cat); setShowItemForm(true); }}
-                              className="text-sm text-orange-500 hover:text-orange-600 font-medium">+ פריט</button>
+                              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">+ פריט</button>
                             <button onClick={() => deleteCategory(cat.id)} className="text-sm text-red-400 hover:text-red-600">מחק</button>
                           </div>
                         )}
@@ -299,7 +299,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                                 {canEdit && (
                                   <>
                                     <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
-                                      className={`text-xs ${item.isActive ? "text-gray-400 hover:text-orange-500" : "text-green-500 hover:text-green-600"}`}>
+                                      className={`text-xs ${item.isActive ? "text-gray-400 hover:text-emerald-600" : "text-green-500 hover:text-green-600"}`}>
                                       {item.isActive ? "השבת" : "הפעל"}
                                     </button>
                                     <button onClick={() => deleteItem(cat.id, item.id)} className="text-xs text-red-400 hover:text-red-600">מחק</button>
@@ -328,10 +328,10 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם התפריט *</label>
                 <input required value={menuForm.name} onChange={e => setMenuForm({ ...menuForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
+                <button type="submit" disabled={loading} className="flex-1 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white py-2.5 rounded-lg font-medium">
                   {loading ? "יוצר..." : "צור"}
                 </button>
                 <button type="button" onClick={() => setShowMenuForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -350,7 +350,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם הקטגוריה *</label>
                 <input required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <ImageUpload
                 label="תמונת קטגוריה"
@@ -358,7 +358,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 onChange={url => setCategoryForm({ ...categoryForm, image: url })}
               />
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
+                <button type="submit" disabled={loading} className="flex-1 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white py-2.5 rounded-lg font-medium">
                   {loading ? "יוצר..." : "צור"}
                 </button>
                 <button type="button" onClick={() => setShowCategoryForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -377,18 +377,18 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם הפריט *</label>
                 <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">תיאור</label>
                 <textarea value={itemForm.description} onChange={e => setItemForm({ ...itemForm, description: e.target.value })}
-                  rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                  rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">מחיר (₪) *</label>
                 <input required type="number" min="0" step="0.5" value={itemForm.price}
                   onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" dir="ltr" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" dir="ltr" />
               </div>
               <ImageUpload
                 label="תמונת פריט"
@@ -412,7 +412,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     onChange={e => setTagInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
                     placeholder="הוסף תגית..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <button type="button" onClick={addTag}
                     className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium">הוסף</button>
@@ -420,7 +420,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 {itemForm.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {itemForm.tags.map(tag => (
-                      <span key={tag} className="flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
+                      <span key={tag} className="flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full">
                         {tag}
                         <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-600 font-bold leading-none">×</button>
                       </span>
@@ -429,7 +429,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 )}
               </div>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
+                <button type="submit" disabled={loading} className="flex-1 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white py-2.5 rounded-lg font-medium">
                   {loading ? "יוצר..." : "הוסף פריט"}
                 </button>
                 <button type="button" onClick={() => { setShowItemForm(false); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
