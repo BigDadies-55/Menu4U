@@ -143,6 +143,7 @@ export const RestaurantScalarFieldEnum = {
   orderPhone: 'orderPhone',
   email: 'email',
   website: 'website',
+  locationUrl: 'locationUrl',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
