@@ -24,7 +24,7 @@ export default function Sidebar({ user, isOpen = false, onClose, onChangePasswor
   const pathname = usePathname();
   const visibleItems = navItems.filter((item) => {
     if (item.superAdmin && user.role !== "SUPER_ADMIN") return false;
-    if (item.adminOnly && user.role === "VIEWER") return false;
+    if (item.adminOnly && !["SUPER_ADMIN", "ADMIN"].includes(user.role)) return false;
     return true;
   });
   const initials = (user.name ?? user.email ?? "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
