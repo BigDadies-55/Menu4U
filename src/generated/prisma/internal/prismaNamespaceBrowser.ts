@@ -139,6 +139,8 @@ export const RestaurantScalarFieldEnum = {
   logo: 'logo',
   address: 'address',
   phone: 'phone',
+  phone2: 'phone2',
+  orderPhone: 'orderPhone',
   email: 'email',
   website: 'website',
   isActive: 'isActive',

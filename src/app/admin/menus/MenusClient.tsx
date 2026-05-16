@@ -4,61 +4,50 @@ import { useState } from "react";
 import { formatPrice } from "@/lib/utils";
 
 type Item = {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  image: string | null;
-  isActive: boolean;
-  isVegetarian: boolean;
-  isVegan: boolean;
-  isGlutenFree: boolean;
+  id: string; name: string; description: string | null; price: number;
+  image: string | null; isActive: boolean; isVegetarian: boolean;
+  isVegan: boolean; isGlutenFree: boolean; sortOrder: number;
 };
 
 type Category = {
-  id: string;
-  name: string;
-  items: Item[];
-  isActive: boolean;
+  id: string; name: string; image: string | null;
+  items: Item[]; isActive: boolean; sortOrder: number;
 };
 
-type Menu = {
-  id: string;
-  name: string;
-  isActive: boolean;
-  categories: Category[];
-};
+type Menu = { id: string; name: string; isActive: boolean; categories: Category[] };
+type Restaurant = { id: string; name: string; menus: Menu[] };
 
-type Restaurant = {
-  id: string;
-  name: string;
-  menus: Menu[];
-};
+const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false };
+const emptyCategoryForm = { name: "", description: "", image: "" };
 
-interface Props {
-  restaurants: Restaurant[];
-  canEdit: boolean;
-}
+export default function MenusClient({ restaurants, canEdit }: { restaurants: Restaurant[]; canEdit: boolean }) {
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(restaurants[0] ?? null);
+  const [selectedMenu, setSelectedMenu] = useState<Menu | null>(restaurants[0]?.menus[0] ?? null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
-export default function MenusClient({ restaurants, canEdit }: Props) {
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(
-    restaurants[0] ?? null
-  );
-  const [selectedMenu, setSelectedMenu] = useState<Menu | null>(
-    restaurants[0]?.menus[0] ?? null
-  );
   const [showMenuForm, setShowMenuForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const [menuForm, setMenuForm] = useState({ name: "", description: "" });
-  const [categoryForm, setCategoryForm] = useState({ name: "", description: "" });
-  const [itemForm, setItemForm] = useState({
-    name: "", description: "", price: "", isVegetarian: false, isVegan: false, isGlutenFree: false,
-  });
+  const [categoryForm, setCategoryForm] = useState(emptyCategoryForm);
+  const [itemForm, setItemForm] = useState(emptyItemForm);
+  const [loading, setLoading] = useState(false);
 
+  // ── helpers ──────────────────────────────────────────────────────────────
+  function updateMenu(updater: (m: Menu) => Menu) {
+    if (!selectedMenu) return;
+    const updated = updater(selectedMenu);
+    setSelectedMenu(updated);
+    if (selectedRestaurant) {
+      setSelectedRestaurant({
+        ...selectedRestaurant,
+        menus: selectedRestaurant.menus.map(m => m.id === updated.id ? updated : m),
+      });
+    }
+  }
+
+  // ── Menu CRUD ─────────────────────────────────────────────────────────────
   async function createMenu(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedRestaurant) return;
@@ -69,19 +58,27 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
       body: JSON.stringify({ ...menuForm, restaurantId: selectedRestaurant.id }),
     });
     if (res.ok) {
-      const newMenu = await res.json();
-      const updatedRestaurant = {
-        ...selectedRestaurant,
-        menus: [...selectedRestaurant.menus, { ...newMenu, categories: [] }],
-      };
-      setSelectedRestaurant(updatedRestaurant);
-      setSelectedMenu({ ...newMenu, categories: [] });
+      const newMenu: Menu = { ...(await res.json()), categories: [] };
+      const updated = { ...selectedRestaurant, menus: [...selectedRestaurant.menus, newMenu] };
+      setSelectedRestaurant(updated);
+      setSelectedMenu(newMenu);
       setShowMenuForm(false);
       setMenuForm({ name: "", description: "" });
     }
     setLoading(false);
   }
 
+  async function deleteMenu(menuId: string) {
+    if (!confirm("למחוק את התפריט? כל הקטגוריות והפריטים שלו יימחקו.")) return;
+    await fetch(`/api/admin/menus/${menuId}`, { method: "DELETE" });
+    if (selectedRestaurant) {
+      const updated = { ...selectedRestaurant, menus: selectedRestaurant.menus.filter(m => m.id !== menuId) };
+      setSelectedRestaurant(updated);
+      setSelectedMenu(updated.menus[0] ?? null);
+    }
+  }
+
+  // ── Category CRUD ─────────────────────────────────────────────────────────
   async function createCategory(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedMenu) return;
@@ -89,18 +86,44 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
     const res = await fetch("/api/admin/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...categoryForm, menuId: selectedMenu.id }),
+      body: JSON.stringify({ ...categoryForm, menuId: selectedMenu.id, sortOrder: selectedMenu.categories.length }),
     });
     if (res.ok) {
-      const newCat = await res.json();
-      const updatedMenu = { ...selectedMenu, categories: [...selectedMenu.categories, { ...newCat, items: [] }] };
-      setSelectedMenu(updatedMenu);
+      const newCat: Category = { ...(await res.json()), items: [] };
+      updateMenu(m => ({ ...m, categories: [...m.categories, newCat] }));
       setShowCategoryForm(false);
-      setCategoryForm({ name: "", description: "" });
+      setCategoryForm(emptyCategoryForm);
     }
     setLoading(false);
   }
 
+  async function deleteCategory(catId: string) {
+    if (!confirm("למחוק את הקטגוריה? כל הפריטים שלה יימחקו.")) return;
+    await fetch(`/api/admin/categories/${catId}`, { method: "DELETE" });
+    updateMenu(m => ({ ...m, categories: m.categories.filter(c => c.id !== catId) }));
+  }
+
+  async function moveCategoryOrder(catId: string, direction: "up" | "down") {
+    if (!selectedMenu) return;
+    const cats = [...selectedMenu.categories].sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = cats.findIndex(c => c.id === catId);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= cats.length) return;
+
+    const newOrder = cats.map((c, i) => {
+      if (i === idx) return { ...c, sortOrder: cats[swapIdx].sortOrder };
+      if (i === swapIdx) return { ...c, sortOrder: cats[idx].sortOrder };
+      return c;
+    });
+
+    await Promise.all([
+      fetch(`/api/admin/categories/${cats[idx].id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sortOrder: cats[swapIdx].sortOrder }) }),
+      fetch(`/api/admin/categories/${cats[swapIdx].id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sortOrder: cats[idx].sortOrder }) }),
+    ]);
+    updateMenu(m => ({ ...m, categories: newOrder }));
+  }
+
+  // ── Item CRUD ─────────────────────────────────────────────────────────────
   async function createItem(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedCategory) return;
@@ -112,36 +135,46 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
     });
     if (res.ok) {
       const newItem = await res.json();
-      const updatedMenu = {
-        ...selectedMenu!,
-        categories: selectedMenu!.categories.map((c) =>
+      updateMenu(m => ({
+        ...m,
+        categories: m.categories.map(c =>
           c.id === selectedCategory.id ? { ...c, items: [...c.items, newItem] } : c
         ),
-      };
-      setSelectedMenu(updatedMenu);
-      setSelectedCategory({ ...selectedCategory, items: [...selectedCategory.items, newItem] });
+      }));
       setShowItemForm(false);
-      setItemForm({ name: "", description: "", price: "", isVegetarian: false, isVegan: false, isGlutenFree: false });
+      setItemForm(emptyItemForm);
     }
     setLoading(false);
   }
 
-  async function toggleItem(categoryId: string, itemId: string, isActive: boolean) {
+  async function deleteItem(catId: string, itemId: string) {
+    if (!confirm("למחוק את הפריט?")) return;
+    await fetch(`/api/admin/items/${itemId}`, { method: "DELETE" });
+    updateMenu(m => ({
+      ...m,
+      categories: m.categories.map(c =>
+        c.id === catId ? { ...c, items: c.items.filter(i => i.id !== itemId) } : c
+      ),
+    }));
+  }
+
+  async function toggleItem(catId: string, itemId: string, isActive: boolean) {
     await fetch(`/api/admin/items/${itemId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: !isActive }),
     });
-    const updatedMenu = {
-      ...selectedMenu!,
-      categories: selectedMenu!.categories.map((c) =>
-        c.id === categoryId
-          ? { ...c, items: c.items.map((i) => i.id === itemId ? { ...i, isActive: !isActive } : i) }
-          : c
+    updateMenu(m => ({
+      ...m,
+      categories: m.categories.map(c =>
+        c.id === catId ? { ...c, items: c.items.map(i => i.id === itemId ? { ...i, isActive: !isActive } : i) } : c
       ),
-    };
-    setSelectedMenu(updatedMenu);
+    }));
   }
+
+  const sortedCategories = selectedMenu
+    ? [...selectedMenu.categories].sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
 
   return (
     <div className="p-8">
@@ -150,30 +183,17 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
       </div>
 
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">
-          אין מסעדות זמינות
-        </div>
+        <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">אין מסעדות זמינות</div>
       ) : (
         <div className="flex gap-6">
-          {/* Sidebar: Restaurants & Menus */}
+          {/* Sidebar */}
           <div className="w-64 shrink-0 space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 border-b border-gray-100 font-semibold text-sm text-gray-700">מסעדות</div>
-              {restaurants.map((rest) => (
-                <button
-                  key={rest.id}
-                  onClick={() => {
-                    setSelectedRestaurant(rest);
-                    setSelectedMenu(rest.menus[0] ?? null);
-                  }}
-                  className={`w-full text-right px-4 py-3 text-sm transition-colors ${
-                    selectedRestaurant?.id === rest.id
-                      ? "bg-orange-50 text-orange-700 font-medium"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
+              {restaurants.map(rest => (
+                <button key={rest.id} onClick={() => { setSelectedRestaurant(rest); setSelectedMenu(rest.menus[0] ?? null); }}
+                  className={`w-full text-right px-4 py-3 text-sm transition-colors ${selectedRestaurant?.id === rest.id ? "bg-orange-50 text-orange-700 font-medium" : "text-gray-600 hover:bg-gray-50"}`}>
                   {rest.name}
-                  <span className="text-xs text-gray-400 mr-1">({rest.menus.length})</span>
                 </button>
               ))}
             </div>
@@ -183,100 +203,90 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                   <span className="font-semibold text-sm text-gray-700">תפריטים</span>
                   {canEdit && (
-                    <button
-                      onClick={() => setShowMenuForm(true)}
-                      className="text-xs text-orange-500 hover:text-orange-600 font-medium"
-                    >
-                      + חדש
-                    </button>
+                    <button onClick={() => setShowMenuForm(true)} className="text-xs text-orange-500 hover:text-orange-600 font-medium">+ חדש</button>
                   )}
                 </div>
-                {selectedRestaurant.menus.map((menu) => (
-                  <button
-                    key={menu.id}
-                    onClick={() => setSelectedMenu(menu)}
-                    className={`w-full text-right px-4 py-3 text-sm transition-colors ${
-                      selectedMenu?.id === menu.id
-                        ? "bg-orange-50 text-orange-700 font-medium"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {menu.name}
-                  </button>
+                {selectedRestaurant.menus.map(menu => (
+                  <div key={menu.id} className={`flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors ${selectedMenu?.id === menu.id ? "bg-orange-50" : "hover:bg-gray-50"}`}>
+                    <button onClick={() => setSelectedMenu(menu)} className={`flex-1 text-right text-sm ${selectedMenu?.id === menu.id ? "text-orange-700 font-medium" : "text-gray-600"}`}>
+                      {menu.name}
+                    </button>
+                    {canEdit && (
+                      <button onClick={() => deleteMenu(menu.id)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
+                    )}
+                  </div>
                 ))}
-                {selectedRestaurant.menus.length === 0 && (
-                  <p className="p-4 text-xs text-gray-400">אין תפריטים</p>
-                )}
+                {selectedRestaurant.menus.length === 0 && <p className="p-4 text-xs text-gray-400">אין תפריטים</p>}
               </div>
             )}
           </div>
 
-          {/* Main content */}
+          {/* Main */}
           <div className="flex-1">
             {!selectedMenu ? (
-              <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">
-                בחר תפריט או צור חדש
-              </div>
+              <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">בחר תפריט או צור חדש</div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-gray-900">{selectedMenu.name}</h2>
                   {canEdit && (
-                    <button
-                      onClick={() => setShowCategoryForm(true)}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
+                    <button onClick={() => setShowCategoryForm(true)}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
                       + קטגוריה חדשה
                     </button>
                   )}
                 </div>
 
-                {selectedMenu.categories.length === 0 ? (
+                {sortedCategories.length === 0 ? (
                   <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">
-                    אין קטגוריות. לחץ על &quot;קטגוריה חדשה&quot; להתחיל.
+                    אין קטגוריות. לחץ על &quot;קטגוריה חדשה&quot;.
                   </div>
                 ) : (
-                  selectedMenu.categories.map((cat) => (
+                  sortedCategories.map((cat, idx) => (
                     <div key={cat.id} className="bg-white rounded-xl shadow-sm border border-gray-100">
-                      <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900">{cat.name}</h3>
+                      <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+                        {cat.image && <img src={cat.image} alt={cat.name} className="w-10 h-10 rounded-lg object-cover" />}
+                        <h3 className="font-semibold text-gray-900 flex-1">{cat.name}</h3>
                         {canEdit && (
-                          <button
-                            onClick={() => { setSelectedCategory(cat); setShowItemForm(true); }}
-                            className="text-sm text-orange-500 hover:text-orange-600 font-medium"
-                          >
-                            + פריט חדש
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-0.5">
+                              <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
+                                className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none">▲</button>
+                              <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1}
+                                className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none">▼</button>
+                            </div>
+                            <button onClick={() => { setSelectedCategory(cat); setShowItemForm(true); }}
+                              className="text-sm text-orange-500 hover:text-orange-600 font-medium">+ פריט</button>
+                            <button onClick={() => deleteCategory(cat.id)} className="text-sm text-red-400 hover:text-red-600">מחק</button>
+                          </div>
                         )}
                       </div>
                       <div className="divide-y divide-gray-50">
                         {cat.items.length === 0 ? (
                           <p className="p-4 text-sm text-gray-400">אין פריטים בקטגוריה זו</p>
                         ) : (
-                          cat.items.map((item) => (
-                            <div key={item.id} className="p-4 flex items-center justify-between">
+                          cat.items.map(item => (
+                            <div key={item.id} className="p-4 flex items-center gap-4">
+                              {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span className={`font-medium ${!item.isActive ? "text-gray-400 line-through" : "text-gray-900"}`}>
-                                    {item.name}
-                                  </span>
+                                  <span className={`font-medium ${!item.isActive ? "text-gray-400 line-through" : "text-gray-900"}`}>{item.name}</span>
                                   {item.isVegetarian && <span title="צמחוני" className="text-green-500 text-xs">🌿</span>}
                                   {item.isVegan && <span title="טבעוני" className="text-green-600 text-xs">🌱</span>}
-                                  {item.isGlutenFree && <span title="ללא גלוטן" className="text-yellow-500 text-xs">GF</span>}
+                                  {item.isGlutenFree && <span title="ללא גלוטן" className="text-yellow-500 text-xs font-bold">GF</span>}
                                 </div>
-                                {item.description && (
-                                  <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>
-                                )}
+                                {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
                               </div>
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-3 shrink-0">
                                 <span className="font-semibold text-gray-900">{formatPrice(item.price)}</span>
                                 {canEdit && (
-                                  <button
-                                    onClick={() => toggleItem(cat.id, item.id, item.isActive)}
-                                    className={`text-xs ${item.isActive ? "text-gray-400 hover:text-red-500" : "text-green-500 hover:text-green-600"}`}
-                                  >
-                                    {item.isActive ? "השבת" : "הפעל"}
-                                  </button>
+                                  <>
+                                    <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
+                                      className={`text-xs ${item.isActive ? "text-gray-400 hover:text-orange-500" : "text-green-500 hover:text-green-600"}`}>
+                                      {item.isActive ? "השבת" : "הפעל"}
+                                    </button>
+                                    <button onClick={() => deleteItem(cat.id, item.id)} className="text-xs text-red-400 hover:text-red-600">מחק</button>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -300,13 +310,8 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
             <form onSubmit={createMenu} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם התפריט *</label>
-                <input required value={menuForm.name} onChange={(e) => setMenuForm({ ...menuForm, name: e.target.value })}
+                <input required value={menuForm.name} onChange={e => setMenuForm({ ...menuForm, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">תיאור</label>
-                <textarea value={menuForm.description} onChange={(e) => setMenuForm({ ...menuForm, description: e.target.value })}
-                  rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
@@ -327,8 +332,15 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
             <form onSubmit={createCategory} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם הקטגוריה *</label>
-                <input required value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                <input required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">תמונה (URL)</label>
+                <input type="url" value={categoryForm.image} onChange={e => setCategoryForm({ ...categoryForm, image: e.target.value })}
+                  placeholder="https://..." dir="ltr"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                {categoryForm.image && <img src={categoryForm.image} alt="preview" className="mt-2 h-16 object-cover rounded-lg" />}
               </div>
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-lg font-medium">
@@ -345,34 +357,36 @@ export default function MenusClient({ restaurants, canEdit }: Props) {
       {showItemForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">פריט חדש ב{selectedCategory?.name}</h2>
+            <h2 className="text-xl font-bold mb-4">פריט חדש — {selectedCategory?.name}</h2>
             <form onSubmit={createItem} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם הפריט *</label>
-                <input required value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
+                <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">תיאור</label>
-                <textarea value={itemForm.description} onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
+                <textarea value={itemForm.description} onChange={e => setItemForm({ ...itemForm, description: e.target.value })}
                   rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">מחיר (₪) *</label>
                 <input required type="number" min="0" step="0.5" value={itemForm.price}
-                  onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
+                  onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" dir="ltr" />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">תמונה (URL)</label>
+                <input type="url" value={itemForm.image} onChange={e => setItemForm({ ...itemForm, image: e.target.value })}
+                  placeholder="https://..." dir="ltr"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                {itemForm.image && <img src={itemForm.image} alt="preview" className="mt-2 h-16 object-cover rounded-lg" />}
+              </div>
               <div className="flex gap-4">
-                {[
-                  { key: "isVegetarian", label: "צמחוני 🌿" },
-                  { key: "isVegan", label: "טבעוני 🌱" },
-                  { key: "isGlutenFree", label: "ללא גלוטן" },
-                ].map(({ key, label }) => (
+                {[{ key: "isVegetarian", label: "צמחוני 🌿" }, { key: "isVegan", label: "טבעוני 🌱" }, { key: "isGlutenFree", label: "ללא גלוטן" }].map(({ key, label }) => (
                   <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={itemForm[key as keyof typeof itemForm] as boolean}
-                      onChange={(e) => setItemForm({ ...itemForm, [key]: e.target.checked })}
-                      className="rounded" />
+                      onChange={e => setItemForm({ ...itemForm, [key]: e.target.checked })} className="rounded" />
                     {label}
                   </label>
                 ))}

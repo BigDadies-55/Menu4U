@@ -75,17 +75,19 @@ model VerificationToken {
 }
 
 model Restaurant {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  logo        String?
-  address     String?
-  phone       String?
-  email       String?
-  website     String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  logo          String?
+  address       String?
+  phone         String?
+  phone2        String?
+  orderPhone    String?
+  email         String?
+  website       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   restaurantUsers RestaurantUser[]
   menus           Menu[]
