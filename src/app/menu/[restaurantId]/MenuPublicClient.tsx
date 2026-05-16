@@ -94,9 +94,6 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
       {/* Header */}
       <header className="menu-header">
         <div className="menu-header-content">
-          <div className="menu-header-text">
-            <h1 className="menu-main-title">{restaurant.name}</h1>
-          </div>
           <div className="menu-header-right-group">
             {restaurant.address && (
               <div className="menu-address-text">{restaurant.address}</div>

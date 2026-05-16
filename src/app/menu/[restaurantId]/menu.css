@@ -195,7 +195,7 @@
 }
 
 /* ── Item cards ─────────────────────────────────────── */
-.menu-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+.menu-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
 
 .menu-card {
   border-radius: 10px; overflow: hidden;
@@ -219,7 +219,7 @@
   box-shadow: 0 10px 35px rgba(0,0,0,0.7), 0 0 25px rgba(201,163,93,0.25), inset 0 1px 0 rgba(224,192,132,0.2);
 }
 .menu-img-box {
-  height: 200px; overflow: hidden; background: #0d0d0d;
+  height: 150px; overflow: hidden; background: #0d0d0d;
   border-bottom: 1px solid var(--border); position: relative;
 }
 .menu-img-box img { width: 100%; height: 100%; object-fit: cover; transition: 0.6s ease; }
@@ -230,7 +230,7 @@
 }
 .menu-img-placeholder { width: 100%; height: 100%; background: #111; }
 
-.menu-card-content { padding: 18px 15px; display: flex; flex-direction: column; flex-grow: 1; }
+.menu-card-content { padding: 12px 12px; display: flex; flex-direction: column; flex-grow: 1; }
 .menu-type-labels { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
 .menu-type-tag {
   font-size: 0.65rem; background: rgba(201,163,93,0.1); padding: 3px 10px;
@@ -238,15 +238,15 @@
   border: 1px solid rgba(201,163,93,0.3); letter-spacing: 0.5px;
 }
 .menu-card-name {
-  font-family: 'Cormorant Garamond', serif; margin: 8px 0;
-  font-size: 1.35rem; color: var(--text); letter-spacing: 1.5px; font-weight: 600;
+  font-family: 'Cormorant Garamond', serif; margin: 5px 0;
+  font-size: 1.1rem; color: var(--text); letter-spacing: 1px; font-weight: 600;
 }
 .menu-card-desc {
   font-size: 0.85rem; color: var(--text-muted); margin: 5px 0 15px 0;
   line-height: 1.5; height: 2.8em; overflow: hidden;
 }
 .menu-price {
-  font-weight: 700; font-size: 1.2rem; margin-top: auto; padding-top: 12px;
+  font-weight: 700; font-size: 1rem; margin-top: auto; padding-top: 8px;
   border-top: 1px dashed var(--border); color: var(--gold);
   font-family: 'Cormorant Garamond', serif;
 }
