@@ -25,13 +25,22 @@ async function getStats(userId: string, role: string) {
       prisma.item.count(),
     ]);
     const revenue = await prisma.order.aggregate({ _sum: { totalAmount: true } });
+    const restaurantDetails = await prisma.restaurant.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { orders: true, menus: true } },
+        orders: { select: { totalAmount: true } },
+      },
+    });
     return {
       restaurants,
       users,
       orders,
       items,
       revenue: revenue._sum.totalAmount ?? 0,
-      restaurantDetails: undefined as RestaurantDetail[] | undefined,
+      restaurantDetails: restaurantDetails as RestaurantDetail[],
     };
   }
 
@@ -118,11 +127,7 @@ export default async function AdminDashboard() {
 
   const stats = await getStats(session.user.id, session.user.role);
 
-  const restaurantIds = stats.restaurantDetails
-    ? stats.restaurantDetails.map(r => r.id)
-    : session.user.role === "SUPER_ADMIN"
-      ? (await prisma.restaurant.findMany({ select: { id: true } })).map(r => r.id)
-      : [];
+  const restaurantIds = (stats.restaurantDetails ?? []).map(r => r.id);
   const menuViewStats = await getMenuViewStats(restaurantIds);
 
   let recentOrdersWhere = {};
