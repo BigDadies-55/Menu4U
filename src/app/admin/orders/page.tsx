@@ -51,22 +51,23 @@ export default async function OrdersPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">ניהול הזמנות</h1>
         <p className="text-gray-500 mt-1">{orders.length} הזמנות</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 text-right">
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">לקוח</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">מסעדה</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">פריטים</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">סכום</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">תאריך</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">סטטוס</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">לקוח</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">מסעדה</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">פריטים</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סכום</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">תאריך</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סטטוס</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -112,6 +113,7 @@ export default async function OrdersPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

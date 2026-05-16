@@ -40,6 +40,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [addRestaurantId, setAddRestaurantId] = useState("");
   const [restLoading, setRestLoading] = useState(false);
 
+  const [resetTarget, setResetTarget] = useState<UserWithRestaurants | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+
   const filtered = users.filter(
     (u) =>
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -119,12 +124,32 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     setRestLoading(false);
   }
 
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    setResetLoading(true);
+    setResetError("");
+    const res = await fetch(`/api/admin/users/${resetTarget.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: resetPassword }),
+    });
+    if (res.ok) {
+      setResetTarget(null);
+      setResetPassword("");
+    } else {
+      const data = await res.json();
+      setResetError(data.error ?? "שגיאה באיפוס הסיסמה");
+    }
+    setResetLoading(false);
+  }
+
   const unassignedRestaurants = managingUser
     ? restaurants.filter(r => !managingUser.restaurantUsers.some(ru => ru.restaurantId === r.id))
     : [];
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -151,85 +176,141 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         />
       </div>
 
-      {/* Table */}
+      {/* Table container */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">משתמש</th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">הרשאה</th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">מסעדות משויכות</th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">נרשם</th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">פעולות</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-16 text-center text-gray-400 text-sm">לא נמצאו משתמשים</td>
+        {/* Desktop Table - hidden on mobile */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">משתמש</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">הרשאה</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">מסעדות משויכות</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">נרשם</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">פעולות</th>
               </tr>
-            ) : (
-              filtered.map((user) => (
-                <tr key={user.id} className="hover:bg-amber-50/30 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                        style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)" }}
-                      >
-                        {(user.name ?? user.email)[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm">{user.name ?? "—"}</div>
-                        <div className="text-xs text-gray-400" dir="ltr">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
-                      disabled={!availableRoles.includes(user.role) && currentUserRole !== "SUPER_ADMIN"}
-                      className={`text-xs px-2.5 py-1 rounded-full font-semibold border-0 cursor-pointer ${ROLE_COLORS[user.role]}`}
-                    >
-                      {availableRoles.map((r) => (
-                        <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {user.restaurantUsers.length === 0 ? (
-                        <span className="text-gray-300 text-xs">ללא שיוך</span>
-                      ) : (
-                        user.restaurantUsers.map((ru) => (
-                          <span key={ru.restaurantId} className="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2 py-0.5 rounded-full font-medium">
-                            {ru.restaurant.name}
-                          </span>
-                        ))
-                      )}
-                      <button
-                        onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
-                        className="text-xs text-amber-500 hover:text-amber-700 font-medium transition-colors"
-                      >
-                        ✎ ערוך
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-xs text-gray-400">{formatDate(user.createdAt)}</td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleDelete(user.id)}
-                      className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
-                    >
-                      מחק
-                    </button>
-                  </td>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-16 text-center text-gray-400 text-sm">לא נמצאו משתמשים</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filtered.map((user) => (
+                  <tr key={user.id} className="hover:bg-amber-50/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                          style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)" }}
+                        >
+                          {(user.name ?? user.email)[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 text-sm">{user.name ?? "—"}</div>
+                          <div className="text-xs text-gray-400" dir="ltr">{user.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
+                        disabled={!availableRoles.includes(user.role) && currentUserRole !== "SUPER_ADMIN"}
+                        className={`text-xs px-2.5 py-1 rounded-full font-semibold border-0 cursor-pointer ${ROLE_COLORS[user.role]}`}
+                      >
+                        {availableRoles.map((r) => (
+                          <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {user.restaurantUsers.length === 0 ? (
+                          <span className="text-gray-300 text-xs">ללא שיוך</span>
+                        ) : (
+                          user.restaurantUsers.map((ru) => (
+                            <span key={ru.restaurantId} className="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2 py-0.5 rounded-full font-medium">
+                              {ru.restaurant.name}
+                            </span>
+                          ))
+                        )}
+                        <button
+                          onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
+                          className="text-xs text-amber-500 hover:text-amber-700 font-medium transition-colors"
+                        >
+                          ✎ ערוך
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-gray-400">{formatDate(user.createdAt)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
+                          className="text-xs text-emerald-600 hover:text-emerald-800 font-medium transition-colors"
+                        >
+                          🔑 סיסמה
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                        >
+                          מחק
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile cards - visible only on small screens */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {filtered.length === 0 ? (
+            <p className="px-4 py-16 text-center text-gray-400 text-sm">לא נמצאו משתמשים</p>
+          ) : (
+            filtered.map((user) => (
+              <div key={user.id} className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                      style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>
+                      {(user.name ?? user.email)[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">{user.name ?? "—"}</div>
+                      <div className="text-xs text-gray-400" dir="ltr">{user.email}</div>
+                    </div>
+                  </div>
+                  <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
+                    className={`text-xs px-2 py-1 rounded-full font-semibold border-0 cursor-pointer ${ROLE_COLORS[user.role]}`}>
+                    {availableRoles.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  </select>
+                </div>
+                {user.restaurantUsers.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {user.restaurantUsers.map((ru) => (
+                      <span key={ru.restaurantId} className="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2 py-0.5 rounded-full">
+                        {ru.restaurant.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-3 pt-1">
+                  <button onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
+                    className="text-xs text-amber-600 font-medium">✎ מסעדות</button>
+                  <button onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
+                    className="text-xs text-emerald-600 font-medium">🔑 סיסמה</button>
+                  <button onClick={() => handleDelete(user.id)}
+                    className="text-xs text-red-400 font-medium">מחק</button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Create User Modal */}
@@ -367,6 +448,42 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             >
               סגור
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {resetTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">איפוס סיסמה</h2>
+            <p className="text-sm text-gray-400 mb-6">{resetTarget.name ?? resetTarget.email}</p>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">סיסמה חדשה *</label>
+                <input
+                  required
+                  type="password"
+                  minLength={6}
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="מינימום 6 תווים"
+                />
+              </div>
+              {resetError && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{resetError}</p>}
+              <div className="flex gap-3 pt-1">
+                <button type="submit" disabled={resetLoading}
+                  className="flex-1 text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg,#059669,#047857)" }}>
+                  {resetLoading ? "מאפס..." : "אפס סיסמה"}
+                </button>
+                <button type="button" onClick={() => setResetTarget(null)}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">
+                  ביטול
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

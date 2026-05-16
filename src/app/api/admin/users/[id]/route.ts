@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
+import bcrypt from "bcryptjs";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -17,9 +18,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Cannot assign Super Admin role" }, { status: 403 });
   }
 
+  const updateData: Record<string, unknown> = {};
+  if (body.role) updateData.role = body.role as Role;
+  if (body.password) updateData.password = await bcrypt.hash(body.password, 12);
+
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  }
+
   const user = await prisma.user.update({
     where: { id },
-    data: { role: body.role as Role },
+    data: updateData,
     select: { id: true, name: true, email: true, role: true },
   });
 

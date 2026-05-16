@@ -96,7 +96,7 @@ export default async function AdminDashboard() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
           שלום, {session.user.name ?? session.user.email} 👋
@@ -104,7 +104,7 @@ export default async function AdminDashboard() {
         <p className="text-gray-500 mt-1">ברוך הבא לממשק הניהול של Menu4U</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
         {cards.map((card) => (
           <div key={card.label} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3 ${card.color}`}>
@@ -135,7 +135,7 @@ export default async function AdminDashboard() {
                   </div>
                   <div className="text-sm text-gray-500">{order.restaurant.name}</div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColors[order.status]}`}>
                     {statusLabels[order.status]}
                   </span>

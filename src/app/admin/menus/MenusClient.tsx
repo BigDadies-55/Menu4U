@@ -191,7 +191,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     : [];
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">ניהול תפריטים</h1>
       </div>
@@ -199,9 +199,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       {restaurants.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">אין מסעדות זמינות</div>
       ) : (
-        <div className="flex gap-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Sidebar */}
-          <div className="w-64 shrink-0 space-y-4">
+          <div className="w-full md:w-64 md:shrink-0 space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 border-b border-gray-100 font-semibold text-sm text-gray-700">מסעדות</div>
               {restaurants.map(rest => (
@@ -280,7 +280,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                           <p className="p-4 text-sm text-gray-400">אין פריטים בקטגוריה זו</p>
                         ) : (
                           cat.items.map(item => (
-                            <div key={item.id} className="p-4 flex items-center gap-4">
+                            <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap">
                               {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">

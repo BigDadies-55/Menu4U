@@ -119,13 +119,13 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
   );
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">ניהול מסעדות</h1>
           <p className="text-gray-500 mt-1">{restaurants.length} מסעדות במערכת</p>
         </div>
-        <button onClick={openCreate} className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-lg font-medium transition-colors">
+        <button onClick={openCreate} className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm">
           + הוסף מסעדה
         </button>
       </div>
@@ -135,7 +135,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 my-4">
             <h2 className="text-xl font-bold mb-4">{editTarget ? "עריכת מסעדה" : "מסעדה חדשה"}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {field("שם המסעדה *", "name")}
                 {field("כתובת", "address")}
               </div>
@@ -153,11 +153,11 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   <img src={form.logo} alt="preview" className="mt-2 h-16 w-16 object-cover rounded-lg border" />
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {field("אימייל", "email", { type: "email", dir: "ltr" })}
                 {field("אתר אינטרנט", "website", { dir: "ltr" })}
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {field("טלפון ראשי", "phone", { dir: "ltr" })}
                 {field("טלפון נוסף", "phone2", { dir: "ltr" })}
                 {field("טלפון הזמנות", "orderPhone", { dir: "ltr" })}
@@ -188,6 +188,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 text-right">
@@ -256,6 +257,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
