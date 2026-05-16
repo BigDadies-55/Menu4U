@@ -274,13 +274,14 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <button onClick={() => openEdit(r)} className="text-xs text-blue-600 hover:underline">ערוך</button>
+                        <button onClick={() => openEdit(r)} title="ערוך" className="text-base hover:scale-110 transition-transform">✏️</button>
                         <a href={`/menu/${r.id}`} target="_blank" rel="noopener noreferrer"
                           title="תפריט ציבורי" className="text-base hover:scale-110 transition-transform inline-block">🔗</a>
-                        <button onClick={() => toggleActive(r.id, r.isActive)} className="text-xs text-gray-500 hover:underline">
-                          {r.isActive ? "השבת" : "הפעל"}
+                        <button onClick={() => toggleActive(r.id, r.isActive)} title={r.isActive ? "השבת" : "הפעל"}
+                          className="text-base hover:scale-110 transition-transform">
+                          {r.isActive ? "⏸️" : "▶️"}
                         </button>
-                        <button onClick={() => handleDelete(r.id)} className="text-xs text-red-500 hover:underline">מחק</button>
+                        <button onClick={() => handleDelete(r.id)} title="מחק" className="text-base hover:scale-110 transition-transform">🗑️</button>
                       </div>
                     </td>
                   </tr>
