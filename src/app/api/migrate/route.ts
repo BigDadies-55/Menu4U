@@ -95,10 +95,6 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "termsAcceptedUserAgent" TEXT;
     `);
-    // Allow duplicate emails (SUPER_ADMIN can assign same email to multiple users)
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "User" DROP CONSTRAINT IF EXISTS "User_email_key";
-    `);
     // Mark all existing users (created before email-OTP feature) as already verified
     await prisma.$executeRawUnsafe(`
       UPDATE "User" SET "emailVerified" = "createdAt" WHERE "emailVerified" IS NULL;

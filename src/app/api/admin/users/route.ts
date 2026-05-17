@@ -25,19 +25,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Cannot create Super Admin" }, { status: 403 });
   }
 
-  // Only block duplicate emails for non-SUPER_ADMIN creators
-  if (session.user.role !== "SUPER_ADMIN") {
-    const existing = await prisma.user.findFirst({ where: { email } });
-    if (existing) {
-      return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
-    }
+  const existing = await prisma.user.findFirst({ where: { email } });
+  if (existing) {
+    return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
   }
 
   const hashed = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({
-    data: { name: name || null, email, password: hashed, role: (role as Role) ?? "VIEWER" },
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
-  });
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: { name: name || null, email, password: hashed, role: (role as Role) ?? "VIEWER" },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    if (code === "P2002") {
+      return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
+    }
+    throw err;
+  }
 
   await logAudit({
     userId: session.user.id,

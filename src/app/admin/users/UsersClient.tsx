@@ -74,8 +74,12 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       body: JSON.stringify(form),
     });
     if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "שגיאה ביצירת המשתמש");
+      try {
+        const data = await res.json();
+        setError(data.error ?? "שגיאה ביצירת המשתמש");
+      } catch {
+        setError("שגיאת שרת, נסה שנית");
+      }
       setLoading(false);
       return;
     }
