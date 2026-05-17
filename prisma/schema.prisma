@@ -35,6 +35,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  termsAccepted          Boolean   @default(false)
+  termsAcceptedAt        DateTime?
+  termsAcceptedIp        String?
+  termsAcceptedUserAgent String?
+
   accounts        Account[]
   sessions        Session[]
   restaurantUsers RestaurantUser[]
