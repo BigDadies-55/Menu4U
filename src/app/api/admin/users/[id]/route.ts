@@ -22,6 +22,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const updateData: Record<string, unknown> = {};
   if (body.role) updateData.role = body.role as Role;
   if (body.password) updateData.password = await bcrypt.hash(body.password, 12);
+  if (body.name !== undefined) updateData.name = body.name || null;
+  if (body.email) {
+    if (session.user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Only Super Admin can change email" }, { status: 403 });
+    }
+    const conflict = await prisma.user.findFirst({ where: { email: body.email, NOT: { id } } });
+    if (conflict) return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
+    updateData.email = body.email;
+  }
 
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
@@ -30,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const user = await prisma.user.update({
     where: { id },
     data: updateData,
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: true, emailVerified: true, createdAt: true },
   });
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email, meta: { changed: Object.keys(updateData) }, ip: getIp(req) });
   return NextResponse.json(user);

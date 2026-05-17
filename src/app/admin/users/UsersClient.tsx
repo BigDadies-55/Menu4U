@@ -48,6 +48,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   const [resendingId, setResendingId] = useState<string | null>(null);
 
+  const [editTarget, setEditTarget] = useState<UserWithRestaurants | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", role: "VIEWER" as Role });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+
   const filtered = users.filter(
     (u) =>
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -125,6 +130,33 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     setManagingUser(updated);
     setUsers(users.map(u => u.id === managingUser.id ? updated : u));
     setRestLoading(false);
+  }
+
+  function openEdit(user: UserWithRestaurants) {
+    setEditTarget(user);
+    setEditForm({ name: user.name ?? "", email: user.email, role: user.role });
+    setEditError("");
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditLoading(true);
+    setEditError("");
+    const res = await fetch(`/api/admin/users/${editTarget.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editForm.name, email: editForm.email, role: editForm.role }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setUsers(users.map((u) => u.id === editTarget.id ? { ...u, ...updated } : u));
+      setEditTarget(null);
+    } else {
+      const data = await res.json();
+      setEditError(data.error ?? "שגיאה בעדכון המשתמש");
+    }
+    setEditLoading(false);
   }
 
   async function handleResendVerification(userId: string) {
@@ -281,6 +313,14 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     <td className="px-6 py-4 text-xs text-gray-400">{formatDate(user.createdAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
+                        {currentUserRole === "SUPER_ADMIN" && (
+                          <button
+                            onClick={() => openEdit(user)}
+                            className="text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
+                          >
+                            ✎ ערוך
+                          </button>
+                        )}
                         <button
                           onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
                           className="text-xs text-amber-600 hover:text-amber-800 font-medium transition-colors"
@@ -335,6 +375,10 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   </div>
                 )}
                 <div className="flex items-center gap-3 pt-1">
+                  {currentUserRole === "SUPER_ADMIN" && (
+                    <button onClick={() => openEdit(user)}
+                      className="text-xs text-indigo-500 font-medium">✎ ערוך</button>
+                  )}
                   <button onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
                     className="text-xs text-amber-600 font-medium">✎ מסעדות</button>
                   <button onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
@@ -483,6 +527,67 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             >
               סגור
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal (SUPER_ADMIN only) */}
+      {editTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">עריכת משתמש</h2>
+            <p className="text-sm text-gray-400 mb-6" dir="ltr">{editTarget.email}</p>
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">שם מלא</label>
+                <input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">אימייל *</label>
+                <input
+                  required
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">הרשאה</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+                >
+                  {ALL_ROLES.map((r) => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                  ))}
+                </select>
+              </div>
+              {editError && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{editError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 text-white py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
+                >
+                  {editLoading ? "שומר..." : "שמור שינויים"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditTarget(null)}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                >
+                  ביטול
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
