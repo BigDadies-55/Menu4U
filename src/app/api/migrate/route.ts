@@ -95,6 +95,10 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "termsAcceptedUserAgent" TEXT;
     `);
+    // Mark all existing users (created before email-OTP feature) as already verified
+    await prisma.$executeRawUnsafe(`
+      UPDATE "User" SET "emailVerified" = "createdAt" WHERE "emailVerified" IS NULL;
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

@@ -13,8 +13,12 @@ export default async function AdminLayout({
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { termsAccepted: true },
+    select: { emailVerified: true, termsAccepted: true },
   });
+
+  if (!user?.emailVerified) {
+    redirect("/verify-email");
+  }
 
   if (!user?.termsAccepted) {
     redirect("/terms");

@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { isAdmin } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 import { logAudit, getIp } from "@/lib/audit";
+import { generateOtp, hashOtp } from "@/lib/otp";
+import { sendOtpEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -33,6 +35,30 @@ export async function POST(req: Request) {
     data: { name: name || null, email, password: hashed, role: (role as Role) ?? "VIEWER" },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
   });
-  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CREATE_USER", entity: "user", entityId: user.id, entityName: user.email, meta: { role: user.role }, ip: getIp(req) });
+
+  await logAudit({
+    userId: session.user.id,
+    userEmail: session.user.email,
+    action: "CREATE_USER",
+    entity: "user",
+    entityId: user.id,
+    entityName: user.email,
+    meta: { role: user.role },
+    ip: getIp(req),
+  });
+
+  // Send OTP verification email (non-blocking)
+  try {
+    const otp = generateOtp();
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
+    await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+    await prisma.verificationToken.create({
+      data: { identifier: email, token: hashOtp(otp), expires },
+    });
+    await sendOtpEmail(email, otp, name);
+  } catch (err) {
+    console.error("[otp] Failed to send verification email:", err);
+  }
+
   return NextResponse.json(user, { status: 201 });
 }

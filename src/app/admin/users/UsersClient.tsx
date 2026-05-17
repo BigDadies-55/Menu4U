@@ -16,6 +16,7 @@ type UserWithRestaurants = {
   name: string | null;
   email: string;
   role: Role;
+  emailVerified: Date | null;
   createdAt: Date;
   restaurantUsers: RestaurantUser[];
 };
@@ -44,6 +45,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [resetPassword, setResetPassword] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState("");
+
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const filtered = users.filter(
     (u) =>
@@ -124,6 +127,16 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     setRestLoading(false);
   }
 
+  async function handleResendVerification(userId: string) {
+    setResendingId(userId);
+    await fetch("/api/admin/users/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    setResendingId(null);
+  }
+
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
     if (!resetTarget) return;
@@ -186,6 +199,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">משתמש</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">הרשאה</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">מסעדות משויכות</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">אימות</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">נרשם</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">פעולות</th>
               </tr>
@@ -242,6 +256,27 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           ✎ ערוך
                         </button>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.emailVerified ? (
+                        <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-medium">
+                          ✓ מאומת
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 text-xs bg-orange-50 text-orange-600 border border-orange-200 px-2.5 py-1 rounded-full font-medium">
+                            ממתין
+                          </span>
+                          <button
+                            onClick={() => handleResendVerification(user.id)}
+                            disabled={resendingId === user.id}
+                            className="text-xs text-amber-600 hover:text-amber-800 font-medium transition-colors disabled:opacity-40"
+                            title="שלח קוד אימות מחדש"
+                          >
+                            {resendingId === user.id ? "שולח..." : "↩ שלח"}
+                          </button>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-xs text-gray-400">{formatDate(user.createdAt)}</td>
                     <td className="px-6 py-4">

@@ -11,7 +11,13 @@ export default async function UsersPage() {
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      emailVerified: true,
+      createdAt: true,
       restaurantUsers: { include: { restaurant: { select: { id: true, name: true } } } },
     },
   });
