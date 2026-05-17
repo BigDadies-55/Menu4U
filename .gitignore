@@ -43,4 +43,3 @@ next-env.d.ts
 
 # /src/generated/prisma - intentionally tracked for Vercel build
 .claude/worktrees/
-prisma/seed.ts

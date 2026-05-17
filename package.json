@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && node -e \"require('fs').writeFileSync('prisma/seed.ts','export {};\\n')\" && next build",
+    "build": "prisma generate && node -e \"require('fs').writeFileSync('prisma/seed.ts','// @ts-nocheck\\nexport {};\\n')\" && next build",
     "migrate": "prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
-    "postinstall": "prisma generate && node -e \"require('fs').writeFileSync('prisma/seed.ts','export {};\\n')\""
+    "postinstall": "prisma generate && node -e \"require('fs').writeFileSync('prisma/seed.ts','// @ts-nocheck\\nexport {};\\n')\""
   },
   "prisma": {
     "seed": "tsx scripts/seed.ts"
