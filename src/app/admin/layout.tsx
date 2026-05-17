@@ -16,7 +16,7 @@ export default async function AdminLayout({
     select: { emailVerified: true, termsAccepted: true },
   });
 
-  if (!user?.emailVerified) {
+  if (!user?.emailVerified && session.user.role !== "SUPER_ADMIN") {
     redirect("/verify-email");
   }
 
