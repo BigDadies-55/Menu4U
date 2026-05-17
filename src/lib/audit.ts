@@ -14,8 +14,8 @@ export interface AuditInput {
 export async function logAudit(input: AuditInput): Promise<void> {
   try {
     await prisma.auditLog.create({ data: input });
-  } catch {
-    // never fail the request due to logging
+  } catch (err) {
+    console.error("[audit] Failed to write log:", input.action, err);
   }
 }
 
