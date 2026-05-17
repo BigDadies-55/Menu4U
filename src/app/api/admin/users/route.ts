@@ -25,9 +25,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Cannot create Super Admin" }, { status: 403 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
+  // Only block duplicate emails for non-SUPER_ADMIN creators
+  if (session.user.role !== "SUPER_ADMIN") {
+    const existing = await prisma.user.findFirst({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
+    }
   }
 
   const hashed = await bcrypt.hash(password, 12);

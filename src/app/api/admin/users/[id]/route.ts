@@ -27,8 +27,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (session.user.role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "Only Super Admin can change email" }, { status: 403 });
     }
-    const conflict = await prisma.user.findFirst({ where: { email: body.email, NOT: { id } } });
-    if (conflict) return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
+    // SUPER_ADMIN may assign the same email to multiple users deliberately
     updateData.email = body.email;
   }
 
