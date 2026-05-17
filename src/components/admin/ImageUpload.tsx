@@ -50,9 +50,12 @@ export default function ImageUpload({ value, onChange, label = "תמונה" }: P
         </button>
         <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       </div>
-      <p className="mt-1.5 text-xs text-gray-400 leading-relaxed">
-        ⚠️ העלאת תמונות המפרות זכויות יוצרים או פוגעניות אסורה בהחלט ותגרור אחריות משפטית בלעדית על המעלה.
-      </p>
+      <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <span className="text-red-500 text-sm mt-0.5 shrink-0">🚫</span>
+        <p className="text-xs font-semibold text-red-600 leading-relaxed">
+          העלאת תמונות המפרות זכויות יוצרים או פוגעניות אסורה בהחלט ותגרור אחריות משפטית בלעדית על המעלה.
+        </p>
+      </div>
     </div>
   );
 }
