@@ -50,8 +50,13 @@ export async function POST(req: Request) {
     ip: getIp(req),
   });
 
-  // Send OTP verification email (non-blocking)
+  // Send OTP verification email
+  let emailSent = false;
+  let otpCode: string | null = null;
   try {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
     const otp = generateOtp();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
     await prisma.verificationToken.deleteMany({ where: { identifier: email } });
@@ -59,9 +64,22 @@ export async function POST(req: Request) {
       data: { identifier: email, token: hashOtp(otp), expires },
     });
     await sendOtpEmail(email, otp, name);
+    emailSent = true;
   } catch (err) {
     console.error("[otp] Failed to send verification email:", err);
+    // Generate OTP anyway and return it to admin as fallback
+    try {
+      const otp = generateOtp();
+      const expires = new Date(Date.now() + 15 * 60 * 1000);
+      await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+      await prisma.verificationToken.create({
+        data: { identifier: email, token: hashOtp(otp), expires },
+      });
+      otpCode = otp;
+    } catch {
+      // ignore
+    }
   }
 
-  return NextResponse.json(user, { status: 201 });
+  return NextResponse.json({ ...user, emailSent, otpCode }, { status: 201 });
 }

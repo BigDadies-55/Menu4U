@@ -47,6 +47,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [resetError, setResetError] = useState("");
 
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [pendingOtp, setPendingOtp] = useState<{ email: string; code: string } | null>(null);
 
   const [editTarget, setEditTarget] = useState<UserWithRestaurants | null>(null);
   const [editForm, setEditForm] = useState({ name: "", email: "", role: "VIEWER" as Role });
@@ -79,10 +80,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       return;
     }
     const created = await res.json();
-    setUsers([{ ...created, restaurantUsers: [] }, ...users]);
+    setUsers([{ ...created, emailVerified: null, restaurantUsers: [] }, ...users]);
     setShowForm(false);
     setForm({ name: "", email: "", password: "", role: "VIEWER" });
     setLoading(false);
+    if (!created.emailSent && created.otpCode) {
+      setPendingOtp({ email: created.email, code: created.otpCode });
+    }
   }
 
   async function handleRoleChange(userId: string, role: Role) {
@@ -526,6 +530,39 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               className="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm transition-colors"
             >
               סגור
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* OTP Fallback Modal — shown when email sending failed */}
+      {pendingOtp && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 text-center">
+            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">⚠️</div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">המייל לא נשלח</h2>
+            <p className="text-sm text-gray-500 mb-1">
+              לא הצלחנו לשלוח מייל אימות ל-
+            </p>
+            <p className="text-sm font-medium text-gray-700 mb-4" dir="ltr">{pendingOtp.email}</p>
+            <p className="text-sm text-gray-500 mb-3">
+              שתף את קוד האימות הבא עם המשתמש ידנית:
+            </p>
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl py-4 px-6 mb-4">
+              <div className="text-3xl font-black tracking-[10px] text-amber-700 font-mono">
+                {pendingOtp.code}
+              </div>
+              <div className="text-xs text-amber-500 mt-1">תקף ל-15 דקות</div>
+            </div>
+            <p className="text-xs text-gray-400 mb-5">
+              לאחר הפצת הקוד, ודא שמשתני הסביבה <span className="font-mono bg-gray-100 px-1 rounded">RESEND_API_KEY</span> ו-<span className="font-mono bg-gray-100 px-1 rounded">EMAIL_FROM</span> מוגדרים ב-Vercel.
+            </p>
+            <button
+              onClick={() => setPendingOtp(null)}
+              className="w-full py-2.5 rounded-xl font-semibold text-sm text-white"
+              style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+            >
+              הבנתי
             </button>
           </div>
         </div>
