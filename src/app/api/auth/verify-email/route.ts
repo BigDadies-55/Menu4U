@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hashOtp } from "@/lib/otp";
 import { logAudit, getIp } from "@/lib/audit";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { email: true, emailVerified: true },
+    select: { email: true, name: true, emailVerified: true },
   });
 
   if (!user) return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
@@ -54,6 +55,11 @@ export async function POST(req: Request) {
     entityId: session.user.id,
     ip: getIp(req),
   });
+
+  // Send welcome email (non-blocking)
+  sendWelcomeEmail(user.email, user.name).catch((err) =>
+    console.error("[welcome] Failed to send welcome email:", err)
+  );
 
   return NextResponse.json({ success: true });
 }
