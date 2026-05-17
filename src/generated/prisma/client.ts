@@ -101,3 +101,8 @@ export type OrderItem = Prisma.OrderItemModel
  * 
  */
 export type MenuView = Prisma.MenuViewModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel
