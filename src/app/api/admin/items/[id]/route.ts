@@ -29,8 +29,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const body = await req.json();
+  const before = await prisma.item.findUnique({ where: { id }, select: { name: true, price: true } });
   const item = await prisma.item.update({ where: { id }, data: body });
-  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_ITEM", entity: "item", entityId: id, entityName: item.name, meta: { changed: Object.keys(body), ...(body.price !== undefined ? { oldPrice: null, newPrice: body.price } : {}) }, ip: getIp(req) });
+  await logAudit({
+    userId: session.user.id,
+    userEmail: session.user.email,
+    action: "UPDATE_ITEM",
+    entity: "item",
+    entityId: id,
+    entityName: item.name,
+    meta: {
+      changed: Object.keys(body),
+      ...(body.price !== undefined ? { oldPrice: before?.price, newPrice: parseFloat(body.price) } : {}),
+    },
+    ip: getIp(req),
+  });
   return NextResponse.json(item);
 }
 

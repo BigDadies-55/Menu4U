@@ -96,22 +96,34 @@ function MetaDisplay({ meta }: { meta: Record<string, unknown> | null }) {
 export default function LogsClient() {
   const [data, setData] = useState<LogsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [page, setPage] = useState(1);
   const [filterAction, setFilterAction] = useState("");
   const [filterEntity, setFilterEntity] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: "50" });
+  function buildParams(extra: Record<string, string> = {}) {
+    const params = new URLSearchParams();
     if (filterAction) params.set("action", filterAction);
     if (filterEntity) params.set("entity", filterEntity);
     if (search) params.set("search", search);
+    if (dateFrom) params.set("from", dateFrom);
+    if (dateTo) params.set("to", dateTo);
+    Object.entries(extra).forEach(([k, v]) => params.set(k, v));
+    return params;
+  }
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    const params = buildParams({ page: String(page) });
     const res = await fetch(`/api/admin/logs?${params}`);
     if (res.ok) setData(await res.json());
     setLoading(false);
-  }, [page, filterAction, filterEntity, search]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filterAction, filterEntity, search, dateFrom, dateTo]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
@@ -120,13 +132,33 @@ export default function LogsClient() {
     setPage(1);
   }
 
+  async function exportCSV() {
+    setExporting(true);
+    const params = buildParams({ format: "csv" });
+    const res = await fetch(`/api/admin/logs?${params}`);
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    setExporting(false);
+  }
+
   function clearFilters() {
     setFilterAction("");
     setFilterEntity("");
     setSearch("");
     setSearchInput("");
+    setDateFrom("");
+    setDateTo("");
     setPage(1);
   }
+
+  const hasFilters = !!(filterAction || filterEntity || search || dateFrom || dateTo);
 
   return (
     <div className="p-4 md:p-8 min-h-screen" dir="rtl" style={{ background: "#f5f2ea" }}>
@@ -137,53 +169,86 @@ export default function LogsClient() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5 flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-40">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">סוג פעולה</label>
-          <select
-            value={filterAction}
-            onChange={e => { setFilterAction(e.target.value); setPage(1); }}
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-          >
-            <option value="">הכל</option>
-            {ALL_ACTIONS.map(a => (
-              <option key={a} value={a}>{ACTION_LABELS[a]}</option>
-            ))}
-          </select>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-40">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">סוג פעולה</label>
+            <select
+              value={filterAction}
+              onChange={e => { setFilterAction(e.target.value); setPage(1); }}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+            >
+              <option value="">הכל</option>
+              {ALL_ACTIONS.map(a => (
+                <option key={a} value={a}>{ACTION_LABELS[a]}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1 min-w-36">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ישות</label>
+            <select
+              value={filterEntity}
+              onChange={e => { setFilterEntity(e.target.value); setPage(1); }}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+            >
+              <option value="">הכל</option>
+              {["restaurant", "menu", "category", "item", "user", "restaurantUser", "system"].map(e => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1 min-w-48">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">חיפוש</label>
+            <div className="flex gap-2">
+              <input
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && applySearch()}
+                placeholder="אימייל / שם ישות..."
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <button onClick={applySearch} className="text-white px-3 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                חפש
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 min-w-36">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ישות</label>
-          <select
-            value={filterEntity}
-            onChange={e => { setFilterEntity(e.target.value); setPage(1); }}
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-          >
-            <option value="">הכל</option>
-            {["restaurant", "menu", "category", "item", "user", "restaurantUser", "system"].map(e => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-1 min-w-48">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">חיפוש</label>
-          <div className="flex gap-2">
+
+        {/* Date range row */}
+        <div className="flex flex-wrap gap-3 items-end mt-3 pt-3 border-t border-gray-100">
+          <div className="flex-1 min-w-36">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">מתאריך</label>
             <input
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && applySearch()}
-              placeholder="אימייל / שם ישות..."
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              type="date"
+              value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
-            <button onClick={applySearch} className="text-white px-3 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
-              חפש
+          </div>
+          <div className="flex-1 min-w-36">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">עד תאריך</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(1); }}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+          <div className="flex items-end gap-2 pb-0">
+            {hasFilters && (
+              <button onClick={clearFilters} className="text-xs text-gray-500 hover:text-red-500 underline py-2.5">
+                נקה סינון
+              </button>
+            )}
+            <button
+              onClick={exportCSV}
+              disabled={exporting}
+              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+            >
+              {exporting ? "מייצא..." : "⬇ ייצוא לאקסל"}
             </button>
           </div>
         </div>
-        {(filterAction || filterEntity || search) && (
-          <button onClick={clearFilters} className="text-xs text-gray-500 hover:text-red-500 underline self-end pb-2.5">
-            נקה סינון
-          </button>
-        )}
       </div>
 
       {/* Table */}
