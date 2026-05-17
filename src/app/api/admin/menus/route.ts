@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isEditor } from "@/lib/permissions";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -21,5 +22,6 @@ export async function POST(req: Request) {
   }
 
   const menu = await prisma.menu.create({ data: { name, description: description || null, restaurantId } });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CREATE_MENU", entity: "menu", entityId: menu.id, entityName: menu.name, meta: { restaurantId }, ip: getIp(req) });
   return NextResponse.json(menu, { status: 201 });
 }

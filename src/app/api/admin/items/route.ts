@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isEditor } from "@/lib/permissions";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -38,5 +39,6 @@ export async function POST(req: Request) {
       tags: Array.isArray(tags) ? tags : [],
     },
   });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CREATE_ITEM", entity: "item", entityId: item.id, entityName: item.name, meta: { price: item.price, categoryId }, ip: getIp(req) });
   return NextResponse.json(item, { status: 201 });
 }

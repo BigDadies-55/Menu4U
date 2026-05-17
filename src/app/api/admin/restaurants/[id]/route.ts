@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -10,15 +11,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const body = await req.json();
   const restaurant = await prisma.restaurant.update({ where: { id }, data: body });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_RESTAURANT", entity: "restaurant", entityId: id, entityName: restaurant.name, meta: { changed: Object.keys(body) }, ip: getIp(req) });
   return NextResponse.json(restaurant);
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user || session.user.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
+  const restaurant = await prisma.restaurant.findUnique({ where: { id }, select: { name: true } });
   await prisma.restaurant.delete({ where: { id } });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_RESTAURANT", entity: "restaurant", entityId: id, entityName: restaurant?.name, ip: getIp(req) });
   return NextResponse.json({ success: true });
 }

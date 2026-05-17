@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -20,6 +21,6 @@ export async function POST(req: Request) {
 
   const hashed = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({ where: { id: session.user.id }, data: { password: hashed } });
-
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CHANGE_PASSWORD", entity: "user", entityId: session.user.id, ip: getIp(req) });
   return NextResponse.json({ success: true });
 }

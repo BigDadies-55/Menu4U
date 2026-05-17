@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isEditor } from "@/lib/permissions";
+import { logAudit, getIp } from "@/lib/audit";
 
 async function checkItemAccess(userId: string, itemId: string) {
   const item = await prisma.item.findUnique({
@@ -29,10 +30,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const body = await req.json();
   const item = await prisma.item.update({ where: { id }, data: body });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_ITEM", entity: "item", entityId: id, entityName: item.name, meta: { changed: Object.keys(body), ...(body.price !== undefined ? { oldPrice: null, newPrice: body.price } : {}) }, ip: getIp(req) });
   return NextResponse.json(item);
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user || !isEditor(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -44,6 +46,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const itemToDelete = await prisma.item.findUnique({ where: { id }, select: { name: true, price: true } });
   await prisma.item.delete({ where: { id } });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_ITEM", entity: "item", entityId: id, entityName: itemToDelete?.name, meta: { price: itemToDelete?.price }, ip: getIp(req) });
   return NextResponse.json({ success: true });
 }

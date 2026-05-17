@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -31,11 +32,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data: updateData,
     select: { id: true, name: true, email: true, role: true },
   });
-
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email, meta: { changed: Object.keys(updateData) }, ip: getIp(req) });
   return NextResponse.json(user);
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user || !isAdmin(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -47,6 +48,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
   }
 
+  const userToDelete = await prisma.user.findUnique({ where: { id }, select: { email: true } });
   await prisma.user.delete({ where: { id } });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_USER", entity: "user", entityId: id, entityName: userToDelete?.email, ip: getIp(req) });
   return NextResponse.json({ success: true });
 }

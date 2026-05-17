@@ -202,3 +202,16 @@ model MenuView {
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  userEmail  String?
+  action     String
+  entity     String?
+  entityId   String?
+  entityName String?
+  meta       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+}

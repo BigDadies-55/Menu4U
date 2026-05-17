@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/lib/auth.config";
 import type { Role } from "@/generated/prisma/client";
+import { logAudit } from "@/lib/audit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -21,14 +22,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: credentials.email as string },
         });
 
-        if (!user || !user.password) return null;
+        if (!user || !user.password) {
+          await logAudit({ action: "LOGIN_FAILED", meta: { email: credentials.email } });
+          return null;
+        }
 
         const isValid = await bcrypt.compare(
           credentials.password as string,
           user.password
         );
 
-        if (!isValid) return null;
+        if (!isValid) {
+          await logAudit({ action: "LOGIN_FAILED", userEmail: user.email, userId: user.id, meta: { reason: "bad_password" } });
+          return null;
+        }
 
         return {
           id: user.id,
@@ -54,6 +61,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as Role;
       }
       return session;
+    },
+  },
+  events: {
+    async signIn({ user }) {
+      await logAudit({ action: "LOGIN_SUCCESS", userId: user.id, userEmail: user.email });
+    },
+    async signOut(message) {
+      const token = "token" in message ? message.token : null;
+      await logAudit({
+        action: "LOGOUT",
+        userId: token?.id as string | undefined,
+        userEmail: token?.email as string | undefined,
+      });
     },
   },
 });

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isEditor } from "@/lib/permissions";
+import { logAudit, getIp } from "@/lib/audit";
 
 async function checkMenuAccess(userId: string, menuId: string) {
   const menu = await prisma.menu.findUnique({ where: { id: menuId }, select: { restaurantId: true } });
@@ -44,10 +45,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const updated = await prisma.menu.findUnique({ where: { id } });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_MENU", entity: "menu", entityId: id, entityName: updated?.name, meta: { changed: Object.keys(body) }, ip: getIp(req) });
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user || !isEditor(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -59,6 +61,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const menuToDelete = await prisma.menu.findUnique({ where: { id }, select: { name: true } });
   await prisma.menu.delete({ where: { id } });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_MENU", entity: "menu", entityId: id, entityName: menuToDelete?.name, ip: getIp(req) });
   return NextResponse.json({ success: true });
 }

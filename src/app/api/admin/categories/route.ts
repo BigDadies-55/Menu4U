@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isEditor } from "@/lib/permissions";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -25,5 +26,6 @@ export async function POST(req: Request) {
   const category = await prisma.category.create({
     data: { name, description: description || null, menuId, image: image || null, sortOrder: sortOrder ?? 0 },
   });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CREATE_CATEGORY", entity: "category", entityId: category.id, entityName: category.name, meta: { menuId }, ip: getIp(req) });
   return NextResponse.json(category, { status: 201 });
 }

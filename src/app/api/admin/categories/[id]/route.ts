@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isEditor } from "@/lib/permissions";
+import { logAudit, getIp } from "@/lib/audit";
 
 async function checkCategoryAccess(userId: string, categoryId: string) {
   const cat = await prisma.category.findUnique({
@@ -29,10 +30,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const body = await req.json();
   const category = await prisma.category.update({ where: { id }, data: body });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_CATEGORY", entity: "category", entityId: id, entityName: category.name, meta: { changed: Object.keys(body) }, ip: getIp(req) });
   return NextResponse.json(category);
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user || !isEditor(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -44,6 +46,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const catToDelete = await prisma.category.findUnique({ where: { id }, select: { name: true } });
   await prisma.category.delete({ where: { id } });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_CATEGORY", entity: "category", entityId: id, entityName: catToDelete?.name, ip: getIp(req) });
   return NextResponse.json({ success: true });
 }

@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin/restaurants", label: "מסעדות", icon: "◈", superAdmin: true },
   { href: "/admin/menus", label: "תפריטים", icon: "◉" },
   { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true },
+  { href: "/admin/logs", label: "לוגים", icon: "◎", adminOnly: true },
 ];
 
 interface SidebarProps {

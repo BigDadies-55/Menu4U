@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function GET() {
   const session = await auth();
@@ -23,5 +24,6 @@ export async function POST(req: Request) {
   const restaurant = await prisma.restaurant.create({
     data: { name, email: email || null, phone: phone || null, address: address || null, description: description || null },
   });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CREATE_RESTAURANT", entity: "restaurant", entityId: restaurant.id, entityName: restaurant.name, ip: getIp(req) });
   return NextResponse.json(restaurant, { status: 201 });
 }
