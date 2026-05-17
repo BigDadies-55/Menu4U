@@ -46,29 +46,29 @@ const ACTION_LABELS: Record<string, string> = {
   RUN_MIGRATION: "הרצת מיגרציה",
 };
 
-const ACTION_COLORS: Record<string, string> = {
-  LOGIN_SUCCESS: "bg-blue-900/40 text-blue-300 border-blue-700/40",
-  LOGIN_FAILED: "bg-red-900/40 text-red-300 border-red-700/40",
-  LOGOUT: "bg-slate-800/60 text-slate-400 border-slate-700/40",
-  CREATE_RESTAURANT: "bg-emerald-900/40 text-emerald-300 border-emerald-700/40",
-  UPDATE_RESTAURANT: "bg-amber-900/40 text-amber-300 border-amber-700/40",
-  DELETE_RESTAURANT: "bg-red-900/40 text-red-300 border-red-700/40",
-  CREATE_MENU: "bg-emerald-900/40 text-emerald-300 border-emerald-700/40",
-  UPDATE_MENU: "bg-amber-900/40 text-amber-300 border-amber-700/40",
-  DELETE_MENU: "bg-red-900/40 text-red-300 border-red-700/40",
-  CREATE_CATEGORY: "bg-emerald-900/40 text-emerald-300 border-emerald-700/40",
-  UPDATE_CATEGORY: "bg-amber-900/40 text-amber-300 border-amber-700/40",
-  DELETE_CATEGORY: "bg-red-900/40 text-red-300 border-red-700/40",
-  CREATE_ITEM: "bg-emerald-900/40 text-emerald-300 border-emerald-700/40",
-  UPDATE_ITEM: "bg-amber-900/40 text-amber-300 border-amber-700/40",
-  DELETE_ITEM: "bg-red-900/40 text-red-300 border-red-700/40",
-  CREATE_USER: "bg-violet-900/40 text-violet-300 border-violet-700/40",
-  UPDATE_USER: "bg-amber-900/40 text-amber-300 border-amber-700/40",
-  DELETE_USER: "bg-red-900/40 text-red-300 border-red-700/40",
-  ASSIGN_USER_TO_RESTAURANT: "bg-cyan-900/40 text-cyan-300 border-cyan-700/40",
-  REMOVE_USER_FROM_RESTAURANT: "bg-orange-900/40 text-orange-300 border-orange-700/40",
-  CHANGE_PASSWORD: "bg-violet-900/40 text-violet-300 border-violet-700/40",
-  RUN_MIGRATION: "bg-violet-900/40 text-violet-300 border-violet-700/40",
+const ACTION_DOT: Record<string, string> = {
+  LOGIN_SUCCESS: "#3b82f6",
+  LOGIN_FAILED: "#ef4444",
+  LOGOUT: "#94a3b8",
+  CREATE_RESTAURANT: "#10b981",
+  UPDATE_RESTAURANT: "#f59e0b",
+  DELETE_RESTAURANT: "#ef4444",
+  CREATE_MENU: "#10b981",
+  UPDATE_MENU: "#f59e0b",
+  DELETE_MENU: "#ef4444",
+  CREATE_CATEGORY: "#10b981",
+  UPDATE_CATEGORY: "#f59e0b",
+  DELETE_CATEGORY: "#ef4444",
+  CREATE_ITEM: "#10b981",
+  UPDATE_ITEM: "#f59e0b",
+  DELETE_ITEM: "#ef4444",
+  CREATE_USER: "#8b5cf6",
+  UPDATE_USER: "#f59e0b",
+  DELETE_USER: "#ef4444",
+  ASSIGN_USER_TO_RESTAURANT: "#06b6d4",
+  REMOVE_USER_FROM_RESTAURANT: "#f97316",
+  CHANGE_PASSWORD: "#8b5cf6",
+  RUN_MIGRATION: "#8b5cf6",
 };
 
 const ALL_ACTIONS = Object.keys(ACTION_LABELS);
@@ -83,9 +83,9 @@ function MetaDisplay({ meta }: { meta: Record<string, unknown> | null }) {
   const entries = Object.entries(meta).filter(([, v]) => v !== null && v !== undefined);
   if (!entries.length) return null;
   return (
-    <div className="flex flex-wrap gap-1 mt-1">
+    <div className="flex flex-wrap gap-1">
       {entries.map(([k, v]) => (
-        <span key={k} className="text-xs text-slate-500 bg-white/5 px-1.5 py-0.5 rounded font-mono">
+        <span key={k} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
           {k}: {Array.isArray(v) ? (v as unknown[]).join(", ") : String(v)}
         </span>
       ))}
@@ -104,6 +104,7 @@ export default function LogsClient() {
   const [searchInput, setSearchInput] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [hideMigration, setHideMigration] = useState(true);
 
   function buildParams(extra: Record<string, string> = {}) {
     const params = new URLSearchParams();
@@ -112,6 +113,7 @@ export default function LogsClient() {
     if (search) params.set("search", search);
     if (dateFrom) params.set("from", dateFrom);
     if (dateTo) params.set("to", dateTo);
+    if (hideMigration) params.set("hideMigration", "1");
     Object.entries(extra).forEach(([k, v]) => params.set(k, v));
     return params;
   }
@@ -123,14 +125,11 @@ export default function LogsClient() {
     if (res.ok) setData(await res.json());
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filterAction, filterEntity, search, dateFrom, dateTo]);
+  }, [page, filterAction, filterEntity, search, dateFrom, dateTo, hideMigration]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-  function applySearch() {
-    setSearch(searchInput);
-    setPage(1);
-  }
+  function applySearch() { setSearch(searchInput); setPage(1); }
 
   async function exportCSV() {
     setExporting(true);
@@ -149,102 +148,93 @@ export default function LogsClient() {
   }
 
   function clearFilters() {
-    setFilterAction("");
-    setFilterEntity("");
-    setSearch("");
-    setSearchInput("");
-    setDateFrom("");
-    setDateTo("");
-    setPage(1);
+    setFilterAction(""); setFilterEntity(""); setSearch(""); setSearchInput("");
+    setDateFrom(""); setDateTo(""); setPage(1);
   }
 
   const hasFilters = !!(filterAction || filterEntity || search || dateFrom || dateTo);
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" dir="rtl" style={{ background: "#f5f2ea" }}>
+    <div className="p-4 md:p-6 min-h-screen" dir="rtl" style={{ background: "#f5f2ea" }}>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">לוג פעולות</h1>
-        <p className="text-gray-500 text-sm mt-1">היסטוריית פעולות מערכת הניהול</p>
+      <div className="mb-4">
+        <h1 className="text-xl font-bold text-gray-900">לוג פעולות</h1>
+        <p className="text-gray-400 text-xs mt-0.5">היסטוריית פעולות מערכת הניהול</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-40">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">סוג פעולה</label>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 mb-4">
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="flex-1 min-w-36">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">סוג פעולה</label>
             <select
               value={filterAction}
               onChange={e => { setFilterAction(e.target.value); setPage(1); }}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+              className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
             >
               <option value="">הכל</option>
-              {ALL_ACTIONS.map(a => (
-                <option key={a} value={a}>{ACTION_LABELS[a]}</option>
-              ))}
+              {ALL_ACTIONS.map(a => <option key={a} value={a}>{ACTION_LABELS[a]}</option>)}
             </select>
           </div>
-          <div className="flex-1 min-w-36">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ישות</label>
+          <div className="flex-1 min-w-32">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">ישות</label>
             <select
               value={filterEntity}
               onChange={e => { setFilterEntity(e.target.value); setPage(1); }}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+              className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
             >
               <option value="">הכל</option>
-              {["restaurant", "menu", "category", "item", "user", "restaurantUser", "system"].map(e => (
+              {["restaurant","menu","category","item","user","restaurantUser","system"].map(e => (
                 <option key={e} value={e}>{e}</option>
               ))}
             </select>
           </div>
-          <div className="flex-1 min-w-48">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">חיפוש</label>
-            <div className="flex gap-2">
+          <div className="flex-1 min-w-44">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">חיפוש</label>
+            <div className="flex gap-1.5">
               <input
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && applySearch()}
                 placeholder="אימייל / שם ישות..."
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
-              <button onClick={applySearch} className="text-white px-3 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+              <button onClick={applySearch} className="text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
                 חפש
               </button>
             </div>
           </div>
         </div>
 
-        {/* Date range row */}
-        <div className="flex flex-wrap gap-3 items-end mt-3 pt-3 border-t border-gray-100">
-          <div className="flex-1 min-w-36">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">מתאריך</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
+        {/* Second row: dates + checkbox + actions */}
+        <div className="flex flex-wrap gap-2 items-center mt-2.5 pt-2.5 border-t border-gray-100">
+          <div className="flex-1 min-w-32">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">מתאריך</label>
+            <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+              className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400" />
           </div>
-          <div className="flex-1 min-w-36">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">עד תאריך</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={e => { setDateTo(e.target.value); setPage(1); }}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
+          <div className="flex-1 min-w-32">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">עד תאריך</label>
+            <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }}
+              className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400" />
           </div>
-          <div className="flex items-end gap-2 pb-0">
+          <label className="flex items-center gap-1.5 cursor-pointer select-none mt-4">
+            <input
+              type="checkbox"
+              checked={hideMigration}
+              onChange={e => { setHideMigration(e.target.checked); setPage(1); }}
+              className="w-3.5 h-3.5 accent-amber-500 rounded"
+            />
+            <span className="text-xs text-gray-500">הסתר הרצות מיגרציה</span>
+          </label>
+          <div className="flex items-center gap-2 mt-4 mr-auto">
             {hasFilters && (
-              <button onClick={clearFilters} className="text-xs text-gray-500 hover:text-red-500 underline py-2.5">
+              <button onClick={clearFilters} className="text-xs text-gray-400 hover:text-red-500 underline">
                 נקה סינון
               </button>
             )}
-            <button
-              onClick={exportCSV}
-              disabled={exporting}
-              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 transition-colors"
-            >
+            <button onClick={exportCSV} disabled={exporting}
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 transition-colors">
               {exporting ? "מייצא..." : "⬇ ייצוא לאקסל"}
             </button>
           </div>
@@ -252,47 +242,52 @@ export default function LogsClient() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-gray-400">טוען...</div>
+          <div className="p-10 text-center text-gray-400 text-sm">טוען...</div>
         ) : !data || data.logs.length === 0 ? (
-          <div className="p-12 text-center text-gray-400">אין לוגים</div>
+          <div className="p-10 text-center text-gray-400 text-sm">אין לוגים</div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ background: "#faf9f6" }}>
-                    <th className="text-right font-semibold text-gray-500 text-xs uppercase tracking-wide px-4 py-3">זמן</th>
-                    <th className="text-right font-semibold text-gray-500 text-xs uppercase tracking-wide px-4 py-3">פעולה</th>
-                    <th className="text-right font-semibold text-gray-500 text-xs uppercase tracking-wide px-4 py-3">משתמש</th>
-                    <th className="text-right font-semibold text-gray-500 text-xs uppercase tracking-wide px-4 py-3">ישות</th>
-                    <th className="text-right font-semibold text-gray-500 text-xs uppercase tracking-wide px-4 py-3">פרטים</th>
+                    <th className="text-right font-semibold text-gray-400 text-xs uppercase tracking-wide px-3 py-2">זמן</th>
+                    <th className="text-right font-semibold text-gray-400 text-xs uppercase tracking-wide px-3 py-2">פעולה</th>
+                    <th className="text-right font-semibold text-gray-400 text-xs uppercase tracking-wide px-3 py-2">משתמש</th>
+                    <th className="text-right font-semibold text-gray-400 text-xs uppercase tracking-wide px-3 py-2">ישות</th>
+                    <th className="text-right font-semibold text-gray-400 text-xs uppercase tracking-wide px-3 py-2">פרטים</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.logs.map((log, i) => (
-                    <tr key={log.id} className={`border-b border-gray-50 hover:bg-amber-50/30 transition-colors ${i % 2 === 0 ? "" : "bg-gray-50/30"}`}>
-                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap font-mono">
+                    <tr key={log.id} className={`border-b border-gray-50 hover:bg-amber-50/20 transition-colors ${i % 2 !== 0 ? "bg-gray-50/40" : ""}`}>
+                      <td className="px-3 py-1.5 text-xs text-gray-400 whitespace-nowrap font-mono">
                         {formatDate(log.createdAt)}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block text-xs font-semibold px-2 py-1 rounded-lg border ${ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                          {ACTION_LABELS[log.action] ?? log.action}
+                      <td className="px-3 py-1.5">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ background: ACTION_DOT[log.action] ?? "#94a3b8" }} />
+                          <span className="text-xs font-bold text-gray-900">
+                            {ACTION_LABELS[log.action] ?? log.action}
+                          </span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-600">
+                      <td className="px-3 py-1.5 text-xs text-gray-600 whitespace-nowrap">
                         {log.userEmail ?? <span className="text-gray-300">—</span>}
-                        {log.ip && <div className="text-gray-400 font-mono">{log.ip}</div>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-600">
-                        {log.entity && <span className="text-gray-400 text-xs">{log.entity}</span>}
-                        {log.entityName && <div className="font-medium text-gray-700">{log.entityName}</div>}
-                        {!log.entityName && !log.entity && <span className="text-gray-300">—</span>}
+                      <td className="px-3 py-1.5 text-xs">
+                        {log.entityName
+                          ? <span className="font-medium text-gray-700">{log.entityName}</span>
+                          : log.entity
+                            ? <span className="text-gray-400">{log.entity}</span>
+                            : <span className="text-gray-300">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 max-w-xs">
+                      <td className="px-3 py-1.5 max-w-xs">
                         <MetaDisplay meta={log.meta} />
-                        {!log.meta && <span className="text-gray-300">—</span>}
+                        {!log.meta && <span className="text-xs text-gray-300">—</span>}
                       </td>
                     </tr>
                   ))}
@@ -301,22 +296,16 @@ export default function LogsClient() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+            <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100">
               <span className="text-xs text-gray-400">סה"כ {data.total.toLocaleString()} רשומות</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+                  className="text-xs px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                   הקודם
                 </button>
-                <span className="text-xs text-gray-500">{page} / {data.pages}</span>
-                <button
-                  onClick={() => setPage(p => Math.min(data.pages, p + 1))}
-                  disabled={page >= data.pages}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+                <span className="text-xs text-gray-500 px-1">{page} / {data.pages}</span>
+                <button onClick={() => setPage(p => Math.min(data.pages, p + 1))} disabled={page >= data.pages}
+                  className="text-xs px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                   הבא
                 </button>
               </div>

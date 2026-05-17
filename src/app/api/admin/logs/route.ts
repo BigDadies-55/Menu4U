@@ -11,9 +11,11 @@ function buildWhere(params: URLSearchParams) {
   const search = params.get("search") ?? "";
   const from = params.get("from") ?? "";
   const to = params.get("to") ?? "";
+  const hideMigration = params.get("hideMigration") === "1";
 
   const where: Record<string, unknown> = {};
   if (action) where.action = action;
+  else if (hideMigration) where.action = { not: "RUN_MIGRATION" };
   if (entity) where.entity = entity;
   if (search) {
     where.OR = [
