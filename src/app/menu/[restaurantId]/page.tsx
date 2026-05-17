@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import MenuPublicClient from "./MenuPublicClient";
+import MenuExpired from "./MenuExpired";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ restaurantId: string }> }
@@ -40,6 +41,7 @@ export default async function PublicMenuPage(
     select: {
       id: true, name: true, logo: true, address: true,
       phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true,
+      subscriptionFrom: true, subscriptionTo: true,
       menus: {
         where: { isActive: true },
         orderBy: { sortOrder: "asc" },
@@ -66,6 +68,15 @@ export default async function PublicMenuPage(
   });
 
   if (!restaurant) notFound();
+
+  // Subscription check
+  const now = new Date();
+  if (restaurant.subscriptionFrom && now < restaurant.subscriptionFrom) {
+    return <MenuExpired name={restaurant.name} logo={restaurant.logo} reason="not_started" />;
+  }
+  if (restaurant.subscriptionTo && now > restaurant.subscriptionTo) {
+    return <MenuExpired name={restaurant.name} logo={restaurant.logo} reason="expired" />;
+  }
 
   // 1. If any menu is marked primary → show only primary menus
   const hasPrimary = restaurant.menus.some(m => m.isPrimary);

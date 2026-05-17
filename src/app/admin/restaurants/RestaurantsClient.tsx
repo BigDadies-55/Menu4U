@@ -18,6 +18,8 @@ type Restaurant = {
   locationUrl: string | null;
   isActive: boolean;
   menuTheme: string;
+  subscriptionFrom: string | null;
+  subscriptionTo: string | null;
   createdAt: Date;
   _count: { menus: number; orders: number; restaurantUsers: number };
 };
@@ -32,8 +34,26 @@ const THEMES = [
 const emptyForm = {
   name: "", description: "", logo: "", email: "", phone: "",
   phone2: "", orderPhone: "", address: "", website: "", locationUrl: "",
-  menuTheme: "luxury",
+  menuTheme: "luxury", subscriptionFrom: "", subscriptionTo: "",
 };
+
+function toDateInput(val: string | null | undefined): string {
+  if (!val) return "";
+  return new Date(val).toISOString().slice(0, 10);
+}
+
+function getSubscriptionStatus(r: Restaurant): { label: string; cls: string } {
+  const now = new Date();
+  if (!r.subscriptionFrom && !r.subscriptionTo) return { label: "ללא מנוי", cls: "bg-gray-100 text-gray-500" };
+  if (r.subscriptionFrom && now < new Date(r.subscriptionFrom)) return { label: "טרם התחיל", cls: "bg-blue-100 text-blue-600" };
+  if (r.subscriptionTo && now > new Date(r.subscriptionTo)) return { label: "פג תוקף", cls: "bg-red-100 text-red-600" };
+  if (r.subscriptionTo) {
+    const daysLeft = Math.ceil((new Date(r.subscriptionTo).getTime() - now.getTime()) / 86400000);
+    if (daysLeft <= 7) return { label: `${daysLeft} ימים נותרו`, cls: "bg-orange-100 text-orange-600" };
+    return { label: `פעיל עד ${new Date(r.subscriptionTo).toLocaleDateString("he-IL")}`, cls: "bg-green-100 text-green-700" };
+  }
+  return { label: "פעיל", cls: "bg-green-100 text-green-700" };
+}
 
 export default function RestaurantsClient({ restaurants: initial }: { restaurants: Restaurant[] }) {
   const [restaurants, setRestaurants] = useState(initial);
@@ -57,8 +77,21 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       orderPhone: r.orderPhone ?? "", address: r.address ?? "",
       website: r.website ?? "", locationUrl: r.locationUrl ?? "",
       menuTheme: r.menuTheme ?? "luxury",
+      subscriptionFrom: toDateInput(r.subscriptionFrom),
+      subscriptionTo: toDateInput(r.subscriptionTo),
     });
     setShowForm(true);
+  }
+
+  function setTrial() {
+    const from = new Date();
+    const to = new Date(from);
+    to.setDate(to.getDate() + 30);
+    setForm(f => ({
+      ...f,
+      subscriptionFrom: from.toISOString().slice(0, 10),
+      subscriptionTo: to.toISOString().slice(0, 10),
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -78,6 +111,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       website: form.website || null,
       locationUrl: form.locationUrl || null,
       menuTheme: form.menuTheme,
+      subscriptionFrom: form.subscriptionFrom ? new Date(form.subscriptionFrom).toISOString() : null,
+      subscriptionTo: form.subscriptionTo ? new Date(form.subscriptionTo).toISOString() : null,
     };
 
     if (editTarget) {
@@ -222,6 +257,49 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                 </div>
               </div>
 
+              {/* Subscription */}
+              <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-gray-700">📅 תוקף מנוי</label>
+                  <button
+                    type="button"
+                    onClick={setTrial}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border-2 border-amber-400 text-amber-700 hover:bg-amber-50 transition-colors"
+                  >
+                    🎁 30 ימים ניסיון
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">מתאריך</label>
+                    <input
+                      type="date"
+                      value={form.subscriptionFrom}
+                      onChange={e => setForm({ ...form, subscriptionFrom: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">עד תאריך</label>
+                    <input
+                      type="date"
+                      value={form.subscriptionTo}
+                      onChange={e => setForm({ ...form, subscriptionTo: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                    />
+                  </div>
+                </div>
+                {(form.subscriptionFrom || form.subscriptionTo) && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, subscriptionFrom: "", subscriptionTo: "" })}
+                    className="text-xs text-gray-400 hover:text-red-500 underline"
+                  >
+                    הסר תאריכים (ללא הגבלת תוקף)
+                  </button>
+                )}
+              </div>
+
               {error && <p className="text-red-600 text-sm">{error}</p>}
               <div className="flex gap-3 pt-2">
                 <button type="submit" disabled={loading}
@@ -249,6 +327,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סטטיסטיקות</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">נוצר</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סטטוס</th>
+                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">מנוי</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">פעולות</th>
               </tr>
             </thead>
@@ -305,6 +384,11 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${r.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                         {r.isActive ? "פעיל" : "לא פעיל"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => { const s = getSubscriptionStatus(r); return (
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${s.cls}`}>{s.label}</span>
+                      ); })()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
