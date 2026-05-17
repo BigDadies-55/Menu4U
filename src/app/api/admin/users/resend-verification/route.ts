@@ -29,7 +29,9 @@ export async function POST(req: Request) {
   await prisma.verificationToken.create({
     data: { identifier: user.email, token: hashOtp(otp), expires },
   });
-  await sendOtpEmail(user.email, otp, user.name);
+  sendOtpEmail(user.email, otp, user.name).catch((err) =>
+    console.error("[otp] resend failed:", err)
+  );
 
   return NextResponse.json({ success: true });
 }
