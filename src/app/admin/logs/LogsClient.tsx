@@ -85,7 +85,7 @@ function MetaDisplay({ meta }: { meta: Record<string, unknown> | null }) {
   return (
     <div className="flex flex-wrap gap-1">
       {entries.map(([k, v]) => (
-        <span key={k} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
+        <span key={k} className="text-gray-500 bg-gray-100 px-1 py-0.5 rounded font-mono" style={{ fontSize: "10px" }}>
           {k}: {Array.isArray(v) ? (v as unknown[]).join(", ") : String(v)}
         </span>
       ))}
