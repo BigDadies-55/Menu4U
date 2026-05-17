@@ -39,7 +39,7 @@ export default async function PublicMenuPage(
     where: { id: restaurantId, isActive: true },
     select: {
       id: true, name: true, logo: true, address: true,
-      phone: true, orderPhone: true, website: true, locationUrl: true,
+      phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true,
       menus: {
         where: { isActive: true },
         orderBy: { sortOrder: "asc" },

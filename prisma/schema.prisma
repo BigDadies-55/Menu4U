@@ -88,6 +88,7 @@ model Restaurant {
   website       String?
   locationUrl   String?
   isActive      Boolean  @default(true)
+  menuTheme     String   @default("luxury")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

@@ -52,6 +52,9 @@ export async function GET(req: Request) {
           REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE
       );
     `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuTheme" TEXT NOT NULL DEFAULT 'luxury';
+    `);
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

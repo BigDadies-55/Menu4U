@@ -17,13 +17,22 @@ type Restaurant = {
   website: string | null;
   locationUrl: string | null;
   isActive: boolean;
+  menuTheme: string;
   createdAt: Date;
   _count: { menus: number; orders: number; restaurantUsers: number };
 };
 
+const THEMES = [
+  { value: 'luxury', label: 'יוקרה', bg: '#0a0a0a', accent: '#c9a35d', icon: '✨' },
+  { value: 'fresh',  label: 'כחול',  bg: '#050d18', accent: '#38bdf8', icon: '💎' },
+  { value: 'nature', label: 'טבע',   bg: '#030f06', accent: '#4ade80', icon: '🌿' },
+  { value: 'bold',   label: 'נועז',  bg: '#0f0512', accent: '#f472b6', icon: '🔥' },
+];
+
 const emptyForm = {
   name: "", description: "", logo: "", email: "", phone: "",
   phone2: "", orderPhone: "", address: "", website: "", locationUrl: "",
+  menuTheme: "luxury",
 };
 
 export default function RestaurantsClient({ restaurants: initial }: { restaurants: Restaurant[] }) {
@@ -47,6 +56,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       email: r.email ?? "", phone: r.phone ?? "", phone2: r.phone2 ?? "",
       orderPhone: r.orderPhone ?? "", address: r.address ?? "",
       website: r.website ?? "", locationUrl: r.locationUrl ?? "",
+      menuTheme: r.menuTheme ?? "luxury",
     });
     setShowForm(true);
   }
@@ -67,6 +77,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       address: form.address || null,
       website: form.website || null,
       locationUrl: form.locationUrl || null,
+      menuTheme: form.menuTheme,
     };
 
     if (editTarget) {
@@ -186,6 +197,29 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
+              </div>
+
+              {/* Theme picker */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ערכת נושא לתפריט</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {THEMES.map(t => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setForm({ ...form, menuTheme: t.value })}
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all"
+                      style={{
+                        background: t.bg,
+                        borderColor: form.menuTheme === t.value ? t.accent : 'transparent',
+                        boxShadow: form.menuTheme === t.value ? `0 0 0 2px ${t.accent}55` : 'none',
+                      }}
+                    >
+                      <div className="w-full h-8 rounded" style={{ background: t.accent, opacity: 0.85 }} />
+                      <span className="text-xs font-medium" style={{ color: t.accent }}>{t.icon} {t.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {error && <p className="text-red-600 text-sm">{error}</p>}

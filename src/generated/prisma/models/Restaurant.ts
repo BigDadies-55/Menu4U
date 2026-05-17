@@ -37,6 +37,7 @@ export type RestaurantMinAggregateOutputType = {
   website: string | null
   locationUrl: string | null
   isActive: boolean | null
+  menuTheme: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -54,6 +55,7 @@ export type RestaurantMaxAggregateOutputType = {
   website: string | null
   locationUrl: string | null
   isActive: boolean | null
+  menuTheme: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -71,6 +73,7 @@ export type RestaurantCountAggregateOutputType = {
   website: number
   locationUrl: number
   isActive: number
+  menuTheme: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -90,6 +93,7 @@ export type RestaurantMinAggregateInputType = {
   website?: true
   locationUrl?: true
   isActive?: true
+  menuTheme?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -107,6 +111,7 @@ export type RestaurantMaxAggregateInputType = {
   website?: true
   locationUrl?: true
   isActive?: true
+  menuTheme?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -124,6 +129,7 @@ export type RestaurantCountAggregateInputType = {
   website?: true
   locationUrl?: true
   isActive?: true
+  menuTheme?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -214,6 +220,7 @@ export type RestaurantGroupByOutputType = {
   website: string | null
   locationUrl: string | null
   isActive: boolean
+  menuTheme: string
   createdAt: Date
   updatedAt: Date
   _count: RestaurantCountAggregateOutputType | null
@@ -252,6 +259,7 @@ export type RestaurantWhereInput = {
   website?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   locationUrl?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   isActive?: Prisma.BoolFilter<"Restaurant"> | boolean
+  menuTheme?: Prisma.StringFilter<"Restaurant"> | string
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
@@ -273,6 +281,7 @@ export type RestaurantOrderByWithRelationInput = {
   website?: Prisma.SortOrderInput | Prisma.SortOrder
   locationUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  menuTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   restaurantUsers?: Prisma.RestaurantUserOrderByRelationAggregateInput
@@ -297,6 +306,7 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   website?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   locationUrl?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   isActive?: Prisma.BoolFilter<"Restaurant"> | boolean
+  menuTheme?: Prisma.StringFilter<"Restaurant"> | string
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
@@ -318,6 +328,7 @@ export type RestaurantOrderByWithAggregationInput = {
   website?: Prisma.SortOrderInput | Prisma.SortOrder
   locationUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  menuTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.RestaurantCountOrderByAggregateInput
@@ -341,6 +352,7 @@ export type RestaurantScalarWhereWithAggregatesInput = {
   website?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   locationUrl?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"Restaurant"> | boolean
+  menuTheme?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Restaurant"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Restaurant"> | Date | string
 }
@@ -358,6 +370,7 @@ export type RestaurantCreateInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -379,6 +392,7 @@ export type RestaurantUncheckedCreateInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -400,6 +414,7 @@ export type RestaurantUpdateInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -421,6 +436,7 @@ export type RestaurantUncheckedUpdateInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -442,6 +458,7 @@ export type RestaurantCreateManyInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -459,6 +476,7 @@ export type RestaurantUpdateManyMutationInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -476,6 +494,7 @@ export type RestaurantUncheckedUpdateManyInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -493,6 +512,7 @@ export type RestaurantCountOrderByAggregateInput = {
   website?: Prisma.SortOrder
   locationUrl?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  menuTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -510,6 +530,7 @@ export type RestaurantMaxOrderByAggregateInput = {
   website?: Prisma.SortOrder
   locationUrl?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  menuTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -527,6 +548,7 @@ export type RestaurantMinOrderByAggregateInput = {
   website?: Prisma.SortOrder
   locationUrl?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  menuTheme?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -609,6 +631,7 @@ export type RestaurantCreateWithoutRestaurantUsersInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   menus?: Prisma.MenuCreateNestedManyWithoutRestaurantInput
@@ -629,6 +652,7 @@ export type RestaurantUncheckedCreateWithoutRestaurantUsersInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   menus?: Prisma.MenuUncheckedCreateNestedManyWithoutRestaurantInput
@@ -665,6 +689,7 @@ export type RestaurantUpdateWithoutRestaurantUsersInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   menus?: Prisma.MenuUpdateManyWithoutRestaurantNestedInput
@@ -685,6 +710,7 @@ export type RestaurantUncheckedUpdateWithoutRestaurantUsersInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   menus?: Prisma.MenuUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -705,6 +731,7 @@ export type RestaurantCreateWithoutMenusInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -725,6 +752,7 @@ export type RestaurantUncheckedCreateWithoutMenusInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -761,6 +789,7 @@ export type RestaurantUpdateWithoutMenusInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -781,6 +810,7 @@ export type RestaurantUncheckedUpdateWithoutMenusInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -801,6 +831,7 @@ export type RestaurantCreateWithoutOrdersInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -821,6 +852,7 @@ export type RestaurantUncheckedCreateWithoutOrdersInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -857,6 +889,7 @@ export type RestaurantUpdateWithoutOrdersInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -877,6 +910,7 @@ export type RestaurantUncheckedUpdateWithoutOrdersInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -897,6 +931,7 @@ export type RestaurantCreateWithoutMenuViewsInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -917,6 +952,7 @@ export type RestaurantUncheckedCreateWithoutMenuViewsInput = {
   website?: string | null
   locationUrl?: string | null
   isActive?: boolean
+  menuTheme?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -953,6 +989,7 @@ export type RestaurantUpdateWithoutMenuViewsInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -973,6 +1010,7 @@ export type RestaurantUncheckedUpdateWithoutMenuViewsInput = {
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -1051,6 +1089,7 @@ export type RestaurantSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   website?: boolean
   locationUrl?: boolean
   isActive?: boolean
+  menuTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
@@ -1073,6 +1112,7 @@ export type RestaurantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   website?: boolean
   locationUrl?: boolean
   isActive?: boolean
+  menuTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["restaurant"]>
@@ -1090,6 +1130,7 @@ export type RestaurantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   website?: boolean
   locationUrl?: boolean
   isActive?: boolean
+  menuTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["restaurant"]>
@@ -1107,11 +1148,12 @@ export type RestaurantSelectScalar = {
   website?: boolean
   locationUrl?: boolean
   isActive?: boolean
+  menuTheme?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
+export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
 export type RestaurantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
   menus?: boolean | Prisma.Restaurant$menusArgs<ExtArgs>
@@ -1143,6 +1185,7 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     website: string | null
     locationUrl: string | null
     isActive: boolean
+    menuTheme: string
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["restaurant"]>
@@ -1584,6 +1627,7 @@ export interface RestaurantFieldRefs {
   readonly website: Prisma.FieldRef<"Restaurant", 'String'>
   readonly locationUrl: Prisma.FieldRef<"Restaurant", 'String'>
   readonly isActive: Prisma.FieldRef<"Restaurant", 'Boolean'>
+  readonly menuTheme: Prisma.FieldRef<"Restaurant", 'String'>
   readonly createdAt: Prisma.FieldRef<"Restaurant", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Restaurant", 'DateTime'>
 }

@@ -31,6 +31,7 @@ type Restaurant = {
   orderPhone: string | null;
   website: string | null;
   locationUrl: string | null;
+  menuTheme?: string;
   menus: { id: string; categories: Category[] }[];
 };
 
@@ -90,7 +91,7 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
   }, [modalItem]);
 
   return (
-    <div className="menu-root">
+    <div className={`menu-root menu-theme-${restaurant.menuTheme ?? 'luxury'}`}>
       {/* Header */}
       <header className="menu-header">
         <div className="menu-header-content">
