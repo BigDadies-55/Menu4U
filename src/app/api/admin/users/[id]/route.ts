@@ -51,7 +51,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const expires = new Date(Date.now() + 15 * 60 * 1000);
     await prisma.verificationToken.deleteMany({ where: { identifier: body.email } });
     await prisma.verificationToken.create({ data: { identifier: body.email, token: hashOtp(otp), expires } });
-    sendOtpEmail(body.email, otp, user.name).catch((err) => console.error("[otp] email change send failed:", err));
+    try { await sendOtpEmail(body.email, otp, user.name); } catch (err) { console.error("[otp] email change send failed:", err); }
   }
 
   return NextResponse.json(user);

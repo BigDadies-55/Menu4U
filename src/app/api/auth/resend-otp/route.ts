@@ -26,9 +26,7 @@ export async function POST() {
     data: { identifier: user.email, token: hashOtp(otp), expires },
   });
 
-  sendOtpEmail(user.email, otp, user.name).catch((err) =>
-    console.error("[otp] resend failed:", err)
-  );
+  try { await sendOtpEmail(user.email, otp, user.name); } catch (err) { console.error("[otp] resend failed:", err); }
 
   return NextResponse.json({ success: true });
 }

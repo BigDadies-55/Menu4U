@@ -56,10 +56,7 @@ export async function POST(req: Request) {
     ip: getIp(req),
   });
 
-  // Send welcome email (non-blocking)
-  sendWelcomeEmail(user.email, user.name).catch((err) =>
-    console.error("[welcome] Failed to send welcome email:", err)
-  );
+  try { await sendWelcomeEmail(user.email, user.name); } catch (err) { console.error("[welcome] Failed to send welcome email:", err); }
 
   return NextResponse.json({ success: true });
 }

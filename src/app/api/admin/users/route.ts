@@ -56,9 +56,9 @@ export async function POST(req: Request) {
     ip: getIp(req),
   });
 
-  // Generate OTP and store it — then fire email in background
+  // Generate OTP and store it, then send email
   let otpCode: string | null = null;
-  const hasResend = !!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD;
+  const hasEmail = !!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD;
   try {
     const otp = generateOtp();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
@@ -66,17 +66,17 @@ export async function POST(req: Request) {
     await prisma.verificationToken.create({
       data: { identifier: email, token: hashOtp(otp), expires },
     });
-    if (hasResend) {
-      // Fire-and-forget: do NOT await so the response is never blocked
-      sendOtpEmail(email, otp, name).catch((err) =>
-        console.error("[otp] Failed to send verification email:", err)
-      );
+    if (hasEmail) {
+      try { await sendOtpEmail(email, otp, name); } catch (err) {
+        console.error("[otp] Failed to send verification email:", err);
+        otpCode = otp;
+      }
     } else {
-      otpCode = otp; // return to admin as fallback
+      otpCode = otp;
     }
   } catch (err) {
     console.error("[otp] Failed to create OTP token:", err);
   }
 
-  return NextResponse.json({ ...user, emailSent: hasResend, otpCode }, { status: 201 });
+  return NextResponse.json({ ...user, emailSent: hasEmail && !otpCode, otpCode }, { status: 201 });
 }
