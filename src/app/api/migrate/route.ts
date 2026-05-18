@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
+import { auth } from "@/lib/auth";
 
 export async function GET(req: Request) {
+  const session = await auth();
   const { searchParams } = new URL(req.url);
-  if (searchParams.get("secret") !== process.env.SETUP_SECRET) {
+  const secret = searchParams.get("secret");
+
+  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const hasSecret = secret && process.env.SETUP_SECRET && secret === process.env.SETUP_SECRET;
+
+  if (!isSuperAdmin && !hasSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

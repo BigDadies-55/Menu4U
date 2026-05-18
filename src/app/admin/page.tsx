@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AnalyticsSection from "./AnalyticsSection";
+import MigrateButton from "./MigrateButton";
 
 async function getStats(userId: string, role: string) {
   if (role === "SUPER_ADMIN") {
@@ -67,6 +68,8 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {session.user.role === "SUPER_ADMIN" && <MigrateButton />}
 
       {stats.restaurantDetails && stats.restaurantDetails.length > 0 && (
         <AnalyticsSection restaurants={stats.restaurantDetails} />
