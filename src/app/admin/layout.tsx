@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {
@@ -11,17 +13,21 @@ export default async function AdminLayout({
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { emailVerified: true, termsAccepted: true },
-  });
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
-  if (!user?.emailVerified && session.user.role !== "SUPER_ADMIN") {
-    redirect("/verify-email");
-  }
+  if (!isSuperAdmin) {
+    let user: { emailVerified: Date | null; termsAccepted: boolean } | null = null;
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { emailVerified: true, termsAccepted: true },
+      });
+    } catch {
+      // DB columns may not exist yet — allow access until migration runs
+    }
 
-  if (!user?.termsAccepted) {
-    redirect("/terms");
+    if (!user?.emailVerified) redirect("/verify-email");
+    if (!user?.termsAccepted) redirect("/terms");
   }
 
   return <AdminShell user={session.user}>{children}</AdminShell>;
