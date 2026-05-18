@@ -21,8 +21,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
   }
 
-  if (role === "SUPER_ADMIN" && session.user.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Cannot create Super Admin" }, { status: 403 });
+  if (role === "SUPER_ADMIN") {
+    if (session.user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Cannot create Super Admin" }, { status: 403 });
+    }
+    const count = await prisma.user.count({ where: { role: "SUPER_ADMIN" } });
+    if (count >= 2) {
+      return NextResponse.json({ error: "לא ניתן להוסיף יותר מ-2 Super Admin" }, { status: 403 });
+    }
   }
 
   const existing = await prisma.user.findFirst({ where: { email } });

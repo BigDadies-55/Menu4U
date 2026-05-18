@@ -17,8 +17,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const body = await req.json();
 
-  if (body.role === "SUPER_ADMIN" && session.user.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Cannot assign Super Admin role" }, { status: 403 });
+  if (body.role === "SUPER_ADMIN") {
+    if (session.user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Cannot assign Super Admin role" }, { status: 403 });
+    }
+    const count = await prisma.user.count({ where: { role: "SUPER_ADMIN", NOT: { id } } });
+    if (count >= 2) {
+      return NextResponse.json({ error: "לא ניתן להוסיף יותר מ-2 Super Admin" }, { status: 403 });
+    }
   }
 
   const updateData: Record<string, unknown> = {};
