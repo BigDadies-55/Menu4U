@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import AnalyticsSection from "./AnalyticsSection";
 import MigrateButton from "./MigrateButton";
 
+export const dynamic = "force-dynamic";
+
 async function getStats(userId: string, role: string) {
   if (role === "SUPER_ADMIN") {
     const [restaurants, users, items] = await Promise.all([
@@ -54,7 +56,7 @@ export default async function AdminDashboard() {
         <h1 className="text-2xl font-bold text-gray-900">
           שלום, {session.user.name ?? session.user.email} 👋
         </h1>
-        <p className="text-gray-500 mt-1">ברוך הבא לממשק הניהול של Menu4U</p>
+        <p className="text-gray-500 mt-1">ברוך הבא לממשק הניהול של Menu4U ✦</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
