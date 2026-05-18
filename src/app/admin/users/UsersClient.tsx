@@ -55,11 +55,15 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
-  const filtered = users.filter(
-    (u) =>
-      u.name?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const ROLE_ORDER: Record<string, number> = { SUPER_ADMIN: 0, ADMIN: 1, OWNER: 2, EDITOR: 3, VIEWER: 4 };
+
+  const filtered = users
+    .filter(
+      (u) =>
+        u.name?.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => (ROLE_ORDER[a.role] ?? 5) - (ROLE_ORDER[b.role] ?? 5));
 
   const availableRoles = currentUserRole === "SUPER_ADMIN"
     ? ALL_ROLES
