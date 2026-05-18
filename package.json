@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && node -e \"try{require('fs').unlinkSync('prisma/seed.ts')}catch(e){}\" && next build",
+    "build": "prisma generate && node -e \"try{require('fs').unlinkSync('prisma/seed.ts')}catch(e){}\" && next build && node scripts/migrate.mjs",
     "migrate": "prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",

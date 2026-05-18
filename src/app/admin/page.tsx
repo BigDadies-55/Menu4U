@@ -1,8 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AnalyticsSection from "./AnalyticsSection";
-import MigrateButton from "./MigrateButton";
-
 export const dynamic = "force-dynamic";
 
 async function getStats(userId: string, role: string) {
@@ -56,7 +54,7 @@ export default async function AdminDashboard() {
         <h1 className="text-2xl font-bold text-gray-900">
           שלום, {session.user.name ?? session.user.email} 👋
         </h1>
-        <p className="text-gray-500 mt-1">ברוך הבא לממשק הניהול של Menu4U ✦</p>
+        <p className="text-gray-500 mt-1">ברוך הבא לממשק הניהול של Menu4U</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
@@ -70,8 +68,6 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
-
-      {session.user.role === "SUPER_ADMIN" && <MigrateButton />}
 
       {stats.restaurantDetails && stats.restaurantDetails.length > 0 && (
         <AnalyticsSection restaurants={stats.restaurantDetails} />
