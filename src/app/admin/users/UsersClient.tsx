@@ -47,6 +47,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [resetError, setResetError] = useState("");
 
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [resentId, setResentId] = useState<string | null>(null);
   const [pendingOtp, setPendingOtp] = useState<{ email: string; code: string } | null>(null);
 
   const [editTarget, setEditTarget] = useState<UserWithRestaurants | null>(null);
@@ -175,6 +176,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       body: JSON.stringify({ userId }),
     });
     setResendingId(null);
+    setResentId(userId);
+    setTimeout(() => setResentId(null), 3000);
   }
 
   async function handleResetPassword(e: React.FormEvent) {
@@ -309,11 +312,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           </span>
                           <button
                             onClick={() => handleResendVerification(user.id)}
-                            disabled={resendingId === user.id}
-                            className="text-xs text-amber-600 hover:text-amber-800 font-medium transition-colors disabled:opacity-40"
+                            disabled={resendingId === user.id || resentId === user.id}
+                            className={`text-xs font-medium transition-colors disabled:opacity-40 ${resentId === user.id ? "text-green-600" : "text-amber-600 hover:text-amber-800"}`}
                             title="שלח קוד אימות מחדש"
                           >
-                            {resendingId === user.id ? "שולח..." : "↩ שלח"}
+                            {resendingId === user.id ? "שולח..." : resentId === user.id ? "✓ נשלח" : "↩ שלח"}
                           </button>
                         </div>
                       )}

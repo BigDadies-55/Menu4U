@@ -5,6 +5,8 @@ import { isAdmin } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { logAudit, getIp } from "@/lib/audit";
+import { generateOtp, hashOtp } from "@/lib/otp";
+import { sendOtpEmail } from "@/lib/email";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -30,6 +32,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const conflict = await prisma.user.findFirst({ where: { email: body.email, NOT: { id } } });
     if (conflict) return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
     updateData.email = body.email;
+    updateData.emailVerified = null;
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -42,6 +45,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     select: { id: true, name: true, email: true, role: true, emailVerified: true, createdAt: true },
   });
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email, meta: { changed: Object.keys(updateData) }, ip: getIp(req) });
+
+  if (body.email) {
+    const otp = generateOtp();
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
+    await prisma.verificationToken.deleteMany({ where: { identifier: body.email } });
+    await prisma.verificationToken.create({ data: { identifier: body.email, token: hashOtp(otp), expires } });
+    sendOtpEmail(body.email, otp, user.name).catch((err) => console.error("[otp] email change send failed:", err));
+  }
+
   return NextResponse.json(user);
 }
 
