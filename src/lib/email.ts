@@ -1,12 +1,21 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
+
+function createTransport() {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+}
 
 export async function sendWelcomeEmail(email: string, name?: string | null) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
   const displayName = name ?? email;
   const adminUrl = process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM ?? "Menu4U <noreply@menu4u.co.il>",
+  await createTransport().sendMail({
+    from: `"Menu4U" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: `ברוכים הבאים ל-Menu4U! 🎉`,
     html: `
@@ -124,11 +133,10 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
 }
 
 export async function sendOtpEmail(email: string, otp: string, name?: string | null) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
   const displayName = name ?? email;
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM ?? "Menu4U <noreply@menu4u.co.il>",
+  await createTransport().sendMail({
+    from: `"Menu4U" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: `קוד האימות שלך - Menu4U`,
     html: `

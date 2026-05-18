@@ -559,7 +559,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               <div className="text-xs text-amber-500 mt-1">תקף ל-15 דקות</div>
             </div>
             <p className="text-xs text-gray-400 mb-5">
-              לאחר הפצת הקוד, ודא שמשתני הסביבה <span className="font-mono bg-gray-100 px-1 rounded">RESEND_API_KEY</span> ו-<span className="font-mono bg-gray-100 px-1 rounded">EMAIL_FROM</span> מוגדרים ב-Vercel.
+              לאחר הפצת הקוד, ודא שמשתני הסביבה <span className="font-mono bg-gray-100 px-1 rounded">GMAIL_USER</span> ו-<span className="font-mono bg-gray-100 px-1 rounded">GMAIL_APP_PASSWORD</span> מוגדרים ב-Vercel.
             </p>
             <button
               onClick={() => setPendingOtp(null)}

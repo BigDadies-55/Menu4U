@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
   // Generate OTP and store it — then fire email in background
   let otpCode: string | null = null;
-  const hasResend = !!process.env.RESEND_API_KEY;
+  const hasResend = !!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD;
   try {
     const otp = generateOtp();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
