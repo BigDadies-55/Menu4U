@@ -243,12 +243,12 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">משתמש</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">הרשאה</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">מסעדות משויכות</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">אימות</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">נרשם</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">פעולות</th>
+                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">משתמש</th>
+                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">הרשאה</th>
+                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">מסעדות משויכות</th>
+                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">אימות</th>
+                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">נרשם</th>
+                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">פעולות</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -259,7 +259,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               ) : (
                 filtered.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 bg-gray-100 shrink-0">
                           {(user.name ?? user.email)[0].toUpperCase()}
@@ -270,7 +270,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <select
                         value={user.role}
                         onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
@@ -282,7 +282,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         ))}
                       </select>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {user.restaurantUsers.length === 0 ? (
                           <span className="text-gray-300 text-xs">ללא שיוך</span>
@@ -301,7 +301,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       {user.emailVerified ? (
                         <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-medium">
                           ✓ מאומת
@@ -322,8 +322,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-xs text-gray-400">{formatDate(user.createdAt)}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2 text-xs text-gray-400">{formatDate(user.createdAt)}</td>
+                    <td className="px-6 py-2">
                       <div className="flex items-center gap-3">
                         {currentUserRole === "SUPER_ADMIN" && (
                           <button
