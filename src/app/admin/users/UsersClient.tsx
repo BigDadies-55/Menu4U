@@ -359,12 +359,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               <div key={user.id} className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                      style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 bg-gray-100 shrink-0">
                       {(user.name ?? user.email)[0].toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900 text-sm">{user.name ?? "—"}</div>
+                      <div className="font-medium text-gray-700 text-sm">{user.name ?? "—"}</div>
                       <div className="text-xs text-gray-400" dir="ltr">{user.email}</div>
                     </div>
                   </div>
@@ -374,9 +373,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   </select>
                 </div>
                 {user.restaurantUsers.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-2">
                     {user.restaurantUsers.map((ru) => (
-                      <span key={ru.restaurantId} className="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2 py-0.5 rounded-full">
+                      <span key={ru.restaurantId} className="text-xs text-gray-500">
                         {ru.restaurant.name}
                       </span>
                     ))}
@@ -385,14 +384,14 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <div className="flex items-center gap-3 pt-1">
                   {currentUserRole === "SUPER_ADMIN" && (
                     <button onClick={() => openEdit(user)}
-                      className="text-xs text-indigo-500 font-medium">✎ ערוך</button>
+                      className="text-xs text-gray-400 hover:text-gray-600 transition-colors">✎ ערוך</button>
                   )}
                   <button onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
-                    className="text-xs text-amber-600 font-medium">✎ מסעדות</button>
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors">✎ מסעדות</button>
                   <button onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
-                    className="text-xs text-amber-600 font-medium">🔑 סיסמה</button>
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors">🔑 סיסמה</button>
                   <button onClick={() => handleDelete(user.id)}
-                    className="text-xs text-red-400 font-medium">מחק</button>
+                    className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors">מחק</button>
                 </div>
               </div>
             ))
