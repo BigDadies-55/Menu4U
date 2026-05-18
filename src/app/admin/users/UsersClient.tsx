@@ -254,17 +254,14 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 </tr>
               ) : (
                 filtered.map((user) => (
-                  <tr key={user.id} className="hover:bg-amber-50/30 transition-colors">
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                          style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)" }}
-                        >
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 bg-gray-100 shrink-0">
                           {(user.name ?? user.email)[0].toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900 text-sm">{user.name ?? "—"}</div>
+                          <div className="font-medium text-gray-700 text-sm">{user.name ?? "—"}</div>
                           <div className="text-xs text-gray-400" dir="ltr">{user.email}</div>
                         </div>
                       </div>
@@ -287,16 +284,16 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           <span className="text-gray-300 text-xs">ללא שיוך</span>
                         ) : (
                           user.restaurantUsers.map((ru) => (
-                            <span key={ru.restaurantId} className="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2 py-0.5 rounded-full font-medium">
+                            <span key={ru.restaurantId} className="text-gray-600 text-xs">
                               {ru.restaurant.name}
                             </span>
                           ))
                         )}
                         <button
                           onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
-                          className="text-xs text-amber-500 hover:text-amber-700 font-medium transition-colors"
+                          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                         >
-                          ✎ ערוך
+                          ✎
                         </button>
                       </div>
                     </td>
@@ -313,7 +310,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           <button
                             onClick={() => handleResendVerification(user.id)}
                             disabled={resendingId === user.id || resentId === user.id}
-                            className={`text-xs font-medium transition-colors disabled:opacity-40 ${resentId === user.id ? "text-green-600" : "text-amber-600 hover:text-amber-800"}`}
+                            className={`text-xs font-medium transition-colors disabled:opacity-40 ${resentId === user.id ? "text-green-600" : "text-gray-400 hover:text-gray-600"}`}
                             title="שלח קוד אימות מחדש"
                           >
                             {resendingId === user.id ? "שולח..." : resentId === user.id ? "✓ נשלח" : "↩ שלח"}
@@ -327,14 +324,14 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         {currentUserRole === "SUPER_ADMIN" && (
                           <button
                             onClick={() => openEdit(user)}
-                            className="text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
+                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                           >
                             ✎ ערוך
                           </button>
                         )}
                         <button
                           onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
-                          className="text-xs text-amber-600 hover:text-amber-800 font-medium transition-colors"
+                          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                         >
                           🔑 סיסמה
                         </button>
