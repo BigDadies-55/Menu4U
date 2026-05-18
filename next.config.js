@@ -4,6 +4,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
     tsconfigPath: 'tsconfig.build.json',
   },
+  serverExternalPackages: ["nodemailer"],
 };
 
 module.exports = nextConfig;
