@@ -32,7 +32,10 @@ function isMenuScheduledNow(menu: {
 }
 
 export default async function PublicMenuPage(
-  { params }: { params: Promise<{ restaurantId: string }> }
+  { params, searchParams }: {
+    params: Promise<{ restaurantId: string }>;
+    searchParams: Promise<Record<string, string>>;
+  }
 ) {
   const { restaurantId } = await params;
 
@@ -40,7 +43,7 @@ export default async function PublicMenuPage(
     where: { id: restaurantId, isActive: true },
     select: {
       id: true, name: true, logo: true, address: true,
-      phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true,
+      phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true, menuPalette: true, menuPaletteData: true,
       subscriptionFrom: true, subscriptionTo: true,
       menus: {
         where: { isActive: true },
@@ -85,5 +88,23 @@ export default async function PublicMenuPage(
   // 2. Filter by current day/time schedule
   visibleMenus = visibleMenus.filter(isMenuScheduledNow);
 
-  return <MenuPublicClient restaurant={{ ...restaurant, menus: visibleMenus }} />;
+  const sp = await searchParams;
+  const previewTheme = sp.previewTheme;
+  const previewPalette = sp.previewPalette;
+  const previewAc = sp.previewAc;
+  const previewBg = sp.previewBg;
+
+  const effectiveTheme = previewTheme || restaurant.menuTheme;
+  const effectivePalette = previewPalette || restaurant.menuPalette || '0';
+  const effectivePaletteData = (previewPalette === 'custom' && previewAc && previewBg)
+    ? JSON.stringify({ ac: previewAc, bg: previewBg })
+    : restaurant.menuPaletteData;
+
+  return <MenuPublicClient restaurant={{
+    ...restaurant,
+    menus: visibleMenus,
+    menuTheme: effectiveTheme,
+    menuPalette: effectivePalette,
+    menuPaletteData: effectivePaletteData ?? null,
+  }} />;
 }

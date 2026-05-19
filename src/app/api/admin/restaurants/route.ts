@@ -22,7 +22,16 @@ export async function POST(req: Request) {
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
   const restaurant = await prisma.restaurant.create({
-    data: { name, email: email || null, phone: phone || null, address: address || null, description: description || null },
+    data: {
+      name,
+      email: email || null,
+      phone: phone || null,
+      address: address || null,
+      description: description || null,
+      menuTheme: body.menuTheme || 'luxury',
+      menuPalette: body.menuPalette || '0',
+      menuPaletteData: body.menuPaletteData || null,
+    },
   });
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CREATE_RESTAURANT", entity: "restaurant", entityId: restaurant.id, entityName: restaurant.name, ip: getIp(req) });
   return NextResponse.json(restaurant, { status: 201 });

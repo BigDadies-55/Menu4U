@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import "./menu.css";
+import { buildPaletteStyle } from "@/lib/menuPalettes";
 
 type Item = {
   id: string;
@@ -32,6 +33,8 @@ type Restaurant = {
   website: string | null;
   locationUrl: string | null;
   menuTheme?: string;
+  menuPalette?: string | null;
+  menuPaletteData?: string | null;
   menus: { id: string; categories: Category[] }[];
 };
 
@@ -50,6 +53,12 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
 
   const categories = restaurant.menus.flatMap(m => m.categories);
+
+  const paletteStyle = buildPaletteStyle(
+    restaurant.menuTheme ?? 'luxury',
+    restaurant.menuPalette ?? '0',
+    restaurant.menuPaletteData
+  );
 
   function track(type: string, refId?: string, refName?: string) {
     fetch(`/api/menu/${restaurant.id}/track`, {
@@ -91,7 +100,7 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
   }, [modalItem]);
 
   return (
-    <div className={`menu-root menu-theme-${restaurant.menuTheme ?? 'luxury'}`}>
+    <div className={`menu-root menu-theme-${restaurant.menuTheme ?? 'luxury'}`} style={paletteStyle as React.CSSProperties}>
       {/* Header */}
       <header className="menu-header">
         <div className="menu-header-content">

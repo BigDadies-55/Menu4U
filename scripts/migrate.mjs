@@ -26,6 +26,8 @@ const sqls = [
       REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE
   );`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuTheme" TEXT NOT NULL DEFAULT 'luxury';`,
+  `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuPalette" TEXT NOT NULL DEFAULT '0'`,
+  `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuPaletteData" TEXT`,
   `CREATE TABLE IF NOT EXISTS "AuditLog" (
     "id" TEXT NOT NULL, "userId" TEXT, "userEmail" TEXT, "action" TEXT NOT NULL,
     "entity" TEXT, "entityId" TEXT, "entityName" TEXT, "meta" JSONB, "ip" TEXT,
