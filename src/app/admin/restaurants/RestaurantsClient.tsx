@@ -205,8 +205,9 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 my-4">
+        <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-start justify-center p-4 py-6">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
             <h2 className="text-xl font-bold mb-5">{editTarget ? "עריכת מסעדה" : "מסעדה חדשה"}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -403,35 +404,103 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
               </div>
             </form>
           </div>
+          </div>
         </div>
       )}
 
-      {/* Preview modal */}
+      {/* Preview modal — full screen with theme/palette switcher */}
       {previewOpen && editTarget && (
-        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-4xl flex flex-col" style={{ height: '85vh' }}>
-            <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="font-semibold text-gray-800">תצוגה מקדימה — {editTarget.name}</span>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {THEMES.find(t => t.value === form.menuTheme)?.labelHe} · {form.menuPalette === 'custom' ? 'מותאם' : (MENU_PALETTES[form.menuTheme]?.[parseInt(form.menuPalette)]?.name ?? form.menuPalette)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <a href={buildPreviewUrl(editTarget.id)} target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-amber-600 hover:text-amber-800 font-medium px-3 py-1 border border-amber-200 rounded-full">
-                  פתח בטאב ↗
-                </a>
-                <button onClick={() => setPreviewOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
-              </div>
+        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#0a0a0a' }}>
+
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ background: '#111', borderBottom: '1px solid #222' }}>
+            <span className="text-white font-semibold text-sm">{editTarget.name} — תצוגה מקדימה</span>
+            <div className="flex items-center gap-2">
+              <a href={buildPreviewUrl(editTarget.id)} target="_blank" rel="noopener noreferrer"
+                className="text-xs px-3 py-1 rounded-full font-medium"
+                style={{ background: '#222', color: '#c9a35d', border: '1px solid #333' }}>
+                פתח בטאב ↗
+              </a>
+              <button onClick={() => setPreviewOpen(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-white"
+                style={{ background: '#222' }}>✕</button>
             </div>
-            <iframe
-              key={buildPreviewUrl(editTarget.id)}
-              src={buildPreviewUrl(editTarget.id)}
-              className="flex-1 w-full rounded-b-2xl"
-              style={{ border: 'none' }}
-            />
           </div>
+
+          {/* Theme + palette switcher bar */}
+          <div className="shrink-0 px-4 py-2.5 flex flex-wrap items-center gap-3" style={{ background: '#161616', borderBottom: '1px solid #252525' }}>
+            {/* Theme tabs */}
+            <div className="flex items-center gap-1">
+              {THEMES.map(t => {
+                const active = form.menuTheme === t.value;
+                return (
+                  <button key={t.value} type="button"
+                    onClick={() => setForm(f => ({ ...f, menuTheme: t.value, menuPalette: '0' }))}
+                    className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                    style={active
+                      ? { background: t.previewAccent, color: '#000' }
+                      : { background: '#222', color: '#777', border: '1px solid #2a2a2a' }}>
+                    {t.icon} {t.labelHe}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ width: 1, height: 20, background: '#2a2a2a', flexShrink: 0 }} />
+
+            {/* Palette swatches */}
+            <div className="flex items-center gap-2">
+              {(MENU_PALETTES[form.menuTheme] ?? []).map((p, i) => {
+                const pid = String(i);
+                const active = form.menuPalette === pid;
+                return (
+                  <button key={pid} type="button" title={p.name}
+                    onClick={() => setForm(f => ({ ...f, menuPalette: pid }))}
+                    className="transition-all hover:scale-110"
+                    style={{
+                      width: 22, height: 22, borderRadius: '50%',
+                      background: p.color,
+                      border: active ? '2px solid #fff' : '2px solid transparent',
+                      boxShadow: active ? `0 0 0 2px ${p.color}` : 'none',
+                    }} />
+                );
+              })}
+              <button type="button"
+                onClick={() => setForm(f => ({ ...f, menuPalette: 'custom' }))}
+                className="text-xs px-2 py-0.5 rounded font-medium transition-all"
+                style={form.menuPalette === 'custom'
+                  ? { background: '#2a2010', color: '#f59e0b', border: '1px solid #f59e0b' }
+                  : { background: '#1e1e1e', color: '#666', border: '1px solid #2a2a2a' }}>
+                🎨
+              </button>
+            </div>
+
+            {/* Custom pickers — inline when custom selected */}
+            {form.menuPalette === 'custom' && (
+              <div className="flex items-center gap-3 px-3 py-1 rounded-lg" style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs" style={{ color: '#888' }}>צבע:</span>
+                  <input type="color" value={form.menuCustomAc}
+                    onChange={e => setForm(f => ({ ...f, menuCustomAc: e.target.value }))}
+                    className="w-6 h-6 rounded cursor-pointer border-0 p-0" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs" style={{ color: '#888' }}>רקע:</span>
+                  <input type="color" value={form.menuCustomBg}
+                    onChange={e => setForm(f => ({ ...f, menuCustomBg: e.target.value }))}
+                    className="w-6 h-6 rounded cursor-pointer border-0 p-0" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* iframe */}
+          <iframe
+            key={buildPreviewUrl(editTarget.id)}
+            src={buildPreviewUrl(editTarget.id)}
+            className="flex-1 w-full"
+            style={{ border: 'none' }}
+          />
         </div>
       )}
 
