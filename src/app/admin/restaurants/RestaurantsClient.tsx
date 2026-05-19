@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatDate } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
+import { MENU_PALETTES } from "@/lib/menuPalettes";
 
 type Restaurant = {
   id: string;
@@ -18,6 +19,8 @@ type Restaurant = {
   locationUrl: string | null;
   isActive: boolean;
   menuTheme: string;
+  menuPalette: string;
+  menuPaletteData: string | null;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   createdAt: Date;
@@ -25,16 +28,19 @@ type Restaurant = {
 };
 
 const THEMES = [
-  { value: 'luxury', label: 'יוקרה', bg: '#0a0a0a', accent: '#c9a35d', icon: '✨' },
-  { value: 'fresh',  label: 'כחול',  bg: '#050d18', accent: '#38bdf8', icon: '💎' },
-  { value: 'nature', label: 'טבע',   bg: '#030f06', accent: '#4ade80', icon: '🌿' },
-  { value: 'bold',   label: 'נועז',  bg: '#0f0512', accent: '#f472b6', icon: '🔥' },
+  { value: 'luxury', label: 'Luxury',     labelHe: 'יוקרה',    icon: '✦', previewBg: '#0a0a0a', previewAccent: '#c9a35d' },
+  { value: 'fresh',  label: 'Industrial', labelHe: 'אינדסטריאל', icon: '⚙', previewBg: '#1a1a1a', previewAccent: '#f59e0b' },
+  { value: 'nature', label: 'Nature',     labelHe: 'טבע',       icon: '❧', previewBg: '#030f06', previewAccent: '#4ade80' },
+  { value: 'bold',   label: 'Bold',       labelHe: 'נועז',      icon: '▲', previewBg: '#0f0512', previewAccent: '#f472b6' },
 ];
 
 const emptyForm = {
   name: "", description: "", logo: "", email: "", phone: "",
   phone2: "", orderPhone: "", address: "", website: "", locationUrl: "",
   menuTheme: "luxury", subscriptionFrom: "", subscriptionTo: "",
+  menuPalette: "0",
+  menuCustomAc: "#c9a35d",
+  menuCustomBg: "#0a0a0a",
 };
 
 function toDateInput(val: string | null | undefined): string {
@@ -62,6 +68,17 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  function buildPreviewUrl(restaurantId: string): string {
+    const params = new URLSearchParams({ previewTheme: form.menuTheme });
+    params.set('previewPalette', form.menuPalette);
+    if (form.menuPalette === 'custom') {
+      params.set('previewAc', form.menuCustomAc);
+      params.set('previewBg', form.menuCustomBg);
+    }
+    return `/menu/${restaurantId}?${params.toString()}`;
+  }
 
   function openCreate() {
     setEditTarget(null);
@@ -79,6 +96,9 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       menuTheme: r.menuTheme ?? "luxury",
       subscriptionFrom: toDateInput(r.subscriptionFrom),
       subscriptionTo: toDateInput(r.subscriptionTo),
+      menuPalette: r.menuPalette ?? "0",
+      menuCustomAc: (() => { try { return JSON.parse(r.menuPaletteData ?? '{}').ac ?? '#c9a35d'; } catch { return '#c9a35d'; } })(),
+      menuCustomBg: (() => { try { return JSON.parse(r.menuPaletteData ?? '{}').bg ?? '#0a0a0a'; } catch { return '#0a0a0a'; } })(),
     });
     setShowForm(true);
   }
@@ -111,6 +131,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       website: form.website || null,
       locationUrl: form.locationUrl || null,
       menuTheme: form.menuTheme,
+      menuPalette: form.menuPalette,
+      menuPaletteData: form.menuPalette === 'custom' ? JSON.stringify({ ac: form.menuCustomAc, bg: form.menuCustomBg }) : null,
       subscriptionFrom: form.subscriptionFrom ? new Date(form.subscriptionFrom).toISOString() : null,
       subscriptionTo: form.subscriptionTo ? new Date(form.subscriptionTo).toISOString() : null,
     };
@@ -234,27 +256,94 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                 />
               </div>
 
-              {/* Theme picker */}
+              {/* Theme selector */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">ערכת נושא לתפריט</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {THEMES.map(t => (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setForm({ ...form, menuTheme: t.value })}
-                      className="flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all"
-                      style={{
-                        background: t.bg,
-                        borderColor: form.menuTheme === t.value ? t.accent : 'transparent',
-                        boxShadow: form.menuTheme === t.value ? `0 0 0 2px ${t.accent}55` : 'none',
-                      }}
-                    >
-                      <div className="w-full h-8 rounded" style={{ background: t.accent, opacity: 0.85 }} />
-                      <span className="text-xs font-medium" style={{ color: t.accent }}>{t.icon} {t.label}</span>
-                    </button>
-                  ))}
+                <label className="block text-sm font-semibold text-gray-700 mb-2">עיצוב תפריט</label>
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {THEMES.map(t => {
+                    const isActive = form.menuTheme === t.value;
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, menuTheme: t.value, menuPalette: '0' }))}
+                        className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all"
+                        style={{
+                          background: t.previewBg,
+                          borderColor: isActive ? t.previewAccent : 'transparent',
+                          boxShadow: isActive ? `0 0 0 2px ${t.previewAccent}44` : 'none',
+                        }}
+                      >
+                        <div className="w-full h-6 rounded-md" style={{ background: t.previewAccent, opacity: 0.85 }} />
+                        <span className="text-xs font-semibold" style={{ color: t.previewAccent }}>{t.icon} {t.labelHe}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Palette row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-400 font-medium pl-1">פלטה:</span>
+                  {(MENU_PALETTES[form.menuTheme] ?? []).map((p, i) => {
+                    const pid = String(i);
+                    const isActive = form.menuPalette === pid;
+                    return (
+                      <button
+                        key={pid}
+                        type="button"
+                        title={p.name}
+                        onClick={() => setForm(f => ({ ...f, menuPalette: pid }))}
+                        className="w-7 h-7 rounded-full border-2 transition-all hover:scale-110"
+                        style={{
+                          background: p.color,
+                          borderColor: isActive ? '#fff' : 'transparent',
+                          boxShadow: isActive ? `0 0 0 2px ${p.color}` : 'none',
+                        }}
+                      />
+                    );
+                  })}
+                  {/* Custom button */}
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, menuPalette: 'custom' }))}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium transition-all ${form.menuPalette === 'custom' ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-500 hover:border-gray-400'}`}
+                  >
+                    🎨 מותאם
+                  </button>
+                </div>
+
+                {/* Custom color pickers */}
+                {form.menuPalette === 'custom' && (
+                  <div className="mt-3 flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-500 font-medium whitespace-nowrap">צבע ראשי</label>
+                      <input type="color" value={form.menuCustomAc}
+                        onChange={e => setForm(f => ({ ...f, menuCustomAc: e.target.value }))}
+                        className="w-8 h-8 rounded border border-gray-300 cursor-pointer p-0.5"
+                      />
+                      <span className="text-xs text-gray-400 font-mono">{form.menuCustomAc}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-500 font-medium whitespace-nowrap">רקע</label>
+                      <input type="color" value={form.menuCustomBg}
+                        onChange={e => setForm(f => ({ ...f, menuCustomBg: e.target.value }))}
+                        className="w-8 h-8 rounded border border-gray-300 cursor-pointer p-0.5"
+                      />
+                      <span className="text-xs text-gray-400 font-mono">{form.menuCustomBg}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview button - only shown in edit mode */}
+                {editTarget && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewOpen(true)}
+                    className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-amber-400 hover:text-amber-600 text-sm font-medium transition-all"
+                  >
+                    👁 תצוגה מקדימה של התפריט
+                  </button>
+                )}
               </div>
 
               {/* Subscription */}
@@ -313,6 +402,35 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Preview modal */}
+      {previewOpen && editTarget && (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-4xl flex flex-col" style={{ height: '85vh' }}>
+            <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-gray-800">תצוגה מקדימה — {editTarget.name}</span>
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                  {THEMES.find(t => t.value === form.menuTheme)?.labelHe} · {form.menuPalette === 'custom' ? 'מותאם' : (MENU_PALETTES[form.menuTheme]?.[parseInt(form.menuPalette)]?.name ?? form.menuPalette)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <a href={buildPreviewUrl(editTarget.id)} target="_blank" rel="noopener noreferrer"
+                  className="text-xs text-amber-600 hover:text-amber-800 font-medium px-3 py-1 border border-amber-200 rounded-full">
+                  פתח בטאב ↗
+                </a>
+                <button onClick={() => setPreviewOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              </div>
+            </div>
+            <iframe
+              key={buildPreviewUrl(editTarget.id)}
+              src={buildPreviewUrl(editTarget.id)}
+              className="flex-1 w-full rounded-b-2xl"
+              style={{ border: 'none' }}
+            />
           </div>
         </div>
       )}

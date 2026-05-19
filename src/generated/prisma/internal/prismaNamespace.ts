@@ -1487,6 +1487,8 @@ export const RestaurantScalarFieldEnum = {
   locationUrl: 'locationUrl',
   isActive: 'isActive',
   menuTheme: 'menuTheme',
+  menuPalette: 'menuPalette',
+  menuPaletteData: 'menuPaletteData',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
   createdAt: 'createdAt',
