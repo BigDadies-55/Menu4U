@@ -3,113 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Menu4U — תצוגה מקדימה של ערכות נושא</title>
+<title>Menu4U — Theme Preview</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Heebo:wght@300;400;500;600;700&family=Rubik:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Barlow+Condensed:wght@400;600;700;800;900&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Heebo:wght@300;400;500;600&family=Rubik:wght@400;600;700;900&family=Frank+Ruhl+Libre:wght@700;900&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
+body { font-family: 'Heebo', sans-serif; background: #0a0a0a; }
 
-/* ── NAV ── */
-.nav {
-  position: sticky; top: 0; z-index: 100;
-  background: #1a1a1a; border-bottom: 2px solid #333;
-  display: flex; gap: 0; justify-content: center;
+/* ── MAIN NAV ────────────────────────────────────── */
+.main-nav {
+  position: sticky; top: 0; z-index: 200;
+  background: #111; border-bottom: 2px solid #222;
+  display: flex; justify-content: center;
 }
-.nav-btn {
-  padding: 14px 30px; font-size: 0.95rem; font-family: 'Heebo', sans-serif;
-  cursor: pointer; border: none; background: transparent; color: #aaa;
+.main-nav button {
+  padding: 15px 32px; font-size: 0.92rem; font-family: 'Heebo', sans-serif;
+  cursor: pointer; border: none; background: transparent; color: #666;
   transition: 0.2s; font-weight: 500; letter-spacing: 0.5px;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
 }
-.nav-btn.active { color: #fff; border-bottom: 3px solid #fff; }
-.nav-btn:hover { color: #fff; }
+.main-nav button.active { color: #fff; border-bottom-color: #fff; }
+.main-nav button:hover { color: #ccc; }
 
-/* ── SECTIONS ── */
+/* ── PALETTE BAR ─────────────────────────────────── */
+.palette-bar {
+  position: sticky; top: 52px; z-index: 190;
+  background: #0e0e0e; border-bottom: 1px solid #1e1e1e;
+  padding: 10px 20px; display: flex; align-items: center; justify-content: center;
+  gap: 10px; flex-wrap: wrap;
+}
+.palette-bar .pb-label {
+  font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase;
+  color: #444; font-weight: 600; padding-left: 8px; border-left: 1px solid #2a2a2a;
+  margin-left: 4px;
+}
+.pb-swatch {
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: 0.2s; position: relative;
+  flex-shrink: 0;
+}
+.pb-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+}
+.pb-swatch:hover { transform: scale(1.15); }
+.pb-swatch .pb-tip {
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  background: #222; color: #ccc; font-size: 0.65rem; white-space: nowrap;
+  padding: 3px 8px; border-radius: 4px; pointer-events: none;
+  opacity: 0; transition: 0.15s;
+}
+.pb-swatch:hover .pb-tip { opacity: 1; }
+
+.pb-custom-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid #2a2a2a; background: transparent; color: #666;
+  font-size: 0.75rem; font-family: 'Heebo', sans-serif; font-weight: 600;
+  cursor: pointer; transition: 0.2s; letter-spacing: 0.5px;
+}
+.pb-custom-btn:hover, .pb-custom-btn.active { border-color: #555; color: #ccc; background: #1a1a1a; }
+
+/* ── CUSTOM PANEL ────────────────────────────────── */
+.custom-panel {
+  display: none; background: #0c0c0c; border-bottom: 1px solid #1e1e1e;
+  padding: 14px 20px; justify-content: center; align-items: center; gap: 18px;
+  flex-wrap: wrap;
+}
+.custom-panel.open { display: flex; }
+.cp-field { display: flex; align-items: center; gap: 8px; }
+.cp-field label {
+  font-size: 0.72rem; color: #555; letter-spacing: 1.5px; text-transform: uppercase;
+  font-weight: 600; white-space: nowrap;
+}
+.cp-field input[type="color"] {
+  width: 34px; height: 34px; border: 2px solid #2a2a2a; border-radius: 6px;
+  cursor: pointer; background: none; padding: 2px;
+}
+.cp-field input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.cp-field input[type="color"]::-webkit-color-swatch { border: none; border-radius: 3px; }
+.cp-apply {
+  padding: 8px 20px; border-radius: 6px;
+  background: #1e1e1e; border: 1px solid #333; color: #bbb;
+  font-size: 0.78rem; font-family: 'Heebo', sans-serif; font-weight: 600;
+  cursor: pointer; transition: 0.2s; letter-spacing: 1px;
+}
+.cp-apply:hover { background: #2a2a2a; color: #fff; border-color: #555; }
+
+/* ── THEME SECTIONS ──────────────────────────────── */
 .theme-section { display: none; min-height: 100vh; }
 .theme-section.active { display: block; }
 
-/* ════════════════════════════════════════════════
-   THEME 1: LUXURY — Fine Dining / Gold & Dark
-   ════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   LUXURY
+   ═══════════════════════════════════════════════ */
 .luxury {
-  background: #0a0a0a;
+  --ac:     #c9a35d;
+  --ac-l:   #e0c084;
+  --ac-d:   #8b6f3e;
+  --ac-rgb: 201, 163, 93;
+  --bg:     #0a0a0a;
+  --bg2:    #1a1a1a;
+  --bg3:    #0d0d0d;
+  --h1:     #b89868;
+  --h2:     #c9a878;
+  --hb:     #7a5f33;
+  --ht:     #2a1f0f;
+  --tx:     #f0ebe0;
+  --tx-m:   #8a857a;
+  --bdr:    #2a2620;
+
+  background: var(--bg);
   background-image:
-    radial-gradient(ellipse at top, rgba(201,163,93,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom, rgba(201,163,93,0.03) 0%, transparent 50%);
-  color: #f0ebe0;
-  direction: rtl;
-  font-family: 'Heebo', sans-serif;
+    radial-gradient(ellipse at top, rgba(var(--ac-rgb),.06) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(var(--ac-rgb),.03) 0%, transparent 50%);
+  color: var(--tx);
+  direction: rtl; font-family: 'Heebo', sans-serif;
   padding-bottom: 80px;
 }
-
-.luxury .header {
-  padding: 28px 30px;
-  background: radial-gradient(ellipse at center top, rgba(255,240,215,0.2) 0%, transparent 70%),
-              linear-gradient(180deg, #b89868 0%, #c9a878 50%, #b89868 100%);
-  border-bottom: 1px solid #7a5f33;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+.luxury .hdr {
+  padding: 26px 30px;
+  background: radial-gradient(ellipse at center top, rgba(255,240,215,.18) 0%, transparent 70%),
+              linear-gradient(180deg, var(--h1) 0%, var(--h2) 50%, var(--h1) 100%);
+  border-bottom: 1px solid var(--hb);
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
   display: flex; align-items: center; justify-content: space-between;
 }
-.luxury .header-logo {
+.luxury .hdr-name {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 2.2rem; font-weight: 700; color: #2a1f0f;
-  letter-spacing: 6px;
+  font-size: 2rem; font-weight: 700; color: var(--ht);
+  letter-spacing: 8px; text-transform: uppercase;
 }
-.luxury .header-address { font-size: 0.95rem; color: #3a2f1f; font-weight: 500; letter-spacing: 1px; }
+.luxury .hdr-addr { font-size: 0.9rem; color: var(--ht); opacity: .7; letter-spacing: 1px; }
 
-.luxury .section-label {
-  text-align: center; padding: 50px 20px 35px;
+.luxury .sec-title {
+  text-align: center; padding: 50px 20px 20px;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 3rem; letter-spacing: 12px; font-weight: 600;
-  color: #c9a35d; text-transform: uppercase;
+  font-size: 2.8rem; letter-spacing: 12px; font-weight: 600;
+  color: var(--ac); text-transform: uppercase;
 }
-.luxury .section-ornament {
-  display: flex; align-items: center; justify-content: center; gap: 15px;
-  margin: 0 auto 45px;
+.luxury .sec-orn {
+  display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 45px;
 }
-.luxury .section-ornament::before, .luxury .section-ornament::after {
-  content: ''; width: 120px; height: 1px;
-  background: linear-gradient(90deg, transparent, #c9a35d, transparent);
+.luxury .sec-orn::before, .luxury .sec-orn::after {
+  content: ''; width: 110px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ac), transparent);
 }
-.luxury .section-ornament span { color: #c9a35d; font-size: 0.8rem; }
+.luxury .sec-orn span { color: var(--ac); font-size: .8rem; }
 
 .luxury .grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 28px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
 }
 .luxury .tile {
-  border-radius: 12px; cursor: pointer; transition: 0.4s ease;
+  border-radius: 12px; cursor: pointer; transition: .4s ease;
   background:
-    linear-gradient(#0d0d0d, #0d0d0d) padding-box,
-    linear-gradient(135deg, #e0c084 0%, #8b6f3e 30%, #c9a35d 60%, #8b6f3e 100%) border-box;
+    linear-gradient(var(--bg3), var(--bg3)) padding-box,
+    linear-gradient(135deg, var(--ac-l) 0%, var(--ac-d) 30%, var(--ac) 60%, var(--ac-d) 100%) border-box;
   border: 2px solid transparent;
-  box-shadow: 0 6px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,163,93,0.1);
-  position: relative; overflow: hidden; min-height: 260px;
+  box-shadow: 0 6px 25px rgba(0,0,0,.5), inset 0 1px 0 rgba(var(--ac-rgb),.1);
+  position: relative; overflow: hidden; min-height: 255px;
 }
 .luxury .tile-img {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, #1a1510 0%, #0d0b08 100%);
+  background: linear-gradient(135deg, #1e1a14 0%, #0d0b08 100%);
   background-size: cover; background-position: center;
+  transition: .6s ease;
 }
-.luxury .tile-overlay {
+.luxury .tile-ov {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.82) 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,.2) 0%, rgba(0,0,0,.82) 100%);
+  transition: .4s;
 }
-.luxury .tile-content {
+.luxury .tile-body {
   position: relative; z-index: 2;
   padding: 35px 25px 30px;
   display: flex; flex-direction: column; justify-content: flex-end;
-  height: 100%; min-height: 258px; text-align: center;
+  height: 100%; min-height: 253px; text-align: center;
 }
 .luxury .tile::after {
   content: ''; position: absolute; inset: 14px;
-  border: 1px solid rgba(201,163,93,0.25); border-radius: 6px; pointer-events: none; z-index: 3;
-  transition: 0.4s;
+  border: 1px solid rgba(var(--ac-rgb),.25); border-radius: 6px;
+  pointer-events: none; z-index: 3; transition: .4s;
 }
-.luxury .tile:hover { transform: translateY(-6px); box-shadow: 0 18px 45px rgba(0,0,0,0.7), 0 0 30px rgba(201,163,93,0.25); }
-.luxury .tile:hover::after { border-color: rgba(201,163,93,0.55); inset: 11px; }
+.luxury .tile:hover { transform: translateY(-6px); box-shadow: 0 18px 45px rgba(0,0,0,.7), 0 0 30px rgba(var(--ac-rgb),.22); }
+.luxury .tile:hover::after { border-color: rgba(var(--ac-rgb),.55); inset: 11px; }
+.luxury .tile:hover .tile-img { transform: scale(1.07); }
 
-.luxury .corner { position: absolute; width: 22px; height: 22px; border-color: #c9a35d; opacity: 0.75; z-index: 4; }
+.luxury .corner { position: absolute; width: 22px; height: 22px; border-color: var(--ac); opacity: .75; z-index: 4; }
 .luxury .corner.tl { top: 18px; right: 18px; border-top: 1px solid; border-right: 1px solid; }
 .luxury .corner.tr { top: 18px; left: 18px; border-top: 1px solid; border-left: 1px solid; }
 .luxury .corner.bl { bottom: 18px; right: 18px; border-bottom: 1px solid; border-right: 1px solid; }
@@ -118,281 +199,280 @@ body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
 .luxury .tile-name {
   font-family: 'Cormorant Garamond', serif;
   font-size: 1.9rem; letter-spacing: 5px; font-weight: 600;
-  color: #e0c084; margin: 0 0 12px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.9), 0 0 20px rgba(201,163,93,0.3);
+  color: var(--ac-l); margin: 0 0 12px;
+  text-shadow: 0 2px 4px rgba(0,0,0,.9);
   text-transform: uppercase;
 }
-.luxury .tile-divider {
-  width: 45px; height: 1px; background: #c9a35d;
-  margin: 0 auto 12px; opacity: 0.8;
-}
-.luxury .tile-arrow { color: #c9a35d; font-size: 1.1rem; opacity: 0.8; }
+.luxury .tile-div { width: 45px; height: 1px; background: var(--ac); margin: 0 auto 12px; opacity: .8; }
+.luxury .tile-arrow { color: var(--ac); font-size: 1.1rem; opacity: .8; }
 
-/* ════════════════════════════════════════════════
-   THEME 2: INDUSTRIAL — Concrete / Metal / Raw
-   ════════════════════════════════════════════════ */
-.fresh {
-  background: #1c1c1c;
+.luxury .actions { display: flex; justify-content: center; gap: 10px; padding: 50px 20px 0; }
+.luxury .actions a {
+  text-decoration: none; padding: 11px 22px; border-radius: 30px;
+  font-size: .85rem; font-weight: 600; font-family: 'Heebo', sans-serif;
+  transition: .3s; letter-spacing: .5px;
+}
+.luxury .actions a.pri { background: linear-gradient(135deg, var(--ac) 0%, var(--ac-d) 100%); color: #000; }
+.luxury .actions a.sec { background: transparent; border: 1px solid rgba(var(--ac-rgb),.4); color: var(--ac-l); }
+
+/* ═══════════════════════════════════════════════
+   INDUSTRIAL
+   ═══════════════════════════════════════════════ */
+.indust {
+  --ac:     #f59e0b;
+  --ac-rgb: 245, 158, 11;
+  --bg:     #1c1c1c;
+  --bg2:    #242424;
+  --ht:     #1c1c1c;
+
+  background: var(--bg);
   background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px),
-    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px);
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,.025) 39px, rgba(255,255,255,.025) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,.025) 39px, rgba(255,255,255,.025) 40px);
   color: #e0e0e0;
-  direction: rtl;
-  font-family: 'Barlow Condensed', sans-serif;
+  direction: rtl; font-family: 'Barlow Condensed', sans-serif;
   padding-bottom: 80px;
 }
-
-.fresh .header {
+.indust .hdr {
   background: linear-gradient(180deg, #2e2e2e 0%, #252525 100%);
-  border-bottom: 4px solid #f59e0b;
-  padding: 0;
-  display: flex; align-items: stretch;
-  position: relative;
+  border-bottom: 4px solid var(--ac);
+  padding: 0; display: flex; align-items: stretch; position: relative;
 }
-.fresh .header::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: repeating-linear-gradient(90deg, #f59e0b 0px, #f59e0b 20px, #1c1c1c 20px, #1c1c1c 30px);
+.indust .hdr::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: repeating-linear-gradient(90deg, var(--ac) 0px, var(--ac) 20px, #1c1c1c 20px, #1c1c1c 30px);
 }
-.fresh .header-brand {
-  background: #f59e0b;
-  padding: 22px 35px;
-  display: flex; flex-direction: column; justify-content: center;
-}
-.fresh .header-logo {
+.indust .hdr-brand { background: var(--ac); padding: 22px 35px; display: flex; flex-direction: column; justify-content: center; }
+.indust .hdr-name {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 2rem; font-weight: 900; color: #1c1c1c;
-  letter-spacing: 3px; line-height: 1; text-transform: uppercase;
+  font-size: 2rem; font-weight: 900; color: var(--ht);
+  letter-spacing: 3px; text-transform: uppercase; line-height: 1;
 }
-.fresh .header-tagline { font-size: 0.68rem; letter-spacing: 4px; color: rgba(28,28,28,0.65); margin-top: 4px; text-transform: uppercase; font-weight: 700; }
-.fresh .header-meta {
-  padding: 22px 30px;
-  display: flex; flex-direction: column; justify-content: center; gap: 5px;
-}
-.fresh .header-address { font-size: 0.9rem; color: #888; font-weight: 400; letter-spacing: 0.5px; }
-.fresh .header-status {
+.indust .hdr-tag { font-size: .68rem; letter-spacing: 4px; color: var(--ht); opacity: .55; margin-top: 4px; text-transform: uppercase; font-weight: 700; }
+.indust .hdr-meta { padding: 22px 30px; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+.indust .hdr-addr { font-size: .9rem; color: #888; font-weight: 400; letter-spacing: .5px; }
+.indust .hdr-status {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
-  color: #f59e0b; text-transform: uppercase;
+  font-size: .72rem; font-weight: 700; letter-spacing: 2px;
+  color: var(--ac); text-transform: uppercase;
 }
-.fresh .header-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
-
-.fresh .section-wrap {
-  max-width: 1140px; margin: 0 auto; padding: 50px 20px 0;
+.indust .hdr-status::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ac); box-shadow: 0 0 6px var(--ac);
 }
-.fresh .section-top {
+.indust .sec-wrap { max-width: 1140px; margin: 0 auto; padding: 50px 20px 0; }
+.indust .sec-top {
   display: flex; align-items: flex-end; justify-content: space-between;
   border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 32px;
 }
-.fresh .section-label {
+.indust .sec-title {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 3.2rem; font-weight: 900; color: #fff;
   letter-spacing: 2px; text-transform: uppercase; line-height: 1;
 }
-.fresh .section-label span { color: #f59e0b; }
-.fresh .section-sub {
-  font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase;
-  color: #555; font-weight: 700; padding-bottom: 4px;
-}
+.indust .sec-title span { color: var(--ac); }
+.indust .sec-sub { font-size: .75rem; letter-spacing: 3px; text-transform: uppercase; color: #555; font-weight: 700; padding-bottom: 4px; }
 
-.fresh .grid {
+.indust .grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 16px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
 }
-.fresh .tile {
-  background: #242424;
-  border-radius: 2px;
-  border: 1px solid #333;
-  border-left: 4px solid #f59e0b;
-  cursor: pointer; transition: 0.2s;
-  overflow: hidden; position: relative;
+.indust .tile {
+  background: var(--bg2); border-radius: 2px;
+  border: 1px solid #333; border-left: 4px solid var(--ac);
+  cursor: pointer; transition: .2s; overflow: hidden; position: relative;
 }
-.fresh .tile:hover {
-  border-left-color: #fbbf24;
-  background: #2a2a2a;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px rgba(245,158,11,0.12);
-  transform: translateY(-3px);
+.indust .tile:hover {
+  background: #2a2a2a; transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0,0,0,.5), 0 0 20px rgba(var(--ac-rgb),.12);
 }
-.fresh .tile-img {
+.indust .tile-img {
   height: 185px;
   background: linear-gradient(135deg, #2e2a22 0%, #201e1a 100%);
   background-size: cover; background-position: center;
-  position: relative;
-  border-bottom: 1px solid #333;
+  position: relative; border-bottom: 1px solid #333;
 }
-.fresh .tile-img::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(36,36,36,0.85) 100%);
+.indust .tile-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(36,36,36,.85) 100%);
 }
-.fresh .tile-bolt {
+.indust .bolt {
   position: absolute; z-index: 2;
-  width: 12px; height: 12px; border-radius: 50%;
+  width: 11px; height: 11px; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #555, #2a2a2a);
   border: 1px solid #444;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.1);
 }
-.fresh .tile-bolt.tl { top: 10px; right: 10px; }
-.fresh .tile-bolt.tr { top: 10px; left: 10px; }
-.fresh .tile-bolt.bl { bottom: 10px; right: 10px; }
-.fresh .tile-bolt.br { bottom: 10px; left: 10px; }
+.indust .bolt.tl { top: 10px; right: 10px; }
+.indust .bolt.tr { top: 10px; left: 10px; }
+.indust .bolt.bl { bottom: 10px; right: 10px; }
+.indust .bolt.br { bottom: 10px; left: 10px; }
 
-.fresh .tile-content { padding: 16px 18px 18px; }
-.fresh .tile-name {
+.indust .tile-body { padding: 16px 18px 18px; }
+.indust .tile-name {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 1.6rem; font-weight: 800; color: #fff;
-  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;
-  line-height: 1.1;
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; line-height: 1.1;
 }
-.fresh .tile-count {
-  font-size: 0.72rem; color: #555; letter-spacing: 3px;
-  text-transform: uppercase; margin-bottom: 14px; font-weight: 600;
-}
-.fresh .tile-footer {
+.indust .tile-count { font-size: .72rem; color: #555; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px; font-weight: 600; }
+.indust .tile-foot {
   display: flex; align-items: center; justify-content: space-between;
   border-top: 1px solid #333; padding-top: 12px;
 }
-.fresh .tile-cta {
+.indust .tile-cta {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.8rem; font-weight: 800; letter-spacing: 3px;
-  text-transform: uppercase; color: #f59e0b;
+  font-size: .8rem; font-weight: 800; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--ac);
   display: flex; align-items: center; gap: 6px;
 }
-.fresh .tile-cta::after { content: '→'; transition: 0.2s; }
-.fresh .tile:hover .tile-cta::after { transform: translateX(-5px); }
-.fresh .tile-plate {
-  font-size: 0.68rem; color: #444; letter-spacing: 1px;
-  font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase;
-}
+.indust .tile-cta::after { content: '→'; transition: .2s; }
+.indust .tile:hover .tile-cta::after { transform: translateX(-5px); }
+.indust .tile-plate { font-size: .68rem; color: #3a3a3a; letter-spacing: 1px; font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; }
 
-/* ════════════════════════════════════════════════
-   THEME 3: NATURE — Warm Organic / Earthy Bistro
-   ════════════════════════════════════════════════ */
+.indust .actions { display: flex; justify-content: center; gap: 12px; padding: 50px 20px 0; }
+.indust .actions a {
+  text-decoration: none; padding: 11px 26px; border-radius: 2px;
+  font-size: .8rem; font-weight: 800; font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 3px; text-transform: uppercase; transition: .2s;
+}
+.indust .actions a.pri { background: var(--ac); color: var(--ht); }
+.indust .actions a.sec { background: transparent; border: 2px solid #333; color: #777; }
+.indust .actions a.sec:hover { border-color: var(--ac); color: var(--ac); }
+
+/* ═══════════════════════════════════════════════
+   NATURE
+   ═══════════════════════════════════════════════ */
 .nature {
-  background: #f9f4ec;
-  color: #2c2016;
-  direction: rtl;
-  font-family: 'Frank Ruhl Libre', serif;
+  --ac:     #7ab648;
+  --ac-rgb: 122, 182, 72;
+  --hd:     #2c2016;
+  --hl:     #e8d5b0;
+  --warm:   #c4956a;
+  --bg:     #f9f4ec;
+  --bg2:    #ffffff;
+
+  background: var(--bg);
+  color: var(--hd);
+  direction: rtl; font-family: 'Frank Ruhl Libre', serif;
   padding-bottom: 80px;
 }
-
-.nature .header {
-  background: #2c2016;
-  padding: 28px 35px;
+.nature .hdr {
+  background: var(--hd); padding: 28px 35px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.nature .header-logo {
+.nature .hdr-name {
   font-family: 'Frank Ruhl Libre', serif;
-  font-size: 2rem; font-weight: 900; color: #e8d5b0;
-  letter-spacing: 3px;
+  font-size: 2rem; font-weight: 900; color: var(--hl); letter-spacing: 3px;
+  display: flex; align-items: center; gap: 8px;
 }
-.nature .leaf { color: #7ab648; font-size: 1.4rem; margin-left: 8px; }
-.nature .header-address { font-size: 0.85rem; color: #a08060; letter-spacing: 0.5px; }
-
-.nature .section-label {
+.nature .hdr-addr { font-size: .85rem; color: var(--warm); letter-spacing: .5px; }
+.nature .sec-title {
   text-align: center; padding: 60px 20px 12px;
   font-family: 'Frank Ruhl Libre', serif;
-  font-size: 2.8rem; font-weight: 900; color: #2c2016;
+  font-size: 2.8rem; font-weight: 900; color: var(--hd);
 }
-.nature .section-ornament {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  margin: 12px auto 50px;
+.nature .sec-orn {
+  display: flex; align-items: center; justify-content: center; gap: 12px; margin: 12px auto 50px;
 }
-.nature .section-ornament::before, .nature .section-ornament::after {
-  content: ''; width: 80px; height: 2px;
-  background: #c4956a; border-radius: 2px;
+.nature .sec-orn::before, .nature .sec-orn::after {
+  content: ''; width: 80px; height: 2px; background: var(--warm); border-radius: 2px;
 }
-.nature .section-ornament span { color: #7ab648; font-size: 1.2rem; }
+.nature .sec-orn span { color: var(--ac); font-size: 1.2rem; }
 
 .nature .grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 24px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
 }
 .nature .tile {
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid #e0cdb5;
-  cursor: pointer; transition: 0.35s;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(44,32,22,0.08);
+  background: var(--bg2); border-radius: 16px;
+  border: 1px solid rgba(0,0,0,.08);
+  cursor: pointer; transition: .35s; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
 }
-.nature .tile:hover { transform: translateY(-5px); box-shadow: 0 14px 35px rgba(44,32,22,0.15); border-color: #c4956a; }
-
+.nature .tile:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 35px rgba(0,0,0,.13);
+  border-color: var(--ac);
+}
 .nature .tile-img {
   height: 200px;
   background: linear-gradient(135deg, #e8d5b0 0%, #d4c09a 100%);
-  background-size: cover; background-position: center;
-  position: relative;
+  background-size: cover; background-position: center; position: relative;
 }
 .nature .tile-tag {
   position: absolute; bottom: 14px; right: 14px;
-  background: #fff; color: #7ab648; border: 1.5px solid #7ab648;
-  border-radius: 20px; font-size: 0.7rem; font-weight: 700;
-  padding: 4px 12px; letter-spacing: 1px;
-  font-family: 'Heebo', sans-serif;
+  background: var(--bg2); color: var(--ac); border: 1.5px solid var(--ac);
+  border-radius: 20px; font-size: .7rem; font-weight: 700;
+  padding: 4px 12px; letter-spacing: 1px; font-family: 'Heebo', sans-serif;
 }
-.nature .tile-content { padding: 22px 24px 26px; }
+.nature .tile-body { padding: 22px 24px 26px; }
 .nature .tile-name {
   font-family: 'Frank Ruhl Libre', serif;
-  font-size: 1.45rem; font-weight: 700; color: #2c2016;
-  margin-bottom: 6px;
+  font-size: 1.45rem; font-weight: 700; color: var(--hd); margin-bottom: 6px;
 }
-.nature .tile-count { font-size: 0.82rem; color: #a08060; margin-bottom: 14px; font-family: 'Heebo', sans-serif; }
-.nature .tile-footer {
+.nature .tile-count { font-size: .82rem; color: var(--warm); margin-bottom: 14px; font-family: 'Heebo', sans-serif; }
+.nature .tile-foot {
   display: flex; align-items: center; justify-content: space-between;
-  border-top: 1px solid #f0e4d0; padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,.08); padding-top: 14px;
 }
 .nature .tile-arrow {
   width: 34px; height: 34px; border-radius: 50%;
-  background: #2c2016; color: #e8d5b0;
+  background: var(--hd); color: var(--hl);
   display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; transition: 0.25s;
+  font-size: 1rem; transition: .25s;
 }
-.nature .tile:hover .tile-arrow { background: #7ab648; color: #fff; }
-.nature .tile-meta { font-size: 0.75rem; color: #c4956a; font-family: 'Heebo', sans-serif; }
+.nature .tile:hover .tile-arrow { background: var(--ac); }
+.nature .tile-meta { font-size: .75rem; color: var(--warm); font-family: 'Heebo', sans-serif; }
 
-/* ════════════════════════════════════════════════
-   THEME 4: BOLD — Street Food / Neon / Urban
-   ════════════════════════════════════════════════ */
+.nature .actions { display: flex; justify-content: center; gap: 12px; padding: 50px 20px 0; }
+.nature .actions a {
+  text-decoration: none; padding: 12px 26px; border-radius: 30px;
+  font-size: .88rem; font-weight: 600; font-family: 'Heebo', sans-serif; transition: .3s;
+}
+.nature .actions a.pri { background: var(--hd); color: var(--hl); }
+.nature .actions a.sec { background: transparent; border: 2px solid var(--warm); color: var(--hd); }
+.nature .actions a.sec:hover { background: var(--warm); color: #fff; }
+
+/* ═══════════════════════════════════════════════
+   BOLD
+   ═══════════════════════════════════════════════ */
 .bold {
-  background: #0e0e0e;
+  --ac:     #ff3d00;
+  --ac-rgb: 255, 61, 0;
+  --bg:     #0e0e0e;
+  --bg2:    #1a1a1a;
+
+  background: var(--bg);
   color: #fff;
-  direction: rtl;
-  font-family: 'Rubik', sans-serif;
+  direction: rtl; font-family: 'Rubik', sans-serif;
   padding-bottom: 80px;
 }
-
-.bold .header {
-  background: #0e0e0e;
-  border-bottom: 3px solid #ff3d00;
+.bold .hdr {
+  background: var(--bg); border-bottom: 3px solid var(--ac);
   padding: 20px 30px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.bold .header-logo {
+.bold .hdr-name {
   font-family: 'Rubik', sans-serif;
   font-size: 1.8rem; font-weight: 900; color: #fff;
-  letter-spacing: 0;
   text-transform: uppercase;
 }
-.bold .header-logo span { color: #ff3d00; }
-.bold .header-address { font-size: 0.85rem; color: #666; font-weight: 400; }
-.bold .header-open {
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
-  background: #ff3d00; color: #fff;
-  padding: 4px 10px; border-radius: 2px; text-transform: uppercase;
+.bold .hdr-name span { color: var(--ac); }
+.bold .hdr-addr { font-size: .85rem; color: #555; }
+.bold .hdr-open {
+  font-size: .7rem; font-weight: 700; letter-spacing: 1px;
+  background: var(--ac); color: #fff;
+  padding: 5px 12px; border-radius: 2px; text-transform: uppercase;
 }
-
-.bold .section-label {
+.bold .sec-title {
   text-align: center; padding: 55px 20px 8px;
   font-family: 'Rubik', sans-serif;
   font-size: 3.5rem; font-weight: 900; color: #fff;
-  text-transform: uppercase; letter-spacing: -1px;
-  line-height: 1;
+  text-transform: uppercase; letter-spacing: -1px; line-height: 1;
 }
-.bold .section-sub {
+.bold .sec-sub {
   text-align: center; margin-bottom: 45px; margin-top: 6px;
-  font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase;
-  color: #ff3d00; font-weight: 700;
+  font-size: .8rem; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--ac); font-weight: 700;
 }
 
 .bold .grid {
@@ -400,394 +480,524 @@ body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
   gap: 16px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
 }
 .bold .tile {
-  background: #1a1a1a;
-  border-radius: 0;
-  border: 1px solid #2a2a2a;
-  border-right: 3px solid #ff3d00;
-  cursor: pointer; transition: 0.2s;
-  overflow: hidden; position: relative;
+  background: var(--bg2); border-radius: 0;
+  border: 1px solid #252525; border-right: 3px solid var(--ac);
+  cursor: pointer; transition: .2s; overflow: hidden; position: relative;
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
 }
 .bold .tile:hover {
-  border-color: #ff3d00;
+  border-color: var(--ac);
   background: #1f1f1f;
-  box-shadow: 0 0 25px rgba(255,61,0,0.25);
+  box-shadow: 0 0 25px rgba(var(--ac-rgb),.22);
 }
 .bold .tile-img {
   height: 180px;
   background: linear-gradient(135deg, #2a1a10 0%, #1a0f08 100%);
-  background-size: cover; background-position: center;
-  position: relative;
+  background-size: cover; background-position: center; position: relative;
 }
 .bold .tile-img::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 30%, rgba(14,14,14,0.9) 100%);
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(14,14,14,.9) 100%);
 }
-.bold .tile-number {
+.bold .tile-num {
   position: absolute; top: 14px; right: 16px; z-index: 2;
-  font-size: 3rem; font-weight: 900; color: rgba(255,61,0,0.25);
+  font-size: 3rem; font-weight: 900; color: rgba(var(--ac-rgb),.2);
   line-height: 1; font-family: 'Rubik', sans-serif;
 }
-.bold .tile-content { padding: 18px 20px 20px; }
+.bold .tile-body { padding: 18px 20px 20px; }
 .bold .tile-name {
   font-family: 'Rubik', sans-serif;
   font-size: 1.3rem; font-weight: 700;
-  color: #fff; text-transform: uppercase; letter-spacing: 1px;
-  margin-bottom: 8px;
+  color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
 }
-.bold .tile-count { font-size: 0.75rem; color: #555; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.bold .tile-count { font-size: .75rem; color: #444; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
 .bold .tile-cta {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-  color: #ff3d00;
+  font-size: .75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ac);
 }
-.bold .tile-cta::after { content: '→'; transition: 0.2s; }
+.bold .tile-cta::after { content: '→'; transition: .2s; }
 .bold .tile:hover .tile-cta::after { transform: translateX(-4px); }
 
-/* ════════════════════════════════════════════════
-   FLOATING ACTIONS — each theme
-   ════════════════════════════════════════════════ */
-.demo-actions {
-  display: flex; justify-content: center; gap: 12px;
-  padding: 50px 20px 0; flex-wrap: wrap;
-}
-.luxury .demo-actions a {
-  text-decoration: none; padding: 11px 22px; border-radius: 30px;
-  font-size: 0.85rem; font-weight: 600; font-family: 'Heebo', sans-serif;
-  transition: 0.3s; letter-spacing: 0.5px;
-}
-.luxury .demo-actions a.primary { background: linear-gradient(135deg, #c9a35d 0%, #8b6f3e 100%); color: #000; }
-.luxury .demo-actions a.secondary { background: transparent; border: 1px solid rgba(201,163,93,0.4); color: #e0c084; }
-
-.fresh .demo-actions a {
+.bold .actions { display: flex; justify-content: center; gap: 12px; padding: 50px 20px 0; }
+.bold .actions a {
   text-decoration: none; padding: 12px 26px;
-  font-size: 0.8rem; font-weight: 800; font-family: 'Barlow Condensed', sans-serif;
-  transition: 0.2s; letter-spacing: 3px; text-transform: uppercase;
-  border-radius: 2px;
-}
-.fresh .demo-actions a.primary { background: #f59e0b; color: #1c1c1c; border: 2px solid #f59e0b; }
-.fresh .demo-actions a.secondary { background: transparent; color: #888; border: 2px solid #333; }
-.fresh .demo-actions a.secondary:hover { border-color: #f59e0b; color: #f59e0b; }
-
-.nature .demo-actions a {
-  text-decoration: none; padding: 12px 26px; border-radius: 30px;
-  font-size: 0.88rem; font-weight: 600; font-family: 'Heebo', sans-serif;
-  transition: 0.3s; letter-spacing: 0.5px;
-}
-.nature .demo-actions a.primary { background: #2c2016; color: #e8d5b0; }
-.nature .demo-actions a.secondary { background: transparent; border: 2px solid #c4956a; color: #2c2016; }
-
-.bold .demo-actions a {
-  text-decoration: none; padding: 12px 26px;
-  font-size: 0.8rem; font-weight: 700; font-family: 'Rubik', sans-serif;
-  letter-spacing: 2px; text-transform: uppercase; transition: 0.2s;
+  font-size: .8rem; font-weight: 700; font-family: 'Rubik', sans-serif;
+  letter-spacing: 2px; text-transform: uppercase; transition: .2s;
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
-.bold .demo-actions a.primary { background: #ff3d00; color: #fff; }
-.bold .demo-actions a.secondary { background: transparent; border: 1px solid #ff3d00; color: #ff3d00; }
-
-/* sample image placeholders */
-.img-food-1 { background: linear-gradient(135deg, #4a3520 20%, #2a1f15 100%) !important; }
-.img-food-2 { background: linear-gradient(135deg, #3a2a1a 20%, #1a1208 100%) !important; }
-.img-food-3 { background: linear-gradient(135deg, #2a3a1a 20%, #121808 100%) !important; }
-.img-food-1f { background: linear-gradient(135deg, #e5ddd0 20%, #d0c8bc 100%) !important; }
-.img-food-2f { background: linear-gradient(135deg, #d0d8e0 20%, #c0c8d0 100%) !important; }
-.img-food-3f { background: linear-gradient(135deg, #d8e0d0 20%, #c8d0c0 100%) !important; }
-
-.label-icon { font-size: 2rem; opacity: 0.2; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-
+.bold .actions a.pri { background: var(--ac); color: #fff; }
+.bold .actions a.sec { background: transparent; border: 1px solid var(--ac); color: var(--ac); }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<div class="nav">
-  <button class="nav-btn active" onclick="showTheme('luxury')">✦ Luxury</button>
-  <button class="nav-btn" onclick="showTheme('fresh')">⚙ Industrial</button>
-  <button class="nav-btn" onclick="showTheme('nature')">❧ Nature</button>
-  <button class="nav-btn" onclick="showTheme('bold')">▲ Bold</button>
+<!-- ── MAIN NAV ────────────────────────────── -->
+<nav class="main-nav">
+  <button class="active" onclick="showTheme('luxury')">✦ Luxury</button>
+  <button onclick="showTheme('indust')">⚙ Industrial</button>
+  <button onclick="showTheme('nature')">❧ Nature</button>
+  <button onclick="showTheme('bold')">▲ Bold</button>
+</nav>
+
+<!-- ── PALETTE BAR ─────────────────────────── -->
+<div class="palette-bar" id="palette-bar">
+  <span class="pb-label">פלטה</span>
+  <!-- swatches injected by JS -->
 </div>
 
+<!-- ── CUSTOM PANEL ────────────────────────── -->
+<div class="custom-panel" id="custom-panel">
+  <div class="cp-field">
+    <label>צבע ראשי</label>
+    <input type="color" id="cp-accent" value="#c9a35d">
+  </div>
+  <div class="cp-field">
+    <label>רקע</label>
+    <input type="color" id="cp-bg" value="#0a0a0a">
+  </div>
+  <div class="cp-field" id="cp-header-wrap">
+    <label>כותרת</label>
+    <input type="color" id="cp-header" value="#b89868">
+  </div>
+  <button class="cp-apply" onclick="applyCustom()">החל ✓</button>
+</div>
 
 <!-- ══════════════ LUXURY ══════════════ -->
 <div class="theme-section luxury active" id="theme-luxury">
-
-  <div class="header">
+  <div class="hdr">
     <div>
-      <div class="header-logo">LE BISTRO</div>
+      <div class="hdr-name">LE BISTRO</div>
     </div>
-    <div class="header-address">רחוב אלנבי 42, תל אביב</div>
+    <div class="hdr-addr">רחוב אלנבי 42, תל אביב</div>
   </div>
-
-  <div class="section-label">התפריט שלנו</div>
-  <div class="section-ornament"><span>◆</span></div>
-
+  <div class="sec-title">התפריט שלנו</div>
+  <div class="sec-orn"><span>◆</span></div>
   <div class="grid">
-    <!-- Tile 1 -->
     <div class="tile">
-      <div class="tile-img img-food-1"><span class="label-icon">🥩</span></div>
-      <div class="tile-overlay"></div>
+      <div class="tile-img" style="background:linear-gradient(135deg,#1e1810,#0d0b08)"></div>
+      <div class="tile-ov"></div>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">מנות עיקריות</div>
-        <div class="tile-divider"></div>
+        <div class="tile-div"></div>
         <div class="tile-arrow">←</div>
       </div>
     </div>
-    <!-- Tile 2 -->
     <div class="tile">
-      <div class="tile-img img-food-2"><span class="label-icon">🥗</span></div>
-      <div class="tile-overlay"></div>
+      <div class="tile-img" style="background:linear-gradient(135deg,#141e10,#0b1008)"></div>
+      <div class="tile-ov"></div>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">מנות ראשונות</div>
-        <div class="tile-divider"></div>
+        <div class="tile-div"></div>
         <div class="tile-arrow">←</div>
       </div>
     </div>
-    <!-- Tile 3 -->
     <div class="tile">
-      <div class="tile-img img-food-3"><span class="label-icon">🍰</span></div>
-      <div class="tile-overlay"></div>
+      <div class="tile-img" style="background:linear-gradient(135deg,#1a1018,#0d080e)"></div>
+      <div class="tile-ov"></div>
       <span class="corner tl"></span><span class="corner tr"></span>
       <span class="corner bl"></span><span class="corner br"></span>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">קינוחים</div>
-        <div class="tile-divider"></div>
+        <div class="tile-div"></div>
         <div class="tile-arrow">←</div>
       </div>
     </div>
   </div>
-
-  <div class="demo-actions">
-    <a href="#" class="primary">📞 התקשרו</a>
-    <a href="#" class="secondary">📍 נווט</a>
-    <a href="#" class="secondary">🌐 אתר</a>
+  <div class="actions">
+    <a href="#" class="pri">📞 התקשרו</a>
+    <a href="#" class="sec">📍 נווט</a>
+    <a href="#" class="sec">🌐 אתר</a>
   </div>
-
 </div>
 
-
 <!-- ══════════════ INDUSTRIAL ══════════════ -->
-<div class="theme-section fresh" id="theme-fresh">
-
-  <div class="header">
-    <div class="header-brand">
-      <div class="header-logo">IRON GRILL</div>
-      <div class="header-tagline">Industrial Kitchen · Est. 2019</div>
+<div class="theme-section indust" id="theme-indust">
+  <div class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-name">IRON GRILL</div>
+      <div class="hdr-tag">Industrial Kitchen · Est. 2019</div>
     </div>
-    <div class="header-meta">
-      <div class="header-address">📍 רחוב הברזל 14, תל אביב</div>
-      <div class="header-status">פתוח עכשיו</div>
-    </div>
-  </div>
-
-  <div class="section-wrap">
-    <div class="section-top">
-      <div class="section-label">בחר <span>קטגוריה</span></div>
-      <div class="section-sub">3 קטגוריות · 26 מנות</div>
+    <div class="hdr-meta">
+      <div class="hdr-addr">📍 רחוב הברזל 14, תל אביב</div>
+      <div class="hdr-status">פתוח עכשיו</div>
     </div>
   </div>
-
+  <div class="sec-wrap">
+    <div class="sec-top">
+      <div class="sec-title">בחר <span>קטגוריה</span></div>
+      <div class="sec-sub">3 קטגוריות · 26 מנות</div>
+    </div>
+  </div>
   <div class="grid">
-    <!-- Tile 1 -->
     <div class="tile">
-      <div class="tile-img img-food-1">
-        <div class="tile-bolt tl"></div><div class="tile-bolt tr"></div>
-        <div class="tile-bolt bl"></div><div class="tile-bolt br"></div>
-        <span class="label-icon" style="opacity:0.12; font-size:5rem; z-index:1; position:relative;">🥩</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#2e2a22,#201e1a)">
+        <div class="bolt tl"></div><div class="bolt tr"></div>
+        <div class="bolt bl"></div><div class="bolt br"></div>
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">מנות עיקריות</div>
         <div class="tile-count">12 ITEMS · MAIN COURSE</div>
-        <div class="tile-footer">
+        <div class="tile-foot">
           <div class="tile-cta">לתפריט</div>
           <div class="tile-plate">SECTION-01</div>
         </div>
       </div>
     </div>
-    <!-- Tile 2 -->
     <div class="tile">
-      <div class="tile-img" style="background: linear-gradient(135deg, #1e2a1a 0%, #131a10 100%) !important;">
-        <div class="tile-bolt tl"></div><div class="tile-bolt tr"></div>
-        <div class="tile-bolt bl"></div><div class="tile-bolt br"></div>
-        <span class="label-icon" style="opacity:0.12; font-size:5rem; z-index:1; position:relative;">🥗</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#1e2a1a,#131a10)">
+        <div class="bolt tl"></div><div class="bolt tr"></div>
+        <div class="bolt bl"></div><div class="bolt br"></div>
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">מנות ראשונות</div>
         <div class="tile-count">8 ITEMS · STARTERS</div>
-        <div class="tile-footer">
+        <div class="tile-foot">
           <div class="tile-cta">לתפריט</div>
           <div class="tile-plate">SECTION-02</div>
         </div>
       </div>
     </div>
-    <!-- Tile 3 -->
     <div class="tile">
-      <div class="tile-img" style="background: linear-gradient(135deg, #2a1e10 0%, #1a1308 100%) !important;">
-        <div class="tile-bolt tl"></div><div class="tile-bolt tr"></div>
-        <div class="tile-bolt bl"></div><div class="tile-bolt br"></div>
-        <span class="label-icon" style="opacity:0.12; font-size:5rem; z-index:1; position:relative;">🍰</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#2a1e10,#1a1308)">
+        <div class="bolt tl"></div><div class="bolt tr"></div>
+        <div class="bolt bl"></div><div class="bolt br"></div>
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">קינוחים</div>
         <div class="tile-count">6 ITEMS · DESSERTS</div>
-        <div class="tile-footer">
+        <div class="tile-foot">
           <div class="tile-cta">לתפריט</div>
           <div class="tile-plate">SECTION-03</div>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="demo-actions">
-    <a href="#" class="primary">📞 התקשרו</a>
-    <a href="#" class="secondary">📍 נווט</a>
+  <div class="actions">
+    <a href="#" class="pri">📞 התקשרו</a>
+    <a href="#" class="sec">📍 נווט</a>
   </div>
-
 </div>
-
 
 <!-- ══════════════ NATURE ══════════════ -->
 <div class="theme-section nature" id="theme-nature">
-
-  <div class="header">
-    <div>
-      <div class="header-logo"><span class="leaf">🌿</span>הביסטרו הירוק</div>
-    </div>
-    <div class="header-address">רחוב שינקין 15, תל אביב</div>
+  <div class="hdr">
+    <div class="hdr-name">🌿 הביסטרו הירוק</div>
+    <div class="hdr-addr">רחוב שינקין 15, תל אביב</div>
   </div>
-
-  <div class="section-label">מה יש היום?</div>
-  <div class="section-ornament"><span>🌿</span></div>
-
+  <div class="sec-title">מה יש היום?</div>
+  <div class="sec-orn"><span>🌿</span></div>
   <div class="grid">
-    <!-- Tile 1 -->
     <div class="tile">
-      <div class="tile-img img-food-1" style="background: linear-gradient(135deg, #d4c09a 0%, #c0a880 100%) !important;">
-        <span class="label-icon" style="opacity:0.3; font-size: 3.5rem;">🥩</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#d4c09a,#c0a880)">
         <div class="tile-tag">ללא גלוטן</div>
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">מנות עיקריות</div>
         <div class="tile-count">12 מנות מיוחדות</div>
-        <div class="tile-footer">
+        <div class="tile-foot">
           <div class="tile-meta">מעודכן היום</div>
           <div class="tile-arrow">←</div>
         </div>
       </div>
     </div>
-    <!-- Tile 2 -->
     <div class="tile">
-      <div class="tile-img" style="background: linear-gradient(135deg, #c8d8b0 0%, #b0c098 100%) !important;">
-        <span class="label-icon" style="opacity:0.3; font-size: 3.5rem;">🥗</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#c8d8b0,#b0c098)">
         <div class="tile-tag">🌱 טבעוני</div>
       </div>
-      <div class="tile-content">
-        <div class="tile-name">סלטים ומנות ראשונות</div>
+      <div class="tile-body">
+        <div class="tile-name">סלטים וראשונות</div>
         <div class="tile-count">8 מנות מיוחדות</div>
-        <div class="tile-footer">
+        <div class="tile-foot">
           <div class="tile-meta">מרוכז מהחווה</div>
           <div class="tile-arrow">←</div>
         </div>
       </div>
     </div>
-    <!-- Tile 3 -->
     <div class="tile">
-      <div class="tile-img" style="background: linear-gradient(135deg, #e8c8a8 0%, #d4b088 100%) !important;">
-        <span class="label-icon" style="opacity:0.3; font-size: 3.5rem;">🍰</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#e8c8a8,#d4b088)">
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">קינוחים</div>
         <div class="tile-count">6 מנות מיוחדות</div>
-        <div class="tile-footer">
+        <div class="tile-foot">
           <div class="tile-meta">ביתי ומפנק</div>
           <div class="tile-arrow">←</div>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="demo-actions">
-    <a href="#" class="primary">📞 התקשרו</a>
-    <a href="#" class="secondary">📍 נווט</a>
-    <a href="#" class="secondary">🌐 אתר</a>
+  <div class="actions">
+    <a href="#" class="pri">📞 התקשרו</a>
+    <a href="#" class="sec">📍 נווט</a>
+    <a href="#" class="sec">🌐 אתר</a>
   </div>
-
 </div>
-
 
 <!-- ══════════════ BOLD ══════════════ -->
 <div class="theme-section bold" id="theme-bold">
-
-  <div class="header">
+  <div class="hdr">
     <div>
-      <div class="header-logo">FOOD<span>SPOT</span></div>
-      <div class="header-address">רחוב הרצל 5, תל אביב</div>
+      <div class="hdr-name">FOOD<span>SPOT</span></div>
+      <div class="hdr-addr">רחוב הרצל 5, תל אביב</div>
     </div>
-    <div class="header-open">פתוח עכשיו</div>
+    <div class="hdr-open">פתוח עכשיו</div>
   </div>
-
-  <div class="section-label">ORDER NOW</div>
-  <div class="section-sub">בחר את הקטגוריה שלך</div>
-
+  <div class="sec-title">ORDER NOW</div>
+  <div class="sec-sub">בחר את הקטגוריה שלך</div>
   <div class="grid">
-    <!-- Tile 1 -->
     <div class="tile">
-      <div class="tile-img img-food-1">
-        <div class="tile-number">01</div>
-        <span class="label-icon" style="opacity:0.15; font-size: 4rem; z-index:3; position:relative;">🥩</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#2a1a10,#1a0f08)">
+        <div class="tile-num">01</div>
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">מנות עיקריות</div>
         <div class="tile-count">12 ITEMS</div>
         <div class="tile-cta">הזמן עכשיו</div>
       </div>
     </div>
-    <!-- Tile 2 -->
     <div class="tile">
-      <div class="tile-img" style="background: linear-gradient(135deg, #1a2a10 0%, #0f1a08 100%) !important;">
-        <div class="tile-number">02</div>
-        <span class="label-icon" style="opacity:0.15; font-size: 4rem; z-index:3; position:relative;">🥗</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#1a2a10,#0f1a08)">
+        <div class="tile-num">02</div>
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">מנות ראשונות</div>
         <div class="tile-count">8 ITEMS</div>
         <div class="tile-cta">הזמן עכשיו</div>
       </div>
     </div>
-    <!-- Tile 3 -->
     <div class="tile">
-      <div class="tile-img" style="background: linear-gradient(135deg, #2a1a10 0%, #1a0f08 100%) !important;">
-        <div class="tile-number">03</div>
-        <span class="label-icon" style="opacity:0.15; font-size: 4rem; z-index:3; position:relative;">🍰</span>
+      <div class="tile-img" style="background:linear-gradient(135deg,#2a1a20,#1a0f14)">
+        <div class="tile-num">03</div>
       </div>
-      <div class="tile-content">
+      <div class="tile-body">
         <div class="tile-name">קינוחים</div>
         <div class="tile-count">6 ITEMS</div>
         <div class="tile-cta">הזמן עכשיו</div>
       </div>
     </div>
   </div>
-
-  <div class="demo-actions">
-    <a href="#" class="primary">📞 התקשרו</a>
-    <a href="#" class="secondary">📍 נווט</a>
+  <div class="actions">
+    <a href="#" class="pri">📞 התקשרו</a>
+    <a href="#" class="sec">📍 נווט</a>
   </div>
-
 </div>
 
-
 <script>
+/* ── PALETTE DATA ────────────────────────────────────────── */
+const PALETTES = {
+  luxury: [
+    { name:'זהב',    color:'#c9a35d', ac:'#c9a35d', acL:'#e0c084', acD:'#8b6f3e', acRgb:'201,163,93',  bg:'#0a0a0a', bg2:'#1a1a1a', bg3:'#0d0d0d', h1:'#b89868', h2:'#c9a878', hb:'#7a5f33', ht:'#2a1f0f' },
+    { name:'כסף',    color:'#94a3b8', ac:'#94a3b8', acL:'#bdd1e6', acD:'#607080', acRgb:'148,163,184', bg:'#080b10', bg2:'#10151e', bg3:'#0a0d14', h1:'#253045', h2:'#2e3c58', hb:'#3a5070', ht:'#b8cce0' },
+    { name:'רוזה',   color:'#c98080', ac:'#c98080', acL:'#e8a8a0', acD:'#8b5050', acRgb:'201,128,128', bg:'#0c0808', bg2:'#1a1212', bg3:'#0e0a0a', h1:'#804848', h2:'#985858', hb:'#6a3535', ht:'#f0d5d5' },
+    { name:'ירקן',   color:'#5aba90', ac:'#5aba90', acL:'#80d4b0', acD:'#347860', acRgb:'90,186,144',  bg:'#050e0b', bg2:'#0f1c18', bg3:'#091410', h1:'#1e4535', h2:'#255040', hb:'#2d6a4a', ht:'#c0f0e0' },
+  ],
+  indust: [
+    { name:'ענבר',   color:'#f59e0b', ac:'#f59e0b', acRgb:'245,158,11',  bg:'#1c1c1c', bg2:'#242424', ht:'#1c1c1c' },
+    { name:'כחול',   color:'#3b82f6', ac:'#3b82f6', acRgb:'59,130,246',  bg:'#101624', bg2:'#181f30', ht:'#ffffff' },
+    { name:'ליים',   color:'#a3e635', ac:'#a3e635', acRgb:'163,230,53',  bg:'#111a10', bg2:'#182416', ht:'#0a1008' },
+    { name:'אדום',   color:'#e53e3e', ac:'#e53e3e', acRgb:'229,62,62',   bg:'#1a1010', bg2:'#221414', ht:'#ffffff' },
+  ],
+  nature: [
+    { name:'יער',    color:'#7ab648', ac:'#7ab648', acRgb:'122,182,72',  hd:'#2c2016', hl:'#e8d5b0', warm:'#c4956a', bg:'#f9f4ec', bg2:'#ffffff' },
+    { name:'ים',     color:'#4a9fc4', ac:'#4a9fc4', acRgb:'74,159,196',  hd:'#0a2a3c', hl:'#b0d8f0', warm:'#5ab0d0', bg:'#f0f6fa', bg2:'#ffffff' },
+    { name:'חרסינה', color:'#d4795a', ac:'#d4795a', acRgb:'212,121,90',  hd:'#3a1a10', hl:'#f0c8b0', warm:'#c49060', bg:'#faf3ee', bg2:'#ffffff' },
+    { name:'לבנדר',  color:'#9b7bc4', ac:'#9b7bc4', acRgb:'155,123,196', hd:'#201040', hl:'#d8c8f0', warm:'#b090d0', bg:'#f5f0fb', bg2:'#ffffff' },
+  ],
+  bold: [
+    { name:'אש',     color:'#ff3d00', ac:'#ff3d00', acRgb:'255,61,0',   bg:'#0e0e0e', bg2:'#1a1a1a' },
+    { name:'סגול',   color:'#a855f7', ac:'#a855f7', acRgb:'168,85,247', bg:'#0c0814', bg2:'#181024' },
+    { name:'ציאן',   color:'#06b6d4', ac:'#06b6d4', acRgb:'6,182,212',  bg:'#080e12', bg2:'#101820' },
+    { name:'זהב',    color:'#eab308', ac:'#eab308', acRgb:'234,179,8',  bg:'#0e0e08', bg2:'#1a1a10' },
+  ],
+};
+
+/* ── STATE ───────────────────────────────────────────────── */
+let activeTheme = 'luxury';
+let activePaletteIdx = 0;
+
+/* ── HELPERS ─────────────────────────────────────────────── */
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+function rgbToHex(r,g,b) {
+  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+function lighten(hex, amt) {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(r+(255-r)*amt, g+(255-g)*amt, b+(255-b)*amt);
+}
+function darken(hex, amt) {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(r*(1-amt), g*(1-amt), b*(1-amt));
+}
+function toRgbStr(hex) { return hexToRgb(hex).join(','); }
+function contrastColor(hex) {
+  const [r,g,b] = hexToRgb(hex);
+  return (r*299 + g*587 + b*114) / 1000 > 128 ? '#000000' : '#ffffff';
+}
+
+/* ── APPLY PALETTE ───────────────────────────────────────── */
+function applyPalette(theme, p) {
+  const el = document.getElementById('theme-' + theme);
+  const s = el.style;
+
+  if (theme === 'luxury') {
+    s.setProperty('--ac',     p.ac);
+    s.setProperty('--ac-l',   p.acL);
+    s.setProperty('--ac-d',   p.acD);
+    s.setProperty('--ac-rgb', p.acRgb);
+    s.setProperty('--bg',     p.bg);
+    s.setProperty('--bg2',    p.bg2);
+    s.setProperty('--bg3',    p.bg3);
+    s.setProperty('--h1',     p.h1);
+    s.setProperty('--h2',     p.h2);
+    s.setProperty('--hb',     p.hb);
+    s.setProperty('--ht',     p.ht);
+  } else if (theme === 'indust') {
+    s.setProperty('--ac',     p.ac);
+    s.setProperty('--ac-rgb', p.acRgb);
+    s.setProperty('--bg',     p.bg);
+    s.setProperty('--bg2',    p.bg2);
+    s.setProperty('--ht',     p.ht);
+  } else if (theme === 'nature') {
+    s.setProperty('--ac',     p.ac);
+    s.setProperty('--ac-rgb', p.acRgb);
+    s.setProperty('--hd',     p.hd);
+    s.setProperty('--hl',     p.hl);
+    s.setProperty('--warm',   p.warm);
+    s.setProperty('--bg',     p.bg);
+    s.setProperty('--bg2',    p.bg2);
+  } else if (theme === 'bold') {
+    s.setProperty('--ac',     p.ac);
+    s.setProperty('--ac-rgb', p.acRgb);
+    s.setProperty('--bg',     p.bg);
+    s.setProperty('--bg2',    p.bg2);
+  }
+}
+
+/* ── PALETTE BAR ─────────────────────────────────────────── */
+function renderPaletteBar(theme) {
+  const bar = document.getElementById('palette-bar');
+  const palettes = PALETTES[theme];
+
+  // remove old swatches + custom btn
+  bar.querySelectorAll('.pb-swatch, .pb-custom-btn').forEach(el => el.remove());
+
+  palettes.forEach((p, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'pb-swatch' + (i === activePaletteIdx ? ' active' : '');
+    btn.style.background = p.color;
+    btn.innerHTML = `<span class="pb-tip">${p.name}</span>`;
+    btn.onclick = () => {
+      activePaletteIdx = i;
+      bar.querySelectorAll('.pb-swatch').forEach((s,j) => s.classList.toggle('active', j===i));
+      bar.querySelector('.pb-custom-btn')?.classList.remove('active');
+      document.getElementById('custom-panel').classList.remove('open');
+      applyPalette(theme, p);
+    };
+    bar.appendChild(btn);
+  });
+
+  // Custom button
+  const customBtn = document.createElement('button');
+  customBtn.className = 'pb-custom-btn';
+  customBtn.innerHTML = '🎨 מותאם אישית';
+  customBtn.onclick = () => {
+    const isOpen = customBtn.classList.toggle('active');
+    document.getElementById('custom-panel').classList.toggle('open', isOpen);
+    if (isOpen) syncCustomInputs(theme);
+  };
+  bar.appendChild(customBtn);
+}
+
+function syncCustomInputs(theme) {
+  const p = PALETTES[theme][activePaletteIdx] || PALETTES[theme][0];
+  document.getElementById('cp-accent').value = p.ac || p.color;
+  document.getElementById('cp-bg').value = p.bg;
+
+  const hdrWrap = document.getElementById('cp-header-wrap');
+  if (theme === 'luxury') {
+    hdrWrap.style.display = 'flex';
+    document.getElementById('cp-header').value = p.h1;
+  } else if (theme === 'nature') {
+    hdrWrap.style.display = 'flex';
+    document.getElementById('cp-header').value = p.hd;
+  } else {
+    hdrWrap.style.display = 'none';
+  }
+}
+
+/* ── APPLY CUSTOM ────────────────────────────────────────── */
+function applyCustom() {
+  const ac  = document.getElementById('cp-accent').value;
+  const bg  = document.getElementById('cp-bg').value;
+  const hdr = document.getElementById('cp-header').value;
+
+  const acRgb = toRgbStr(ac);
+  let p;
+
+  if (activeTheme === 'luxury') {
+    p = {
+      ac, acRgb,
+      acL: lighten(ac, 0.22),
+      acD: darken(ac, 0.32),
+      bg,
+      bg2: lighten(bg, 0.09),
+      bg3: lighten(bg, 0.04),
+      h1: hdr,
+      h2: lighten(hdr, 0.08),
+      hb: darken(hdr, 0.2),
+      ht: contrastColor(hdr),
+    };
+  } else if (activeTheme === 'indust') {
+    p = { ac, acRgb, bg, bg2: lighten(bg, 0.06), ht: contrastColor(ac) };
+  } else if (activeTheme === 'nature') {
+    p = {
+      ac, acRgb,
+      hd: hdr,
+      hl: lighten(hdr, 0.7),
+      warm: lighten(ac, 0.2),
+      bg,
+      bg2: '#ffffff',
+    };
+  } else if (activeTheme === 'bold') {
+    p = { ac, acRgb, bg, bg2: lighten(bg, 0.06) };
+  }
+
+  applyPalette(activeTheme, p);
+
+  // mark no preset active
+  document.querySelectorAll('.pb-swatch').forEach(s => s.classList.remove('active'));
+}
+
+/* ── THEME SWITCH ────────────────────────────────────────── */
 function showTheme(name) {
+  activeTheme = name;
+  activePaletteIdx = 0;
+
   document.querySelectorAll('.theme-section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.main-nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('theme-' + name).classList.add('active');
   event.target.classList.add('active');
+
+  // close custom panel
+  document.getElementById('custom-panel').classList.remove('open');
+
+  renderPaletteBar(name);
+  applyPalette(name, PALETTES[name][0]);
 }
+
+/* ── INIT ────────────────────────────────────────────────── */
+renderPaletteBar('luxury');
+applyPalette('luxury', PALETTES.luxury[0]);
 </script>
 </body>
 </html>
