@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Menu4U — תצוגה מקדימה של ערכות נושא</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Heebo:wght@300;400;500;600;700&family=Rubik:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Secular+One&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Heebo:wght@300;400;500;600;700&family=Rubik:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Barlow+Condensed:wght@400;600;700;800;900&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
@@ -129,83 +129,140 @@ body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
 .luxury .tile-arrow { color: #c9a35d; font-size: 1.1rem; opacity: 0.8; }
 
 /* ════════════════════════════════════════════════
-   THEME 2: FRESH — Light / Clean / Modern Café
+   THEME 2: INDUSTRIAL — Concrete / Metal / Raw
    ════════════════════════════════════════════════ */
 .fresh {
-  background: #f7f5f0;
-  color: #1a1a1a;
+  background: #1c1c1c;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px);
+  color: #e0e0e0;
   direction: rtl;
-  font-family: 'Assistant', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   padding-bottom: 80px;
 }
 
 .fresh .header {
-  background: #ffffff;
-  border-bottom: 3px solid #1a1a1a;
+  background: linear-gradient(180deg, #2e2e2e 0%, #252525 100%);
+  border-bottom: 4px solid #f59e0b;
   padding: 0;
   display: flex; align-items: stretch;
+  position: relative;
+}
+.fresh .header::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: repeating-linear-gradient(90deg, #f59e0b 0px, #f59e0b 20px, #1c1c1c 20px, #1c1c1c 30px);
 }
 .fresh .header-brand {
-  background: #1a1a1a; color: #fff;
+  background: #f59e0b;
   padding: 22px 35px;
   display: flex; flex-direction: column; justify-content: center;
 }
 .fresh .header-logo {
-  font-family: 'Secular One', sans-serif;
-  font-size: 1.6rem; letter-spacing: 2px; line-height: 1;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2rem; font-weight: 900; color: #1c1c1c;
+  letter-spacing: 3px; line-height: 1; text-transform: uppercase;
 }
-.fresh .header-tagline { font-size: 0.72rem; letter-spacing: 3px; opacity: 0.6; margin-top: 4px; text-transform: uppercase; }
+.fresh .header-tagline { font-size: 0.68rem; letter-spacing: 4px; color: rgba(28,28,28,0.65); margin-top: 4px; text-transform: uppercase; font-weight: 700; }
 .fresh .header-meta {
-  padding: 22px 35px;
-  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  padding: 22px 30px;
+  display: flex; flex-direction: column; justify-content: center; gap: 5px;
 }
-.fresh .header-address { font-size: 0.9rem; color: #555; font-weight: 400; }
-.fresh .header-phone { font-size: 0.9rem; color: #1a1a1a; font-weight: 600; }
+.fresh .header-address { font-size: 0.9rem; color: #888; font-weight: 400; letter-spacing: 0.5px; }
+.fresh .header-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+  color: #f59e0b; text-transform: uppercase;
+}
+.fresh .header-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
 
-.fresh .section-label {
-  text-align: center; padding: 55px 20px 10px;
-  font-family: 'Secular One', sans-serif;
-  font-size: 2.2rem; letter-spacing: 2px; color: #1a1a1a;
+.fresh .section-wrap {
+  max-width: 1140px; margin: 0 auto; padding: 50px 20px 0;
 }
-.fresh .section-sub { text-align: center; color: #999; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 45px; margin-top: 6px; }
+.fresh .section-top {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 32px;
+}
+.fresh .section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 3.2rem; font-weight: 900; color: #fff;
+  letter-spacing: 2px; text-transform: uppercase; line-height: 1;
+}
+.fresh .section-label span { color: #f59e0b; }
+.fresh .section-sub {
+  font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase;
+  color: #555; font-weight: 700; padding-bottom: 4px;
+}
 
 .fresh .grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
 }
 .fresh .tile {
-  background: #fff; border-radius: 4px;
-  border: 2px solid #1a1a1a;
-  cursor: pointer; transition: 0.25s;
+  background: #242424;
+  border-radius: 2px;
+  border: 1px solid #333;
+  border-left: 4px solid #f59e0b;
+  cursor: pointer; transition: 0.2s;
   overflow: hidden; position: relative;
-  box-shadow: 4px 4px 0 #1a1a1a;
 }
-.fresh .tile:hover { transform: translate(-3px, -3px); box-shadow: 7px 7px 0 #1a1a1a; }
-.fresh .tile:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #1a1a1a; }
-
+.fresh .tile:hover {
+  border-left-color: #fbbf24;
+  background: #2a2a2a;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px rgba(245,158,11,0.12);
+  transform: translateY(-3px);
+}
 .fresh .tile-img {
-  height: 180px;
-  background: linear-gradient(135deg, #e8e5df 0%, #d5d0c8 100%);
+  height: 185px;
+  background: linear-gradient(135deg, #2e2a22 0%, #201e1a 100%);
   background-size: cover; background-position: center;
   position: relative;
-  border-bottom: 2px solid #1a1a1a;
+  border-bottom: 1px solid #333;
 }
-.fresh .tile-badge {
-  position: absolute; top: 14px; right: 14px;
-  background: #1a1a1a; color: #fff;
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
-  padding: 5px 12px; text-transform: uppercase;
+.fresh .tile-img::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(36,36,36,0.85) 100%);
 }
-.fresh .tile-content { padding: 20px 22px 22px; }
+.fresh .tile-bolt {
+  position: absolute; z-index: 2;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #555, #2a2a2a);
+  border: 1px solid #444;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.1);
+}
+.fresh .tile-bolt.tl { top: 10px; right: 10px; }
+.fresh .tile-bolt.tr { top: 10px; left: 10px; }
+.fresh .tile-bolt.bl { bottom: 10px; right: 10px; }
+.fresh .tile-bolt.br { bottom: 10px; left: 10px; }
+
+.fresh .tile-content { padding: 16px 18px 18px; }
 .fresh .tile-name {
-  font-family: 'Secular One', sans-serif;
-  font-size: 1.4rem; color: #1a1a1a; margin-bottom: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.6rem; font-weight: 800; color: #fff;
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;
+  line-height: 1.1;
 }
-.fresh .tile-count { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
-.fresh .tile-arrow {
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 14px; font-size: 0.8rem; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase; color: #1a1a1a;
+.fresh .tile-count {
+  font-size: 0.72rem; color: #555; letter-spacing: 3px;
+  text-transform: uppercase; margin-bottom: 14px; font-weight: 600;
+}
+.fresh .tile-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid #333; padding-top: 12px;
+}
+.fresh .tile-cta {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem; font-weight: 800; letter-spacing: 3px;
+  text-transform: uppercase; color: #f59e0b;
+  display: flex; align-items: center; gap: 6px;
+}
+.fresh .tile-cta::after { content: '→'; transition: 0.2s; }
+.fresh .tile:hover .tile-cta::after { transform: translateX(-5px); }
+.fresh .tile-plate {
+  font-size: 0.68rem; color: #444; letter-spacing: 1px;
+  font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase;
 }
 
 /* ════════════════════════════════════════════════
@@ -404,12 +461,14 @@ body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
 .luxury .demo-actions a.secondary { background: transparent; border: 1px solid rgba(201,163,93,0.4); color: #e0c084; }
 
 .fresh .demo-actions a {
-  text-decoration: none; padding: 12px 24px;
-  font-size: 0.85rem; font-weight: 700; font-family: 'Heebo', sans-serif;
-  transition: 0.2s; letter-spacing: 1px; text-transform: uppercase;
+  text-decoration: none; padding: 12px 26px;
+  font-size: 0.8rem; font-weight: 800; font-family: 'Barlow Condensed', sans-serif;
+  transition: 0.2s; letter-spacing: 3px; text-transform: uppercase;
+  border-radius: 2px;
 }
-.fresh .demo-actions a.primary { background: #1a1a1a; color: #fff; border: 2px solid #1a1a1a; box-shadow: 3px 3px 0 #888; }
-.fresh .demo-actions a.secondary { background: #fff; color: #1a1a1a; border: 2px solid #1a1a1a; box-shadow: 3px 3px 0 #888; }
+.fresh .demo-actions a.primary { background: #f59e0b; color: #1c1c1c; border: 2px solid #f59e0b; }
+.fresh .demo-actions a.secondary { background: transparent; color: #888; border: 2px solid #333; }
+.fresh .demo-actions a.secondary:hover { border-color: #f59e0b; color: #f59e0b; }
 
 .nature .demo-actions a {
   text-decoration: none; padding: 12px 26px; border-radius: 30px;
@@ -445,7 +504,7 @@ body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
 <!-- NAV -->
 <div class="nav">
   <button class="nav-btn active" onclick="showTheme('luxury')">✦ Luxury</button>
-  <button class="nav-btn" onclick="showTheme('fresh')">◈ Fresh</button>
+  <button class="nav-btn" onclick="showTheme('fresh')">⚙ Industrial</button>
   <button class="nav-btn" onclick="showTheme('nature')">❧ Nature</button>
   <button class="nav-btn" onclick="showTheme('bold')">▲ Bold</button>
 </div>
@@ -512,57 +571,74 @@ body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
 </div>
 
 
-<!-- ══════════════ FRESH ══════════════ -->
+<!-- ══════════════ INDUSTRIAL ══════════════ -->
 <div class="theme-section fresh" id="theme-fresh">
 
   <div class="header">
     <div class="header-brand">
-      <div class="header-logo">CAFÉ MENU4U</div>
-      <div class="header-tagline">מנות טריות יומיות</div>
+      <div class="header-logo">IRON GRILL</div>
+      <div class="header-tagline">Industrial Kitchen · Est. 2019</div>
     </div>
     <div class="header-meta">
-      <div class="header-address">📍 רחוב דיזנגוף 88, תל אביב</div>
-      <div class="header-phone">📞 03-1234567</div>
+      <div class="header-address">📍 רחוב הברזל 14, תל אביב</div>
+      <div class="header-status">פתוח עכשיו</div>
     </div>
   </div>
 
-  <div class="section-label">בחר קטגוריה</div>
-  <div class="section-sub">מה תרצה היום?</div>
+  <div class="section-wrap">
+    <div class="section-top">
+      <div class="section-label">בחר <span>קטגוריה</span></div>
+      <div class="section-sub">3 קטגוריות · 26 מנות</div>
+    </div>
+  </div>
 
   <div class="grid">
     <!-- Tile 1 -->
     <div class="tile">
-      <div class="tile-img img-food-1f">
-        <span class="label-icon" style="opacity:0.4; font-size: 3rem;">🥩</span>
-        <div class="tile-badge">HOT 🔥</div>
+      <div class="tile-img img-food-1">
+        <div class="tile-bolt tl"></div><div class="tile-bolt tr"></div>
+        <div class="tile-bolt bl"></div><div class="tile-bolt br"></div>
+        <span class="label-icon" style="opacity:0.12; font-size:5rem; z-index:1; position:relative;">🥩</span>
       </div>
       <div class="tile-content">
         <div class="tile-name">מנות עיקריות</div>
-        <div class="tile-count">12 מנות</div>
-        <div class="tile-arrow">לצפייה בתפריט →</div>
+        <div class="tile-count">12 ITEMS · MAIN COURSE</div>
+        <div class="tile-footer">
+          <div class="tile-cta">לתפריט</div>
+          <div class="tile-plate">SECTION-01</div>
+        </div>
       </div>
     </div>
     <!-- Tile 2 -->
     <div class="tile">
-      <div class="tile-img img-food-2f">
-        <span class="label-icon" style="opacity:0.4; font-size: 3rem;">🥗</span>
+      <div class="tile-img" style="background: linear-gradient(135deg, #1e2a1a 0%, #131a10 100%) !important;">
+        <div class="tile-bolt tl"></div><div class="tile-bolt tr"></div>
+        <div class="tile-bolt bl"></div><div class="tile-bolt br"></div>
+        <span class="label-icon" style="opacity:0.12; font-size:5rem; z-index:1; position:relative;">🥗</span>
       </div>
       <div class="tile-content">
         <div class="tile-name">מנות ראשונות</div>
-        <div class="tile-count">8 מנות</div>
-        <div class="tile-arrow">לצפייה בתפריט →</div>
+        <div class="tile-count">8 ITEMS · STARTERS</div>
+        <div class="tile-footer">
+          <div class="tile-cta">לתפריט</div>
+          <div class="tile-plate">SECTION-02</div>
+        </div>
       </div>
     </div>
     <!-- Tile 3 -->
     <div class="tile">
-      <div class="tile-img img-food-3f">
-        <span class="label-icon" style="opacity:0.4; font-size: 3rem;">🍰</span>
-        <div class="tile-badge">NEW ✨</div>
+      <div class="tile-img" style="background: linear-gradient(135deg, #2a1e10 0%, #1a1308 100%) !important;">
+        <div class="tile-bolt tl"></div><div class="tile-bolt tr"></div>
+        <div class="tile-bolt bl"></div><div class="tile-bolt br"></div>
+        <span class="label-icon" style="opacity:0.12; font-size:5rem; z-index:1; position:relative;">🍰</span>
       </div>
       <div class="tile-content">
         <div class="tile-name">קינוחים</div>
-        <div class="tile-count">6 מנות</div>
-        <div class="tile-arrow">לצפייה בתפריט →</div>
+        <div class="tile-count">6 ITEMS · DESSERTS</div>
+        <div class="tile-footer">
+          <div class="tile-cta">לתפריט</div>
+          <div class="tile-plate">SECTION-03</div>
+        </div>
       </div>
     </div>
   </div>
