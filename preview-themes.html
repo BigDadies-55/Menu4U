@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu4U — תצוגה מקדימה של ערכות נושא</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Heebo:wght@300;400;500;600;700&family=Rubik:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Secular+One&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Heebo', sans-serif; background: #111; color: #eee; }
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: #1a1a1a; border-bottom: 2px solid #333;
+  display: flex; gap: 0; justify-content: center;
+}
+.nav-btn {
+  padding: 14px 30px; font-size: 0.95rem; font-family: 'Heebo', sans-serif;
+  cursor: pointer; border: none; background: transparent; color: #aaa;
+  transition: 0.2s; font-weight: 500; letter-spacing: 0.5px;
+}
+.nav-btn.active { color: #fff; border-bottom: 3px solid #fff; }
+.nav-btn:hover { color: #fff; }
+
+/* ── SECTIONS ── */
+.theme-section { display: none; min-height: 100vh; }
+.theme-section.active { display: block; }
+
+/* ════════════════════════════════════════════════
+   THEME 1: LUXURY — Fine Dining / Gold & Dark
+   ════════════════════════════════════════════════ */
+.luxury {
+  background: #0a0a0a;
+  background-image:
+    radial-gradient(ellipse at top, rgba(201,163,93,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(201,163,93,0.03) 0%, transparent 50%);
+  color: #f0ebe0;
+  direction: rtl;
+  font-family: 'Heebo', sans-serif;
+  padding-bottom: 80px;
+}
+
+.luxury .header {
+  padding: 28px 30px;
+  background: radial-gradient(ellipse at center top, rgba(255,240,215,0.2) 0%, transparent 70%),
+              linear-gradient(180deg, #b89868 0%, #c9a878 50%, #b89868 100%);
+  border-bottom: 1px solid #7a5f33;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.luxury .header-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem; font-weight: 700; color: #2a1f0f;
+  letter-spacing: 6px;
+}
+.luxury .header-address { font-size: 0.95rem; color: #3a2f1f; font-weight: 500; letter-spacing: 1px; }
+
+.luxury .section-label {
+  text-align: center; padding: 50px 20px 35px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3rem; letter-spacing: 12px; font-weight: 600;
+  color: #c9a35d; text-transform: uppercase;
+}
+.luxury .section-ornament {
+  display: flex; align-items: center; justify-content: center; gap: 15px;
+  margin: 0 auto 45px;
+}
+.luxury .section-ornament::before, .luxury .section-ornament::after {
+  content: ''; width: 120px; height: 1px;
+  background: linear-gradient(90deg, transparent, #c9a35d, transparent);
+}
+.luxury .section-ornament span { color: #c9a35d; font-size: 0.8rem; }
+
+.luxury .grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 28px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
+}
+.luxury .tile {
+  border-radius: 12px; cursor: pointer; transition: 0.4s ease;
+  background:
+    linear-gradient(#0d0d0d, #0d0d0d) padding-box,
+    linear-gradient(135deg, #e0c084 0%, #8b6f3e 30%, #c9a35d 60%, #8b6f3e 100%) border-box;
+  border: 2px solid transparent;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,163,93,0.1);
+  position: relative; overflow: hidden; min-height: 260px;
+}
+.luxury .tile-img {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #1a1510 0%, #0d0b08 100%);
+  background-size: cover; background-position: center;
+}
+.luxury .tile-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.82) 100%);
+}
+.luxury .tile-content {
+  position: relative; z-index: 2;
+  padding: 35px 25px 30px;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  height: 100%; min-height: 258px; text-align: center;
+}
+.luxury .tile::after {
+  content: ''; position: absolute; inset: 14px;
+  border: 1px solid rgba(201,163,93,0.25); border-radius: 6px; pointer-events: none; z-index: 3;
+  transition: 0.4s;
+}
+.luxury .tile:hover { transform: translateY(-6px); box-shadow: 0 18px 45px rgba(0,0,0,0.7), 0 0 30px rgba(201,163,93,0.25); }
+.luxury .tile:hover::after { border-color: rgba(201,163,93,0.55); inset: 11px; }
+
+.luxury .corner { position: absolute; width: 22px; height: 22px; border-color: #c9a35d; opacity: 0.75; z-index: 4; }
+.luxury .corner.tl { top: 18px; right: 18px; border-top: 1px solid; border-right: 1px solid; }
+.luxury .corner.tr { top: 18px; left: 18px; border-top: 1px solid; border-left: 1px solid; }
+.luxury .corner.bl { bottom: 18px; right: 18px; border-bottom: 1px solid; border-right: 1px solid; }
+.luxury .corner.br { bottom: 18px; left: 18px; border-bottom: 1px solid; border-left: 1px solid; }
+
+.luxury .tile-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.9rem; letter-spacing: 5px; font-weight: 600;
+  color: #e0c084; margin: 0 0 12px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.9), 0 0 20px rgba(201,163,93,0.3);
+  text-transform: uppercase;
+}
+.luxury .tile-divider {
+  width: 45px; height: 1px; background: #c9a35d;
+  margin: 0 auto 12px; opacity: 0.8;
+}
+.luxury .tile-arrow { color: #c9a35d; font-size: 1.1rem; opacity: 0.8; }
+
+/* ════════════════════════════════════════════════
+   THEME 2: FRESH — Light / Clean / Modern Café
+   ════════════════════════════════════════════════ */
+.fresh {
+  background: #f7f5f0;
+  color: #1a1a1a;
+  direction: rtl;
+  font-family: 'Assistant', sans-serif;
+  padding-bottom: 80px;
+}
+
+.fresh .header {
+  background: #ffffff;
+  border-bottom: 3px solid #1a1a1a;
+  padding: 0;
+  display: flex; align-items: stretch;
+}
+.fresh .header-brand {
+  background: #1a1a1a; color: #fff;
+  padding: 22px 35px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.fresh .header-logo {
+  font-family: 'Secular One', sans-serif;
+  font-size: 1.6rem; letter-spacing: 2px; line-height: 1;
+}
+.fresh .header-tagline { font-size: 0.72rem; letter-spacing: 3px; opacity: 0.6; margin-top: 4px; text-transform: uppercase; }
+.fresh .header-meta {
+  padding: 22px 35px;
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+}
+.fresh .header-address { font-size: 0.9rem; color: #555; font-weight: 400; }
+.fresh .header-phone { font-size: 0.9rem; color: #1a1a1a; font-weight: 600; }
+
+.fresh .section-label {
+  text-align: center; padding: 55px 20px 10px;
+  font-family: 'Secular One', sans-serif;
+  font-size: 2.2rem; letter-spacing: 2px; color: #1a1a1a;
+}
+.fresh .section-sub { text-align: center; color: #999; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 45px; margin-top: 6px; }
+
+.fresh .grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
+}
+.fresh .tile {
+  background: #fff; border-radius: 4px;
+  border: 2px solid #1a1a1a;
+  cursor: pointer; transition: 0.25s;
+  overflow: hidden; position: relative;
+  box-shadow: 4px 4px 0 #1a1a1a;
+}
+.fresh .tile:hover { transform: translate(-3px, -3px); box-shadow: 7px 7px 0 #1a1a1a; }
+.fresh .tile:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #1a1a1a; }
+
+.fresh .tile-img {
+  height: 180px;
+  background: linear-gradient(135deg, #e8e5df 0%, #d5d0c8 100%);
+  background-size: cover; background-position: center;
+  position: relative;
+  border-bottom: 2px solid #1a1a1a;
+}
+.fresh .tile-badge {
+  position: absolute; top: 14px; right: 14px;
+  background: #1a1a1a; color: #fff;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
+  padding: 5px 12px; text-transform: uppercase;
+}
+.fresh .tile-content { padding: 20px 22px 22px; }
+.fresh .tile-name {
+  font-family: 'Secular One', sans-serif;
+  font-size: 1.4rem; color: #1a1a1a; margin-bottom: 8px;
+}
+.fresh .tile-count { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
+.fresh .tile-arrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 14px; font-size: 0.8rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase; color: #1a1a1a;
+}
+
+/* ════════════════════════════════════════════════
+   THEME 3: NATURE — Warm Organic / Earthy Bistro
+   ════════════════════════════════════════════════ */
+.nature {
+  background: #f9f4ec;
+  color: #2c2016;
+  direction: rtl;
+  font-family: 'Frank Ruhl Libre', serif;
+  padding-bottom: 80px;
+}
+
+.nature .header {
+  background: #2c2016;
+  padding: 28px 35px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nature .header-logo {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 2rem; font-weight: 900; color: #e8d5b0;
+  letter-spacing: 3px;
+}
+.nature .leaf { color: #7ab648; font-size: 1.4rem; margin-left: 8px; }
+.nature .header-address { font-size: 0.85rem; color: #a08060; letter-spacing: 0.5px; }
+
+.nature .section-label {
+  text-align: center; padding: 60px 20px 12px;
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 2.8rem; font-weight: 900; color: #2c2016;
+}
+.nature .section-ornament {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin: 12px auto 50px;
+}
+.nature .section-ornament::before, .nature .section-ornament::after {
+  content: ''; width: 80px; height: 2px;
+  background: #c4956a; border-radius: 2px;
+}
+.nature .section-ornament span { color: #7ab648; font-size: 1.2rem; }
+
+.nature .grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 24px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
+}
+.nature .tile {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e0cdb5;
+  cursor: pointer; transition: 0.35s;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(44,32,22,0.08);
+}
+.nature .tile:hover { transform: translateY(-5px); box-shadow: 0 14px 35px rgba(44,32,22,0.15); border-color: #c4956a; }
+
+.nature .tile-img {
+  height: 200px;
+  background: linear-gradient(135deg, #e8d5b0 0%, #d4c09a 100%);
+  background-size: cover; background-position: center;
+  position: relative;
+}
+.nature .tile-tag {
+  position: absolute; bottom: 14px; right: 14px;
+  background: #fff; color: #7ab648; border: 1.5px solid #7ab648;
+  border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+  padding: 4px 12px; letter-spacing: 1px;
+  font-family: 'Heebo', sans-serif;
+}
+.nature .tile-content { padding: 22px 24px 26px; }
+.nature .tile-name {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 1.45rem; font-weight: 700; color: #2c2016;
+  margin-bottom: 6px;
+}
+.nature .tile-count { font-size: 0.82rem; color: #a08060; margin-bottom: 14px; font-family: 'Heebo', sans-serif; }
+.nature .tile-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid #f0e4d0; padding-top: 14px;
+}
+.nature .tile-arrow {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #2c2016; color: #e8d5b0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; transition: 0.25s;
+}
+.nature .tile:hover .tile-arrow { background: #7ab648; color: #fff; }
+.nature .tile-meta { font-size: 0.75rem; color: #c4956a; font-family: 'Heebo', sans-serif; }
+
+/* ════════════════════════════════════════════════
+   THEME 4: BOLD — Street Food / Neon / Urban
+   ════════════════════════════════════════════════ */
+.bold {
+  background: #0e0e0e;
+  color: #fff;
+  direction: rtl;
+  font-family: 'Rubik', sans-serif;
+  padding-bottom: 80px;
+}
+
+.bold .header {
+  background: #0e0e0e;
+  border-bottom: 3px solid #ff3d00;
+  padding: 20px 30px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.bold .header-logo {
+  font-family: 'Rubik', sans-serif;
+  font-size: 1.8rem; font-weight: 900; color: #fff;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.bold .header-logo span { color: #ff3d00; }
+.bold .header-address { font-size: 0.85rem; color: #666; font-weight: 400; }
+.bold .header-open {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
+  background: #ff3d00; color: #fff;
+  padding: 4px 10px; border-radius: 2px; text-transform: uppercase;
+}
+
+.bold .section-label {
+  text-align: center; padding: 55px 20px 8px;
+  font-family: 'Rubik', sans-serif;
+  font-size: 3.5rem; font-weight: 900; color: #fff;
+  text-transform: uppercase; letter-spacing: -1px;
+  line-height: 1;
+}
+.bold .section-sub {
+  text-align: center; margin-bottom: 45px; margin-top: 6px;
+  font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase;
+  color: #ff3d00; font-weight: 700;
+}
+
+.bold .grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
+}
+.bold .tile {
+  background: #1a1a1a;
+  border-radius: 0;
+  border: 1px solid #2a2a2a;
+  border-right: 3px solid #ff3d00;
+  cursor: pointer; transition: 0.2s;
+  overflow: hidden; position: relative;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+.bold .tile:hover {
+  border-color: #ff3d00;
+  background: #1f1f1f;
+  box-shadow: 0 0 25px rgba(255,61,0,0.25);
+}
+.bold .tile-img {
+  height: 180px;
+  background: linear-gradient(135deg, #2a1a10 0%, #1a0f08 100%);
+  background-size: cover; background-position: center;
+  position: relative;
+}
+.bold .tile-img::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(14,14,14,0.9) 100%);
+}
+.bold .tile-number {
+  position: absolute; top: 14px; right: 16px; z-index: 2;
+  font-size: 3rem; font-weight: 900; color: rgba(255,61,0,0.25);
+  line-height: 1; font-family: 'Rubik', sans-serif;
+}
+.bold .tile-content { padding: 18px 20px 20px; }
+.bold .tile-name {
+  font-family: 'Rubik', sans-serif;
+  font-size: 1.3rem; font-weight: 700;
+  color: #fff; text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.bold .tile-count { font-size: 0.75rem; color: #555; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.bold .tile-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: #ff3d00;
+}
+.bold .tile-cta::after { content: '→'; transition: 0.2s; }
+.bold .tile:hover .tile-cta::after { transform: translateX(-4px); }
+
+/* ════════════════════════════════════════════════
+   FLOATING ACTIONS — each theme
+   ════════════════════════════════════════════════ */
+.demo-actions {
+  display: flex; justify-content: center; gap: 12px;
+  padding: 50px 20px 0; flex-wrap: wrap;
+}
+.luxury .demo-actions a {
+  text-decoration: none; padding: 11px 22px; border-radius: 30px;
+  font-size: 0.85rem; font-weight: 600; font-family: 'Heebo', sans-serif;
+  transition: 0.3s; letter-spacing: 0.5px;
+}
+.luxury .demo-actions a.primary { background: linear-gradient(135deg, #c9a35d 0%, #8b6f3e 100%); color: #000; }
+.luxury .demo-actions a.secondary { background: transparent; border: 1px solid rgba(201,163,93,0.4); color: #e0c084; }
+
+.fresh .demo-actions a {
+  text-decoration: none; padding: 12px 24px;
+  font-size: 0.85rem; font-weight: 700; font-family: 'Heebo', sans-serif;
+  transition: 0.2s; letter-spacing: 1px; text-transform: uppercase;
+}
+.fresh .demo-actions a.primary { background: #1a1a1a; color: #fff; border: 2px solid #1a1a1a; box-shadow: 3px 3px 0 #888; }
+.fresh .demo-actions a.secondary { background: #fff; color: #1a1a1a; border: 2px solid #1a1a1a; box-shadow: 3px 3px 0 #888; }
+
+.nature .demo-actions a {
+  text-decoration: none; padding: 12px 26px; border-radius: 30px;
+  font-size: 0.88rem; font-weight: 600; font-family: 'Heebo', sans-serif;
+  transition: 0.3s; letter-spacing: 0.5px;
+}
+.nature .demo-actions a.primary { background: #2c2016; color: #e8d5b0; }
+.nature .demo-actions a.secondary { background: transparent; border: 2px solid #c4956a; color: #2c2016; }
+
+.bold .demo-actions a {
+  text-decoration: none; padding: 12px 26px;
+  font-size: 0.8rem; font-weight: 700; font-family: 'Rubik', sans-serif;
+  letter-spacing: 2px; text-transform: uppercase; transition: 0.2s;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.bold .demo-actions a.primary { background: #ff3d00; color: #fff; }
+.bold .demo-actions a.secondary { background: transparent; border: 1px solid #ff3d00; color: #ff3d00; }
+
+/* sample image placeholders */
+.img-food-1 { background: linear-gradient(135deg, #4a3520 20%, #2a1f15 100%) !important; }
+.img-food-2 { background: linear-gradient(135deg, #3a2a1a 20%, #1a1208 100%) !important; }
+.img-food-3 { background: linear-gradient(135deg, #2a3a1a 20%, #121808 100%) !important; }
+.img-food-1f { background: linear-gradient(135deg, #e5ddd0 20%, #d0c8bc 100%) !important; }
+.img-food-2f { background: linear-gradient(135deg, #d0d8e0 20%, #c0c8d0 100%) !important; }
+.img-food-3f { background: linear-gradient(135deg, #d8e0d0 20%, #c8d0c0 100%) !important; }
+
+.label-icon { font-size: 2rem; opacity: 0.2; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showTheme('luxury')">✦ Luxury</button>
+  <button class="nav-btn" onclick="showTheme('fresh')">◈ Fresh</button>
+  <button class="nav-btn" onclick="showTheme('nature')">❧ Nature</button>
+  <button class="nav-btn" onclick="showTheme('bold')">▲ Bold</button>
+</div>
+
+
+<!-- ══════════════ LUXURY ══════════════ -->
+<div class="theme-section luxury active" id="theme-luxury">
+
+  <div class="header">
+    <div>
+      <div class="header-logo">LE BISTRO</div>
+    </div>
+    <div class="header-address">רחוב אלנבי 42, תל אביב</div>
+  </div>
+
+  <div class="section-label">התפריט שלנו</div>
+  <div class="section-ornament"><span>◆</span></div>
+
+  <div class="grid">
+    <!-- Tile 1 -->
+    <div class="tile">
+      <div class="tile-img img-food-1"><span class="label-icon">🥩</span></div>
+      <div class="tile-overlay"></div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="tile-content">
+        <div class="tile-name">מנות עיקריות</div>
+        <div class="tile-divider"></div>
+        <div class="tile-arrow">←</div>
+      </div>
+    </div>
+    <!-- Tile 2 -->
+    <div class="tile">
+      <div class="tile-img img-food-2"><span class="label-icon">🥗</span></div>
+      <div class="tile-overlay"></div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="tile-content">
+        <div class="tile-name">מנות ראשונות</div>
+        <div class="tile-divider"></div>
+        <div class="tile-arrow">←</div>
+      </div>
+    </div>
+    <!-- Tile 3 -->
+    <div class="tile">
+      <div class="tile-img img-food-3"><span class="label-icon">🍰</span></div>
+      <div class="tile-overlay"></div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="tile-content">
+        <div class="tile-name">קינוחים</div>
+        <div class="tile-divider"></div>
+        <div class="tile-arrow">←</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-actions">
+    <a href="#" class="primary">📞 התקשרו</a>
+    <a href="#" class="secondary">📍 נווט</a>
+    <a href="#" class="secondary">🌐 אתר</a>
+  </div>
+
+</div>
+
+
+<!-- ══════════════ FRESH ══════════════ -->
+<div class="theme-section fresh" id="theme-fresh">
+
+  <div class="header">
+    <div class="header-brand">
+      <div class="header-logo">CAFÉ MENU4U</div>
+      <div class="header-tagline">מנות טריות יומיות</div>
+    </div>
+    <div class="header-meta">
+      <div class="header-address">📍 רחוב דיזנגוף 88, תל אביב</div>
+      <div class="header-phone">📞 03-1234567</div>
+    </div>
+  </div>
+
+  <div class="section-label">בחר קטגוריה</div>
+  <div class="section-sub">מה תרצה היום?</div>
+
+  <div class="grid">
+    <!-- Tile 1 -->
+    <div class="tile">
+      <div class="tile-img img-food-1f">
+        <span class="label-icon" style="opacity:0.4; font-size: 3rem;">🥩</span>
+        <div class="tile-badge">HOT 🔥</div>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">מנות עיקריות</div>
+        <div class="tile-count">12 מנות</div>
+        <div class="tile-arrow">לצפייה בתפריט →</div>
+      </div>
+    </div>
+    <!-- Tile 2 -->
+    <div class="tile">
+      <div class="tile-img img-food-2f">
+        <span class="label-icon" style="opacity:0.4; font-size: 3rem;">🥗</span>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">מנות ראשונות</div>
+        <div class="tile-count">8 מנות</div>
+        <div class="tile-arrow">לצפייה בתפריט →</div>
+      </div>
+    </div>
+    <!-- Tile 3 -->
+    <div class="tile">
+      <div class="tile-img img-food-3f">
+        <span class="label-icon" style="opacity:0.4; font-size: 3rem;">🍰</span>
+        <div class="tile-badge">NEW ✨</div>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">קינוחים</div>
+        <div class="tile-count">6 מנות</div>
+        <div class="tile-arrow">לצפייה בתפריט →</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-actions">
+    <a href="#" class="primary">📞 התקשרו</a>
+    <a href="#" class="secondary">📍 נווט</a>
+  </div>
+
+</div>
+
+
+<!-- ══════════════ NATURE ══════════════ -->
+<div class="theme-section nature" id="theme-nature">
+
+  <div class="header">
+    <div>
+      <div class="header-logo"><span class="leaf">🌿</span>הביסטרו הירוק</div>
+    </div>
+    <div class="header-address">רחוב שינקין 15, תל אביב</div>
+  </div>
+
+  <div class="section-label">מה יש היום?</div>
+  <div class="section-ornament"><span>🌿</span></div>
+
+  <div class="grid">
+    <!-- Tile 1 -->
+    <div class="tile">
+      <div class="tile-img img-food-1" style="background: linear-gradient(135deg, #d4c09a 0%, #c0a880 100%) !important;">
+        <span class="label-icon" style="opacity:0.3; font-size: 3.5rem;">🥩</span>
+        <div class="tile-tag">ללא גלוטן</div>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">מנות עיקריות</div>
+        <div class="tile-count">12 מנות מיוחדות</div>
+        <div class="tile-footer">
+          <div class="tile-meta">מעודכן היום</div>
+          <div class="tile-arrow">←</div>
+        </div>
+      </div>
+    </div>
+    <!-- Tile 2 -->
+    <div class="tile">
+      <div class="tile-img" style="background: linear-gradient(135deg, #c8d8b0 0%, #b0c098 100%) !important;">
+        <span class="label-icon" style="opacity:0.3; font-size: 3.5rem;">🥗</span>
+        <div class="tile-tag">🌱 טבעוני</div>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">סלטים ומנות ראשונות</div>
+        <div class="tile-count">8 מנות מיוחדות</div>
+        <div class="tile-footer">
+          <div class="tile-meta">מרוכז מהחווה</div>
+          <div class="tile-arrow">←</div>
+        </div>
+      </div>
+    </div>
+    <!-- Tile 3 -->
+    <div class="tile">
+      <div class="tile-img" style="background: linear-gradient(135deg, #e8c8a8 0%, #d4b088 100%) !important;">
+        <span class="label-icon" style="opacity:0.3; font-size: 3.5rem;">🍰</span>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">קינוחים</div>
+        <div class="tile-count">6 מנות מיוחדות</div>
+        <div class="tile-footer">
+          <div class="tile-meta">ביתי ומפנק</div>
+          <div class="tile-arrow">←</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-actions">
+    <a href="#" class="primary">📞 התקשרו</a>
+    <a href="#" class="secondary">📍 נווט</a>
+    <a href="#" class="secondary">🌐 אתר</a>
+  </div>
+
+</div>
+
+
+<!-- ══════════════ BOLD ══════════════ -->
+<div class="theme-section bold" id="theme-bold">
+
+  <div class="header">
+    <div>
+      <div class="header-logo">FOOD<span>SPOT</span></div>
+      <div class="header-address">רחוב הרצל 5, תל אביב</div>
+    </div>
+    <div class="header-open">פתוח עכשיו</div>
+  </div>
+
+  <div class="section-label">ORDER NOW</div>
+  <div class="section-sub">בחר את הקטגוריה שלך</div>
+
+  <div class="grid">
+    <!-- Tile 1 -->
+    <div class="tile">
+      <div class="tile-img img-food-1">
+        <div class="tile-number">01</div>
+        <span class="label-icon" style="opacity:0.15; font-size: 4rem; z-index:3; position:relative;">🥩</span>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">מנות עיקריות</div>
+        <div class="tile-count">12 ITEMS</div>
+        <div class="tile-cta">הזמן עכשיו</div>
+      </div>
+    </div>
+    <!-- Tile 2 -->
+    <div class="tile">
+      <div class="tile-img" style="background: linear-gradient(135deg, #1a2a10 0%, #0f1a08 100%) !important;">
+        <div class="tile-number">02</div>
+        <span class="label-icon" style="opacity:0.15; font-size: 4rem; z-index:3; position:relative;">🥗</span>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">מנות ראשונות</div>
+        <div class="tile-count">8 ITEMS</div>
+        <div class="tile-cta">הזמן עכשיו</div>
+      </div>
+    </div>
+    <!-- Tile 3 -->
+    <div class="tile">
+      <div class="tile-img" style="background: linear-gradient(135deg, #2a1a10 0%, #1a0f08 100%) !important;">
+        <div class="tile-number">03</div>
+        <span class="label-icon" style="opacity:0.15; font-size: 4rem; z-index:3; position:relative;">🍰</span>
+      </div>
+      <div class="tile-content">
+        <div class="tile-name">קינוחים</div>
+        <div class="tile-count">6 ITEMS</div>
+        <div class="tile-cta">הזמן עכשיו</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-actions">
+    <a href="#" class="primary">📞 התקשרו</a>
+    <a href="#" class="secondary">📍 נווט</a>
+  </div>
+
+</div>
+
+
+<script>
+function showTheme(name) {
+  document.querySelectorAll('.theme-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('theme-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
