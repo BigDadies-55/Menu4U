@@ -52,6 +52,7 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
   const [modalItem, setModalItem] = useState<Item | null>(null);
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
 
+  const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
 
   const paletteStyle = buildPaletteStyle(
@@ -124,8 +125,55 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
           <div className="menu-page-anim">
             <div style={{ height: 30 }} />
             <div className="menu-categories-grid">
-              {categories.map(cat => {
+              {categories.map((cat, idx) => {
                 const img = cat.image || cat.items[0]?.image || null;
+
+                if (theme === 'fresh') {
+                  return (
+                    <div key={cat.id} className="menu-category-tile" onClick={() => openCategory(cat)}>
+                      <div className="menu-tile-image" style={img ? { backgroundImage: `url('${img}')` } : {}} />
+                      <div className="menu-tile-overlay" />
+                      <div className="menu-tile-bolt menu-tile-bolt-tl" />
+                      <div className="menu-tile-bolt menu-tile-bolt-tr" />
+                      <div className="menu-tile-bolt menu-tile-bolt-bl" />
+                      <div className="menu-tile-bolt menu-tile-bolt-br" />
+                      <div className="menu-tile-industrial-number">{String(idx + 1).padStart(2, '0')}</div>
+                      <div className="menu-tile-content">
+                        <h2 className="menu-tile-name">{cat.name}</h2>
+                        <div className="menu-tile-cta">לתפריט ←</div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (theme === 'nature') {
+                  return (
+                    <div key={cat.id} className="menu-category-tile" onClick={() => openCategory(cat)}>
+                      <div className="menu-tile-nature-img" style={img ? { backgroundImage: `url('${img}')` } : {}} />
+                      <div className="menu-tile-content">
+                        <h2 className="menu-tile-name">{cat.name}</h2>
+                        <div className="menu-tile-divider" />
+                        <div className="menu-tile-nature-count">{cat.items.length} מנות</div>
+                        <div className="menu-tile-arrow">←</div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (theme === 'bold') {
+                  return (
+                    <div key={cat.id} className="menu-category-tile" onClick={() => openCategory(cat)}>
+                      <div className="menu-tile-image" style={img ? { backgroundImage: `url('${img}')` } : {}} />
+                      <div className="menu-tile-overlay" />
+                      <div className="menu-tile-bold-number">{String(idx + 1).padStart(2, '0')}</div>
+                      <div className="menu-tile-content">
+                        <h2 className="menu-tile-name">{cat.name}</h2>
+                        <div className="menu-tile-cta">הכנס →</div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={cat.id} className="menu-category-tile" onClick={() => openCategory(cat)}>
                     <div className="menu-tile-image" style={img ? { backgroundImage: `url('${img}')` } : {}} />
