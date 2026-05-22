@@ -140,21 +140,22 @@ function TableCard({
         </div>
       </div>
 
-      {/* Orders in chronological order */}
-      {nonCancelledOrders.map((order, idx) => {
+      {/* Orders — newest first */}
+      {[...nonCancelledOrders].reverse().map((order, idx, arr) => {
         const isPending = order.status === "PENDING";
         const isDelivered = order.status === "DELIVERED";
+        const orderNum = arr.length - idx;
 
         return (
           <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #f3f4f6" : undefined }}>
             {/* Order sub-header */}
             <div
-              className="flex items-center justify-between px-4 py-2"
+              className="flex items-center justify-between px-3 py-1.5"
               style={{ background: isPending ? "#fefce8" : isDelivered ? "#f0fdf4" : "#fafafa" }}
             >
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <span className={`text-xs font-bold shrink-0 ${isPending ? "text-yellow-700" : isDelivered ? "text-green-700" : "text-gray-500"}`}>
-                  {isPending ? "🕐 ממתין לאישור" : isDelivered ? "✓ הושלם" : `הזמנה ${idx + 1}`}
+                  {isPending ? "🕐 ממתין" : isDelivered ? "✓ הושלם" : `הזמנה ${orderNum}`}
                 </span>
                 <span className="text-xs text-gray-400 shrink-0">
                   {order.items.length} מנות · ₪{order.totalAmount.toFixed(0)} · {timeSince(order.createdAt)}
@@ -167,7 +168,7 @@ function TableCard({
                 <button
                   onClick={() => confirmOrder(order.id)}
                   disabled={confirmingOrder === order.id}
-                  className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
+                  className="shrink-0 px-3 py-1 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
                   style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)" }}
                 >
                   {confirmingOrder === order.id ? "..." : "✓ אשר"}
@@ -176,7 +177,7 @@ function TableCard({
               {!isPending && !isDelivered && (
                 <button
                   onClick={() => onOrderCancel(order.id)}
-                  className="shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                  className="shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
                 >
                   ✕ בטל
                 </button>
@@ -193,13 +194,13 @@ function TableCard({
                 return (
                   <div
                     key={itemId}
-                    className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${isDone ? "opacity-50" : ""}`}
+                    className={`flex items-center gap-2 px-3 py-1.5 transition-colors ${isDone ? "opacity-50" : ""}`}
                   >
-                    <span className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
+                    <span className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
                       {quantity}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-semibold truncate ${isDone ? "line-through text-gray-400" : "text-gray-800"}`}>
+                      <div className={`text-sm font-medium truncate ${isDone ? "line-through text-gray-400" : "text-gray-800"}`}>
                         {item.name}
                       </div>
                       {notes && !isDone && (
@@ -207,7 +208,7 @@ function TableCard({
                       )}
                     </div>
                     {!isDelivered && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus]}`}>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus]}`}>
                         {ITEM_STATUS_LABEL[itemStatus]}
                       </span>
                     )}
@@ -215,13 +216,13 @@ function TableCard({
                       <button
                         onClick={() => advanceItem(order.id, itemId)}
                         disabled={isBusy}
-                        className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all"
+                        className="shrink-0 px-2 py-0.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all"
                         style={{ background: itemStatus === "PREPARING" ? "#22c55e" : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
                       >
                         {isBusy ? "..." : nextLabel}
                       </button>
                     ) : isDone ? (
-                      <span className="shrink-0 text-green-500 text-base">✓</span>
+                      <span className="shrink-0 text-green-500 text-sm">✓</span>
                     ) : null}
                   </div>
                 );
