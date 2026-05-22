@@ -32,7 +32,7 @@ const ITEM_COLOR: Record<string, string> = {
 const ITEM_LABEL: Record<string, string> = {
   PENDING: "ממתין",
   PREPARING: "בהכנה",
-  DONE: "הוכן ✓",
+  DONE: "🔔 מוכן למסירה",
 };
 
 const ITEM_NEXT_LABEL: Record<string, string> = {
@@ -179,7 +179,9 @@ function TableCard({
                   <div
                     key={`${itemId}-${tick}`}
                     className="flex items-center gap-3 px-4 py-3 transition-all"
-                    style={{ opacity: isDone ? 0.45 : 1 }}
+                    style={{
+                      background: isDone && !isDelivered ? "#0a2a0a" : "transparent",
+                    }}
                   >
                     <span
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0"
@@ -190,18 +192,18 @@ function TableCard({
                     <div className="flex-1 min-w-0">
                       <div
                         className="text-base font-semibold truncate"
-                        style={{ color: isDone ? "#4b5563" : "#f3f4f6", textDecoration: isDone ? "line-through" : "none" }}
+                        style={{ color: isDelivered ? "#374151" : "#f3f4f6" }}
                       >
                         {item.name}
                       </div>
-                      {notes && !isDone && (
+                      {notes && (
                         <div className="text-xs text-gray-600 italic truncate mt-0.5">{notes}</div>
                       )}
                     </div>
                     {!isDelivered && (
                       <span
-                        className="text-xs px-2.5 py-1 rounded-full font-semibold shrink-0"
-                        style={{ background: color + "22", color }}
+                        className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${isDone ? "animate-pulse" : ""}`}
+                        style={{ background: color + "33", color }}
                       >
                         {ITEM_LABEL[itemStatus]}
                       </span>
@@ -222,7 +224,6 @@ function TableCard({
                         {isBusy ? "..." : nextLabel}
                       </button>
                     )}
-                    {isDone && <span className="text-green-400 text-lg shrink-0">✓</span>}
                   </div>
                 );
               })}

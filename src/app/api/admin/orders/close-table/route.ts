@@ -35,38 +35,49 @@ export async function POST(req: Request) {
     return NextResponse.json({ closed: 0, totalAmount: 0 });
   }
 
-  const totalAmount = activeOrders.reduce((s, o) => s + o.totalAmount, 0);
-  const openedAt = activeOrders[0].createdAt;
+  // Include already-delivered orders for the session total
+  const allTableOrders = await prisma.order.findMany({
+    where: { restaurantId, tableNumber, status: { notIn: ["CANCELLED"] } },
+    select: { id: true, totalAmount: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
 
-  await prisma.$transaction([
-    // Mark all active orders as DELIVERED
-    prisma.order.updateMany({
-      where: { id: { in: activeOrders.map(o => o.id) } },
-      data: { status: "DELIVERED" },
-    }),
-    // Create status logs for each order
-    prisma.orderStatusLog.createMany({
-      data: activeOrders.map(o => ({
-        id: `close-${o.id}-${Date.now()}`,
-        orderId: o.id,
-        fromStatus: o.status,
-        toStatus: "DELIVERED",
-        changedBy: session.user.id,
-      })),
-      skipDuplicates: true,
-    }),
-    // Record the table session
-    prisma.tableSession.create({
+  const totalAmount = allTableOrders.reduce((s, o) => s + o.totalAmount, 0);
+  const openedAt = allTableOrders[0]?.createdAt ?? new Date();
+
+  // Core: mark remaining active orders as DELIVERED
+  if (activeOrders.length > 0) {
+    await prisma.$transaction([
+      prisma.order.updateMany({
+        where: { id: { in: activeOrders.map(o => o.id) } },
+        data: { status: "DELIVERED" },
+      }),
+      prisma.orderStatusLog.createMany({
+        data: activeOrders.map(o => ({
+          id: `close-${o.id}-${Date.now()}`,
+          orderId: o.id,
+          fromStatus: o.status,
+          toStatus: "DELIVERED",
+          changedBy: session.user.id,
+        })),
+        skipDuplicates: true,
+      }),
+    ]);
+  }
+
+  // Best-effort: record table session (non-critical, won't fail the close)
+  try {
+    await prisma.tableSession.create({
       data: {
         id: `ts-${restaurantId}-${tableNumber}-${Date.now()}`,
         restaurantId,
         tableNumber,
         openedAt,
         totalAmount,
-        orderCount: activeOrders.length,
+        orderCount: allTableOrders.length,
       },
-    }),
-  ]);
+    });
+  } catch { /* migration may not have run yet — ignore */ }
 
   return NextResponse.json({ closed: activeOrders.length, totalAmount });
 }

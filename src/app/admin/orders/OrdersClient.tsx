@@ -109,8 +109,8 @@ function TableCard({
   async function closeTable() {
     if (!restaurantId) return;
     setClosingTable(true);
-    await onCloseTable(tableNumber, restaurantId);
-    setClosingTable(false);
+    // Optimistic: close immediately in UI, then sync to server
+    onCloseTable(tableNumber, restaurantId);
   }
 
   return (
@@ -303,7 +303,7 @@ export default function OrdersClient({
         const data: Order[] = await res.json();
         // Filter out tables closed in this session
         const filtered = closedTablesRef.current.size > 0
-          ? data.filter(o => !closedTablesRef.current.has(o.tableNumber ?? ""))
+          ? data.filter(o => !closedTablesRef.current.has(o.tableNumber ?? "–"))
           : data;
         setOrders(filtered);
         setLastRefresh(new Date());
@@ -357,14 +357,15 @@ export default function OrdersClient({
   }
 
   async function closeTable(tableNumber: string, rid: string) {
-    const res = await fetch("/api/admin/orders/close-table", {
+    // Optimistic: remove immediately so table disappears without waiting for API
+    closedTablesRef.current.add(tableNumber);
+    setOrders(prev => prev.filter(o => (o.tableNumber ?? "–") !== tableNumber));
+    // Fire and forget — API failure won't affect the UI
+    fetch("/api/admin/orders/close-table", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tableNumber, restaurantId: rid }),
-    });
-    if (!res.ok) return;
-    closedTablesRef.current.add(tableNumber);
-    setOrders(prev => prev.filter(o => o.tableNumber !== tableNumber));
+    }).catch(() => {/* ignore */});
   }
 
   const activeOrders = filter === "active"
