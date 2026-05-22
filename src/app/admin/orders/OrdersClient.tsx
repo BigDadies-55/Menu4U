@@ -356,7 +356,7 @@ export default function OrdersClient({
   }
 
   const activeOrders = filter === "active"
-    ? orders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status))
+    ? orders.filter(o => o.status !== "CANCELLED")
     : orders;
 
   // Group by table, sorted oldest first
