@@ -6,11 +6,32 @@ import { cn } from "@/lib/utils";
 import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: string;
+  exact?: boolean;
+  superAdmin?: boolean;
+  adminOnly?: boolean;
+  waiterHide?: boolean;
+  displayHide?: boolean;
+  children?: { href: string; label: string; icon: string; waiterHide?: boolean; displayHide?: boolean }[];
+};
+
+const navItems: NavItem[] = [
   { href: "/admin", label: "דשבורד", icon: "▣", exact: true, waiterHide: true, displayHide: true },
   { href: "/admin/restaurants", label: "מסעדות", icon: "◈", superAdmin: true, waiterHide: true, displayHide: true },
   { href: "/admin/menus", label: "תפריטים", icon: "◉", waiterHide: true, displayHide: true },
-  { href: "/admin/orders", label: "הזמנות", icon: "🍽", exact: false, displayHide: true },
+  {
+    href: "/admin/orders",
+    label: "הזמנות",
+    icon: "🍽",
+    exact: false,
+    displayHide: true,
+    children: [
+      { href: "/admin/orders/stats", label: "סטטיסטיקות", icon: "📊", waiterHide: true, displayHide: true },
+    ],
+  },
   { href: "/admin/dashboard", label: "תצוגת מטבח", icon: "📺", exact: false },
   { href: "/admin/layout-builder", label: "פריסת שולחנות", icon: "🗺", waiterHide: true, displayHide: true },
   { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true, waiterHide: true, displayHide: true },
@@ -60,14 +81,37 @@ export default function Sidebar({ user, isOpen = false, onClose, onChangePasswor
         <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest px-3 mb-3">ניווט</p>
         {visibleItems.map((item) => {
           const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+          const visibleChildren = item.children?.filter(child => {
+            if (child.waiterHide && isWaiter) return false;
+            if (child.displayHide && isDisplay) return false;
+            return true;
+          });
           return (
-            <Link key={item.href} href={item.href} onClick={onClose}
-              className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
-                isActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
-              style={isActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
-              <span className={cn("text-base transition-transform duration-150", isActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>{item.icon}</span>
-              {item.label}
-            </Link>
+            <div key={item.href}>
+              <Link href={item.href} onClick={onClose}
+                className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
+                  isActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
+                style={isActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
+                <span className={cn("text-base transition-transform duration-150", isActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>{item.icon}</span>
+                {item.label}
+              </Link>
+              {visibleChildren && visibleChildren.length > 0 && isActive && (
+                <div className="mr-4 mt-0.5 border-r border-white/10 pr-2 space-y-0.5">
+                  {visibleChildren.map(child => {
+                    const childActive = pathname.startsWith(child.href);
+                    return (
+                      <Link key={child.href} href={child.href} onClick={onClose}
+                        className={cn("group flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150 text-xs font-medium",
+                          childActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
+                        style={childActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
+                        <span className={cn("text-sm", childActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>{child.icon}</span>
+                        {child.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

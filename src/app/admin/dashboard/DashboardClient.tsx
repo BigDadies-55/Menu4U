@@ -22,10 +22,10 @@ type Order = {
 type Restaurant = { id: string; name: string };
 
 const COLUMNS = [
-  { status: "PENDING",   label: "ממתין לאישור", icon: "🕐", color: "#f59e0b", bg: "#1c1408", border: "#92400e" },
-  { status: "CONFIRMED", label: "אושר — מחכה",  icon: "✓",  color: "#3b82f6", bg: "#0c1220", border: "#1e3a6e" },
-  { status: "PREPARING", label: "בהכנה",         icon: "👨‍🍳", color: "#f97316", bg: "#1c0e06", border: "#92420e" },
-  { status: "READY",     label: "מוכן למסירה",  icon: "🔔", color: "#22c55e", bg: "#061c0e", border: "#14532d" },
+  { status: "PENDING",   label: "ממתין לאישור", icon: "🕐", color: "#facc15", bg: "#18160a", border: "#3d3208" },
+  { status: "CONFIRMED", label: "אושר — מחכה",  icon: "✓",  color: "#38bdf8", bg: "#091520", border: "#0c3050" },
+  { status: "PREPARING", label: "בהכנה",         icon: "👨‍🍳", color: "#fb923c", bg: "#1a0f06", border: "#3d2008" },
+  { status: "READY",     label: "מוכן למסירה",  icon: "🔔", color: "#4ade80", bg: "#081a0f", border: "#0e3d1e" },
 ];
 
 const NEXT_STATUS: Record<string, string | undefined> = {

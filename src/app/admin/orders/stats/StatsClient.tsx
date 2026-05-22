@@ -157,6 +157,10 @@ function SeverityBadge({ s }: { s: "warn" | "info" | "ok" }) {
   return <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${s === "warn" ? "bg-red-400" : s === "ok" ? "bg-green-400" : "bg-blue-400"}`} />;
 }
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function StatsClient({
   restaurants,
   isSuperAdmin,
@@ -166,17 +170,25 @@ export default function StatsClient({
 }) {
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [period, setPeriod] = useState(30);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ days: String(period) });
+    const params = new URLSearchParams();
+    if (dateFrom) {
+      params.set("from", dateFrom);
+      if (dateTo) params.set("to", dateTo);
+    } else {
+      params.set("days", String(period));
+    }
     if (restaurantId) params.set("restaurantId", restaurantId);
     const res = await fetch(`/api/admin/orders/stats?${params}`);
     if (res.ok) setStats(await res.json());
     setLoading(false);
-  }, [restaurantId, period]);
+  }, [restaurantId, period, dateFrom, dateTo]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
@@ -196,7 +208,7 @@ export default function StatsClient({
           <h1 className="text-2xl font-bold text-gray-900">📊 סטטיסטיקות הזמנות</h1>
           <p className="text-gray-500 text-sm mt-0.5">ניתוח זמני סטטוסים, עומסים והמלצות</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           {isSuperAdmin && restaurants.length > 1 && (
             <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
               className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
@@ -205,12 +217,35 @@ export default function StatsClient({
           )}
           <div className="flex rounded-xl overflow-hidden border border-gray-200">
             {[7, 30, 90].map(d => (
-              <button key={d} onClick={() => setPeriod(d)}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${period === d ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-                style={period === d ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}>
+              <button key={d} onClick={() => { setPeriod(d); setDateFrom(""); setDateTo(""); }}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${!dateFrom && period === d ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                style={!dateFrom && period === d ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}>
                 {d} ימים
               </button>
             ))}
+          </div>
+          <div className="flex items-center gap-1.5 border border-gray-200 rounded-xl px-3 py-1.5 bg-white">
+            <span className="text-xs text-gray-400">מ-</span>
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || todayStr()}
+              onChange={e => setDateFrom(e.target.value)}
+              className="text-sm text-gray-700 focus:outline-none bg-transparent"
+            />
+            <span className="text-xs text-gray-400 mx-1">עד</span>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              max={todayStr()}
+              onChange={e => setDateTo(e.target.value)}
+              className="text-sm text-gray-700 focus:outline-none bg-transparent"
+            />
+            {dateFrom && (
+              <button onClick={() => { setDateFrom(""); setDateTo(""); }}
+                className="text-gray-400 hover:text-gray-700 text-xs mr-1">✕</button>
+            )}
           </div>
         </div>
       </div>

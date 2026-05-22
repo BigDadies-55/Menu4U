@@ -21,9 +21,22 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const restaurantId = searchParams.get("restaurantId");
   const days = parseInt(searchParams.get("days") ?? "30");
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
 
-  const since = new Date();
-  since.setDate(since.getDate() - days);
+  let since: Date;
+  let until: Date | undefined;
+  if (fromParam) {
+    since = new Date(fromParam);
+    since.setHours(0, 0, 0, 0);
+    if (toParam) {
+      until = new Date(toParam);
+      until.setHours(23, 59, 59, 999);
+    }
+  } else {
+    since = new Date();
+    since.setDate(since.getDate() - days);
+  }
 
   const role = session.user.role;
   const userId = session.user.id;
@@ -44,8 +57,12 @@ export async function GET(req: Request) {
     allowedIds = [restaurantId];
   }
 
+  const createdAtFilter = until
+    ? { gte: since, lte: until }
+    : { gte: since };
+
   const orderWhere = {
-    createdAt: { gte: since },
+    createdAt: createdAtFilter,
     ...(allowedIds ? { restaurantId: { in: allowedIds } } : {}),
   };
 
@@ -72,7 +89,7 @@ export async function GET(req: Request) {
     }),
     prisma.orderStatusLog.findMany({
       where: {
-        changedAt: { gte: since },
+        changedAt: until ? { gte: since, lte: until } : { gte: since },
         order: allowedIds ? { restaurantId: { in: allowedIds } } : undefined,
       },
       orderBy: { changedAt: "asc" },
@@ -125,10 +142,13 @@ export async function GET(req: Request) {
     byHour[h]++;
   }
 
-  // Orders by day (last `days` days)
+  // Orders by day
   const byDay: { date: string; count: number; revenue: number }[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
+  const endDate = until ?? new Date();
+  const spanMs = endDate.getTime() - since.getTime();
+  const spanDays = Math.max(1, Math.ceil(spanMs / 86400000));
+  for (let i = spanDays - 1; i >= 0; i--) {
+    const d = new Date(endDate);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().slice(0, 10);
     const dayOrders = orders.filter(o => o.createdAt.toISOString().slice(0, 10) === dateStr);
@@ -166,7 +186,7 @@ export async function GET(req: Request) {
   })();
 
   const stats = {
-    period: days,
+    period: fromParam ? spanDays : days,
     totalOrders: orders.length,
     totalRevenue,
     avgOrderValue: orders.length ? totalRevenue / orders.filter(o => o.status !== "CANCELLED").length : 0,

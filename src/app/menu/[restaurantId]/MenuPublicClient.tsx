@@ -45,6 +45,7 @@ type CartItem = {
   name: string;
   price: number;
   quantity: number;
+  notes?: string;
 };
 
 function getItemBadges(item: Item): string[] {
@@ -144,6 +145,10 @@ export default function MenuPublicClient({
     setCart(prev => prev.filter(c => c.itemId !== itemId));
   }
 
+  function updateNotes(itemId: string, notes: string) {
+    setCart(prev => prev.map(c => c.itemId === itemId ? { ...c, notes } : c));
+  }
+
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
   const cartTotal = cart.reduce((s, c) => s + c.price * c.quantity, 0);
 
@@ -157,7 +162,7 @@ export default function MenuPublicClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tableNumber: tableNumber || "",
-          items: cart.map(c => ({ itemId: c.itemId, quantity: c.quantity })),
+          items: cart.map(c => ({ itemId: c.itemId, quantity: c.quantity, notes: c.notes || null })),
           customerName: "",
           notes: "",
         }),
@@ -484,61 +489,78 @@ export default function MenuPublicClient({
                   <div
                     key={c.itemId}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
                       padding: "10px 0",
                       borderBottom: "1px solid var(--border)",
                     }}
                   >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>{c.name}</div>
-                      <div style={{ color: "var(--gold)", fontSize: 13, marginTop: 2 }}>₪{c.price}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>{c.name}</div>
+                        <div style={{ color: "var(--gold)", fontSize: 13, marginTop: 2 }}>₪{c.price}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <button
+                          onClick={() => updateQty(c.itemId, -1)}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            border: "1px solid var(--border)",
+                            background: "none",
+                            color: "var(--text)",
+                            cursor: "pointer",
+                            fontSize: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          −
+                        </button>
+                        <span style={{ color: "var(--text)", fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                          {c.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQty(c.itemId, 1)}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            border: "1px solid var(--gold)",
+                            background: "none",
+                            color: "var(--gold)",
+                            cursor: "pointer",
+                            fontSize: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div style={{ color: "var(--text)", fontSize: 13, minWidth: 48, textAlign: "left" }}>
+                        ₪{c.price * c.quantity}
+                      </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <button
-                        onClick={() => updateQty(c.itemId, -1)}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          border: "1px solid var(--border)",
-                          background: "none",
-                          color: "var(--text)",
-                          cursor: "pointer",
-                          fontSize: 16,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        −
-                      </button>
-                      <span style={{ color: "var(--text)", fontSize: 14, minWidth: 20, textAlign: "center" }}>
-                        {c.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQty(c.itemId, 1)}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          border: "1px solid var(--gold)",
-                          background: "none",
-                          color: "var(--gold)",
-                          cursor: "pointer",
-                          fontSize: 16,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div style={{ color: "var(--text)", fontSize: 13, minWidth: 48, textAlign: "left" }}>
-                      ₪{c.price * c.quantity}
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="הערה למנה (אופציונלי)"
+                      value={c.notes ?? ""}
+                      onChange={e => updateNotes(c.itemId, e.target.value)}
+                      style={{
+                        marginTop: 6,
+                        width: "100%",
+                        padding: "5px 10px",
+                        fontSize: 12,
+                        background: "transparent",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6,
+                        color: "var(--text)",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
                   </div>
                 ))
               )}
