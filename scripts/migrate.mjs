@@ -43,6 +43,9 @@ const sqls = [
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "termsAcceptedIp" TEXT;`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "termsAcceptedUserAgent" TEXT;`,
   `UPDATE "User" SET "emailVerified" = "createdAt" WHERE "emailVerified" IS NULL;`,
+  `ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'WAITER';`,
+  `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "ordersEnabled" BOOLEAN NOT NULL DEFAULT false;`,
+  `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tableLayoutJson" TEXT;`,
 ];
 
 async function run() {

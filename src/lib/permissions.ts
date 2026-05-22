@@ -6,6 +6,7 @@ export const ROLE_HIERARCHY: Record<Role, number> = {
   OWNER: 2,
   EDITOR: 2,
   VIEWER: 1,
+  WAITER: 0,
 };
 
 export function hasPermission(userRole: Role, requiredRole: Role): boolean {
@@ -34,6 +35,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   OWNER: "בעל מסעדה",
   EDITOR: "עורך",
   VIEWER: "צופה",
+  WAITER: "מלצר",
 };
 
 export const ROLE_COLORS: Record<Role, string> = {
@@ -42,4 +44,5 @@ export const ROLE_COLORS: Record<Role, string> = {
   OWNER: "bg-amber-100 text-amber-800",
   EDITOR: "bg-blue-100 text-blue-800",
   VIEWER: "bg-gray-100 text-gray-800",
+  WAITER: "bg-green-100 text-green-800",
 };

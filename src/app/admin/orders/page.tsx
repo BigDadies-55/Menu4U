@@ -1,120 +1,65 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { formatPrice, formatDate } from "@/lib/utils";
+import OrdersClient from "./OrdersClient";
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: "ממתין",
-  CONFIRMED: "אושר",
-  PREPARING: "בהכנה",
-  READY: "מוכן",
-  DELIVERED: "נמסר",
-  CANCELLED: "בוטל",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  CONFIRMED: "bg-blue-100 text-blue-800",
-  PREPARING: "bg-amber-100 text-amber-800",
-  READY: "bg-green-100 text-green-800",
-  DELIVERED: "bg-gray-100 text-gray-800",
-  CANCELLED: "bg-red-100 text-red-800",
-};
+export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  let orders;
-  if (session.user.role === "SUPER_ADMIN") {
-    orders = await prisma.order.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        restaurant: { select: { name: true } },
-        items: { include: { item: { select: { name: true } } } },
-      },
-    });
-  } else {
-    const userRestaurants = await prisma.restaurantUser.findMany({
-      where: { userId: session.user.id },
+  const role = session.user.role;
+  const userId = session.user.id;
+  const isSuperAdmin = role === "SUPER_ADMIN";
+
+  let restaurantIds: string[] = [];
+  if (!isSuperAdmin) {
+    const links = await prisma.restaurantUser.findMany({
+      where: { userId },
       select: { restaurantId: true },
     });
-    const ids = userRestaurants.map((r) => r.restaurantId);
-    orders = await prisma.order.findMany({
-      where: { restaurantId: { in: ids } },
-      orderBy: { createdAt: "desc" },
+    restaurantIds = links.map(l => l.restaurantId);
+    if (restaurantIds.length === 0 && role === "WAITER") {
+      return (
+        <div className="p-8 text-center text-gray-500">
+          <div className="text-4xl mb-3">🍽</div>
+          <p>לא שויכת לאף מסעדה עדיין.</p>
+        </div>
+      );
+    }
+  }
+
+  const [initialOrders, restaurants] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        ...(isSuperAdmin ? {} : { restaurantId: { in: restaurantIds } }),
+        status: { notIn: ["DELIVERED", "CANCELLED"] },
+      },
+      orderBy: { createdAt: "asc" },
       include: {
         restaurant: { select: { name: true } },
         items: { include: { item: { select: { name: true } } } },
       },
-    });
-  }
+    }),
+    isSuperAdmin
+      ? prisma.restaurant.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } })
+      : prisma.restaurant.findMany({
+          where: { id: { in: restaurantIds } },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+  ]);
+
+  const defaultRestaurantId =
+    !isSuperAdmin && restaurantIds.length === 1 ? restaurantIds[0] : null;
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">ניהול הזמנות</h1>
-        <p className="text-gray-500 mt-1">{orders.length} הזמנות</p>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 text-right">
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">לקוח</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">מסעדה</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">פריטים</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סכום</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">תאריך</th>
-              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סטטוס</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {orders.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
-                  אין הזמנות עדיין
-                </td>
-              </tr>
-            ) : (
-              orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">
-                      {order.customerName ?? "אנונימי"}
-                    </div>
-                    {order.tableNumber && (
-                      <div className="text-xs text-gray-400">שולחן {order.tableNumber}</div>
-                    )}
-                    {order.customerPhone && (
-                      <div className="text-xs text-gray-400" dir="ltr">{order.customerPhone}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{order.restaurant.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {order.items.map((oi) => (
-                      <div key={oi.id}>
-                        {oi.quantity}x {oi.item.name}
-                      </div>
-                    ))}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-gray-900">
-                    {formatPrice(order.totalAmount)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(order.createdAt)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[order.status]}`}>
-                      {STATUS_LABELS[order.status]}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        </div>
-      </div>
-    </div>
+    <OrdersClient
+      initialOrders={initialOrders as Parameters<typeof OrdersClient>[0]["initialOrders"]}
+      restaurants={restaurants}
+      isSuperAdmin={isSuperAdmin}
+      defaultRestaurantId={defaultRestaurantId}
+    />
   );
 }
