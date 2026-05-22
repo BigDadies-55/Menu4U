@@ -62,7 +62,6 @@ function TableCard({
   tableNumber,
   orders,
   isSuperAdmin,
-  restaurantId,
   onItemAdvance,
   onOrderCancel,
   onConfirmOrder,
@@ -71,15 +70,13 @@ function TableCard({
   tableNumber: string;
   orders: Order[];
   isSuperAdmin: boolean;
-  restaurantId: string;
   onItemAdvance: (orderId: string, itemId: string) => Promise<void>;
   onOrderCancel: (orderId: string) => Promise<void>;
   onConfirmOrder: (orderId: string) => Promise<void>;
-  onCloseTable: (tableNumber: string, restaurantId: string) => Promise<void>;
+  onCloseTable: (tableNumber: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
-  const [closingTable, setClosingTable] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
 
   const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED");
@@ -106,11 +103,8 @@ function TableCard({
     setConfirmingOrder(null);
   }
 
-  async function closeTable() {
-    if (!restaurantId) return;
-    setClosingTable(true);
-    // Optimistic: close immediately in UI, then sync to server
-    onCloseTable(tableNumber, restaurantId);
+  function closeTable() {
+    onCloseTable(tableNumber);
   }
 
   return (
@@ -128,25 +122,28 @@ function TableCard({
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
           <div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</span>
-              <span className="font-black text-gray-900 text-lg">₪{totalAmount.toFixed(0)}</span>
-              <span className="text-xs text-gray-400">{nonCancelledOrders.length} הזמנות</span>
-            </div>
+            <div className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</div>
             <div className={`text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
               ⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {allItems.map(i => (
-              <div key={i.id} className="w-2 h-2 rounded-full"
-                style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#d1d5db" }}
-              />
-            ))}
+        {/* Left side: price large + order count + progress dots */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-left">
+            <div className="font-black text-gray-900 text-xl leading-none">₪{totalAmount.toFixed(0)}</div>
+            <div className="text-xs text-gray-400 mt-0.5">{nonCancelledOrders.length} הזמנות</div>
           </div>
-          <span className="text-xs text-gray-400">{doneCount}/{totalCount}</span>
+          <div className="flex flex-col gap-1 items-end">
+            <div className="flex gap-1">
+              {allItems.map(i => (
+                <div key={i.id} className="w-2 h-2 rounded-full"
+                  style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#d1d5db" }}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-400">{doneCount}/{totalCount}</span>
+          </div>
         </div>
       </div>
 
@@ -242,7 +239,7 @@ function TableCard({
       })}
 
       {/* Footer: close table */}
-      {restaurantId && nonCancelledOrders.length > 0 && (
+      {nonCancelledOrders.length > 0 && (
         <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
           {confirmClose ? (
             <div className="flex items-center gap-2">
@@ -254,12 +251,11 @@ function TableCard({
                 ביטול
               </button>
               <button
-                onClick={closeTable}
-                disabled={closingTable}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
+                onClick={() => onCloseTable(tableNumber)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
                 style={{ background: "#16a34a" }}
               >
-                {closingTable ? "..." : "✓ אשר סגירה"}
+                ✓ אשר סגירה
               </button>
             </div>
           ) : (
@@ -360,11 +356,14 @@ export default function OrdersClient({
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "CONFIRMED" } : o));
   }
 
-  async function closeTable(tableNumber: string, rid: string) {
-    // Optimistic: remove immediately so table disappears without waiting for API
+  function closeTable(tableNumber: string) {
+    // Get restaurantId from the order data (most reliable source)
+    const tableOrders = orders.filter(o => (o.tableNumber ?? "–") === tableNumber);
+    const rid = tableOrders[0]?.restaurant?.id || restaurantId;
+    // Optimistic: remove from UI immediately
     closedTablesRef.current.add(tableNumber);
     setOrders(prev => prev.filter(o => (o.tableNumber ?? "–") !== tableNumber));
-    // Fire and forget — API failure won't affect the UI
+    // Fire and forget
     fetch("/api/admin/orders/close-table", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -470,7 +469,6 @@ export default function OrdersClient({
               tableNumber={table}
               orders={tableOrders}
               isSuperAdmin={isSuperAdmin}
-              restaurantId={tableOrders[0]?.restaurant.id ?? restaurantId}
               onItemAdvance={advanceItem}
               onOrderCancel={cancelOrder}
               onConfirmOrder={confirmOrder}
