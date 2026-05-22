@@ -47,6 +47,18 @@ const sqls = [
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "ordersEnabled" BOOLEAN NOT NULL DEFAULT false;`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tableLayoutJson" TEXT;`,
   `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "prepTime" INTEGER;`,
+  `CREATE TABLE IF NOT EXISTS "OrderStatusLog" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "fromStatus" TEXT NOT NULL,
+    "toStatus" TEXT NOT NULL,
+    "changedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "changedBy" TEXT,
+    CONSTRAINT "OrderStatusLog_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "OrderStatusLog_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE
+  );`,
+  `CREATE INDEX IF NOT EXISTS "OrderStatusLog_orderId_idx" ON "OrderStatusLog"("orderId");`,
+  `CREATE INDEX IF NOT EXISTS "OrderStatusLog_changedAt_idx" ON "OrderStatusLog"("changedAt" DESC);`,
 ];
 
 async function run() {
