@@ -54,6 +54,15 @@ const STATUS_BADGE: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-800",
 };
 
+const STATUS_COLOR: Record<string, string> = {
+  PENDING: "#f59e0b",
+  CONFIRMED: "#38bdf8",
+  PREPARING: "#fb923c",
+  READY: "#4ade80",
+  DELIVERED: "#9ca3af",
+  CANCELLED: "#f87171",
+};
+
 const NEXT_STATUS: Record<string, string | undefined> = {
   PENDING: "CONFIRMED",
   CONFIRMED: "PREPARING",
@@ -62,10 +71,10 @@ const NEXT_STATUS: Record<string, string | undefined> = {
 };
 
 const NEXT_LABEL: Record<string, string> = {
-  PENDING: "אשר הזמנה",
-  CONFIRMED: "התחל הכנה",
-  PREPARING: "מוכן למסירה",
-  READY: "סומן כנמסר",
+  PENDING: "אשר",
+  CONFIRMED: "להכנה",
+  PREPARING: "מוכן",
+  READY: "נמסר ✓",
 };
 
 const STATUS_ICON: Record<string, string> = {
@@ -80,22 +89,26 @@ const STATUS_ICON: Record<string, string> = {
 function timeSince(dateStr: string): string {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
   if (diff < 1) return "עכשיו";
-  if (diff < 60) return `לפני ${diff} דק'`;
-  const h = Math.floor(diff / 60);
-  return `לפני ${h} שעות`;
+  if (diff < 60) return `${diff} דק'`;
+  return `${Math.floor(diff / 60)}ש'`;
 }
 
-function OrderCard({
+function ItemCard({
+  orderItem,
   order,
   isSuperAdmin,
   onStatusChange,
 }: {
+  orderItem: OrderItem;
   order: Order;
   isSuperAdmin: boolean;
   onStatusChange: (id: string, status: string) => Promise<void>;
 }) {
   const [updating, setUpdating] = useState(false);
   const nextStatus = NEXT_STATUS[order.status];
+  const elapsed = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
+  const isUrgent = elapsed > 20 && !["DELIVERED", "CANCELLED", "READY"].includes(order.status);
+  const accent = STATUS_COLOR[order.status] ?? "#9ca3af";
 
   async function advance() {
     if (!nextStatus) return;
@@ -112,81 +125,83 @@ function OrderCard({
   }
 
   return (
-    <div className={`rounded-2xl border p-5 transition-all ${STATUS_BG[order.status]}`}>
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        {/* Left: table + time */}
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-white border-2 border-amber-200 flex flex-col items-center justify-center shadow-sm shrink-0">
-            <div className="text-xs text-gray-400 leading-none">שולחן</div>
-            <div className="text-lg font-bold text-amber-700 leading-tight">
-              {order.tableNumber ?? "–"}
-            </div>
-          </div>
-          <div>
-            <div className="font-semibold text-gray-900 text-sm">
-              {order.customerName ?? "לקוח"}
-            </div>
-            <div className="text-xs text-gray-500 mt-0.5">{timeSince(order.createdAt)}</div>
-            {isSuperAdmin && (
-              <div className="text-xs text-gray-400">{order.restaurant.name}</div>
+    <div
+      className={`rounded-2xl border flex flex-col transition-all ${STATUS_BG[order.status]}`}
+      style={{
+        borderColor: isUrgent ? "#ef4444" : undefined,
+        boxShadow: isUrgent ? "0 0 0 2px #ef444422" : undefined,
+      }}
+    >
+      {/* Status color strip */}
+      <div className="h-1.5 rounded-t-2xl" style={{ background: accent }} />
+
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        {/* Item name + price */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {orderItem.quantity > 1 && (
+              <span
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black text-white shrink-0"
+                style={{ background: accent }}
+              >
+                {orderItem.quantity}
+              </span>
             )}
+            <span className="font-bold text-gray-900 text-base leading-tight">
+              {orderItem.item.name}
+            </span>
           </div>
+          <span className="text-sm font-semibold text-gray-500 shrink-0">
+            ₪{(orderItem.price * orderItem.quantity).toFixed(0)}
+          </span>
         </div>
 
-        {/* Right: status badge + total */}
-        <div className="flex items-center gap-3">
-          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_BADGE[order.status]}`}>
+        {orderItem.notes && (
+          <div className="text-xs text-gray-500 italic bg-white/60 rounded-lg px-2.5 py-1.5">
+            💬 {orderItem.notes}
+          </div>
+        )}
+
+        {/* Order context */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-white/70 border border-gray-200 rounded-lg px-2 py-1">
+            <span className="text-xs text-gray-400">שולחן</span>
+            <span className="font-bold text-amber-700 text-sm">{order.tableNumber ?? "–"}</span>
+          </div>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[order.status]}`}>
             {STATUS_ICON[order.status]} {STATUS_LABELS[order.status]}
           </span>
-          <div className="text-base font-bold text-gray-900">
-            ₪{order.totalAmount.toFixed(0)}
-          </div>
+          <span className={`text-xs font-medium mr-auto ${isUrgent ? "text-red-500 animate-pulse" : "text-gray-400"}`}>
+            ⏱ {timeSince(order.createdAt)}
+          </span>
         </div>
-      </div>
 
-      {/* Items */}
-      <div className="mt-4 space-y-2">
-        {order.items.map(oi => (
-          <div key={oi.id} className="flex items-center gap-3 bg-white/60 rounded-xl px-3 py-2.5 border border-white/80">
-            <span className="w-7 h-7 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-xs font-black text-amber-700 shrink-0">
-              {oi.quantity}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-gray-800 text-sm truncate">{oi.item.name}</div>
-              {oi.notes && (
-                <div className="text-xs text-gray-400 italic mt-0.5">{oi.notes}</div>
-              )}
-            </div>
-            <span className="text-xs font-medium text-gray-500 shrink-0">₪{(oi.price * oi.quantity).toFixed(0)}</span>
-          </div>
-        ))}
-      </div>
+        {isSuperAdmin && (
+          <div className="text-xs text-gray-400">{order.restaurant.name}</div>
+        )}
 
-      {order.notes && (
-        <div className="mt-3 text-xs text-gray-500 bg-white/70 rounded-lg px-3 py-2">
-          💬 {order.notes}
-        </div>
-      )}
+        {order.notes && (
+          <div className="text-xs text-gray-400 italic">📋 {order.notes}</div>
+        )}
+      </div>
 
       {/* Actions */}
-      {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
-        <div className="mt-4 flex items-center gap-2 flex-wrap">
-          {nextStatus && (
-            <button
-              onClick={advance}
-              disabled={updating}
-              className="flex-1 min-w-[140px] py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all"
-              style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
-            >
-              {updating ? "..." : `✓ ${NEXT_LABEL[order.status]}`}
-            </button>
-          )}
+      {order.status !== "DELIVERED" && order.status !== "CANCELLED" && nextStatus && (
+        <div className="px-4 pb-4 flex gap-2">
+          <button
+            onClick={advance}
+            disabled={updating}
+            className="flex-1 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all"
+            style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+          >
+            {updating ? "..." : `✓ ${NEXT_LABEL[order.status]}`}
+          </button>
           <button
             onClick={cancel}
             disabled={updating}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 disabled:opacity-50 transition-colors"
+            className="px-3 py-2 rounded-xl text-sm font-medium text-red-500 bg-white border border-red-200 hover:bg-red-50 disabled:opacity-50 transition-colors"
           >
-            ✕ בטל
+            ✕
           </button>
         </div>
       )}
@@ -249,6 +264,11 @@ export default function OrdersClient({
     ? orders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status))
     : orders;
 
+  // Flatten all items into individual cards, oldest orders first
+  const itemCards = grouped
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .flatMap(order => order.items.map(oi => ({ orderItem: oi, order })));
+
   const pending = grouped.filter(o => o.status === "PENDING").length;
 
   return (
@@ -265,15 +285,15 @@ export default function OrdersClient({
             )}
           </h1>
           <div className="flex gap-4 mt-0.5">
-            <Link href="/admin/orders/stats" className="text-xs text-amber-700 hover:text-amber-900 font-medium inline-flex items-center gap-1">
+            <Link href="/admin/orders/stats" className="text-xs text-amber-700 hover:text-amber-900 font-medium">
               📊 סטטיסטיקות →
             </Link>
-            <Link href="/admin/dashboard" className="text-xs text-cyan-700 hover:text-cyan-900 font-medium inline-flex items-center gap-1">
+            <Link href="/admin/dashboard" className="text-xs text-cyan-700 hover:text-cyan-900 font-medium">
               📺 תצוגת מטבח →
             </Link>
           </div>
           <p className="text-gray-500 mt-0.5 text-sm">
-            {grouped.length} הזמנות · עדכון: {lastRefresh.toLocaleTimeString("he-IL")}
+            {itemCards.length} מנות · {grouped.length} הזמנות · עדכון: {lastRefresh.toLocaleTimeString("he-IL")}
           </p>
         </div>
 
@@ -310,20 +330,17 @@ export default function OrdersClient({
             className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             title="רענן"
           >
-            <svg
-              className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-              fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
-            >
+            <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Status summary bar */}
+      {/* Status summary */}
       {grouped.length > 0 && (
         <div className="flex gap-2 mb-5 flex-wrap">
-          {["PENDING","CONFIRMED","PREPARING","READY"].map(s => {
+          {["PENDING", "CONFIRMED", "PREPARING", "READY"].map(s => {
             const count = grouped.filter(o => o.status === s).length;
             if (!count) return null;
             return (
@@ -335,18 +352,19 @@ export default function OrdersClient({
         </div>
       )}
 
-      {/* Orders */}
-      {grouped.length === 0 ? (
+      {/* Item cards */}
+      {itemCards.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center text-gray-400">
           <div className="text-5xl mb-3">🍽</div>
           <div className="font-medium text-lg">אין הזמנות {filter === "active" ? "פעילות" : ""}</div>
           <div className="text-sm mt-1">הדף מתרענן אוטומטית כל 10 שניות</div>
         </div>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          {grouped.map(order => (
-            <OrderCard
-              key={order.id}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {itemCards.map(({ orderItem, order }) => (
+            <ItemCard
+              key={orderItem.id}
+              orderItem={orderItem}
               order={order}
               isSuperAdmin={isSuperAdmin}
               onStatusChange={updateStatus}
