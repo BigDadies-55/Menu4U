@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 type OrderItem = {
@@ -114,33 +114,29 @@ function TableCard({
     >
       {/* Table header */}
       <div
-        className="flex items-center gap-3 px-4 py-3"
+        className="px-4 pt-3 pb-2"
         style={{ background: isUrgent ? "#fef2f2" : "#f9fafb", borderBottom: "1px solid #e5e7eb" }}
       >
-        {/* Icon */}
-        <div className="w-10 h-10 rounded-xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center font-black text-amber-800 text-sm shrink-0">
-          {tableNumber === "–" ? "?" : tableNumber}
-        </div>
-        {/* Table name + time + dots */}
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</div>
-          <div className={`flex items-center gap-2 mt-0.5 ${isUrgent ? "text-red-500" : "text-gray-400"}`}>
-            <span className={`text-xs ${isUrgent ? "font-semibold" : ""}`}>
-              ⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות
-            </span>
-            <div className="flex gap-0.5">
-              {allItems.map(i => (
-                <div key={i.id} className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#d1d5db" }}
-                />
-              ))}
-            </div>
+        {/* Row 1: icon + name | price */}
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center font-black text-amber-800 text-sm shrink-0">
+            {tableNumber === "–" ? "?" : tableNumber}
           </div>
+          <span className="font-bold text-gray-900 text-sm flex-1">שולחן {tableNumber}</span>
+          <span className="font-black text-gray-900 text-xl shrink-0">₪{totalAmount.toFixed(0)}</span>
         </div>
-        {/* Price large + order count small */}
-        <div className="shrink-0 text-left">
-          <div className="font-black text-gray-900 text-xl leading-none">₪{totalAmount.toFixed(0)}</div>
-          <div className="text-xs text-gray-400 mt-0.5 text-left">{nonCancelledOrders.length} הזמנות</div>
+        {/* Row 2: time + dishes | order count */}
+        <div className={`flex justify-between mt-1 text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
+          <span>⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות</span>
+          <span>{nonCancelledOrders.length} הזמנות</span>
+        </div>
+        {/* Row 3: progress dots */}
+        <div className="flex gap-1 mt-2">
+          {allItems.map(i => (
+            <div key={i.id} className="w-2 h-2 rounded-full"
+              style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#d1d5db" }}
+            />
+          ))}
         </div>
       </div>
 
@@ -286,28 +282,22 @@ export default function OrdersClient({
   const [restaurantId, setRestaurantId] = useState(defaultRestaurantId ?? "");
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
-  // Tracks tables closed this session so they don't reappear on auto-refresh
-  const closedTablesRef = useRef<Set<string>>(new Set());
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     const params = new URLSearchParams();
     if (restaurantId) params.set("restaurantId", restaurantId);
     if (filter === "active") params.set("activeOnly", "1");
+    if (dateFrom) params.set("from", new Date(dateFrom).toISOString());
+    if (dateTo) params.set("to", new Date(dateTo).toISOString());
     try {
       const res = await fetch(`/api/admin/orders?${params}`);
-      if (res.ok) {
-        const data: Order[] = await res.json();
-        // Filter out tables closed in this session
-        const filtered = closedTablesRef.current.size > 0
-          ? data.filter(o => !closedTablesRef.current.has(o.tableNumber ?? "–"))
-          : data;
-        setOrders(filtered);
-        setLastRefresh(new Date());
-      }
+      if (res.ok) { setOrders(await res.json()); setLastRefresh(new Date()); }
     } catch { /* ignore */ }
     if (showSpinner) setRefreshing(false);
-  }, [restaurantId, filter]);
+  }, [restaurantId, filter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchOrders();
@@ -354,13 +344,10 @@ export default function OrdersClient({
   }
 
   function closeTable(tableNumber: string) {
-    // Get restaurantId from the order data (most reliable source)
     const tableOrders = orders.filter(o => (o.tableNumber ?? "–") === tableNumber);
     const rid = tableOrders[0]?.restaurant?.id || restaurantId;
-    // Optimistic: remove from UI immediately
-    closedTablesRef.current.add(tableNumber);
+    // Optimistic remove — API marks orders DELIVERED so they won't come back in activeOnly
     setOrders(prev => prev.filter(o => (o.tableNumber ?? "–") !== tableNumber));
-    // Fire and forget
     fetch("/api/admin/orders/close-table", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -369,7 +356,7 @@ export default function OrdersClient({
   }
 
   const activeOrders = filter === "active"
-    ? orders.filter(o => o.status !== "CANCELLED")
+    ? orders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status))
     : orders;
 
   // Group by table, sorted oldest first
@@ -433,6 +420,36 @@ export default function OrdersClient({
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
+        </div>
+        {/* Date range filter */}
+        <div className="flex items-center gap-2 flex-wrap mt-3">
+          <span className="text-xs text-gray-500 font-medium">סינון תאריך:</span>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-400">מ-</span>
+            <input
+              type="datetime-local"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-400">עד-</span>
+            <input
+              type="datetime-local"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              ✕ נקה
+            </button>
+          )}
         </div>
       </div>
 
