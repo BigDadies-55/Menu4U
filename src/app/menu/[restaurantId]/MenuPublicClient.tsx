@@ -46,6 +46,7 @@ type CartItem = {
   price: number;
   quantity: number;
   notes?: string;
+  person?: number;
 };
 
 function getItemBadges(item: Item): string[] {
@@ -147,6 +148,10 @@ export default function MenuPublicClient({
 
   function updateNotes(itemId: string, notes: string) {
     setCart(prev => prev.map(c => c.itemId === itemId ? { ...c, notes } : c));
+  }
+
+  function updatePerson(itemId: string, person: number | undefined) {
+    setCart(prev => prev.map(c => c.itemId === itemId ? { ...c, person } : c));
   }
 
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
@@ -485,84 +490,141 @@ export default function MenuPublicClient({
                   הסל ריק
                 </div>
               ) : (
-                cart.map(c => (
-                  <div
-                    key={c.itemId}
-                    style={{
-                      padding: "10px 0",
-                      borderBottom: "1px solid var(--border)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>{c.name}</div>
-                        <div style={{ color: "var(--gold)", fontSize: 13, marginTop: 2 }}>₪{c.price}</div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <button
-                          onClick={() => updateQty(c.itemId, -1)}
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: "50%",
-                            border: "1px solid var(--border)",
-                            background: "none",
-                            color: "var(--text)",
-                            cursor: "pointer",
-                            fontSize: 16,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          −
-                        </button>
-                        <span style={{ color: "var(--text)", fontSize: 14, minWidth: 20, textAlign: "center" }}>
-                          {c.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQty(c.itemId, 1)}
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: "50%",
-                            border: "1px solid var(--gold)",
-                            background: "none",
-                            color: "var(--gold)",
-                            cursor: "pointer",
-                            fontSize: 16,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          +
-                        </button>
-                      </div>
-                      <div style={{ color: "var(--text)", fontSize: 13, minWidth: 48, textAlign: "left" }}>
-                        ₪{c.price * c.quantity}
-                      </div>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="הערה למנה (אופציונלי)"
-                      value={c.notes ?? ""}
-                      onChange={e => updateNotes(c.itemId, e.target.value)}
+                <>
+                  {cart.map(c => (
+                    <div
+                      key={c.itemId}
                       style={{
-                        marginTop: 6,
-                        width: "100%",
-                        padding: "5px 10px",
-                        fontSize: 12,
-                        background: "transparent",
-                        border: "1px solid var(--border)",
-                        borderRadius: 6,
-                        color: "var(--text)",
-                        outline: "none",
-                        boxSizing: "border-box",
+                        padding: "10px 0",
+                        borderBottom: "1px solid var(--border)",
                       }}
-                    />
-                  </div>
-                ))
+                    >
+                      {/* Item row */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>{c.name}</div>
+                          <div style={{ color: "var(--gold)", fontSize: 13, marginTop: 2 }}>₪{c.price}</div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <button
+                            onClick={() => updateQty(c.itemId, -1)}
+                            style={{
+                              width: 28, height: 28, borderRadius: "50%",
+                              border: "1px solid var(--border)", background: "none",
+                              color: "var(--text)", cursor: "pointer", fontSize: 16,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >−</button>
+                          <span style={{ color: "var(--text)", fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                            {c.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQty(c.itemId, 1)}
+                            style={{
+                              width: 28, height: 28, borderRadius: "50%",
+                              border: "1px solid var(--gold)", background: "none",
+                              color: "var(--gold)", cursor: "pointer", fontSize: 16,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >+</button>
+                        </div>
+                        <div style={{ color: "var(--text)", fontSize: 13, minWidth: 48, textAlign: "left" }}>
+                          ₪{c.price * c.quantity}
+                        </div>
+                      </div>
+
+                      {/* Person selector */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 10, color: "var(--text)", opacity: 0.45, marginLeft: 2 }}>שייך ל:</span>
+                        {/* "none" button */}
+                        <button
+                          onClick={() => updatePerson(c.itemId, undefined)}
+                          style={{
+                            padding: "2px 8px", borderRadius: 20, fontSize: 11, cursor: "pointer",
+                            border: c.person === undefined ? "1.5px solid var(--gold)" : "1px solid var(--border)",
+                            background: c.person === undefined ? "var(--gold)" : "transparent",
+                            color: c.person === undefined ? "var(--bg)" : "var(--text)",
+                            opacity: c.person === undefined ? 1 : 0.5,
+                            fontWeight: c.person === undefined ? 700 : 400,
+                            transition: "all 0.15s",
+                          }}
+                        >ללא</button>
+                        {[1, 2, 3, 4, 5].map(p => (
+                          <button
+                            key={p}
+                            onClick={() => updatePerson(c.itemId, c.person === p ? undefined : p)}
+                            style={{
+                              width: 26, height: 26, borderRadius: "50%", fontSize: 12,
+                              cursor: "pointer", fontWeight: 700,
+                              border: c.person === p ? "1.5px solid var(--gold)" : "1px solid var(--border)",
+                              background: c.person === p ? "var(--gold)" : "transparent",
+                              color: c.person === p ? "var(--bg)" : "var(--text)",
+                              opacity: c.person === p ? 1 : 0.45,
+                              transition: "all 0.15s",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >{p}</button>
+                        ))}
+                      </div>
+
+                      {/* Notes */}
+                      <input
+                        type="text"
+                        placeholder="הערה למנה (אופציונלי)"
+                        value={c.notes ?? ""}
+                        onChange={e => updateNotes(c.itemId, e.target.value)}
+                        style={{
+                          marginTop: 5, width: "100%", padding: "5px 10px", fontSize: 12,
+                          background: "transparent", border: "1px solid var(--border)",
+                          borderRadius: 6, color: "var(--text)", outline: "none", boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                  ))}
+
+                  {/* Per-person breakdown — only shown when at least one item is assigned */}
+                  {cart.some(c => c.person !== undefined) && (
+                    <div style={{
+                      marginTop: 14, padding: "12px 14px",
+                      background: "rgba(255,255,255,0.04)", borderRadius: 10,
+                      border: "1px solid var(--border)",
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", marginBottom: 8, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                        פירוט לפי אדם
+                      </div>
+                      {[1, 2, 3, 4, 5].map(p => {
+                        const pItems = cart.filter(c => c.person === p);
+                        if (pItems.length === 0) return null;
+                        const pTotal = pItems.reduce((s, c) => s + c.price * c.quantity, 0);
+                        return (
+                          <div key={p} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                              <span style={{
+                                width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
+                                background: "var(--gold)", color: "var(--bg)",
+                                display: "inline-flex", alignItems: "center", justifyContent: "center", shrink: 0,
+                              }}>{p}</span>
+                              <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.75, lineHeight: "20px" }}>
+                                {pItems.map(c => `${c.name}${c.quantity > 1 ? ` ×${c.quantity}` : ""}`).join(", ")}
+                              </span>
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", whiteSpace: "nowrap", marginRight: 8 }}>
+                              ₪{pTotal}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {cart.some(c => c.person === undefined) && (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 4, paddingTop: 6, borderTop: "1px solid var(--border)" }}>
+                          <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.45 }}>ללא שיוך</span>
+                          <span style={{ fontSize: 13, color: "var(--text)", opacity: 0.45 }}>
+                            ₪{cart.filter(c => c.person === undefined).reduce((s, c) => s + c.price * c.quantity, 0)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
