@@ -561,7 +561,7 @@ export default function MenuPublicClient({
             )}
 
             {/* Items list */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px" }}>
               {cart.length === 0 ? (
                 <div style={{ textAlign: "center", opacity: 0.4, marginTop: 40, color: "var(--text)" }}>
                   הסל ריק
@@ -574,71 +574,61 @@ export default function MenuPublicClient({
                     <div
                       key={c.itemId}
                       style={{
-                        padding: "10px 0",
-                        borderBottom: "1px solid var(--border)",
+                        margin: "8px 0",
+                        padding: "12px 12px 10px",
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid var(--border)",
                       }}
                     >
                       {/* Item row */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         {c.person !== undefined && (
                           <div style={{
-                            width: 22, height: 22, borderRadius: "50%", fontSize: 11, fontWeight: 700,
+                            width: 20, height: 20, borderRadius: "50%", fontSize: 10, fontWeight: 700,
                             background: "var(--gold)", color: "var(--bg)", flexShrink: 0,
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}>{c.person}</div>
                         )}
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>{c.name}</div>
-                          <div style={{ color: "var(--gold)", fontSize: 13, marginTop: 2 }}>₪{c.price}</div>
+                          <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{c.name}</div>
+                          <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 1 }}>₪{c.price} ליחידה</div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                           <button onClick={() => updateQty(c.itemId, -1)} style={{
-                            width: 28, height: 28, borderRadius: "50%",
+                            width: 26, height: 26, borderRadius: "50%",
                             border: "1px solid var(--border)", background: "none",
-                            color: "var(--text)", cursor: "pointer", fontSize: 16,
+                            color: "var(--text)", cursor: "pointer", fontSize: 15,
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}>−</button>
-                          <span style={{ color: "var(--text)", fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                          <span style={{ color: "var(--text)", fontSize: 13, minWidth: 18, textAlign: "center", fontWeight: 600 }}>
                             {c.quantity}
                           </span>
                           <button onClick={() => updateQty(c.itemId, 1)} style={{
-                            width: 28, height: 28, borderRadius: "50%",
+                            width: 26, height: 26, borderRadius: "50%",
                             border: "1px solid var(--gold)", background: "none",
-                            color: "var(--gold)", cursor: "pointer", fontSize: 16,
+                            color: "var(--gold)", cursor: "pointer", fontSize: 15,
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}>+</button>
                         </div>
-                        <div style={{ color: "var(--text)", fontSize: 13, minWidth: 48, textAlign: "left" }}>
+                        <div style={{ color: "var(--text)", fontSize: 13, fontWeight: 700, minWidth: 44, textAlign: "left" }}>
                           ₪{c.price * c.quantity}
                         </div>
                       </div>
 
-                      {/* Notes */}
-                      <input
-                        type="text"
-                        placeholder="הערה למנה (אופציונלי)"
-                        value={c.notes ?? ""}
-                        onChange={e => updateNotes(c.itemId, e.target.value)}
-                        style={{
-                          marginTop: 6, width: "100%", padding: "5px 10px", fontSize: 12,
-                          background: "transparent", border: "1px solid var(--border)",
-                          borderRadius: 6, color: "var(--text)", outline: "none", boxSizing: "border-box",
-                        }}
-                      />
-
-                      {/* Person selector */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 10, color: "var(--text)", opacity: 0.45, marginLeft: 2 }}>שיוך לסועד:</span>
+                      {/* Person selector — compact, above notes */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 7 }}>
+                        <span style={{ fontSize: 9, color: "var(--text)", opacity: 0.38, marginLeft: 1, whiteSpace: "nowrap" }}>סועד:</span>
                         <button
                           onClick={() => updatePerson(c.itemId, undefined)}
                           style={{
-                            padding: "2px 8px", borderRadius: 20, fontSize: 11, cursor: "pointer",
-                            border: c.person === undefined ? "1.5px solid var(--gold)" : "1px solid var(--border)",
+                            padding: "1px 6px", borderRadius: 20, fontSize: 9, cursor: "pointer",
+                            border: c.person === undefined ? "1px solid var(--gold)" : "1px solid var(--border)",
                             background: c.person === undefined ? "var(--gold)" : "transparent",
                             color: c.person === undefined ? "var(--bg)" : "var(--text)",
-                            opacity: c.person === undefined ? 1 : 0.5,
+                            opacity: c.person === undefined ? 1 : 0.4,
                             fontWeight: c.person === undefined ? 700 : 400,
-                            transition: "all 0.15s",
+                            transition: "all 0.12s",
                           }}
                         >ללא</button>
                         {[1, 2, 3, 4, 5].map(p => (
@@ -646,18 +636,31 @@ export default function MenuPublicClient({
                             key={p}
                             onClick={() => updatePerson(c.itemId, c.person === p ? undefined : p)}
                             style={{
-                              width: 26, height: 26, borderRadius: "50%", fontSize: 12,
+                              width: 20, height: 20, borderRadius: "50%", fontSize: 10,
                               cursor: "pointer", fontWeight: 700,
-                              border: c.person === p ? "1.5px solid var(--gold)" : "1px solid var(--border)",
+                              border: c.person === p ? "1px solid var(--gold)" : "1px solid var(--border)",
                               background: c.person === p ? "var(--gold)" : "transparent",
                               color: c.person === p ? "var(--bg)" : "var(--text)",
-                              opacity: c.person === p ? 1 : 0.45,
-                              transition: "all 0.15s",
+                              opacity: c.person === p ? 1 : 0.38,
+                              transition: "all 0.12s",
                               display: "flex", alignItems: "center", justifyContent: "center",
                             }}
                           >{p}</button>
                         ))}
                       </div>
+
+                      {/* Notes */}
+                      <input
+                        type="text"
+                        placeholder="הערה למנה..."
+                        value={c.notes ?? ""}
+                        onChange={e => updateNotes(c.itemId, e.target.value)}
+                        style={{
+                          marginTop: 5, width: "100%", padding: "4px 9px", fontSize: 11,
+                          background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
+                          borderRadius: 6, color: "var(--text)", outline: "none", boxSizing: "border-box",
+                        }}
+                      />
                     </div>
                   ))}
 

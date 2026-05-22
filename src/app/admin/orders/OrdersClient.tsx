@@ -145,17 +145,19 @@ function OrderCard({
       </div>
 
       {/* Items */}
-      <div className="mt-4 space-y-1">
+      <div className="mt-4 space-y-2">
         {order.items.map(oi => (
-          <div key={oi.id} className="flex items-center gap-2 text-sm">
-            <span className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xs font-bold text-amber-700 shrink-0">
+          <div key={oi.id} className="flex items-center gap-3 bg-white/60 rounded-xl px-3 py-2.5 border border-white/80">
+            <span className="w-7 h-7 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-xs font-black text-amber-700 shrink-0">
               {oi.quantity}
             </span>
-            <span className="text-gray-700">{oi.item.name}</span>
-            {oi.notes && (
-              <span className="text-xs text-gray-400 italic">({oi.notes})</span>
-            )}
-            <span className="mr-auto text-gray-500 text-xs">₪{(oi.price * oi.quantity).toFixed(0)}</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-800 text-sm truncate">{oi.item.name}</div>
+              {oi.notes && (
+                <div className="text-xs text-gray-400 italic mt-0.5">{oi.notes}</div>
+              )}
+            </div>
+            <span className="text-xs font-medium text-gray-500 shrink-0">₪{(oi.price * oi.quantity).toFixed(0)}</span>
           </div>
         ))}
       </div>
