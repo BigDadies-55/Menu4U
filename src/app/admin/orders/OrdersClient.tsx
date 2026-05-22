@@ -128,9 +128,13 @@ function TableCard({
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
           <div>
-            <div className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</span>
+              <span className="font-black text-gray-900 text-lg">₪{totalAmount.toFixed(0)}</span>
+              <span className="text-xs text-gray-400">{nonCancelledOrders.length} הזמנות</span>
+            </div>
             <div className={`text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
-              ⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות · ₪{totalAmount.toFixed(0)}
+              ⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות
             </div>
           </div>
         </div>
