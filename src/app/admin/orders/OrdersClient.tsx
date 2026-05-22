@@ -8,15 +8,13 @@ type OrderItem = {
   quantity: number;
   price: number;
   notes: string | null;
+  itemStatus: string;
   item: { name: string };
 };
 
 type Order = {
   id: string;
-  restaurantId: string;
   tableNumber: string | null;
-  customerName: string | null;
-  customerPhone: string | null;
   status: string;
   totalAmount: number;
   notes: string | null;
@@ -27,63 +25,30 @@ type Order = {
 
 type Restaurant = { id: string; name: string };
 
-const STATUS_LABELS: Record<string, string> = {
+const ITEM_STATUS_LABEL: Record<string, string> = {
   PENDING: "ממתין",
-  CONFIRMED: "אושר",
   PREPARING: "בהכנה",
-  READY: "מוכן",
-  DELIVERED: "נמסר",
-  CANCELLED: "בוטל",
+  DONE: "הוכן",
 };
 
-const STATUS_BG: Record<string, string> = {
-  PENDING: "bg-yellow-50 border-yellow-200",
-  CONFIRMED: "bg-blue-50 border-blue-200",
-  PREPARING: "bg-amber-50 border-amber-200",
-  READY: "bg-green-50 border-green-200",
-  DELIVERED: "bg-gray-50 border-gray-200",
-  CANCELLED: "bg-red-50 border-red-200",
+const ITEM_STATUS_COLOR: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-700",
+  PREPARING: "bg-blue-100 text-blue-700",
+  DONE: "bg-green-100 text-green-700",
 };
 
-const STATUS_BADGE: Record<string, string> = {
+const ITEM_NEXT_LABEL: Record<string, string> = {
+  PENDING: "הכנה",
+  PREPARING: "הוכן ✓",
+};
+
+const ORDER_STATUS_BADGE: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-800",
   CONFIRMED: "bg-blue-100 text-blue-800",
   PREPARING: "bg-amber-100 text-amber-800",
   READY: "bg-green-100 text-green-800",
-  DELIVERED: "bg-gray-100 text-gray-800",
-  CANCELLED: "bg-red-100 text-red-800",
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  PENDING: "#f59e0b",
-  CONFIRMED: "#38bdf8",
-  PREPARING: "#fb923c",
-  READY: "#4ade80",
-  DELIVERED: "#9ca3af",
-  CANCELLED: "#f87171",
-};
-
-const NEXT_STATUS: Record<string, string | undefined> = {
-  PENDING: "CONFIRMED",
-  CONFIRMED: "PREPARING",
-  PREPARING: "READY",
-  READY: "DELIVERED",
-};
-
-const NEXT_LABEL: Record<string, string> = {
-  PENDING: "אשר",
-  CONFIRMED: "להכנה",
-  PREPARING: "מוכן",
-  READY: "נמסר ✓",
-};
-
-const STATUS_ICON: Record<string, string> = {
-  PENDING: "🕐",
-  CONFIRMED: "✓",
-  PREPARING: "👨‍🍳",
-  READY: "🔔",
-  DELIVERED: "✅",
-  CANCELLED: "✕",
+  DELIVERED: "bg-gray-100 text-gray-600",
+  CANCELLED: "bg-red-100 text-red-700",
 };
 
 function timeSince(dateStr: string): string {
@@ -93,118 +58,147 @@ function timeSince(dateStr: string): string {
   return `${Math.floor(diff / 60)}ש'`;
 }
 
-function ItemCard({
-  orderItem,
-  order,
+function TableCard({
+  tableNumber,
+  orders,
   isSuperAdmin,
-  onStatusChange,
+  onItemAdvance,
+  onOrderCancel,
 }: {
-  orderItem: OrderItem;
-  order: Order;
+  tableNumber: string;
+  orders: Order[];
   isSuperAdmin: boolean;
-  onStatusChange: (id: string, status: string) => Promise<void>;
+  onItemAdvance: (orderId: string, itemId: string) => Promise<void>;
+  onOrderCancel: (orderId: string) => Promise<void>;
 }) {
-  const [updating, setUpdating] = useState(false);
-  const nextStatus = NEXT_STATUS[order.status];
-  const elapsed = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
-  const isUrgent = elapsed > 20 && !["DELIVERED", "CANCELLED", "READY"].includes(order.status);
-  const accent = STATUS_COLOR[order.status] ?? "#9ca3af";
+  const [busy, setBusy] = useState<Set<string>>(new Set());
 
-  async function advance() {
-    if (!nextStatus) return;
-    setUpdating(true);
-    await onStatusChange(order.id, nextStatus);
-    setUpdating(false);
-  }
+  const allItems = orders.flatMap(o => o.items.map(i => ({ ...i, order: o })));
+  const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
+  const totalCount = allItems.length;
+  const allDone = doneCount === totalCount;
+  const oldestOrder = orders.reduce((a, b) =>
+    new Date(a.createdAt) < new Date(b.createdAt) ? a : b
+  );
+  const elapsed = Math.floor((Date.now() - new Date(oldestOrder.createdAt).getTime()) / 60000);
+  const isUrgent = elapsed > 20 && !allDone;
+  const totalAmount = orders.reduce((s, o) => s + o.totalAmount, 0);
 
-  async function cancel() {
-    if (!confirm("לבטל הזמנה זו?")) return;
-    setUpdating(true);
-    await onStatusChange(order.id, "CANCELLED");
-    setUpdating(false);
+  async function advanceItem(orderId: string, itemId: string) {
+    setBusy(prev => new Set(prev).add(itemId));
+    await onItemAdvance(orderId, itemId);
+    setBusy(prev => { const n = new Set(prev); n.delete(itemId); return n; });
   }
 
   return (
     <div
-      className={`rounded-2xl border flex flex-col transition-all ${STATUS_BG[order.status]}`}
-      style={{
-        borderColor: isUrgent ? "#ef4444" : undefined,
-        boxShadow: isUrgent ? "0 0 0 2px #ef444422" : undefined,
-      }}
+      className="bg-white rounded-2xl border overflow-hidden shadow-sm"
+      style={{ borderColor: isUrgent ? "#ef4444" : "#e5e7eb" }}
     >
-      {/* Status color strip */}
-      <div className="h-1.5 rounded-t-2xl" style={{ background: accent }} />
-
-      <div className="p-4 flex flex-col gap-3 flex-1">
-        {/* Item name + price */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {orderItem.quantity > 1 && (
-              <span
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black text-white shrink-0"
-                style={{ background: accent }}
-              >
-                {orderItem.quantity}
-              </span>
-            )}
-            <span className="font-bold text-gray-900 text-base leading-tight">
-              {orderItem.item.name}
-            </span>
+      {/* Table header */}
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ background: isUrgent ? "#fef2f2" : "#f9fafb", borderBottom: "1px solid #e5e7eb" }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center font-black text-amber-800 text-lg">
+            {tableNumber === "–" ? "?" : tableNumber}
           </div>
-          <span className="text-sm font-semibold text-gray-500 shrink-0">
-            ₪{(orderItem.price * orderItem.quantity).toFixed(0)}
-          </span>
+          <div>
+            <div className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</div>
+            <div className={`text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
+              ⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות · ₪{totalAmount.toFixed(0)}
+            </div>
+          </div>
         </div>
-
-        {orderItem.notes && (
-          <div className="text-xs text-gray-500 italic bg-white/60 rounded-lg px-2.5 py-1.5">
-            💬 {orderItem.notes}
+        <div className="flex items-center gap-2">
+          {/* Progress dots */}
+          <div className="flex gap-1">
+            {allItems.map(i => (
+              <div
+                key={i.id}
+                className="w-2 h-2 rounded-full"
+                style={{
+                  background: i.itemStatus === "DONE" ? "#22c55e"
+                    : i.itemStatus === "PREPARING" ? "#38bdf8"
+                    : "#d1d5db"
+                }}
+              />
+            ))}
           </div>
-        )}
-
-        {/* Order context */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-white/70 border border-gray-200 rounded-lg px-2 py-1">
-            <span className="text-xs text-gray-400">שולחן</span>
-            <span className="font-bold text-amber-700 text-sm">{order.tableNumber ?? "–"}</span>
-          </div>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[order.status]}`}>
-            {STATUS_ICON[order.status]} {STATUS_LABELS[order.status]}
-          </span>
-          <span className={`text-xs font-medium mr-auto ${isUrgent ? "text-red-500 animate-pulse" : "text-gray-400"}`}>
-            ⏱ {timeSince(order.createdAt)}
-          </span>
+          <span className="text-xs text-gray-400">{doneCount}/{totalCount}</span>
         </div>
-
-        {isSuperAdmin && (
-          <div className="text-xs text-gray-400">{order.restaurant.name}</div>
-        )}
-
-        {order.notes && (
-          <div className="text-xs text-gray-400 italic">📋 {order.notes}</div>
-        )}
       </div>
 
-      {/* Actions */}
-      {order.status !== "DELIVERED" && order.status !== "CANCELLED" && nextStatus && (
-        <div className="px-4 pb-4 flex gap-2">
-          <button
-            onClick={advance}
-            disabled={updating}
-            className="flex-1 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all"
-            style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
-          >
-            {updating ? "..." : `✓ ${NEXT_LABEL[order.status]}`}
-          </button>
-          <button
-            onClick={cancel}
-            disabled={updating}
-            className="px-3 py-2 rounded-xl text-sm font-medium text-red-500 bg-white border border-red-200 hover:bg-red-50 disabled:opacity-50 transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {/* Items */}
+      <div className="divide-y divide-gray-100">
+        {allItems.map(({ id: itemId, quantity, price, notes, itemStatus, item, order }) => {
+          const nextLabel = ITEM_NEXT_LABEL[itemStatus];
+          const isBusy = busy.has(itemId);
+          const isDone = itemStatus === "DONE";
+
+          return (
+            <div
+              key={itemId}
+              className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${isDone ? "opacity-50" : ""}`}
+            >
+              {/* Qty badge */}
+              <span className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
+                {quantity}
+              </span>
+
+              {/* Name + notes */}
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-semibold truncate ${isDone ? "line-through text-gray-400" : "text-gray-800"}`}>
+                  {item.name}
+                </div>
+                {notes && (
+                  <div className="text-xs text-gray-400 italic truncate">{notes}</div>
+                )}
+              </div>
+
+              {/* Status badge */}
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus]}`}>
+                {ITEM_STATUS_LABEL[itemStatus]}
+              </span>
+
+              {/* Action */}
+              {nextLabel && !isDone ? (
+                <button
+                  onClick={() => advanceItem(order.id, itemId)}
+                  disabled={isBusy}
+                  className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all"
+                  style={{ background: itemStatus === "PREPARING" ? "#22c55e" : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                >
+                  {isBusy ? "..." : nextLabel}
+                </button>
+              ) : isDone ? (
+                <span className="shrink-0 text-green-500 text-base">✓</span>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer: order-level actions */}
+      {orders.map(order => (
+        order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+          <div key={order.id} className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-2 bg-gray-50/50">
+            {isSuperAdmin && (
+              <span className="text-xs text-gray-400">{order.restaurant.name}</span>
+            )}
+            {order.notes && (
+              <span className="text-xs text-gray-400 italic flex-1 truncate">💬 {order.notes}</span>
+            )}
+            <button
+              onClick={() => onOrderCancel(order.id)}
+              className="mr-auto shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              ✕ בטל הזמנה
+            </button>
+          </div>
+        )
+      ))}
     </div>
   );
 }
@@ -233,10 +227,7 @@ export default function OrdersClient({
     if (filter === "active") params.set("activeOnly", "1");
     try {
       const res = await fetch(`/api/admin/orders?${params}`);
-      if (res.ok) {
-        setOrders(await res.json());
-        setLastRefresh(new Date());
-      }
+      if (res.ok) { setOrders(await res.json()); setLastRefresh(new Date()); }
     } catch { /* ignore */ }
     if (showSpinner) setRefreshing(false);
   }, [restaurantId, filter]);
@@ -247,29 +238,51 @@ export default function OrdersClient({
     return () => clearInterval(iv);
   }, [fetchOrders]);
 
-  async function updateStatus(orderId: string, status: string) {
+  async function advanceItem(orderId: string, itemId: string) {
+    const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH",
+    });
+    if (!res.ok) return;
+    const { itemStatus, orderDelivered } = await res.json();
+
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      const updatedItems = o.items.map(i => i.id === itemId ? { ...i, itemStatus } : i);
+      if (orderDelivered && filter === "active") return { ...o, status: "DELIVERED", items: updatedItems };
+      return { ...o, items: updatedItems };
+    }).filter(o => !(filter === "active" && o.status === "DELIVERED")));
+  }
+
+  async function cancelOrder(orderId: string) {
+    if (!confirm("לבטל הזמנה זו?")) return;
     await fetch(`/api/admin/orders/${orderId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status: "CANCELLED" }),
     });
-    if (filter === "active" && (status === "DELIVERED" || status === "CANCELLED")) {
+    if (filter === "active") {
       setOrders(prev => prev.filter(o => o.id !== orderId));
     } else {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "CANCELLED" } : o));
     }
   }
 
-  const grouped = filter === "active"
+  const activeOrders = filter === "active"
     ? orders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status))
     : orders;
 
-  // Flatten all items into individual cards, oldest orders first
-  const itemCards = grouped
+  // Group by table, sorted oldest first
+  const byTable = new Map<string, Order[]>();
+  [...activeOrders]
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .flatMap(order => order.items.map(oi => ({ orderItem: oi, order })));
+    .forEach(order => {
+      const key = order.tableNumber ?? "–";
+      if (!byTable.has(key)) byTable.set(key, []);
+      byTable.get(key)!.push(order);
+    });
 
-  const pending = grouped.filter(o => o.status === "PENDING").length;
+  const totalItems = activeOrders.reduce((s, o) => s + o.items.length, 0);
+  const pendingOrders = activeOrders.filter(o => o.status === "PENDING").length;
 
   return (
     <div className="p-4 md:p-8">
@@ -278,22 +291,18 @@ export default function OrdersClient({
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             🍽 ניהול הזמנות
-            {pending > 0 && (
+            {pendingOrders > 0 && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold animate-pulse">
-                {pending} ממתינות
+                {pendingOrders} ממתינות
               </span>
             )}
           </h1>
           <div className="flex gap-4 mt-0.5">
-            <Link href="/admin/orders/stats" className="text-xs text-amber-700 hover:text-amber-900 font-medium">
-              📊 סטטיסטיקות →
-            </Link>
-            <Link href="/admin/dashboard" className="text-xs text-cyan-700 hover:text-cyan-900 font-medium">
-              📺 תצוגת מטבח →
-            </Link>
+            <Link href="/admin/orders/stats" className="text-xs text-amber-700 hover:text-amber-900 font-medium">📊 סטטיסטיקות →</Link>
+            <Link href="/admin/dashboard" className="text-xs text-cyan-700 hover:text-cyan-900 font-medium">📺 תצוגת מטבח →</Link>
           </div>
           <p className="text-gray-500 mt-0.5 text-sm">
-            {itemCards.length} מנות · {grouped.length} הזמנות · עדכון: {lastRefresh.toLocaleTimeString("he-IL")}
+            {byTable.size} שולחנות · {totalItems} מנות · עדכון: {lastRefresh.toLocaleTimeString("he-IL")}
           </p>
         </div>
 
@@ -308,28 +317,17 @@ export default function OrdersClient({
               {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           )}
-
           <div className="flex rounded-xl overflow-hidden border border-gray-200">
             {(["active", "all"] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  filter === f ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-                style={filter === f ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}
-              >
+              <button key={f} onClick={() => setFilter(f)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${filter === f ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                style={filter === f ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}>
                 {f === "active" ? "פעילות" : "הכל"}
               </button>
             ))}
           </div>
-
-          <button
-            onClick={() => fetchOrders(true)}
-            disabled={refreshing}
-            className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            title="רענן"
-          >
+          <button onClick={() => fetchOrders(true)} disabled={refreshing}
+            className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50">
             <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -338,36 +336,37 @@ export default function OrdersClient({
       </div>
 
       {/* Status summary */}
-      {grouped.length > 0 && (
+      {activeOrders.length > 0 && (
         <div className="flex gap-2 mb-5 flex-wrap">
-          {["PENDING", "CONFIRMED", "PREPARING", "READY"].map(s => {
-            const count = grouped.filter(o => o.status === s).length;
+          {(["PENDING","CONFIRMED","PREPARING","READY"] as const).map(s => {
+            const count = activeOrders.filter(o => o.status === s).length;
             if (!count) return null;
             return (
-              <div key={s} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_BADGE[s]}`}>
-                {STATUS_ICON[s]} {STATUS_LABELS[s]}: {count}
+              <div key={s} className={`px-3 py-1.5 rounded-full text-xs font-semibold ${ORDER_STATUS_BADGE[s]}`}>
+                {count} {s === "PENDING" ? "ממתינות" : s === "CONFIRMED" ? "מאושרות" : s === "PREPARING" ? "בהכנה" : "מוכנות"}
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Item cards */}
-      {itemCards.length === 0 ? (
+      {/* Tables grid */}
+      {byTable.size === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center text-gray-400">
           <div className="text-5xl mb-3">🍽</div>
           <div className="font-medium text-lg">אין הזמנות {filter === "active" ? "פעילות" : ""}</div>
           <div className="text-sm mt-1">הדף מתרענן אוטומטית כל 10 שניות</div>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {itemCards.map(({ orderItem, order }) => (
-            <ItemCard
-              key={orderItem.id}
-              orderItem={orderItem}
-              order={order}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from(byTable.entries()).map(([table, tableOrders]) => (
+            <TableCard
+              key={table}
+              tableNumber={table}
+              orders={tableOrders}
               isSuperAdmin={isSuperAdmin}
-              onStatusChange={updateStatus}
+              onItemAdvance={advanceItem}
+              onOrderCancel={cancelOrder}
             />
           ))}
         </div>

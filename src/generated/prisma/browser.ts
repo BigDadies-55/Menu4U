@@ -68,6 +68,11 @@ export type Item = Prisma.ItemModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model OrderStatusLog
+ * 
+ */
+export type OrderStatusLog = Prisma.OrderStatusLogModel
+/**
  * Model OrderItem
  * 
  */

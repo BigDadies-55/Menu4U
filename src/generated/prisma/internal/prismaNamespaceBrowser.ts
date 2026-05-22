@@ -61,6 +61,7 @@ export const ModelName = {
   Category: 'Category',
   Item: 'Item',
   Order: 'Order',
+  OrderStatusLog: 'OrderStatusLog',
   OrderItem: 'OrderItem',
   MenuView: 'MenuView',
   AuditLog: 'AuditLog'
@@ -154,6 +155,8 @@ export const RestaurantScalarFieldEnum = {
   menuTheme: 'menuTheme',
   menuPalette: 'menuPalette',
   menuPaletteData: 'menuPaletteData',
+  ordersEnabled: 'ordersEnabled',
+  tableLayoutJson: 'tableLayoutJson',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
   createdAt: 'createdAt',
@@ -219,6 +222,7 @@ export const ItemScalarFieldEnum = {
   isVegan: 'isVegan',
   isGlutenFree: 'isGlutenFree',
   tags: 'tags',
+  prepTime: 'prepTime',
   sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -243,13 +247,26 @@ export const OrderScalarFieldEnum = {
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
 
 
+export const OrderStatusLogScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  fromStatus: 'fromStatus',
+  toStatus: 'toStatus',
+  changedAt: 'changedAt',
+  changedBy: 'changedBy'
+} as const
+
+export type OrderStatusLogScalarFieldEnum = (typeof OrderStatusLogScalarFieldEnum)[keyof typeof OrderStatusLogScalarFieldEnum]
+
+
 export const OrderItemScalarFieldEnum = {
   id: 'id',
   orderId: 'orderId',
   itemId: 'itemId',
   quantity: 'quantity',
   price: 'price',
-  notes: 'notes'
+  notes: 'notes',
+  itemStatus: 'itemStatus'
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]

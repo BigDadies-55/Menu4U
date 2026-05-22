@@ -60,6 +60,7 @@ const sqls = [
   );`,
   `CREATE INDEX IF NOT EXISTS "OrderStatusLog_orderId_idx" ON "OrderStatusLog"("orderId");`,
   `CREATE INDEX IF NOT EXISTS "OrderStatusLog_changedAt_idx" ON "OrderStatusLog"("changedAt" DESC);`,
+  `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "itemStatus" TEXT NOT NULL DEFAULT 'PENDING';`,
 ];
 
 async function run() {
