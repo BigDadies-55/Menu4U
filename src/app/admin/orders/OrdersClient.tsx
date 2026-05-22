@@ -262,9 +262,14 @@ export default function OrdersClient({
               </span>
             )}
           </h1>
-          <Link href="/admin/orders/stats" className="text-xs text-amber-700 hover:text-amber-900 font-medium mt-0.5 inline-flex items-center gap-1">
-            📊 סטטיסטיקות וניתוח →
-          </Link>
+          <div className="flex gap-4 mt-0.5">
+            <Link href="/admin/orders/stats" className="text-xs text-amber-700 hover:text-amber-900 font-medium inline-flex items-center gap-1">
+              📊 סטטיסטיקות →
+            </Link>
+            <Link href="/admin/dashboard" className="text-xs text-cyan-700 hover:text-cyan-900 font-medium inline-flex items-center gap-1">
+              📺 תצוגת מטבח →
+            </Link>
+          </div>
           <p className="text-gray-500 mt-0.5 text-sm">
             {grouped.length} הזמנות · עדכון: {lastRefresh.toLocaleTimeString("he-IL")}
           </p>

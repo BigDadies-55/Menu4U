@@ -7,13 +7,14 @@ import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 
 const navItems = [
-  { href: "/admin", label: "דשבורד", icon: "▣", exact: true, waiterHide: true },
-  { href: "/admin/restaurants", label: "מסעדות", icon: "◈", superAdmin: true, waiterHide: true },
-  { href: "/admin/menus", label: "תפריטים", icon: "◉", waiterHide: true },
-  { href: "/admin/orders", label: "הזמנות", icon: "🍽", exact: false },
-  { href: "/admin/layout-builder", label: "פריסת שולחנות", icon: "🗺", waiterHide: true },
-  { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true, waiterHide: true },
-  { href: "/admin/logs", label: "לוגים", icon: "◎", adminOnly: true, waiterHide: true },
+  { href: "/admin", label: "דשבורד", icon: "▣", exact: true, waiterHide: true, displayHide: true },
+  { href: "/admin/restaurants", label: "מסעדות", icon: "◈", superAdmin: true, waiterHide: true, displayHide: true },
+  { href: "/admin/menus", label: "תפריטים", icon: "◉", waiterHide: true, displayHide: true },
+  { href: "/admin/orders", label: "הזמנות", icon: "🍽", exact: false, displayHide: true },
+  { href: "/admin/dashboard", label: "תצוגת מטבח", icon: "📺", exact: false },
+  { href: "/admin/layout-builder", label: "פריסת שולחנות", icon: "🗺", waiterHide: true, displayHide: true },
+  { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true, waiterHide: true, displayHide: true },
+  { href: "/admin/logs", label: "לוגים", icon: "◎", adminOnly: true, waiterHide: true, displayHide: true },
 ];
 
 interface SidebarProps {
@@ -26,8 +27,10 @@ interface SidebarProps {
 export default function Sidebar({ user, isOpen = false, onClose, onChangePassword }: SidebarProps) {
   const pathname = usePathname();
   const isWaiter = user.role === "WAITER";
+  const isDisplay = user.role === "DISPLAY";
   const visibleItems = navItems.filter((item) => {
     if (item.waiterHide && isWaiter) return false;
+    if (item.displayHide && isDisplay) return false;
     if (item.superAdmin && user.role !== "SUPER_ADMIN") return false;
     if (item.adminOnly && !["SUPER_ADMIN", "ADMIN"].includes(user.role)) return false;
     return true;

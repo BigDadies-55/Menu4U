@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function OrdersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
 
   const role = session.user.role;
   const userId = session.user.id;

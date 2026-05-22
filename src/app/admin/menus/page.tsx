@@ -7,6 +7,7 @@ export default async function MenusPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   if (session.user.role === "WAITER") redirect("/admin/orders");
+  if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
 
   let restaurants;
   if (session.user.role === "SUPER_ADMIN") {
