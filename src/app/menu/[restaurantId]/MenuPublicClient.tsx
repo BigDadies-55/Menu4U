@@ -72,6 +72,7 @@ type Restaurant = {
 };
 
 type CartItem = {
+  cartId: string;
   itemId: string;
   name: string;
   price: number;
@@ -174,32 +175,32 @@ export default function MenuPublicClient({
   }, [modalItem, cartOpen, myOrdersOpen]);
 
   function addToCart(item: Item) {
-    setCart(prev => {
-      const existing = prev.find(c => c.itemId === item.id);
-      if (existing) {
-        return prev.map(c => c.itemId === item.id ? { ...c, quantity: c.quantity + 1 } : c);
-      }
-      return [...prev, { itemId: item.id, name: item.name, price: item.price, quantity: 1 }];
-    });
+    setCart(prev => [...prev, {
+      cartId: `${item.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      itemId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: 1,
+    }]);
   }
 
-  function updateQty(itemId: string, delta: number) {
+  function updateQty(cartId: string, delta: number) {
     setCart(prev => {
-      const updated = prev.map(c => c.itemId === itemId ? { ...c, quantity: c.quantity + delta } : c);
+      const updated = prev.map(c => c.cartId === cartId ? { ...c, quantity: c.quantity + delta } : c);
       return updated.filter(c => c.quantity > 0);
     });
   }
 
-  function removeFromCart(itemId: string) {
-    setCart(prev => prev.filter(c => c.itemId !== itemId));
+  function removeFromCart(cartId: string) {
+    setCart(prev => prev.filter(c => c.cartId !== cartId));
   }
 
-  function updateNotes(itemId: string, notes: string) {
-    setCart(prev => prev.map(c => c.itemId === itemId ? { ...c, notes } : c));
+  function updateNotes(cartId: string, notes: string) {
+    setCart(prev => prev.map(c => c.cartId === cartId ? { ...c, notes } : c));
   }
 
-  function updatePerson(itemId: string, person: number | undefined) {
-    setCart(prev => prev.map(c => c.itemId === itemId ? { ...c, person } : c));
+  function updatePerson(cartId: string, person: number | undefined) {
+    setCart(prev => prev.map(c => c.cartId === cartId ? { ...c, person } : c));
   }
 
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
@@ -572,7 +573,7 @@ export default function MenuPublicClient({
                     .sort((a, b) => (a.person ?? 99) - (b.person ?? 99))
                     .map(c => (
                     <div
-                      key={c.itemId}
+                      key={c.cartId}
                       style={{
                         margin: "8px 0",
                         padding: "12px 12px 10px",
@@ -595,7 +596,7 @@ export default function MenuPublicClient({
                           <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 1 }}>₪{c.price} ליחידה</div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                          <button onClick={() => updateQty(c.itemId, -1)} style={{
+                          <button onClick={() => updateQty(c.cartId, -1)} style={{
                             width: 26, height: 26, borderRadius: "50%",
                             border: "1px solid var(--border)", background: "none",
                             color: "var(--text)", cursor: "pointer", fontSize: 15,
@@ -604,7 +605,7 @@ export default function MenuPublicClient({
                           <span style={{ color: "var(--text)", fontSize: 13, minWidth: 18, textAlign: "center", fontWeight: 600 }}>
                             {c.quantity}
                           </span>
-                          <button onClick={() => updateQty(c.itemId, 1)} style={{
+                          <button onClick={() => updateQty(c.cartId, 1)} style={{
                             width: 26, height: 26, borderRadius: "50%",
                             border: "1px solid var(--gold)", background: "none",
                             color: "var(--gold)", cursor: "pointer", fontSize: 15,
@@ -620,7 +621,7 @@ export default function MenuPublicClient({
                       <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 7 }}>
                         <span style={{ fontSize: 9, color: "var(--text)", opacity: 0.38, marginLeft: 1, whiteSpace: "nowrap" }}>סועד:</span>
                         <button
-                          onClick={() => updatePerson(c.itemId, undefined)}
+                          onClick={() => updatePerson(c.cartId, undefined)}
                           style={{
                             padding: "1px 6px", borderRadius: 20, fontSize: 9, cursor: "pointer",
                             border: c.person === undefined ? "1px solid var(--gold)" : "1px solid var(--border)",
@@ -634,7 +635,7 @@ export default function MenuPublicClient({
                         {[1, 2, 3, 4, 5].map(p => (
                           <button
                             key={p}
-                            onClick={() => updatePerson(c.itemId, c.person === p ? undefined : p)}
+                            onClick={() => updatePerson(c.cartId, c.person === p ? undefined : p)}
                             style={{
                               width: 20, height: 20, borderRadius: "50%", fontSize: 10,
                               cursor: "pointer", fontWeight: 700,
@@ -654,7 +655,7 @@ export default function MenuPublicClient({
                         type="text"
                         placeholder="הערה למנה..."
                         value={c.notes ?? ""}
-                        onChange={e => updateNotes(c.itemId, e.target.value)}
+                        onChange={e => updateNotes(c.cartId, e.target.value)}
                         style={{
                           marginTop: 5, width: "100%", padding: "4px 9px", fontSize: 11,
                           background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
