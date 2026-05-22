@@ -41,7 +41,7 @@ export async function GET(req: Request) {
     orderBy: { createdAt: "desc" },
     include: {
       restaurant: { select: { name: true } },
-      items: { include: { item: { select: { name: true } } } },
+      items: { include: { item: { select: { name: true, prepTime: true } } } },
     },
   });
 
