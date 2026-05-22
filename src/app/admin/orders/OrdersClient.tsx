@@ -114,36 +114,33 @@ function TableCard({
     >
       {/* Table header */}
       <div
-        className="flex items-center justify-between px-4 py-3"
+        className="flex items-center gap-3 px-4 py-3"
         style={{ background: isUrgent ? "#fef2f2" : "#f9fafb", borderBottom: "1px solid #e5e7eb" }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center font-black text-amber-800 text-lg">
-            {tableNumber === "–" ? "?" : tableNumber}
-          </div>
-          <div>
-            <div className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</div>
-            <div className={`text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
-              ⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות
-            </div>
-          </div>
+        {/* Icon */}
+        <div className="w-10 h-10 rounded-xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center font-black text-amber-800 text-sm shrink-0">
+          {tableNumber === "–" ? "?" : tableNumber}
         </div>
-        {/* Left side: price large + order count + progress dots */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="text-left">
-            <div className="font-black text-gray-900 text-xl leading-none">₪{totalAmount.toFixed(0)}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{nonCancelledOrders.length} הזמנות</div>
-          </div>
-          <div className="flex flex-col gap-1 items-end">
-            <div className="flex gap-1">
+        {/* Table name + time + dots */}
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-gray-900 text-sm">שולחן {tableNumber}</div>
+          <div className={`flex items-center gap-2 mt-0.5 ${isUrgent ? "text-red-500" : "text-gray-400"}`}>
+            <span className={`text-xs ${isUrgent ? "font-semibold" : ""}`}>
+              ⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות
+            </span>
+            <div className="flex gap-0.5">
               {allItems.map(i => (
-                <div key={i.id} className="w-2 h-2 rounded-full"
+                <div key={i.id} className="w-1.5 h-1.5 rounded-full"
                   style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#d1d5db" }}
                 />
               ))}
             </div>
-            <span className="text-xs text-gray-400">{doneCount}/{totalCount}</span>
           </div>
+        </div>
+        {/* Price large + order count small */}
+        <div className="shrink-0 text-left">
+          <div className="font-black text-gray-900 text-xl leading-none">₪{totalAmount.toFixed(0)}</div>
+          <div className="text-xs text-gray-400 mt-0.5 text-left">{nonCancelledOrders.length} הזמנות</div>
         </div>
       </div>
 
