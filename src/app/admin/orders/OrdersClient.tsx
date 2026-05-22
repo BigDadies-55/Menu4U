@@ -80,20 +80,19 @@ function TableCard({
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
   const [closingTable, setClosingTable] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
-  const pendingOrders = orders.filter(o => o.status === "PENDING");
-  const activeOrders = orders.filter(o => o.status !== "PENDING");
-  const allItems = orders.flatMap(o => o.items.map(i => ({ ...i, order: o })));
-  const activeItems = activeOrders.flatMap(o => o.items.map(i => ({ ...i, order: o })));
-  const doneCount = activeItems.filter(i => i.itemStatus === "DONE").length;
+  const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED");
+  const allItems = nonCancelledOrders.flatMap(o => o.items);
+  const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
-  const allDone = activeItems.length > 0 && doneCount === activeItems.length && pendingOrders.length === 0;
   const oldestOrder = orders.reduce((a, b) =>
     new Date(a.createdAt) < new Date(b.createdAt) ? a : b
   );
-  const elapsed = Math.floor((Date.now() - new Date(oldestOrder.createdAt).getTime()) / 60000);
-  const isUrgent = elapsed > 20 && !allDone;
-  const totalAmount = orders.reduce((s, o) => s + o.totalAmount, 0);
+  const ageMin = Math.floor((Date.now() - new Date(oldestOrder.createdAt).getTime()) / 60000);
+  const hasActive = nonCancelledOrders.some(o => o.status !== "DELIVERED");
+  const isUrgent = ageMin > 20 && hasActive;
+  const totalAmount = nonCancelledOrders.reduce((s, o) => s + o.totalAmount, 0);
 
   async function advanceItem(orderId: string, itemId: string) {
     setBusy(prev => new Set(prev).add(itemId));
@@ -136,132 +135,140 @@ function TableCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Progress dots */}
           <div className="flex gap-1">
             {allItems.map(i => (
-              <div
-                key={i.id}
-                className="w-2 h-2 rounded-full"
-                style={{
-                  background: i.itemStatus === "DONE" ? "#22c55e"
-                    : i.itemStatus === "PREPARING" ? "#38bdf8"
-                    : "#d1d5db"
-                }}
+              <div key={i.id} className="w-2 h-2 rounded-full"
+                style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#d1d5db" }}
               />
             ))}
           </div>
-          <span className="text-xs text-gray-400">{doneCount}/{activeItems.length}</span>
+          <span className="text-xs text-gray-400">{doneCount}/{totalCount}</span>
         </div>
       </div>
 
-      {/* Pending orders — confirmation banners */}
-      {pendingOrders.map(order => (
-        <div key={order.id} className="border-b border-yellow-200 bg-yellow-50 px-4 py-3">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="text-xs font-bold text-yellow-800">
-              🕐 הזמנה חדשה · {timeSince(order.createdAt)} · ₪{order.totalAmount.toFixed(0)}
-            </div>
-            <button
-              onClick={() => confirmOrder(order.id)}
-              disabled={confirmingOrder === order.id}
-              className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
-              style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)" }}
-            >
-              {confirmingOrder === order.id ? "..." : "✓ אשר הזמנה"}
-            </button>
-          </div>
-          <div className="space-y-1">
-            {order.items.map(i => (
-              <div key={i.id} className="flex items-center gap-2 text-xs text-yellow-700 opacity-70">
-                <span className="w-5 h-5 rounded bg-yellow-200 flex items-center justify-center font-bold">{i.quantity}</span>
-                <span>{i.item.name}</span>
-                {i.notes && <span className="italic text-yellow-500">· {i.notes}</span>}
-              </div>
-            ))}
-          </div>
-          {order.notes && (
-            <div className="mt-1.5 text-xs text-yellow-600 italic">💬 {order.notes}</div>
-          )}
-        </div>
-      ))}
+      {/* Orders in chronological order */}
+      {nonCancelledOrders.map((order, idx) => {
+        const isPending = order.status === "PENDING";
+        const isDelivered = order.status === "DELIVERED";
 
-      {/* Active items */}
-      <div className="divide-y divide-gray-100">
-        {activeItems.map(({ id: itemId, quantity, notes, itemStatus, item, order }) => {
-          const nextLabel = ITEM_NEXT_LABEL[itemStatus];
-          const isBusy = busy.has(itemId);
-          const isDone = itemStatus === "DONE";
-
-          return (
+        return (
+          <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #f3f4f6" : undefined }}>
+            {/* Order sub-header */}
             <div
-              key={itemId}
-              className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${isDone ? "opacity-50" : ""}`}
+              className="flex items-center justify-between px-4 py-2"
+              style={{ background: isPending ? "#fefce8" : isDelivered ? "#f0fdf4" : "#fafafa" }}
             >
-              <span className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
-                {quantity}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className={`text-sm font-semibold truncate ${isDone ? "line-through text-gray-400" : "text-gray-800"}`}>
-                  {item.name}
-                </div>
-                {notes && (
-                  <div className="text-xs text-gray-400 italic truncate">{notes}</div>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`text-xs font-bold shrink-0 ${isPending ? "text-yellow-700" : isDelivered ? "text-green-700" : "text-gray-500"}`}>
+                  {isPending ? "🕐 ממתין לאישור" : isDelivered ? "✓ הושלם" : `הזמנה ${idx + 1}`}
+                </span>
+                <span className="text-xs text-gray-400 shrink-0">
+                  {order.items.length} מנות · ₪{order.totalAmount.toFixed(0)} · {timeSince(order.createdAt)}
+                </span>
+                {order.notes && (
+                  <span className="text-xs text-gray-400 italic truncate">· 💬 {order.notes}</span>
                 )}
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus]}`}>
-                {ITEM_STATUS_LABEL[itemStatus]}
-              </span>
-              {nextLabel && !isDone ? (
+              {isPending && (
                 <button
-                  onClick={() => advanceItem(order.id, itemId)}
-                  disabled={isBusy}
-                  className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all"
-                  style={{ background: itemStatus === "PREPARING" ? "#22c55e" : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                  onClick={() => confirmOrder(order.id)}
+                  disabled={confirmingOrder === order.id}
+                  className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
+                  style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)" }}
                 >
-                  {isBusy ? "..." : nextLabel}
+                  {confirmingOrder === order.id ? "..." : "✓ אשר"}
                 </button>
-              ) : isDone ? (
-                <span className="shrink-0 text-green-500 text-base">✓</span>
-              ) : null}
+              )}
+              {!isPending && !isDelivered && (
+                <button
+                  onClick={() => onOrderCancel(order.id)}
+                  className="shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  ✕ בטל
+                </button>
+              )}
             </div>
-          );
-        })}
-      </div>
 
-      {/* Footer: per-order cancel + close table */}
-      <div className="border-t border-gray-100 bg-gray-50/50">
-        {activeOrders.map(order => (
-          order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
-            <div key={order.id} className="px-4 py-2 flex items-center gap-2">
-              {isSuperAdmin && (
-                <span className="text-xs text-gray-400">{order.restaurant.name}</span>
-              )}
-              {order.notes && (
-                <span className="text-xs text-gray-400 italic flex-1 truncate">💬 {order.notes}</span>
-              )}
+            {/* Items */}
+            <div className="divide-y divide-gray-50" style={{ opacity: isPending ? 0.6 : 1 }}>
+              {order.items.map(({ id: itemId, quantity, notes, itemStatus, item }) => {
+                const nextLabel = !isPending && !isDelivered ? ITEM_NEXT_LABEL[itemStatus] : undefined;
+                const isBusy = busy.has(itemId);
+                const isDone = itemStatus === "DONE" || isDelivered;
+
+                return (
+                  <div
+                    key={itemId}
+                    className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${isDone ? "opacity-50" : ""}`}
+                  >
+                    <span className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
+                      {quantity}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-semibold truncate ${isDone ? "line-through text-gray-400" : "text-gray-800"}`}>
+                        {item.name}
+                      </div>
+                      {notes && !isDone && (
+                        <div className="text-xs text-gray-400 italic truncate">{notes}</div>
+                      )}
+                    </div>
+                    {!isDelivered && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus]}`}>
+                        {ITEM_STATUS_LABEL[itemStatus]}
+                      </span>
+                    )}
+                    {nextLabel && !isDone ? (
+                      <button
+                        onClick={() => advanceItem(order.id, itemId)}
+                        disabled={isBusy}
+                        className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all"
+                        style={{ background: itemStatus === "PREPARING" ? "#22c55e" : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                      >
+                        {isBusy ? "..." : nextLabel}
+                      </button>
+                    ) : isDone ? (
+                      <span className="shrink-0 text-green-500 text-base">✓</span>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Footer: close table */}
+      {restaurantId && nonCancelledOrders.length > 0 && (
+        <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+          {confirmClose ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 flex-1">סגור שולחן לצמיתות?</span>
               <button
-                onClick={() => onOrderCancel(order.id)}
-                className="mr-auto shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                onClick={() => setConfirmClose(false)}
+                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                ✕ בטל הזמנה
+                ביטול
+              </button>
+              <button
+                onClick={closeTable}
+                disabled={closingTable}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
+                style={{ background: "#16a34a" }}
+              >
+                {closingTable ? "..." : "✓ אשר סגירה"}
               </button>
             </div>
-          )
-        ))}
-        {/* Close table */}
-        {allDone && restaurantId && (
-          <div className="px-4 py-3 border-t border-gray-100">
+          ) : (
             <button
-              onClick={closeTable}
-              disabled={closingTable}
-              className="w-full py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
+              onClick={() => setConfirmClose(true)}
+              className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all"
               style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
             >
-              {closingTable ? "..." : "💳 סגור שולחן ותשלום"}
+              💳 סגור שולחן ותשלום
             </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -311,9 +318,8 @@ export default function OrdersClient({
     setOrders(prev => prev.map(o => {
       if (o.id !== orderId) return o;
       const updatedItems = o.items.map(i => i.id === itemId ? { ...i, itemStatus } : i);
-      if (orderDelivered && filter === "active") return { ...o, status: "DELIVERED", items: updatedItems };
-      return { ...o, items: updatedItems };
-    }).filter(o => !(filter === "active" && o.status === "DELIVERED")));
+      return { ...o, status: orderDelivered ? "DELIVERED" : o.status, items: updatedItems };
+    }));
   }
 
   async function cancelOrder(orderId: string) {
@@ -347,15 +353,12 @@ export default function OrdersClient({
       body: JSON.stringify({ tableNumber, restaurantId: rid }),
     });
     if (!res.ok) return;
-    if (filter === "active") {
-      setOrders(prev => prev.filter(o => o.tableNumber !== tableNumber));
-    } else {
-      setOrders(prev => prev.map(o => o.tableNumber === tableNumber ? { ...o, status: "DELIVERED" } : o));
-    }
+    // Remove table entirely after confirmed close
+    setOrders(prev => prev.filter(o => o.tableNumber !== tableNumber));
   }
 
   const activeOrders = filter === "active"
-    ? orders.filter(o => !["DELIVERED", "CANCELLED"].includes(o.status))
+    ? orders.filter(o => o.status !== "CANCELLED")
     : orders;
 
   // Group by table, sorted oldest first

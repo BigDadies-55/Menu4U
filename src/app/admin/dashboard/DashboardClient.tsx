@@ -73,19 +73,21 @@ function TableCard({
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [closeBusy, setCloseBusy] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
-  const pendingOrders = orders.filter(o => o.status === "PENDING");
-  const activeOrders = orders.filter(o => o.status !== "PENDING");
-  const allItems = orders.flatMap(o => o.items.map(i => ({ ...i, order: o })));
+  // All items across all orders (for progress bar)
+  const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED");
+  const allItems = nonCancelledOrders.flatMap(o => o.items);
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
   const oldest = orders.reduce((a, b) =>
     new Date(a.createdAt) < new Date(b.createdAt) ? a : b
   );
   const mins = elapsed(oldest.createdAt);
-  const isUrgent = mins > 20 && doneCount < totalCount;
+  const hasActive = nonCancelledOrders.some(o => o.status !== "DELIVERED");
+  const isUrgent = mins > 20 && hasActive;
   const progressPct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
-  const totalAmount = orders.reduce((s, o) => s + o.totalAmount, 0);
+  const totalAmount = nonCancelledOrders.reduce((s, o) => s + o.totalAmount, 0);
 
   async function handleItemAdvance(orderId: string, itemId: string) {
     setBusy(prev => new Set(prev).add(itemId));
@@ -138,141 +140,142 @@ function TableCard({
         </div>
       </div>
 
-      {/* Pending orders — require confirmation */}
-      {pendingOrders.map(order => (
-        <div key={order.id} style={{ background: "#2a1f00", borderBottom: "1px solid #ffffff0a" }}>
-          <div className="flex items-center justify-between px-4 py-3">
-            <div>
-              <div className="text-yellow-400 font-bold text-sm">🕐 הזמנה חדשה — ממתין לאישור</div>
-              <div className="text-gray-500 text-xs mt-0.5">{order.items.length} מנות · ₪{order.totalAmount.toFixed(0)}</div>
-            </div>
-            {canUpdate && (
-              <button
-                onClick={() => onConfirmOrder(order.id)}
-                className="px-5 py-3 rounded-xl font-black text-black text-sm transition-all active:scale-95 hover:opacity-90"
-                style={{ background: "#facc15", minWidth: 80, minHeight: 48 }}
-              >
-                ✓ אשר
-              </button>
-            )}
-          </div>
-          {/* Items preview (greyed) */}
-          <div className="px-4 pb-3 space-y-1 opacity-40">
-            {order.items.map(i => (
-              <div key={i.id} className="flex items-center gap-2 text-sm">
-                <span className="w-5 h-5 rounded-md bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-300">{i.quantity}</span>
-                <span className="text-gray-400">{i.item.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+      {/* Orders in chronological order */}
+      {nonCancelledOrders.map((order, idx) => {
+        const isPending = order.status === "PENDING";
+        const isDelivered = order.status === "DELIVERED";
 
-      {/* Active orders — items with per-item actions */}
-      {activeOrders.map(order => (
-        <div key={order.id} className="divide-y divide-white/5">
-          {order.notes && (
-            <div className="px-4 py-2 text-xs text-gray-500 italic" style={{ background: "#161616" }}>
-              💬 {order.notes}
-            </div>
-          )}
-          {order.items.map(({ id: itemId, quantity, notes, itemStatus, item }) => {
-            const color = ITEM_COLOR[itemStatus] ?? "#9ca3af";
-            const nextLabel = ITEM_NEXT_LABEL[itemStatus];
-            const isDone = itemStatus === "DONE";
-            const isBusy = busy.has(itemId);
-
-            return (
-              <div
-                key={`${itemId}-${tick}`}
-                className="flex items-center gap-3 px-4 py-3 transition-all"
-                style={{ opacity: isDone ? 0.4 : 1 }}
-              >
-                {/* Qty */}
-                <span
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0"
-                  style={{ background: color + "30", color, minWidth: 32 }}
-                >
-                  {quantity}
+        return (
+          <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #ffffff14" : undefined }}>
+            {/* Order sub-header */}
+            <div
+              className="flex items-center justify-between px-4 py-2.5"
+              style={{ background: isPending ? "#2a1f00" : isDelivered ? "#0d1a0d" : "#161616" }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-bold shrink-0" style={{ color: isPending ? "#facc15" : isDelivered ? "#4ade80" : "#9ca3af" }}>
+                  {isPending ? "🕐 ממתין לאישור" : isDelivered ? "✓ הושלם" : `הזמנה ${idx + 1}`}
                 </span>
-
-                {/* Name + notes */}
-                <div className="flex-1 min-w-0">
-                  <div
-                    className="text-base font-semibold truncate"
-                    style={{
-                      color: isDone ? "#4b5563" : "#f3f4f6",
-                      textDecoration: isDone ? "line-through" : "none",
-                    }}
-                  >
-                    {item.name}
-                  </div>
-                  {notes && !isDone && (
-                    <div className="text-xs text-gray-600 italic truncate mt-0.5">{notes}</div>
-                  )}
-                </div>
-
-                {/* Status badge */}
-                <span
-                  className="text-xs px-2.5 py-1 rounded-full font-semibold shrink-0"
-                  style={{ background: color + "22", color }}
-                >
-                  {ITEM_LABEL[itemStatus]}
-                </span>
-
-                {/* Action */}
-                {canUpdate && nextLabel && !isDone && (
-                  <button
-                    onClick={() => handleItemAdvance(order.id, itemId)}
-                    disabled={isBusy}
-                    className="shrink-0 rounded-xl font-bold text-black transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
-                    style={{
-                      background: itemStatus === "PREPARING" ? "#4ade80" : "#38bdf8",
-                      padding: "10px 14px",
-                      minHeight: 44,
-                      minWidth: 80,
-                      fontSize: 13,
-                    }}
-                  >
-                    {isBusy ? "..." : nextLabel}
-                  </button>
+                <span className="text-xs text-gray-600 shrink-0">{order.items.length} מנות · ₪{order.totalAmount.toFixed(0)}</span>
+                {order.notes && (
+                  <span className="text-xs text-gray-600 italic truncate">· 💬 {order.notes}</span>
                 )}
-                {isDone && <span className="text-green-400 text-lg shrink-0">✓</span>}
               </div>
-            );
-          })}
-        </div>
-      ))}
-
-      {/* Footer: cancel + close table */}
-      {canUpdate && (
-        <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between gap-3" style={{ background: "#0d0d0d" }}>
-          <div className="flex gap-2">
-            {orders.map(order =>
-              order.status !== "DELIVERED" && order.status !== "CANCELLED" ? (
+              {canUpdate && isPending && (
                 <button
-                  key={order.id}
+                  onClick={() => onConfirmOrder(order.id)}
+                  className="shrink-0 px-4 py-2 rounded-xl font-black text-black text-sm transition-all active:scale-95 hover:opacity-90"
+                  style={{ background: "#facc15", minHeight: 44, minWidth: 72 }}
+                >
+                  ✓ אשר
+                </button>
+              )}
+              {canUpdate && !isPending && !isDelivered && (
+                <button
                   onClick={() => onCancel(order.id)}
-                  className="text-xs text-red-500/60 hover:text-red-400 px-3 py-2 rounded-lg hover:bg-red-950/50 transition-colors"
+                  className="shrink-0 text-xs text-red-500/60 hover:text-red-400 px-3 py-2 rounded-lg hover:bg-red-950/50 transition-colors"
                   style={{ minHeight: 40 }}
                 >
                   ✕ בטל
                 </button>
-              ) : null
-            )}
+              )}
+            </div>
+
+            {/* Items */}
+            <div className="divide-y divide-white/5" style={{ opacity: isPending ? 0.5 : 1 }}>
+              {order.items.map(({ id: itemId, quantity, notes, itemStatus, item }) => {
+                const color = isDelivered ? "#4b5563" : (ITEM_COLOR[itemStatus] ?? "#9ca3af");
+                const nextLabel = !isPending && !isDelivered ? ITEM_NEXT_LABEL[itemStatus] : undefined;
+                const isDone = itemStatus === "DONE" || isDelivered;
+                const isBusy = busy.has(itemId);
+
+                return (
+                  <div
+                    key={`${itemId}-${tick}`}
+                    className="flex items-center gap-3 px-4 py-3 transition-all"
+                    style={{ opacity: isDone ? 0.45 : 1 }}
+                  >
+                    <span
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0"
+                      style={{ background: color + "30", color, minWidth: 32 }}
+                    >
+                      {quantity}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="text-base font-semibold truncate"
+                        style={{ color: isDone ? "#4b5563" : "#f3f4f6", textDecoration: isDone ? "line-through" : "none" }}
+                      >
+                        {item.name}
+                      </div>
+                      {notes && !isDone && (
+                        <div className="text-xs text-gray-600 italic truncate mt-0.5">{notes}</div>
+                      )}
+                    </div>
+                    {!isDelivered && (
+                      <span
+                        className="text-xs px-2.5 py-1 rounded-full font-semibold shrink-0"
+                        style={{ background: color + "22", color }}
+                      >
+                        {ITEM_LABEL[itemStatus]}
+                      </span>
+                    )}
+                    {canUpdate && nextLabel && !isDone && (
+                      <button
+                        onClick={() => handleItemAdvance(order.id, itemId)}
+                        disabled={isBusy}
+                        className="shrink-0 rounded-xl font-bold text-black transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
+                        style={{
+                          background: itemStatus === "PREPARING" ? "#4ade80" : "#38bdf8",
+                          padding: "10px 14px",
+                          minHeight: 44,
+                          minWidth: 80,
+                          fontSize: 13,
+                        }}
+                      >
+                        {isBusy ? "..." : nextLabel}
+                      </button>
+                    )}
+                    {isDone && <span className="text-green-400 text-lg shrink-0">✓</span>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={closeBusy}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-40"
-            style={{
-              background: "linear-gradient(135deg,#8B6914,#C9A84C)",
-              color: "#000",
-              minHeight: 44,
-            }}
-          >
-            {closeBusy ? "..." : "💳 סגור שולחן"}
-          </button>
+        );
+      })}
+
+      {/* Footer: close table */}
+      {canUpdate && (
+        <div className="px-4 py-3 border-t border-white/5 flex items-center justify-end gap-2" style={{ background: "#0d0d0d" }}>
+          {confirmClose ? (
+            <>
+              <span className="text-xs text-gray-500 mr-auto">סגור שולחן לצמיתות?</span>
+              <button
+                onClick={() => setConfirmClose(false)}
+                className="px-3 py-2 rounded-lg text-xs text-gray-400 hover:bg-white/10 transition-colors"
+                style={{ minHeight: 40 }}
+              >
+                ביטול
+              </button>
+              <button
+                onClick={handleClose}
+                disabled={closeBusy}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-40"
+                style={{ background: "#16a34a", color: "#fff", minHeight: 44 }}
+              >
+                {closeBusy ? "..." : "✓ אשר סגירה"}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmClose(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95"
+              style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)", color: "#000", minHeight: 44 }}
+            >
+              💳 סגור שולחן
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -356,8 +359,8 @@ export default function DashboardClient({
         i.id === itemId ? { ...i, itemStatus: NEXT[i.itemStatus] ?? i.itemStatus } : i
       );
       const allDone = updatedItems.every(i => i.itemStatus === "DONE");
-      return allDone ? { ...o, status: "DELIVERED", items: updatedItems } : { ...o, items: updatedItems };
-    }).filter(o => o.status !== "DELIVERED"));
+      return { ...o, status: allDone ? "DELIVERED" : o.status, items: updatedItems };
+    }));
 
     await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, { method: "PATCH" });
   }
@@ -372,7 +375,6 @@ export default function DashboardClient({
   }
 
   async function handleCloseTable(tableNumber: string, restId: string) {
-    if (!confirm(`לסגור שולחן ${tableNumber} ולרשום תשלום?`)) return;
     setOrders(prev => prev.filter(o => o.tableNumber !== tableNumber));
     await fetch("/api/admin/orders/close-table", {
       method: "POST", headers: { "Content-Type": "application/json" },

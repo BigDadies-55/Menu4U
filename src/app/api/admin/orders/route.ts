@@ -30,14 +30,16 @@ export async function GET(req: Request) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const statusFilter: any = activeOnly
-    ? { notIn: ["DELIVERED", "CANCELLED"] }
+  const statusFilter: any = activeOnly ? { not: "CANCELLED" } : undefined;
+  const timeFilter = activeOnly
+    ? { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     : undefined;
 
   const orders = await prisma.order.findMany({
     where: {
       ...(restaurantFilter ? { restaurantId: restaurantFilter } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
+      ...(timeFilter ? { createdAt: timeFilter } : {}),
     },
     orderBy: { createdAt: "desc" },
     include: {
