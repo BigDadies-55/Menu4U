@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 type CellType = "empty" | "wall" | "table";
 
@@ -51,7 +52,11 @@ export default function LayoutClient({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("");
   const isPainting = useRef(false);
+
+  useEffect(() => { setOrigin(window.location.origin); }, []);
 
   async function loadLayout(rid: string) {
     setLoading(true);
@@ -280,68 +285,109 @@ export default function LayoutClient({
       </div>
 
       {/* Edit table dialog */}
-      {editCell && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditCell(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">✏️ הגדרת שולחן</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">מספר שולחן</label>
-                <input
-                  type="text"
-                  value={editForm.tableNumber}
-                  onChange={e => setEditForm(f => ({ ...f, tableNumber: e.target.value }))}
-                  placeholder="לדוגמה: 1, A3, בר..."
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">מספר כסאות</label>
-                <div className="flex gap-2">
-                  {[2, 4, 6, 8, 10].map(n => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setEditForm(f => ({ ...f, seats: String(n) }))}
-                      className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                        editForm.seats === String(n)
-                          ? "border-amber-400 text-white"
-                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                      style={editForm.seats === String(n) ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}
-                    >
-                      {n}
-                    </button>
-                  ))}
+      {editCell && (() => {
+        const tableUrl = editForm.tableNumber && restaurantId && origin
+          ? `${origin}/menu/${restaurantId}?table=${encodeURIComponent(editForm.tableNumber)}`
+          : null;
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditCell(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">✏️ הגדרת שולחן</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">מספר שולחן</label>
+                  <input
+                    type="text"
+                    value={editForm.tableNumber}
+                    onChange={e => setEditForm(f => ({ ...f, tableNumber: e.target.value }))}
+                    placeholder="לדוגמה: 1, A3, בר..."
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    autoFocus
+                  />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">מספר כסאות</label>
+                  <div className="flex gap-2">
+                    {[2, 4, 6, 8, 10].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setEditForm(f => ({ ...f, seats: String(n) }))}
+                        className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                          editForm.seats === String(n)
+                            ? "border-amber-400 text-white"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                        style={editForm.seats === String(n) ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* QR + link — shown when table number is filled */}
+                {tableUrl && (
+                  <div className="border border-gray-100 rounded-xl p-4 bg-gray-50 space-y-3">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">קישור ו-QR לשולחן</p>
+
+                    {/* QR code */}
+                    <div className="flex justify-center">
+                      <div className="p-2 bg-white rounded-xl border border-gray-200 inline-block">
+                        <QRCodeSVG value={tableUrl} size={160} />
+                      </div>
+                    </div>
+
+                    {/* URL + copy */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        readOnly
+                        value={tableUrl}
+                        className="flex-1 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-2 py-1.5 truncate focus:outline-none"
+                        onClick={e => (e.target as HTMLInputElement).select()}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(tableUrl);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
+                        style={{ background: copied ? "#22c55e" : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                      >
+                        {copied ? "✓ הועתק" : "העתק"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={saveEditCell}
-                className="flex-1 py-2.5 rounded-xl text-white font-semibold text-sm"
-                style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
-              >
-                שמור שולחן
-              </button>
-              <button
-                onClick={() => {
-                  const key = cellKey(editCell.r, editCell.c);
-                  setCellMap(prev => { const next = new Map(prev); next.delete(key); return next; });
-                  setEditCell(null);
-                }}
-                className="px-4 py-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 text-sm font-medium"
-              >
-                מחק
-              </button>
-              <button onClick={() => setEditCell(null)} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm">
-                ביטול
-              </button>
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={saveEditCell}
+                  className="flex-1 py-2.5 rounded-xl text-white font-semibold text-sm"
+                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                >
+                  שמור שולחן
+                </button>
+                <button
+                  onClick={() => {
+                    const key = cellKey(editCell.r, editCell.c);
+                    setCellMap(prev => { const next = new Map(prev); next.delete(key); return next; });
+                    setEditCell(null);
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 text-sm font-medium"
+                >
+                  מחק
+                </button>
+                <button onClick={() => setEditCell(null)} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm">
+                  ביטול
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

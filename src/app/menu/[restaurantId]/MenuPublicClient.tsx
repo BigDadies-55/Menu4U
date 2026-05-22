@@ -1,8 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import "./menu.css";
 import { buildPaletteStyle } from "@/lib/menuPalettes";
+
+type TableOrderItem = {
+  id: string;
+  quantity: number;
+  price: number;
+  notes: string | null;
+  item: { name: string };
+};
+
+type TableOrder = {
+  id: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  notes: string | null;
+  items: TableOrderItem[];
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: "ממתין לאישור",
+  CONFIRMED: "אושר",
+  PREPARING: "בהכנה",
+  READY: "מוכן למסירה 🔔",
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  PENDING: "#f59e0b",
+  CONFIRMED: "#38bdf8",
+  PREPARING: "#fb923c",
+  READY: "#4ade80",
+};
 
 type Item = {
   id: string;
@@ -76,6 +107,22 @@ export default function MenuPublicClient({
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
 
+  // My orders (current table)
+  const [myOrdersOpen, setMyOrdersOpen] = useState(false);
+  const [myOrders, setMyOrders] = useState<TableOrder[]>([]);
+  const [myOrdersLoading, setMyOrdersLoading] = useState(false);
+
+  const fetchMyOrders = useCallback(async () => {
+    if (!tableNumber) return;
+    setMyOrdersLoading(true);
+    try {
+      const res = await fetch(`/api/menu/${restaurant.id}/orders?table=${encodeURIComponent(tableNumber)}`);
+      if (res.ok) setMyOrders(await res.json());
+    } finally {
+      setMyOrdersLoading(false);
+    }
+  }, [restaurant.id, tableNumber]);
+
   const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
 
@@ -114,16 +161,17 @@ export default function MenuPublicClient({
       if (zoomSrc) setZoomSrc(null);
       else if (modalItem) setModalItem(null);
       else if (cartOpen) setCartOpen(false);
+      else if (myOrdersOpen) setMyOrdersOpen(false);
       else if (view === "category") goHome();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [zoomSrc, modalItem, view, cartOpen]);
+  }, [zoomSrc, modalItem, view, cartOpen, myOrdersOpen]);
 
   useEffect(() => {
-    document.body.style.overflow = (modalItem || cartOpen) ? "hidden" : "";
+    document.body.style.overflow = (modalItem || cartOpen || myOrdersOpen) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [modalItem, cartOpen]);
+  }, [modalItem, cartOpen, myOrdersOpen]);
 
   function addToCart(item: Item) {
     setCart(prev => {
@@ -360,6 +408,35 @@ export default function MenuPublicClient({
         )}
       </div>
 
+      {/* My orders button — only when table number is known */}
+      {restaurant.ordersEnabled && tableNumber && (
+        <button
+          onClick={() => { setMyOrdersOpen(true); fetchMyOrders(); }}
+          style={{
+            position: "fixed",
+            bottom: cartCount > 0 ? 144 : 80,
+            right: 16,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "var(--bg-card, #1a1a1a)",
+            color: "var(--gold)",
+            border: "2px solid var(--gold)",
+            cursor: "pointer",
+            fontSize: 22,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            zIndex: 40,
+          }}
+          aria-label="הזמנות השולחן"
+          title="מה הזמנתי?"
+        >
+          📋
+        </button>
+      )}
+
       {/* Cart button — fixed, above floating actions */}
       {restaurant.ordersEnabled && cartCount > 0 && (
         <button
@@ -491,7 +568,9 @@ export default function MenuPublicClient({
                 </div>
               ) : (
                 <>
-                  {cart.map(c => (
+                  {[...cart]
+                    .sort((a, b) => (a.person ?? 99) - (b.person ?? 99))
+                    .map(c => (
                     <div
                       key={c.itemId}
                       style={{
@@ -501,42 +580,55 @@ export default function MenuPublicClient({
                     >
                       {/* Item row */}
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        {c.person !== undefined && (
+                          <div style={{
+                            width: 22, height: 22, borderRadius: "50%", fontSize: 11, fontWeight: 700,
+                            background: "var(--gold)", color: "var(--bg)", flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>{c.person}</div>
+                        )}
                         <div style={{ flex: 1 }}>
                           <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>{c.name}</div>
                           <div style={{ color: "var(--gold)", fontSize: 13, marginTop: 2 }}>₪{c.price}</div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <button
-                            onClick={() => updateQty(c.itemId, -1)}
-                            style={{
-                              width: 28, height: 28, borderRadius: "50%",
-                              border: "1px solid var(--border)", background: "none",
-                              color: "var(--text)", cursor: "pointer", fontSize: 16,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}
-                          >−</button>
+                          <button onClick={() => updateQty(c.itemId, -1)} style={{
+                            width: 28, height: 28, borderRadius: "50%",
+                            border: "1px solid var(--border)", background: "none",
+                            color: "var(--text)", cursor: "pointer", fontSize: 16,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>−</button>
                           <span style={{ color: "var(--text)", fontSize: 14, minWidth: 20, textAlign: "center" }}>
                             {c.quantity}
                           </span>
-                          <button
-                            onClick={() => updateQty(c.itemId, 1)}
-                            style={{
-                              width: 28, height: 28, borderRadius: "50%",
-                              border: "1px solid var(--gold)", background: "none",
-                              color: "var(--gold)", cursor: "pointer", fontSize: 16,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}
-                          >+</button>
+                          <button onClick={() => updateQty(c.itemId, 1)} style={{
+                            width: 28, height: 28, borderRadius: "50%",
+                            border: "1px solid var(--gold)", background: "none",
+                            color: "var(--gold)", cursor: "pointer", fontSize: 16,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>+</button>
                         </div>
                         <div style={{ color: "var(--text)", fontSize: 13, minWidth: 48, textAlign: "left" }}>
                           ₪{c.price * c.quantity}
                         </div>
                       </div>
 
+                      {/* Notes */}
+                      <input
+                        type="text"
+                        placeholder="הערה למנה (אופציונלי)"
+                        value={c.notes ?? ""}
+                        onChange={e => updateNotes(c.itemId, e.target.value)}
+                        style={{
+                          marginTop: 6, width: "100%", padding: "5px 10px", fontSize: 12,
+                          background: "transparent", border: "1px solid var(--border)",
+                          borderRadius: 6, color: "var(--text)", outline: "none", boxSizing: "border-box",
+                        }}
+                      />
+
                       {/* Person selector */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 10, color: "var(--text)", opacity: 0.45, marginLeft: 2 }}>שייך ל:</span>
-                        {/* "none" button */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 10, color: "var(--text)", opacity: 0.45, marginLeft: 2 }}>שיוך לסועד:</span>
                         <button
                           onClick={() => updatePerson(c.itemId, undefined)}
                           style={{
@@ -566,19 +658,6 @@ export default function MenuPublicClient({
                           >{p}</button>
                         ))}
                       </div>
-
-                      {/* Notes */}
-                      <input
-                        type="text"
-                        placeholder="הערה למנה (אופציונלי)"
-                        value={c.notes ?? ""}
-                        onChange={e => updateNotes(c.itemId, e.target.value)}
-                        style={{
-                          marginTop: 5, width: "100%", padding: "5px 10px", fontSize: 12,
-                          background: "transparent", border: "1px solid var(--border)",
-                          borderRadius: 6, color: "var(--text)", outline: "none", boxSizing: "border-box",
-                        }}
-                      />
                     </div>
                   ))}
 
@@ -602,7 +681,7 @@ export default function MenuPublicClient({
                               <span style={{
                                 width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
                                 background: "var(--gold)", color: "var(--bg)",
-                                display: "inline-flex", alignItems: "center", justifyContent: "center", shrink: 0,
+                                display: "inline-flex", alignItems: "center", justifyContent: "center",
                               }}>{p}</span>
                               <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.75, lineHeight: "20px" }}>
                                 {pItems.map(c => `${c.name}${c.quantity > 1 ? ` ×${c.quantity}` : ""}`).join(", ")}
@@ -671,6 +750,121 @@ export default function MenuPublicClient({
               >
                 {orderLoading ? "שולח..." : "שלח הזמנה"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* My orders panel */}
+      {myOrdersOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
+          <div
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
+            onClick={() => setMyOrdersOpen(false)}
+          />
+          <div style={{
+            position: "absolute", top: 0, bottom: 0, left: 0,
+            width: "min(380px, 100vw)",
+            background: "var(--bg-card, #1a1a1a)",
+            borderRight: "1px solid var(--border)",
+            display: "flex", flexDirection: "column", zIndex: 51,
+          }}>
+            {/* Header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 20px", borderBottom: "1px solid var(--border)",
+            }}>
+              <div>
+                <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>📋 הזמנות השולחן</span>
+                {tableNumber && (
+                  <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.55, marginTop: 2 }}>
+                    שולחן <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong>
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={fetchMyOrders}
+                  style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", fontSize: 18 }}
+                  title="רענן"
+                >🔄</button>
+                <button
+                  onClick={() => setMyOrdersOpen(false)}
+                  style={{ background: "none", border: "none", color: "var(--text)", fontSize: 20, cursor: "pointer", opacity: 0.7 }}
+                >✕</button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+              {myOrdersLoading ? (
+                <div style={{ textAlign: "center", color: "var(--text)", opacity: 0.4, marginTop: 40 }}>
+                  טוען...
+                </div>
+              ) : myOrders.length === 0 ? (
+                <div style={{ textAlign: "center", color: "var(--text)", opacity: 0.4, marginTop: 60 }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>🍽</div>
+                  <div>אין הזמנות פעילות לשולחן זה</div>
+                </div>
+              ) : (
+                myOrders.map(order => {
+                  const statusColor = STATUS_COLOR[order.status] ?? "#999";
+                  const statusLabel = STATUS_LABEL[order.status] ?? order.status;
+                  return (
+                    <div key={order.id} style={{
+                      marginBottom: 14, borderRadius: 12, overflow: "hidden",
+                      border: `1.5px solid ${statusColor}44`,
+                      background: `${statusColor}0a`,
+                    }}>
+                      {/* Status bar */}
+                      <div style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "8px 14px",
+                        background: `${statusColor}18`,
+                        borderBottom: `1px solid ${statusColor}33`,
+                      }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: statusColor }}>{statusLabel}</span>
+                        <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.5 }}>
+                          ₪{order.totalAmount.toFixed(0)}
+                        </span>
+                      </div>
+                      {/* Items */}
+                      <div style={{ padding: "10px 14px" }}>
+                        {order.items.map(oi => (
+                          <div key={oi.id} style={{
+                            display: "flex", alignItems: "center", gap: 8, marginBottom: 6,
+                          }}>
+                            <span style={{
+                              width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
+                              background: statusColor, color: "#000",
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            }}>{oi.quantity}</span>
+                            <div style={{ flex: 1 }}>
+                              <span style={{ fontSize: 13, color: "var(--text)" }}>{oi.item.name}</span>
+                              {oi.notes && (
+                                <div style={{ fontSize: 11, color: "var(--text)", opacity: 0.5, fontStyle: "italic" }}>
+                                  {oi.notes}
+                                </div>
+                              )}
+                            </div>
+                            <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.6 }}>
+                              ₪{(oi.price * oi.quantity).toFixed(0)}
+                            </span>
+                          </div>
+                        ))}
+                        {order.notes && (
+                          <div style={{
+                            marginTop: 6, fontSize: 12, color: "var(--text)", opacity: 0.5,
+                            fontStyle: "italic", borderTop: "1px solid var(--border)", paddingTop: 6,
+                          }}>
+                            💬 {order.notes}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
