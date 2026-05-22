@@ -54,28 +54,21 @@ function TableCard({
   tableNumber,
   orders,
   canUpdate,
-  restaurantId,
   tick,
   onConfirmOrder,
   onItemAdvance,
   onCancel,
-  onCloseTable,
 }: {
   tableNumber: string;
   orders: Order[];
   canUpdate: boolean;
-  restaurantId: string;
   tick: number;
   onConfirmOrder: (orderId: string) => void;
   onItemAdvance: (orderId: string, itemId: string) => void;
   onCancel: (orderId: string) => void;
-  onCloseTable: (tableNumber: string, restaurantId: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
-  const [closeBusy, setCloseBusy] = useState(false);
-  const [confirmClose, setConfirmClose] = useState(false);
 
-  // All items across all orders (for progress bar)
   const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED");
   const allItems = nonCancelledOrders.flatMap(o => o.items);
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
@@ -84,8 +77,7 @@ function TableCard({
     new Date(a.createdAt) < new Date(b.createdAt) ? a : b
   );
   const mins = elapsed(oldest.createdAt);
-  const hasActive = nonCancelledOrders.some(o => o.status !== "DELIVERED");
-  const isUrgent = mins > 20 && hasActive;
+  const isUrgent = mins > 20 && doneCount < totalCount;
   const progressPct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
   const totalAmount = nonCancelledOrders.reduce((s, o) => s + o.totalAmount, 0);
 
@@ -93,12 +85,6 @@ function TableCard({
     setBusy(prev => new Set(prev).add(itemId));
     await onItemAdvance(orderId, itemId);
     setBusy(prev => { const n = new Set(prev); n.delete(itemId); return n; });
-  }
-
-  async function handleClose() {
-    setCloseBusy(true);
-    await onCloseTable(tableNumber, restaurantId);
-    setCloseBusy(false);
   }
 
   return (
@@ -245,39 +231,6 @@ function TableCard({
         );
       })}
 
-      {/* Footer: close table */}
-      {canUpdate && (
-        <div className="px-4 py-3 border-t border-white/5 flex items-center justify-end gap-2" style={{ background: "#0d0d0d" }}>
-          {confirmClose ? (
-            <>
-              <span className="text-xs text-gray-500 mr-auto">סגור שולחן לצמיתות?</span>
-              <button
-                onClick={() => setConfirmClose(false)}
-                className="px-3 py-2 rounded-lg text-xs text-gray-400 hover:bg-white/10 transition-colors"
-                style={{ minHeight: 40 }}
-              >
-                ביטול
-              </button>
-              <button
-                onClick={handleClose}
-                disabled={closeBusy}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-40"
-                style={{ background: "#16a34a", color: "#fff", minHeight: 44 }}
-              >
-                {closeBusy ? "..." : "✓ אשר סגירה"}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setConfirmClose(true)}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95"
-              style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)", color: "#000", minHeight: 44 }}
-            >
-              💳 סגור שולחן
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -308,8 +261,10 @@ export default function DashboardClient({
     const res = await fetch(`/api/admin/orders?${params}`);
     if (!res.ok) return;
     const data: Order[] = await res.json();
-    const pending = data.filter(o => o.status === "PENDING").length;
-    setOrders(data);
+    // Kitchen only shows actionable orders (not DELIVERED — those go to orders management)
+    const active = data.filter(o => o.status !== "DELIVERED" && o.status !== "CANCELLED");
+    const pending = active.filter(o => o.status === "PENDING").length;
+    setOrders(active);
     setLastCount(prev => {
       if (pending > prev) { setNewAlert(true); playBeep(); setTimeout(() => setNewAlert(false), 3000); }
       return pending;
@@ -360,7 +315,8 @@ export default function DashboardClient({
       );
       const allDone = updatedItems.every(i => i.itemStatus === "DONE");
       return { ...o, status: allDone ? "DELIVERED" : o.status, items: updatedItems };
-    }));
+    // Kitchen removes order once DELIVERED — closing is handled in orders management
+    }).filter(o => o.status !== "DELIVERED"));
 
     await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, { method: "PATCH" });
   }
@@ -371,14 +327,6 @@ export default function DashboardClient({
     await fetch(`/api/admin/orders/${orderId}/status`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "CANCELLED" }),
-    });
-  }
-
-  async function handleCloseTable(tableNumber: string, restId: string) {
-    setOrders(prev => prev.filter(o => o.tableNumber !== tableNumber));
-    await fetch("/api/admin/orders/close-table", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableNumber, restaurantId: restId || restaurantId }),
     });
   }
 
@@ -453,12 +401,10 @@ export default function DashboardClient({
                 tableNumber={table}
                 orders={tableOrders}
                 canUpdate={canUpdateStatus}
-                restaurantId={restaurantId}
                 tick={tick}
                 onConfirmOrder={handleConfirmOrder}
                 onItemAdvance={handleItemAdvance}
                 onCancel={handleCancel}
-                onCloseTable={handleCloseTable}
               />
             ))}
           </div>

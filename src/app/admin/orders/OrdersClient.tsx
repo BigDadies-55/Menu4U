@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 
 type OrderItem = {
@@ -289,6 +289,8 @@ export default function OrdersClient({
   const [restaurantId, setRestaurantId] = useState(defaultRestaurantId ?? "");
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  // Tracks tables closed this session so they don't reappear on auto-refresh
+  const closedTablesRef = useRef<Set<string>>(new Set());
 
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
@@ -297,7 +299,15 @@ export default function OrdersClient({
     if (filter === "active") params.set("activeOnly", "1");
     try {
       const res = await fetch(`/api/admin/orders?${params}`);
-      if (res.ok) { setOrders(await res.json()); setLastRefresh(new Date()); }
+      if (res.ok) {
+        const data: Order[] = await res.json();
+        // Filter out tables closed in this session
+        const filtered = closedTablesRef.current.size > 0
+          ? data.filter(o => !closedTablesRef.current.has(o.tableNumber ?? ""))
+          : data;
+        setOrders(filtered);
+        setLastRefresh(new Date());
+      }
     } catch { /* ignore */ }
     if (showSpinner) setRefreshing(false);
   }, [restaurantId, filter]);
@@ -353,7 +363,7 @@ export default function OrdersClient({
       body: JSON.stringify({ tableNumber, restaurantId: rid }),
     });
     if (!res.ok) return;
-    // Remove table entirely after confirmed close
+    closedTablesRef.current.add(tableNumber);
     setOrders(prev => prev.filter(o => o.tableNumber !== tableNumber));
   }
 
