@@ -21,7 +21,7 @@ export async function PATCH(
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { restaurantId: true },
+    select: { restaurantId: true, status: true },
   });
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -33,10 +33,17 @@ export async function PATCH(
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updated = await prisma.order.update({
-    where: { id: orderId },
-    data: { status },
-  });
+  const [updated] = await prisma.$transaction([
+    prisma.order.update({ where: { id: orderId }, data: { status } }),
+    prisma.orderStatusLog.create({
+      data: {
+        orderId,
+        fromStatus: order.status,
+        toStatus: status,
+        changedBy: session.user.id,
+      },
+    }),
+  ]);
 
   await logAudit({
     userId: session.user.id,
