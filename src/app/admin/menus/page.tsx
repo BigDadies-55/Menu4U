@@ -6,6 +6,7 @@ import MenusClient from "./MenusClient";
 export default async function MenusPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (session.user.role === "WAITER") redirect("/admin/orders");
 
   let restaurants;
   if (session.user.role === "SUPER_ADMIN") {

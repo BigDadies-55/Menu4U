@@ -35,7 +35,15 @@ type Restaurant = {
   menuTheme?: string;
   menuPalette?: string | null;
   menuPaletteData?: string | null;
+  ordersEnabled?: boolean;
   menus: { id: string; categories: Category[] }[];
+};
+
+type CartItem = {
+  itemId: string;
+  name: string;
+  price: number;
+  quantity: number;
 };
 
 function getItemBadges(item: Item): string[] {
@@ -46,11 +54,24 @@ function getItemBadges(item: Item): string[] {
   return [...badges, ...item.tags];
 }
 
-export default function MenuPublicClient({ restaurant }: { restaurant: Restaurant }) {
+export default function MenuPublicClient({
+  restaurant,
+  tableNumber,
+}: {
+  restaurant: Restaurant;
+  tableNumber?: string | null;
+}) {
   const [view, setView] = useState<"home" | "category">("home");
   const [selectedCat, setSelectedCat] = useState<Category | null>(null);
   const [modalItem, setModalItem] = useState<Item | null>(null);
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
+
+  // Cart state
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
@@ -89,16 +110,67 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
       if (e.key !== "Escape") return;
       if (zoomSrc) setZoomSrc(null);
       else if (modalItem) setModalItem(null);
+      else if (cartOpen) setCartOpen(false);
       else if (view === "category") goHome();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [zoomSrc, modalItem, view]);
+  }, [zoomSrc, modalItem, view, cartOpen]);
 
   useEffect(() => {
-    document.body.style.overflow = modalItem ? "hidden" : "";
+    document.body.style.overflow = (modalItem || cartOpen) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [modalItem]);
+  }, [modalItem, cartOpen]);
+
+  function addToCart(item: Item) {
+    setCart(prev => {
+      const existing = prev.find(c => c.itemId === item.id);
+      if (existing) {
+        return prev.map(c => c.itemId === item.id ? { ...c, quantity: c.quantity + 1 } : c);
+      }
+      return [...prev, { itemId: item.id, name: item.name, price: item.price, quantity: 1 }];
+    });
+  }
+
+  function updateQty(itemId: string, delta: number) {
+    setCart(prev => {
+      const updated = prev.map(c => c.itemId === itemId ? { ...c, quantity: c.quantity + delta } : c);
+      return updated.filter(c => c.quantity > 0);
+    });
+  }
+
+  function removeFromCart(itemId: string) {
+    setCart(prev => prev.filter(c => c.itemId !== itemId));
+  }
+
+  const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
+  const cartTotal = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+
+  async function handleOrder() {
+    if (cart.length === 0) return;
+    setOrderLoading(true);
+    setOrderError("");
+    try {
+      const res = await fetch(`/api/menu/${restaurant.id}/order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tableNumber: tableNumber || "",
+          items: cart.map(c => ({ itemId: c.itemId, quantity: c.quantity })),
+          customerName: "",
+          notes: "",
+        }),
+      });
+      if (!res.ok) throw new Error("שגיאה בשליחת ההזמנה");
+      setCart([]);
+      setCartOpen(false);
+      setOrderSuccess(true);
+    } catch (err: unknown) {
+      setOrderError(err instanceof Error ? err.message : "שגיאה בשליחת ההזמנה");
+    } finally {
+      setOrderLoading(false);
+    }
+  }
 
   return (
     <div className={`menu-root menu-theme-${restaurant.menuTheme ?? 'luxury'}`} style={paletteStyle as React.CSSProperties}>
@@ -208,19 +280,48 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
                 <p style={{ gridColumn: "1/-1", opacity: 0.5, padding: 40 }}>אין מנות בקטגוריה זו.</p>
               ) : (
                 selectedCat.items.map(item => (
-                  <div key={item.id} className="menu-card" onClick={() => { track("item", item.id, item.name); setModalItem(item); }}>
-                    <div className="menu-img-box">
+                  <div key={item.id} className="menu-card">
+                    <div
+                      className="menu-img-box"
+                      onClick={() => { track("item", item.id, item.name); setModalItem(item); }}
+                      style={{ cursor: "pointer" }}
+                    >
                       {item.image
                         ? <img src={item.image} alt={item.name} loading="lazy" />
                         : <div className="menu-img-placeholder" />}
                     </div>
                     <div className="menu-card-content">
-                      <div className="menu-type-labels">
-                        {getItemBadges(item).map(b => <span key={b} className="menu-type-tag">{b}</span>)}
+                      <div
+                        onClick={() => { track("item", item.id, item.name); setModalItem(item); }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="menu-type-labels">
+                          {getItemBadges(item).map(b => <span key={b} className="menu-type-tag">{b}</span>)}
+                        </div>
+                        <h3 className="menu-card-name">{item.name}</h3>
+                        <p className="menu-card-desc">{item.description ?? ""}</p>
+                        <div className="menu-price">₪{item.price}</div>
                       </div>
-                      <h3 className="menu-card-name">{item.name}</h3>
-                      <p className="menu-card-desc">{item.description ?? ""}</p>
-                      <div className="menu-price">₪{item.price}</div>
+                      {restaurant.ordersEnabled && (
+                        <button
+                          onClick={e => { e.stopPropagation(); addToCart(item); }}
+                          style={{
+                            marginTop: 10,
+                            width: "100%",
+                            padding: "8px 0",
+                            background: "var(--gold)",
+                            color: "var(--bg)",
+                            border: "none",
+                            borderRadius: 8,
+                            fontWeight: 700,
+                            fontSize: 14,
+                            cursor: "pointer",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          הוסף לסל
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -242,6 +343,298 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
           <a href={restaurant.website} target="_blank" rel="noopener noreferrer" className="menu-action-btn menu-btn-order">🌐 אתר</a>
         )}
       </div>
+
+      {/* Cart button — fixed, above floating actions */}
+      {restaurant.ordersEnabled && cartCount > 0 && (
+        <button
+          onClick={() => setCartOpen(true)}
+          style={{
+            position: "fixed",
+            bottom: 80,
+            right: 16,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "var(--gold)",
+            color: "var(--bg)",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            zIndex: 40,
+          }}
+          aria-label="פתח סל הזמנות"
+        >
+          🛒
+          <span
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              minWidth: 20,
+              height: 20,
+              borderRadius: 10,
+              background: "#e53e3e",
+              color: "#fff",
+              fontSize: 11,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0 4px",
+            }}
+          >
+            {cartCount}
+          </span>
+        </button>
+      )}
+
+      {/* Cart drawer */}
+      {cartOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+          }}
+        >
+          {/* Backdrop */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+            }}
+            onClick={() => setCartOpen(false)}
+          />
+          {/* Drawer */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: "min(360px, 100vw)",
+              background: "var(--bg-card)",
+              borderRight: "1px solid var(--border)",
+              display: "flex",
+              flexDirection: "column",
+              zIndex: 51,
+            }}
+          >
+            {/* Drawer header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--border)",
+              }}
+            >
+              <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>סל הזמנות</span>
+              <button
+                onClick={() => setCartOpen(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--text)",
+                  fontSize: 20,
+                  cursor: "pointer",
+                  opacity: 0.7,
+                  lineHeight: 1,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Table number indicator */}
+            {tableNumber && (
+              <div
+                style={{
+                  padding: "8px 20px",
+                  borderBottom: "1px solid var(--border)",
+                  fontSize: 13,
+                  color: "var(--text)",
+                  opacity: 0.7,
+                }}
+              >
+                שולחן: <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong>
+              </div>
+            )}
+
+            {/* Items list */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+              {cart.length === 0 ? (
+                <div style={{ textAlign: "center", opacity: 0.4, marginTop: 40, color: "var(--text)" }}>
+                  הסל ריק
+                </div>
+              ) : (
+                cart.map(c => (
+                  <div
+                    key={c.itemId}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 0",
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>{c.name}</div>
+                      <div style={{ color: "var(--gold)", fontSize: 13, marginTop: 2 }}>₪{c.price}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <button
+                        onClick={() => updateQty(c.itemId, -1)}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: "50%",
+                          border: "1px solid var(--border)",
+                          background: "none",
+                          color: "var(--text)",
+                          cursor: "pointer",
+                          fontSize: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        −
+                      </button>
+                      <span style={{ color: "var(--text)", fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                        {c.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQty(c.itemId, 1)}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: "50%",
+                          border: "1px solid var(--gold)",
+                          background: "none",
+                          color: "var(--gold)",
+                          cursor: "pointer",
+                          fontSize: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div style={{ color: "var(--text)", fontSize: 13, minWidth: 48, textAlign: "left" }}>
+                      ₪{c.price * c.quantity}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: "16px 20px",
+                borderTop: "1px solid var(--border)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 14,
+                  color: "var(--text)",
+                  fontSize: 16,
+                  fontWeight: 700,
+                }}
+              >
+                <span>סה"כ</span>
+                <span style={{ color: "var(--gold)" }}>₪{cartTotal}</span>
+              </div>
+              {orderError && (
+                <div style={{ color: "#e53e3e", fontSize: 13, marginBottom: 8, textAlign: "center" }}>
+                  {orderError}
+                </div>
+              )}
+              <button
+                onClick={handleOrder}
+                disabled={orderLoading || cart.length === 0}
+                style={{
+                  width: "100%",
+                  padding: "12px 0",
+                  background: "var(--gold)",
+                  color: "var(--bg)",
+                  border: "none",
+                  borderRadius: 10,
+                  fontWeight: 700,
+                  fontSize: 16,
+                  cursor: cart.length === 0 || orderLoading ? "not-allowed" : "pointer",
+                  opacity: cart.length === 0 || orderLoading ? 0.5 : 1,
+                }}
+              >
+                {orderLoading ? "שולח..." : "שלח הזמנה"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order success overlay */}
+      {orderSuccess && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            background: "var(--bg)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+          }}
+        >
+          <div style={{ fontSize: 64 }}>✅</div>
+          <div
+            style={{
+              color: "var(--gold)",
+              fontSize: 28,
+              fontWeight: 700,
+              textAlign: "center",
+            }}
+          >
+            ההזמנה התקבלה!
+          </div>
+          {tableNumber && (
+            <div style={{ color: "var(--text)", fontSize: 18, opacity: 0.8 }}>
+              שולחן {tableNumber}
+            </div>
+          )}
+          <button
+            onClick={() => setOrderSuccess(false)}
+            style={{
+              marginTop: 12,
+              padding: "10px 32px",
+              background: "var(--gold)",
+              color: "var(--bg)",
+              border: "none",
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: "pointer",
+            }}
+          >
+            סגור
+          </button>
+        </div>
+      )}
 
       {/* Product modal */}
       {modalItem && (
@@ -272,6 +665,25 @@ export default function MenuPublicClient({ restaurant }: { restaurant: Restauran
                 <div className="menu-modal-price-label">מחיר</div>
                 <div className="menu-modal-price">₪{modalItem.price}</div>
               </div>
+              {restaurant.ordersEnabled && (
+                <button
+                  onClick={() => { addToCart(modalItem); setModalItem(null); }}
+                  style={{
+                    marginTop: 16,
+                    width: "100%",
+                    padding: "12px 0",
+                    background: "var(--gold)",
+                    color: "var(--bg)",
+                    border: "none",
+                    borderRadius: 10,
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: "pointer",
+                  }}
+                >
+                  הוסף לסל
+                </button>
+              )}
             </div>
           </div>
         </div>

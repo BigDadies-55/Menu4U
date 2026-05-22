@@ -43,7 +43,7 @@ export default async function PublicMenuPage(
     where: { id: restaurantId, isActive: true },
     select: {
       id: true, name: true, logo: true, address: true,
-      phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true, menuPalette: true, menuPaletteData: true,
+      phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true, menuPalette: true, menuPaletteData: true, ordersEnabled: true,
       subscriptionFrom: true, subscriptionTo: true,
       menus: {
         where: { isActive: true },
@@ -100,11 +100,14 @@ export default async function PublicMenuPage(
     ? JSON.stringify({ ac: previewAc, bg: previewBg })
     : restaurant.menuPaletteData;
 
-  return <MenuPublicClient restaurant={{
-    ...restaurant,
-    menus: visibleMenus,
-    menuTheme: effectiveTheme,
-    menuPalette: effectivePalette,
-    menuPaletteData: effectivePaletteData ?? null,
-  }} />;
+  return <MenuPublicClient
+    restaurant={{
+      ...restaurant,
+      menus: visibleMenus,
+      menuTheme: effectiveTheme,
+      menuPalette: effectivePalette,
+      menuPaletteData: effectivePaletteData ?? null,
+    }}
+    tableNumber={sp.table || null}
+  />;
 }

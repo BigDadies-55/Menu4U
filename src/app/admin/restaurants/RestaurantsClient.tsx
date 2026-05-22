@@ -21,6 +21,7 @@ type Restaurant = {
   menuTheme: string;
   menuPalette: string;
   menuPaletteData: string | null;
+  ordersEnabled: boolean;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   createdAt: Date;
@@ -41,6 +42,7 @@ const emptyForm = {
   menuPalette: "0",
   menuCustomAc: "#c9a35d",
   menuCustomBg: "#0a0a0a",
+  ordersEnabled: false,
 };
 
 function toDateInput(val: string | null | undefined): string {
@@ -99,6 +101,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       menuPalette: r.menuPalette ?? "0",
       menuCustomAc: (() => { try { return JSON.parse(r.menuPaletteData ?? '{}').ac ?? '#c9a35d'; } catch { return '#c9a35d'; } })(),
       menuCustomBg: (() => { try { return JSON.parse(r.menuPaletteData ?? '{}').bg ?? '#0a0a0a'; } catch { return '#0a0a0a'; } })(),
+      ordersEnabled: r.ordersEnabled ?? false,
     });
     setShowForm(true);
   }
@@ -135,6 +138,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       menuPaletteData: form.menuPalette === 'custom' ? JSON.stringify({ ac: form.menuCustomAc, bg: form.menuCustomBg }) : null,
       subscriptionFrom: form.subscriptionFrom ? new Date(form.subscriptionFrom).toISOString() : null,
       subscriptionTo: form.subscriptionTo ? new Date(form.subscriptionTo).toISOString() : null,
+      ordersEnabled: form.ordersEnabled,
     };
 
     if (editTarget) {
@@ -345,6 +349,25 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     👁 תצוגה מקדימה של התפריט
                   </button>
                 )}
+              </div>
+
+              {/* Orders toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div>
+                  <div className="font-semibold text-gray-800 text-sm">הזמנות מהתפריט</div>
+                  <div className="text-xs text-gray-500 mt-0.5">לקוחות יוכלו להזמין ישירות מהתפריט</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, ordersEnabled: !f.ordersEnabled }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    form.ordersEnabled ? 'bg-amber-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    form.ordersEnabled ? 'translate-x-1' : 'translate-x-6'
+                  }`} />
+                </button>
               </div>
 
               {/* Subscription */}

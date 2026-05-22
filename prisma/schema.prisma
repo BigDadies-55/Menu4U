@@ -13,6 +13,7 @@ enum Role {
   OWNER
   EDITOR
   VIEWER
+  WAITER
 }
 
 enum OrderStatus {
@@ -96,6 +97,8 @@ model Restaurant {
   menuTheme     String   @default("luxury")
   menuPalette     String   @default("0")
   menuPaletteData String?
+  ordersEnabled   Boolean @default(false)
+  tableLayoutJson String?
   subscriptionFrom DateTime?
   subscriptionTo   DateTime?
   createdAt     DateTime @default(now())
