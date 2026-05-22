@@ -60,7 +60,7 @@ export default async function PublicMenuPage(
                 orderBy: { sortOrder: "asc" },
                 select: {
                   id: true, name: true, description: true, price: true, image: true,
-                  isVegetarian: true, isVegan: true, isGlutenFree: true, tags: true,
+                  isVegetarian: true, isVegan: true, isGlutenFree: true, tags: true, prepTime: true,
                 },
               },
             },

@@ -252,6 +252,16 @@
   font-weight: 700; font-size: 1rem; margin-top: auto; padding-top: 8px;
   border-top: 1px dashed var(--border); color: var(--gold);
   font-family: 'Cormorant Garamond', serif;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.menu-prep-time {
+  font-size: 0.72rem; font-family: 'Heebo', sans-serif; font-weight: 500;
+  color: var(--text-muted); opacity: 0.9; letter-spacing: 0;
+}
+
+/* ── Modal meta row (price + prep time side by side) ─── */
+.menu-modal-meta {
+  display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 15px;
 }
 
 /* ── Floating bar ───────────────────────────────────── */

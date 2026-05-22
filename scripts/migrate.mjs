@@ -46,6 +46,7 @@ const sqls = [
   `ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'WAITER';`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "ordersEnabled" BOOLEAN NOT NULL DEFAULT false;`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tableLayoutJson" TEXT;`,
+  `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "prepTime" INTEGER;`,
 ];
 
 async function run() {

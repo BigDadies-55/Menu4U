@@ -168,6 +168,7 @@ model Item {
   isVegan      Boolean  @default(false)
   isGlutenFree Boolean  @default(false)
   tags         String[]
+  prepTime     Int?
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

@@ -14,6 +14,7 @@ type Item = {
   isVegan: boolean;
   isGlutenFree: boolean;
   tags: string[];
+  prepTime: number | null;
 };
 
 type Category = {
@@ -300,7 +301,12 @@ export default function MenuPublicClient({
                         </div>
                         <h3 className="menu-card-name">{item.name}</h3>
                         <p className="menu-card-desc">{item.description ?? ""}</p>
-                        <div className="menu-price">₪{item.price}</div>
+                        <div className="menu-price">
+                          ₪{item.price}
+                          {item.prepTime != null && (
+                            <span className="menu-prep-time">⏱ {item.prepTime}&apos;</span>
+                          )}
+                        </div>
                       </div>
                       {restaurant.ordersEnabled && (
                         <button
@@ -661,9 +667,17 @@ export default function MenuPublicClient({
               <h2 className="menu-modal-name">{modalItem.name}</h2>
               <div className="menu-modal-divider"><span>◆</span></div>
               {modalItem.description && <p className="menu-modal-desc">{modalItem.description}</p>}
-              <div className="menu-modal-price-box">
-                <div className="menu-modal-price-label">מחיר</div>
-                <div className="menu-modal-price">₪{modalItem.price}</div>
+              <div className="menu-modal-meta">
+                <div className="menu-modal-price-box">
+                  <div className="menu-modal-price-label">מחיר</div>
+                  <div className="menu-modal-price">₪{modalItem.price}</div>
+                </div>
+                {modalItem.prepTime != null && (
+                  <div className="menu-modal-price-box">
+                    <div className="menu-modal-price-label">זמן הכנה</div>
+                    <div className="menu-modal-price" style={{ fontSize: "1.8rem" }}>⏱ {modalItem.prepTime}&apos;</div>
+                  </div>
+                )}
               </div>
               {restaurant.ordersEnabled && (
                 <button
