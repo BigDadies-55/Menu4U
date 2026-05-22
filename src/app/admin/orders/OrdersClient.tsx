@@ -19,7 +19,7 @@ type Order = {
   totalAmount: number;
   notes: string | null;
   createdAt: string;
-  restaurant: { name: string };
+  restaurant: { id: string; name: string };
   items: OrderItem[];
 };
 
@@ -62,21 +62,32 @@ function TableCard({
   tableNumber,
   orders,
   isSuperAdmin,
+  restaurantId,
   onItemAdvance,
   onOrderCancel,
+  onConfirmOrder,
+  onCloseTable,
 }: {
   tableNumber: string;
   orders: Order[];
   isSuperAdmin: boolean;
+  restaurantId: string;
   onItemAdvance: (orderId: string, itemId: string) => Promise<void>;
   onOrderCancel: (orderId: string) => Promise<void>;
+  onConfirmOrder: (orderId: string) => Promise<void>;
+  onCloseTable: (tableNumber: string, restaurantId: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
+  const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
+  const [closingTable, setClosingTable] = useState(false);
 
+  const pendingOrders = orders.filter(o => o.status === "PENDING");
+  const activeOrders = orders.filter(o => o.status !== "PENDING");
   const allItems = orders.flatMap(o => o.items.map(i => ({ ...i, order: o })));
-  const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
+  const activeItems = activeOrders.flatMap(o => o.items.map(i => ({ ...i, order: o })));
+  const doneCount = activeItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
-  const allDone = doneCount === totalCount;
+  const allDone = activeItems.length > 0 && doneCount === activeItems.length && pendingOrders.length === 0;
   const oldestOrder = orders.reduce((a, b) =>
     new Date(a.createdAt) < new Date(b.createdAt) ? a : b
   );
@@ -88,6 +99,19 @@ function TableCard({
     setBusy(prev => new Set(prev).add(itemId));
     await onItemAdvance(orderId, itemId);
     setBusy(prev => { const n = new Set(prev); n.delete(itemId); return n; });
+  }
+
+  async function confirmOrder(orderId: string) {
+    setConfirmingOrder(orderId);
+    await onConfirmOrder(orderId);
+    setConfirmingOrder(null);
+  }
+
+  async function closeTable() {
+    if (!restaurantId) return;
+    setClosingTable(true);
+    await onCloseTable(tableNumber, restaurantId);
+    setClosingTable(false);
   }
 
   return (
@@ -126,13 +150,44 @@ function TableCard({
               />
             ))}
           </div>
-          <span className="text-xs text-gray-400">{doneCount}/{totalCount}</span>
+          <span className="text-xs text-gray-400">{doneCount}/{activeItems.length}</span>
         </div>
       </div>
 
-      {/* Items */}
+      {/* Pending orders — confirmation banners */}
+      {pendingOrders.map(order => (
+        <div key={order.id} className="border-b border-yellow-200 bg-yellow-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="text-xs font-bold text-yellow-800">
+              🕐 הזמנה חדשה · {timeSince(order.createdAt)} · ₪{order.totalAmount.toFixed(0)}
+            </div>
+            <button
+              onClick={() => confirmOrder(order.id)}
+              disabled={confirmingOrder === order.id}
+              className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
+              style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)" }}
+            >
+              {confirmingOrder === order.id ? "..." : "✓ אשר הזמנה"}
+            </button>
+          </div>
+          <div className="space-y-1">
+            {order.items.map(i => (
+              <div key={i.id} className="flex items-center gap-2 text-xs text-yellow-700 opacity-70">
+                <span className="w-5 h-5 rounded bg-yellow-200 flex items-center justify-center font-bold">{i.quantity}</span>
+                <span>{i.item.name}</span>
+                {i.notes && <span className="italic text-yellow-500">· {i.notes}</span>}
+              </div>
+            ))}
+          </div>
+          {order.notes && (
+            <div className="mt-1.5 text-xs text-yellow-600 italic">💬 {order.notes}</div>
+          )}
+        </div>
+      ))}
+
+      {/* Active items */}
       <div className="divide-y divide-gray-100">
-        {allItems.map(({ id: itemId, quantity, price, notes, itemStatus, item, order }) => {
+        {activeItems.map(({ id: itemId, quantity, notes, itemStatus, item, order }) => {
           const nextLabel = ITEM_NEXT_LABEL[itemStatus];
           const isBusy = busy.has(itemId);
           const isDone = itemStatus === "DONE";
@@ -142,12 +197,9 @@ function TableCard({
               key={itemId}
               className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${isDone ? "opacity-50" : ""}`}
             >
-              {/* Qty badge */}
               <span className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
                 {quantity}
               </span>
-
-              {/* Name + notes */}
               <div className="flex-1 min-w-0">
                 <div className={`text-sm font-semibold truncate ${isDone ? "line-through text-gray-400" : "text-gray-800"}`}>
                   {item.name}
@@ -156,13 +208,9 @@ function TableCard({
                   <div className="text-xs text-gray-400 italic truncate">{notes}</div>
                 )}
               </div>
-
-              {/* Status badge */}
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus]}`}>
                 {ITEM_STATUS_LABEL[itemStatus]}
               </span>
-
-              {/* Action */}
               {nextLabel && !isDone ? (
                 <button
                   onClick={() => advanceItem(order.id, itemId)}
@@ -180,25 +228,40 @@ function TableCard({
         })}
       </div>
 
-      {/* Footer: order-level actions */}
-      {orders.map(order => (
-        order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
-          <div key={order.id} className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-2 bg-gray-50/50">
-            {isSuperAdmin && (
-              <span className="text-xs text-gray-400">{order.restaurant.name}</span>
-            )}
-            {order.notes && (
-              <span className="text-xs text-gray-400 italic flex-1 truncate">💬 {order.notes}</span>
-            )}
+      {/* Footer: per-order cancel + close table */}
+      <div className="border-t border-gray-100 bg-gray-50/50">
+        {activeOrders.map(order => (
+          order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+            <div key={order.id} className="px-4 py-2 flex items-center gap-2">
+              {isSuperAdmin && (
+                <span className="text-xs text-gray-400">{order.restaurant.name}</span>
+              )}
+              {order.notes && (
+                <span className="text-xs text-gray-400 italic flex-1 truncate">💬 {order.notes}</span>
+              )}
+              <button
+                onClick={() => onOrderCancel(order.id)}
+                className="mr-auto shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                ✕ בטל הזמנה
+              </button>
+            </div>
+          )
+        ))}
+        {/* Close table */}
+        {allDone && restaurantId && (
+          <div className="px-4 py-3 border-t border-gray-100">
             <button
-              onClick={() => onOrderCancel(order.id)}
-              className="mr-auto shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+              onClick={closeTable}
+              disabled={closingTable}
+              className="w-full py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
+              style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
             >
-              ✕ בטל הזמנה
+              {closingTable ? "..." : "💳 סגור שולחן ותשלום"}
             </button>
           </div>
-        )
-      ))}
+        )}
+      </div>
     </div>
   );
 }
@@ -264,6 +327,30 @@ export default function OrdersClient({
       setOrders(prev => prev.filter(o => o.id !== orderId));
     } else {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "CANCELLED" } : o));
+    }
+  }
+
+  async function confirmOrder(orderId: string) {
+    const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "CONFIRMED" }),
+    });
+    if (!res.ok) return;
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "CONFIRMED" } : o));
+  }
+
+  async function closeTable(tableNumber: string, rid: string) {
+    const res = await fetch("/api/admin/orders/close-table", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tableNumber, restaurantId: rid }),
+    });
+    if (!res.ok) return;
+    if (filter === "active") {
+      setOrders(prev => prev.filter(o => o.tableNumber !== tableNumber));
+    } else {
+      setOrders(prev => prev.map(o => o.tableNumber === tableNumber ? { ...o, status: "DELIVERED" } : o));
     }
   }
 
@@ -365,8 +452,11 @@ export default function OrdersClient({
               tableNumber={table}
               orders={tableOrders}
               isSuperAdmin={isSuperAdmin}
+              restaurantId={tableOrders[0]?.restaurant.id ?? restaurantId}
               onItemAdvance={advanceItem}
               onOrderCancel={cancelOrder}
+              onConfirmOrder={confirmOrder}
+              onCloseTable={closeTable}
             />
           ))}
         </div>

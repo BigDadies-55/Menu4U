@@ -111,3 +111,8 @@ export type MenuView = Prisma.MenuViewModel
  * 
  */
 export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model TableSession
+ * 
+ */
+export type TableSession = Prisma.TableSessionModel

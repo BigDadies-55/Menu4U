@@ -397,7 +397,8 @@ export const ModelName = {
   OrderStatusLog: 'OrderStatusLog',
   OrderItem: 'OrderItem',
   MenuView: 'MenuView',
-  AuditLog: 'AuditLog'
+  AuditLog: 'AuditLog',
+  TableSession: 'TableSession'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -413,7 +414,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderStatusLog" | "orderItem" | "menuView" | "auditLog"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderStatusLog" | "orderItem" | "menuView" | "auditLog" | "tableSession"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1453,6 +1454,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TableSession: {
+      payload: Prisma.$TableSessionPayload<ExtArgs>
+      fields: Prisma.TableSessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TableSessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TableSessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>
+        }
+        findFirst: {
+          args: Prisma.TableSessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TableSessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>
+        }
+        findMany: {
+          args: Prisma.TableSessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>[]
+        }
+        create: {
+          args: Prisma.TableSessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>
+        }
+        createMany: {
+          args: Prisma.TableSessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TableSessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>[]
+        }
+        delete: {
+          args: Prisma.TableSessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>
+        }
+        update: {
+          args: Prisma.TableSessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.TableSessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TableSessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TableSessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.TableSessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TableSessionPayload>
+        }
+        aggregate: {
+          args: Prisma.TableSessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTableSession>
+        }
+        groupBy: {
+          args: Prisma.TableSessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TableSessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TableSessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TableSessionCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1707,6 +1782,19 @@ export const AuditLogScalarFieldEnum = {
 } as const
 
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const TableSessionScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  tableNumber: 'tableNumber',
+  openedAt: 'openedAt',
+  closedAt: 'closedAt',
+  totalAmount: 'totalAmount',
+  orderCount: 'orderCount'
+} as const
+
+export type TableSessionScalarFieldEnum = (typeof TableSessionScalarFieldEnum)[keyof typeof TableSessionScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1984,6 +2072,7 @@ export type GlobalOmitConfig = {
   orderItem?: Prisma.OrderItemOmit
   menuView?: Prisma.MenuViewOmit
   auditLog?: Prisma.AuditLogOmit
+  tableSession?: Prisma.TableSessionOmit
 }
 
 /* Types for Logging */

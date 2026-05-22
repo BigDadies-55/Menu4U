@@ -9,7 +9,20 @@ type TableOrderItem = {
   quantity: number;
   price: number;
   notes: string | null;
+  itemStatus: string;
   item: { name: string };
+};
+
+const ITEM_STATUS_LABEL: Record<string, string> = {
+  PENDING: "ממתין",
+  PREPARING: "בהכנה 👨‍🍳",
+  DONE: "הוכן ✓",
+};
+
+const ITEM_STATUS_COLOR: Record<string, string> = {
+  PENDING: "#f59e0b",
+  PREPARING: "#38bdf8",
+  DONE: "#4ade80",
 };
 
 type TableOrder = {
@@ -113,16 +126,23 @@ export default function MenuPublicClient({
   const [myOrders, setMyOrders] = useState<TableOrder[]>([]);
   const [myOrdersLoading, setMyOrdersLoading] = useState(false);
 
-  const fetchMyOrders = useCallback(async () => {
+  const fetchMyOrders = useCallback(async (silent = false) => {
     if (!tableNumber) return;
-    setMyOrdersLoading(true);
+    if (!silent) setMyOrdersLoading(true);
     try {
       const res = await fetch(`/api/menu/${restaurant.id}/orders?table=${encodeURIComponent(tableNumber)}`);
       if (res.ok) setMyOrders(await res.json());
     } finally {
-      setMyOrdersLoading(false);
+      if (!silent) setMyOrdersLoading(false);
     }
   }, [restaurant.id, tableNumber]);
+
+  // Auto-refresh my orders every 10s when panel is open
+  useEffect(() => {
+    if (!myOrdersOpen) return;
+    const iv = setInterval(() => fetchMyOrders(true), 10000);
+    return () => clearInterval(iv);
+  }, [myOrdersOpen, fetchMyOrders]);
 
   const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
@@ -788,7 +808,7 @@ export default function MenuPublicClient({
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
-                  onClick={fetchMyOrders}
+                  onClick={() => fetchMyOrders(false)}
                   style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", fontSize: 18 }}
                   title="רענן"
                 >🔄</button>
@@ -834,28 +854,39 @@ export default function MenuPublicClient({
                       </div>
                       {/* Items */}
                       <div style={{ padding: "10px 14px" }}>
-                        {order.items.map(oi => (
-                          <div key={oi.id} style={{
-                            display: "flex", alignItems: "center", gap: 8, marginBottom: 6,
-                          }}>
-                            <span style={{
-                              width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
-                              background: statusColor, color: "#000",
-                              display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            }}>{oi.quantity}</span>
-                            <div style={{ flex: 1 }}>
-                              <span style={{ fontSize: 13, color: "var(--text)" }}>{oi.item.name}</span>
-                              {oi.notes && (
-                                <div style={{ fontSize: 11, color: "var(--text)", opacity: 0.5, fontStyle: "italic" }}>
-                                  {oi.notes}
-                                </div>
-                              )}
+                        {order.items.map(oi => {
+                          const iColor = ITEM_STATUS_COLOR[oi.itemStatus] ?? statusColor;
+                          const iLabel = ITEM_STATUS_LABEL[oi.itemStatus];
+                          return (
+                            <div key={oi.id} style={{
+                              display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
+                              padding: "6px 8px", borderRadius: 8,
+                              background: oi.itemStatus === "DONE" ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.03)",
+                            }}>
+                              <span style={{
+                                width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
+                                background: iColor, color: "#000",
+                                display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                              }}>{oi.quantity}</span>
+                              <div style={{ flex: 1 }}>
+                                <span style={{
+                                  fontSize: 13, color: "var(--text)",
+                                  textDecoration: oi.itemStatus === "DONE" ? "line-through" : "none",
+                                  opacity: oi.itemStatus === "DONE" ? 0.5 : 1,
+                                }}>{oi.item.name}</span>
+                                {oi.notes && (
+                                  <div style={{ fontSize: 11, color: "var(--text)", opacity: 0.45, fontStyle: "italic" }}>
+                                    {oi.notes}
+                                  </div>
+                                )}
+                              </div>
+                              <span style={{
+                                fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 20,
+                                background: iColor + "22", color: iColor, whiteSpace: "nowrap",
+                              }}>{iLabel}</span>
                             </div>
-                            <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.6 }}>
-                              ₪{(oi.price * oi.quantity).toFixed(0)}
-                            </span>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {order.notes && (
                           <div style={{
                             marginTop: 6, fontSize: 12, color: "var(--text)", opacity: 0.5,

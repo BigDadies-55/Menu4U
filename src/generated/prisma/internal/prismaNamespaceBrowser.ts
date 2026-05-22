@@ -64,7 +64,8 @@ export const ModelName = {
   OrderStatusLog: 'OrderStatusLog',
   OrderItem: 'OrderItem',
   MenuView: 'MenuView',
-  AuditLog: 'AuditLog'
+  AuditLog: 'AuditLog',
+  TableSession: 'TableSession'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -298,6 +299,19 @@ export const AuditLogScalarFieldEnum = {
 } as const
 
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const TableSessionScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  tableNumber: 'tableNumber',
+  openedAt: 'openedAt',
+  closedAt: 'closedAt',
+  totalAmount: 'totalAmount',
+  orderCount: 'orderCount'
+} as const
+
+export type TableSessionScalarFieldEnum = (typeof TableSessionScalarFieldEnum)[keyof typeof TableSessionScalarFieldEnum]
 
 
 export const SortOrder = {

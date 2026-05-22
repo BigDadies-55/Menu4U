@@ -39,7 +39,7 @@ export default async function OrdersPage() {
       },
       orderBy: { createdAt: "asc" },
       include: {
-        restaurant: { select: { name: true } },
+        restaurant: { select: { id: true, name: true } },
         items: { include: { item: { select: { name: true } } } },
       },
     }),
@@ -57,7 +57,7 @@ export default async function OrdersPage() {
 
   return (
     <OrdersClient
-      initialOrders={initialOrders as Parameters<typeof OrdersClient>[0]["initialOrders"]}
+      initialOrders={initialOrders as unknown as Parameters<typeof OrdersClient>[0]["initialOrders"]}
       restaurants={restaurants}
       isSuperAdmin={isSuperAdmin}
       defaultRestaurantId={defaultRestaurantId}

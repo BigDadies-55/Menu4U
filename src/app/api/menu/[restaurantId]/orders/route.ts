@@ -32,6 +32,7 @@ export async function GET(
           quantity: true,
           price: true,
           notes: true,
+          itemStatus: true,
           item: { select: { name: true } },
         },
       },

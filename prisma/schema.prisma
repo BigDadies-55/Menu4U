@@ -109,6 +109,7 @@ model Restaurant {
   menus           Menu[]
   orders          Order[]
   menuViews       MenuView[]
+  tableSessions   TableSession[]
 }
 
 model RestaurantUser {
@@ -241,4 +242,16 @@ model AuditLog {
   meta       Json?
   ip         String?
   createdAt  DateTime @default(now())
+}
+
+model TableSession {
+  id           String   @id @default(cuid())
+  restaurantId String
+  tableNumber  String
+  openedAt     DateTime
+  closedAt     DateTime @default(now())
+  totalAmount  Float    @default(0)
+  orderCount   Int      @default(0)
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }

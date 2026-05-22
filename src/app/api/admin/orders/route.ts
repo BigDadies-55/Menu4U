@@ -29,8 +29,9 @@ export async function GET(req: Request) {
     restaurantFilter = { in: [restaurantId] };
   }
 
-  const statusFilter = activeOnly
-    ? { notIn: ["DELIVERED", "CANCELLED"] as const }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const statusFilter: any = activeOnly
+    ? { notIn: ["DELIVERED", "CANCELLED"] }
     : undefined;
 
   const orders = await prisma.order.findMany({
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     },
     orderBy: { createdAt: "desc" },
     include: {
-      restaurant: { select: { name: true } },
+      restaurant: { select: { id: true, name: true } },
       items: {
         include: { item: { select: { name: true, prepTime: true } } },
         orderBy: { id: "asc" },

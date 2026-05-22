@@ -61,6 +61,19 @@ const sqls = [
   `CREATE INDEX IF NOT EXISTS "OrderStatusLog_orderId_idx" ON "OrderStatusLog"("orderId");`,
   `CREATE INDEX IF NOT EXISTS "OrderStatusLog_changedAt_idx" ON "OrderStatusLog"("changedAt" DESC);`,
   `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "itemStatus" TEXT NOT NULL DEFAULT 'PENDING';`,
+  `CREATE TABLE IF NOT EXISTS "TableSession" (
+    "id" TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "tableNumber" TEXT NOT NULL,
+    "openedAt" TIMESTAMP(3) NOT NULL,
+    "closedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "totalAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "orderCount" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "TableSession_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "TableSession_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE
+  );`,
+  `CREATE INDEX IF NOT EXISTS "TableSession_restaurantId_idx" ON "TableSession"("restaurantId");`,
+  `CREATE INDEX IF NOT EXISTS "TableSession_closedAt_idx" ON "TableSession"("closedAt" DESC);`,
 ];
 
 async function run() {
