@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   if (!session?.user || !isEditor(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { name, description, price, categoryId, image, isVegetarian, isVegan, isGlutenFree, tags } = await req.json();
+  const { name, description, price, categoryId, image, isVegetarian, isVegan, isGlutenFree, tags, prepTime } = await req.json();
   if (!name || !categoryId || price === undefined) {
     return NextResponse.json({ error: "Name, categoryId and price are required" }, { status: 400 });
   }
@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       isVegan: !!isVegan,
       isGlutenFree: !!isGlutenFree,
       tags: Array.isArray(tags) ? tags : [],
+      prepTime: prepTime ? parseInt(prepTime) : null,
     },
   });
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "CREATE_ITEM", entity: "item", entityId: item.id, entityName: item.name, meta: { price: item.price, categoryId }, ip: getIp(req) });

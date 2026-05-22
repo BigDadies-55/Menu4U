@@ -7,7 +7,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 type Item = {
   id: string; name: string; description: string | null; price: number;
   image: string | null; isActive: boolean; isVegetarian: boolean;
-  isVegan: boolean; isGlutenFree: boolean; tags: string[]; sortOrder: number;
+  isVegan: boolean; isGlutenFree: boolean; tags: string[]; prepTime: number | null; sortOrder: number;
 };
 
 type Category = {
@@ -25,7 +25,7 @@ type Restaurant = { id: string; name: string; menus: Menu[] };
 const DAYS_HE = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const emptyScheduleForm = { isPrimary: false, scheduleDays: [] as string[], scheduleFrom: "", scheduleTo: "" };
 
-const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[] };
+const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[], prepTime: "" };
 const emptyCategoryForm = { name: "", description: "", image: "" };
 
 export default function MenusClient({ restaurants, canEdit }: { restaurants: Restaurant[]; canEdit: boolean }) {
@@ -226,6 +226,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       isVegan: item.isVegan,
       isGlutenFree: item.isGlutenFree,
       tags: item.tags ?? [],
+      prepTime: item.prepTime != null ? String(item.prepTime) : "",
     });
     setTagInput("");
     setShowItemForm(true);
@@ -235,7 +236,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     e.preventDefault();
     if (!selectedCategory) return;
     setLoading(true);
-    const body = { ...itemForm, price: parseFloat(itemForm.price) };
+    const body = { ...itemForm, price: parseFloat(itemForm.price), prepTime: itemForm.prepTime ? parseInt(itemForm.prepTime) : null };
 
     if (editItem) {
       const res = await fetch(`/api/admin/items/${editItem.id}`, {
@@ -388,6 +389,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                                   {item.isVegetarian && <span title="צמחוני" className="text-green-500 text-xs">🌿</span>}
                                   {item.isVegan && <span title="טבעוני" className="text-green-600 text-xs">🌱</span>}
                                   {item.isGlutenFree && <span title="ללא גלוטן" className="text-yellow-500 text-xs font-bold">GF</span>}
+                                  {item.prepTime != null && (
+                                    <span className="bg-blue-50 text-blue-600 text-xs px-1.5 py-0.5 rounded-full font-medium">⏱ {item.prepTime}&apos;</span>
+                                  )}
                                   {item.tags?.map(tag => (
                                     <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{tag}</span>
                                   ))}
@@ -529,6 +533,38 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   </div>
                 )}
               </div>
+              {/* Prep time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">⏱ זמן הכנה ממוצע</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[5, 10, 15, 20, 30, 45].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setItemForm({ ...itemForm, prepTime: itemForm.prepTime === String(m) ? "" : String(m) })}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                        itemForm.prepTime === String(m)
+                          ? "border-amber-400 text-white"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                      style={itemForm.prepTime === String(m) ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}
+                    >
+                      {m}&apos;
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min="1"
+                    max="180"
+                    value={itemForm.prepTime}
+                    onChange={e => setItemForm({ ...itemForm, prepTime: e.target.value })}
+                    placeholder="דק'"
+                    className="w-20 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
                   {loading ? "שומר..." : editItem ? "שמור שינויים" : "הוסף פריט"}
