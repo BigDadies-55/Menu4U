@@ -73,6 +73,7 @@ export async function POST(req: Request) {
         restaurantId,
         tableNumber,
         openedAt,
+        closedAt: new Date(),
         totalAmount,
         orderCount: allTableOrders.length,
       },

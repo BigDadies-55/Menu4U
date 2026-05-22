@@ -114,24 +114,24 @@ function TableCard({
     >
       {/* Table header */}
       <div
-        className="px-4 pt-3 pb-2"
+        className="px-3 pt-2 pb-1.5"
         style={{ background: isUrgent ? "#fef2f2" : "#f9fafb", borderBottom: "1px solid #e5e7eb" }}
       >
         {/* Row 1: icon + name | price */}
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center font-black text-amber-800 text-sm shrink-0">
+        <div className="flex items-center gap-1.5">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 border-2 border-amber-300 flex items-center justify-center font-black text-amber-800 text-xs shrink-0">
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
           <span className="font-bold text-gray-900 text-sm flex-1">שולחן {tableNumber}</span>
-          <span className="font-black text-gray-900 text-xl shrink-0">₪{totalAmount.toFixed(0)}</span>
+          <span className="font-black text-gray-900 text-lg shrink-0">₪{totalAmount.toFixed(0)}</span>
         </div>
         {/* Row 2: time + dishes | order count */}
-        <div className={`flex justify-between mt-1 text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
+        <div className={`flex justify-between mt-0.5 text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
           <span>⏱ {timeSince(oldestOrder.createdAt)} · {totalCount} מנות</span>
           <span>{nonCancelledOrders.length} הזמנות</span>
         </div>
         {/* Row 3: progress dots */}
-        <div className="flex gap-1 mt-2">
+        <div className="flex gap-1 mt-1.5">
           {allItems.map(i => (
             <div key={i.id} className="w-2 h-2 rounded-full"
               style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#d1d5db" }}
@@ -150,7 +150,7 @@ function TableCard({
           <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #f3f4f6" : undefined }}>
             {/* Order sub-header */}
             <div
-              className="flex items-center justify-between px-3 py-1.5"
+              className="flex items-center justify-between px-2 py-1"
               style={{ background: isPending ? "#fefce8" : isDelivered ? "#f0fdf4" : "#fafafa" }}
             >
               <div className="flex items-center gap-1.5 min-w-0">
@@ -194,7 +194,7 @@ function TableCard({
                 return (
                   <div
                     key={itemId}
-                    className={`flex items-center gap-2 px-3 py-1.5 transition-colors ${isDone ? "opacity-50" : ""}`}
+                    className={`flex items-center gap-1.5 px-2 py-1 transition-colors ${isDone ? "opacity-50" : ""}`}
                   >
                     <span className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
                       {quantity}
@@ -234,7 +234,7 @@ function TableCard({
 
       {/* Footer: close table */}
       {nonCancelledOrders.length > 0 && (
-        <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+        <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
           {confirmClose ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 flex-1">סגור שולחן לצמיתות?</span>
@@ -477,7 +477,7 @@ export default function OrdersClient({
           <div className="text-sm mt-1">הדף מתרענן אוטומטית כל 10 שניות</div>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
           {Array.from(byTable.entries()).map(([table, tableOrders]) => (
             <TableCard
               key={table}
