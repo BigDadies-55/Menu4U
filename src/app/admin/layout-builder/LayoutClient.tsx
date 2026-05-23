@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
-type CellType   = "empty" | "wall" | "table" | "bar";
-type ToolMode   = CellType | "move";
-type BarSide    = "top" | "bottom" | "left" | "right";
-type TableShape = "square" | "round" | "oval";
+type CellType    = "empty" | "wall" | "table" | "bar";
+type ToolMode    = CellType | "move";
+type BarSide     = "top" | "bottom" | "left" | "right";
+type TableShape  = "square" | "round" | "oval";
 
 type Cell = {
   r: number; c: number; type: CellType;
@@ -17,9 +17,10 @@ type Cell = {
 type Layout = { rows: number; cols: number; cells: Cell[] };
 type Restaurant = { id: string; name: string };
 
-const ROWS = 12;
-const COLS = 20;
-const CELL = 30; // reduced from 44
+// Grid dimensions — large fixed canvas, displayed cell-size adapts to screen
+const ROWS = 22;
+const COLS = 42;
+const BASE = 30; // px the visual components were designed for
 
 function cellKey(r: number, c: number) { return `${r}:${c}`; }
 function layoutToMap(l: Layout): Map<string, Cell> {
@@ -30,11 +31,11 @@ function layoutToMap(l: Layout): Map<string, Cell> {
 function mapToLayout(m: Map<string, Cell>): Layout {
   return { rows: ROWS, cols: COLS, cells: Array.from(m.values()) };
 }
-function connRadius(hasN: boolean, hasS: boolean, hasE: boolean, hasW: boolean) {
-  return `${!hasN&&!hasW?2:0}px ${!hasN&&!hasE?2:0}px ${!hasS&&!hasE?2:0}px ${!hasS&&!hasW?2:0}px`;
+function connRadius(N: boolean, S: boolean, E: boolean, W: boolean) {
+  return `${!N&&!W?2:0}px ${!N&&!E?2:0}px ${!S&&!E?2:0}px ${!S&&!W?2:0}px`;
 }
 
-/* ─── Chair helpers ─── */
+/* ─── Chair helpers (designed for BASE=30) ─── */
 function getChairDist(seats: number) {
   if (seats <= 2) return { top: 1, bottom: 1, left: 0, right: 0 };
   if (seats <= 4) return { top: 1, bottom: 1, left: 1, right: 1 };
@@ -46,11 +47,11 @@ const HC = () => <div style={{ width: 6, height: 4, background: "#92400e", borde
 const VC = () => <div style={{ width: 4, height: 6, background: "#92400e", borderRadius: 1, flexShrink: 0 }} />;
 const ST = () => <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#fbbf24", border: "1px solid #92400e", flexShrink: 0 }} />;
 
-/* ─── Table visuals ─── */
+/* ─── Table visuals (all sized for BASE=30) ─── */
 function SquareTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
   const d = getChairDist(cell.seats ?? 4);
   return (
-    <div className="absolute inset-0 pointer-events-none" style={{ opacity: ghost ? 0.45 : 1 }}>
+    <div className="absolute inset-0 pointer-events-none" style={{ opacity: ghost ? 0.5 : 1 }}>
       {d.top    > 0 && <div className="absolute left-0 right-0 flex justify-center gap-px" style={{ top: 1 }}>{Array.from({length: d.top   }).map((_,i)=><HC key={i}/>)}</div>}
       {d.bottom > 0 && <div className="absolute left-0 right-0 flex justify-center gap-px" style={{ bottom: 1 }}>{Array.from({length: d.bottom}).map((_,i)=><HC key={i}/>)}</div>}
       {d.left   > 0 && <div className="absolute top-0 bottom-0 flex flex-col justify-center gap-px" style={{ left: 1 }}>{Array.from({length: d.left  }).map((_,i)=><VC key={i}/>)}</div>}
@@ -65,13 +66,12 @@ function SquareTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
 
 function RoundTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
   const seats = cell.seats ?? 4;
-  const half = CELL / 2;
-  const tR = 9; const cR = 12;
+  const half = BASE / 2; const tR = 9; const cR = 12;
   return (
-    <div className="absolute inset-0 pointer-events-none" style={{ opacity: ghost ? 0.45 : 1 }}>
+    <div className="absolute inset-0 pointer-events-none" style={{ opacity: ghost ? 0.5 : 1 }}>
       {Array.from({length: seats}).map((_,i) => {
         const a = (i * 2 * Math.PI / seats) - Math.PI / 2;
-        return <div key={i} className="absolute rounded-full" style={{ width: 5, height: 5, background: "#92400e", left: half + cR * Math.cos(a) - 2.5, top: half + cR * Math.sin(a) - 2.5 }} />;
+        return <div key={i} className="absolute rounded-full" style={{ width: 5, height: 5, background: "#92400e", left: half + cR*Math.cos(a)-2.5, top: half + cR*Math.sin(a)-2.5 }} />;
       })}
       <div className="absolute rounded-full flex items-center justify-center"
         style={{ left: half-tR, top: half-tR, width: tR*2, height: tR*2, background: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "1.5px solid #d97706" }}>
@@ -83,13 +83,12 @@ function RoundTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
 
 function OvalTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
   const seats = cell.seats ?? 4;
-  const half = CELL / 2;
-  const rx = 13; const ry = 9; const trx = 10; const try_ = 7;
+  const half = BASE / 2; const rx = 13; const ry = 9; const trx = 10; const try_ = 7;
   return (
-    <div className="absolute inset-0 pointer-events-none" style={{ opacity: ghost ? 0.45 : 1 }}>
+    <div className="absolute inset-0 pointer-events-none" style={{ opacity: ghost ? 0.5 : 1 }}>
       {Array.from({length: seats}).map((_,i) => {
         const a = (i * 2 * Math.PI / seats) - Math.PI / 2;
-        return <div key={i} className="absolute rounded-full" style={{ width: 5, height: 5, background: "#92400e", left: half + rx * Math.cos(a) - 2.5, top: half + ry * Math.sin(a) - 2.5 }} />;
+        return <div key={i} className="absolute rounded-full" style={{ width: 5, height: 5, background: "#92400e", left: half+rx*Math.cos(a)-2.5, top: half+ry*Math.sin(a)-2.5 }} />;
       })}
       <div className="absolute flex items-center justify-center"
         style={{ left: half-trx, top: half-try_, width: trx*2, height: try_*2, borderRadius: "50%", background: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "1.5px solid #d97706" }}>
@@ -107,13 +106,13 @@ function TableCellVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
 }
 
 function WallCellVisual({ r, c, cellMap }: { r: number; c: number; cellMap: Map<string, Cell> }) {
-  const hasN = cellMap.get(cellKey(r-1,c))?.type === "wall";
-  const hasS = cellMap.get(cellKey(r+1,c))?.type === "wall";
-  const hasE = cellMap.get(cellKey(r,c+1))?.type === "wall";
-  const hasW = cellMap.get(cellKey(r,c-1))?.type === "wall";
+  const N = cellMap.get(cellKey(r-1,c))?.type === "wall";
+  const S = cellMap.get(cellKey(r+1,c))?.type === "wall";
+  const E = cellMap.get(cellKey(r,c+1))?.type === "wall";
+  const W = cellMap.get(cellKey(r,c-1))?.type === "wall";
   return (
     <div className="absolute inset-0" style={{
-      borderRadius: connRadius(hasN,hasS,hasE,hasW),
+      borderRadius: connRadius(N,S,E,W),
       background: "#374151",
       backgroundImage: ["repeating-linear-gradient(0deg,rgba(255,255,255,0.06) 0,rgba(255,255,255,0.06) 1px,transparent 1px,transparent 7px)",
         "repeating-linear-gradient(90deg,rgba(255,255,255,0.06) 0,rgba(255,255,255,0.06) 1px,transparent 1px,transparent 12px)"].join(","),
@@ -123,14 +122,14 @@ function WallCellVisual({ r, c, cellMap }: { r: number; c: number; cellMap: Map<
 
 function BarCellVisual({ r, c, cell, cellMap }: { r: number; c: number; cell: Cell; cellMap: Map<string, Cell> }) {
   const side = cell.barSide ?? "top";
-  const hasN = cellMap.get(cellKey(r-1,c))?.type === "bar";
-  const hasS = cellMap.get(cellKey(r+1,c))?.type === "bar";
-  const hasE = cellMap.get(cellKey(r,c+1))?.type === "bar";
-  const hasW = cellMap.get(cellKey(r,c-1))?.type === "bar";
+  const N = cellMap.get(cellKey(r-1,c))?.type === "bar";
+  const S = cellMap.get(cellKey(r+1,c))?.type === "bar";
+  const E = cellMap.get(cellKey(r,c+1))?.type === "bar";
+  const W = cellMap.get(cellKey(r,c-1))?.type === "bar";
   return (
     <div className="absolute inset-0 pointer-events-none">
       <div className="absolute inset-0" style={{
-        borderRadius: connRadius(hasN,hasS,hasE,hasW),
+        borderRadius: connRadius(N,S,E,W),
         background: "linear-gradient(135deg,#78350f,#92400e)",
         backgroundImage: "repeating-linear-gradient(90deg,rgba(255,255,255,0.05) 0,rgba(255,255,255,0.05) 1px,transparent 1px,transparent 7px)",
       }} />
@@ -169,14 +168,32 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [loading, setLoading]       = useState(false);
   const [copied, setCopied]         = useState(false);
   const [origin, setOrigin]         = useState("");
+  const [cellPx, setCellPx]         = useState(BASE);
 
-  // Drag-to-move state
   const [dragSource, setDragSource] = useState<Cell | null>(null);
   const [dragOver, setDragOver]     = useState<{ r: number; c: number } | null>(null);
   const isDragging = useRef(false);
   const isPainting = useRef(false);
+  const gridRef    = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setOrigin(window.location.origin); }, []);
+
+  // Dynamic cell size: fill container width
+  useEffect(() => {
+    const recalc = () => {
+      if (!gridRef.current) return;
+      const w = gridRef.current.clientWidth - 16; // 8px padding each side
+      const size = Math.max(14, Math.floor((w - (COLS - 1)) / COLS));
+      setCellPx(size);
+    };
+    recalc();
+    const ro = new ResizeObserver(recalc);
+    if (gridRef.current) ro.observe(gridRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const scale = cellPx / BASE;
+
   useEffect(() => {
     if (restaurants[0]?.id) loadLayout(restaurants[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,7 +216,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   }
 
   function applyTool(r: number, c: number) {
-    if (tool === "move") return; // handled separately
+    if (tool === "move") return;
     const key = cellKey(r, c);
     setCellMap(prev => {
       const next = new Map(prev);
@@ -224,20 +241,21 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     });
   }
 
-  function commitMove() {
-    if (!dragSource || !dragOver) { setDragSource(null); setDragOver(null); isDragging.current = false; return; }
-    const srcKey = cellKey(dragSource.r, dragSource.c);
-    const dstKey = cellKey(dragOver.r, dragOver.c);
-    if (srcKey !== dstKey) {
-      setCellMap(prev => {
-        const next = new Map(prev);
-        next.delete(srcKey);
-        next.set(dstKey, { ...dragSource, r: dragOver.r, c: dragOver.c });
-        return next;
-      });
+  const commitMove = useCallback(() => {
+    if (dragSource && dragOver) {
+      const srcKey = cellKey(dragSource.r, dragSource.c);
+      const dstKey = cellKey(dragOver.r, dragOver.c);
+      if (srcKey !== dstKey) {
+        setCellMap(prev => {
+          const next = new Map(prev);
+          next.delete(srcKey);
+          next.set(dstKey, { ...dragSource, r: dragOver.r, c: dragOver.c });
+          return next;
+        });
+      }
     }
     setDragSource(null); setDragOver(null); isDragging.current = false;
-  }
+  }, [dragSource, dragOver]);
 
   function saveEditCell() {
     if (!editCell) return;
@@ -274,15 +292,16 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const totalSeats = Array.from(cellMap.values()).filter(c => c.type === "table").reduce((s, c) => s + (c.seats ?? 4), 0);
 
   return (
-    <div className="p-4 md:p-8" onMouseUp={() => { if (isDragging.current) commitMove(); isPainting.current = false; }}>
-      <div className="mb-6">
+    <div className="p-4 md:p-6 flex flex-col h-full"
+      onMouseUp={() => { if (isDragging.current) commitMove(); isPainting.current = false; }}>
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">🗺 פריסת שולחנות</h1>
-        <p className="text-gray-500 mt-1 text-sm">תכנן את מפת המסעדה — שולחנות, בר, קירות ומעברים</p>
+        <p className="text-gray-500 mt-0.5 text-sm">תכנן את מפת המסעדה — שולחנות, בר, קירות ומעברים</p>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col gap-3 mb-5">
-        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+      <div className="flex flex-col gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
           {restaurants.length > 1 && (
             <select value={restaurantId} onChange={e => handleRestaurantChange(e.target.value)}
               className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
@@ -308,11 +327,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
           <div className="flex gap-2 mr-auto">
             <button onClick={clearAll}
-              className="px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors">
+              className="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors">
               נקה הכל
             </button>
             <button onClick={saveLayout} disabled={saving || !restaurantId}
-              className="px-5 py-2 text-sm font-semibold rounded-xl text-white disabled:opacity-50"
+              className="px-4 py-2 text-sm font-semibold rounded-xl text-white disabled:opacity-50"
               style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
               {saving ? "שומר..." : saved ? "✓ נשמר!" : "שמור פריסה"}
             </button>
@@ -324,7 +343,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
             <span className="text-sm text-gray-600 font-medium">צורת שולחן:</span>
             {TABLE_SHAPES.map(({ shape, label, title }) => (
               <button key={shape} onClick={() => setTableShape(shape)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${tableShape === shape ? "text-white border-amber-500" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${tableShape === shape ? "text-white border-amber-500" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
                 style={tableShape === shape ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}>
                 {label} {title}
               </button>
@@ -347,88 +366,85 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         )}
 
         {tool === "move" && (
-          <p className="text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2 w-fit">
+          <p className="text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-1.5 w-fit">
             ✋ לחץ וגרור שולחן למיקום חדש
           </p>
         )}
       </div>
 
       {/* Stats */}
-      <div className="flex gap-4 mb-4 text-sm text-gray-600 flex-wrap">
+      <div className="flex gap-3 mb-3 text-xs text-gray-500 flex-wrap">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block rounded" style={{ width: 14, height: 14, background: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "2px solid #d97706" }} />
+          <span className="inline-block rounded" style={{ width: 12, height: 12, background: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "1.5px solid #d97706" }} />
           {tableCount} שולחנות · {totalSeats} מושבים
         </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block" style={{ width: 12, height: 12, background: "linear-gradient(135deg,#78350f,#92400e)", borderRadius: 2 }} />
+          בר
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block" style={{ width: 12, height: 12, background: "#374151", borderRadius: 2 }} />
+          קיר
+        </span>
+        <span className="text-gray-400 mr-auto">{COLS}×{ROWS} · תא {cellPx}px</span>
       </div>
 
-      {/* Grid */}
+      {/* Grid — fills remaining width */}
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-400">טוען...</div>
       ) : (
-        <div className="overflow-auto rounded-2xl border border-gray-200 bg-white shadow-sm p-3">
+        <div ref={gridRef} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-auto p-2">
           <div className="grid select-none"
-            style={{ gridTemplateColumns: `repeat(${COLS}, ${CELL}px)`, gap: 1, width: "fit-content" }}
-            onMouseLeave={() => {
-              if (isDragging.current) commitMove();
-              isPainting.current = false;
-            }}>
+            style={{ gridTemplateColumns: `repeat(${COLS}, ${cellPx}px)`, gap: 1, width: "fit-content" }}
+            onMouseLeave={() => { if (isDragging.current) commitMove(); isPainting.current = false; }}>
             {Array.from({ length: ROWS }, (_, r) =>
               Array.from({ length: COLS }, (_, c) => {
                 const cell    = cellMap.get(cellKey(r, c));
                 const isTable = cell?.type === "table";
                 const isWall  = cell?.type === "wall";
                 const isBar   = cell?.type === "bar";
-
-                // Drag visuals
-                const isSrc  = dragSource?.r === r && dragSource?.c === c;
-                const isDst  = dragOver?.r === r && dragOver?.c === c && !!dragSource;
-                const isMoveTool = tool === "move";
-
-                // What to show in this cell
-                const showGhost  = isSrc && isDragging.current; // source dims out
-                const showPreview = isDst && dragSource;         // preview at dest
+                const isSrc   = dragSource?.r === r && dragSource?.c === c;
+                const isDst   = !!dragSource && dragOver?.r === r && dragOver?.c === c;
 
                 return (
                   <div key={`${r}-${c}`}
-                    title={isTable ? `שולחן ${cell?.tableNumber ?? "?"} · ${cell?.seats ?? 4} כסאות` : undefined}
-                    className="relative transition-colors"
+                    className="relative"
                     style={{
-                      width: CELL, height: CELL,
-                      background: isTable || isWall || isBar ? "transparent" : "#f9fafb",
-                      border: isWall || isBar ? "none" : "1px solid #e5e7eb",
-                      cursor: isMoveTool
-                        ? (isTable ? "grab" : "default")
-                        : "crosshair",
+                      width: cellPx, height: cellPx,
+                      background: isTable || isWall || isBar ? "transparent" : "#f8f9fa",
+                      border: isWall || isBar ? "none" : "1px solid #e9ecef",
+                      cursor: tool === "move" ? (isTable ? "grab" : "default") : "crosshair",
                       outline: isDst ? "2px solid #3b82f6" : undefined,
+                      outlineOffset: "-1px",
                     }}
                     onMouseDown={() => {
-                      if (isMoveTool) {
-                        if (isTable) {
-                          isDragging.current = true;
-                          setDragSource(cell!);
-                          setDragOver({ r, c });
-                        }
+                      if (tool === "move" && isTable) {
+                        isDragging.current = true;
+                        setDragSource(cell!);
+                        setDragOver({ r, c });
                       } else {
                         isPainting.current = true;
                         applyTool(r, c);
                       }
                     }}
-                    onMouseUp={() => {
-                      if (isDragging.current) commitMove();
-                      isPainting.current = false;
-                    }}
+                    onMouseUp={() => { if (isDragging.current) commitMove(); isPainting.current = false; }}
                     onMouseEnter={() => {
                       if (isDragging.current) setDragOver({ r, c });
                       else if (isPainting.current && tool !== "table") applyTool(r, c);
                     }}>
 
-                    {isWall  && <WallCellVisual r={r} c={c} cellMap={cellMap} />}
-                    {isBar   && <BarCellVisual  r={r} c={c} cell={cell!} cellMap={cellMap} />}
-                    {isTable && <TableCellVisual cell={cell!} ghost={showGhost} />}
-
-                    {/* Drag preview at destination */}
-                    {showPreview && !isTable && dragSource && (
-                      <TableCellVisual cell={{ ...dragSource, r, c }} ghost={true} />
+                    {/* Scale wrapper — renders visuals at BASE size then scales to cellPx */}
+                    {(isWall || isBar || isTable || isDst) && (
+                      <div style={{
+                        position: "absolute", width: BASE, height: BASE, left: 0, top: 0,
+                        transform: `scale(${scale})`, transformOrigin: "top left",
+                        pointerEvents: "none",
+                      }}>
+                        {isWall  && <WallCellVisual  r={r} c={c} cellMap={cellMap} />}
+                        {isBar   && <BarCellVisual   r={r} c={c} cell={cell!} cellMap={cellMap} />}
+                        {isTable && <TableCellVisual cell={cell!} ghost={isSrc && isDragging.current} />}
+                        {isDst && dragSource && !isTable && <TableCellVisual cell={{ ...dragSource, r, c }} ghost />}
+                      </div>
                     )}
                   </div>
                 );
@@ -437,21 +453,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           </div>
         </div>
       )}
-
-      {/* Legend */}
-      <div className="mt-4 flex gap-5 text-xs text-gray-500 flex-wrap">
-        {[
-          { bg: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "1.5px solid #d97706", r: 3, label: "שולחן" },
-          { bg: "linear-gradient(135deg,#78350f,#92400e)", border: "none", r: 2, label: "בר" },
-          { bg: "#374151", border: "none", r: 2, label: "קיר" },
-          { bg: "#f9fafb", border: "1px solid #e5e7eb", r: 2, label: "ריק" },
-        ].map(({ bg, border, r: br, label }) => (
-          <span key={label} className="flex items-center gap-1.5">
-            <span className="inline-block" style={{ width: 12, height: 12, background: bg, border, borderRadius: br }} />
-            {label}
-          </span>
-        ))}
-      </div>
 
       {/* Edit table dialog */}
       {editCell && (() => {
@@ -488,8 +489,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   <div className="flex gap-2">
                     {[2,4,6,8,10].map(n => (
                       <button key={n} type="button" onClick={() => setEditForm(f => ({ ...f, seats: String(n) }))}
-                        className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${editForm.seats === String(n) ? "border-amber-400 text-white" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-                        style={editForm.seats === String(n) ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}>
+                        className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${editForm.seats===String(n) ? "border-amber-400 text-white" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                        style={editForm.seats===String(n) ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}>
                         {n}
                       </button>
                     ))}
