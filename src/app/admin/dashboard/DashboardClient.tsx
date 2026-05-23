@@ -221,15 +221,8 @@ function TableCard({
                         onClick={() => handleItemGoBack(order.id, itemId)}
                         disabled={busy.has(itemId + "-back")}
                         title="חזור סטטוס"
-                        className="shrink-0 rounded-xl font-bold transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
-                        style={{
-                          background: "#374151",
-                          color: "#9ca3af",
-                          padding: "10px 10px",
-                          minHeight: 44,
-                          minWidth: 44,
-                          fontSize: 16,
-                        }}
+                        className="shrink-0 rounded-lg transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
+                        style={{ background: "#1f2937", color: "#6b7280", width: 28, height: 28, fontSize: 13 }}
                       >
                         {busy.has(itemId + "-back") ? "·" : "←"}
                       </button>
