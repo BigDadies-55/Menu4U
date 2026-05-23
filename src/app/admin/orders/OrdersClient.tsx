@@ -29,12 +29,14 @@ const ITEM_STATUS_LABEL: Record<string, string> = {
   PENDING: "ממתין",
   PREPARING: "בהכנה",
   DONE: "הוכן",
+  CANCELLED: "בוטל",
 };
 
 const ITEM_STATUS_COLOR: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
   PREPARING: "bg-blue-100 text-blue-700",
   DONE: "bg-green-100 text-green-700",
+  CANCELLED: "bg-red-100 text-red-500 line-through",
 };
 
 const ITEM_NEXT_LABEL: Record<string, string> = {
@@ -64,6 +66,7 @@ function TableCard({
   orders,
   isSuperAdmin,
   onItemAdvance,
+  onItemCancel,
   onOrderCancel,
   onConfirmOrder,
   onCloseTable,
@@ -72,6 +75,7 @@ function TableCard({
   orders: Order[];
   isSuperAdmin: boolean;
   onItemAdvance: (orderId: string, itemId: string) => Promise<void>;
+  onItemCancel: (orderId: string, itemId: string) => Promise<void>;
   onOrderCancel: (orderId: string) => Promise<void>;
   onConfirmOrder: (orderId: string) => Promise<void>;
   onCloseTable: (tableNumber: string) => void;
@@ -96,6 +100,12 @@ function TableCard({
     setBusy(prev => new Set(prev).add(itemId));
     await onItemAdvance(orderId, itemId);
     setBusy(prev => { const n = new Set(prev); n.delete(itemId); return n; });
+  }
+
+  async function cancelItem(orderId: string, itemId: string) {
+    setBusy(prev => new Set(prev).add(itemId + "-cancel"));
+    await onItemCancel(orderId, itemId);
+    setBusy(prev => { const n = new Set(prev); n.delete(itemId + "-cancel"); return n; });
   }
 
   async function confirmOrder(orderId: string) {
@@ -188,29 +198,32 @@ function TableCard({
             {/* Items */}
             <div className="divide-y divide-gray-50" style={{ opacity: isPending ? 0.6 : 1 }}>
               {order.items.map(({ id: itemId, quantity, notes, itemStatus, item }) => {
-                const nextLabel = !isPending && !isDelivered ? ITEM_NEXT_LABEL[itemStatus] : undefined;
+                const isCancelled = itemStatus === "CANCELLED";
+                const nextLabel = !isPending && !isDelivered && !isCancelled ? ITEM_NEXT_LABEL[itemStatus] : undefined;
                 const isBusy = busy.has(itemId);
+                const isCancelBusy = busy.has(itemId + "-cancel");
                 const isDone = itemStatus === "DONE" || isDelivered;
+                const canCancel = !isPending && !isDelivered && !isCancelled && !isDone;
 
                 return (
                   <div
                     key={itemId}
-                    className={`flex items-center gap-1.5 px-2 py-1 transition-colors ${isDone ? "opacity-50" : ""}`}
+                    className={`flex items-center gap-1.5 px-2 py-1 transition-colors ${isDone || isCancelled ? "opacity-50" : ""}`}
                   >
-                    <span className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
+                    <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold shrink-0 ${isCancelled ? "bg-red-50 text-red-400" : "bg-gray-100 text-gray-600"}`}>
                       {quantity}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium truncate ${isDone ? "line-through text-gray-400" : "text-gray-800"}`}>
+                      <div className={`text-sm font-medium truncate ${isDone || isCancelled ? "line-through text-gray-400" : "text-gray-800"}`}>
                         {item.name}
                       </div>
-                      {notes && !isDone && (
+                      {notes && !isDone && !isCancelled && (
                         <div className="text-xs text-gray-400 italic truncate">{notes}</div>
                       )}
                     </div>
                     {!isDelivered && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus]}`}>
-                        {ITEM_STATUS_LABEL[itemStatus]}
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus] ?? ""}`}>
+                        {ITEM_STATUS_LABEL[itemStatus] ?? itemStatus}
                       </span>
                     )}
                     {nextLabel && !isDone ? (
@@ -222,9 +235,19 @@ function TableCard({
                       >
                         {isBusy ? "..." : nextLabel}
                       </button>
-                    ) : isDone ? (
+                    ) : isDone && !isCancelled ? (
                       <span className="shrink-0 text-green-500 text-sm">✓</span>
                     ) : null}
+                    {canCancel && (
+                      <button
+                        onClick={() => cancelItem(order.id, itemId)}
+                        disabled={isCancelBusy}
+                        title="בטל פריט"
+                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors text-xs"
+                      >
+                        {isCancelBusy ? "·" : "✕"}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -313,11 +336,25 @@ export default function OrdersClient({
     });
     if (!res.ok) return;
     const { itemStatus, orderDelivered } = await res.json();
-
     setOrders(prev => prev.map(o => {
       if (o.id !== orderId) return o;
       const updatedItems = o.items.map(i => i.id === itemId ? { ...i, itemStatus } : i);
       return { ...o, status: orderDelivered ? "DELIVERED" : o.status, items: updatedItems };
+    }));
+  }
+
+  async function cancelItem(orderId: string, itemId: string) {
+    const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cancel: true }),
+    });
+    if (!res.ok) return;
+    const { newTotal } = await res.json();
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      const updatedItems = o.items.map(i => i.id === itemId ? { ...i, itemStatus: "CANCELLED" } : i);
+      return { ...o, items: updatedItems, ...(newTotal !== undefined ? { totalAmount: newTotal } : {}) };
     }));
   }
 
@@ -490,6 +527,7 @@ export default function OrdersClient({
               orders={tableOrders}
               isSuperAdmin={isSuperAdmin}
               onItemAdvance={advanceItem}
+              onItemCancel={cancelItem}
               onOrderCancel={cancelOrder}
               onConfirmOrder={confirmOrder}
               onCloseTable={closeTable}

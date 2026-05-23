@@ -57,6 +57,7 @@ function TableCard({
   tick,
   onConfirmOrder,
   onItemAdvance,
+  onItemGoBack,
   onCancel,
 }: {
   tableNumber: string;
@@ -65,6 +66,7 @@ function TableCard({
   tick: number;
   onConfirmOrder: (orderId: string) => void;
   onItemAdvance: (orderId: string, itemId: string) => void;
+  onItemGoBack: (orderId: string, itemId: string) => void;
   onCancel: (orderId: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
@@ -85,6 +87,12 @@ function TableCard({
     setBusy(prev => new Set(prev).add(itemId));
     await onItemAdvance(orderId, itemId);
     setBusy(prev => { const n = new Set(prev); n.delete(itemId); return n; });
+  }
+
+  async function handleItemGoBack(orderId: string, itemId: string) {
+    setBusy(prev => new Set(prev).add(itemId + "-back"));
+    await onItemGoBack(orderId, itemId);
+    setBusy(prev => { const n = new Set(prev); n.delete(itemId + "-back"); return n; });
   }
 
   return (
@@ -208,6 +216,24 @@ function TableCard({
                         {ITEM_LABEL[itemStatus]}
                       </span>
                     )}
+                    {canUpdate && !isDelivered && (itemStatus === "PREPARING" || itemStatus === "DONE") && (
+                      <button
+                        onClick={() => handleItemGoBack(order.id, itemId)}
+                        disabled={busy.has(itemId + "-back")}
+                        title="חזור סטטוס"
+                        className="shrink-0 rounded-xl font-bold transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
+                        style={{
+                          background: "#374151",
+                          color: "#9ca3af",
+                          padding: "10px 10px",
+                          minHeight: 44,
+                          minWidth: 44,
+                          fontSize: 16,
+                        }}
+                      >
+                        {busy.has(itemId + "-back") ? "·" : "←"}
+                      </button>
+                    )}
                     {canUpdate && nextLabel && !isDone && (
                       <button
                         onClick={() => handleItemAdvance(order.id, itemId)}
@@ -314,12 +340,28 @@ export default function DashboardClient({
       const updatedItems = o.items.map(i =>
         i.id === itemId ? { ...i, itemStatus: NEXT[i.itemStatus] ?? i.itemStatus } : i
       );
-      const allDone = updatedItems.every(i => i.itemStatus === "DONE");
+      const allDone = updatedItems.every(i => i.itemStatus === "DONE" || i.itemStatus === "CANCELLED");
       return { ...o, status: allDone ? "DELIVERED" : o.status, items: updatedItems };
-    // Kitchen removes order once DELIVERED — closing is handled in orders management
     }).filter(o => o.status !== "DELIVERED"));
-
     await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, { method: "PATCH" });
+  }
+
+  async function handleItemGoBack(orderId: string, itemId: string) {
+    const PREV: Record<string, string> = { PREPARING: "PENDING", DONE: "PREPARING" };
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      const updatedItems = o.items.map(i =>
+        i.id === itemId ? { ...i, itemStatus: PREV[i.itemStatus] ?? i.itemStatus } : i
+      );
+      // If order was delivered, reopen it
+      const newStatus = o.status === "DELIVERED" ? "PREPARING" : o.status;
+      return { ...o, status: newStatus, items: updatedItems };
+    }));
+    await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ goBack: true }),
+    });
   }
 
   async function handleCancel(orderId: string) {
@@ -405,6 +447,7 @@ export default function DashboardClient({
                 tick={tick}
                 onConfirmOrder={handleConfirmOrder}
                 onItemAdvance={handleItemAdvance}
+                onItemGoBack={handleItemGoBack}
                 onCancel={handleCancel}
               />
             ))}

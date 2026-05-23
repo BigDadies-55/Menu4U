@@ -6,6 +6,10 @@ const ITEM_NEXT: Record<string, string> = {
   PENDING: "PREPARING",
   PREPARING: "DONE",
 };
+const ITEM_PREV: Record<string, string> = {
+  PREPARING: "PENDING",
+  DONE: "PREPARING",
+};
 
 export async function PATCH(
   req: Request,
@@ -16,7 +20,15 @@ export async function PATCH(
 
   const { orderId, itemId } = await params;
 
-  // Fetch order + all its items
+  // Read optional body
+  let cancel = false;
+  let goBack = false;
+  try {
+    const body = await req.json();
+    cancel = !!body?.cancel;
+    goBack = !!body?.goBack;
+  } catch { /* no body — forward advance */ }
+
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: true },
@@ -26,22 +38,50 @@ export async function PATCH(
   const orderItem = order.items.find(i => i.id === itemId);
   if (!orderItem) return NextResponse.json({ error: "Item not found" }, { status: 404 });
 
+  /* ── Cancel a single item ── */
+  if (cancel) {
+    if (orderItem.itemStatus === "CANCELLED") {
+      return NextResponse.json({ error: "Already cancelled" }, { status: 400 });
+    }
+    await prisma.orderItem.update({
+      where: { id: itemId },
+      data: { itemStatus: "CANCELLED" },
+    });
+    // Recalculate order total (exclude cancelled items)
+    const remaining = order.items.filter(i => i.id !== itemId && i.itemStatus !== "CANCELLED");
+    const newTotal = remaining.reduce((s, i) => s + i.price * i.quantity, 0);
+    await prisma.order.update({ where: { id: orderId }, data: { totalAmount: newTotal } });
+    return NextResponse.json({ itemStatus: "CANCELLED", orderDelivered: false, newTotal });
+  }
+
+  /* ── Go backwards ── */
+  if (goBack) {
+    const prevStatus = ITEM_PREV[orderItem.itemStatus];
+    if (!prevStatus) return NextResponse.json({ error: "Already at start" }, { status: 400 });
+    await prisma.orderItem.update({ where: { id: itemId }, data: { itemStatus: prevStatus } });
+    // If order was DELIVERED, reopen it (items not all done anymore)
+    if (order.status === "DELIVERED") {
+      await prisma.order.update({ where: { id: orderId }, data: { status: "PREPARING" } });
+    }
+    return NextResponse.json({ itemStatus: prevStatus, orderDelivered: false });
+  }
+
+  /* ── Advance forward (default) ── */
   const nextItemStatus = ITEM_NEXT[orderItem.itemStatus];
   if (!nextItemStatus) return NextResponse.json({ error: "Already done" }, { status: 400 });
 
-  // Update this item's status
   await prisma.orderItem.update({
     where: { id: itemId },
     data: { itemStatus: nextItemStatus },
   });
 
-  // Check if all items are now DONE
-  const allDone = order.items.every(i =>
-    i.id === itemId ? nextItemStatus === "DONE" : i.itemStatus === "DONE"
-  );
+  // Check if all non-cancelled items are now DONE
+  const allDone = order.items.every(i => {
+    if (i.id === itemId) return nextItemStatus === "DONE";
+    return i.itemStatus === "DONE" || i.itemStatus === "CANCELLED";
+  });
 
   if (allDone) {
-    // Auto-close the order
     await prisma.$transaction([
       prisma.order.update({ where: { id: orderId }, data: { status: "DELIVERED" } }),
       prisma.orderStatusLog.create({
