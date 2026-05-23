@@ -30,7 +30,7 @@ export async function GET(req: Request) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const statusFilter: any = activeOnly ? { notIn: ["CANCELLED", "PAID"] } : undefined;
+  const statusFilter: any = activeOnly ? { notIn: ["CANCELLED", "PAID", "DELIVERED"] } : undefined;
 
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");

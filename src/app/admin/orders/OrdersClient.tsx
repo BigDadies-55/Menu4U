@@ -80,7 +80,7 @@ function TableCard({
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
 
-  const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED");
+  const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID" && o.status !== "DELIVERED");
   const allItems = nonCancelledOrders.flatMap(o => o.items);
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
@@ -361,10 +361,13 @@ export default function OrdersClient({
     ? orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID")
     : orders;
 
-  // Group by table, sorted oldest first
+  // Group by table — always exclude PAID/DELIVERED from table cards regardless of filter mode
   const byTable = new Map<string, Order[]>();
   [...activeOrders]
-    .filter(order => order.tableNumber && order.tableNumber.trim() !== "")
+    .filter(order =>
+      order.tableNumber && order.tableNumber.trim() !== "" &&
+      order.status !== "PAID" && order.status !== "DELIVERED"
+    )
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .forEach(order => {
       const key = order.tableNumber!;
