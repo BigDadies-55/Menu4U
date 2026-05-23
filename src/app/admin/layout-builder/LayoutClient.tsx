@@ -23,15 +23,14 @@ type Restaurant = { id: string; name: string };
 
 const ROWS = 12;
 const COLS = 20;
+const CELL = 44;
 const EMPTY_LAYOUT: Layout = { rows: ROWS, cols: COLS, cells: [] };
 
 function cellKey(r: number, c: number) { return `${r}:${c}`; }
 
 function layoutToMap(layout: Layout): Map<string, Cell> {
   const map = new Map<string, Cell>();
-  for (const cell of layout.cells) {
-    map.set(cellKey(cell.r, cell.c), cell);
-  }
+  for (const cell of layout.cells) map.set(cellKey(cell.r, cell.c), cell);
   return map;
 }
 
@@ -39,11 +38,99 @@ function mapToLayout(map: Map<string, Cell>, rows: number, cols: number): Layout
   return { rows, cols, cells: Array.from(map.values()) };
 }
 
-export default function LayoutClient({
-  restaurants,
-}: {
-  restaurants: Restaurant[];
-}) {
+function getChairDist(seats: number) {
+  if (seats <= 2)  return { top: 1, bottom: 1, left: 0, right: 0 };
+  if (seats <= 4)  return { top: 1, bottom: 1, left: 1, right: 1 };
+  if (seats <= 6)  return { top: 2, bottom: 2, left: 1, right: 1 };
+  if (seats <= 8)  return { top: 2, bottom: 2, left: 2, right: 2 };
+  return           { top: 3, bottom: 3, left: 2, right: 2 };
+}
+
+function HChair() {
+  return <div style={{ width: 8, height: 5, background: "#92400e", borderRadius: 2, flexShrink: 0 }} />;
+}
+
+function VChair() {
+  return <div style={{ width: 5, height: 8, background: "#92400e", borderRadius: 2, flexShrink: 0 }} />;
+}
+
+function TableCellVisual({ cell }: { cell: Cell }) {
+  const seats = cell.seats ?? 4;
+  const dist = getChairDist(seats);
+  const INSET = 10;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {/* Top chairs */}
+      {dist.top > 0 && (
+        <div className="absolute left-0 right-0 flex justify-center gap-0.5" style={{ top: 2 }}>
+          {Array.from({ length: dist.top }).map((_, i) => <HChair key={i} />)}
+        </div>
+      )}
+      {/* Bottom chairs */}
+      {dist.bottom > 0 && (
+        <div className="absolute left-0 right-0 flex justify-center gap-0.5" style={{ bottom: 2 }}>
+          {Array.from({ length: dist.bottom }).map((_, i) => <HChair key={i} />)}
+        </div>
+      )}
+      {/* Left chairs */}
+      {dist.left > 0 && (
+        <div className="absolute top-0 bottom-0 flex flex-col justify-center gap-0.5" style={{ left: 2 }}>
+          {Array.from({ length: dist.left }).map((_, i) => <VChair key={i} />)}
+        </div>
+      )}
+      {/* Right chairs */}
+      {dist.right > 0 && (
+        <div className="absolute top-0 bottom-0 flex flex-col justify-center gap-0.5" style={{ right: 2 }}>
+          {Array.from({ length: dist.right }).map((_, i) => <VChair key={i} />)}
+        </div>
+      )}
+      {/* Table surface */}
+      <div
+        className="absolute rounded flex flex-col items-center justify-center"
+        style={{
+          inset: INSET,
+          background: "linear-gradient(135deg,#fef3c7,#fde68a)",
+          border: "2px solid #d97706",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
+        }}
+      >
+        <span className="font-black text-amber-900 leading-none" style={{ fontSize: 9 }}>
+          {cell.tableNumber || "?"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function WallCellVisual({ r, c, cellMap }: { r: number; c: number; cellMap: Map<string, Cell> }) {
+  const hasN = cellMap.get(cellKey(r - 1, c))?.type === "wall";
+  const hasS = cellMap.get(cellKey(r + 1, c))?.type === "wall";
+  const hasE = cellMap.get(cellKey(r, c + 1))?.type === "wall";
+  const hasW = cellMap.get(cellKey(r, c - 1))?.type === "wall";
+
+  // Border-radius: round corners that don't connect to another wall
+  const tl = !hasN && !hasW ? 3 : 0;
+  const tr = !hasN && !hasE ? 3 : 0;
+  const br = !hasS && !hasE ? 3 : 0;
+  const bl = !hasS && !hasW ? 3 : 0;
+
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        borderRadius: `${tl}px ${tr}px ${br}px ${bl}px`,
+        background: "#374151",
+        backgroundImage: [
+          "repeating-linear-gradient(0deg,rgba(255,255,255,0.06) 0,rgba(255,255,255,0.06) 1px,transparent 1px,transparent 8px)",
+          "repeating-linear-gradient(90deg,rgba(255,255,255,0.06) 0,rgba(255,255,255,0.06) 1px,transparent 1px,transparent 14px)",
+        ].join(","),
+      }}
+    />
+  );
+}
+
+export default function LayoutClient({ restaurants }: { restaurants: Restaurant[] }) {
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [tool, setTool] = useState<CellType>("table");
   const [cellMap, setCellMap] = useState<Map<string, Cell>>(new Map());
@@ -65,8 +152,7 @@ export default function LayoutClient({
       const data = await res.json();
       if (data.tableLayoutJson) {
         try {
-          const layout: Layout = JSON.parse(data.tableLayoutJson);
-          setCellMap(layoutToMap(layout));
+          setCellMap(layoutToMap(JSON.parse(data.tableLayoutJson)));
         } catch { setCellMap(new Map()); }
       } else {
         setCellMap(new Map());
@@ -88,14 +174,11 @@ export default function LayoutClient({
         next.delete(key);
       } else if (tool === "wall") {
         next.set(key, { r, c, type: "wall" });
-      } else if (tool === "table") {
+      } else {
         const existing = prev.get(key);
         if (existing?.type === "table") {
           setEditCell({ r, c });
-          setEditForm({
-            tableNumber: existing.tableNumber ?? "",
-            seats: String(existing.seats ?? 4),
-          });
+          setEditForm({ tableNumber: existing.tableNumber ?? "", seats: String(existing.seats ?? 4) });
         } else {
           next.set(key, { r, c, type: "table", tableNumber: "", seats: 4 });
           setEditCell({ r, c });
@@ -131,11 +214,10 @@ export default function LayoutClient({
   async function saveLayout() {
     if (!restaurantId) return;
     setSaving(true);
-    const layout = mapToLayout(cellMap, ROWS, COLS);
     await fetch(`/api/admin/restaurants/${restaurantId}/layout`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableLayoutJson: JSON.stringify(layout) }),
+      body: JSON.stringify({ tableLayoutJson: JSON.stringify(mapToLayout(cellMap, ROWS, COLS)) }),
     });
     setSaving(false);
     setSaved(true);
@@ -164,19 +246,16 @@ export default function LayoutClient({
           {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
 
-        {/* Tools */}
         <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white">
           {([
-            { t: "table" as CellType, label: "🪑 שולחן", color: "amber" },
-            { t: "wall" as CellType, label: "🧱 קיר", color: "gray" },
-            { t: "empty" as CellType, label: "🗑 מחק", color: "red" },
+            { t: "table" as CellType, label: "🪑 שולחן" },
+            { t: "wall" as CellType,  label: "🧱 קיר" },
+            { t: "empty" as CellType, label: "🗑 מחק" },
           ]).map(({ t, label }) => (
             <button
               key={t}
               onClick={() => setTool(t)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                tool === t ? "text-white" : "text-gray-600 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${tool === t ? "text-white" : "text-gray-600 hover:bg-gray-50"}`}
               style={tool === t ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}
             >
               {label}
@@ -205,26 +284,23 @@ export default function LayoutClient({
       {/* Stats */}
       <div className="flex gap-4 mb-4 text-sm text-gray-600">
         <span className="flex items-center gap-1.5">
-          <span className="w-4 h-4 rounded bg-amber-200 border border-amber-400 inline-block"></span>
-          {tableCount} שולחנות
+          <span className="inline-block rounded" style={{ width: 16, height: 16, background: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "2px solid #d97706" }} />
+          {tableCount} שולחנות · {totalSeats} מושבים
         </span>
-        <span>|</span>
-        <span>{totalSeats} מקומות ישיבה סה"כ</span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block" style={{ width: 16, height: 16, background: "#374151", borderRadius: 2 }} />
+          קיר
+        </span>
       </div>
 
       {/* Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-400">טוען...</div>
       ) : (
-        <div className="overflow-auto rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+        <div className="overflow-auto rounded-2xl border border-gray-200 bg-white shadow-sm p-3">
           <div
             className="grid select-none"
-            style={{
-              gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-              gap: 2,
-              width: "fit-content",
-              minWidth: "100%",
-            }}
+            style={{ gridTemplateColumns: `repeat(${COLS}, ${CELL}px)`, gap: 1, width: "fit-content" }}
             onMouseLeave={() => { isPainting.current = false; }}
           >
             {Array.from({ length: ROWS }, (_, r) =>
@@ -237,38 +313,29 @@ export default function LayoutClient({
                   <div
                     key={`${r}-${c}`}
                     title={isTable ? `שולחן ${cell?.tableNumber ?? "?"} · ${cell?.seats ?? 4} כסאות` : undefined}
-                    className={`
-                      relative cursor-pointer rounded transition-all
-                      ${isTable
-                        ? "bg-amber-100 border-2 border-amber-400 hover:bg-amber-200"
+                    className="relative cursor-pointer transition-colors"
+                    style={{
+                      width: CELL,
+                      height: CELL,
+                      background: isTable
+                        ? "transparent"
                         : isWall
-                          ? "bg-gray-600 border border-gray-700"
-                          : "bg-gray-50 border border-gray-100 hover:bg-amber-50"
-                      }
-                    `}
-                    style={{ width: 38, height: 38 }}
-                    onMouseDown={() => {
-                      isPainting.current = true;
-                      applyTool(r, c);
+                          ? "transparent"
+                          : tool === "empty" ? "#fef2f2" : "#f9fafb",
+                      border: isWall ? "none" : isTable ? "none" : "1px solid #e5e7eb",
                     }}
+                    onMouseDown={() => { isPainting.current = true; applyTool(r, c); }}
                     onMouseUp={() => { isPainting.current = false; }}
-                    onMouseEnter={() => {
+                    onMouseEnter={e => {
                       if (isPainting.current && tool !== "table") applyTool(r, c);
+                      if (!isTable && !isWall) (e.currentTarget as HTMLDivElement).style.background = "#fef9ec";
+                    }}
+                    onMouseLeave={e => {
+                      if (!isTable && !isWall) (e.currentTarget as HTMLDivElement).style.background = tool === "empty" ? "#fef2f2" : "#f9fafb";
                     }}
                   >
-                    {isTable && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <div className="text-amber-800 font-bold text-xs leading-tight">
-                          {cell?.tableNumber || "?"}
-                        </div>
-                        <div className="text-amber-600 text-[9px] leading-none">{cell?.seats ?? 4}👤</div>
-                      </div>
-                    )}
-                    {isWall && (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-xs pointer-events-none">
-                        ▪
-                      </div>
-                    )}
+                    {isWall && <WallCellVisual r={r} c={c} cellMap={cellMap} />}
+                    {isTable && <TableCellVisual cell={cell!} />}
                   </div>
                 );
               })
@@ -279,9 +346,18 @@ export default function LayoutClient({
 
       {/* Legend */}
       <div className="mt-4 flex gap-5 text-xs text-gray-500 flex-wrap">
-        <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-amber-100 border-2 border-amber-400 inline-block"></span>שולחן — לחץ לעריכה</span>
-        <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-gray-600 inline-block"></span>קיר — גרור לצייר</span>
-        <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-gray-50 border border-gray-200 inline-block"></span>ריק</span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block rounded" style={{ width: 14, height: 14, background: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "2px solid #d97706" }} />
+          שולחן — לחץ לעריכה
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block" style={{ width: 14, height: 14, background: "#374151", borderRadius: 2 }} />
+          קיר — גרור לצייר
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block rounded border border-gray-200" style={{ width: 14, height: 14, background: "#f9fafb" }} />
+          ריק
+        </span>
       </div>
 
       {/* Edit table dialog */}
@@ -314,9 +390,7 @@ export default function LayoutClient({
                         type="button"
                         onClick={() => setEditForm(f => ({ ...f, seats: String(n) }))}
                         className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                          editForm.seats === String(n)
-                            ? "border-amber-400 text-white"
-                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                          editForm.seats === String(n) ? "border-amber-400 text-white" : "border-gray-200 text-gray-600 hover:bg-gray-50"
                         }`}
                         style={editForm.seats === String(n) ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}
                       >
@@ -326,19 +400,14 @@ export default function LayoutClient({
                   </div>
                 </div>
 
-                {/* QR + link — shown when table number is filled */}
                 {tableUrl && (
                   <div className="border border-gray-100 rounded-xl p-4 bg-gray-50 space-y-3">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">קישור ו-QR לשולחן</p>
-
-                    {/* QR code */}
                     <div className="flex justify-center">
                       <div className="p-2 bg-white rounded-xl border border-gray-200 inline-block">
                         <QRCodeSVG value={tableUrl} size={160} />
                       </div>
                     </div>
-
-                    {/* URL + copy */}
                     <div className="flex items-center gap-2">
                       <input
                         readOnly
@@ -348,11 +417,7 @@ export default function LayoutClient({
                       />
                       <button
                         type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(tableUrl);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }}
+                        onClick={() => { navigator.clipboard.writeText(tableUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                         className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
                         style={{ background: copied ? "#22c55e" : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
                       >
