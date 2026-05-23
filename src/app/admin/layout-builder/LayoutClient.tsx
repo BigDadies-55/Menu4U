@@ -91,10 +91,10 @@ function getChairDist(seats: number, w = 1, h = 1) {
 }
 
 /* ── Chair atoms ── */
-const HC = () => <div style={{ width: 6, height: 4, background: "#92400e", borderRadius: 1, flexShrink: 0 }} />;
-const VC = () => <div style={{ width: 4, height: 6, background: "#92400e", borderRadius: 1, flexShrink: 0 }} />;
-function Stool({ size = 6 }: { size?: number }) {
-  return <div style={{ width: size, height: size, borderRadius: "50%", background: "#fbbf24", border: "1px solid #92400e", flexShrink: 0 }} />;
+const HC = () => <div style={{ width: 10, height: 7, background: "#92400e", borderRadius: 2, flexShrink: 0, boxShadow:"0 1px 2px rgba(0,0,0,0.25)" }} />;
+const VC = () => <div style={{ width: 7, height: 10, background: "#92400e", borderRadius: 2, flexShrink: 0, boxShadow:"0 1px 2px rgba(0,0,0,0.25)" }} />;
+function Stool({ size = 9 }: { size?: number }) {
+  return <div style={{ width: size, height: size, borderRadius: "50%", background: "#fbbf24", border: "1.5px solid #92400e", flexShrink: 0, boxShadow:"0 1px 3px rgba(0,0,0,0.2)" }} />;
 }
 
 /* ── Table visuals ── */
@@ -102,22 +102,22 @@ function SquareTableVisual({ cell, ghost, w = 1, h = 1 }: { cell: Cell; ghost?: 
   const d = getChairDist(cell.seats ?? 4, w, h);
   return (
     <div style={{ width: BASE*w, height: BASE*h, position: "relative", opacity: ghost?0.5:1, pointerEvents: "none" }}>
-      {d.top    > 0 && <div className="absolute left-0 right-0 flex justify-around px-2" style={{top:1}}>{Array.from({length:d.top   }).map((_,i)=><HC key={i}/>)}</div>}
-      {d.bottom > 0 && <div className="absolute left-0 right-0 flex justify-around px-2" style={{bottom:1}}>{Array.from({length:d.bottom}).map((_,i)=><HC key={i}/>)}</div>}
-      {d.left   > 0 && <div className="absolute top-0 bottom-0 flex flex-col justify-around py-2" style={{left:1}}>{Array.from({length:d.left  }).map((_,i)=><VC key={i}/>)}</div>}
-      {d.right  > 0 && <div className="absolute top-0 bottom-0 flex flex-col justify-around py-2" style={{right:1}}>{Array.from({length:d.right }).map((_,i)=><VC key={i}/>)}</div>}
+      {d.top    > 0 && <div className="absolute left-0 right-0 flex justify-around px-1" style={{top:1}}>{Array.from({length:d.top   }).map((_,i)=><HC key={i}/>)}</div>}
+      {d.bottom > 0 && <div className="absolute left-0 right-0 flex justify-around px-1" style={{bottom:1}}>{Array.from({length:d.bottom}).map((_,i)=><HC key={i}/>)}</div>}
+      {d.left   > 0 && <div className="absolute top-0 bottom-0 flex flex-col justify-around py-1" style={{left:1}}>{Array.from({length:d.left  }).map((_,i)=><VC key={i}/>)}</div>}
+      {d.right  > 0 && <div className="absolute top-0 bottom-0 flex flex-col justify-around py-1" style={{right:1}}>{Array.from({length:d.right }).map((_,i)=><VC key={i}/>)}</div>}
       <div className="absolute rounded flex items-center justify-center"
-        style={{ inset:7, background:"linear-gradient(135deg,#fef3c7,#fde68a)", border:"1.5px solid #d97706", boxShadow:"0 1px 2px rgba(0,0,0,0.15)" }}>
+        style={{ inset:9, background:"linear-gradient(135deg,#fef3c7,#fde68a)", border:"1.5px solid #d97706", boxShadow:"0 1px 2px rgba(0,0,0,0.15)" }}>
         <span className="font-black text-amber-900 leading-none" style={{fontSize:8}}>{cell.tableNumber||"?"}</span>
       </div>
     </div>
   );
 }
 function RoundTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
-  const seats=cell.seats??4; const half=BASE/2; const tR=9; const cR=12;
+  const seats=cell.seats??4; const half=BASE/2; const tR=9; const cR=13; const cS=7;
   return (
     <div style={{ width:BASE, height:BASE, position:"relative", opacity:ghost?0.5:1, pointerEvents:"none" }}>
-      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2; return <div key={i} className="absolute rounded-full" style={{width:5,height:5,background:"#92400e",left:half+cR*Math.cos(a)-2.5,top:half+cR*Math.sin(a)-2.5}}/>; })}
+      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2; return <div key={i} className="absolute rounded-full" style={{width:cS,height:cS,background:"#92400e",boxShadow:"0 1px 2px rgba(0,0,0,0.25)",left:half+cR*Math.cos(a)-cS/2,top:half+cR*Math.sin(a)-cS/2}}/>; })}
       <div className="absolute rounded-full flex items-center justify-center" style={{left:half-tR,top:half-tR,width:tR*2,height:tR*2,background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1.5px solid #d97706"}}>
         <span className="font-black text-amber-900" style={{fontSize:7}}>{cell.tableNumber||"?"}</span>
       </div>
@@ -125,10 +125,10 @@ function RoundTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
   );
 }
 function OvalTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
-  const seats=cell.seats??4; const half=BASE/2; const rx=13; const ry=9; const trx=10; const try_=7;
+  const seats=cell.seats??4; const half=BASE/2; const rx=13; const ry=10; const trx=10; const try_=7; const cS=7;
   return (
     <div style={{ width:BASE, height:BASE, position:"relative", opacity:ghost?0.5:1, pointerEvents:"none" }}>
-      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2; return <div key={i} className="absolute rounded-full" style={{width:5,height:5,background:"#92400e",left:half+rx*Math.cos(a)-2.5,top:half+ry*Math.sin(a)-2.5}}/>; })}
+      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2; return <div key={i} className="absolute rounded-full" style={{width:cS,height:cS,background:"#92400e",boxShadow:"0 1px 2px rgba(0,0,0,0.25)",left:half+rx*Math.cos(a)-cS/2,top:half+ry*Math.sin(a)-cS/2}}/>; })}
       <div className="absolute flex items-center justify-center" style={{left:half-trx,top:half-try_,width:trx*2,height:try_*2,borderRadius:"50%",background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1.5px solid #d97706"}}>
         <span className="font-black text-amber-900" style={{fontSize:7}}>{cell.tableNumber||"?"}</span>
       </div>
