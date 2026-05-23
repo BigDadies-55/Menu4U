@@ -30,15 +30,16 @@ export async function GET(req: Request) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const statusFilter: any = activeOnly ? { notIn: ["CANCELLED"] } : undefined;
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const statusFilter: any = activeOnly ? { notIn: ["CANCELLED", "PAID"] } : undefined;
 
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let createdAtFilter: any = activeOnly && !fromParam ? { gte: since24h } : undefined;
+  let createdAtFilter: any;
   if (fromParam) {
     createdAtFilter = { gte: new Date(fromParam), ...(toParam ? { lte: new Date(toParam) } : {}) };
+  } else if (activeOnly) {
+    createdAtFilter = { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
   }
 
   const orders = await prisma.order.findMany({
@@ -56,29 +57,6 @@ export async function GET(req: Request) {
       },
     },
   });
-
-  // For activeOnly: filter out tables that were explicitly closed (have a TableSession)
-  if (activeOnly && !fromParam) {
-    let closedKeys = new Set<string>();
-    try {
-      const sessions = await prisma.tableSession.findMany({
-        where: {
-          ...(restaurantFilter ? { restaurantId: { in: restaurantFilter.in } } : {}),
-          closedAt: { gte: since24h },
-        },
-        select: { restaurantId: true, tableNumber: true },
-      });
-      closedKeys = new Set(sessions.map(s => `${s.restaurantId}:${s.tableNumber ?? ""}`));
-    } catch { /* TableSession table may not exist yet */ }
-
-    if (closedKeys.size > 0) {
-      const filtered = orders.filter(o => {
-        if (o.status !== "DELIVERED") return true;
-        return !closedKeys.has(`${o.restaurantId}:${o.tableNumber ?? ""}`);
-      });
-      return NextResponse.json(filtered);
-    }
-  }
 
   return NextResponse.json(orders);
 }

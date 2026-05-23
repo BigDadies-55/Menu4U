@@ -74,6 +74,11 @@ const sqls = [
   );`,
   `CREATE INDEX IF NOT EXISTS "TableSession_restaurantId_idx" ON "TableSession"("restaurantId");`,
   `CREATE INDEX IF NOT EXISTS "TableSession_closedAt_idx" ON "TableSession"("closedAt" DESC);`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'PAID' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'OrderStatus')) THEN
+      ALTER TYPE "OrderStatus" ADD VALUE 'PAID';
+    END IF;
+  END $$;`,
 ];
 
 async function run() {

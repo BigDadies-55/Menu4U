@@ -35,7 +35,7 @@ export default async function OrdersPage() {
     prisma.order.findMany({
       where: {
         ...(isSuperAdmin ? {} : { restaurantId: { in: restaurantIds } }),
-        status: { notIn: ["DELIVERED", "CANCELLED"] },
+        status: { notIn: ["DELIVERED", "CANCELLED", "PAID"] },
       },
       orderBy: { createdAt: "asc" },
       include: {

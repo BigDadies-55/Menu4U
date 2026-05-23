@@ -49,6 +49,7 @@ const ORDER_STATUS_BADGE: Record<string, string> = {
   READY: "bg-green-100 text-green-800",
   DELIVERED: "bg-gray-100 text-gray-600",
   CANCELLED: "bg-red-100 text-red-700",
+  PAID: "bg-purple-100 text-purple-800",
 };
 
 function timeSince(dateStr: string): string {
@@ -357,7 +358,7 @@ export default function OrdersClient({
   }
 
   const activeOrders = filter === "active"
-    ? orders.filter(o => o.status !== "CANCELLED")
+    ? orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID")
     : orders;
 
   // Group by table, sorted oldest first
