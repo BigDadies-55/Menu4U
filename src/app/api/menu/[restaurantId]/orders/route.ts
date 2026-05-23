@@ -17,7 +17,7 @@ export async function GET(
     where: {
       restaurantId,
       tableNumber,
-      status: { notIn: ["DELIVERED", "CANCELLED"] },
+      status: { notIn: ["DELIVERED", "CANCELLED", "PAID"] },
     },
     orderBy: { createdAt: "desc" },
     select: {
