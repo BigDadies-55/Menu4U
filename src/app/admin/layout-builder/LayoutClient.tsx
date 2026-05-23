@@ -75,7 +75,15 @@ function getGroupStoolsMap(group: Cell[]): Map<string, number> {
 }
 
 /* ── Table sizing ── */
-function getDefaultTableSize(seats: number): { w: number; h: number } {
+function getDefaultTableSize(seats: number, shape: TableShape = "square"): { w: number; h: number } {
+  if (shape === "round") {
+    // Square footprint to keep the circle look
+    if (seats <= 2) return { w: 1, h: 1 };
+    if (seats <= 6) return { w: 2, h: 2 };
+    if (seats <= 9) return { w: 3, h: 3 };
+    return           { w: 4, h: 4 };
+  }
+  // square / oval — rectangular footprint
   if (seats <= 2) return { w: 1, h: 1 };
   if (seats <= 4) return { w: 2, h: 1 };
   if (seats <= 6) return { w: 2, h: 2 };
@@ -125,32 +133,51 @@ function SquareTableVisual({ cell, ghost, w = 1, h = 1 }: { cell: Cell; ghost?: 
     </div>
   );
 }
-function RoundTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
-  const seats=cell.seats??4; const half=BASE/2; const tR=9; const cR=13; const cS=7;
+function RoundTableVisual({ cell, ghost, w = 1, h = 1 }: { cell: Cell; ghost?: boolean; w?: number; h?: number }) {
+  const seats = cell.seats ?? 4;
+  const s   = Math.min(w, h);          // use smaller dimension for radius
+  const cx  = BASE * w / 2;
+  const cy  = BASE * h / 2;
+  const tR  = Math.round(BASE * s * 0.30);
+  const cR  = Math.round(BASE * s * 0.43);
+  const cS  = Math.max(5, Math.round(BASE * s * 0.23));
+  const fS  = Math.max(6, Math.round(BASE * s * 0.22));
   return (
-    <div style={{ width:BASE, height:BASE, position:"relative", opacity:ghost?0.5:1, pointerEvents:"none" }}>
-      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2; return <div key={i} className="absolute rounded-full" style={{width:cS,height:cS,background:"#92400e",boxShadow:"0 1px 2px rgba(0,0,0,0.25)",left:half+cR*Math.cos(a)-cS/2,top:half+cR*Math.sin(a)-cS/2}}/>; })}
-      <div className="absolute rounded-full flex items-center justify-center" style={{left:half-tR,top:half-tR,width:tR*2,height:tR*2,background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1.5px solid #d97706"}}>
-        <span className="font-black text-amber-900" style={{fontSize:7}}>{cell.tableNumber||"?"}</span>
+    <div style={{ width:BASE*w, height:BASE*h, position:"relative", opacity:ghost?0.5:1, pointerEvents:"none" }}>
+      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2;
+        return <div key={i} className="absolute rounded-full" style={{width:cS,height:cS,background:"#92400e",boxShadow:"0 1px 2px rgba(0,0,0,0.25)",left:cx+cR*Math.cos(a)-cS/2,top:cy+cR*Math.sin(a)-cS/2}}/>; })}
+      <div className="absolute rounded-full flex items-center justify-center"
+        style={{left:cx-tR,top:cy-tR,width:tR*2,height:tR*2,background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1.5px solid #d97706"}}>
+        <span className="font-black text-amber-900" style={{fontSize:fS}}>{cell.tableNumber||"?"}</span>
       </div>
     </div>
   );
 }
-function OvalTableVisual({ cell, ghost }: { cell: Cell; ghost?: boolean }) {
-  const seats=cell.seats??4; const half=BASE/2; const rx=13; const ry=10; const trx=10; const try_=7; const cS=7;
+function OvalTableVisual({ cell, ghost, w = 1, h = 1 }: { cell: Cell; ghost?: boolean; w?: number; h?: number }) {
+  const seats = cell.seats ?? 4;
+  const cx  = BASE * w / 2;
+  const cy  = BASE * h / 2;
+  const trx = Math.round(BASE * w * 0.33);
+  const try_= Math.round(BASE * h * 0.23);
+  const rx  = Math.round(BASE * w * 0.43);
+  const ry  = Math.round(BASE * h * 0.33);
+  const cS  = Math.max(5, Math.round(BASE * Math.min(w,h) * 0.23));
+  const fS  = Math.max(6, Math.round(BASE * Math.min(w,h) * 0.22));
   return (
-    <div style={{ width:BASE, height:BASE, position:"relative", opacity:ghost?0.5:1, pointerEvents:"none" }}>
-      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2; return <div key={i} className="absolute rounded-full" style={{width:cS,height:cS,background:"#92400e",boxShadow:"0 1px 2px rgba(0,0,0,0.25)",left:half+rx*Math.cos(a)-cS/2,top:half+ry*Math.sin(a)-cS/2}}/>; })}
-      <div className="absolute flex items-center justify-center" style={{left:half-trx,top:half-try_,width:trx*2,height:try_*2,borderRadius:"50%",background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1.5px solid #d97706"}}>
-        <span className="font-black text-amber-900" style={{fontSize:7}}>{cell.tableNumber||"?"}</span>
+    <div style={{ width:BASE*w, height:BASE*h, position:"relative", opacity:ghost?0.5:1, pointerEvents:"none" }}>
+      {Array.from({length:seats}).map((_,i)=>{ const a=(i*2*Math.PI/seats)-Math.PI/2;
+        return <div key={i} className="absolute rounded-full" style={{width:cS,height:cS,background:"#92400e",boxShadow:"0 1px 2px rgba(0,0,0,0.25)",left:cx+rx*Math.cos(a)-cS/2,top:cy+ry*Math.sin(a)-cS/2}}/>; })}
+      <div className="absolute flex items-center justify-center"
+        style={{left:cx-trx,top:cy-try_,width:trx*2,height:try_*2,borderRadius:"50%",background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1.5px solid #d97706"}}>
+        <span className="font-black text-amber-900" style={{fontSize:fS}}>{cell.tableNumber||"?"}</span>
       </div>
     </div>
   );
 }
-function TableCellVisual({ cell, ghost, w, h }: { cell: Cell; ghost?: boolean; w?: number; h?: number }) {
+function TableCellVisual({ cell, ghost, w = 1, h = 1 }: { cell: Cell; ghost?: boolean; w?: number; h?: number }) {
   const s = cell.tableShape ?? "square";
-  if (s==="round") return <RoundTableVisual cell={cell} ghost={ghost}/>;
-  if (s==="oval")  return <OvalTableVisual  cell={cell} ghost={ghost}/>;
+  if (s==="round") return <RoundTableVisual cell={cell} ghost={ghost} w={w} h={h}/>;
+  if (s==="oval")  return <OvalTableVisual  cell={cell} ghost={ghost} w={w} h={h}/>;
   return <SquareTableVisual cell={cell} ghost={ghost} w={w} h={h}/>;
 }
 
@@ -303,7 +330,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         }
         return;
       }
-      const seats=4; const {w,h}=getDefaultTableSize(seats);
+      const seats=4; const {w,h}=getDefaultTableSize(seats, tableShape);
       setCellMap(prev => { const next=new Map(prev); placeTable(next,r,c,{tableNumber:"",seats,tableShape,tableW:w,tableH:h}); return next; });
       setTableForm({ tableNumber:"", seats:String(seats), shape:tableShape, w:String(w), h:String(h) });
       setEditTable({r,c});
@@ -533,7 +560,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   <label className="block text-sm font-medium text-gray-700 mb-1">צורת שולחן</label>
                   <div className="flex gap-2">
                     {TABLE_SHAPES.map(({shape,label})=>(
-                      <button key={shape} type="button" onClick={()=>setTableForm(f=>({...f,shape}))}
+                      <button key={shape} type="button" onClick={()=>{
+                        const seats=parseInt(tableForm.seats)||4;
+                        const def=getDefaultTableSize(seats, shape);
+                        setTableForm(f=>({...f,shape,w:String(def.w),h:String(def.h)}));
+                      }}
                         className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${tableForm.shape===shape?"border-amber-400 text-white":"border-gray-200 text-gray-600 hover:bg-gray-50"}`}
                         style={tableForm.shape===shape?{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}:undefined}>{label}</button>
                     ))}
@@ -543,7 +574,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   <label className="block text-sm font-medium text-gray-700 mb-1">מספר כסאות</label>
                   <div className="flex gap-2">
                     {[2,4,6,8,10].map(n=>{
-                      const def=getDefaultTableSize(n);
+                      const def=getDefaultTableSize(n, tableForm.shape);
                       return <button key={n} type="button" onClick={()=>setTableForm(f=>({...f,seats:String(n),w:String(def.w),h:String(def.h)}))}
                         className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${tableForm.seats===String(n)?"border-amber-400 text-white":"border-gray-200 text-gray-600 hover:bg-gray-50"}`}
                         style={tableForm.seats===String(n)?{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}:undefined}>{n}</button>;
