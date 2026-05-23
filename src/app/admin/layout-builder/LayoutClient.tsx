@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 type CellType    = "empty" | "wall" | "table" | "table-part" | "bar";
@@ -93,8 +93,21 @@ function getChairDist(seats: number, w = 1, h = 1) {
 /* ── Chair atoms ── */
 const HC = () => <div style={{ width: 10, height: 7, background: "#92400e", borderRadius: 2, flexShrink: 0, boxShadow:"0 1px 2px rgba(0,0,0,0.25)" }} />;
 const VC = () => <div style={{ width: 7, height: 10, background: "#92400e", borderRadius: 2, flexShrink: 0, boxShadow:"0 1px 2px rgba(0,0,0,0.25)" }} />;
-function Stool({ size = 9 }: { size?: number }) {
-  return <div style={{ width: size, height: size, borderRadius: "50%", background: "#fbbf24", border: "1.5px solid #92400e", flexShrink: 0, boxShadow:"0 1px 3px rgba(0,0,0,0.2)" }} />;
+/* Bar stool – top-down view: round seat + backrest on the outer side (away from bar) */
+function BarStool({ side }: { side: BarSide }) {
+  const S = 10; // seat diameter
+  const B = 3;  // backrest thickness
+  const bw = 7; // backrest width
+  const seat = <div style={{ width:S, height:S, borderRadius:"50%", flexShrink:0,
+    background:"radial-gradient(circle at 35% 35%,#fde68a,#d97706)",
+    border:"1.5px solid #92400e", boxShadow:"0 1px 3px rgba(0,0,0,0.3)" }} />;
+  const backH = <div style={{ width:bw, height:B, borderRadius:1.5, flexShrink:0, background:"#78350f" }} />;
+  const backV = <div style={{ width:B, height:bw, borderRadius:1.5, flexShrink:0, background:"#78350f" }} />;
+  // back is on OUTER side (away from bar counter)
+  if (side==="top")    return <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,pointerEvents:"none"}}>{backH}{seat}</div>;
+  if (side==="bottom") return <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,pointerEvents:"none"}}>{seat}{backH}</div>;
+  if (side==="left")   return <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:1,pointerEvents:"none"}}>{backV}{seat}</div>;
+  return                      <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:1,pointerEvents:"none"}}>{seat}{backV}</div>;
 }
 
 /* ── Table visuals ── */
@@ -152,24 +165,34 @@ function WallCellVisual({ r, c, cellMap }: { r: number; c: number; cellMap: Map<
 
 function BarCellVisual({ r, c, cell, cellMap, stools }: { r: number; c: number; cell: Cell; cellMap: Map<string,Cell>; stools: number }) {
   const side = cell.barSide ?? "top";
-  const N=cellMap.get(cellKey(r-1,c))?.type==="bar"; const S=cellMap.get(cellKey(r+1,c))?.type==="bar";
+  const N=cellMap.get(cellKey(r-1,c))?.type==="bar"; const Sc=cellMap.get(cellKey(r+1,c))?.type==="bar";
   const E=cellMap.get(cellKey(r,c+1))?.type==="bar"; const W=cellMap.get(cellKey(r,c-1))?.type==="bar";
+  const GAP = 3; // gap between bar edge and first stool
+  const isH = side==="top" || side==="bottom";
+  const stoolStyle: React.CSSProperties = {
+    position:"absolute", display:"flex", alignItems:"center", justifyContent:"space-around",
+    flexDirection: isH ? "row" : "column",
+    ...(side==="top"    ? { left:0, right:0, bottom: BASE + GAP } : {}),
+    ...(side==="bottom" ? { left:0, right:0, top:    BASE + GAP } : {}),
+    ...(side==="left"   ? { top:0, bottom:0, right:  BASE + GAP } : {}),
+    ...(side==="right"  ? { top:0, bottom:0, left:   BASE + GAP } : {}),
+  };
   return (
     <div style={{ width:BASE, height:BASE, position:"relative", pointerEvents:"none" }}>
-      <div className="absolute inset-0" style={{ borderRadius:connRadius(N,S,E,W), background:"linear-gradient(135deg,#78350f,#92400e)",
+      {/* Bar surface */}
+      <div className="absolute inset-0" style={{ borderRadius:connRadius(N,Sc,E,W), background:"linear-gradient(135deg,#78350f,#92400e)",
         backgroundImage:"repeating-linear-gradient(90deg,rgba(255,255,255,0.05) 0,rgba(255,255,255,0.05) 1px,transparent 1px,transparent 7px)" }} />
+      {/* Label on first cell of group */}
       {cell.barLabel && !N && !W && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="font-black text-amber-200 leading-none" style={{fontSize:7}}>{cell.barLabel}</span>
         </div>
       )}
+      {/* Stools OUTSIDE the bar — overflow into aisle */}
       {stools > 0 && (
-        <>
-          {side==="top"    && <div className="absolute left-0 right-0 flex justify-around px-1" style={{top:2,pointerEvents:"none"}}>{Array.from({length:stools}).map((_,i)=><Stool key={i}/>)}</div>}
-          {side==="bottom" && <div className="absolute left-0 right-0 flex justify-around px-1" style={{bottom:2,pointerEvents:"none"}}>{Array.from({length:stools}).map((_,i)=><Stool key={i}/>)}</div>}
-          {side==="left"   && <div className="absolute top-0 bottom-0 flex flex-col justify-around py-1" style={{left:2,pointerEvents:"none"}}>{Array.from({length:stools}).map((_,i)=><Stool key={i}/>)}</div>}
-          {side==="right"  && <div className="absolute top-0 bottom-0 flex flex-col justify-around py-1" style={{right:2,pointerEvents:"none"}}>{Array.from({length:stools}).map((_,i)=><Stool key={i}/>)}</div>}
-        </>
+        <div style={stoolStyle}>
+          {Array.from({length:stools}).map((_,i) => <BarStool key={i} side={side} />)}
+        </div>
       )}
     </div>
   );
