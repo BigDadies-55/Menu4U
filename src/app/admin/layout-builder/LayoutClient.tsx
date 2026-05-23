@@ -93,21 +93,20 @@ function getChairDist(seats: number, w = 1, h = 1) {
 /* ── Chair atoms ── */
 const HC = () => <div style={{ width: 10, height: 7, background: "#92400e", borderRadius: 2, flexShrink: 0, boxShadow:"0 1px 2px rgba(0,0,0,0.25)" }} />;
 const VC = () => <div style={{ width: 7, height: 10, background: "#92400e", borderRadius: 2, flexShrink: 0, boxShadow:"0 1px 2px rgba(0,0,0,0.25)" }} />;
-/* Bar stool – top-down view: round seat + backrest on the outer side (away from bar) */
-function BarStool({ side }: { side: BarSide }) {
-  const S = 10; // seat diameter
-  const B = 3;  // backrest thickness
-  const bw = 7; // backrest width
-  const seat = <div style={{ width:S, height:S, borderRadius:"50%", flexShrink:0,
+/* Bar stool at screen-pixel scale – round seat + outer backrest (top-down view).
+   Rendered OUTSIDE the transform:scale wrapper so z-index works correctly. */
+function BarStoolPx({ side, sz }: { side: BarSide; sz: number }) {
+  const B  = Math.max(2, Math.round(sz * 0.28));
+  const bw = Math.round(sz * 0.68);
+  const seat = <div style={{ width:sz, height:sz, borderRadius:"50%", flexShrink:0,
     background:"radial-gradient(circle at 35% 35%,#fde68a,#d97706)",
-    border:"1.5px solid #92400e", boxShadow:"0 1px 3px rgba(0,0,0,0.3)" }} />;
-  const backH = <div style={{ width:bw, height:B, borderRadius:1.5, flexShrink:0, background:"#78350f" }} />;
-  const backV = <div style={{ width:B, height:bw, borderRadius:1.5, flexShrink:0, background:"#78350f" }} />;
-  // back is on OUTER side (away from bar counter)
-  if (side==="top")    return <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,pointerEvents:"none"}}>{backH}{seat}</div>;
-  if (side==="bottom") return <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,pointerEvents:"none"}}>{seat}{backH}</div>;
-  if (side==="left")   return <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:1,pointerEvents:"none"}}>{backV}{seat}</div>;
-  return                      <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:1,pointerEvents:"none"}}>{seat}{backV}</div>;
+    border:"1px solid #92400e", boxShadow:"0 1px 2px rgba(0,0,0,0.3)" }} />;
+  const bH = <div style={{ width:bw, height:B, borderRadius:1, flexShrink:0, background:"#78350f" }} />;
+  const bV = <div style={{ width:B, height:bw, borderRadius:1, flexShrink:0, background:"#78350f" }} />;
+  if (side==="top")    return <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,pointerEvents:"none"}}>{bH}{seat}</div>;
+  if (side==="bottom") return <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,pointerEvents:"none"}}>{seat}{bH}</div>;
+  if (side==="left")   return <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:1,pointerEvents:"none"}}>{bV}{seat}</div>;
+  return                      <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:1,pointerEvents:"none"}}>{seat}{bV}</div>;
 }
 
 /* ── Table visuals ── */
@@ -163,35 +162,16 @@ function WallCellVisual({ r, c, cellMap }: { r: number; c: number; cellMap: Map<
       "repeating-linear-gradient(90deg,rgba(255,255,255,0.06) 0,rgba(255,255,255,0.06) 1px,transparent 1px,transparent 12px)"].join(",") }} />;
 }
 
-function BarCellVisual({ r, c, cell, cellMap, stools }: { r: number; c: number; cell: Cell; cellMap: Map<string,Cell>; stools: number }) {
-  const side = cell.barSide ?? "top";
+function BarCellVisual({ r, c, cell, cellMap }: { r: number; c: number; cell: Cell; cellMap: Map<string,Cell> }) {
   const N=cellMap.get(cellKey(r-1,c))?.type==="bar"; const Sc=cellMap.get(cellKey(r+1,c))?.type==="bar";
   const E=cellMap.get(cellKey(r,c+1))?.type==="bar"; const W=cellMap.get(cellKey(r,c-1))?.type==="bar";
-  const GAP = 3; // gap between bar edge and first stool
-  const isH = side==="top" || side==="bottom";
-  const stoolStyle: React.CSSProperties = {
-    position:"absolute", display:"flex", alignItems:"center", justifyContent:"space-around",
-    flexDirection: isH ? "row" : "column",
-    ...(side==="top"    ? { left:0, right:0, bottom: BASE + GAP } : {}),
-    ...(side==="bottom" ? { left:0, right:0, top:    BASE + GAP } : {}),
-    ...(side==="left"   ? { top:0, bottom:0, right:  BASE + GAP } : {}),
-    ...(side==="right"  ? { top:0, bottom:0, left:   BASE + GAP } : {}),
-  };
   return (
     <div style={{ width:BASE, height:BASE, position:"relative", pointerEvents:"none" }}>
-      {/* Bar surface */}
       <div className="absolute inset-0" style={{ borderRadius:connRadius(N,Sc,E,W), background:"linear-gradient(135deg,#78350f,#92400e)",
         backgroundImage:"repeating-linear-gradient(90deg,rgba(255,255,255,0.05) 0,rgba(255,255,255,0.05) 1px,transparent 1px,transparent 7px)" }} />
-      {/* Label on first cell of group */}
       {cell.barLabel && !N && !W && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="font-black text-amber-200 leading-none" style={{fontSize:7}}>{cell.barLabel}</span>
-        </div>
-      )}
-      {/* Stools OUTSIDE the bar — overflow into aisle */}
-      {stools > 0 && (
-        <div style={stoolStyle}>
-          {Array.from({length:stools}).map((_,i) => <BarStool key={i} side={side} />)}
         </div>
       )}
     </div>
@@ -500,11 +480,33 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                       {(isWall||isBar||isTable||isDst) && (
                         <div style={{ position:"absolute", left:0, top:0, width:BASE*w, height:BASE*h, transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none" }}>
                           {isWall  && <WallCellVisual  r={r} c={c} cellMap={cellMap}/>}
-                          {isBar   && <BarCellVisual   r={r} c={c} cell={cell!} cellMap={cellMap} stools={stools}/>}
+                          {isBar   && <BarCellVisual   r={r} c={c} cell={cell!} cellMap={cellMap}/>}
                           {isTable && <TableCellVisual cell={cell!} ghost={isSrc&&isDragging.current} w={w} h={h}/>}
                           {isDst&&dragSource&&!isTable && <TableCellVisual cell={{...dragSource,r,c}} ghost w={dragSource.tableW??1} h={dragSource.tableH??1}/>}
                         </div>
                       )}
+                      {/* Bar stools rendered at screen-pixel scale OUTSIDE the scaled wrapper.
+                          z-index:20 ensures they always paint above adjacent grid cells regardless of DOM order. */}
+                      {isBar && stools > 0 && (() => {
+                        const side = cell!.barSide ?? "top";
+                        const isH  = side === "top" || side === "bottom";
+                        const sz   = Math.max(7, Math.round(cellPx * 0.42));
+                        const gap  = Math.max(2, Math.round(cellPx * 0.1));
+                        const cs: React.CSSProperties = {
+                          position:"absolute", display:"flex", alignItems:"center",
+                          justifyContent:"space-around", pointerEvents:"none", zIndex:20,
+                          flexDirection: isH ? "row" : "column",
+                          ...(side==="top"    ? { left:1, right:1, bottom: pxH + gap } : {}),
+                          ...(side==="bottom" ? { left:1, right:1, top:    pxH + gap } : {}),
+                          ...(side==="left"   ? { top:1, bottom:1, right:  pxW + gap } : {}),
+                          ...(side==="right"  ? { top:1, bottom:1, left:   pxW + gap } : {}),
+                        };
+                        return (
+                          <div style={cs}>
+                            {Array.from({length:stools}).map((_,i)=><BarStoolPx key={i} side={side} sz={sz}/>)}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 }
