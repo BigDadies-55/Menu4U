@@ -364,9 +364,10 @@ export default function OrdersClient({
   // Group by table, sorted oldest first
   const byTable = new Map<string, Order[]>();
   [...activeOrders]
+    .filter(order => order.tableNumber && order.tableNumber.trim() !== "")
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .forEach(order => {
-      const key = order.tableNumber ?? "–";
+      const key = order.tableNumber!;
       if (!byTable.has(key)) byTable.set(key, []);
       byTable.get(key)!.push(order);
     });
