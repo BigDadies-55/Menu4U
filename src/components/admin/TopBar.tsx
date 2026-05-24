@@ -30,6 +30,7 @@ function getPageName(pathname: string) {
 
 /* ─── Type icons ─────────────────────────────────────────────── */
 const TYPE_ICON: Record<string, string> = {
+  page:       "📄",
   restaurant: "🍽️",
   menu:       "📋",
   item:       "🍕",

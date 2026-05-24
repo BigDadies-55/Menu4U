@@ -2,6 +2,30 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+/* ─── Static pages ───────────────────────────────────────────── */
+const PAGES = [
+  { label: "דשבורד",              sub: "דף",  href: "/admin",                  keywords: ["דשבורד","בית","home","dashboard"] },
+  { label: "מסעדות",              sub: "דף",  href: "/admin/restaurants",      keywords: ["מסעדות","מסעדה","restaurant"] },
+  { label: "תפריטים",             sub: "דף",  href: "/admin/menus",            keywords: ["תפריטים","תפריט","menu"] },
+  { label: "משתמשים",             sub: "דף",  href: "/admin/users",            keywords: ["משתמשים","משתמש","user"] },
+  { label: "לוגים",               sub: "דף",  href: "/admin/logs",             keywords: ["לוגים","לוג","log","audit"] },
+  { label: "הזמנות",              sub: "דף",  href: "/admin/orders",           keywords: ["הזמנות","הזמנה","order"] },
+  { label: "סטטיסטיקות הזמנות",  sub: "דף",  href: "/admin/orders/stats",     keywords: ["סטטיסטיקות","stats","ביצועים"] },
+  { label: "פריסת שולחנות",       sub: "דף",  href: "/admin/layout-builder",   keywords: ["שולחנות","פריסה","layout","שולחן"] },
+  { label: "KDS — Station Dark",  sub: "דף",  href: "/admin/kitchen",          keywords: ["kds","מטבח","kitchen","station"] },
+  { label: "KDS — Kanban",        sub: "דף",  href: "/admin/kitchen-kanban",   keywords: ["kanban","kds","מטבח"] },
+  { label: "KDS — Ticket Board",  sub: "דף",  href: "/admin/kitchen-tickets",  keywords: ["ticket","kds","מטבח"] },
+  { label: "KDS — תצוגת שולחן",  sub: "דף",  href: "/admin/kitchen-table",    keywords: ["kds","שולחן","תצוגה","table"] },
+];
+
+function matchPages(q: string) {
+  const lq = q.toLowerCase();
+  return PAGES.filter(p =>
+    p.label.includes(q) ||
+    p.keywords.some(k => k.includes(lq))
+  ).slice(0, 3);
+}
+
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -24,9 +48,12 @@ export async function GET(req: Request) {
   }
 
   const restaurantFilter = allowedIds ? { restaurantId: { in: allowedIds } } : {};
-
-  // Check if query looks like a table number or order ID fragment
   const isNumeric = /^\d+$/.test(q);
+
+  const STATUS_HE: Record<string, string> = {
+    PENDING: "ממתין", CONFIRMED: "אושר", PREPARING: "בהכנה",
+    READY: "מוכן", DELIVERED: "הושלם", CANCELLED: "בוטל", PAID: "שולם",
+  };
 
   const [restaurants, menus, items, orders, users] = await Promise.all([
     // Restaurants
@@ -41,10 +68,7 @@ export async function GET(req: Request) {
 
     // Menus
     prisma.menu.findMany({
-      where: {
-        name: { contains: q, mode: "insensitive" },
-        ...restaurantFilter,
-      },
+      where: { name: { contains: q, mode: "insensitive" }, ...restaurantFilter },
       select: { id: true, name: true, restaurant: { select: { id: true, name: true } } },
       take: 3,
     }),
@@ -62,31 +86,29 @@ export async function GET(req: Request) {
       take: 4,
     }),
 
-    // Orders — search by table number, customer name, or order ID prefix
+    // Orders — broad search: table number, customer name, ID, or recent if query matches status keywords
     prisma.order.findMany({
       where: {
         ...restaurantFilter,
         OR: [
-          ...(isNumeric ? [{ tableNumber: { contains: q } }] : []),
+          ...(isNumeric ? [{ tableNumber: q }, { tableNumber: { contains: q } }] : []),
           { customerName: { contains: q, mode: "insensitive" as const } },
           { notes: { contains: q, mode: "insensitive" as const } },
-          { id: { startsWith: q } },
+          { id: { contains: q } },
+          // also match against item names in the order
+          { items: { some: { item: { name: { contains: q, mode: "insensitive" as const } } } } },
         ],
       },
       select: {
-        id: true,
-        tableNumber: true,
-        customerName: true,
-        status: true,
-        totalAmount: true,
-        createdAt: true,
+        id: true, tableNumber: true, customerName: true,
+        status: true, totalAmount: true, createdAt: true,
         restaurant: { select: { name: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 4,
     }),
 
-    // Users — only for admins
+    // Users — admins only
     ["SUPER_ADMIN", "ADMIN"].includes(role)
       ? prisma.user.findMany({
           where: {
@@ -101,13 +123,16 @@ export async function GET(req: Request) {
       : Promise.resolve([]),
   ]);
 
-  const STATUS_HE: Record<string, string> = {
-    PENDING: "ממתין", CONFIRMED: "אושר", PREPARING: "בהכנה",
-    READY: "מוכן", DELIVERED: "הושלם", CANCELLED: "בוטל", PAID: "שולם",
-  };
-
   type Result = { type: string; id: string; label: string; sub: string; href: string };
+
+  const pages = matchPages(q);
+
   const results: Result[] = [
+    // Pages first
+    ...pages.map(p => ({
+      type: "page", id: p.href, label: p.label, sub: "עמוד", href: p.href,
+    })),
+    // DB content
     ...restaurants.map(r => ({
       type: "restaurant", id: r.id, label: r.name, sub: "מסעדה",
       href: "/admin/restaurants",
@@ -122,14 +147,17 @@ export async function GET(req: Request) {
       sub: `פריט · ${i.category.menu.restaurant.name}`,
       href: `/admin/menus?restaurantId=${i.category.menu.restaurant.id}`,
     })),
-    ...orders.map(o => ({
-      type: "order", id: o.id,
-      label: o.customerName
-        ? `${o.customerName}${o.tableNumber ? ` · שולחן ${o.tableNumber}` : ""}`
-        : o.tableNumber ? `שולחן ${o.tableNumber}` : `הזמנה`,
-      sub: `הזמנה · ${STATUS_HE[o.status] ?? o.status} · ₪${o.totalAmount.toFixed(0)} · ${o.restaurant.name}`,
-      href: "/admin/orders",
-    })),
+    ...orders.map(o => {
+      const table   = o.tableNumber ? `שולחן ${o.tableNumber}` : null;
+      const name    = o.customerName ?? null;
+      const label   = [name, table].filter(Boolean).join(" · ") || "הזמנה";
+      const dateStr = new Date(o.createdAt).toLocaleDateString("he-IL");
+      return {
+        type: "order", id: o.id, label,
+        sub: `הזמנה · ${STATUS_HE[o.status] ?? o.status} · ₪${o.totalAmount.toFixed(0)} · ${dateStr} · ${o.restaurant.name}`,
+        href: "/admin/orders",
+      };
+    }),
     ...(users as { id: string; name: string | null; email: string }[]).map(u => ({
       type: "user", id: u.id, label: u.name ?? u.email,
       sub: `משתמש · ${u.email}`,
@@ -137,5 +165,5 @@ export async function GET(req: Request) {
     })),
   ];
 
-  return NextResponse.json(results.slice(0, 12));
+  return NextResponse.json(results.slice(0, 14));
 }
