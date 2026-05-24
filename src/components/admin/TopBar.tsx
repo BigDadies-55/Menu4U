@@ -63,8 +63,10 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
       className="sticky top-0 z-20 flex items-center justify-between px-4"
       style={{
         height: 40,
-        background: "#fff",
-        borderBottom: "1px solid #e5e7eb",
+        background: "rgba(255,255,255,0.7)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        borderBottom: "1px solid rgba(229,231,235,0.6)",
         direction: "rtl",
       }}
     >
@@ -81,6 +83,14 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
             <line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
+
+        {/* Logo mark */}
+        <div
+          className="w-6 h-6 rounded-md flex items-center justify-center font-black text-[11px] text-white shrink-0"
+          style={{ background: "linear-gradient(135deg,#c9a35d,#8B6914)" }}
+        >
+          M
+        </div>
 
         {/* Page title */}
         <h1 className="text-[13px] font-semibold text-gray-800 tracking-tight">{pageName}</h1>
