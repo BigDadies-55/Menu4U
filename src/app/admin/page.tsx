@@ -58,14 +58,16 @@ export default async function AdminDashboard() {
         <p className="text-gray-500 mt-1">ברוך הבא לממשק הניהול של Menu4U</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {cards.map(card => (
-          <div key={card.label} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3 ${card.color}`}>
+          <div key={card.label} className="bg-white rounded-xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 ${card.color}`}>
               {card.icon}
             </div>
-            <div className="text-2xl font-bold text-gray-900">{card.value}</div>
-            <div className="text-sm text-gray-500 mt-1">{card.label}</div>
+            <div>
+              <div className="text-lg font-bold text-gray-900 leading-tight">{card.value}</div>
+              <div className="text-xs text-gray-400 mt-0.5">{card.label}</div>
+            </div>
           </div>
         ))}
       </div>
