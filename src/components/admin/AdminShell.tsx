@@ -11,12 +11,13 @@ interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
   kdsView: string;
   adminPalette?: string;
+  adminBg?: string;
   siteLogo?: string | null;
   siteName?: string;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", siteLogo, siteName = "Menu4U", children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", siteLogo, siteName = "Menu4U", children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [showPasswordModal, setShowPasswordModal]  = useState(false);
@@ -64,7 +65,7 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", siteL
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#f0ece3" }} dir="rtl">
+    <div className="min-h-screen" style={{ background: adminBg }} dir="rtl">
 
       <Sidebar
         user={user} kdsView={kdsView}

@@ -2,21 +2,32 @@
 
 import { useState, useRef } from "react";
 
-/* ─── Admin palette options ──────────────────────────────── */
+/* ─── Admin sidebar palette options ─────────────────────── */
 const PALETTES = [
-  { id: "dark",   label: "Dark",   bg: "#0f111a", accent: "#f59e0b", preview: "linear-gradient(135deg,#0f111a,#1a1c27)", accentLabel: "#f59e0b", desc: "ברירת מחדל — כהה עם זהב" },
-  { id: "purple", label: "Purple", bg: "#130c1e", accent: "#7c3aed", preview: "linear-gradient(135deg,#130c1e,#1e1032)", accentLabel: "#7c3aed", desc: "סגול כהה" },
-  { id: "blue",   label: "Blue",   bg: "#080f1e", accent: "#2563eb", preview: "linear-gradient(135deg,#080f1e,#0d1a35)", accentLabel: "#2563eb", desc: "כחול כהה" },
-  { id: "green",  label: "Green",  bg: "#071510", accent: "#16a34a", preview: "linear-gradient(135deg,#071510,#0d2218)", accentLabel: "#16a34a", desc: "ירוק כהה" },
-  { id: "rose",   label: "Rose",   bg: "#150a0e", accent: "#e11d48", preview: "linear-gradient(135deg,#150a0e,#220c13)", accentLabel: "#e11d48", desc: "אדום כהה" },
+  { id: "dark",   label: "Dark",   bg: "#0f111a", accent: "#f59e0b", preview: "linear-gradient(135deg,#0f111a,#1a1c27)", desc: "ברירת מחדל — כהה עם זהב" },
+  { id: "purple", label: "Purple", bg: "#130c1e", accent: "#7c3aed", preview: "linear-gradient(135deg,#130c1e,#1e1032)", desc: "סגול כהה" },
+  { id: "blue",   label: "Blue",   bg: "#080f1e", accent: "#2563eb", preview: "linear-gradient(135deg,#080f1e,#0d1a35)", desc: "כחול כהה" },
+  { id: "green",  label: "Green",  bg: "#071510", accent: "#16a34a", preview: "linear-gradient(135deg,#071510,#0d2218)", desc: "ירוק כהה" },
+  { id: "rose",   label: "Rose",   bg: "#150a0e", accent: "#e11d48", preview: "linear-gradient(135deg,#150a0e,#220c13)", desc: "אדום כהה" },
 ] as const;
 
+/* ─── Background presets ─────────────────────────────────── */
+const BG_PRESETS = [
+  { id: "#f0ece3", label: "Sand",    desc: "חם — ברירת מחדל" },
+  { id: "#f8fafc", label: "White",   desc: "בהיר קריר" },
+  { id: "#f1f5f9", label: "Gray",    desc: "אפור בהיר" },
+  { id: "#1e2130", label: "Navy",    desc: "כחול כהה" },
+  { id: "#111827", label: "Charcoal",desc: "אפור כהה" },
+];
+
+/* ─── Types ──────────────────────────────────────────────── */
 type Config = {
   siteName: string; logo: string | null;
   domain: string | null; copyright: string | null;
-  adminPalette: string;
+  adminPalette: string; adminBg: string;
 };
 
+/* ─── Section wrapper ────────────────────────────────────── */
 function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -29,12 +40,14 @@ function Section({ title, icon, children }: { title: string; icon: string; child
   );
 }
 
+/* ─── Main ───────────────────────────────────────────────── */
 export default function SettingsClient({ config: initial }: { config: Config }) {
-  const [form,         setForm]         = useState<Config>({ ...initial });
-  const [saving,       setSaving]       = useState(false);
-  const [saved,        setSaved]        = useState(false);
-  const [uploadingLogo,setUploadingLogo]= useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [form,          setForm]          = useState<Config>({ ...initial });
+  const [saving,        setSaving]        = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileRef    = useRef<HTMLInputElement>(null);
+  const colorRef   = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof Config>(field: K, value: Config[K]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -62,17 +75,19 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     if (res.ok) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
-      // Reload to apply palette change
       setTimeout(() => window.location.reload(), 400);
     }
   }
+
+  /* Is the current bg a custom color (not one of the presets)? */
+  const isCustomBg = !BG_PRESETS.some(p => p.id === form.adminBg);
 
   return (
     <div className="p-4 md:p-8 max-w-2xl">
       <div className="space-y-5">
 
-        {/* ── Palette ── */}
-        <Section title="פלטת צבעים לפאנל הניהול" icon="🎨">
+        {/* ── Sidebar palette ── */}
+        <Section title="פלטת צבעים לסיידבר" icon="🎨">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {PALETTES.map(p => {
               const active = form.adminPalette === p.id;
@@ -87,11 +102,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                     boxShadow: active ? `0 0 0 3px ${p.accent}33` : "none",
                   }}
                 >
-                  {/* Preview */}
                   <div className="h-16 flex flex-col items-center justify-center gap-1.5 px-2">
-                    {/* Fake sidebar strip */}
                     <div className="w-4 h-8 rounded-sm opacity-60" style={{ background: p.bg }} />
-                    {/* Accent bar */}
                     <div className="w-6 h-1 rounded-full" style={{ background: p.accent }} />
                   </div>
                   <div className="px-1.5 py-2 text-center border-t" style={{ borderColor: `${p.accent}22` }}>
@@ -111,6 +123,94 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
             })}
           </div>
           <p className="text-xs text-gray-400 mt-3">הצבע ישתנה בסיידבר לאחר שמירה ורענון הדף</p>
+        </Section>
+
+        {/* ── Background color ── */}
+        <Section title="צבע רקע הפאנל" icon="🖌️">
+          {/* 5 presets */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
+            {BG_PRESETS.map(p => {
+              const active = form.adminBg === p.id;
+              const isDark = p.id.startsWith("#1") || p.id.startsWith("#0");
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => update("adminBg", p.id)}
+                  title={`${p.label} — ${p.desc}`}
+                  className="relative flex flex-col items-center gap-1.5 rounded-xl p-2.5 border-2 transition-all"
+                  style={{
+                    background: p.id,
+                    borderColor: active ? "#f59e0b" : "rgba(0,0,0,0.08)",
+                    boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.25)" : "none",
+                  }}
+                >
+                  {/* Color swatch fill */}
+                  <div className="w-full h-7 rounded-md" style={{ background: p.id, border: "1px solid rgba(0,0,0,0.06)" }} />
+                  <span className="text-[10px] font-semibold leading-tight" style={{ color: isDark ? "#e5e7eb" : "#374151" }}>
+                    {p.label}
+                  </span>
+                  {active && (
+                    <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Custom color button */}
+            <button
+              onClick={() => colorRef.current?.click()}
+              title="בחר צבע מותאם אישית"
+              className="relative flex flex-col items-center gap-1.5 rounded-xl p-2.5 border-2 transition-all"
+              style={{
+                borderColor: isCustomBg ? "#f59e0b" : "rgba(0,0,0,0.08)",
+                boxShadow: isCustomBg ? "0 0 0 3px rgba(245,158,11,0.25)" : "none",
+                background: isCustomBg ? form.adminBg : "white",
+              }}
+            >
+              <div
+                className="w-full h-7 rounded-md flex items-center justify-center"
+                style={{
+                  background: isCustomBg
+                    ? `conic-gradient(from 0deg, #f59e0b, #ec4899, #3b82f6, #10b981, #f59e0b)`
+                    : `conic-gradient(from 0deg, #f59e0b, #ec4899, #3b82f6, #10b981, #f59e0b)`,
+                  opacity: isCustomBg ? 0.6 : 1,
+                }}
+              />
+              <span className="text-[10px] font-semibold text-gray-600 leading-tight">Custom</span>
+              {isCustomBg && (
+                <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              )}
+            </button>
+            {/* Hidden native color picker */}
+            <input
+              ref={colorRef}
+              type="color"
+              className="sr-only"
+              value={isCustomBg ? form.adminBg : "#f0ece3"}
+              onChange={e => update("adminBg", e.target.value)}
+            />
+          </div>
+
+          {/* Current color preview */}
+          <div className="flex items-center gap-3 mt-2">
+            <div className="w-8 h-8 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminBg }} />
+            <span className="text-xs font-mono text-gray-500 uppercase">{form.adminBg}</span>
+            <button
+              onClick={() => colorRef.current?.click()}
+              className="text-xs text-amber-700 underline hover:no-underline"
+            >
+              שנה צבע
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">רקע אזור התוכן הראשי של פאנל הניהול</p>
         </Section>
 
         {/* ── Site name ── */}

@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit";
 
 const DEFAULTS = {
   id: "default", siteName: "Menu4U", logo: null,
-  domain: null, copyright: null, adminPalette: "dark",
+  domain: null, copyright: null, adminPalette: "dark", adminBg: "#f0ece3",
 };
 
 export async function GET() {
@@ -25,7 +25,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();
-  const { siteName, logo, domain, copyright, adminPalette } = body;
+  const { siteName, logo, domain, copyright, adminPalette, adminBg } = body;
   try {
     await prisma.$executeRawUnsafe(`
       UPDATE "SiteConfig" SET
@@ -34,10 +34,11 @@ export async function PATCH(req: Request) {
         "domain"       = $3,
         "copyright"    = $4,
         "adminPalette" = $5,
+        "adminBg"      = $6,
         "updatedAt"    = NOW()
       WHERE id = 'default'
     `, siteName ?? "Menu4U", logo ?? null, domain ?? null,
-       copyright ?? null, adminPalette ?? "dark");
+       copyright ?? null, adminPalette ?? "dark", adminBg ?? "#f0ece3");
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });
     return NextResponse.json({ success: true });
   } catch {

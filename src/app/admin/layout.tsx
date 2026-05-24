@@ -42,17 +42,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Load site config (with fallback when table doesn't exist yet)
   let adminPalette = "dark";
+  let adminBg = "#f0ece3";
   let siteLogo: string | null = null;
   let siteName = "Menu4U";
   try {
-    type Row = { adminPalette: string; logo: string | null; siteName: string };
+    type Row = { adminPalette: string; adminBg: string; logo: string | null; siteName: string };
     const rows = await prisma.$queryRaw<Row[]>`
-      SELECT "adminPalette", "logo", "siteName" FROM "SiteConfig" WHERE id = 'default' LIMIT 1
+      SELECT "adminPalette", "adminBg", "logo", "siteName" FROM "SiteConfig" WHERE id = 'default' LIMIT 1
     `;
     if (rows[0]) {
       adminPalette = rows[0].adminPalette ?? "dark";
-      siteLogo     = rows[0].logo ?? null;
-      siteName     = rows[0].siteName ?? "Menu4U";
+      adminBg      = rows[0].adminBg      ?? "#f0ece3";
+      siteLogo     = rows[0].logo         ?? null;
+      siteName     = rows[0].siteName     ?? "Menu4U";
     }
   } catch {
     // Table doesn't exist yet — use defaults
@@ -63,6 +65,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       user={session.user}
       kdsView={kdsView}
       adminPalette={adminPalette}
+      adminBg={adminBg}
       siteLogo={siteLogo}
       siteName={siteName}
     >
