@@ -48,21 +48,32 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   let siteName = "Menu4U";
   let adminSidebarBg: string | null = null;
   let adminSidebarAccent: string | null = null;
+  let adminSidebarTextColor = "#9ca3af";
+  let adminContentTextColor = "#111827";
   try {
     // Full query (all columns including recently added ones)
-    type FullRow = { adminPalette: string; adminBg: string; adminBgImage: string | null; logo: string | null; siteName: string; adminSidebarBg: string | null; adminSidebarAccent: string | null };
+    type FullRow = {
+      adminPalette: string; adminBg: string; adminBgImage: string | null;
+      logo: string | null; siteName: string;
+      adminSidebarBg: string | null; adminSidebarAccent: string | null;
+      adminSidebarTextColor: string; adminContentTextColor: string;
+    };
     const rows = await prisma.$queryRaw<FullRow[]>`
-      SELECT "adminPalette", "adminBg", "adminBgImage", "logo", "siteName", "adminSidebarBg", "adminSidebarAccent"
+      SELECT "adminPalette", "adminBg", "adminBgImage", "logo", "siteName",
+             "adminSidebarBg", "adminSidebarAccent",
+             "adminSidebarTextColor", "adminContentTextColor"
       FROM "SiteConfig" WHERE id = 'default' LIMIT 1
     `;
     if (rows[0]) {
-      adminPalette       = rows[0].adminPalette      ?? "dark";
-      adminBg            = rows[0].adminBg           ?? "#f0ece3";
-      adminBgImage       = rows[0].adminBgImage      ?? null;
-      siteLogo           = rows[0].logo              ?? null;
-      siteName           = rows[0].siteName          ?? "Menu4U";
-      adminSidebarBg     = rows[0].adminSidebarBg    ?? null;
-      adminSidebarAccent = rows[0].adminSidebarAccent ?? null;
+      adminPalette           = rows[0].adminPalette           ?? "dark";
+      adminBg                = rows[0].adminBg                ?? "#f0ece3";
+      adminBgImage           = rows[0].adminBgImage           ?? null;
+      siteLogo               = rows[0].logo                   ?? null;
+      siteName               = rows[0].siteName               ?? "Menu4U";
+      adminSidebarBg         = rows[0].adminSidebarBg         ?? null;
+      adminSidebarAccent     = rows[0].adminSidebarAccent     ?? null;
+      adminSidebarTextColor  = rows[0].adminSidebarTextColor  ?? "#9ca3af";
+      adminContentTextColor  = rows[0].adminContentTextColor  ?? "#111827";
     }
   } catch {
     // Newer columns may not exist — fall back to base columns only
@@ -93,6 +104,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       siteName={siteName}
       adminSidebarBg={adminSidebarBg}
       adminSidebarAccent={adminSidebarAccent}
+      adminSidebarTextColor={adminSidebarTextColor}
+      adminContentTextColor={adminContentTextColor}
     >
       {children}
     </AdminShell>

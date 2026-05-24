@@ -122,6 +122,7 @@ interface SidebarProps {
   siteName?: string;
   adminSidebarBg?: string | null;
   adminSidebarAccent?: string | null;
+  adminSidebarTextColor?: string;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -139,33 +140,28 @@ function isGroupActive(group: NavGroup, pathname: string): boolean {
 /* ─── Sub-components ─────────────────────────────────────── */
 
 /** Single nav link row */
-function NavLink({ href, label, I: Icon, isActive, depth = 0, isExpanded, onClick, accentColor, accentMuted }: {
+function NavLink({ href, label, I: Icon, isActive, depth = 0, isExpanded, onClick, accentColor, accentMuted, textColor = "#9ca3af" }: {
   href: string; label: string; I: React.FC;
   isActive: boolean; depth?: number; isExpanded: boolean; onClick?: () => void;
-  accentColor: string; accentMuted: string;
+  accentColor: string; accentMuted: string; textColor?: string;
 }) {
   return (
     <Link
       href={href}
       onClick={onClick}
       title={!isExpanded ? label : undefined}
-      className={cn(
-        "flex items-center rounded-lg transition-all duration-150 group",
-        !isActive && "text-[#9ca3af] hover:bg-white/[0.07] hover:text-white",
-      )}
+      className="flex items-center rounded-lg transition-all duration-150 group hover:bg-white/[0.07]"
       style={{
         padding: isExpanded ? (depth > 0 ? "7px 12px" : "9px 12px") : "9px 0",
         justifyContent: isExpanded ? "flex-start" : "center",
         paddingRight: isExpanded ? (depth > 0 ? 12 : 12) : 0,
         marginRight: isExpanded && depth > 0 ? 8 : 0,
-        ...(isActive ? { background: accentColor, color: "#fff" } : {}),
+        color: isActive ? "#fff" : textColor,
+        ...(isActive ? { background: accentColor } : {}),
       }}
     >
-      <span className={cn(
-        "shrink-0 flex transition-colors",
-        !isActive && "text-[#6b7280] group-hover:text-white",
-      )}
-        style={isActive ? { color: "#fff" } : undefined}
+      <span className="shrink-0 flex transition-colors"
+        style={{ color: isActive ? "#fff" : textColor }}
       >
         <Icon />
       </span>
@@ -186,7 +182,7 @@ function NavLink({ href, label, I: Icon, isActive, depth = 0, isExpanded, onClic
 }
 
 /** Accordion group header + collapsible children */
-function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLeaf, onClick, accentColor, accentMuted, accentText }: {
+function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLeaf, onClick, accentColor, accentMuted, accentText, textColor = "#9ca3af" }: {
   group: NavGroup;
   pathname: string;
   isExpanded: boolean;
@@ -197,6 +193,7 @@ function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLe
   accentColor: string;
   accentMuted: string;
   accentText: string;
+  textColor?: string;
 }) {
   const groupActive = isGroupActive(group, pathname);
   const visItems = group.items.filter(filterLeaf);
@@ -208,22 +205,17 @@ function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLe
       <button
         onClick={isExpanded ? onToggle : undefined}
         title={!isExpanded ? group.label : undefined}
-        className={cn(
-          "w-full flex items-center rounded-lg transition-all duration-150 group",
-          !(groupActive && !isExpanded) && "text-[#9ca3af] hover:bg-white/[0.07] hover:text-white",
-        )}
+        className="w-full flex items-center rounded-lg transition-all duration-150 group hover:bg-white/[0.07]"
         style={{
           padding: isExpanded ? "9px 12px" : "9px 0",
           justifyContent: isExpanded ? "flex-start" : "center",
           cursor: isExpanded ? "pointer" : "default",
-          ...(groupActive && !isExpanded ? { background: accentMuted, color: accentText } : {}),
+          color: (groupActive && !isExpanded) ? accentText : textColor,
+          ...(groupActive && !isExpanded ? { background: accentMuted } : {}),
         }}
       >
-        <span className={cn(
-          "shrink-0 flex transition-colors",
-          !groupActive && "text-[#6b7280] group-hover:text-white",
-        )}
-          style={groupActive ? { color: accentText } : undefined}
+        <span className="shrink-0 flex transition-colors"
+          style={{ color: groupActive ? accentText : textColor }}
         >
           <group.I />
         </span>
@@ -268,6 +260,7 @@ function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLe
                   href={item.href} label={item.label} I={item.I}
                   isActive={active} isExpanded depth={1} onClick={onClick}
                   accentColor={accentColor} accentMuted={accentMuted}
+                  textColor={textColor}
                 />
                 {active && visKids.map(c => (
                   <NavLink
@@ -275,6 +268,7 @@ function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLe
                     isActive={isLeafActive(c, pathname)}
                     isExpanded depth={2} onClick={onClick}
                     accentColor={accentColor} accentMuted={accentMuted}
+                    textColor={textColor}
                   />
                 ))}
               </div>
@@ -289,7 +283,8 @@ function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLe
 /* ─── Main component ─────────────────────────────────────── */
 export default function Sidebar({
   user, kdsView, pinned, onTogglePin, isOpen = false, onOpen, onClose, onChangePassword,
-  adminPalette = "dark", siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent,
+  adminPalette = "dark", siteLogo, siteName = "Menu4U",
+  adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af",
 }: SidebarProps) {
   const pathname  = usePathname();
   const pal = (() => {
@@ -300,6 +295,7 @@ export default function Sidebar({
     }
     return ADMIN_PALETTE_MAP[adminPalette ?? "dark"] ?? ADMIN_PALETTE_MAP.dark;
   })();
+  const textColor = adminSidebarTextColor;
 
   // openGroups: which accordion sections are open
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
@@ -412,6 +408,7 @@ export default function Sidebar({
               href={STANDALONE.href} label={STANDALONE.label} I={STANDALONE.I}
               isActive={standActive} isExpanded={expanded} onClick={close}
               accentColor={pal.accent} accentMuted={pal.accentMuted}
+              textColor={textColor}
             />
           )}
 
@@ -433,6 +430,7 @@ export default function Sidebar({
                 accentColor={pal.accent}
                 accentMuted={pal.accentMuted}
                 accentText={pal.accentText}
+                textColor={textColor}
               />
             );
           })}

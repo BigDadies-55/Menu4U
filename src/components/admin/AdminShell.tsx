@@ -17,10 +17,12 @@ interface Props {
   siteName?: string;
   adminSidebarBg?: string | null;
   adminSidebarAccent?: string | null;
+  adminSidebarTextColor?: string;
+  adminContentTextColor?: string;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#111827", children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [showPasswordModal, setShowPasswordModal]  = useState(false);
@@ -91,6 +93,7 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
         siteName={siteName}
         adminSidebarBg={adminSidebarBg}
         adminSidebarAccent={adminSidebarAccent}
+        adminSidebarTextColor={adminSidebarTextColor}
       />
 
       {/* Main — offset right so content is never under the sidebar */}
@@ -99,6 +102,7 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
         style={{
           marginRight: (pinned || sidebarOpen) ? SIDEBAR_PINNED : SIDEBAR_COLLAPSED,
           transition: "margin-right 230ms cubic-bezier(0.4,0,0.2,1)",
+          color: adminContentTextColor,
         }}
       >
         {/* On mobile: no right margin */}

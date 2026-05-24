@@ -9,6 +9,7 @@ const DEFAULTS = {
   domain: null as string | null, copyright: null as string | null,
   adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null as string | null,
   adminSidebarBg: null as string | null, adminSidebarAccent: null as string | null,
+  adminSidebarTextColor: "#9ca3af", adminContentTextColor: "#111827",
 };
 
 export default async function SettingsPage() {

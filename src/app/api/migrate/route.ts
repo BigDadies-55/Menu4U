@@ -154,6 +154,12 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarAccent" TEXT;
     `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarTextColor" TEXT NOT NULL DEFAULT '#9ca3af';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminContentTextColor" TEXT NOT NULL DEFAULT '#111827';
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

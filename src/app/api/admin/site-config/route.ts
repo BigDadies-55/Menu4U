@@ -7,6 +7,7 @@ const DEFAULTS = {
   id: "default", siteName: "Menu4U", logo: null, domain: null,
   copyright: null, adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null,
   adminSidebarBg: null, adminSidebarAccent: null,
+  adminSidebarTextColor: "#9ca3af", adminContentTextColor: "#111827",
 };
 
 export async function GET() {
@@ -26,25 +27,29 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();
-  const { siteName, logo, domain, copyright, adminPalette, adminBg, adminBgImage, adminSidebarBg, adminSidebarAccent } = body;
+  const { siteName, logo, domain, copyright, adminPalette, adminBg, adminBgImage,
+          adminSidebarBg, adminSidebarAccent, adminSidebarTextColor, adminContentTextColor } = body;
   try {
     await prisma.$executeRawUnsafe(`
       UPDATE "SiteConfig" SET
-        "siteName"           = $1,
-        "logo"               = $2,
-        "domain"             = $3,
-        "copyright"          = $4,
-        "adminPalette"       = $5,
-        "adminBg"            = $6,
-        "adminBgImage"       = $7,
-        "adminSidebarBg"     = $8,
-        "adminSidebarAccent" = $9,
-        "updatedAt"          = NOW()
+        "siteName"               = $1,
+        "logo"                   = $2,
+        "domain"                 = $3,
+        "copyright"              = $4,
+        "adminPalette"           = $5,
+        "adminBg"                = $6,
+        "adminBgImage"           = $7,
+        "adminSidebarBg"         = $8,
+        "adminSidebarAccent"     = $9,
+        "adminSidebarTextColor"  = $10,
+        "adminContentTextColor"  = $11,
+        "updatedAt"              = NOW()
       WHERE id = 'default'
     `, siteName ?? "Menu4U", logo ?? null, domain ?? null,
        copyright ?? null, adminPalette ?? "dark",
        adminBg ?? "#f0ece3", adminBgImage ?? null,
-       adminSidebarBg ?? null, adminSidebarAccent ?? null);
+       adminSidebarBg ?? null, adminSidebarAccent ?? null,
+       adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827");
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });
     return NextResponse.json({ success: true });
   } catch {
