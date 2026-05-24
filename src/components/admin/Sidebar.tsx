@@ -66,10 +66,8 @@ export default function Sidebar({ user, kdsView, isOpen = false, onClose, onChan
     return true;
   });
 
-  // Compute visible KDS children based on kdsView
-  const visibleKdsViews = kdsView === "ALL"
-    ? KDS_VIEWS
-    : KDS_VIEWS.filter(v => v.value === kdsView);
+  // All 4 KDS views always visible; kdsView used only as "preferred" highlight
+  const visibleKdsViews = KDS_VIEWS;
 
   const initials = (user.name ?? user.email ?? "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
