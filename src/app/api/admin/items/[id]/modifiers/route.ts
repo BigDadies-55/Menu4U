@@ -3,12 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 // GET — fetch all modifier groups + options for an item
-export async function GET(req: Request, { params }: { params: Promise<{ itemId: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { itemId } = await params;
+  const { id } = await params;
   const groups = await prisma.itemModifierGroup.findMany({
-    where: { itemId },
+    where: { id },
     include: { options: { orderBy: { order: "asc" } } },
     orderBy: { order: "asc" },
   });
@@ -16,10 +16,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ itemId: 
 }
 
 // PUT — replace all modifier groups for an item (full sync)
-export async function PUT(req: Request, { params }: { params: Promise<{ itemId: string }> }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { itemId } = await params;
+  const { id } = await params;
 
   type OptionIn = { id?: string; label: string; priceAdd?: number; order?: number };
   type GroupIn = { id?: string; name: string; required?: boolean; maxSelect?: number; order?: number; options: OptionIn[] };
@@ -28,12 +28,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ itemId: 
   // Delete groups not in the new list
   const keepGroupIds = groups.filter(g => g.id).map(g => g.id as string);
   await prisma.itemModifierGroup.deleteMany({
-    where: { itemId, id: { notIn: keepGroupIds } },
+    where: { id, id: { notIn: keepGroupIds } },
   });
 
   for (const [gi, group] of groups.entries()) {
     const groupData = {
-      itemId,
+      id,
       name: group.name,
       required: group.required ?? false,
       maxSelect: group.maxSelect ?? 1,
@@ -63,7 +63,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ itemId: 
   }
 
   const result = await prisma.itemModifierGroup.findMany({
-    where: { itemId },
+    where: { id },
     include: { options: { orderBy: { order: "asc" } } },
     orderBy: { order: "asc" },
   });

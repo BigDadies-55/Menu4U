@@ -4,14 +4,14 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ restaurantId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { restaurantId } = await params;
+  const { id } = await params;
 
   const r = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
+    where: { id: id },
     select: { tableLayoutJson: true },
   });
   if (!r) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -20,16 +20,16 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ restaurantId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { restaurantId } = await params;
+  const { id } = await params;
 
   const { tableLayoutJson } = await req.json();
 
   await prisma.restaurant.update({
-    where: { id: restaurantId },
+    where: { id: id },
     data: { tableLayoutJson },
   });
 

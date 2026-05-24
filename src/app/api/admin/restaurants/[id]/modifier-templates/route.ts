@@ -6,19 +6,19 @@ import { NextResponse } from "next/server";
 // Used as a "template library" so admins can copy groups to new items
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ restaurantId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { restaurantId } = await params;
+  const { id } = await params;
 
   // Verify access
   const role = session.user.role;
   const userId = session.user.id;
   if (role !== "SUPER_ADMIN") {
     const membership = await prisma.restaurantUser.findFirst({
-      where: { userId, restaurantId },
+      where: { userId, id },
     });
     if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -28,7 +28,7 @@ export async function GET(
     where: {
       item: {
         category: {
-          menu: { restaurantId },
+          menu: { id },
         },
       },
     },
