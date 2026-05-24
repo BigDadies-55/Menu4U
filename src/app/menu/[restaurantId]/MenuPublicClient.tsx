@@ -243,11 +243,26 @@ export default function MenuPublicClient({
   const [regError,          setRegError]          = useState("");
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
-  // Check localStorage on mount — hide button if already registered
+  // On mount: check if already registered; if not — auto-open modal on first ever visit
   useEffect(() => {
     try {
-      const key = `menu4u_customer_registered_${restaurant.id}`;
-      if (localStorage.getItem(key) === "1") setAlreadyRegistered(true);
+      const regKey     = `menu4u_customer_registered_${restaurant.id}`;
+      const shownKey   = `menu4u_reg_shown_${restaurant.id}`;
+      const registered = localStorage.getItem(regKey) === "1";
+      if (registered) {
+        setAlreadyRegistered(true);
+        return;
+      }
+      // First time visiting this restaurant's menu → auto-open after 1.5 s
+      if (!localStorage.getItem(shownKey)) {
+        localStorage.setItem(shownKey, "1");
+        setTimeout(() => {
+          setRegStep("form");
+          setRegOtp(""); setRegError(""); setRegCoupon("");
+          setRegForm({ name: "", phone: "", email: "" });
+          setRegModalOpen(true);
+        }, 1500);
+      }
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
