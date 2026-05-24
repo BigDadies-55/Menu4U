@@ -461,7 +461,7 @@ export default function MenuPublicClient({
                         </div>
                         <h3 className="menu-card-name">{item.name}</h3>
                         <p className="menu-card-desc">{item.description ?? ""}</p>
-                        <div className="menu-price">
+                        <div className="menu-price" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                           ₪{item.price}
                           {item.prepTime != null && (
                             <span className="menu-prep-time">⏱ {item.prepTime}&apos;</span>
