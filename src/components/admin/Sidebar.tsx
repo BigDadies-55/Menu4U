@@ -392,18 +392,6 @@ export default function Sidebar({
             );
           })}
 
-          {/* Collapsed: show all items as flat icons */}
-          {!expanded && (
-            <div className="space-y-0.5 mt-1">
-              {GROUPS.flatMap(g => g.items).filter(filterLeaf).map(item => (
-                <NavLink
-                  key={item.href} href={item.href} label={item.label} I={item.I}
-                  isActive={isLeafActive(item, pathname)}
-                  isExpanded={false} onClick={close}
-                />
-              ))}
-            </div>
-          )}
         </nav>
 
         {/* Footer */}
