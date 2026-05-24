@@ -162,6 +162,8 @@ export const RestaurantScalarFieldEnum = {
   ordersEnabled: 'ordersEnabled',
   tableLayoutJson: 'tableLayoutJson',
   kdsView: 'kdsView',
+  customDomain: 'customDomain',
+  copyright: 'copyright',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
   createdAt: 'createdAt',

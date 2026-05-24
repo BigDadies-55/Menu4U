@@ -8,6 +8,7 @@ import { ROLE_LABELS } from "@/lib/permissions";
 
 /* ─── Page-name map ─────────────────────────────────────────── */
 const PAGE_NAMES: { pattern: RegExp; name: string }[] = [
+  { pattern: /^\/admin\/settings/,        name: "הגדרות" },
   { pattern: /^\/admin\/restaurants/,    name: "מסעדות" },
   { pattern: /^\/admin\/menus/,          name: "תפריטים" },
   { pattern: /^\/admin\/users/,          name: "משתמשים" },
