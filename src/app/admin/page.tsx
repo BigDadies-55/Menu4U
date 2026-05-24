@@ -51,13 +51,6 @@ export default async function AdminDashboard() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          שלום, {session.user.name ?? session.user.email} 👋
-        </h1>
-        <p className="text-gray-500 mt-1">ברוך הבא לממשק הניהול של Menu4U</p>
-      </div>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {cards.map(card => (
           <div key={card.label} className="bg-white rounded-xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-3">
