@@ -110,6 +110,27 @@ const LUXURY_TEMPLATES = [
     previewSidebar: "#131d2e",
     previewTopBar: "#f8fafc",
   },
+  {
+    id: "nebula-gradient",
+    name: "Nebula Gradient",
+    nameHe: "נבולה — גרדיאנט קוסמי",
+    emoji: "🌌",
+    tagline: "גרדיאנט רב-שלבי ססגוני מן החלל",
+    mood: "Deep Space",
+    adminBg: "linear-gradient(135deg,#0f0c29,#302b63,#24243e)",
+    adminBgImage: null,
+    adminPalette: "custom",
+    adminSidebarBg: "linear-gradient(180deg,#0d0a24,#1f1a52,#160e3a)",
+    adminSidebarAccent: "#818cf8",
+    adminSidebarTextColor: "#a5b4fc",
+    adminContentTextColor: "#e0e7ff",
+    adminTopBarBg: "rgba(15,12,41,0.90)",
+    adminTopBarTextColor: "#a5b4fc",
+    previewBg: "#1e1840",
+    previewAccent: "#818cf8",
+    previewSidebar: "#100d30",
+    previewTopBar: "#0f0c29",
+  },
 ] as const;
 
 /* ─── Sidebar palette presets ────────────────────────────── */
