@@ -142,7 +142,7 @@ export default function Sidebar({ user, kdsView, isOpen = false, onClose, onChan
           </div>
           <div className="space-y-0.5">
             {visibleKdsViews.map(view => {
-              const isActive = pathname.startsWith(view.href);
+              const isActive = pathname === view.href || pathname.startsWith(view.href + "/");
               return (
                 <Link key={view.href} href={view.href} onClick={onClose}
                   className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
