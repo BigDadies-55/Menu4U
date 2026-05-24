@@ -184,6 +184,19 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
   CREATE INDEX IF NOT EXISTS "Customer_restaurantId_idx" ON "Customer"("restaurantId");
 `);
+    // Customer OTP + verification columns
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "otpHash"    TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "otpExpiry"  TIMESTAMP(3);
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "isVerified" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "couponCode" TEXT;
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

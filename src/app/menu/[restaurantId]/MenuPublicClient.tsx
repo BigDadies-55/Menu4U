@@ -232,11 +232,15 @@ export default function MenuPublicClient({
   const [showRegistration, setShowRegistration] = useState(false);
 
   // Customer newsletter/updates registration
-  const [regModalOpen,    setRegModalOpen]    = useState(false);
-  const [regForm,         setRegForm]         = useState({ name: "", phone: "", email: "" });
-  const [regLoading,      setRegLoading]      = useState(false);
-  const [regSuccess,      setRegSuccess]      = useState(false);
-  const [regError,        setRegError]        = useState("");
+  const [regModalOpen,      setRegModalOpen]      = useState(false);
+  const [regForm,           setRegForm]           = useState({ name: "", phone: "", email: "" });
+  const [regLoading,        setRegLoading]        = useState(false);
+  // step: "form" | "otp" | "done"
+  const [regStep,           setRegStep]           = useState<"form" | "otp" | "done">("form");
+  const [regPendingId,      setRegPendingId]      = useState("");
+  const [regOtp,            setRegOtp]            = useState("");
+  const [regCoupon,         setRegCoupon]         = useState("");
+  const [regError,          setRegError]          = useState("");
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
   // Check localStorage on mount — hide button if already registered
@@ -303,8 +307,8 @@ export default function MenuPublicClient({
     localStorage.setItem(key, JSON.stringify(identity));
     setGuestIdentity(identity);
     setShowRegistration(false);
-    // Register as Customer (ignore 409 duplicate — never update existing)
-    fetch(`/api/menu/${restaurant.id}/register`, {
+    // Silently register as Customer (name+phone only, no OTP)
+    fetch(`/api/menu/${restaurant.id}/register-guest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: identity.name, phone: identity.phone }),
@@ -508,10 +512,30 @@ export default function MenuPublicClient({
       });
       const data = await res.json();
       if (!res.ok) { setRegError(data.error ?? "שגיאה בהרשמה"); return; }
+      setRegPendingId(data.pendingId);
+      setRegOtp("");
+      setRegStep("otp");
+    } finally {
+      setRegLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp() {
+    if (!regOtp.trim()) { setRegError("יש להזין את הקוד"); return; }
+    setRegLoading(true); setRegError("");
+    try {
+      const res = await fetch(`/api/menu/${restaurant.id}/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pendingId: regPendingId, otp: regOtp.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setRegError(data.error ?? "שגיאה באימות"); return; }
       // Mark as registered in localStorage — hide button permanently
       try { localStorage.setItem(`menu4u_customer_registered_${restaurant.id}`, "1"); } catch { /* ignore */ }
       setAlreadyRegistered(true);
-      setRegSuccess(true);
+      setRegCoupon(data.couponCode ?? "");
+      setRegStep("done");
     } finally {
       setRegLoading(false);
     }
@@ -1407,7 +1431,7 @@ export default function MenuPublicClient({
 
       {/* ── Floating registration card — hidden once registered ── */}
       {!alreadyRegistered && <button
-        onClick={() => { setRegModalOpen(true); setRegSuccess(false); setRegError(""); setRegForm({ name: "", phone: "", email: "" }); }}
+        onClick={() => { setRegModalOpen(true); setRegStep("form"); setRegOtp(""); setRegError(""); setRegCoupon(""); setRegForm({ name: "", phone: "", email: "" }); }}
         style={{
           position: "fixed",
           bottom: 24,
@@ -1444,7 +1468,7 @@ export default function MenuPublicClient({
         כל מי שרוצה 5% לארוחה מוזמן להירשם
       </button>}
 
-      {/* ── Registration modal ── */}
+      {/* ── Registration modal (3 steps) ── */}
       {regModalOpen && (
         <div
           style={{
@@ -1454,7 +1478,7 @@ export default function MenuPublicClient({
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 16,
           }}
-          onClick={e => { if (e.target === e.currentTarget) setRegModalOpen(false); }}
+          onClick={e => { if (e.target === e.currentTarget && regStep !== "done") setRegModalOpen(false); }}
         >
           <div style={{
             position: "relative", zIndex: 71,
@@ -1466,117 +1490,152 @@ export default function MenuPublicClient({
             boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
             direction: "rtl",
           }}>
-            {/* Close button */}
-            <button
-              onClick={() => setRegModalOpen(false)}
-              style={{
-                position: "absolute", top: 14, left: 14,
-                background: "rgba(255,255,255,0.08)", border: "none",
-                borderRadius: 8, width: 28, height: 28,
-                cursor: "pointer", color: "var(--text, #fff)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 16, fontWeight: 700,
-              }}
-            >×</button>
+            {/* Close — not shown on done step */}
+            {regStep !== "done" && (
+              <button
+                onClick={() => setRegModalOpen(false)}
+                style={{
+                  position: "absolute", top: 14, left: 14,
+                  background: "rgba(255,255,255,0.08)", border: "none",
+                  borderRadius: 8, width: 28, height: 28,
+                  cursor: "pointer", color: "var(--text, #fff)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, fontWeight: 700,
+                }}
+              >×</button>
+            )}
 
-            {regSuccess ? (
-              <div style={{ textAlign: "center", padding: "12px 0" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
-                <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>נרשמת בהצלחה!</div>
-                <div style={{ color: "var(--text, #fff)", opacity: 0.6, fontSize: 14, marginBottom: 20 }}>
-                  תודה שנרשמת לעדכונים מ{restaurant.name}
-                </div>
-                <button
-                  onClick={() => setRegModalOpen(false)}
-                  style={{
-                    padding: "10px 28px", borderRadius: 50,
-                    background: "var(--gold, #c9a35d)", color: "var(--bg, #111)",
-                    border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer",
-                  }}
-                >סגור</button>
-              </div>
-            ) : (
+            {/* ── STEP 1: form ── */}
+            {regStep === "form" && (
               <>
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  {/* Gift icon in modal */}
                   <div style={{ fontSize: 36, marginBottom: 6 }}>🎁</div>
                   <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 18, marginBottom: 6, lineHeight: 1.3 }}>
                     קבל 5% הנחה לארוחה הבאה!
                   </div>
-                  <div style={{ color: "var(--text, #fff)", opacity: 0.6, fontSize: 13, marginBottom: 2 }}>הירשם ותקבל הטבה ישירות לנייד</div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.6, fontSize: 13, marginBottom: 2 }}>הירשם ותקבל קוד קופון למייל</div>
                   <div style={{ color: "var(--text, #fff)", opacity: 0.45, fontSize: 12 }}>{restaurant.name}</div>
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>שם מלא *</label>
-                  <input
-                    type="text"
-                    value={regForm.name}
-                    onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="ישראל ישראלי"
-                    autoFocus
-                    style={{
-                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                  <input type="text" value={regForm.name} onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="ישראל ישראלי" autoFocus
+                    onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
                       background: "rgba(255,255,255,0.07)", border: "1px solid var(--border, rgba(255,255,255,0.15))",
-                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box",
-                    }}
-                  />
+                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box" }} />
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>טלפון *</label>
-                  <input
-                    type="tel"
-                    value={regForm.phone}
-                    onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="050-0000000"
-                    dir="ltr"
-                    style={{
-                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                  <input type="tel" value={regForm.phone} onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="050-0000000" dir="ltr"
+                    onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
                       background: "rgba(255,255,255,0.07)", border: "1px solid var(--border, rgba(255,255,255,0.15))",
-                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box",
-                      textAlign: "right",
-                    }}
-                  />
+                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box", textAlign: "right" }} />
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>אימייל *</label>
-                  <input
-                    type="email"
-                    value={regForm.email}
-                    onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
-                    placeholder="email@example.com"
-                    dir="ltr"
-                    style={{
-                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                  <input type="email" value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="email@example.com" dir="ltr"
+                    onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
                       background: "rgba(255,255,255,0.07)", border: "1px solid var(--border, rgba(255,255,255,0.15))",
-                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box",
-                      textAlign: "right",
-                    }}
-                  />
+                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box", textAlign: "right" }} />
                 </div>
 
                 {regError && (
-                  <div style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
-                    {regError}
-                  </div>
+                  <div style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>{regError}</div>
                 )}
-
-                <button
-                  onClick={handleRegisterSubmit}
-                  disabled={regLoading || !regForm.name.trim()}
-                  style={{
-                    width: "100%", padding: "11px 16px", borderRadius: 50,
+                <button onClick={handleRegisterSubmit} disabled={regLoading}
+                  style={{ width: "100%", padding: "11px 16px", borderRadius: 50,
                     background: "var(--gold, #c9a35d)", color: "var(--bg, #111)",
-                    border: "none", fontWeight: 700, fontSize: 14, cursor: regLoading || !regForm.name.trim() ? "not-allowed" : "pointer",
-                    opacity: regLoading || !regForm.name.trim() ? 0.55 : 1,
-                    transition: "opacity 150ms",
-                  }}
-                >
-                  {regLoading ? "שולח..." : "הירשם"}
+                    border: "none", fontWeight: 700, fontSize: 14,
+                    cursor: regLoading ? "not-allowed" : "pointer",
+                    opacity: regLoading ? 0.55 : 1, transition: "opacity 150ms" }}>
+                  {regLoading ? "שולח..." : "הירשם וקבל קוד →"}
                 </button>
               </>
+            )}
+
+            {/* ── STEP 2: OTP ── */}
+            {regStep === "otp" && (
+              <>
+                <div style={{ textAlign: "center", marginBottom: 24 }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>📧</div>
+                  <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
+                    קוד אימות נשלח!
+                  </div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.65, fontSize: 13, lineHeight: 1.5 }}>
+                    שלחנו קוד בן 6 ספרות ל<br />
+                    <span style={{ fontWeight: 600, opacity: 1, direction: "ltr", display: "inline-block" }}>{regForm.email}</span>
+                  </div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.4, fontSize: 12, marginTop: 6 }}>הקוד תקף ל-15 דקות</div>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>קוד אימות *</label>
+                  <input type="text" inputMode="numeric" value={regOtp} onChange={e => setRegOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="• • • • • •" autoFocus maxLength={6}
+                    onKeyDown={e => { if (e.key === "Enter") handleVerifyOtp(); }}
+                    style={{ width: "100%", padding: "14px 12px", borderRadius: 10, fontSize: 22,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid var(--border, rgba(255,255,255,0.15))",
+                      color: "var(--gold, #c9a35d)", outline: "none", boxSizing: "border-box",
+                      textAlign: "center", letterSpacing: 8, fontWeight: 700 }} />
+                </div>
+
+                {regError && (
+                  <div style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>{regError}</div>
+                )}
+                <button onClick={handleVerifyOtp} disabled={regLoading || regOtp.length < 6}
+                  style={{ width: "100%", padding: "11px 16px", borderRadius: 50,
+                    background: "var(--gold, #c9a35d)", color: "var(--bg, #111)",
+                    border: "none", fontWeight: 700, fontSize: 14,
+                    cursor: regLoading || regOtp.length < 6 ? "not-allowed" : "pointer",
+                    opacity: regLoading || regOtp.length < 6 ? 0.55 : 1, transition: "opacity 150ms" }}>
+                  {regLoading ? "מאמת..." : "אמת קוד ←"}
+                </button>
+                <button onClick={() => { setRegStep("form"); setRegError(""); }}
+                  style={{ width: "100%", marginTop: 10, padding: "8px", background: "none", border: "none",
+                    color: "var(--text, #fff)", opacity: 0.45, fontSize: 12, cursor: "pointer" }}>
+                  ← חזרה לטופס
+                </button>
+              </>
+            )}
+
+            {/* ── STEP 3: coupon ── */}
+            {regStep === "done" && (
+              <div style={{ textAlign: "center", padding: "12px 0" }}>
+                <div style={{ fontSize: 44, marginBottom: 12 }}>🎉</div>
+                <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
+                  ברוך הבא לקהילה!
+                </div>
+                <div style={{ color: "var(--text, #fff)", opacity: 0.65, fontSize: 14, marginBottom: 20 }}>
+                  הנה קוד ה-5% שלך לארוחה הבאה
+                </div>
+                {/* Coupon display */}
+                <div style={{
+                  background: "rgba(201,163,93,0.12)", border: "2px dashed var(--gold, #c9a35d)",
+                  borderRadius: 14, padding: "18px 24px", marginBottom: 24,
+                }}>
+                  <div style={{ fontSize: 11, color: "var(--gold, #c9a35d)", fontWeight: 600, letterSpacing: "0.08em", marginBottom: 8, opacity: 0.7 }}>קוד קופון</div>
+                  <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 4, color: "var(--gold, #c9a35d)", fontFamily: "'Courier New', monospace" }}>
+                    {regCoupon}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text, #fff)", opacity: 0.45, marginTop: 8 }}>
+                    הצג קוד זה למלצר בסיום הארוחה
+                  </div>
+                </div>
+                <button onClick={() => setRegModalOpen(false)}
+                  style={{ padding: "11px 36px", borderRadius: 50,
+                    background: "var(--gold, #c9a35d)", color: "var(--bg, #111)",
+                    border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                  תודה, סגור
+                </button>
+              </div>
             )}
           </div>
         </div>
