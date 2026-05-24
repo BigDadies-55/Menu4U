@@ -102,13 +102,13 @@ function TableCard({
     <div
       className="rounded-2xl flex flex-col overflow-hidden"
       style={{
-        background: "#111",
-        border: `2px solid ${isUrgent ? "#ef4444" : "#ffffff18"}`,
-        boxShadow: isUrgent ? "0 0 20px #ef444422" : "none",
+        background: "#1c2033",
+        border: `2px solid ${isUrgent ? "#ef4444" : "#3a4260"}`,
+        boxShadow: isUrgent ? "0 0 20px #ef444430" : "0 2px 12px rgba(0,0,0,0.3)",
       }}
     >
       {/* Table header */}
-      <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#1a1a1a", borderBottom: "1px solid #ffffff12" }}>
+      <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#252b45", borderBottom: "1px solid #3a4260" }}>
         <div
           className="w-14 h-14 rounded-xl flex items-center justify-center font-black text-black text-2xl shrink-0"
           style={{ background: isUrgent ? "#ef4444" : "#facc15" }}
@@ -117,23 +117,23 @@ function TableCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-white font-bold">שולחן {tableNumber}</span>
-            <span className={`text-sm font-semibold ${isUrgent ? "text-red-400 animate-pulse" : "text-gray-500"}`}>
+            <span className="font-bold" style={{ color: "#e2e8f0" }}>שולחן {tableNumber}</span>
+            <span className={`text-sm font-semibold ${isUrgent ? "text-red-400 animate-pulse" : "text-blue-300"}`}>
               ⏱ {fmtElapsed(mins)}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "#3a4260" }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%`, background: progressPct === 100 ? "#4ade80" : "#38bdf8" }}
+                style={{ width: `${progressPct}%`, background: progressPct === 100 ? "#4ade80" : "#60a5fa" }}
               />
             </div>
-            <span className="text-xs text-gray-500 shrink-0">{doneCount}/{totalCount}</span>
+            <span className="text-xs shrink-0" style={{ color: "#94a3b8" }}>{doneCount}/{totalCount}</span>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-white font-bold text-lg">₪{totalAmount.toFixed(0)}</div>
+          <div className="font-bold text-lg" style={{ color: "#e2e8f0" }}>₪{totalAmount.toFixed(0)}</div>
         </div>
       </div>
 
@@ -143,11 +143,11 @@ function TableCard({
         const isDelivered = order.status === "DELIVERED";
 
         return (
-          <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #ffffff14" : undefined }}>
+          <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #3a4260" : undefined }}>
             {/* Order sub-header */}
             <div
               className="flex items-center justify-between px-4 py-2.5"
-              style={{ background: isPending ? "#2a1f00" : isDelivered ? "#0d1a0d" : "#161616" }}
+              style={{ background: isPending ? "#33280a" : isDelivered ? "#162616" : "#1e2540" }}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-xs font-bold shrink-0" style={{ color: isPending ? "#facc15" : isDelivered ? "#4ade80" : "#9ca3af" }}>
@@ -191,7 +191,7 @@ function TableCard({
                     key={`${itemId}-${tick}`}
                     className="flex items-center gap-3 px-4 py-3 transition-all"
                     style={{
-                      background: isDone && !isDelivered ? "#0a2a0a" : "transparent",
+                      background: isDone && !isDelivered ? "#132813" : "transparent",
                     }}
                   >
                     <span
@@ -203,7 +203,7 @@ function TableCard({
                     <div className="flex-1 min-w-0">
                       <div
                         className="text-base font-semibold truncate"
-                        style={{ color: isDelivered ? "#374151" : "#f3f4f6" }}
+                        style={{ color: isDelivered ? "#64748b" : "#e2e8f0" }}
                       >
                         {item.name}
                       </div>
