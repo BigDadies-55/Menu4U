@@ -102,13 +102,13 @@ function TableCard({
     <div
       className="rounded-2xl flex flex-col overflow-hidden"
       style={{
-        background: "#ffffff",
-        border: `2px solid ${isUrgent ? "#ef4444" : "#d1d5db"}`,
+        background: "#1e2433",
+        border: `2px solid ${isUrgent ? "#ef4444" : "#374157"}`,
         boxShadow: isUrgent ? "0 0 16px #ef444440" : "0 2px 8px rgba(0,0,0,0.08)",
       }}
     >
       {/* Table header */}
-      <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#f1f5f9", borderBottom: "1px solid #e5e7eb" }}>
+      <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#252d42", borderBottom: "1px solid #374157" }}>
         <div
           className="w-14 h-14 rounded-xl flex items-center justify-center font-black text-black text-2xl shrink-0"
           style={{ background: isUrgent ? "#ef4444" : "#facc15" }}
@@ -117,13 +117,13 @@ function TableCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold" style={{ color: "#111827" }}>שולחן {tableNumber}</span>
-            <span className={`text-sm font-semibold ${isUrgent ? "text-red-500 animate-pulse" : "text-blue-600"}`}>
+            <span className="font-bold" style={{ color: "#f1f5f9" }}>שולחן {tableNumber}</span>
+            <span className={`text-sm font-semibold ${isUrgent ? "text-red-400 animate-pulse" : "text-blue-300"}`}>
               ⏱ {fmtElapsed(mins)}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "#e2e8f0" }}>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "#374157" }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${progressPct}%`, background: progressPct === 100 ? "#4ade80" : "#60a5fa" }}
@@ -133,7 +133,7 @@ function TableCard({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-bold text-lg" style={{ color: "#111827" }}>₪{totalAmount.toFixed(0)}</div>
+          <div className="font-bold text-lg" style={{ color: "#f1f5f9" }}>₪{totalAmount.toFixed(0)}</div>
         </div>
       </div>
 
@@ -143,19 +143,19 @@ function TableCard({
         const isDelivered = order.status === "DELIVERED";
 
         return (
-          <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #f0f0f0" : undefined }}>
+          <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #2d3650" : undefined }}>
             {/* Order sub-header */}
             <div
               className="flex items-center justify-between px-4 py-2.5"
-              style={{ background: isPending ? "#fffbeb" : isDelivered ? "#f0fdf4" : "#f8fafc" }}
+              style={{ background: isPending ? "#2d2510" : isDelivered ? "#142414" : "#1e2433" }}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-bold shrink-0" style={{ color: isPending ? "#92400e" : isDelivered ? "#166534" : "#4b5563" }}>
+                <span className="text-xs font-bold shrink-0" style={{ color: isPending ? "#fbbf24" : isDelivered ? "#4ade80" : "#94a3b8" }}>
                   {isPending ? "🕐 ממתין לאישור" : isDelivered ? "✓ הושלם" : `הזמנה ${idx + 1}`}
                 </span>
-                <span className="text-xs text-gray-600 shrink-0">{order.items.length} מנות · ₪{order.totalAmount.toFixed(0)}</span>
+                <span className="text-xs text-gray-400 shrink-0">{order.items.length} מנות · ₪{order.totalAmount.toFixed(0)}</span>
                 {order.notes && (
-                  <span className="text-xs text-gray-600 italic truncate">· 💬 {order.notes}</span>
+                  <span className="text-xs text-gray-400 italic truncate">· 💬 {order.notes}</span>
                 )}
               </div>
               {canUpdate && isPending && (
@@ -179,7 +179,7 @@ function TableCard({
             </div>
 
             {/* Items */}
-            <div className="divide-y divide-gray-100" style={{ opacity: isPending ? 0.6 : 1 }}>
+            <div className="divide-y divide-white/5" style={{ opacity: isPending ? 0.6 : 1 }}>
               {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers }) => {
                 const color = isDelivered ? "#4b5563" : (ITEM_COLOR[itemStatus] ?? "#9ca3af");
                 const nextLabel = !isPending && !isDelivered ? ITEM_NEXT_LABEL[itemStatus] : undefined;
@@ -191,7 +191,7 @@ function TableCard({
                     key={`${itemId}-${tick}`}
                     className="flex items-center gap-3 px-4 py-3 transition-all"
                     style={{
-                      background: isDone && !isDelivered ? "#f0fdf4" : "transparent",
+                      background: isDone && !isDelivered ? "#142414" : "transparent",
                     }}
                   >
                     <span
@@ -203,21 +203,21 @@ function TableCard({
                     <div className="flex-1 min-w-0">
                       <div
                         className="text-base font-semibold truncate"
-                        style={{ color: isDelivered ? "#9ca3af" : "#111827" }}
+                        style={{ color: isDelivered ? "#6b7280" : "#f1f5f9" }}
                       >
                         {item.name}
                       </div>
                       {modifiers && modifiers.length > 0 && (
                         <div className="flex gap-1 flex-wrap mt-0.5">
                           {modifiers.map((m, i) => (
-                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#dcfce7", color: "#166534" }}>
+                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#1e3a2e", color: "#4ade80" }}>
                               {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                             </span>
                           ))}
                         </div>
                       )}
                       {notes && (
-                        <div className="text-xs text-gray-600 italic truncate mt-0.5">{notes}</div>
+                        <div className="text-xs text-gray-400 italic truncate mt-0.5">{notes}</div>
                       )}
                     </div>
                     {!isDelivered && (
@@ -234,7 +234,7 @@ function TableCard({
                         disabled={busy.has(itemId + "-back")}
                         title="חזור סטטוס"
                         className="shrink-0 rounded-lg transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
-                        style={{ background: "#e5e7eb", color: "#374151", width: 28, height: 28, fontSize: 13 }}
+                        style={{ background: "#2d3748", color: "#a0aec0", width: 28, height: 28, fontSize: 13 }}
                       >
                         {busy.has(itemId + "-back") ? "·" : "←"}
                       </button>
