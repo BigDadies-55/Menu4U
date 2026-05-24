@@ -8,6 +8,7 @@ export async function GET(
   const { restaurantId } = await params;
   const { searchParams } = new URL(req.url);
   const tableNumber = searchParams.get("table");
+  const phone = searchParams.get("phone");
 
   if (!tableNumber) {
     return NextResponse.json({ error: "Missing table" }, { status: 400 });
@@ -18,6 +19,7 @@ export async function GET(
       restaurantId,
       tableNumber,
       status: { notIn: ["DELIVERED", "CANCELLED", "PAID"] },
+      ...(phone ? { customerPhone: phone } : {}),
     },
     orderBy: { createdAt: "desc" },
     select: {
@@ -26,6 +28,8 @@ export async function GET(
       totalAmount: true,
       createdAt: true,
       notes: true,
+      customerName: true,
+      customerPhone: true,
       items: {
         select: {
           id: true,

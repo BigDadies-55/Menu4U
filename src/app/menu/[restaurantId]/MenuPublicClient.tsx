@@ -31,8 +31,12 @@ type TableOrder = {
   totalAmount: number;
   createdAt: string;
   notes: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
   items: TableOrderItem[];
 };
+
+type GuestIdentity = { name: string; phone: string };
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "ממתין לאישור",
@@ -108,6 +112,89 @@ function getItemBadges(item: Item): string[] {
   return [...badges, ...item.tags];
 }
 
+function GuestRegistrationModal({
+  onSave,
+  restaurantName,
+  tableNumber,
+}: {
+  onSave: (identity: { name: string; phone: string }) => void;
+  restaurantName: string;
+  tableNumber: string;
+}) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
+
+  function handleSubmit() {
+    const trimName = name.trim();
+    const trimPhone = phone.trim().replace(/\s/g, "");
+    if (!trimName) { setError("נא להזין שם"); return; }
+    if (!trimPhone || trimPhone.length < 9) { setError("נא להזין מספר טלפון תקין"); return; }
+    onSave({ name: trimName, phone: trimPhone });
+  }
+
+  return (
+    <div style={{
+      position: "relative", zIndex: 71,
+      background: "var(--bg-card, #1c1c1c)", borderRadius: 16,
+      padding: "28px 24px", width: "min(340px, 90vw)",
+      border: "1px solid var(--border)", boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+      textAlign: "center",
+    }}>
+      <div style={{ fontSize: 36, marginBottom: 8 }}>👋</div>
+      <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 20, marginBottom: 4 }}>ברוך הבא!</div>
+      <div style={{ color: "var(--text)", opacity: 0.6, fontSize: 14, marginBottom: 20 }}>
+        {restaurantName} • שולחן {tableNumber}
+      </div>
+      <div style={{ textAlign: "right", marginBottom: 14 }}>
+        <label style={{ display: "block", fontSize: 12, color: "var(--text)", opacity: 0.6, marginBottom: 4 }}>שם מלא *</label>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="ישראל ישראלי"
+          autoFocus
+          style={{
+            width: "100%", padding: "10px 12px", borderRadius: 9, fontSize: 15,
+            background: "rgba(255,255,255,0.06)", border: "1px solid var(--border)",
+            color: "var(--text)", outline: "none", boxSizing: "border-box",
+          }}
+        />
+      </div>
+      <div style={{ textAlign: "right", marginBottom: 20 }}>
+        <label style={{ display: "block", fontSize: 12, color: "var(--text)", opacity: 0.6, marginBottom: 4 }}>מספר טלפון *</label>
+        <input
+          type="tel"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          placeholder="050-0000000"
+          inputMode="numeric"
+          style={{
+            width: "100%", padding: "10px 12px", borderRadius: 9, fontSize: 15,
+            background: "rgba(255,255,255,0.06)", border: "1px solid var(--border)",
+            color: "var(--text)", outline: "none", boxSizing: "border-box",
+          }}
+          onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
+        />
+      </div>
+      {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 10 }}>{error}</div>}
+      <button
+        onClick={handleSubmit}
+        style={{
+          width: "100%", padding: "12px 0", borderRadius: 10,
+          background: "var(--gold)", color: "var(--bg)",
+          border: "none", fontWeight: 700, fontSize: 16, cursor: "pointer",
+        }}
+      >
+        המשך לתפריט ←
+      </button>
+      <div style={{ fontSize: 11, color: "var(--text)", opacity: 0.35, marginTop: 12 }}>
+        הפרטים משמשים לזיהוי הזמנתך בלבד
+      </div>
+    </div>
+  );
+}
+
 export default function MenuPublicClient({
   restaurant,
   tableNumber,
@@ -137,17 +224,29 @@ export default function MenuPublicClient({
   const [myOrdersOpen, setMyOrdersOpen] = useState(false);
   const [myOrders, setMyOrders] = useState<TableOrder[]>([]);
   const [myOrdersLoading, setMyOrdersLoading] = useState(false);
+  const [ordersView, setOrdersView] = useState<"mine" | "all">("mine");
+  const [billMode, setBillMode] = useState<"mine" | "all" | null>(null);
 
-  const fetchMyOrders = useCallback(async (silent = false) => {
+  // Guest identity (name + phone stored in localStorage)
+  const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
+  const [showRegistration, setShowRegistration] = useState(false);
+
+  const fetchMyOrders = useCallback(async (silent = false, view?: "mine" | "all", identity?: GuestIdentity | null) => {
     if (!tableNumber) return;
     if (!silent) setMyOrdersLoading(true);
+    const currentView = view ?? ordersView;
+    const currentIdentity = identity !== undefined ? identity : guestIdentity;
     try {
-      const res = await fetch(`/api/menu/${restaurant.id}/orders?table=${encodeURIComponent(tableNumber)}`);
+      let url = `/api/menu/${restaurant.id}/orders?table=${encodeURIComponent(tableNumber)}`;
+      if (currentView === "mine" && currentIdentity?.phone) {
+        url += `&phone=${encodeURIComponent(currentIdentity.phone)}`;
+      }
+      const res = await fetch(url);
       if (res.ok) setMyOrders(await res.json());
     } finally {
       if (!silent) setMyOrdersLoading(false);
     }
-  }, [restaurant.id, tableNumber]);
+  }, [restaurant.id, tableNumber, ordersView, guestIdentity]);
 
   // Auto-refresh my orders every 10s when panel is open
   useEffect(() => {
@@ -163,6 +262,33 @@ export default function MenuPublicClient({
     es.onerror = () => es.close();
     return () => es.close();
   }, [restaurant.id, fetchMyOrders]);
+
+  // Load guest identity from localStorage on mount
+  useEffect(() => {
+    if (!tableNumber || !restaurant.ordersEnabled) return;
+    const key = `menu4u_guest_${restaurant.id}_${tableNumber}`;
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed: GuestIdentity = JSON.parse(stored);
+        if (parsed.name && parsed.phone) {
+          setGuestIdentity(parsed);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+    setShowRegistration(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function saveGuestIdentity(identity: GuestIdentity) {
+    const key = `menu4u_guest_${restaurant.id}_${tableNumber}`;
+    localStorage.setItem(key, JSON.stringify(identity));
+    setGuestIdentity(identity);
+    setShowRegistration(false);
+    // Immediately fetch my orders with new identity
+    fetchMyOrders(true, "mine", identity);
+  }
 
   const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
@@ -326,7 +452,8 @@ export default function MenuPublicClient({
         body: JSON.stringify({
           tableNumber: tableNumber || "",
           items: cart.map(c => ({ itemId: c.itemId, quantity: c.quantity, notes: c.notes || null, modifiers: c.modifiers ?? [] })),
-          customerName: "",
+          customerName: guestIdentity?.name || "",
+          customerPhone: guestIdentity?.phone || "",
           notes: "",
         }),
       });
@@ -655,7 +782,7 @@ export default function MenuPublicClient({
               </button>
             </div>
 
-            {/* Table number indicator */}
+            {/* Table number + guest name indicator */}
             {tableNumber && (
               <div
                 style={{
@@ -663,10 +790,16 @@ export default function MenuPublicClient({
                   borderBottom: "1px solid var(--border)",
                   fontSize: 13,
                   color: "var(--text)",
-                  opacity: 0.7,
+                  opacity: 0.8,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                שולחן: <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong>
+                <span>שולחן: <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong></span>
+                {guestIdentity && (
+                  <span style={{ fontSize: 12, color: "var(--gold)" }}>👤 {guestIdentity.name}</span>
+                )}
               </div>
             )}
 
@@ -679,7 +812,6 @@ export default function MenuPublicClient({
               ) : (
                 <>
                   {[...cart]
-                    .sort((a, b) => (a.person ?? 99) - (b.person ?? 99))
                     .map(c => (
                     <div
                       key={c.cartId}
@@ -693,13 +825,6 @@ export default function MenuPublicClient({
                     >
                       {/* Item row */}
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        {c.person !== undefined && (
-                          <div style={{
-                            width: 20, height: 20, borderRadius: "50%", fontSize: 10, fontWeight: 700,
-                            background: "var(--gold)", color: "var(--bg)", flexShrink: 0,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>{c.person}</div>
-                        )}
                         <div style={{ flex: 1 }}>
                           <div style={{ color: "var(--text)", fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{c.name}</div>
                           <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 1 }}>₪{c.price} ליחידה</div>
@@ -726,39 +851,6 @@ export default function MenuPublicClient({
                         </div>
                       </div>
 
-                      {/* Person selector — compact, above notes */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 7 }}>
-                        <span style={{ fontSize: 9, color: "var(--text)", opacity: 0.38, marginLeft: 1, whiteSpace: "nowrap" }}>סועד:</span>
-                        <button
-                          onClick={() => updatePerson(c.cartId, undefined)}
-                          style={{
-                            padding: "1px 6px", borderRadius: 20, fontSize: 9, cursor: "pointer",
-                            border: c.person === undefined ? "1px solid var(--gold)" : "1px solid var(--border)",
-                            background: c.person === undefined ? "var(--gold)" : "transparent",
-                            color: c.person === undefined ? "var(--bg)" : "var(--text)",
-                            opacity: c.person === undefined ? 1 : 0.4,
-                            fontWeight: c.person === undefined ? 700 : 400,
-                            transition: "all 0.12s",
-                          }}
-                        >ללא</button>
-                        {[1, 2, 3, 4, 5].map(p => (
-                          <button
-                            key={p}
-                            onClick={() => updatePerson(c.cartId, c.person === p ? undefined : p)}
-                            style={{
-                              width: 20, height: 20, borderRadius: "50%", fontSize: 10,
-                              cursor: "pointer", fontWeight: 700,
-                              border: c.person === p ? "1px solid var(--gold)" : "1px solid var(--border)",
-                              background: c.person === p ? "var(--gold)" : "transparent",
-                              color: c.person === p ? "var(--bg)" : "var(--text)",
-                              opacity: c.person === p ? 1 : 0.38,
-                              transition: "all 0.12s",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}
-                          >{p}</button>
-                        ))}
-                      </div>
-
                       {/* Notes */}
                       <input
                         type="text"
@@ -774,48 +866,6 @@ export default function MenuPublicClient({
                     </div>
                   ))}
 
-                  {/* Per-person breakdown — only shown when at least one item is assigned */}
-                  {cart.some(c => c.person !== undefined) && (
-                    <div style={{
-                      marginTop: 14, padding: "12px 14px",
-                      background: "rgba(255,255,255,0.04)", borderRadius: 10,
-                      border: "1px solid var(--border)",
-                    }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", marginBottom: 8, letterSpacing: 0.5, textTransform: "uppercase" }}>
-                        פירוט לפי אדם
-                      </div>
-                      {[1, 2, 3, 4, 5].map(p => {
-                        const pItems = cart.filter(c => c.person === p);
-                        if (pItems.length === 0) return null;
-                        const pTotal = pItems.reduce((s, c) => s + c.price * c.quantity, 0);
-                        return (
-                          <div key={p} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                              <span style={{
-                                width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
-                                background: "var(--gold)", color: "var(--bg)",
-                                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                              }}>{p}</span>
-                              <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.75, lineHeight: "20px" }}>
-                                {pItems.map(c => `${c.name}${c.quantity > 1 ? ` ×${c.quantity}` : ""}`).join(", ")}
-                              </span>
-                            </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", whiteSpace: "nowrap", marginRight: 8 }}>
-                              ₪{pTotal}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {cart.some(c => c.person === undefined) && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 4, paddingTop: 6, borderTop: "1px solid var(--border)" }}>
-                          <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.45 }}>ללא שיוך</span>
-                          <span style={{ fontSize: 13, color: "var(--text)", opacity: 0.45 }}>
-                            ₪{cart.filter(c => c.person === undefined).reduce((s, c) => s + c.price * c.quantity, 0)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </>
               )}
             </div>
@@ -873,7 +923,7 @@ export default function MenuPublicClient({
         <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
           <div
             style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
-            onClick={() => setMyOrdersOpen(false)}
+            onClick={() => { setMyOrdersOpen(false); setBillMode(null); }}
           />
           <div style={{
             position: "absolute", top: 0, bottom: 0, left: 0,
@@ -884,27 +934,49 @@ export default function MenuPublicClient({
           }}>
             {/* Header */}
             <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 20px", borderBottom: "1px solid var(--border)",
+              borderBottom: "1px solid var(--border)",
             }}>
-              <div>
-                <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>📋 הזמנות השולחן</span>
-                {tableNumber && (
-                  <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.55, marginTop: 2 }}>
-                    שולחן <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong>
-                  </div>
-                )}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 20px 12px",
+              }}>
+                <div>
+                  <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>📋 הזמנות</span>
+                  {tableNumber && (
+                    <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.55, marginTop: 2 }}>
+                      שולחן <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong>
+                      {guestIdentity && <span style={{ marginRight: 6, color: "var(--gold)", opacity: 0.8 }}>• {guestIdentity.name}</span>}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => fetchMyOrders(false)}
+                    style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", fontSize: 18 }}
+                    title="רענן"
+                  >🔄</button>
+                  <button
+                    onClick={() => { setMyOrdersOpen(false); setBillMode(null); }}
+                    style={{ background: "none", border: "none", color: "var(--text)", fontSize: 20, cursor: "pointer", opacity: 0.7 }}
+                  >✕</button>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => fetchMyOrders(false)}
-                  style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", fontSize: 18 }}
-                  title="רענן"
-                >🔄</button>
-                <button
-                  onClick={() => setMyOrdersOpen(false)}
-                  style={{ background: "none", border: "none", color: "var(--text)", fontSize: 20, cursor: "pointer", opacity: 0.7 }}
-                >✕</button>
+              {/* View toggle */}
+              <div style={{ display: "flex", gap: 6, padding: "0 20px 12px" }}>
+                {(["mine", "all"] as const).map(v => (
+                  <button key={v} onClick={() => {
+                    setOrdersView(v);
+                    fetchMyOrders(false, v);
+                  }} style={{
+                    flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    cursor: "pointer", transition: "all 0.15s",
+                    border: ordersView === v ? "1.5px solid var(--gold)" : "1.5px solid var(--border)",
+                    background: ordersView === v ? "var(--gold)" : "transparent",
+                    color: ordersView === v ? "var(--bg)" : "var(--text)",
+                  }}>
+                    {v === "mine" ? "שלי" : "כל השולחן"}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -936,7 +1008,12 @@ export default function MenuPublicClient({
                         background: `${statusColor}18`,
                         borderBottom: `1px solid ${statusColor}33`,
                       }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: statusColor }}>{statusLabel}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: statusColor }}>{statusLabel}</span>
+                          {ordersView === "all" && order.customerName && (
+                            <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>👤 {order.customerName}</span>
+                          )}
+                        </div>
                         <span style={{ fontSize: 12, color: "var(--text)", opacity: 0.5 }}>
                           ₪{order.totalAmount.toFixed(0)}
                         </span>
