@@ -52,7 +52,10 @@ export async function GET(req: Request) {
     include: {
       restaurant: { select: { id: true, name: true } },
       items: {
-        include: { item: { select: { name: true, prepTime: true } } },
+        include: {
+          item: { select: { name: true, prepTime: true } },
+          modifiers: { select: { groupName: true, label: true, priceAdd: true } },
+        },
         orderBy: { id: "asc" },
       },
     },

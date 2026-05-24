@@ -127,6 +127,12 @@ export default function MenuPublicClient({
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
 
+  // Modifier modal state
+  const [modifierItem, setModifierItem] = useState<Item | null>(null);
+  const [modifierGroups, setModifierGroups] = useState<ModGroup[]>([]);
+  const [modifierGroupsLoading, setModifierGroupsLoading] = useState(false);
+  const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string[]>>({}); // groupId -> selected option labels
+
   // My orders (current table)
   const [myOrdersOpen, setMyOrdersOpen] = useState(false);
   const [myOrders, setMyOrders] = useState<TableOrder[]>([]);
@@ -200,14 +206,83 @@ export default function MenuPublicClient({
     return () => { document.body.style.overflow = ""; };
   }, [modalItem, cartOpen, myOrdersOpen]);
 
-  function addToCart(item: Item) {
+  async function openAddToCart(item: Item) {
+    setModifierGroupsLoading(true);
+    setModifierItem(item);
+    setSelectedModifiers({});
+    try {
+      const res = await fetch(`/api/menu/${restaurant.id}/items/${item.id}/modifiers`);
+      const groups: ModGroup[] = res.ok ? await res.json() : [];
+      setModifierGroups(groups);
+      if (groups.length === 0) {
+        // No modifier groups — add directly
+        addToCartDirect(item, []);
+        setModifierItem(null);
+      }
+    } catch {
+      setModifierGroups([]);
+      addToCartDirect(item, []);
+      setModifierItem(null);
+    } finally {
+      setModifierGroupsLoading(false);
+    }
+  }
+
+  function addToCartDirect(item: Item, modifiers: CartModifier[]) {
+    const priceAdd = modifiers.reduce((s, m) => s + m.priceAdd, 0);
     setCart(prev => [...prev, {
       cartId: `${item.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       itemId: item.id,
       name: item.name,
-      price: item.price,
+      price: item.price + priceAdd,
       quantity: 1,
+      modifiers: modifiers.length > 0 ? modifiers : undefined,
     }]);
+  }
+
+  function addToCart(item: Item) {
+    openAddToCart(item);
+  }
+
+  function confirmModifiers() {
+    if (!modifierItem) return;
+    const modifiers: CartModifier[] = [];
+    for (const grp of modifierGroups) {
+      const sel = selectedModifiers[grp.id] ?? [];
+      for (const label of sel) {
+        const opt = grp.options.find(o => o.label === label);
+        if (opt) modifiers.push({ groupName: grp.name, label, priceAdd: opt.priceAdd });
+      }
+    }
+    addToCartDirect(modifierItem, modifiers);
+    setModifierItem(null);
+    setModifierGroups([]);
+    setSelectedModifiers({});
+  }
+
+  function toggleModifierOption(grp: ModGroup, label: string) {
+    setSelectedModifiers(prev => {
+      const cur = prev[grp.id] ?? [];
+      if (grp.maxSelect === 1) {
+        // Single-select: replace
+        return { ...prev, [grp.id]: cur.includes(label) ? [] : [label] };
+      } else {
+        // Multi-select
+        if (cur.includes(label)) {
+          return { ...prev, [grp.id]: cur.filter(l => l !== label) };
+        } else if (cur.length < grp.maxSelect) {
+          return { ...prev, [grp.id]: [...cur, label] };
+        }
+        return prev;
+      }
+    });
+  }
+
+  function isModifierValid(): boolean {
+    for (const grp of modifierGroups) {
+      if (grp.required && (selectedModifiers[grp.id] ?? []).length === 0) return false;
+    }
+    return true;
   }
 
   function updateQty(cartId: string, delta: number) {
@@ -242,7 +317,7 @@ export default function MenuPublicClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tableNumber: tableNumber || "",
-          items: cart.map(c => ({ itemId: c.itemId, quantity: c.quantity, notes: c.notes || null })),
+          items: cart.map(c => ({ itemId: c.itemId, quantity: c.quantity, notes: c.notes || null, modifiers: c.modifiers ?? [] })),
           customerName: "",
           notes: "",
         }),
@@ -1026,6 +1101,118 @@ export default function MenuPublicClient({
       {zoomSrc && (
         <div className="menu-image-zoom" onClick={() => setZoomSrc(null)}>
           <img src={zoomSrc} alt="zoom" />
+        </div>
+      )}
+
+      {/* Modifier selection modal */}
+      {modifierItem && modifierGroups.length > 0 && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          onClick={e => { if (e.target === e.currentTarget) { setModifierItem(null); setModifierGroups([]); setSelectedModifiers({}); } }}
+        >
+          <div style={{
+            background: "var(--bg-card, #1a1a1a)",
+            borderRadius: "20px 20px 0 0",
+            width: "min(480px, 100vw)",
+            maxHeight: "80vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            border: "1px solid var(--border, #ffffff20)",
+          }}>
+            {/* Header */}
+            <div style={{ padding: "16px 20px 12px", borderBottom: "1px solid var(--border, #ffffff20)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 17 }}>{modifierItem.name}</div>
+                <div style={{ color: "var(--text)", opacity: 0.55, fontSize: 13 }}>בחר אפשרויות</div>
+              </div>
+              <button
+                onClick={() => { setModifierItem(null); setModifierGroups([]); setSelectedModifiers({}); }}
+                style={{ background: "none", border: "none", color: "var(--text)", fontSize: 20, cursor: "pointer", opacity: 0.7 }}
+              >✕</button>
+            </div>
+
+            {/* Groups */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+              {modifierGroupsLoading ? (
+                <div style={{ textAlign: "center", color: "var(--text)", opacity: 0.4 }}>טוען...</div>
+              ) : modifierGroups.map(grp => (
+                <div key={grp.id} style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                    <span style={{ color: "var(--text)", fontWeight: 700, fontSize: 15 }}>{grp.name}</span>
+                    {grp.required && (
+                      <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "#7f1d1d", color: "#fca5a5", fontWeight: 600 }}>חובה</span>
+                    )}
+                    {grp.maxSelect > 1 && (
+                      <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(255,255,255,0.08)", color: "var(--text)", opacity: 0.6 }}>
+                        עד {grp.maxSelect}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {grp.options.map(opt => {
+                      const isSelected = (selectedModifiers[grp.id] ?? []).includes(opt.label);
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => toggleModifierOption(grp, opt.label)}
+                          style={{
+                            padding: "8px 14px",
+                            borderRadius: 20,
+                            border: isSelected ? "2px solid var(--gold)" : "1.5px solid var(--border, #ffffff25)",
+                            background: isSelected ? "var(--gold)" : "rgba(255,255,255,0.05)",
+                            color: isSelected ? "var(--bg, #111)" : "var(--text)",
+                            fontWeight: isSelected ? 700 : 400,
+                            fontSize: 14,
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          {opt.label}
+                          {opt.priceAdd > 0 && (
+                            <span style={{ fontSize: 12, opacity: isSelected ? 0.75 : 0.55, marginRight: 4 }}> +₪{opt.priceAdd}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: "14px 20px", borderTop: "1px solid var(--border, #ffffff20)" }}>
+              {(() => {
+                const priceAdd = modifierGroups.flatMap(g =>
+                  (selectedModifiers[g.id] ?? []).map(label => {
+                    const opt = g.options.find(o => o.label === label);
+                    return opt?.priceAdd ?? 0;
+                  })
+                ).reduce((s, v) => s + v, 0);
+                const totalPrice = modifierItem.price + priceAdd;
+                return (
+                  <button
+                    onClick={confirmModifiers}
+                    disabled={!isModifierValid()}
+                    style={{
+                      width: "100%",
+                      padding: "13px 0",
+                      background: "var(--gold)",
+                      color: "var(--bg, #111)",
+                      border: "none",
+                      borderRadius: 12,
+                      fontWeight: 700,
+                      fontSize: 16,
+                      cursor: isModifierValid() ? "pointer" : "not-allowed",
+                      opacity: isModifierValid() ? 1 : 0.45,
+                    }}
+                  >
+                    הוסף לסל · ₪{totalPrice}
+                  </button>
+                );
+              })()}
+            </div>
+          </div>
         </div>
       )}
     </div>

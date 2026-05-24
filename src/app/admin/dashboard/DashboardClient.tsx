@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
+type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
+
 type OrderItem = {
   id: string;
   quantity: number;
   notes: string | null;
   itemStatus: string;
   item: { name: string; prepTime: number | null };
+  modifiers?: OrderItemModifier[];
 };
 
 type Order = {
@@ -177,7 +180,7 @@ function TableCard({
 
             {/* Items */}
             <div className="divide-y divide-white/5" style={{ opacity: isPending ? 0.5 : 1 }}>
-              {order.items.map(({ id: itemId, quantity, notes, itemStatus, item }) => {
+              {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers }) => {
                 const color = isDelivered ? "#4b5563" : (ITEM_COLOR[itemStatus] ?? "#9ca3af");
                 const nextLabel = !isPending && !isDelivered ? ITEM_NEXT_LABEL[itemStatus] : undefined;
                 const isDone = itemStatus === "DONE" || isDelivered;
@@ -204,6 +207,15 @@ function TableCard({
                       >
                         {item.name}
                       </div>
+                      {modifiers && modifiers.length > 0 && (
+                        <div className="flex gap-1 flex-wrap mt-0.5">
+                          {modifiers.map((m, i) => (
+                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#1e3a2e", color: "#4ade80" }}>
+                              {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {notes && (
                         <div className="text-xs text-gray-600 italic truncate mt-0.5">{notes}</div>
                       )}
