@@ -465,18 +465,23 @@ function TableCard({
       })}
 
       {/* Footer: show bill */}
-      {nonCancelledOrders.length > 0 && (
-        <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
-          <button
-            type="button"
-            onClick={showBill}
-            className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
-          >
-            💳 הצג חשבון ותשלום
-          </button>
-        </div>
-      )}
+      {nonCancelledOrders.length > 0 && (() => {
+        const isPaidTable = nonCancelledOrders.every(o => o.status === "PAID");
+        return (
+          <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
+            <button
+              type="button"
+              onClick={showBill}
+              disabled={isPaidTable}
+              className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: isPaidTable ? "#9ca3af" : "linear-gradient(135deg,#7c3aed,#a855f7)" }}
+              title={isPaidTable ? "השולחן כבר שולם" : undefined}
+            >
+              {isPaidTable ? "✓ שולם" : "💳 הצג חשבון ותשלום"}
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
