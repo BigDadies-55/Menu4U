@@ -70,8 +70,11 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      {/* Live dashboard widgets — KPIs, chart, top items, recent orders */}
-      <DashboardExtra isSuperAdmin={session.user.role === "SUPER_ADMIN"} />
+      {/* Live dashboard widgets — KPIs, chart, top items */}
+      <DashboardExtra
+        isSuperAdmin={session.user.role === "SUPER_ADMIN"}
+        restaurants={(stats.restaurantDetails ?? []).map(r => ({ id: r.id, name: r.name }))}
+      />
 
       {/* Per-restaurant analytics (menu views) */}
       {stats.restaurantDetails && stats.restaurantDetails.length > 0 && (
