@@ -129,6 +129,124 @@ function downloadJson(data: unknown, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+async function downloadXlsx(data: ImportFile, filename: string) {
+  const XLSX = await import("xlsx");
+  const wb = XLSX.utils.book_new();
+
+  // Flat rows: one row per item
+  type XlsxRow = {
+    "תפריט": string;
+    "קטגוריה": string;
+    "שם פריט": string;
+    "תיאור": string;
+    "מחיר (₪)": number;
+    "צמחוני": string;
+    "טבעוני": string;
+    "ללא גלוטן": string;
+    "תגיות": string;
+    "זמן הכנה (דק')": string;
+  };
+  const rows: XlsxRow[] = [];
+  for (const menu of data.menus) {
+    for (const cat of menu.categories) {
+      for (const item of cat.items) {
+        rows.push({
+          "תפריט": menu.name,
+          "קטגוריה": cat.name,
+          "שם פריט": item.name,
+          "תיאור": item.description ?? "",
+          "מחיר (₪)": item.price,
+          "צמחוני": item.isVegetarian ? "כן" : "לא",
+          "טבעוני": item.isVegan ? "כן" : "לא",
+          "ללא גלוטן": item.isGlutenFree ? "כן" : "לא",
+          "תגיות": (item.tags ?? []).join(", "),
+          "זמן הכנה (דק')": item.prepTime != null ? String(item.prepTime) : "",
+        });
+      }
+    }
+  }
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  // Set RTL direction + column widths
+  ws["!cols"] = [
+    { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 32 },
+    { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 20 }, { wch: 14 },
+  ];
+  XLSX.utils.book_append_sheet(wb, ws, "תפריט");
+
+  // Instructions sheet
+  const instrRows = [
+    { "הוראות": "מלא/י את גיליון 'תפריט' בהתאם לעמודות." },
+    { "הוראות": "עמודות חובה: תפריט, קטגוריה, שם פריט, מחיר (₪)" },
+    { "הוראות": "צמחוני / טבעוני / ללא גלוטן: כתוב כן או לא" },
+    { "הוראות": "תגיות: הפרד בפסיקים (לדוגמא: חריף, פופולרי)" },
+    { "הוראות": "זמן הכנה: מספר בדקות (אפשרי להשאיר ריק)" },
+  ];
+  const wsInstr = XLSX.utils.json_to_sheet(instrRows);
+  wsInstr["!cols"] = [{ wch: 60 }];
+  XLSX.utils.book_append_sheet(wb, wsInstr, "הוראות");
+
+  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function parseXlsxToImportFile(file: File): Promise<ImportFile> {
+  const XLSX = await import("xlsx");
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json<Record<string, string | number>>(ws, { defval: "" });
+
+  // Group rows into hierarchy
+  const menusMap = new Map<string, Map<string, ImportItem[]>>();
+  for (const row of rows) {
+    const menuName = String(row["תפריט"] ?? "").trim();
+    const catName  = String(row["קטגוריה"] ?? "").trim();
+    const itemName = String(row["שם פריט"] ?? "").trim();
+    if (!menuName || !catName || !itemName) continue;
+
+    if (!menusMap.has(menuName)) menusMap.set(menuName, new Map());
+    const cats = menusMap.get(menuName)!;
+    if (!cats.has(catName)) cats.set(catName, []);
+
+    const rawPrice = row["מחיר (₪)"] ?? row["מחיר"];
+    const price = parseFloat(String(rawPrice)) || 0;
+    const tagsRaw = String(row["תגיות"] ?? "").trim();
+    const prepRaw = String(row["זמן הכנה (דק')"] ?? row["זמן הכנה"] ?? "").trim();
+
+    cats.get(catName)!.push({
+      name: itemName,
+      description: String(row["תיאור"] ?? "").trim(),
+      price,
+      isVegetarian: String(row["צמחוני"] ?? "").trim() === "כן",
+      isVegan:      String(row["טבעוני"] ?? "").trim() === "כן",
+      isGlutenFree: String(row["ללא גלוטן"] ?? "").trim() === "כן",
+      tags: tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [],
+      prepTime: prepRaw ? parseInt(prepRaw) || null : null,
+      sortOrder: cats.get(catName)!.length,
+    });
+  }
+
+  const menus: ImportMenu[] = [];
+  let menuIdx = 0;
+  for (const [menuName, catsMap] of menusMap.entries()) {
+    const categories: ImportCategory[] = [];
+    let catIdx = 0;
+    for (const [catName, items] of catsMap.entries()) {
+      categories.push({ name: catName, sortOrder: catIdx++, items });
+    }
+    menus.push({ name: menuName, isPrimary: menuIdx === 0, scheduleDays: [], scheduleFrom: null, scheduleTo: null, categories });
+    menuIdx++;
+  }
+  return { version: 1, menus };
+}
+
 function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restaurantId: string }) {
   const [groups, setGroups] = useState<ModGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -336,6 +454,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [importDone, setImportDone] = useState<number | null>(null);
+  const [exportDropdown, setExportDropdown] = useState(false);
+  const [sampleDropdown, setSampleDropdown] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -365,9 +485,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   }
 
   // ── Export ────────────────────────────────────────────────────────────────
-  function handleExport() {
-    if (!selectedRestaurant) return;
-    const exportData: ImportFile = {
+  function buildExportData(): ImportFile | null {
+    if (!selectedRestaurant) return null;
+    return {
       version: 1,
       restaurantName: selectedRestaurant.name,
       exportedAt: new Date().toISOString(),
@@ -394,13 +514,35 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
         })),
       })),
     };
-    const safeName = selectedRestaurant.name.replace(/[^a-zA-Z0-9א-ת\s-]/g, "").trim().replace(/\s+/g, "-");
-    downloadJson(exportData, `${safeName}-menu.json`);
+  }
+
+  function safeName() {
+    return (selectedRestaurant?.name ?? "menu").replace(/[^a-zA-Z0-9א-ת\s-]/g, "").trim().replace(/\s+/g, "-");
+  }
+
+  function handleExportJson() {
+    const data = buildExportData();
+    if (!data) return;
+    downloadJson(data, `${safeName()}-menu.json`);
+    setExportDropdown(false);
+  }
+
+  async function handleExportXlsx() {
+    const data = buildExportData();
+    if (!data) return;
+    setExportDropdown(false);
+    await downloadXlsx(data, `${safeName()}-menu.xlsx`);
   }
 
   // ── Sample file download ──────────────────────────────────────────────────
-  function handleSampleDownload() {
+  function handleSampleJson() {
     downloadJson(SAMPLE_DATA, "menu4u-sample.json");
+    setSampleDropdown(false);
+  }
+
+  async function handleSampleXlsx() {
+    setSampleDropdown(false);
+    await downloadXlsx(SAMPLE_DATA, "menu4u-sample.xlsx");
   }
 
   // ── Import file picker ────────────────────────────────────────────────────
@@ -413,9 +555,29 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     setShowImportModal(true);
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    const isXlsx = file.name.endsWith(".xlsx") || file.name.endsWith(".xls");
+
+    if (isXlsx) {
+      try {
+        const parsed = await parseXlsxToImportFile(file);
+        if (parsed.menus.length === 0) {
+          setImportError("הגיליון ריק — ודא שיש שורות עם תפריט, קטגוריה ושם פריט");
+          return;
+        }
+        setImportError(null);
+        setImportData(parsed);
+      } catch {
+        setImportError("שגיאה בקריאת קובץ Excel — ודא שהוא תקין");
+      }
+      return;
+    }
+
+    // JSON
     const reader = new FileReader();
     reader.onload = ev => {
       try {
@@ -435,8 +597,6 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       } catch {
         setImportError("שגיאה בפענוח הקובץ — ודא שהוא קובץ JSON תקין");
       }
-      // Reset file input so same file can be picked again
-      if (fileInputRef.current) fileInputRef.current.value = "";
     };
     reader.readAsText(file);
   }
@@ -769,13 +929,29 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
         <h1 className="text-2xl font-bold text-gray-900">ניהול תפריטים</h1>
         {selectedRestaurant && (
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleExport}
-              disabled={importing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-400 text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-50"
-            >
-              📤 ייצא תפריט
-            </button>
+
+            {/* Export dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setExportDropdown(v => !v); setSampleDropdown(false); }}
+                disabled={importing}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-400 text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-50"
+              >
+                📤 ייצא ▾
+              </button>
+              {exportDropdown && (
+                <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden min-w-[140px]">
+                  <button onClick={handleExportJson} className="w-full text-right px-4 py-2.5 text-sm hover:bg-amber-50 text-gray-700 flex items-center gap-2">
+                    <span className="text-base">📄</span> JSON
+                  </button>
+                  <button onClick={handleExportXlsx} className="w-full text-right px-4 py-2.5 text-sm hover:bg-green-50 text-gray-700 flex items-center gap-2 border-t border-gray-100">
+                    <span className="text-base">📊</span> Excel (.xlsx)
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Import button */}
             <button
               onClick={handleImportClick}
               disabled={importing}
@@ -783,22 +959,42 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             >
               📥 ייבא תפריט
             </button>
-            <button
-              onClick={handleSampleDownload}
-              disabled={importing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
-            >
-              📄 קובץ דוגמא
-            </button>
+
+            {/* Sample dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setSampleDropdown(v => !v); setExportDropdown(false); }}
+                disabled={importing}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                📋 קובץ דוגמא ▾
+              </button>
+              {sampleDropdown && (
+                <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden min-w-[140px]">
+                  <button onClick={handleSampleJson} className="w-full text-right px-4 py-2.5 text-sm hover:bg-amber-50 text-gray-700 flex items-center gap-2">
+                    <span className="text-base">📄</span> JSON
+                  </button>
+                  <button onClick={handleSampleXlsx} className="w-full text-right px-4 py-2.5 text-sm hover:bg-green-50 text-gray-700 flex items-center gap-2 border-t border-gray-100">
+                    <span className="text-base">📊</span> Excel (.xlsx)
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
       </div>
 
-      {/* Hidden file input for import */}
+      {/* Close dropdowns on outside click */}
+      {(exportDropdown || sampleDropdown) && (
+        <div className="fixed inset-0 z-20" onClick={() => { setExportDropdown(false); setSampleDropdown(false); }} />
+      )}
+
+      {/* Hidden file input for import — accepts JSON and Excel */}
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json"
+        accept=".json,.xlsx,.xls"
         className="hidden"
         onChange={handleFileChange}
       />
