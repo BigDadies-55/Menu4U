@@ -1380,36 +1380,43 @@ export default function MenuPublicClient({
         </div>
       )}
 
-      {/* ── Floating registration button ── */}
+      {/* ── Floating registration card ── */}
       <button
         onClick={() => { setRegModalOpen(true); setRegSuccess(false); setRegError(""); setRegForm({ name: "", phone: "", email: "" }); }}
         style={{
           position: "fixed",
           bottom: 24,
-          left: 20,
+          left: 16,
           zIndex: 60,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          gap: 8,
-          padding: "10px 18px",
-          borderRadius: 50,
+          gap: 4,
+          padding: "12px 16px 10px",
+          borderRadius: 18,
           background: "var(--gold, #c9a35d)",
           color: "var(--bg, #111)",
           border: "none",
           fontWeight: 700,
-          fontSize: 13,
+          fontSize: 12,
           cursor: "pointer",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
+          boxShadow: "0 6px 28px rgba(0,0,0,0.45)",
           direction: "rtl",
-          whiteSpace: "nowrap",
+          maxWidth: 130,
+          textAlign: "center",
+          lineHeight: 1.35,
         }}
-        title="הירשם לעדכונים"
+        title="כל מי שרוצה 5% לארוחה מוזמן להירשם"
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
+        {/* Gift icon */}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 2 }}>
+          <polyline points="20 12 20 22 4 22 4 12"/>
+          <rect x="2" y="7" width="20" height="5"/>
+          <line x1="12" y1="22" x2="12" y2="7"/>
+          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
         </svg>
-        הירשם לעדכונים
+        כל מי שרוצה 5% לארוחה מוזמן להירשם
       </button>
 
       {/* ── Registration modal ── */}
@@ -1466,8 +1473,13 @@ export default function MenuPublicClient({
             ) : (
               <>
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 20, marginBottom: 4 }}>הירשם לעדכונים</div>
-                  <div style={{ color: "var(--text, #fff)", opacity: 0.55, fontSize: 13 }}>{restaurant.name}</div>
+                  {/* Gift icon in modal */}
+                  <div style={{ fontSize: 36, marginBottom: 6 }}>🎁</div>
+                  <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 18, marginBottom: 6, lineHeight: 1.3 }}>
+                    קבל 5% הנחה לארוחה הבאה!
+                  </div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.6, fontSize: 13, marginBottom: 2 }}>הירשם ותקבל הטבה ישירות לנייד</div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.45, fontSize: 12 }}>{restaurant.name}</div>
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
