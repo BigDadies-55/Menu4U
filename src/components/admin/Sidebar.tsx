@@ -8,7 +8,7 @@ import type { Role } from "@/generated/prisma/client";
 
 /* ── KDS view definitions ── */
 const KDS_VIEWS = [
-  { value: "DASHBOARD",    href: "/admin/dashboard",       label: "תצוגת שולחן",  icon: "📺" },
+  { value: "DASHBOARD",    href: "/admin/kitchen-table",   label: "תצוגת שולחן",  icon: "📺" },
   { value: "STATION_DARK", href: "/admin/kitchen",         label: "Station Dark",  icon: "🍳" },
   { value: "KANBAN",       href: "/admin/kitchen-kanban",  label: "Kanban",        icon: "📋" },
   { value: "TICKETS",      href: "/admin/kitchen-tickets", label: "Ticket Board",  icon: "🎫" },
