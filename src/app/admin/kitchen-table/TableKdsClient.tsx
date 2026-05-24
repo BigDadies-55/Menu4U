@@ -20,14 +20,23 @@ type Restaurant = { id: string; name: string };
 /* ── Helpers ── */
 function elapsed(d: string) { return Math.floor((Date.now() - new Date(d).getTime()) / 60000); }
 function fmtTime(d: string) {
-  return new Date(d).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
-function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { day: "2-digit", month: "short" });
+  return new Date(d).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
 }
 
-/* ── Header color by urgency ── */
+/* ── Header color by urgency (lighter so black text is readable) ── */
 function headerColor(mins: number, allDone: boolean): string {
+  if (allDone) return "#bbf7d0";      // green-200
+  if (mins >= 20) return "#fecaca";   // red-200
+  if (mins >= 10) return "#fed7aa";   // orange-200
+  return "#bae6fd";                   // sky-200
+}
+function headerTextColor(mins: number, allDone: boolean): string {
+  if (allDone) return "#14532d";
+  if (mins >= 20) return "#7f1d1d";
+  if (mins >= 10) return "#7c2d12";
+  return "#0c4a6e";
+}
+function headerBorderColor(mins: number, allDone: boolean): string {
   if (allDone) return "#16a34a";
   if (mins >= 20) return "#dc2626";
   if (mins >= 10) return "#d97706";
@@ -36,39 +45,98 @@ function headerColor(mins: number, allDone: boolean): string {
 
 /* ── Item status square color ── */
 function itemSquareColor(status: string): string {
-  if (status === "DONE") return "#16a34a";
-  if (status === "PREPARING") return "#f59e0b";
-  if (status === "CANCELLED") return "#6b7280";
+  if (status === "DONE")       return "#16a34a";
+  if (status === "PREPARING")  return "#f59e0b";
+  if (status === "CANCELLED")  return "#d1d5db";
   return "#dc2626"; // PENDING
 }
 
-/* ── KOT Card ── */
-function KotCard({
-  order, kotIndex, canUpdate, tick,
+/* ── Segmented progress bar ── */
+function ProgressBar({ items }: { items: OrderItem[] }) {
+  const valid = items.filter(i => i.itemStatus !== "CANCELLED");
+  if (valid.length === 0) return null;
+  const pct = valid.filter(i => i.itemStatus === "DONE").length / valid.length * 100;
+  const preparingPct = valid.filter(i => i.itemStatus === "PREPARING").length / valid.length * 100;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <div style={{ position: "relative", height: 10, borderRadius: 6, background: "#e5e7eb", overflow: "hidden" }}>
+        {/* Preparing (amber) */}
+        <div style={{
+          position: "absolute", left: `${pct}%`, top: 0, bottom: 0,
+          width: `${preparingPct}%`,
+          background: "#f59e0b",
+          transition: "width 0.4s ease",
+        }}/>
+        {/* Done (green) */}
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0,
+          width: `${pct}%`,
+          background: "#16a34a",
+          transition: "width 0.4s ease",
+        }}/>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 10, color: "#6b7280" }}>
+          {valid.filter(i => i.itemStatus === "DONE").length}/{valid.length} פריטים הוכנו
+        </span>
+        <div style={{ display: "flex", gap: 8 }}>
+          {valid.filter(i => i.itemStatus === "PENDING").length > 0 && (
+            <span style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>
+              {valid.filter(i => i.itemStatus === "PENDING").length} ממתין
+            </span>
+          )}
+          {valid.filter(i => i.itemStatus === "PREPARING").length > 0 && (
+            <span style={{ fontSize: 10, color: "#d97706", fontWeight: 600 }}>
+              {valid.filter(i => i.itemStatus === "PREPARING").length} בהכנה
+            </span>
+          )}
+          {valid.filter(i => i.itemStatus === "DONE").length > 0 && (
+            <span style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>
+              {valid.filter(i => i.itemStatus === "DONE").length} מוכן
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Table Group Card (multiple orders per table) ── */
+function TableGroupCard({
+  tableKey, orders, kotStartIndex, canUpdate, tick,
   onConfirm, onAdvance, onGoBack,
 }: {
-  order: Order; kotIndex: number; canUpdate: boolean; tick: number;
+  tableKey: string; orders: Order[]; kotStartIndex: number;
+  canUpdate: boolean; tick: number;
   onConfirm: (id: string) => void;
   onAdvance: (orderId: string, itemId: string) => void;
-  onGoBack: (orderId: string, itemId: string) => void;
+  onGoBack:  (orderId: string, itemId: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
 
-  const validItems = order.items.filter(i => i.itemStatus !== "CANCELLED");
-  const doneCount  = validItems.filter(i => i.itemStatus === "DONE").length;
-  const allDone    = validItems.length > 0 && doneCount === validItems.length;
-  const mins       = elapsed(order.createdAt);
-  const isPending  = order.status === "PENDING";
-  const hColor     = headerColor(mins, allDone);
+  // Oldest order drives urgency
+  const oldest = orders.reduce((a, b) => new Date(a.createdAt) < new Date(b.createdAt) ? a : b);
+  const mins = elapsed(oldest.createdAt);
 
-  async function adv(itemId: string) {
+  // All valid items across all orders
+  const allItems = orders.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED"));
+  const allDone  = allItems.length > 0 && allItems.every(i => i.itemStatus === "DONE");
+
+  const hColor      = headerColor(mins, allDone);
+  const hTextColor  = headerTextColor(mins, allDone);
+  const hBorder     = headerBorderColor(mins, allDone);
+
+  const totalAmount = orders.reduce((s, o) => s + o.totalAmount, 0);
+
+  async function adv(orderId: string, itemId: string) {
     setBusy(p => new Set(p).add(itemId));
-    await onAdvance(order.id, itemId);
+    await onAdvance(orderId, itemId);
     setBusy(p => { const n = new Set(p); n.delete(itemId); return n; });
   }
-  async function back(itemId: string) {
+  async function back(orderId: string, itemId: string) {
     setBusy(p => new Set(p).add(itemId + "-b"));
-    await onGoBack(order.id, itemId);
+    await onGoBack(orderId, itemId);
     setBusy(p => { const n = new Set(p); n.delete(itemId + "-b"); return n; });
   }
 
@@ -79,142 +147,162 @@ function KotCard({
       overflow: "hidden",
       boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
       display: "flex", flexDirection: "column",
-      minWidth: 220,
+      borderTop: `4px solid ${hBorder}`,
     }}>
-      {/* ── Colored Header ── */}
+      {/* ── Header ── */}
       <div style={{ background: hColor, padding: "10px 14px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ color: "#fff", fontWeight: 800, fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
-              🍽 {order.tableNumber ? `שולחן ${order.tableNumber}` : order.customerName ?? "–"}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Table badge — black text on white */}
+          <div style={{
+            background: "#fff",
+            borderRadius: 8,
+            padding: "3px 12px",
+            fontFamily: "'Heebo', 'Segoe UI', sans-serif",
+            fontWeight: 900,
+            fontSize: tableKey.length > 3 ? 13 : tableKey.length > 2 ? 16 : 20,
+            color: "#000",
+            lineHeight: 1.2,
+            flexShrink: 0,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+          }}>
+            {tableKey}
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: hTextColor, fontWeight: 700, fontSize: 13 }}>
+              🍽 {orders[0].tableNumber ? `שולחן ${tableKey}` : tableKey}
             </div>
-            <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, marginTop: 2, display: "flex", alignItems: "center", gap: 5 }}>
-              📋 KOT #{kotIndex}
+            <div style={{ color: hTextColor, fontSize: 10, opacity: 0.8 }}>
+              {orders.length > 1 ? `${orders.length} הזמנות` : `KOT #${kotStartIndex}`}
             </div>
           </div>
-          <div style={{ textAlign: "left" }}>
-            <div style={{
-              background: "rgba(255,255,255,0.2)",
-              borderRadius: 20, padding: "3px 10px",
-              color: "#fff", fontWeight: 800, fontSize: 13,
-              display: "flex", alignItems: "center", gap: 4,
-            }}>
-              ⏳ {mins < 1 ? "< 1" : mins} דק'
-            </div>
+
+          {/* Timer */}
+          <div style={{
+            background: "rgba(255,255,255,0.6)",
+            borderRadius: 20, padding: "3px 10px",
+            color: hTextColor, fontWeight: 800, fontSize: 12,
+            display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+          }}>
+            ⏳ {mins < 1 ? "< 1" : mins} דק'
           </div>
-        </div>
-        <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 10, marginTop: 4 }}>
-          ⏰ {fmtDate(order.createdAt)} &nbsp;{fmtTime(order.createdAt)}
         </div>
       </div>
 
-      {/* ── Pending banner ── */}
-      {isPending && (
-        <div style={{ background: "#fef3c7", borderBottom: "1px solid #fde68a", padding: "5px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "#92400e", fontWeight: 700 }}>🕐 ממתין לאישור</span>
-          {canUpdate && (
-            <button
-              type="button"
-              onClick={() => onConfirm(order.id)}
-              style={{ background: "#f59e0b", color: "#fff", border: "none", borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 800, cursor: "pointer" }}
-            >✓ אשר</button>
-          )}
-        </div>
-      )}
-
-      {/* ── Items ── */}
-      <div style={{ flex: 1, padding: "8px 0" }}>
-        {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers }) => {
-          const isCancelled = itemStatus === "CANCELLED";
-          const isDone = itemStatus === "DONE";
-          const sqColor = itemSquareColor(itemStatus);
-          const busyAdv = busy.has(iid);
-          const busyBack = busy.has(iid + "-b");
-          const canAdv = canUpdate && !isPending && !isCancelled && itemStatus !== "DONE";
-          const canBack = canUpdate && !isPending && !isCancelled && (itemStatus === "PREPARING" || itemStatus === "DONE");
+      {/* ── Orders ── */}
+      <div style={{ flex: 1 }}>
+        {orders.map((order, oIdx) => {
+          const isPending = order.status === "PENDING";
 
           return (
-            <div key={`${iid}-${tick}`} style={{
-              display: "flex", alignItems: "flex-start", gap: 8,
-              padding: "6px 14px",
-              borderBottom: "1px solid #f1f5f9",
-              opacity: isCancelled ? 0.4 : 1,
-            }}>
-              {/* Status square */}
+            <div key={order.id}>
+              {/* Order sub-header */}
               <div style={{
-                width: 12, height: 12, borderRadius: 3,
-                background: sqColor,
-                marginTop: 3, flexShrink: 0,
-              }}/>
-
-              {/* Item info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  display: "flex", justifyContent: "space-between", gap: 6,
-                  color: isCancelled ? "#9ca3af" : isDone ? "#6b7280" : "#111827",
-                  textDecoration: isCancelled ? "line-through" : undefined,
-                  fontSize: 13, fontWeight: 600, lineHeight: 1.3,
-                }}>
-                  <span style={{ flex: 1 }}>{item.name}</span>
-                  <span style={{ flexShrink: 0, color: "#374151", fontWeight: 700 }}>× {quantity}</span>
-                </div>
-                {modifiers && modifiers.length > 0 && (
-                  <div style={{ fontSize: 11, color: "#6b7280", fontStyle: "italic", marginTop: 1 }}>
-                    {modifiers.map(m => m.label).join(", ")}
-                  </div>
-                )}
-                {notes && (
-                  <div style={{ fontSize: 11, color: "#f59e0b", fontStyle: "italic", marginTop: 1 }}>💬 {notes}</div>
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "5px 14px",
+                background: isPending ? "#fef9c3" : "#f8fafc",
+                borderBottom: "1px solid #e2e8f0",
+                borderTop: oIdx > 0 ? "2px solid #e2e8f0" : undefined,
+              }}>
+                <span style={{ fontSize: 11, color: isPending ? "#92400e" : "#64748b", fontWeight: 700 }}>
+                  {isPending ? "🕐 ממתין לאישור · " : ""}
+                  KOT #{kotStartIndex + oIdx} · {fmtTime(order.createdAt)}
+                  {order.notes ? ` · 💬 ${order.notes}` : ""}
+                </span>
+                {canUpdate && isPending && (
+                  <button type="button" onClick={() => onConfirm(order.id)} style={{
+                    background: "#f59e0b", color: "#fff", border: "none",
+                    borderRadius: 6, padding: "3px 10px", fontSize: 10, fontWeight: 800, cursor: "pointer",
+                  }}>✓ אשר</button>
                 )}
               </div>
 
-              {/* Buttons */}
-              {canUpdate && !isCancelled && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 3, flexShrink: 0 }}>
-                  {canAdv && (
-                    <button type="button" onClick={() => adv(iid)} disabled={busyAdv} style={{
-                      background: itemStatus === "PREPARING" ? "#16a34a" : "#0891b2",
-                      color: "#fff", border: "none", borderRadius: 5,
-                      padding: "3px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer",
-                      opacity: busyAdv ? 0.5 : 1,
+              {/* Items */}
+              {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers }) => {
+                const isCancelled = itemStatus === "CANCELLED";
+                const isDone      = itemStatus === "DONE";
+                const sqColor     = itemSquareColor(itemStatus);
+                const busyAdv     = busy.has(iid);
+                const busyBack    = busy.has(iid + "-b");
+                const canAdv      = canUpdate && !isPending && !isCancelled && itemStatus !== "DONE";
+                const canBack     = canUpdate && !isPending && !isCancelled && (itemStatus === "PREPARING" || itemStatus === "DONE");
+
+                return (
+                  <div key={`${iid}-${tick}`} style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "6px 14px",
+                    borderBottom: "1px solid #f1f5f9",
+                    opacity: isCancelled ? 0.4 : 1,
+                    minWidth: 0,
+                  }}>
+                    {/* Status square */}
+                    <div style={{
+                      width: 11, height: 11, borderRadius: 3,
+                      background: sqColor, flexShrink: 0,
+                    }}/>
+
+                    {/* Item name — truncated */}
+                    <span style={{
+                      flex: 1, minWidth: 0,
+                      color: isCancelled ? "#9ca3af" : isDone ? "#6b7280" : "#111827",
+                      textDecoration: isCancelled ? "line-through" : undefined,
+                      fontSize: 12, fontWeight: 600,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
-                      {busyAdv ? "..." : itemStatus === "PREPARING" ? "מוכן ✓" : "התחל →"}
-                    </button>
-                  )}
-                  {canBack && (
-                    <button type="button" onClick={() => back(iid)} disabled={busyBack} style={{
-                      background: "#f1f5f9", color: "#64748b",
-                      border: "1px solid #e2e8f0", borderRadius: 5,
-                      padding: "2px 6px", fontSize: 10, cursor: "pointer",
-                      opacity: busyBack ? 0.5 : 1,
-                    }}>← חזור</button>
-                  )}
-                </div>
-              )}
+                      {item.name}
+                      {modifiers && modifiers.length > 0 && (
+                        <span style={{ color: "#9ca3af", fontWeight: 400 }}>
+                          {" "}· {modifiers.map(m => m.label).join(", ")}
+                        </span>
+                      )}
+                      {notes && <span style={{ color: "#f59e0b" }}> 💬{notes}</span>}
+                    </span>
+
+                    {/* Qty */}
+                    <span style={{
+                      flexShrink: 0, color: "#374151", fontWeight: 700, fontSize: 12,
+                      background: "#f1f5f9", borderRadius: 5, padding: "1px 6px",
+                    }}>×{quantity}</span>
+
+                    {/* Buttons inline */}
+                    {canUpdate && !isCancelled && (
+                      <>
+                        {canBack && (
+                          <button type="button" onClick={() => back(order.id, iid)} disabled={busyBack} style={{
+                            background: "#f1f5f9", color: "#64748b",
+                            border: "1px solid #e2e8f0", borderRadius: 5,
+                            padding: "3px 7px", fontSize: 10, cursor: "pointer",
+                            flexShrink: 0, opacity: busyBack ? 0.5 : 1,
+                          }}>←</button>
+                        )}
+                        {canAdv && (
+                          <button type="button" onClick={() => adv(order.id, iid)} disabled={busyAdv} style={{
+                            background: itemStatus === "PREPARING" ? "#16a34a" : "#0891b2",
+                            color: "#fff", border: "none", borderRadius: 5,
+                            padding: "3px 8px", fontSize: 10, fontWeight: 700,
+                            cursor: "pointer", flexShrink: 0,
+                            opacity: busyAdv ? 0.5 : 1,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {busyAdv ? "..." : itemStatus === "PREPARING" ? "מוכן ✓" : "התחל →"}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
       </div>
 
-      {/* ── Footer: progress + notes ── */}
-      <div style={{ padding: "8px 14px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" }}>
-        {order.notes && (
-          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>
-            <span style={{ fontWeight: 700 }}>הערה: </span>{order.notes}
-          </div>
-        )}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {validItems.map((i, idx) => (
-            <div key={idx} style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: itemSquareColor(i.itemStatus),
-            }}/>
-          ))}
-          <span style={{ fontSize: 10, color: "#94a3b8", marginRight: "auto" }}>
-            {doneCount}/{validItems.length}
-          </span>
-          <span style={{ fontSize: 11, color: "#374151", fontWeight: 700 }}>
-            ₪{order.totalAmount.toFixed(0)}
+      {/* ── Footer: status bar + total ── */}
+      <div style={{ padding: "10px 14px", borderTop: "2px solid #f1f5f9", background: "#f8fafc" }}>
+        <ProgressBar items={allItems} />
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+          <span style={{ fontSize: 12, color: "#374151", fontWeight: 700 }}>
+            סה"כ ₪{totalAmount.toFixed(0)}
           </span>
         </div>
       </div>
@@ -301,9 +389,8 @@ export default function TableKdsClient({
       else {
         setOrders(prev => prev.map(o => o.id !== orderId ? o : {
           ...o,
-          items: o.items.map(i => {
-            if (i.id !== itemId) return i;
-            return { ...i, itemStatus: i.itemStatus === "PENDING" ? "PREPARING" : "DONE" };
+          items: o.items.map(i => i.id !== itemId ? i : {
+            ...i, itemStatus: i.itemStatus === "PENDING" ? "PREPARING" : "DONE",
           }),
         }));
         setTick(t => t + 1);
@@ -318,20 +405,36 @@ export default function TableKdsClient({
     });
     setOrders(prev => prev.map(o => o.id !== orderId ? o : {
       ...o,
-      items: o.items.map(i => {
-        if (i.id !== itemId) return i;
-        return { ...i, itemStatus: i.itemStatus === "DONE" ? "PREPARING" : "PENDING" };
+      items: o.items.map(i => i.id !== itemId ? i : {
+        ...i, itemStatus: i.itemStatus === "DONE" ? "PREPARING" : "PENDING",
       }),
     }));
     setTick(t => t + 1);
+  }
+
+  /* ── Group orders by table ── */
+  // Sort all orders oldest-first so KOT numbers are stable
+  const sorted = [...orders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const byTable = new Map<string, Order[]>();
+  for (const o of sorted) {
+    const key = o.tableNumber ?? o.customerName ?? "–";
+    if (!byTable.has(key)) byTable.set(key, []);
+    byTable.get(key)!.push(o);
+  }
+
+  // KOT start index per table (global sequential numbering)
+  const kotStartByTable = new Map<string, number>();
+  let kotCounter = 1;
+  for (const [key, tOrders] of byTable) {
+    kotStartByTable.set(key, kotCounter);
+    kotCounter += tOrders.length;
   }
 
   /* ── Stats ── */
   const newOrders        = orders.filter(o => o.status === "PENDING").length;
   const processingOrders = orders.filter(o => o.status === "PREPARING" && o.items.some(i => i.itemStatus === "PREPARING")).length;
   const readyOrders      = orders.filter(o => o.items.every(i => i.itemStatus === "DONE" || i.itemStatus === "CANCELLED") && o.status !== "DELIVERED").length;
-
-  const restName = restaurants.find(r => r.id === restaurantId)?.name ?? "";
+  const restName         = restaurants.find(r => r.id === restaurantId)?.name ?? "";
 
   return (
     <div ref={containerRef} style={{
@@ -346,139 +449,121 @@ export default function TableKdsClient({
         background: "#1e293b",
         borderBottom: "1px solid #334155",
         padding: "10px 20px",
-        display: "flex", alignItems: "center", gap: 16,
-        flexShrink: 0,
+        display: "flex", alignItems: "center", gap: 14,
+        flexShrink: 0, flexWrap: "wrap",
       }}>
-        {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
-            width: 34, height: 34, borderRadius: 9,
+            width: 32, height: 32, borderRadius: 9,
             background: "linear-gradient(135deg,#8B6914,#C9A84C)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontWeight: 900, fontSize: 15, color: "#fff",
+            fontWeight: 900, fontSize: 14, color: "#fff",
           }}>M</div>
-          <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 14 }}>
+          <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 13 }}>
             📺 תצוגת שולחן
             {restName && <span style={{ color: "#64748b", fontWeight: 400 }}> · {restName}</span>}
           </span>
         </div>
 
-        {/* Restaurant selector */}
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-            style={{ background: "#0f172a", color: "#f1f5f9", border: "1px solid #334155", borderRadius: 8, padding: "5px 10px", fontSize: 12, cursor: "pointer" }}>
+            style={{ background: "#0f172a", color: "#f1f5f9", border: "1px solid #334155", borderRadius: 7, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
 
         <div style={{ flex: 1 }} />
 
-        {/* ── Status counters ── */}
+        {/* Status counters */}
         {[
-          { label: "הזמנות חדשות", count: newOrders,        color: "#dc2626", bg: "#fee2e2" },
-          { label: "בהכנה",        count: processingOrders, color: "#d97706", bg: "#fef3c7" },
-          { label: "מוכן",         count: readyOrders,       color: "#16a34a", bg: "#dcfce7" },
-          { label: "סה\"כ פעיל",   count: orders.length,     color: "#0891b2", bg: "#e0f2fe" },
+          { label: "חדש",      count: newOrders,        color: "#dc2626" },
+          { label: "בהכנה",    count: processingOrders, color: "#d97706" },
+          { label: "מוכן",     count: readyOrders,      color: "#16a34a" },
+          { label: "שולחנות",  count: byTable.size,     color: "#0891b2" },
         ].map(s => (
-          <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <div style={{
-              width: 28, height: 28, borderRadius: "50%",
+              width: 26, height: 26, borderRadius: "50%",
               background: s.color, color: "#fff",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 900, fontSize: 13,
+              fontWeight: 900, fontSize: 12,
             }}>{s.count}</div>
-            <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>{s.label}</span>
+            <span style={{ fontSize: 11, color: "#94a3b8" }}>{s.label}</span>
           </div>
         ))}
 
-        <div style={{ width: 1, height: 24, background: "#334155" }}/>
+        <div style={{ width: 1, height: 20, background: "#334155" }}/>
 
-        {/* Alert */}
         {newAlert && (
-          <div style={{
-            background: "#facc15", color: "#000",
-            padding: "5px 12px", borderRadius: 20,
-            fontWeight: 800, fontSize: 12,
-          }}>🔔 הזמנה חדשה!</div>
+          <div style={{ background: "#facc15", color: "#000", padding: "4px 10px", borderRadius: 20, fontWeight: 800, fontSize: 11 }}>
+            🔔 הזמנה חדשה!
+          </div>
         )}
 
-        {/* Clock + countdown */}
-        <span style={{ fontSize: 12, color: "#64748b" }}>
+        <span style={{ fontSize: 11, color: "#64748b" }}>
           {now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · ↻ {countdown}s
         </span>
 
-        {/* Buttons */}
         <button type="button" onClick={fetchOrders} style={{
-          background: "#0f172a", color: "#94a3b8",
-          border: "1px solid #334155", borderRadius: 7,
-          padding: "5px 11px", fontSize: 11, cursor: "pointer",
+          background: "#0f172a", color: "#94a3b8", border: "1px solid #334155",
+          borderRadius: 7, padding: "4px 10px", fontSize: 11, cursor: "pointer",
         }}>↻ רענן</button>
         <button type="button" onClick={toggleFullscreen} style={{
-          background: "#0f172a", color: "#94a3b8",
-          border: "1px solid #334155", borderRadius: 7,
-          padding: "5px 11px", fontSize: 11, cursor: "pointer",
+          background: "#0f172a", color: "#94a3b8", border: "1px solid #334155",
+          borderRadius: 7, padding: "4px 10px", fontSize: 11, cursor: "pointer",
         }}>{fullscreen ? "⊠ צא" : "⛶ מסך מלא"}</button>
       </div>
 
-      {/* ── Status legend strip ── */}
+      {/* ── Legend ── */}
       <div style={{
-        background: "#1a2540",
-        borderBottom: "1px solid #1e293b",
-        padding: "6px 20px",
-        display: "flex", gap: 20, alignItems: "center",
+        background: "#1a2540", borderBottom: "1px solid #1e293b",
+        padding: "5px 20px", display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap",
       }}>
         {[
-          { color: "#dc2626", label: "דחוף (20+ דק')" },
-          { color: "#d97706", label: "בינוני (10-20 דק')" },
-          { color: "#0891b2", label: "חדש (< 10 דק')" },
-          { color: "#16a34a", label: "הושלם" },
+          { color: "#dc2626", label: "דחוף 20+ דק'" },
+          { color: "#d97706", label: "בינוני 10-20 דק'" },
+          { color: "#0891b2", label: "חדש < 10 דק'" },
+          { color: "#16a34a", label: "הכל מוכן" },
         ].map(l => (
-          <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 12, height: 12, borderRadius: 3, background: l.color }}/>
+          <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: l.color }}/>
             <span style={{ fontSize: 10, color: "#64748b" }}>{l.label}</span>
           </div>
         ))}
-        <div style={{ marginRight: "auto", display: "flex", gap: 16 }}>
-          {[
-            { color: "#dc2626", label: "ממתין" },
-            { color: "#f59e0b", label: "בהכנה" },
-            { color: "#16a34a", label: "מוכן" },
-          ].map(l => (
+        <div style={{ marginRight: "auto", display: "flex", gap: 14 }}>
+          {[{ color: "#dc2626", label: "ממתין" }, { color: "#f59e0b", label: "בהכנה" }, { color: "#16a34a", label: "מוכן" }].map(l => (
             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: l.color }}/>
+              <div style={{ width: 9, height: 9, borderRadius: 2, background: l.color }}/>
               <span style={{ fontSize: 10, color: "#64748b" }}>{l.label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Cards ── */}
+      {/* ── Cards grid ── */}
       <div style={{
-        flex: 1,
-        padding: "20px 24px",
+        flex: 1, padding: "20px 24px",
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-        gap: 16,
-        alignContent: "start",
-        overflowY: "auto",
+        gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+        gap: 16, alignContent: "start", overflowY: "auto",
       }}>
-        {orders.length === 0 ? (
+        {byTable.size === 0 ? (
           <div style={{
-            gridColumn: "1 / -1",
-            display: "flex", flexDirection: "column",
+            gridColumn: "1 / -1", display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
-            minHeight: 300, gap: 12, color: "#334155",
+            minHeight: 300, gap: 12,
           }}>
             <div style={{ fontSize: 64 }}>✅</div>
             <div style={{ color: "#475569", fontWeight: 700, fontSize: 18 }}>אין הזמנות פעילות</div>
             <div style={{ color: "#334155", fontSize: 13 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
           </div>
         ) : (
-          orders.map((order, idx) => (
-            <KotCard
-              key={order.id}
-              order={order}
-              kotIndex={idx + 1}
+          Array.from(byTable.entries()).map(([tableKey, tableOrders]) => (
+            <TableGroupCard
+              key={tableKey}
+              tableKey={tableKey}
+              orders={tableOrders}
+              kotStartIndex={kotStartByTable.get(tableKey) ?? 1}
               canUpdate={canUpdate}
               tick={tick}
               onConfirm={handleConfirm}
