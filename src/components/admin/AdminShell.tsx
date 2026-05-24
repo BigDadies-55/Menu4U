@@ -69,12 +69,10 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
     <div
       className="min-h-screen"
       style={{
-        backgroundColor: adminBg,
-        backgroundImage:    adminBgImage ? `url(${adminBgImage})` : undefined,
-        backgroundSize:     adminBgImage ? "cover" : undefined,
-        backgroundPosition: adminBgImage ? "center" : undefined,
-        backgroundRepeat:   adminBgImage ? "no-repeat" : undefined,
-        backgroundAttachment: adminBgImage ? "fixed" : undefined,
+        // adminBg can be a hex color OR a CSS gradient string
+        background: adminBgImage
+          ? `url(${adminBgImage}) center/cover no-repeat fixed`
+          : adminBg,
       }}
       dir="rtl"
     >

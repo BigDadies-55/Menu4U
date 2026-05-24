@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 
-/* ─── Admin sidebar palette options ─────────────────────── */
+/* ─── Sidebar palette options ────────────────────────────── */
 const PALETTES = [
   { id: "dark",   label: "Dark",   bg: "#0f111a", accent: "#f59e0b", preview: "linear-gradient(135deg,#0f111a,#1a1c27)", desc: "ברירת מחדל — כהה עם זהב" },
   { id: "purple", label: "Purple", bg: "#130c1e", accent: "#7c3aed", preview: "linear-gradient(135deg,#130c1e,#1e1032)", desc: "סגול כהה" },
@@ -11,8 +11,8 @@ const PALETTES = [
   { id: "rose",   label: "Rose",   bg: "#150a0e", accent: "#e11d48", preview: "linear-gradient(135deg,#150a0e,#220c13)", desc: "אדום כהה" },
 ] as const;
 
-/* ─── Background color presets ───────────────────────────── */
-const BG_PRESETS = [
+/* ─── Solid color presets ────────────────────────────────── */
+const COLOR_PRESETS = [
   { id: "#f0ece3", label: "Sand",     dark: false },
   { id: "#f8fafc", label: "White",    dark: false },
   { id: "#f1f5f9", label: "Gray",     dark: false },
@@ -20,12 +20,42 @@ const BG_PRESETS = [
   { id: "#111827", label: "Charcoal", dark: true  },
 ];
 
+/* ─── Gradient presets ───────────────────────────────────── */
+const GRADIENT_PRESETS = [
+  { id: "linear-gradient(135deg,#f0ece3,#ddd0c0)",        label: "Sand Warm",   dark: false },
+  { id: "linear-gradient(135deg,#e0f2fe,#bfdbfe)",        label: "Sky Blue",    dark: false },
+  { id: "linear-gradient(135deg,#dcfce7,#a7f3d0)",        label: "Mint",        dark: false },
+  { id: "linear-gradient(135deg,#fef3c7,#fde68a)",        label: "Sunrise",     dark: false },
+  { id: "linear-gradient(135deg,#f3e8ff,#e9d5ff)",        label: "Lavender",    dark: false },
+  { id: "linear-gradient(135deg,#fce7f3,#fbcfe8)",        label: "Rose Blush",  dark: false },
+  { id: "linear-gradient(135deg,#1e1b4b,#312e81)",        label: "Deep Indigo", dark: true  },
+  { id: "linear-gradient(135deg,#0f172a,#1e293b)",        label: "Midnight",    dark: true  },
+  { id: "linear-gradient(135deg,#052e16,#14532d)",        label: "Forest",      dark: true  },
+  { id: "linear-gradient(135deg,#450a0a,#7f1d1d)",        label: "Crimson",     dark: true  },
+  { id: "linear-gradient(135deg,#0c1445,#1e3a5f)",        label: "Ocean Deep",  dark: true  },
+  { id: "linear-gradient(135deg,#1a0533,#2d0a5e)",        label: "Galaxy",      dark: true  },
+] as const;
+
+/* ─── Gradient angles ────────────────────────────────────── */
+const ANGLES = [
+  { label: "↘", value: "135deg" },
+  { label: "→", value: "90deg"  },
+  { label: "↓", value: "180deg" },
+  { label: "↗", value: "45deg"  },
+];
+
+/* ─── Helpers ────────────────────────────────────────────── */
+function isGradient(v: string) { return v.includes("gradient"); }
+function isImage(v: string | null) { return !!v; }
+
 /* ─── Types ──────────────────────────────────────────────── */
 type Config = {
   siteName: string; logo: string | null;
   domain: string | null; copyright: string | null;
   adminPalette: string; adminBg: string; adminBgImage: string | null;
 };
+
+type BgTab = "color" | "gradient" | "image";
 
 /* ─── Section wrapper ────────────────────────────────────── */
 function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
@@ -47,6 +77,20 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   const [saved,         setSaved]         = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBg,   setUploadingBg]   = useState(false);
+
+  // Determine initial tab
+  const initTab = (): BgTab => {
+    if (initial.adminBgImage) return "image";
+    if (isGradient(initial.adminBg)) return "gradient";
+    return "color";
+  };
+  const [bgTab, setBgTab] = useState<BgTab>(initTab);
+
+  // Custom gradient state
+  const [customFrom,  setCustomFrom]  = useState("#f0ece3");
+  const [customTo,    setCustomTo]    = useState("#ddd0c0");
+  const [customAngle, setCustomAngle] = useState("135deg");
+
   const fileRef    = useRef<HTMLInputElement>(null);
   const bgImgRef   = useRef<HTMLInputElement>(null);
   const colorRef   = useRef<HTMLInputElement>(null);
@@ -56,13 +100,21 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     setSaved(false);
   }
 
+  function applyCustomGradient(from = customFrom, to = customTo, angle = customAngle) {
+    update("adminBg", `linear-gradient(${angle},${from},${to})`);
+    update("adminBgImage", null);
+  }
+
   async function uploadFile(file: File, field: "logo" | "adminBgImage", setLoading: (v: boolean) => void) {
     setLoading(true);
     const fd = new FormData();
     fd.append("file", file);
     const res  = await fetch("/api/admin/upload", { method: "POST", body: fd });
     const data = await res.json();
-    if (data.url) update(field, data.url);
+    if (data.url) {
+      update(field, data.url);
+      if (field === "adminBgImage") setBgTab("image");
+    }
     setLoading(false);
   }
 
@@ -81,7 +133,15 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     }
   }
 
-  const isCustomBg = !BG_PRESETS.some(p => p.id === form.adminBg);
+  const isCustomColor = !COLOR_PRESETS.some(p => p.id === form.adminBg) && !isGradient(form.adminBg);
+  const isCustomGrad  = isGradient(form.adminBg) && !GRADIENT_PRESETS.some(p => p.id === form.adminBg);
+
+  function switchTab(tab: BgTab) {
+    setBgTab(tab);
+    if (tab !== "image") update("adminBgImage", null);
+    if (tab === "color" && isGradient(form.adminBg)) update("adminBg", "#f0ece3");
+    if (tab === "gradient" && !isGradient(form.adminBg)) update("adminBg", GRADIENT_PRESETS[0].id);
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-2xl">
@@ -129,33 +189,30 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
         {/* ── Background ── */}
         <Section title="רקע פאנל הניהול" icon="🖌️">
 
-          {/* Tab: Color / Image */}
-          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-4 w-fit">
-            <button
-              onClick={() => update("adminBgImage", null)}
-              className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
-              style={!form.adminBgImage
-                ? { background: "white", color: "#1f2937", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
-                : { color: "#6b7280" }}
-            >
-              🎨 צבע
-            </button>
-            <button
-              onClick={() => bgImgRef.current?.click()}
-              className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
-              style={form.adminBgImage
-                ? { background: "white", color: "#1f2937", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
-                : { color: "#6b7280" }}
-            >
-              🖼️ תמונה
-            </button>
+          {/* Tab switcher */}
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-5 w-fit">
+            {(["color","gradient","image"] as BgTab[]).map(tab => {
+              const labels = { color: "🎨 צבע", gradient: "🌈 Gradient", image: "🖼️ תמונה" };
+              return (
+                <button
+                  key={tab}
+                  onClick={() => tab === "image" ? bgImgRef.current?.click() : switchTab(tab)}
+                  className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  style={bgTab === tab
+                    ? { background: "white", color: "#1f2937", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+                    : { color: "#6b7280" }}
+                >
+                  {labels[tab]}
+                </button>
+              );
+            })}
           </div>
 
-          {/* ── Color mode ── */}
-          {!form.adminBgImage && (
+          {/* ── SOLID COLOR ── */}
+          {bgTab === "color" && (
             <>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
-                {BG_PRESETS.map(p => {
+                {COLOR_PRESETS.map(p => {
                   const active = form.adminBg === p.id;
                   return (
                     <button
@@ -184,26 +241,20 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                   );
                 })}
 
-                {/* Custom color picker tile */}
+                {/* Custom color tile */}
                 <button
                   onClick={() => colorRef.current?.click()}
                   title="צבע מותאם אישית"
-                  className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all overflow-hidden"
+                  className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
                   style={{
-                    borderColor: isCustomBg ? "#f59e0b" : "rgba(0,0,0,0.08)",
-                    boxShadow: isCustomBg ? "0 0 0 3px rgba(245,158,11,0.3)" : "none",
-                    background: isCustomBg ? form.adminBg : "white",
+                    background: isCustomColor ? form.adminBg : "white",
+                    borderColor: isCustomColor ? "#f59e0b" : "rgba(0,0,0,0.08)",
+                    boxShadow: isCustomColor ? "0 0 0 3px rgba(245,158,11,0.3)" : "none",
                   }}
                 >
-                  <div
-                    className="w-full h-8 rounded-md"
-                    style={{
-                      background: "conic-gradient(from 0deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6, #ef4444)",
-                      opacity: isCustomBg ? 0.5 : 1,
-                    }}
-                  />
+                  <div className="w-full h-8 rounded-md" style={{ background: "conic-gradient(from 0deg,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6,#ef4444)", opacity: isCustomColor ? 0.5 : 1 }} />
                   <span className="text-[10px] font-semibold text-gray-600">Custom</span>
-                  {isCustomBg && (
+                  {isCustomColor && (
                     <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
                       <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
                         <polyline points="20 6 9 17 4 12"/>
@@ -211,100 +262,187 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                     </div>
                   )}
                 </button>
-                <input
-                  ref={colorRef}
-                  type="color"
-                  className="sr-only"
-                  value={isCustomBg ? form.adminBg : "#f0ece3"}
+                <input ref={colorRef} type="color" className="sr-only"
+                  value={isCustomColor ? form.adminBg : "#f0ece3"}
                   onChange={e => update("adminBg", e.target.value)}
                 />
               </div>
 
-              {/* Current color strip */}
-              <div className="flex items-center gap-3 mt-1 p-3 rounded-xl border border-gray-100 bg-gray-50">
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
                 <div className="w-8 h-8 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminBg }} />
                 <span className="text-xs font-mono text-gray-600 uppercase flex-1">{form.adminBg}</span>
-                <button
-                  onClick={() => colorRef.current?.click()}
-                  className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
-                >
+                <button onClick={() => colorRef.current?.click()}
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">
                   בחר צבע
                 </button>
               </div>
             </>
           )}
 
-          {/* ── Image mode ── */}
-          {form.adminBgImage && (
-            <div className="space-y-3">
-              {/* Preview */}
-              <div
-                className="w-full h-36 rounded-xl border border-gray-200 overflow-hidden relative bg-gray-100"
-                style={{
-                  backgroundImage: `url(${form.adminBgImage})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }}
-              >
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+          {/* ── GRADIENT ── */}
+          {bgTab === "gradient" && (
+            <>
+              {/* Preset gradient grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mb-4">
+                {GRADIENT_PRESETS.map(p => {
+                  const active = form.adminBg === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => { update("adminBg", p.id); update("adminBgImage", null); }}
+                      title={p.label}
+                      className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all overflow-hidden"
+                      style={{
+                        borderColor: active ? "#f59e0b" : "transparent",
+                        boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "0 0 0 1px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      <div className="w-full h-10 rounded-lg" style={{ background: p.id }} />
+                      <span className="text-[10px] font-semibold" style={{ color: p.dark ? "#374151" : "#374151" }}>
+                        {p.label}
+                      </span>
+                      {active && (
+                        <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom gradient builder */}
+              <div className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3"
+                style={{ background: isCustomGrad ? "rgba(245,158,11,0.04)" : undefined,
+                         borderColor: isCustomGrad ? "#f59e0b" : undefined }}>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  {isCustomGrad ? "✨ גרדיאנט מותאם אישית" : "בנה גרדיאנט מותאם"}
+                </div>
+
+                {/* Preview strip */}
+                <div className="w-full h-10 rounded-xl border border-gray-100"
+                  style={{ background: `linear-gradient(${customAngle},${customFrom},${customTo})` }} />
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* From color */}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-500">מ:</label>
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer" style={{ background: customFrom }}
+                        onClick={() => document.getElementById("grad-from")?.click()} />
+                      <input id="grad-from" type="color" className="sr-only" value={customFrom}
+                        onChange={e => { setCustomFrom(e.target.value); applyCustomGradient(e.target.value, customTo, customAngle); }} />
+                    </div>
+                    <span className="text-xs font-mono text-gray-500">{customFrom}</span>
+                  </div>
+
+                  {/* To color */}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-500">עד:</label>
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer" style={{ background: customTo }}
+                        onClick={() => document.getElementById("grad-to")?.click()} />
+                      <input id="grad-to" type="color" className="sr-only" value={customTo}
+                        onChange={e => { setCustomTo(e.target.value); applyCustomGradient(customFrom, e.target.value, customAngle); }} />
+                    </div>
+                    <span className="text-xs font-mono text-gray-500">{customTo}</span>
+                  </div>
+
+                  {/* Angle */}
+                  <div className="flex items-center gap-1">
+                    {ANGLES.map(a => (
+                      <button key={a.value} onClick={() => { setCustomAngle(a.value); applyCustomGradient(customFrom, customTo, a.value); }}
+                        className="w-7 h-7 rounded-lg text-sm font-bold border transition-all"
+                        style={customAngle === a.value
+                          ? { background: "#f59e0b", color: "#fff", borderColor: "#f59e0b" }
+                          : { background: "white", color: "#6b7280", borderColor: "#e5e7eb" }}>
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <button
-                    onClick={() => bgImgRef.current?.click()}
-                    className="px-4 py-2 bg-white/90 rounded-xl text-sm font-semibold text-gray-800"
-                  >
-                    החלף תמונה
+                    onClick={() => applyCustomGradient()}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
+                    style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                    החל
                   </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
+
+              {/* Current gradient preview */}
+              {isGradient(form.adminBg) && (
+                <div className="flex items-center gap-3 mt-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
+                  <div className="w-8 h-8 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminBg }} />
+                  <span className="text-xs font-mono text-gray-500 flex-1 truncate">{form.adminBg}</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── IMAGE ── */}
+          {bgTab === "image" && (
+            <div className="space-y-3">
+              {form.adminBgImage ? (
+                <>
+                  <div className="w-full h-40 rounded-xl border border-gray-200 overflow-hidden relative"
+                    style={{ backgroundImage: `url(${form.adminBgImage})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <button onClick={() => bgImgRef.current?.click()}
+                        className="px-4 py-2 bg-white/90 rounded-xl text-sm font-semibold text-gray-800">
+                        החלף תמונה
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => bgImgRef.current?.click()} disabled={uploadingBg}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
+                      style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                      {uploadingBg ? "מעלה..." : "החלף תמונה"}
+                    </button>
+                    <button onClick={() => { update("adminBgImage", null); setBgTab("color"); }}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors">
+                      הסר תמונה
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div
+                  className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-amber-400 transition-colors bg-gray-50"
                   onClick={() => bgImgRef.current?.click()}
-                  disabled={uploadingBg}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
                 >
-                  {uploadingBg ? "מעלה..." : "החלף תמונה"}
-                </button>
-                <button
-                  onClick={() => update("adminBgImage", null)}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
-                >
-                  הסר תמונה
-                </button>
-              </div>
-              <p className="text-xs text-gray-400">התמונה תכסה את כל הרקע בגודל מלא (cover)</p>
+                  {uploadingBg ? (
+                    <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5">
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
+                    </svg>
+                  ) : (
+                    <>
+                      <span className="text-3xl text-gray-300">🖼️</span>
+                      <span className="text-sm text-gray-400">לחץ להעלאת תמונת רקע</span>
+                      <span className="text-xs text-gray-300">JPG / PNG / WebP</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-gray-400">התמונה תכסה את כל הרקע (cover) ותישאר קבועה בגלילה</p>
             </div>
           )}
 
-          {/* Hidden bg image file input */}
-          <input
-            ref={bgImgRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
+          {/* Hidden image file input */}
+          <input ref={bgImgRef} type="file" accept="image/*" className="hidden"
             onChange={e => {
               const f = e.target.files?.[0];
               if (f) uploadFile(f, "adminBgImage", setUploadingBg);
               e.target.value = "";
             }}
           />
-
-          {/* Upload spinner overlay */}
-          {uploadingBg && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
-              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
-              </svg>
-              מעלה תמונה...
-            </div>
-          )}
         </Section>
 
         {/* ── Site name ── */}
         <Section title="שם האתר" icon="✏️">
-          <input
-            type="text"
-            value={form.siteName}
-            onChange={e => update("siteName", e.target.value)}
+          <input type="text" value={form.siteName} onChange={e => update("siteName", e.target.value)}
             placeholder="Menu4U"
             className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
@@ -316,31 +454,23 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
           <div className="flex items-center gap-5">
             <div
               className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center shrink-0 overflow-hidden bg-gray-50 cursor-pointer hover:border-amber-400 transition-colors"
-              onClick={() => fileRef.current?.click()}
-              title="לחץ להעלאת לוגו"
+              onClick={() => fileRef.current?.click()} title="לחץ להעלאת לוגו"
             >
-              {form.logo ? (
-                <img src={form.logo} alt="לוגו" className="w-full h-full object-contain" />
-              ) : (
-                <span className="text-2xl text-gray-300">🏪</span>
-              )}
+              {form.logo
+                ? <img src={form.logo} alt="לוגו" className="w-full h-full object-contain" />
+                : <span className="text-2xl text-gray-300">🏪</span>}
             </div>
             <div className="flex-1 space-y-2">
               <p className="text-sm text-gray-500">מומלץ: PNG/SVG שקוף, לפחות 200×200px</p>
               <div className="flex gap-2">
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploadingLogo}
+                <button onClick={() => fileRef.current?.click()} disabled={uploadingLogo}
                   className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 transition-all"
-                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
-                >
+                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
                   {uploadingLogo ? "מעלה..." : "העלה לוגו"}
                 </button>
                 {form.logo && (
-                  <button
-                    onClick={() => update("logo", null)}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
-                  >
+                  <button onClick={() => update("logo", null)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors">
                     הסר
                   </button>
                 )}
@@ -348,23 +478,15 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               {form.logo && <p className="text-xs text-gray-400 truncate max-w-[260px]">{form.logo}</p>}
             </div>
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f, "logo", setUploadingLogo); e.target.value = ""; }}
           />
         </Section>
 
         {/* ── Domain ── */}
         <Section title="דומיין ראשי" icon="🌐">
-          <input
-            type="text"
-            value={form.domain ?? ""}
-            onChange={e => update("domain", e.target.value || null)}
-            placeholder="לדוגמא: app.mysite.co.il"
-            dir="ltr"
+          <input type="text" value={form.domain ?? ""} onChange={e => update("domain", e.target.value || null)}
+            placeholder="לדוגמא: app.mysite.co.il" dir="ltr"
             className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
           <p className="text-xs text-gray-400 mt-1.5">הדומיין הראשי של פלטפורמת Menu4U</p>
@@ -372,10 +494,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
         {/* ── Copyright ── */}
         <Section title="כל הזכויות שמורות" icon="©">
-          <input
-            type="text"
-            value={form.copyright ?? ""}
-            onChange={e => update("copyright", e.target.value || null)}
+          <input type="text" value={form.copyright ?? ""} onChange={e => update("copyright", e.target.value || null)}
             placeholder={`© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות`}
             className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
@@ -384,12 +503,9 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
         {/* ── Save ── */}
         <div className="flex items-center gap-3 pt-1">
-          <button
-            onClick={save}
-            disabled={saving}
+          <button onClick={save} disabled={saving}
             className="px-6 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition-all"
-            style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
-          >
+            style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
             {saving ? "שומר..." : "שמור הגדרות"}
           </button>
           {saved && (
