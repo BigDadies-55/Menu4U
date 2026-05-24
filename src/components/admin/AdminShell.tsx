@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
+import TopBar from "./TopBar";
 import type { Role } from "@/generated/prisma/client";
 
 const SIDEBAR_COLLAPSED = 60;    // px — icon rail only
@@ -34,6 +35,12 @@ export default function AdminShell({ user, kdsView, children }: Props) {
     });
   }
 
+  function openPasswordModal() {
+    setShowPasswordModal(true);
+    setPwError("");
+    setPwSuccess(false);
+  }
+
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPwLoading(true); setPwError(""); setPwSuccess(false);
@@ -61,31 +68,12 @@ export default function AdminShell({ user, kdsView, children }: Props) {
         pinned={pinned} onTogglePin={togglePin}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onChangePassword={() => { setShowPasswordModal(true); setPwError(""); setPwSuccess(false); }}
+        onChangePassword={openPasswordModal}
       />
-
-      {/* Mobile top bar */}
-      <div
-        className="md:hidden fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-4 py-3"
-        style={{ background: "#0f111a", borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm text-white" style={{ background: "linear-gradient(135deg,#c9a35d,#8B6914)" }}>M</div>
-          <span className="font-bold text-white text-sm">Menu4U<span style={{ color: "#c9a35d" }}>.</span></span>
-        </div>
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
-        >
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-      </div>
 
       {/* Main — offset right so content is never under the sidebar */}
       <main
-        className="overflow-auto pt-14 md:pt-0"
+        className="overflow-auto flex flex-col min-h-screen"
         style={{
           marginRight: pinned ? SIDEBAR_PINNED : SIDEBAR_COLLAPSED,
           transition: "margin-right 230ms cubic-bezier(0.4,0,0.2,1)",
@@ -93,7 +81,18 @@ export default function AdminShell({ user, kdsView, children }: Props) {
       >
         {/* On mobile: no right margin */}
         <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
-        {children}
+
+        {/* Top bar — sticky, full width of main */}
+        <TopBar
+          user={user}
+          onChangePassword={openPasswordModal}
+          onOpenMobileSidebar={() => setSidebarOpen(true)}
+        />
+
+        {/* Page content */}
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
 
       {/* Password modal */}
