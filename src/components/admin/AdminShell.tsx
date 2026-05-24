@@ -10,10 +10,13 @@ const SIDEBAR_PINNED    = 256;   // px — full expanded width
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
   kdsView: string;
+  adminPalette?: string;
+  siteLogo?: string | null;
+  siteName?: string;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", siteLogo, siteName = "Menu4U", children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [showPasswordModal, setShowPasswordModal]  = useState(false);
@@ -70,6 +73,9 @@ export default function AdminShell({ user, kdsView, children }: Props) {
         onOpen={() => setSidebarOpen(true)}
         onClose={() => setSidebarOpen(false)}
         onChangePassword={openPasswordModal}
+        adminPalette={adminPalette}
+        siteLogo={siteLogo}
+        siteName={siteName}
       />
 
       {/* Main — offset right so content is never under the sidebar */}

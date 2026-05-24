@@ -401,7 +401,8 @@ export const ModelName = {
   OrderItemModifier: 'OrderItemModifier',
   MenuView: 'MenuView',
   AuditLog: 'AuditLog',
-  TableSession: 'TableSession'
+  TableSession: 'TableSession',
+  SiteConfig: 'SiteConfig'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -417,7 +418,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1753,6 +1754,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SiteConfig: {
+      payload: Prisma.$SiteConfigPayload<ExtArgs>
+      fields: Prisma.SiteConfigFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SiteConfigFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SiteConfigFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>
+        }
+        findFirst: {
+          args: Prisma.SiteConfigFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SiteConfigFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>
+        }
+        findMany: {
+          args: Prisma.SiteConfigFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>[]
+        }
+        create: {
+          args: Prisma.SiteConfigCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>
+        }
+        createMany: {
+          args: Prisma.SiteConfigCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SiteConfigCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>[]
+        }
+        delete: {
+          args: Prisma.SiteConfigDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>
+        }
+        update: {
+          args: Prisma.SiteConfigUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>
+        }
+        deleteMany: {
+          args: Prisma.SiteConfigDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SiteConfigUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SiteConfigUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>[]
+        }
+        upsert: {
+          args: Prisma.SiteConfigUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SiteConfigPayload>
+        }
+        aggregate: {
+          args: Prisma.SiteConfigAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSiteConfig>
+        }
+        groupBy: {
+          args: Prisma.SiteConfigGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SiteConfigGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SiteConfigCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SiteConfigCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2059,6 +2134,19 @@ export const TableSessionScalarFieldEnum = {
 export type TableSessionScalarFieldEnum = (typeof TableSessionScalarFieldEnum)[keyof typeof TableSessionScalarFieldEnum]
 
 
+export const SiteConfigScalarFieldEnum = {
+  id: 'id',
+  siteName: 'siteName',
+  logo: 'logo',
+  domain: 'domain',
+  copyright: 'copyright',
+  adminPalette: 'adminPalette',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SiteConfigScalarFieldEnum = (typeof SiteConfigScalarFieldEnum)[keyof typeof SiteConfigScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2338,6 +2426,7 @@ export type GlobalOmitConfig = {
   menuView?: Prisma.MenuViewOmit
   auditLog?: Prisma.AuditLogOmit
   tableSession?: Prisma.TableSessionOmit
+  siteConfig?: Prisma.SiteConfigOmit
 }
 
 /* Types for Logging */

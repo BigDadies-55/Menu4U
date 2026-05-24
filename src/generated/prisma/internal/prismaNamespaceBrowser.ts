@@ -68,7 +68,8 @@ export const ModelName = {
   OrderItemModifier: 'OrderItemModifier',
   MenuView: 'MenuView',
   AuditLog: 'AuditLog',
-  TableSession: 'TableSession'
+  TableSession: 'TableSession',
+  SiteConfig: 'SiteConfig'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -352,6 +353,19 @@ export const TableSessionScalarFieldEnum = {
 } as const
 
 export type TableSessionScalarFieldEnum = (typeof TableSessionScalarFieldEnum)[keyof typeof TableSessionScalarFieldEnum]
+
+
+export const SiteConfigScalarFieldEnum = {
+  id: 'id',
+  siteName: 'siteName',
+  logo: 'logo',
+  domain: 'domain',
+  copyright: 'copyright',
+  adminPalette: 'adminPalette',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SiteConfigScalarFieldEnum = (typeof SiteConfigScalarFieldEnum)[keyof typeof SiteConfigScalarFieldEnum]
 
 
 export const SortOrder = {

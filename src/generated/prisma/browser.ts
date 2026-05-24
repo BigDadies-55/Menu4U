@@ -107,3 +107,8 @@ export type AuditLog = Prisma.AuditLogModel
  * 
  */
 export type TableSession = Prisma.TableSessionModel
+/**
+ * Model SiteConfig
+ * 
+ */
+export type SiteConfig = Prisma.SiteConfigModel
