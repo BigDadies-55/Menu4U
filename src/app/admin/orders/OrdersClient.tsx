@@ -413,7 +413,7 @@ function TableCard({
                       {quantity}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium truncate ${isDone || isItemCancelled ? "line-through text-gray-400" : "text-gray-800"}`}>
+                      <div className={`text-sm font-semibold truncate ${isDone || isItemCancelled ? "line-through text-gray-400" : "text-gray-900"}`}>
                         {item.name}
                       </div>
                       {modifiers && modifiers.length > 0 && !isDone && !isItemCancelled && (
