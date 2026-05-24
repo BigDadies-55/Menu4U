@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
     ],
   },
   { href: "/admin/dashboard", label: "תצוגת מטבח", icon: "📺", exact: false },
+  { href: "/admin/kitchen", label: "מטבח — Station Dark", icon: "🍳", exact: false },
   { href: "/admin/layout-builder", label: "פריסת שולחנות", icon: "🗺", waiterHide: true, displayHide: true },
   { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true, waiterHide: true, displayHide: true },
   { href: "/admin/logs", label: "לוגים", icon: "◎", adminOnly: true, waiterHide: true, displayHide: true },
