@@ -78,6 +78,25 @@ const CONTENT_TEXT_PRESETS = [
   { id: "#f8fafc", label: "Light" },
 ];
 
+/* ─── TopBar background presets ──────────────────────────── */
+const TOPBAR_BG_PRESETS = [
+  { id: "#ffffff",                      label: "לבן",         dark: false },
+  { id: "rgba(255,255,255,0.85)",       label: "Frosted",     dark: false },
+  { id: "#f8fafc",                      label: "אפור בהיר",   dark: false },
+  { id: "#1f2937",                      label: "כהה",         dark: true  },
+  { id: "#0f111a",                      label: "Night",       dark: true  },
+  { id: "rgba(15,17,26,0.85)",          label: "Frosted Dark",dark: true  },
+];
+
+/* ─── TopBar text color presets ──────────────────────────── */
+const TOPBAR_TEXT_PRESETS = [
+  { id: "#374151", label: "Gray"  },
+  { id: "#111827", label: "Dark"  },
+  { id: "#6b7280", label: "Muted" },
+  { id: "#ffffff", label: "White" },
+  { id: "#f59e0b", label: "Gold"  },
+];
+
 /* ─── Helpers ────────────────────────────────────────────── */
 function isGradient(v: string) { return v.includes("gradient"); }
 
@@ -88,9 +107,10 @@ type Config = {
   adminPalette: string; adminBg: string; adminBgImage: string | null;
   adminSidebarBg: string | null; adminSidebarAccent: string | null;
   adminSidebarTextColor: string; adminContentTextColor: string;
+  adminTopBarBg: string | null; adminTopBarTextColor: string;
 };
 
-type MainTab    = "sidebar" | "background";
+type MainTab    = "sidebar" | "topbar" | "background";
 type BgTab      = "color" | "gradient" | "image";
 type SidebarTab = "presets" | "gradient" | "custom";
 
@@ -205,6 +225,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   const fileRef  = useRef<HTMLInputElement>(null);
   const bgImgRef = useRef<HTMLInputElement>(null);
   const colorRef = useRef<HTMLInputElement>(null);
+  const topBarBgRef = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof Config>(field: K, value: Config[K]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -239,6 +260,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
   const isCustomBgColor = !COLOR_PRESETS.some(p => p.id === form.adminBg) && !isGradient(form.adminBg);
   const isCustomBgGrad  = isGradient(form.adminBg) && !GRADIENT_PRESETS.some(p => p.id === form.adminBg);
+  const isCustomTopBarBg = form.adminTopBarBg !== null && !TOPBAR_BG_PRESETS.some(p => p.id === form.adminTopBarBg);
 
   return (
     <div className="p-4 md:p-8 max-w-2xl">
@@ -247,11 +269,11 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
         {/* ── MERGED DESIGN SECTION ── */}
         <Section title="עיצוב פאנל הניהול" icon="🎨">
 
-          {/* Outer tabs: Sidebar / Background */}
+          {/* Outer tabs: Sidebar / TopBar / Background */}
           <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-6 w-fit">
-            {([["sidebar","🗂️ סיידבר"],["background","🖼️ רקע"]] as [MainTab,string][]).map(([id,label]) => (
+            {([["sidebar","🗂️ סיידבר"],["topbar","🔝 פאנל עליון"],["background","🖼️ רקע"]] as [MainTab,string][]).map(([id,label]) => (
               <button key={id} onClick={() => setMainTab(id)}
-                className="px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap"
+                className="px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap"
                 style={mainTab === id
                   ? { background: "white", color: "#1f2937", boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }
                   : { color: "#6b7280" }}>
@@ -418,6 +440,116 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                 value={form.adminSidebarTextColor}
                 onChange={v => update("adminSidebarTextColor", v)}
                 inputId="sb-text-custom"
+              />
+            </>
+          )}
+
+          {/* ═══════════════ TOP BAR TAB ═══════════════ */}
+          {mainTab === "topbar" && (
+            <>
+              {/* Live preview strip */}
+              <div className="w-full rounded-xl overflow-hidden border border-gray-100 mb-5">
+                {/* Simulated top bar */}
+                <div className="flex items-center justify-between px-3 gap-2"
+                  style={{
+                    height: 36,
+                    background: form.adminTopBarBg ?? "transparent",
+                    borderBottom: `1px solid ${form.adminTopBarTextColor}33`,
+                    backgroundColor: form.adminTopBarBg ?? "rgba(240,236,227,0.5)",
+                  }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-3 flex flex-col gap-0.5">
+                      <div className="h-0.5 rounded-full w-full" style={{ background: form.adminTopBarTextColor }} />
+                      <div className="h-0.5 rounded-full w-full" style={{ background: form.adminTopBarTextColor }} />
+                      <div className="h-0.5 rounded-full w-3/4" style={{ background: form.adminTopBarTextColor }} />
+                    </div>
+                    <span className="text-[11px] font-semibold" style={{ color: form.adminTopBarTextColor }}>שם הדף</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={form.adminTopBarTextColor} strokeWidth="2.5" strokeLinecap="round">
+                        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="15.65" y2="15.65"/>
+                      </svg>
+                    </div>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                      style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>A</div>
+                  </div>
+                </div>
+                {/* Simulated content row */}
+                <div className="h-8 flex items-center px-3" style={{ background: form.adminBg }}>
+                  <span className="text-[10px] opacity-40" style={{ color: form.adminContentTextColor }}>תוכן הדף...</span>
+                </div>
+              </div>
+
+              {/* Background */}
+              <div className="mb-5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">רקע פאנל עליון</label>
+
+                {/* Transparent option */}
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <button
+                    onClick={() => update("adminTopBarBg", null)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-semibold transition-all"
+                    style={{
+                      borderColor: form.adminTopBarBg === null ? "#f59e0b" : "rgba(0,0,0,0.1)",
+                      boxShadow: form.adminTopBarBg === null ? "0 0 0 3px rgba(245,158,11,0.2)" : "none",
+                      background: form.adminTopBarBg === null ? "rgba(245,158,11,0.06)" : "white",
+                      color: form.adminTopBarBg === null ? "#92400e" : "#6b7280",
+                    }}>
+                    <span>✦</span> שקוף (ברירת מחדל)
+                  </button>
+                </div>
+
+                {/* Color presets */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
+                  {TOPBAR_BG_PRESETS.map(p => {
+                    const active = form.adminTopBarBg === p.id;
+                    return (
+                      <button key={p.id} onClick={() => update("adminTopBarBg", p.id)} title={p.label}
+                        className="relative flex flex-col items-center gap-1 rounded-xl p-2 border-2 transition-all"
+                        style={{ background: p.id, borderColor: active ? "#f59e0b" : "rgba(0,0,0,0.08)",
+                          boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
+                        <div className="w-full h-7 rounded-md border border-black/[0.06]" style={{ background: p.id }} />
+                        <span className="text-[9px] font-semibold" style={{ color: p.dark ? "#d1d5db" : "#4b5563" }}>{p.label}</span>
+                        {active && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>}
+                      </button>
+                    );
+                  })}
+                  {/* Custom */}
+                  <button onClick={() => topBarBgRef.current?.click()} title="צבע מותאם"
+                    className="relative flex flex-col items-center gap-1 rounded-xl p-2 border-2 transition-all"
+                    style={{ background: isCustomTopBarBg ? (form.adminTopBarBg ?? "white") : "white",
+                      borderColor: isCustomTopBarBg ? "#f59e0b" : "rgba(0,0,0,0.08)",
+                      boxShadow: isCustomTopBarBg ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
+                    <div className="w-full h-7 rounded-md" style={{ background: "conic-gradient(from 0deg,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6,#ef4444)", opacity: isCustomTopBarBg ? 0.5 : 1 }} />
+                    <span className="text-[9px] font-semibold text-gray-600">Custom</span>
+                    {isCustomTopBarBg && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>}
+                  </button>
+                  <input ref={topBarBgRef} type="color" className="sr-only"
+                    value={isCustomTopBarBg ? (form.adminTopBarBg ?? "#ffffff") : "#ffffff"}
+                    onChange={e => update("adminTopBarBg", e.target.value)} />
+                </div>
+
+                {/* Current value display */}
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
+                  <div className="w-7 h-7 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminTopBarBg ?? "transparent",
+                    backgroundImage: form.adminTopBarBg === null ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 8px 8px" : undefined }} />
+                  <span className="text-xs font-mono text-gray-600 flex-1">{form.adminTopBarBg ?? "transparent"}</span>
+                  <button onClick={() => topBarBgRef.current?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר צבע</button>
+                </div>
+              </div>
+
+              {/* Text color */}
+              <ColorPickerRow
+                label="צבע טקסט פאנל עליון"
+                presets={TOPBAR_TEXT_PRESETS}
+                value={form.adminTopBarTextColor}
+                onChange={v => update("adminTopBarTextColor", v)}
+                inputId="topbar-text-custom"
               />
             </>
           )}

@@ -10,6 +10,7 @@ const DEFAULTS = {
   adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null as string | null,
   adminSidebarBg: null as string | null, adminSidebarAccent: null as string | null,
   adminSidebarTextColor: "#9ca3af", adminContentTextColor: "#111827",
+  adminTopBarBg: null as string | null, adminTopBarTextColor: "#374151",
 };
 
 export default async function SettingsPage() {

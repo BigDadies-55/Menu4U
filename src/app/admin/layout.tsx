@@ -50,6 +50,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   let adminSidebarAccent: string | null = null;
   let adminSidebarTextColor = "#9ca3af";
   let adminContentTextColor = "#111827";
+  let adminTopBarBg: string | null = null;
+  let adminTopBarTextColor = "#374151";
   try {
     // Full query (all columns including recently added ones)
     type FullRow = {
@@ -57,11 +59,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       logo: string | null; siteName: string;
       adminSidebarBg: string | null; adminSidebarAccent: string | null;
       adminSidebarTextColor: string; adminContentTextColor: string;
+      adminTopBarBg: string | null; adminTopBarTextColor: string;
     };
     const rows = await prisma.$queryRaw<FullRow[]>`
       SELECT "adminPalette", "adminBg", "adminBgImage", "logo", "siteName",
              "adminSidebarBg", "adminSidebarAccent",
-             "adminSidebarTextColor", "adminContentTextColor"
+             "adminSidebarTextColor", "adminContentTextColor",
+             "adminTopBarBg", "adminTopBarTextColor"
       FROM "SiteConfig" WHERE id = 'default' LIMIT 1
     `;
     if (rows[0]) {
@@ -74,6 +78,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       adminSidebarAccent     = rows[0].adminSidebarAccent     ?? null;
       adminSidebarTextColor  = rows[0].adminSidebarTextColor  ?? "#9ca3af";
       adminContentTextColor  = rows[0].adminContentTextColor  ?? "#111827";
+      adminTopBarBg          = rows[0].adminTopBarBg          ?? null;
+      adminTopBarTextColor   = rows[0].adminTopBarTextColor   ?? "#374151";
     }
   } catch {
     // Newer columns may not exist — fall back to base columns only
@@ -106,6 +112,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       adminSidebarAccent={adminSidebarAccent}
       adminSidebarTextColor={adminSidebarTextColor}
       adminContentTextColor={adminContentTextColor}
+      adminTopBarBg={adminTopBarBg}
+      adminTopBarTextColor={adminTopBarTextColor}
     >
       {children}
     </AdminShell>

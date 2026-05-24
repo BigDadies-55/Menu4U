@@ -47,9 +47,11 @@ interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
   onChangePassword: () => void;
   onOpenMobileSidebar: () => void;
+  adminTopBarBg?: string | null;
+  adminTopBarTextColor?: string;
 }
 
-export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: Props) {
+export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, adminTopBarBg, adminTopBarTextColor = "#374151" }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
   const pageName = getPageName(pathname);
@@ -109,23 +111,27 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
   const initials    = (user.name ?? user.email ?? "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   const displayName = user.name ?? user.email ?? "";
 
+  // Derive a slightly muted version for secondary elements (icons, username)
+  const iconColor   = adminTopBarTextColor;
+  const borderColor = adminTopBarTextColor + "33"; // 20% opacity version
+
   return (
     <div
       className="sticky top-0 z-20 flex items-center justify-between px-4 gap-3"
       style={{
         height: 40,
-        background: "transparent",
-        borderTop: "1px solid #9ca3af",
-        borderBottom: "1px solid #9ca3af",
+        background: adminTopBarBg ?? "transparent",
+        borderTop:    `1px solid ${borderColor}`,
+        borderBottom: `1px solid ${borderColor}`,
         direction: "rtl",
       }}
     >
       {/* ── Right: hamburger + page title ── */}
       <div className="flex items-center gap-2.5 shrink-0">
         <button
-          className="text-gray-500 hover:text-gray-800 p-1 rounded-lg hover:bg-gray-100/80 transition-colors"
+          className="p-1 rounded-lg transition-colors hover:bg-black/[0.06]"
           onClick={onOpenMobileSidebar}
-          style={{ transform: "scaleX(-1)" }}
+          style={{ color: iconColor, transform: "scaleX(-1)" }}
         >
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
             <line x1="3" y1="6" x2="21" y2="6"/>
@@ -133,7 +139,12 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
             <line x1="3" y1="18" x2="15" y2="18"/>
           </svg>
         </button>
-        <h1 className="text-[13px] font-semibold text-gray-800 tracking-tight whitespace-nowrap">{pageName}</h1>
+        <h1
+          className="text-[13px] font-semibold tracking-tight whitespace-nowrap"
+          style={{ color: adminTopBarTextColor }}
+        >
+          {pageName}
+        </h1>
       </div>
 
       {/* ── Left: search + avatar ── */}
@@ -170,7 +181,8 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
           {/* Magnifying glass / X button */}
           <button
             onClick={() => { setSearchOpen(v => !v); if (searchOpen) { setQuery(""); setResults([]); } }}
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100/80 transition-colors shrink-0"
+            className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-black/[0.06] shrink-0"
+            style={{ color: iconColor }}
             title="חיפוש"
           >
             {searchOpen ? (
@@ -218,9 +230,12 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
         <button
           onClick={() => setAvatarOpen(v => !v)}
           title={`${displayName} · ${ROLE_LABELS[user.role]}`}
-          className="relative flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-gray-50/80 transition-colors group"
+          className="relative flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-black/[0.06] group"
         >
-          <span className="hidden sm:block text-xs font-medium text-gray-600 max-w-[130px] truncate">
+          <span
+            className="hidden sm:block text-xs font-medium max-w-[130px] truncate"
+            style={{ color: iconColor }}
+          >
             {displayName}
           </span>
           <div

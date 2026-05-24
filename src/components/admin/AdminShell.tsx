@@ -19,10 +19,12 @@ interface Props {
   adminSidebarAccent?: string | null;
   adminSidebarTextColor?: string;
   adminContentTextColor?: string;
+  adminTopBarBg?: string | null;
+  adminTopBarTextColor?: string;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#111827", children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#111827", adminTopBarBg, adminTopBarTextColor = "#374151", children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [showPasswordModal, setShowPasswordModal]  = useState(false);
@@ -113,6 +115,8 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
           user={user}
           onChangePassword={openPasswordModal}
           onOpenMobileSidebar={() => setSidebarOpen(v => !v)}
+          adminTopBarBg={adminTopBarBg}
+          adminTopBarTextColor={adminTopBarTextColor}
         />
 
         {/* Page content */}

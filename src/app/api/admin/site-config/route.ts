@@ -8,6 +8,7 @@ const DEFAULTS = {
   copyright: null, adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null,
   adminSidebarBg: null, adminSidebarAccent: null,
   adminSidebarTextColor: "#9ca3af", adminContentTextColor: "#111827",
+  adminTopBarBg: null as string | null, adminTopBarTextColor: "#374151",
 };
 
 export async function GET() {
@@ -28,7 +29,8 @@ export async function PATCH(req: Request) {
   }
   const body = await req.json();
   const { siteName, logo, domain, copyright, adminPalette, adminBg, adminBgImage,
-          adminSidebarBg, adminSidebarAccent, adminSidebarTextColor, adminContentTextColor } = body;
+          adminSidebarBg, adminSidebarAccent, adminSidebarTextColor, adminContentTextColor,
+          adminTopBarBg, adminTopBarTextColor } = body;
   try {
     await prisma.$executeRawUnsafe(`
       UPDATE "SiteConfig" SET
@@ -43,13 +45,16 @@ export async function PATCH(req: Request) {
         "adminSidebarAccent"     = $9,
         "adminSidebarTextColor"  = $10,
         "adminContentTextColor"  = $11,
+        "adminTopBarBg"          = $12,
+        "adminTopBarTextColor"   = $13,
         "updatedAt"              = NOW()
       WHERE id = 'default'
     `, siteName ?? "Menu4U", logo ?? null, domain ?? null,
        copyright ?? null, adminPalette ?? "dark",
        adminBg ?? "#f0ece3", adminBgImage ?? null,
        adminSidebarBg ?? null, adminSidebarAccent ?? null,
-       adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827");
+       adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827",
+       adminTopBarBg ?? null, adminTopBarTextColor ?? "#374151");
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });
     return NextResponse.json({ success: true });
   } catch {
