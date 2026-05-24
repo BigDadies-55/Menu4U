@@ -156,6 +156,14 @@ export default function MenuPublicClient({
     return () => clearInterval(iv);
   }, [myOrdersOpen, fetchMyOrders]);
 
+  // SSE for real-time order updates
+  useEffect(() => {
+    const es = new EventSource(`/api/menu/${restaurant.id}/stream`);
+    es.onmessage = () => { fetchMyOrders(true); };
+    es.onerror = () => es.close();
+    return () => es.close();
+  }, [restaurant.id, fetchMyOrders]);
+
   const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
 

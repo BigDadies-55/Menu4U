@@ -284,7 +284,7 @@ export default function DashboardClient({
   const [lastCount, setLastCount] = useState(0);
   const [newAlert, setNewAlert] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [countdown, setCountdown] = useState(15);
+  const [countdown, setCountdown] = useState(60);
   const audioCtx = useRef<AudioContext | null>(null);
 
   const fetchOrders = useCallback(async () => {
@@ -301,15 +301,25 @@ export default function DashboardClient({
       if (pending > prev) { setNewAlert(true); playBeep(); setTimeout(() => setNewAlert(false), 3000); }
       return pending;
     });
-    setCountdown(15);
+    setCountdown(60);
   }, [restaurantId]);
 
   useEffect(() => {
     fetchOrders();
-    const iv = setInterval(() => { fetchOrders(); setTick(t => t + 1); }, 15000);
+    const iv = setInterval(() => { fetchOrders(); setTick(t => t + 1); }, 60000);
     const cd = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000);
     return () => { clearInterval(iv); clearInterval(cd); };
   }, [fetchOrders]);
+
+  // SSE real-time updates
+  useEffect(() => {
+    if (!restaurantId) return;
+    const url = `/api/admin/orders/stream?restaurantId=${restaurantId}`;
+    const es = new EventSource(url);
+    es.onmessage = () => { fetchOrders(); };
+    es.onerror = () => { es.close(); }; // Will fall back to polling
+    return () => es.close();
+  }, [restaurantId, fetchOrders]);
 
   useEffect(() => {
     const iv = setInterval(() => setTick(t => t + 1), 30000);
@@ -439,7 +449,7 @@ export default function DashboardClient({
           <div className="flex flex-col items-center justify-center h-64 text-gray-600 gap-3">
             <div className="text-6xl">🍽</div>
             <div className="text-xl font-medium">אין הזמנות פעילות כרגע</div>
-            <div className="text-sm">הדף מתרענן אוטומטית כל 15 שניות</div>
+            <div className="text-sm">הדף מתרענן בזמן אמת (SSE) ± כל 60 שניות</div>
           </div>
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">

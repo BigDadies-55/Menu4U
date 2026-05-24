@@ -325,7 +325,7 @@ export default function KitchenClient({
   const [lastCount, setLastCount]       = useState(0);
   const [newAlert, setNewAlert]         = useState(false);
   const [fullscreen, setFullscreen]     = useState(false);
-  const [countdown, setCountdown]       = useState(15);
+  const [countdown, setCountdown]       = useState(60);
   const [now, setNow]                   = useState(new Date());
   const audioCtx = useRef<AudioContext | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -353,15 +353,25 @@ export default function KitchenClient({
     setLastCount(active.length);
     setOrders(active);
     setTick(t => t + 1);
-    setCountdown(15);
+    setCountdown(60);
   }, [restaurantId, lastCount]);
 
   useEffect(() => { if (restaurantId) fetchOrders(); }, [restaurantId]);
 
+  // SSE real-time updates
+  useEffect(() => {
+    if (!restaurantId) return;
+    const url = `/api/admin/orders/stream?restaurantId=${restaurantId}`;
+    const es = new EventSource(url);
+    es.onmessage = () => { fetchOrders(); };
+    es.onerror = () => { es.close(); }; // Will fall back to polling
+    return () => es.close();
+  }, [restaurantId, fetchOrders]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCountdown(c => {
-        if (c <= 1) { fetchOrders(); return 15; }
+        if (c <= 1) { fetchOrders(); return 60; }
         return c - 1;
       });
       setNow(new Date());
