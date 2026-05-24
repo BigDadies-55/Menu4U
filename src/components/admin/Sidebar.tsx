@@ -394,44 +394,6 @@ export default function Sidebar({
 
         </nav>
 
-        {/* Footer */}
-        <div className="shrink-0 px-2 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div
-            className="flex items-center rounded-xl mb-1.5"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              justifyContent: expanded ? "flex-start" : "center",
-              padding: expanded ? "10px 10px" : "10px 0",
-              gap: expanded ? 10 : 0,
-            }}
-          >
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
-            >{initials}</div>
-            <div className="min-w-0" style={{ overflow: "hidden", maxWidth: expanded ? 140 : 0, opacity: expanded ? 1 : 0, transition: TRANS }}>
-              <div className="text-sm font-semibold text-white truncate">{user.name ?? user.email}</div>
-              <span className={cn("text-xs px-1.5 py-0.5 rounded font-medium", ROLE_COLORS[user.role])}>
-                {ROLE_LABELS[user.role]}
-              </span>
-            </div>
-          </div>
-          {[
-            { label: "שנה סיסמה", Icon: Ic.Lock,   fn: onChangePassword, extra: "hover:text-white hover:bg-white/[0.06]" },
-            { label: "יציאה",     Icon: Ic.Logout, fn: () => signOut({ callbackUrl: "/login" }), extra: "hover:text-red-400 hover:bg-red-500/10" },
-          ].map(btn => (
-            <button key={btn.label} onClick={btn.fn}
-              title={!expanded ? btn.label : undefined}
-              className={cn("w-full flex items-center rounded-lg py-2 text-xs text-gray-500 transition-colors", btn.extra)}
-              style={{ justifyContent: expanded ? "flex-start" : "center", padding: expanded ? "7px 10px" : "7px 0", gap: expanded ? 8 : 0 }}
-            >
-              <span className="shrink-0 flex"><btn.Icon /></span>
-              <span style={{ overflow: "hidden", maxWidth: expanded ? 140 : 0, opacity: expanded ? 1 : 0, whiteSpace: "nowrap", transition: TRANS }}>
-                {btn.label}
-              </span>
-            </button>
-          ))}
-        </div>
       </div>
     );
   }
