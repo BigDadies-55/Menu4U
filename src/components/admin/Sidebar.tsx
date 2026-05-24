@@ -14,8 +14,6 @@ const KDS_VIEWS = [
   { value: "TICKETS",      href: "/admin/kitchen-tickets", label: "Ticket Board",  icon: "🎫" },
 ];
 
-const KDS_HREFS = KDS_VIEWS.map(v => v.href);
-
 type NavItem = {
   href: string;
   label: string;
@@ -72,10 +70,6 @@ export default function Sidebar({ user, kdsView, isOpen = false, onClose, onChan
   const visibleKdsViews = kdsView === "ALL"
     ? KDS_VIEWS
     : KDS_VIEWS.filter(v => v.value === kdsView);
-
-  // KDS section parent href = first visible KDS view
-  const kdsParentHref = visibleKdsViews[0]?.href ?? "/admin/dashboard";
-  const isKdsActive = KDS_HREFS.some(h => pathname.startsWith(h));
 
   const initials = (user.name ?? user.email ?? "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
@@ -139,50 +133,23 @@ export default function Sidebar({ user, kdsView, isOpen = false, onClose, onChan
 
         {/* ── KDS Section ── */}
         <div>
-          {/* KDS section label */}
           <div className="px-3 pt-4 pb-1">
-            <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest">KDS — מטבח</p>
+            <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest">KDS</p>
           </div>
-
-          {visibleKdsViews.length === 1 ? (
-            /* Single view: direct link */
-            <Link href={visibleKdsViews[0].href} onClick={onClose}
-              className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
-                pathname.startsWith(visibleKdsViews[0].href) ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
-              style={pathname.startsWith(visibleKdsViews[0].href) ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
-              <span className={cn("text-base", pathname.startsWith(visibleKdsViews[0].href) ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>
-                {visibleKdsViews[0].icon}
-              </span>
-              {visibleKdsViews[0].label}
-            </Link>
-          ) : (
-            /* Multiple views (SUPER_ADMIN): parent + children */
-            <div>
-              <Link href={kdsParentHref} onClick={onClose}
-                className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
-                  isKdsActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
-                style={isKdsActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
-                <span className={cn("text-base", isKdsActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>🖥</span>
-                תצוגת מטבח
-              </Link>
-              {isKdsActive && (
-                <div className="mr-4 mt-0.5 border-r border-white/10 pr-2 space-y-0.5">
-                  {visibleKdsViews.map(view => {
-                    const childActive = pathname.startsWith(view.href);
-                    return (
-                      <Link key={view.href} href={view.href} onClick={onClose}
-                        className={cn("group flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150 text-xs font-medium",
-                          childActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
-                        style={childActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
-                        <span className={cn("text-sm", childActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>{view.icon}</span>
-                        {view.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+          <div className="space-y-0.5">
+            {visibleKdsViews.map(view => {
+              const isActive = pathname.startsWith(view.href);
+              return (
+                <Link key={view.href} href={view.href} onClick={onClose}
+                  className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
+                    isActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
+                  style={isActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
+                  <span className={cn("text-base transition-transform duration-150", isActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>{view.icon}</span>
+                  {view.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
 
