@@ -82,7 +82,7 @@ function BillModal({
   const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
   const [confirming, setConfirming] = useState(false);
 
-  const validOrders = orders.filter(o => !["CANCELLED","PAID","DELIVERED"].includes(o.status));
+  const validOrders = orders.filter(o => !["CANCELLED","PAID"].includes(o.status));
   const subtotal = validOrders.reduce((s, o) => s + o.totalAmount, 0);
   const tipAmount = tipPct === -1
     ? (parseFloat(customTip) || 0)
@@ -601,11 +601,8 @@ export default function OrdersClient({
       body: JSON.stringify({ status: "DELIVERED" }),
     });
     if (!res.ok) return;
-    if (filter === "active") {
-      setOrders(prev => prev.filter(o => o.id !== orderId));
-    } else {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "DELIVERED" } : o));
-    }
+    // Keep in state (needed for bill calculation) — table grouping already hides DELIVERED in active mode
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "DELIVERED" } : o));
   }
 
   function closeTable(tableNumber: string) {
