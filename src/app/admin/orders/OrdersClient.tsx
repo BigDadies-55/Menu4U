@@ -64,6 +64,209 @@ function timeSince(dateStr: string): string {
   return `${Math.floor(diff / 60)}ש'`;
 }
 
+function fmtTime(d: string) {
+  return new Date(d).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+}
+
+/* ── Bill Modal ── */
+function BillModal({
+  tableNumber, orders, onConfirm, onClose,
+}: {
+  tableNumber: string;
+  orders: Order[];
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const [tipPct, setTipPct]     = useState<number>(0);
+  const [customTip, setCustomTip] = useState("");
+  const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
+  const [confirming, setConfirming] = useState(false);
+
+  const validOrders = orders.filter(o => !["CANCELLED","PAID","DELIVERED"].includes(o.status));
+  const subtotal = validOrders.reduce((s, o) => s + o.totalAmount, 0);
+  const tipAmount = tipPct === -1
+    ? (parseFloat(customTip) || 0)
+    : Math.round(subtotal * tipPct) / 100;
+  const total = subtotal + tipAmount;
+
+  async function handleConfirm() {
+    setConfirming(true);
+    onConfirm();
+  }
+
+  const PAY_METHODS = [
+    { value: "card" as const,  label: "💳 כרטיס" },
+    { value: "cash" as const,  label: "💵 מזומן" },
+    { value: "app"  as const,  label: "📱 אפליקציה" },
+  ];
+  const TIP_OPTS = [
+    { pct: 0,   label: "ללא" },
+    { pct: 10,  label: "10%" },
+    { pct: 12,  label: "12%" },
+    { pct: 15,  label: "15%" },
+    { pct: -1,  label: "אחר" },
+  ];
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 60,
+      background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 16, direction: "rtl",
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 20, width: "100%", maxWidth: 480,
+        maxHeight: "90vh", display: "flex", flexDirection: "column",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+        overflow: "hidden",
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: "16px 20px", borderBottom: "1px solid #f1f5f9",
+          background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <div>
+            <div style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>💳 חשבון — שולחן {tableNumber}</div>
+            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 2 }}>
+              {validOrders.length} הזמנות · {fmtTime(validOrders[0]?.createdAt ?? "")}
+            </div>
+          </div>
+          <button type="button" onClick={onClose} style={{
+            background: "rgba(255,255,255,0.2)", border: "none",
+            borderRadius: "50%", width: 32, height: 32, color: "#fff",
+            fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          }}>✕</button>
+        </div>
+
+        {/* Itemized list */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px" }}>
+          {validOrders.map((order, oi) => {
+            const validItems = order.items.filter(i => i.itemStatus !== "CANCELLED");
+            return (
+              <div key={order.id} style={{ marginBottom: 12 }}>
+                {validOrders.length > 1 && (
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 4, paddingBottom: 4, borderBottom: "1px dashed #e5e7eb" }}>
+                    הזמנה {oi + 1} · {fmtTime(order.createdAt)}
+                  </div>
+                )}
+                {validItems.map(({ id, quantity, price, item, modifiers }) => {
+                  const itemTotal = price * quantity + (modifiers?.reduce((s,m) => s + m.priceAdd * quantity, 0) ?? 0);
+                  return (
+                    <div key={id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 6, marginBottom: 6, borderBottom: "1px solid #f9fafb" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
+                          {quantity > 1 && <span style={{ background: "#f3f4f6", borderRadius: 5, padding: "1px 5px", fontSize: 11, marginLeft: 4, fontWeight: 700, color: "#374151" }}>×{quantity}</span>}
+                          {item.name}
+                        </span>
+                        {modifiers && modifiers.length > 0 && (
+                          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>
+                            {modifiers.map(m => m.label + (m.priceAdd > 0 ? ` +₪${m.priceAdd}` : "")).join(" · ")}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#111827", flexShrink: 0, marginRight: 8 }}>₪{itemTotal.toFixed(0)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          {/* Divider */}
+          <div style={{ borderTop: "2px solid #e5e7eb", marginTop: 4, paddingTop: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", marginBottom: 10 }}>
+              <span>סכום ביניים</span>
+              <span>₪{subtotal.toFixed(2)}</span>
+            </div>
+
+            {/* Tip */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>טיפ</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {TIP_OPTS.map(opt => (
+                  <button key={opt.pct} type="button"
+                    onClick={() => { setTipPct(opt.pct); if (opt.pct !== -1) setCustomTip(""); }}
+                    style={{
+                      padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      border: `2px solid ${tipPct === opt.pct ? "#7c3aed" : "#e5e7eb"}`,
+                      background: tipPct === opt.pct ? "#f3e8ff" : "#fff",
+                      color: tipPct === opt.pct ? "#7c3aed" : "#6b7280",
+                      cursor: "pointer",
+                    }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {tipPct === -1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+                  <span style={{ fontSize: 12, color: "#6b7280" }}>₪</span>
+                  <input
+                    type="number" min="0" step="1"
+                    value={customTip}
+                    onChange={e => setCustomTip(e.target.value)}
+                    placeholder="סכום טיפ"
+                    style={{ border: "2px solid #7c3aed", borderRadius: 10, padding: "5px 10px", fontSize: 13, width: 100, outline: "none" }}
+                  />
+                </div>
+              )}
+              {tipAmount > 0 && (
+                <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 4 }}>
+                  טיפ: ₪{tipAmount.toFixed(2)}
+                </div>
+              )}
+            </div>
+
+            {/* Payment method */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>אמצעי תשלום</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {PAY_METHODS.map(m => (
+                  <button key={m.value} type="button"
+                    onClick={() => setPayMethod(m.value)}
+                    style={{
+                      flex: 1, padding: "8px 0", borderRadius: 10, fontSize: 12, fontWeight: 600,
+                      border: `2px solid ${payMethod === m.value ? "#7c3aed" : "#e5e7eb"}`,
+                      background: payMethod === m.value ? "#f3e8ff" : "#fff",
+                      color: payMethod === m.value ? "#7c3aed" : "#6b7280",
+                      cursor: "pointer",
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Total */}
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              background: "#f5f3ff", borderRadius: 12, padding: "12px 16px",
+            }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "#4c1d95" }}>סה"כ לתשלום</span>
+              <span style={{ fontWeight: 900, fontSize: 22, color: "#6d28d9" }}>₪{total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer buttons */}
+        <div style={{ padding: "12px 20px", borderTop: "1px solid #f1f5f9", display: "flex", gap: 10 }}>
+          <button type="button" onClick={onClose} style={{
+            flex: 1, padding: "11px 0", borderRadius: 12, border: "2px solid #e5e7eb",
+            background: "#fff", color: "#6b7280", fontWeight: 600, fontSize: 14, cursor: "pointer",
+          }}>ביטול</button>
+          <button type="button" onClick={handleConfirm} disabled={confirming} style={{
+            flex: 2, padding: "11px 0", borderRadius: 12, border: "none",
+            background: confirming ? "#a78bfa" : "linear-gradient(135deg,#7c3aed,#a855f7)",
+            color: "#fff", fontWeight: 800, fontSize: 15, cursor: confirming ? "wait" : "pointer",
+          }}>
+            {confirming ? "שומר..." : "✓ אשר תשלום"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TableCard({
   tableNumber,
   orders,
@@ -72,7 +275,7 @@ function TableCard({
   onItemCancel,
   onOrderCancel,
   onConfirmOrder,
-  onCloseTable,
+  onShowBill,
 }: {
   tableNumber: string;
   orders: Order[];
@@ -81,11 +284,10 @@ function TableCard({
   onItemCancel: (orderId: string, itemId: string) => Promise<void>;
   onOrderCancel: (orderId: string) => Promise<void>;
   onConfirmOrder: (orderId: string) => Promise<void>;
-  onCloseTable: (tableNumber: string) => void;
+  onShowBill: (tableNumber: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
-  const [confirmClose, setConfirmClose] = useState(false);
 
   const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID" && o.status !== "DELIVERED");
   const allItems = nonCancelledOrders.flatMap(o => o.items);
@@ -117,8 +319,8 @@ function TableCard({
     setConfirmingOrder(null);
   }
 
-  function closeTable() {
-    onCloseTable(tableNumber);
+  function showBill() {
+    onShowBill(tableNumber);
   }
 
   return (
@@ -268,35 +470,17 @@ function TableCard({
         );
       })}
 
-      {/* Footer: close table */}
+      {/* Footer: show bill */}
       {nonCancelledOrders.length > 0 && (
         <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
-          {confirmClose ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 flex-1">סגור שולחן לצמיתות?</span>
-              <button
-                onClick={() => setConfirmClose(false)}
-                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                ביטול
-              </button>
-              <button
-                onClick={() => onCloseTable(tableNumber)}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
-                style={{ background: "#16a34a" }}
-              >
-                ✓ אשר סגירה
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmClose(true)}
-              className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
-            >
-              💳 סגור שולחן ותשלום
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={showBill}
+            className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all"
+            style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
+          >
+            💳 הצג חשבון ותשלום
+          </button>
         </div>
       )}
     </div>
@@ -321,6 +505,7 @@ export default function OrdersClient({
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [billTableKey, setBillTableKey] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
@@ -397,7 +582,8 @@ export default function OrdersClient({
   function closeTable(tableNumber: string) {
     const tableOrders = orders.filter(o => (o.tableNumber ?? "–") === tableNumber);
     const rid = tableOrders[0]?.restaurant?.id || restaurantId;
-    // Optimistic remove — API marks orders DELIVERED so they won't come back in activeOnly
+    setBillTableKey(null);
+    // Optimistic remove
     setOrders(prev => prev.filter(o => (o.tableNumber ?? "–") !== tableNumber));
     fetch("/api/admin/orders/close-table", {
       method: "POST",
@@ -427,8 +613,21 @@ export default function OrdersClient({
   const totalItems = activeOrders.reduce((s, o) => s + o.items.length, 0);
   const pendingOrders = activeOrders.filter(o => o.status === "PENDING").length;
 
+  // BillModal data
+  const billOrders = billTableKey
+    ? orders.filter(o => (o.tableNumber ?? "–") === billTableKey)
+    : [];
+
   return (
     <div className="p-4 md:p-8">
+      {billTableKey && billOrders.length > 0 && (
+        <BillModal
+          tableNumber={billTableKey}
+          orders={billOrders}
+          onConfirm={() => closeTable(billTableKey)}
+          onClose={() => setBillTableKey(null)}
+        />
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -542,7 +741,7 @@ export default function OrdersClient({
               onItemCancel={cancelItem}
               onOrderCancel={cancelOrder}
               onConfirmOrder={confirmOrder}
-              onCloseTable={closeTable}
+              onShowBill={setBillTableKey}
             />
           ))}
         </div>
