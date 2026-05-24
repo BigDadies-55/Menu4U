@@ -918,6 +918,14 @@ export default function MenuPublicClient({
         </div>
       )}
 
+      {/* Guest Registration Modal */}
+      {showRegistration && tableNumber && restaurant.ordersEnabled && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)" }} />
+          <GuestRegistrationModal onSave={saveGuestIdentity} restaurantName={restaurant.name} tableNumber={tableNumber} />
+        </div>
+      )}
+
       {/* My orders panel */}
       {myOrdersOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
@@ -1067,6 +1075,54 @@ export default function MenuPublicClient({
                 })
               )}
             </div>
+
+            {/* Bill / Payment request footer */}
+            {myOrders.length > 0 && !billMode && (
+              <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
+                <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.5, textAlign: "center", marginBottom: 8 }}>
+                  בקש חשבון
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setBillMode("mine")} style={{
+                    flex: 1, padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 600,
+                    border: "1.5px solid var(--gold)", background: "transparent",
+                    color: "var(--gold)", cursor: "pointer",
+                  }}>💳 שלי בלבד</button>
+                  <button onClick={() => { setOrdersView("all"); fetchMyOrders(false, "all"); setBillMode("all"); }} style={{
+                    flex: 1, padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 600,
+                    border: "1.5px solid var(--border)", background: "rgba(255,255,255,0.05)",
+                    color: "var(--text)", cursor: "pointer",
+                  }}>🧾 כל השולחן</button>
+                </div>
+              </div>
+            )}
+
+            {/* Bill view */}
+            {billMode && (
+              <div style={{ borderTop: "1px solid var(--border)", padding: "16px", flexShrink: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 15 }}>
+                    🧾 {billMode === "mine" ? "החשבון שלי" : "חשבון השולחן"}
+                  </span>
+                  <button onClick={() => setBillMode(null)} style={{ background: "none", border: "none", color: "var(--text)", cursor: "pointer", opacity: 0.6 }}>✕</button>
+                </div>
+                <div style={{ fontSize: 12, marginBottom: 10 }}>
+                  {myOrders.flatMap(o => o.items).map((oi, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, color: "var(--text)" }}>
+                      <span>{oi.quantity > 1 ? `×${oi.quantity} ` : ""}{oi.item.name}</span>
+                      <span>₪{(oi.price * oi.quantity).toFixed(0)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15, color: "var(--gold)", borderTop: "1px solid var(--border)", paddingTop: 8, marginBottom: 12 }}>
+                  <span>סה"כ</span>
+                  <span>₪{myOrders.reduce((s, o) => s + o.totalAmount, 0).toFixed(0)}</span>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 12, color: "var(--text)", opacity: 0.5, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+                  📱 הצג חשבון זה לצוות המסעדה לתשלום
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
