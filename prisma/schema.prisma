@@ -101,6 +101,7 @@ model Restaurant {
   menuPaletteData String?
   ordersEnabled   Boolean @default(false)
   tableLayoutJson String?
+  kdsView       String   @default("STATION_DARK")
   subscriptionFrom DateTime?
   subscriptionTo   DateTime?
   createdAt     DateTime @default(now())

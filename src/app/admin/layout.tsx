@@ -5,11 +5,7 @@ import AdminShell from "@/components/admin/AdminShell";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
@@ -30,5 +26,19 @@ export default async function AdminLayout({
     if (!user?.termsAccepted) redirect("/terms");
   }
 
-  return <AdminShell user={session.user}>{children}</AdminShell>;
+  // Determine which KDS views this user can see
+  let kdsView = "ALL"; // SUPER_ADMIN sees all
+  if (!isSuperAdmin) {
+    try {
+      const link = await prisma.restaurantUser.findFirst({
+        where: { userId: session.user.id },
+        include: { restaurant: { select: { kdsView: true } } },
+      });
+      kdsView = link?.restaurant?.kdsView ?? "STATION_DARK";
+    } catch {
+      kdsView = "STATION_DARK";
+    }
+  }
+
+  return <AdminShell user={session.user} kdsView={kdsView}>{children}</AdminShell>;
 }

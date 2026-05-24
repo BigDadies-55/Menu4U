@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Restaurant" ADD COLUMN "kdsView" TEXT NOT NULL DEFAULT 'STATION_DARK';

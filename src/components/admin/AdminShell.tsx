@@ -5,10 +5,11 @@ import type { Role } from "@/generated/prisma/client";
 
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
+  kdsView: string;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, children }: Props) {
+export default function AdminShell({ user, kdsView, children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pwForm, setPwForm] = useState({ current: "", next: "" });
@@ -39,7 +40,7 @@ export default function AdminShell({ user, children }: Props) {
 
   return (
     <div className="flex min-h-screen" style={{ background: "#f5f2ea" }} dir="rtl">
-      <Sidebar user={user} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onChangePassword={() => { setShowPasswordModal(true); setPwError(""); setPwSuccess(false); }} />
+      <Sidebar user={user} kdsView={kdsView} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onChangePassword={() => { setShowPasswordModal(true); setPwError(""); setPwSuccess(false); }} />
       {/* Mobile topbar */}
       <div className="md:hidden fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-4 py-3 border-b border-white/10" style={{ background: "linear-gradient(180deg,#0a0a0a,#151515)" }}>
         <div className="flex items-center gap-2">

@@ -6,6 +6,16 @@ import { cn } from "@/lib/utils";
 import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 
+/* ── KDS view definitions ── */
+const KDS_VIEWS = [
+  { value: "DASHBOARD",    href: "/admin/dashboard",       label: "תצוגת שולחן",  icon: "📺" },
+  { value: "STATION_DARK", href: "/admin/kitchen",         label: "Station Dark",  icon: "🍳" },
+  { value: "KANBAN",       href: "/admin/kitchen-kanban",  label: "Kanban",        icon: "📋" },
+  { value: "TICKETS",      href: "/admin/kitchen-tickets", label: "Ticket Board",  icon: "🎫" },
+];
+
+const KDS_HREFS = KDS_VIEWS.map(v => v.href);
+
 type NavItem = {
   href: string;
   label: string;
@@ -32,10 +42,6 @@ const navItems: NavItem[] = [
       { href: "/admin/orders/stats", label: "סטטיסטיקות", icon: "📊", waiterHide: true, displayHide: true },
     ],
   },
-  { href: "/admin/dashboard", label: "תצוגת מטבח", icon: "📺", exact: false },
-  { href: "/admin/kitchen", label: "מטבח — Station Dark", icon: "🍳", exact: false },
-  { href: "/admin/kitchen-kanban", label: "מטבח — Kanban", icon: "📋", exact: false },
-  { href: "/admin/kitchen-tickets", label: "מטבח — Ticket Board", icon: "🎫", exact: false },
   { href: "/admin/layout-builder", label: "פריסת שולחנות", icon: "🗺", waiterHide: true, displayHide: true },
   { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true, waiterHide: true, displayHide: true },
   { href: "/admin/logs", label: "לוגים", icon: "◎", adminOnly: true, waiterHide: true, displayHide: true },
@@ -43,15 +49,17 @@ const navItems: NavItem[] = [
 
 interface SidebarProps {
   user: { name?: string | null; email?: string | null; role: Role };
+  kdsView: string; // "ALL" for SUPER_ADMIN, or a specific KDS_VIEW value
   isOpen?: boolean;
   onClose?: () => void;
   onChangePassword?: () => void;
 }
 
-export default function Sidebar({ user, isOpen = false, onClose, onChangePassword }: SidebarProps) {
+export default function Sidebar({ user, kdsView, isOpen = false, onClose, onChangePassword }: SidebarProps) {
   const pathname = usePathname();
   const isWaiter = user.role === "WAITER";
   const isDisplay = user.role === "DISPLAY";
+
   const visibleItems = navItems.filter((item) => {
     if (item.waiterHide && isWaiter) return false;
     if (item.displayHide && isDisplay) return false;
@@ -59,6 +67,16 @@ export default function Sidebar({ user, isOpen = false, onClose, onChangePasswor
     if (item.adminOnly && !["SUPER_ADMIN", "ADMIN"].includes(user.role)) return false;
     return true;
   });
+
+  // Compute visible KDS children based on kdsView
+  const visibleKdsViews = kdsView === "ALL"
+    ? KDS_VIEWS
+    : KDS_VIEWS.filter(v => v.value === kdsView);
+
+  // KDS section parent href = first visible KDS view
+  const kdsParentHref = visibleKdsViews[0]?.href ?? "/admin/dashboard";
+  const isKdsActive = KDS_HREFS.some(h => pathname.startsWith(h));
+
   const initials = (user.name ?? user.email ?? "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   const sidebarContent = (
@@ -82,6 +100,7 @@ export default function Sidebar({ user, isOpen = false, onClose, onChangePasswor
       {/* Nav */}
       <nav className="flex-1 px-3 py-5 space-y-0.5">
         <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest px-3 mb-3">ניווט</p>
+
         {visibleItems.map((item) => {
           const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           const visibleChildren = item.children?.filter(child => {
@@ -117,6 +136,54 @@ export default function Sidebar({ user, isOpen = false, onClose, onChangePasswor
             </div>
           );
         })}
+
+        {/* ── KDS Section ── */}
+        <div>
+          {/* KDS section label */}
+          <div className="px-3 pt-4 pb-1">
+            <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest">KDS — מטבח</p>
+          </div>
+
+          {visibleKdsViews.length === 1 ? (
+            /* Single view: direct link */
+            <Link href={visibleKdsViews[0].href} onClick={onClose}
+              className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
+                pathname.startsWith(visibleKdsViews[0].href) ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
+              style={pathname.startsWith(visibleKdsViews[0].href) ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
+              <span className={cn("text-base", pathname.startsWith(visibleKdsViews[0].href) ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>
+                {visibleKdsViews[0].icon}
+              </span>
+              {visibleKdsViews[0].label}
+            </Link>
+          ) : (
+            /* Multiple views (SUPER_ADMIN): parent + children */
+            <div>
+              <Link href={kdsParentHref} onClick={onClose}
+                className={cn("group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium",
+                  isKdsActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
+                style={isKdsActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
+                <span className={cn("text-base", isKdsActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>🖥</span>
+                תצוגת מטבח
+              </Link>
+              {isKdsActive && (
+                <div className="mr-4 mt-0.5 border-r border-white/10 pr-2 space-y-0.5">
+                  {visibleKdsViews.map(view => {
+                    const childActive = pathname.startsWith(view.href);
+                    return (
+                      <Link key={view.href} href={view.href} onClick={onClose}
+                        className={cn("group flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150 text-xs font-medium",
+                          childActive ? "text-white shadow-md" : "text-slate-400 hover:text-white hover:bg-white/5")}
+                        style={childActive ? { background: "linear-gradient(90deg,#8B6914,#C9A84C)" } : undefined}>
+                        <span className={cn("text-sm", childActive ? "text-white" : "text-slate-500 group-hover:text-amber-400")}>{view.icon}</span>
+                        {view.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </nav>
 
       {/* User */}

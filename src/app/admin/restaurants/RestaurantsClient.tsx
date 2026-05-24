@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { MENU_PALETTES } from "@/lib/menuPalettes";
 
@@ -22,6 +22,7 @@ type Restaurant = {
   menuPalette: string;
   menuPaletteData: string | null;
   ordersEnabled: boolean;
+  kdsView: string;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   createdAt: Date;
@@ -43,6 +44,7 @@ const emptyForm = {
   menuCustomAc: "#c9a35d",
   menuCustomBg: "#0a0a0a",
   ordersEnabled: false,
+  kdsView: "STATION_DARK",
 };
 
 function toDateInput(val: string | null | undefined): string {
@@ -102,6 +104,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       menuCustomAc: (() => { try { return JSON.parse(r.menuPaletteData ?? '{}').ac ?? '#c9a35d'; } catch { return '#c9a35d'; } })(),
       menuCustomBg: (() => { try { return JSON.parse(r.menuPaletteData ?? '{}').bg ?? '#0a0a0a'; } catch { return '#0a0a0a'; } })(),
       ordersEnabled: r.ordersEnabled ?? false,
+      kdsView: r.kdsView ?? "STATION_DARK",
     });
     setShowForm(true);
   }
@@ -139,6 +142,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       subscriptionFrom: form.subscriptionFrom ? new Date(form.subscriptionFrom).toISOString() : null,
       subscriptionTo: form.subscriptionTo ? new Date(form.subscriptionTo).toISOString() : null,
       ordersEnabled: form.ordersEnabled,
+      kdsView: form.kdsView,
     };
 
     if (editTarget) {
@@ -368,6 +372,38 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     form.ordersEnabled ? 'translate-x-1' : 'translate-x-6'
                   }`} />
                 </button>
+              </div>
+
+              {/* KDS View Picker */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">תצוגת מטבח מועדפת (KDS)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "DASHBOARD",    label: "תצוגת שולחן", icon: "📺", desc: "קלאסי, לפי שולחן" },
+                    { value: "STATION_DARK", label: "Station Dark", icon: "🍳", desc: "מודרני, כהה" },
+                    { value: "KANBAN",       label: "Kanban",       icon: "📋", desc: "לפי סטטוס" },
+                    { value: "TICKETS",      label: "Ticket Board", icon: "🎫", desc: "כרטיסיות קלאסי" },
+                  ].map(opt => {
+                    const isActive = form.kdsView === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, kdsView: opt.value }))}
+                        className={cn(
+                          "flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all",
+                          isActive
+                            ? "border-amber-500 bg-amber-50"
+                            : "border-gray-200 hover:border-amber-300 hover:bg-amber-50/50"
+                        )}
+                      >
+                        <span className="text-xl mb-1">{opt.icon}</span>
+                        <span className={cn("text-sm font-semibold", isActive ? "text-amber-800" : "text-gray-700")}>{opt.label}</span>
+                        <span className="text-xs text-gray-400 mt-0.5">{opt.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Subscription */}
