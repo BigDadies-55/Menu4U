@@ -275,6 +275,7 @@ function TableCard({
   onItemCancel,
   onOrderCancel,
   onConfirmOrder,
+  onDeliverOrder,
   onShowBill,
 }: {
   tableNumber: string;
@@ -284,20 +285,22 @@ function TableCard({
   onItemCancel: (orderId: string, itemId: string) => Promise<void>;
   onOrderCancel: (orderId: string) => Promise<void>;
   onConfirmOrder: (orderId: string) => Promise<void>;
+  onDeliverOrder: (orderId: string) => Promise<void>;
   onShowBill: (tableNumber: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
 
-  const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID" && o.status !== "DELIVERED");
-  const allItems = nonCancelledOrders.flatMap(o => o.items);
+  const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID");
+  const activeOrders = nonCancelledOrders.filter(o => o.status !== "DELIVERED");
+  const allItems = activeOrders.flatMap(o => o.items);
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
   const oldestOrder = orders.reduce((a, b) =>
     new Date(a.createdAt) < new Date(b.createdAt) ? a : b
   );
   const ageMin = Math.floor((Date.now() - new Date(oldestOrder.createdAt).getTime()) / 60000);
-  const hasActive = nonCancelledOrders.some(o => o.status !== "DELIVERED");
+  const hasActive = activeOrders.length > 0;
   const isUrgent = ageMin > 20 && hasActive;
   const totalAmount = nonCancelledOrders.reduce((s, o) => s + o.totalAmount, 0);
 
@@ -360,6 +363,7 @@ function TableCard({
       {[...nonCancelledOrders].reverse().map((order, idx, arr) => {
         const isPending = order.status === "PENDING";
         const isDelivered = order.status === "DELIVERED";
+        const isReady = order.status === "READY";
         const orderNum = arr.length - idx;
 
         return (
@@ -367,11 +371,11 @@ function TableCard({
             {/* Order sub-header */}
             <div
               className="flex items-center justify-between px-2 py-1"
-              style={{ background: isPending ? "#fefce8" : isDelivered ? "#f0fdf4" : "#fafafa" }}
+              style={{ background: isPending ? "#fefce8" : isDelivered ? "#f9fafb" : isReady ? "#f0fdf4" : "#fafafa" }}
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`text-xs font-bold shrink-0 ${isPending ? "text-yellow-700" : isDelivered ? "text-green-700" : "text-gray-500"}`}>
-                  {isPending ? "🕐 ממתין" : isDelivered ? "✓ הושלם" : `הזמנה ${orderNum}`}
+                <span className={`text-xs font-bold shrink-0 ${isPending ? "text-yellow-700" : isDelivered ? "text-gray-400" : isReady ? "text-green-700" : "text-gray-500"}`}>
+                  {isPending ? "🕐 ממתין" : isDelivered ? "✓ סופק" : isReady ? "✅ מוכן" : `הזמנה ${orderNum}`}
                 </span>
                 <span className="text-xs text-gray-400 shrink-0">
                   {order.items.length} מנות · ₪{order.totalAmount.toFixed(0)} · {timeSince(order.createdAt)}
@@ -380,35 +384,46 @@ function TableCard({
                   <span className="text-xs text-gray-400 italic truncate">· 💬 {order.notes}</span>
                 )}
               </div>
-              {isPending && (
-                <button
-                  onClick={() => confirmOrder(order.id)}
-                  disabled={confirmingOrder === order.id}
-                  className="shrink-0 px-3 py-1 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
-                  style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)" }}
-                >
-                  {confirmingOrder === order.id ? "..." : "✓ אשר"}
-                </button>
-              )}
-              {!isPending && !isDelivered && (
-                <button
-                  onClick={() => onOrderCancel(order.id)}
-                  className="shrink-0 text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  ✕ בטל
-                </button>
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                {isPending && (
+                  <button
+                    onClick={() => confirmOrder(order.id)}
+                    disabled={confirmingOrder === order.id}
+                    className="px-3 py-1 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
+                    style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)" }}
+                  >
+                    {confirmingOrder === order.id ? "..." : "✓ אשר"}
+                  </button>
+                )}
+                {isReady && (
+                  <button
+                    onClick={() => onDeliverOrder(order.id)}
+                    className="px-3 py-1 rounded-xl text-xs font-bold text-white transition-all"
+                    style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
+                  >
+                    🛎 סופק לשולחן
+                  </button>
+                )}
+                {!isPending && !isDelivered && !isReady && (
+                  <button
+                    onClick={() => onOrderCancel(order.id)}
+                    className="text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    ✕ בטל
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Items */}
-            <div className="divide-y divide-gray-50" style={{ opacity: isPending ? 0.6 : 1 }}>
+            <div className="divide-y divide-gray-50" style={{ opacity: isPending || isDelivered ? 0.5 : 1 }}>
               {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers }) => {
                 const isCancelled = itemStatus === "CANCELLED";
-                const nextLabel = !isPending && !isDelivered && !isCancelled ? ITEM_NEXT_LABEL[itemStatus] : undefined;
+                const nextLabel = !isPending && !isDelivered && !isReady && !isCancelled ? ITEM_NEXT_LABEL[itemStatus] : undefined;
                 const isBusy = busy.has(itemId);
                 const isCancelBusy = busy.has(itemId + "-cancel");
-                const isDone = itemStatus === "DONE" || isDelivered;
-                const canCancel = !isPending && !isDelivered && !isCancelled && !isDone;
+                const isDone = itemStatus === "DONE" || isDelivered || isReady;
+                const canCancel = !isPending && !isDelivered && !isReady && !isCancelled && !isDone;
 
                 return (
                   <div
@@ -532,11 +547,11 @@ export default function OrdersClient({
       method: "PATCH",
     });
     if (!res.ok) return;
-    const { itemStatus, orderDelivered } = await res.json();
+    const { itemStatus, orderReady } = await res.json();
     setOrders(prev => prev.map(o => {
       if (o.id !== orderId) return o;
       const updatedItems = o.items.map(i => i.id === itemId ? { ...i, itemStatus } : i);
-      return { ...o, status: orderDelivered ? "DELIVERED" : o.status, items: updatedItems };
+      return { ...o, status: orderReady ? "READY" : o.status, items: updatedItems };
     }));
   }
 
@@ -579,6 +594,20 @@ export default function OrdersClient({
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "CONFIRMED" } : o));
   }
 
+  async function deliverOrder(orderId: string) {
+    const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "DELIVERED" }),
+    });
+    if (!res.ok) return;
+    if (filter === "active") {
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+    } else {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "DELIVERED" } : o));
+    }
+  }
+
   function closeTable(tableNumber: string) {
     const tableOrders = orders.filter(o => (o.tableNumber ?? "–") === tableNumber);
     const rid = tableOrders[0]?.restaurant?.id || restaurantId;
@@ -596,12 +625,13 @@ export default function OrdersClient({
     ? orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID")
     : orders;
 
-  // Group by table — always exclude PAID/DELIVERED from table cards regardless of filter mode
+  // Group by table — exclude PAID always; exclude DELIVERED only in active mode
   const byTable = new Map<string, Order[]>();
   [...activeOrders]
     .filter(order =>
       order.tableNumber && order.tableNumber.trim() !== "" &&
-      order.status !== "PAID" && order.status !== "DELIVERED"
+      order.status !== "PAID" &&
+      (filter === "all" || order.status !== "DELIVERED")
     )
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .forEach(order => {
@@ -741,6 +771,7 @@ export default function OrdersClient({
               onItemCancel={cancelItem}
               onOrderCancel={cancelOrder}
               onConfirmOrder={confirmOrder}
+              onDeliverOrder={deliverOrder}
               onShowBill={setBillTableKey}
             />
           ))}

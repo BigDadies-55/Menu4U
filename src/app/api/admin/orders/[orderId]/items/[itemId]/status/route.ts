@@ -61,12 +61,12 @@ export async function PATCH(
     const prevStatus = ITEM_PREV[orderItem.itemStatus];
     if (!prevStatus) return NextResponse.json({ error: "Already at start" }, { status: 400 });
     await prisma.orderItem.update({ where: { id: itemId }, data: { itemStatus: prevStatus } });
-    // If order was DELIVERED, reopen it (items not all done anymore)
-    if (order.status === "DELIVERED") {
+    // If order was READY or DELIVERED, reopen it (items not all done anymore)
+    if (order.status === "READY" || order.status === "DELIVERED") {
       await prisma.order.update({ where: { id: orderId }, data: { status: "PREPARING" } });
     }
     sseNotify(order.restaurantId);
-    return NextResponse.json({ itemStatus: prevStatus, orderDelivered: false });
+    return NextResponse.json({ itemStatus: prevStatus, orderReady: false });
   }
 
   /* ── Advance forward (default) ── */
@@ -86,13 +86,13 @@ export async function PATCH(
 
   if (allDone) {
     await prisma.$transaction([
-      prisma.order.update({ where: { id: orderId }, data: { status: "DELIVERED" } }),
+      prisma.order.update({ where: { id: orderId }, data: { status: "READY" } }),
       prisma.orderStatusLog.create({
         data: {
           id: `${orderId}-auto-${Date.now()}`,
           orderId,
           fromStatus: order.status,
-          toStatus: "DELIVERED",
+          toStatus: "READY",
           changedBy: session.user.id,
         },
       }),
@@ -100,5 +100,5 @@ export async function PATCH(
   }
 
   sseNotify(order.restaurantId);
-  return NextResponse.json({ itemStatus: nextItemStatus, orderDelivered: allDone });
+  return NextResponse.json({ itemStatus: nextItemStatus, orderReady: allDone });
 }
