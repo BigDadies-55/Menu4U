@@ -25,7 +25,7 @@ type Restaurant = {
   kdsView: string;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
-  createdAt: Date;
+  createdAt: string;
   _count: { menus: number; orders: number; restaurantUsers: number };
 };
 
