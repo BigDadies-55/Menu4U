@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import type { Role } from "@/generated/prisma/client";
 
-const SIDEBAR_COLLAPSED = 60;    // px — icon rail only
+const SIDEBAR_COLLAPSED = 8;     // px — thin strip only
 const SIDEBAR_PINNED    = 256;   // px — full expanded width
 
 interface Props {
@@ -67,6 +67,7 @@ export default function AdminShell({ user, kdsView, children }: Props) {
         user={user} kdsView={kdsView}
         pinned={pinned} onTogglePin={togglePin}
         isOpen={sidebarOpen}
+        onOpen={() => setSidebarOpen(true)}
         onClose={() => setSidebarOpen(false)}
         onChangePassword={openPasswordModal}
       />

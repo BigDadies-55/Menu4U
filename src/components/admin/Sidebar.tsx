@@ -8,7 +8,7 @@ import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 
 /* ─── Widths ─────────────────────────────────────────────── */
-export const SIDEBAR_W_COLLAPSED = 60;
+export const SIDEBAR_W_COLLAPSED = 8;
 export const SIDEBAR_W_EXPANDED  = 256;
 
 /* ─── Icons ──────────────────────────────────────────────── */
@@ -102,6 +102,7 @@ interface SidebarProps {
   pinned: boolean;
   onTogglePin: () => void;
   isOpen?: boolean;
+  onOpen?: () => void;
   onClose?: () => void;
   onChangePassword?: () => void;
 }
@@ -262,7 +263,7 @@ function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLe
 
 /* ─── Main component ─────────────────────────────────────── */
 export default function Sidebar({
-  user, kdsView, pinned, onTogglePin, isOpen = false, onClose, onChangePassword,
+  user, kdsView, pinned, onTogglePin, isOpen = false, onOpen, onClose, onChangePassword,
 }: SidebarProps) {
   const pathname  = usePathname();
   // openGroups: which accordion sections are open
@@ -415,12 +416,20 @@ export default function Sidebar({
           right: 0, top: 0, bottom: 0,
           width: isExpanded ? SIDEBAR_W_EXPANDED : SIDEBAR_W_COLLAPSED,
           background: "#0f111a",
-          borderLeft: "1px solid rgba(255,255,255,0.06)",
+          borderLeft: "1px solid rgba(255,255,255,0.12)",
           transition: TRANS,
           overflow: "hidden",
+          cursor: isExpanded ? "default" : "pointer",
         }}
+        onClick={!isExpanded ? onOpen : undefined}
       >
-        <SidebarBody expanded={isExpanded} />
+        {/* Collapsed: thin strip with subtle pill indicator */}
+        {!isExpanded && (
+          <div className="w-full h-full flex flex-col items-center justify-center">
+            <div className="w-0.5 h-10 rounded-full bg-white opacity-25" />
+          </div>
+        )}
+        {isExpanded && <SidebarBody expanded={isExpanded} />}
       </aside>
 
       {/* Mobile overlay */}
