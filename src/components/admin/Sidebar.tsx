@@ -193,18 +193,18 @@ export default function Sidebar({
 
         {/* ── Logo + pin ── */}
         <div className="flex items-center justify-between px-4 pt-5 pb-4">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 group" title="עמוד הבית">
             <div
-              className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center font-black text-sm text-white"
+              className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center font-black text-sm text-white transition-opacity group-hover:opacity-80"
               style={{ background: "linear-gradient(135deg,#c9a35d,#8B6914)" }}
             >M</div>
             <span
-              className="font-extrabold text-white text-[17px] tracking-tight whitespace-nowrap"
+              className="font-extrabold text-white text-[17px] tracking-tight whitespace-nowrap transition-opacity group-hover:opacity-80"
               style={{ opacity: isExpanded ? 1 : 0, transition: "opacity 180ms" }}
             >
               Menu4U<span style={{ color: "#c9a35d" }}>.</span>
             </span>
-          </div>
+          </Link>
 
           {/* Pin button — only visible when expanded */}
           <button
@@ -349,10 +349,10 @@ export default function Sidebar({
 
         {/* logo */}
         <div className="px-4 pt-5 pb-4">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3" onClick={onClose}>
             <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm text-white" style={{ background: "linear-gradient(135deg,#c9a35d,#8B6914)" }}>M</div>
             <span className="font-extrabold text-white text-[17px] tracking-tight">Menu4U<span style={{ color: "#c9a35d" }}>.</span></span>
-          </div>
+          </Link>
         </div>
 
         {/* nav */}
