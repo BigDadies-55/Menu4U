@@ -475,6 +475,23 @@ export default function MenuPublicClient({
     }
   }
 
+  async function handleRegisterSubmit() {
+    if (!regForm.name.trim()) { setRegError("שם נדרש"); return; }
+    setRegLoading(true); setRegError("");
+    try {
+      const res = await fetch(`/api/menu/${restaurant.id}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: regForm.name.trim(), phone: regForm.phone.trim() || undefined, email: regForm.email.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setRegError(data.error ?? "שגיאה בהרשמה"); return; }
+      setRegSuccess(true);
+    } finally {
+      setRegLoading(false);
+    }
+  }
+
   return (
     <div className={`menu-root menu-theme-${restaurant.menuTheme ?? 'luxury'}`} style={paletteStyle as React.CSSProperties}>
       {/* Header */}
