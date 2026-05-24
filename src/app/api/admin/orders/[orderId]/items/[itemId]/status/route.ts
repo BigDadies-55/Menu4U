@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sseNotify } from "@/lib/sse";
 import { NextResponse } from "next/server";
 
 const ITEM_NEXT: Record<string, string> = {
@@ -51,6 +52,7 @@ export async function PATCH(
     const remaining = order.items.filter(i => i.id !== itemId && i.itemStatus !== "CANCELLED");
     const newTotal = remaining.reduce((s, i) => s + i.price * i.quantity, 0);
     await prisma.order.update({ where: { id: orderId }, data: { totalAmount: newTotal } });
+    sseNotify(order.restaurantId);
     return NextResponse.json({ itemStatus: "CANCELLED", orderDelivered: false, newTotal });
   }
 
@@ -63,6 +65,7 @@ export async function PATCH(
     if (order.status === "DELIVERED") {
       await prisma.order.update({ where: { id: orderId }, data: { status: "PREPARING" } });
     }
+    sseNotify(order.restaurantId);
     return NextResponse.json({ itemStatus: prevStatus, orderDelivered: false });
   }
 
@@ -96,5 +99,6 @@ export async function PATCH(
     ]);
   }
 
+  sseNotify(order.restaurantId);
   return NextResponse.json({ itemStatus: nextItemStatus, orderDelivered: allDone });
 }

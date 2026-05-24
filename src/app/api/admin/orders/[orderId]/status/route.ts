@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sseNotify } from "@/lib/sse";
 import { NextResponse } from "next/server";
 import { logAudit, getIp } from "@/lib/audit";
 
@@ -54,6 +55,8 @@ export async function PATCH(
     entityName: `Order ${orderId.slice(-6)} → ${status}`,
     ip: getIp(req),
   });
+
+  sseNotify(order.restaurantId);
 
   return NextResponse.json(updated);
 }
