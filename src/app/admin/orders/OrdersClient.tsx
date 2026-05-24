@@ -271,6 +271,7 @@ function TableCard({
   tableNumber,
   orders,
   isSuperAdmin,
+  showAll,
   onItemAdvance,
   onItemCancel,
   onOrderCancel,
@@ -281,6 +282,7 @@ function TableCard({
   tableNumber: string;
   orders: Order[];
   isSuperAdmin: boolean;
+  showAll?: boolean;
   onItemAdvance: (orderId: string, itemId: string) => Promise<void>;
   onItemCancel: (orderId: string, itemId: string) => Promise<void>;
   onOrderCancel: (orderId: string) => Promise<void>;
@@ -291,7 +293,10 @@ function TableCard({
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
 
-  const nonCancelledOrders = orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID");
+  // In "all" mode show every order; in active mode hide CANCELLED/PAID
+  const nonCancelledOrders = showAll
+    ? orders
+    : orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID");
   const activeOrders = nonCancelledOrders.filter(o => o.status !== "DELIVERED");
   const allItems = activeOrders.flatMap(o => o.items);
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
@@ -364,6 +369,8 @@ function TableCard({
         const isPending = order.status === "PENDING";
         const isDelivered = order.status === "DELIVERED";
         const isReady = order.status === "READY";
+        const isPaid = order.status === "PAID";
+        const isCancelled = order.status === "CANCELLED";
         const orderNum = arr.length - idx;
 
         return (
@@ -371,11 +378,18 @@ function TableCard({
             {/* Order sub-header */}
             <div
               className="flex items-center justify-between px-2 py-1"
-              style={{ background: isPending ? "#fefce8" : isDelivered ? "#f9fafb" : isReady ? "#f0fdf4" : "#fafafa" }}
+              style={{
+                background: isPending ? "#fefce8" : isDelivered ? "#f9fafb" : isReady ? "#f0fdf4"
+                  : isPaid ? "#faf5ff" : isCancelled ? "#fef2f2" : "#fafafa",
+              }}
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`text-xs font-bold shrink-0 ${isPending ? "text-yellow-700" : isDelivered ? "text-gray-400" : isReady ? "text-green-700" : "text-gray-500"}`}>
-                  {isPending ? "🕐 ממתין" : isDelivered ? "✓ סופק" : isReady ? "✅ מוכן" : `הזמנה ${orderNum}`}
+                <span className={`text-xs font-bold shrink-0 ${
+                  isPending ? "text-yellow-700" : isDelivered ? "text-gray-400"
+                  : isReady ? "text-green-700" : isPaid ? "text-purple-600"
+                  : isCancelled ? "text-red-400 line-through" : "text-gray-500"}`}>
+                  {isPending ? "🕐 ממתין" : isDelivered ? "✓ סופק" : isReady ? "✅ מוכן"
+                    : isPaid ? "💜 שולם" : isCancelled ? "✕ בוטל" : `הזמנה ${orderNum}`}
                 </span>
                 <span className="text-xs text-gray-400 shrink-0">
                   {order.items.length} מנות · ₪{order.totalAmount.toFixed(0)} · {timeSince(order.createdAt)}
@@ -404,7 +418,7 @@ function TableCard({
                     🛎 סופק לשולחן
                   </button>
                 )}
-                {!isPending && !isDelivered && !isReady && (
+                {!isPending && !isDelivered && !isReady && !isPaid && !isCancelled && (
                   <button
                     onClick={() => onOrderCancel(order.id)}
                     className="text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
@@ -416,28 +430,28 @@ function TableCard({
             </div>
 
             {/* Items */}
-            <div className="divide-y divide-gray-50" style={{ opacity: isPending || isDelivered ? 0.5 : 1 }}>
+            <div className="divide-y divide-gray-50" style={{ opacity: isPending || isDelivered || isPaid || isCancelled ? 0.5 : 1 }}>
               {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers }) => {
-                const isCancelled = itemStatus === "CANCELLED";
-                const nextLabel = !isPending && !isDelivered && !isReady && !isCancelled ? ITEM_NEXT_LABEL[itemStatus] : undefined;
+                const isItemCancelled = itemStatus === "CANCELLED";
+                const nextLabel = !isPending && !isDelivered && !isReady && !isPaid && !isCancelled && !isItemCancelled ? ITEM_NEXT_LABEL[itemStatus] : undefined;
                 const isBusy = busy.has(itemId);
                 const isCancelBusy = busy.has(itemId + "-cancel");
-                const isDone = itemStatus === "DONE" || isDelivered || isReady;
-                const canCancel = !isPending && !isDelivered && !isReady && !isCancelled && !isDone;
+                const isDone = itemStatus === "DONE" || isDelivered || isReady || isPaid;
+                const canCancel = !isPending && !isDelivered && !isReady && !isPaid && !isCancelled && !isItemCancelled && !isDone;
 
                 return (
                   <div
                     key={itemId}
-                    className={`flex items-center gap-1.5 px-2 py-1 transition-colors ${isDone || isCancelled ? "opacity-50" : ""}`}
+                    className={`flex items-center gap-1.5 px-2 py-1 transition-colors ${isDone || isItemCancelled ? "opacity-50" : ""}`}
                   >
-                    <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold shrink-0 ${isCancelled ? "bg-red-50 text-red-400" : "bg-gray-100 text-gray-600"}`}>
+                    <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold shrink-0 ${isItemCancelled ? "bg-red-50 text-red-400" : "bg-gray-100 text-gray-600"}`}>
                       {quantity}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium truncate ${isDone || isCancelled ? "line-through text-gray-400" : "text-gray-800"}`}>
+                      <div className={`text-sm font-medium truncate ${isDone || isItemCancelled ? "line-through text-gray-400" : "text-gray-800"}`}>
                         {item.name}
                       </div>
-                      {modifiers && modifiers.length > 0 && !isDone && !isCancelled && (
+                      {modifiers && modifiers.length > 0 && !isDone && !isItemCancelled && (
                         <div className="flex gap-1 flex-wrap mt-0.5">
                           {modifiers.map((m, i) => (
                             <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#1e3a2e", color: "#4ade80" }}>
@@ -446,11 +460,11 @@ function TableCard({
                           ))}
                         </div>
                       )}
-                      {notes && !isDone && !isCancelled && (
+                      {notes && !isDone && !isItemCancelled && (
                         <div className="text-xs text-gray-400 italic truncate">{notes}</div>
                       )}
                     </div>
-                    {!isDelivered && (
+                    {!isDelivered && !isPaid && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus] ?? ""}`}>
                         {ITEM_STATUS_LABEL[itemStatus] ?? itemStatus}
                       </span>
@@ -464,7 +478,7 @@ function TableCard({
                       >
                         {isBusy ? "..." : nextLabel}
                       </button>
-                    ) : isDone && !isCancelled ? (
+                    ) : isDone && !isItemCancelled ? (
                       <span className="shrink-0 text-green-500 text-sm">✓</span>
                     ) : null}
                     {canCancel && (
@@ -622,13 +636,12 @@ export default function OrdersClient({
     ? orders.filter(o => o.status !== "CANCELLED" && o.status !== "PAID")
     : orders;
 
-  // Group by table — exclude PAID always; exclude DELIVERED only in active mode
+  // Group by table — in active mode exclude PAID/DELIVERED; in all mode show everything
   const byTable = new Map<string, Order[]>();
   [...activeOrders]
     .filter(order =>
       order.tableNumber && order.tableNumber.trim() !== "" &&
-      order.status !== "PAID" &&
-      (filter === "all" || order.status !== "DELIVERED")
+      (filter === "all" || (order.status !== "PAID" && order.status !== "DELIVERED"))
     )
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .forEach(order => {
@@ -737,12 +750,19 @@ export default function OrdersClient({
       {/* Status summary */}
       {activeOrders.length > 0 && (
         <div className="flex gap-2 mb-5 flex-wrap">
-          {(["PENDING","CONFIRMED","PREPARING","READY"] as const).map(s => {
+          {(filter === "active"
+            ? (["PENDING","CONFIRMED","PREPARING","READY"] as const)
+            : (["PENDING","CONFIRMED","PREPARING","READY","DELIVERED","PAID","CANCELLED"] as const)
+          ).map(s => {
             const count = activeOrders.filter(o => o.status === s).length;
             if (!count) return null;
+            const label: Record<string, string> = {
+              PENDING: "ממתינות", CONFIRMED: "מאושרות", PREPARING: "בהכנה",
+              READY: "מוכנות", DELIVERED: "סופקו", PAID: "שולמו", CANCELLED: "בוטלו",
+            };
             return (
               <div key={s} className={`px-3 py-1.5 rounded-full text-xs font-semibold ${ORDER_STATUS_BADGE[s]}`}>
-                {count} {s === "PENDING" ? "ממתינות" : s === "CONFIRMED" ? "מאושרות" : s === "PREPARING" ? "בהכנה" : "מוכנות"}
+                {count} {label[s]}
               </div>
             );
           })}
@@ -764,6 +784,7 @@ export default function OrdersClient({
               tableNumber={table}
               orders={tableOrders}
               isSuperAdmin={isSuperAdmin}
+              showAll={filter === "all"}
               onItemAdvance={advanceItem}
               onItemCancel={cancelItem}
               onOrderCancel={cancelOrder}
