@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -25,42 +25,74 @@ const Ic = {
   Kanban:     () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="5" height="18"/><rect x="10" y="3" width="5" height="11"/><rect x="17" y="3" width="5" height="15"/></svg>,
   Ticket:     () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/></svg>,
   TableView:  () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>,
-  Pin:        ({ on }: { on: boolean }) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="17" x2="12" y2="22"/>
-      <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/>
+  // Group header icons
+  Manage:     () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>,
+  Service:    () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v5a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>,
+  KDSIcon:    () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  Chevron:    ({ open }: { open: boolean }) => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+      <polyline points="6 9 12 15 18 9"/>
     </svg>
   ),
-  Lock:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-  Logout: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  Pin:   ({ on }: { on: boolean }) => <svg width="14" height="14" viewBox="0 0 24 24" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg>,
+  Lock:  () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  Logout:() => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
 };
 
-/* ─── Nav data ───────────────────────────────────────────── */
-const KDS = [
-  { href: "/admin/kitchen-table",   label: "תצוגת שולחן", I: Ic.TableView },
-  { href: "/admin/kitchen",         label: "Station Dark", I: Ic.Kitchen },
-  { href: "/admin/kitchen-kanban",  label: "Kanban",       I: Ic.Kanban },
-  { href: "/admin/kitchen-tickets", label: "Ticket Board", I: Ic.Ticket },
-];
+/* ─── Nav structure ──────────────────────────────────────── */
+type NavLeaf = {
+  href: string; label: string; I: React.FC;
+  exact?: boolean; superAdmin?: boolean; adminOnly?: boolean;
+  ownerOnly?: boolean; waiterHide?: boolean; displayHide?: boolean;
+  children?: NavLeaf[];
+};
 
-type Child = { href: string; label: string; I: React.FC; waiterHide?: boolean; displayHide?: boolean; ownerOnly?: boolean };
-type Item  = { href: string; label: string; I: React.FC; exact?: boolean; superAdmin?: boolean; adminOnly?: boolean; ownerOnly?: boolean; waiterHide?: boolean; displayHide?: boolean; children?: Child[] };
+type NavGroup = {
+  id: string; label: string; I: React.FC;
+  waiterHide?: boolean; displayHide?: boolean;
+  items: NavLeaf[];
+};
 
-const GROUPS: { label: string; items: Item[] }[] = [
-  { label: "כללי", items: [
-    { href: "/admin", label: "דשבורד", I: Ic.Dashboard, exact: true, waiterHide: true, displayHide: true },
-  ]},
-  { label: "ניהול", items: [
-    { href: "/admin/restaurants",    label: "מסעדות",          I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
-    { href: "/admin/menus",          label: "תפריטים",         I: Ic.Menus,      waiterHide: true, displayHide: true },
-    { href: "/admin/users",          label: "משתמשים",         I: Ic.Users,      adminOnly: true, waiterHide: true, displayHide: true },
-    { href: "/admin/logs",           label: "לוגים",           I: Ic.Logs,       adminOnly: true, waiterHide: true, displayHide: true },
-  ]},
-  { label: "שירות", items: [
-    { href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true,
-      children: [{ href: "/admin/orders/stats", label: "סטטיסטיקות", I: Ic.Stats, waiterHide: true, displayHide: true, ownerOnly: true }] },
-    { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout, ownerOnly: true, waiterHide: true, displayHide: true },
-  ]},
+// Standalone item (Dashboard)
+const STANDALONE: NavLeaf = {
+  href: "/admin", label: "דשבורד", I: Ic.Dashboard,
+  exact: true, waiterHide: true, displayHide: true,
+};
+
+const GROUPS: NavGroup[] = [
+  {
+    id: "manage", label: "ניהול", I: Ic.Manage,
+    waiterHide: true, displayHide: true,
+    items: [
+      { href: "/admin/restaurants", label: "מסעדות",  I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
+      { href: "/admin/menus",       label: "תפריטים", I: Ic.Menus,      waiterHide: true, displayHide: true },
+      { href: "/admin/users",       label: "משתמשים", I: Ic.Users,      adminOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/logs",        label: "לוגים",   I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
+    ],
+  },
+  {
+    id: "service", label: "שירות", I: Ic.Service,
+    displayHide: true,
+    items: [
+      {
+        href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true,
+        children: [
+          { href: "/admin/orders/stats", label: "סטטיסטיקות", I: Ic.Stats, waiterHide: true, displayHide: true, ownerOnly: true },
+        ],
+      },
+      { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout, ownerOnly: true, waiterHide: true, displayHide: true },
+    ],
+  },
+  {
+    id: "kds", label: "KDS", I: Ic.KDSIcon,
+    items: [
+      { href: "/admin/kitchen-table",   label: "תצוגת שולחן", I: Ic.TableView },
+      { href: "/admin/kitchen",         label: "Station Dark", I: Ic.Kitchen },
+      { href: "/admin/kitchen-kanban",  label: "Kanban",       I: Ic.Kanban },
+      { href: "/admin/kitchen-tickets", label: "Ticket Board", I: Ic.Ticket },
+    ],
+  },
 ];
 
 /* ─── Props ──────────────────────────────────────────────── */
@@ -74,35 +106,48 @@ interface SidebarProps {
   onChangePassword?: () => void;
 }
 
-/* ─── NavRow ─────────────────────────────────────────────── */
-function NavRow({ href, label, I: NavIcon, isActive, isExpanded, indent = false, onClick }: {
+/* ─── Helpers ────────────────────────────────────────────── */
+function isLeafActive(leaf: NavLeaf, pathname: string): boolean {
+  if (leaf.exact) return pathname === leaf.href;
+  return pathname === leaf.href || pathname.startsWith(leaf.href + "/");
+}
+
+function isGroupActive(group: NavGroup, pathname: string): boolean {
+  return group.items.some(item =>
+    isLeafActive(item, pathname) || (item.children ?? []).some(c => isLeafActive(c, pathname))
+  );
+}
+
+/* ─── Sub-components ─────────────────────────────────────── */
+
+/** Single nav link row */
+function NavLink({ href, label, I: Icon, isActive, depth = 0, isExpanded, onClick }: {
   href: string; label: string; I: React.FC;
-  isActive: boolean; isExpanded: boolean; indent?: boolean; onClick?: () => void;
+  isActive: boolean; depth?: number; isExpanded: boolean; onClick?: () => void;
 }) {
-  const TRANS = "all 230ms cubic-bezier(0.4,0,0.2,1)";
   return (
     <Link
       href={href}
       onClick={onClick}
       title={!isExpanded ? label : undefined}
       className={cn(
-        "flex items-center rounded-xl transition-all duration-200 group",
+        "flex items-center rounded-lg transition-all duration-150 group",
         isActive
-          ? "bg-amber-500 text-white shadow-sm"
+          ? "bg-amber-500 text-white"
           : "text-[#9ca3af] hover:bg-white/[0.07] hover:text-white",
       )}
       style={{
+        padding: isExpanded ? (depth > 0 ? "7px 12px" : "9px 12px") : "9px 0",
         justifyContent: isExpanded ? "flex-start" : "center",
-        padding: isExpanded ? (indent ? "8px 14px" : "10px 14px") : (indent ? "8px 0" : "10px 0"),
-        marginRight: indent && isExpanded ? 10 : 0,
-        transition: TRANS,
+        paddingRight: isExpanded ? (depth > 0 ? 12 : 12) : 0,
+        marginRight: isExpanded && depth > 0 ? 8 : 0,
       }}
     >
       <span className={cn(
-        "shrink-0 flex items-center transition-colors",
+        "shrink-0 flex transition-colors",
         isActive ? "text-white" : "text-[#6b7280] group-hover:text-amber-400",
       )}>
-        <NavIcon />
+        <Icon />
       </span>
       <span
         className="text-sm font-medium whitespace-nowrap"
@@ -110,8 +155,8 @@ function NavRow({ href, label, I: NavIcon, isActive, isExpanded, indent = false,
           overflow: "hidden",
           maxWidth: isExpanded ? 160 : 0,
           opacity: isExpanded ? 1 : 0,
-          marginRight: isExpanded ? 10 : 0,
-          transition: TRANS,
+          marginRight: isExpanded ? 9 : 0,
+          transition: "all 220ms cubic-bezier(0.4,0,0.2,1)",
         }}
       >
         {label}
@@ -120,25 +165,131 @@ function NavRow({ href, label, I: NavIcon, isActive, isExpanded, indent = false,
   );
 }
 
-/* ─── SectionDivider ─────────────────────────────────────── */
-function SectionDiv({ label, isExpanded }: { label: string; isExpanded: boolean }) {
+/** Accordion group header + collapsible children */
+function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLeaf, onClick }: {
+  group: NavGroup;
+  pathname: string;
+  isExpanded: boolean;
+  open: boolean;
+  onToggle: () => void;
+  filterLeaf: (l: NavLeaf) => boolean;
+  onClick?: () => void;
+}) {
+  const groupActive = isGroupActive(group, pathname);
+  const visItems = group.items.filter(filterLeaf);
+  if (visItems.length === 0) return null;
+
   return (
-    <div style={{ paddingTop: 16, paddingBottom: 6, overflow: "hidden" }}>
-      {isExpanded ? (
-        <p className="px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-600">{label}</p>
-      ) : (
-        <div className="mx-3 border-t border-white/[0.08]" />
+    <div>
+      {/* Group header button */}
+      <button
+        onClick={isExpanded ? onToggle : undefined}
+        title={!isExpanded ? group.label : undefined}
+        className={cn(
+          "w-full flex items-center rounded-lg transition-all duration-150 group",
+          groupActive && !isExpanded
+            ? "bg-amber-500/15 text-amber-400"
+            : "text-[#9ca3af] hover:bg-white/[0.07] hover:text-white",
+        )}
+        style={{
+          padding: isExpanded ? "9px 12px" : "9px 0",
+          justifyContent: isExpanded ? "flex-start" : "center",
+          cursor: isExpanded ? "pointer" : "default",
+        }}
+      >
+        <span className={cn(
+          "shrink-0 flex transition-colors",
+          groupActive ? "text-amber-400" : "text-[#6b7280] group-hover:text-amber-400",
+        )}>
+          <group.I />
+        </span>
+
+        {/* Label + chevron (only when expanded) */}
+        <span
+          className="flex items-center flex-1 min-w-0"
+          style={{
+            overflow: "hidden",
+            maxWidth: isExpanded ? 200 : 0,
+            opacity: isExpanded ? 1 : 0,
+            transition: "all 220ms cubic-bezier(0.4,0,0.2,1)",
+          }}
+        >
+          <span className="text-sm font-semibold whitespace-nowrap mr-2 flex-1 text-right">
+            {group.label}
+          </span>
+          <span className={groupActive ? "text-amber-400" : "text-gray-600"}>
+            <Ic.Chevron open={open} />
+          </span>
+        </span>
+      </button>
+
+      {/* Children (only in expanded sidebar) */}
+      {isExpanded && open && (
+        <div
+          className="overflow-hidden"
+          style={{
+            paddingRight: 8,
+            borderRight: "2px solid rgba(255,255,255,0.07)",
+            marginRight: 14,
+            marginTop: 2,
+            marginBottom: 4,
+          }}
+        >
+          {visItems.map(item => {
+            const active = isLeafActive(item, pathname);
+            const visKids = (item.children ?? []).filter(filterLeaf);
+            return (
+              <div key={item.href}>
+                <NavLink
+                  href={item.href} label={item.label} I={item.I}
+                  isActive={active} isExpanded depth={1} onClick={onClick}
+                />
+                {active && visKids.map(c => (
+                  <NavLink
+                    key={c.href} href={c.href} label={c.label} I={c.I}
+                    isActive={isLeafActive(c, pathname)}
+                    isExpanded depth={2} onClick={onClick}
+                  />
+                ))}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
 }
 
-/* ─── Component ──────────────────────────────────────────── */
+/* ─── Main component ─────────────────────────────────────── */
 export default function Sidebar({
   user, kdsView, pinned, onTogglePin, isOpen = false, onClose, onChangePassword,
 }: SidebarProps) {
-  const pathname = usePathname();
+  const pathname  = usePathname();
   const [hovered, setHovered] = useState(false);
+  // openGroups: which accordion sections are open
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    // Auto-open group that contains the active item
+    const initial = new Set<string>();
+    for (const g of GROUPS) {
+      if (isGroupActive(g, pathname)) initial.add(g.id);
+    }
+    return initial;
+  });
+
+  // When pathname changes, ensure the active group is open
+  useEffect(() => {
+    for (const g of GROUPS) {
+      if (isGroupActive(g, pathname)) {
+        setOpenGroups(prev => {
+          if (prev.has(g.id)) return prev;
+          const next = new Set(prev);
+          next.add(g.id);
+          return next;
+        });
+      }
+    }
+  }, [pathname]);
+
   const isExpanded = pinned || hovered;
 
   const isWaiter  = user.role === "WAITER";
@@ -146,13 +297,21 @@ export default function Sidebar({
   const isEditor  = user.role === "EDITOR";
   const isViewer  = user.role === "VIEWER";
 
-  function ok(it: Item | Child): boolean {
-    if (it.waiterHide  && isWaiter)  return false;
-    if (it.displayHide && isDisplay) return false;
-    if ("superAdmin" in it && it.superAdmin && user.role !== "SUPER_ADMIN") return false;
-    if ("adminOnly"  in it && it.adminOnly  && !["SUPER_ADMIN","ADMIN"].includes(user.role)) return false;
-    if (it.ownerOnly && (isEditor || isViewer || isWaiter || isDisplay)) return false;
+  function filterLeaf(l: NavLeaf): boolean {
+    if (l.waiterHide  && isWaiter)  return false;
+    if (l.displayHide && isDisplay) return false;
+    if (l.superAdmin  && user.role !== "SUPER_ADMIN") return false;
+    if (l.adminOnly   && !["SUPER_ADMIN","ADMIN"].includes(user.role)) return false;
+    if (l.ownerOnly   && (isEditor || isViewer || isWaiter || isDisplay)) return false;
     return true;
+  }
+
+  function toggleGroup(id: string) {
+    setOpenGroups(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
   const initials = (user.name ?? user.email ?? "?")
@@ -160,12 +319,14 @@ export default function Sidebar({
 
   const TRANS = "width 230ms cubic-bezier(0.4,0,0.2,1)";
 
-  /* ── inner content (same for desktop/mobile) ── */
-  function SidebarInner({ expanded, close }: { expanded: boolean; close?: () => void }) {
+  /* ── Inner content ── */
+  function SidebarBody({ expanded, close }: { expanded: boolean; close?: () => void }) {
+    const standActive = isLeafActive(STANDALONE, pathname);
+
     return (
       <div className="flex flex-col h-full" style={{ direction: "rtl" }}>
 
-        {/* Logo */}
+        {/* Logo row */}
         <div
           className="flex items-center shrink-0"
           style={{
@@ -187,8 +348,6 @@ export default function Sidebar({
               Menu4U<span style={{ color: "#c9a35d" }}>.</span>
             </span>
           </Link>
-
-          {/* Pin */}
           {expanded && (
             <button
               onClick={onTogglePin}
@@ -204,52 +363,53 @@ export default function Sidebar({
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 space-y-0.5">
+
+          {/* Dashboard — standalone */}
+          {filterLeaf(STANDALONE) && (
+            <NavLink
+              href={STANDALONE.href} label={STANDALONE.label} I={STANDALONE.I}
+              isActive={standActive} isExpanded={expanded} onClick={close}
+            />
+          )}
+
+          {/* Accordion groups */}
           {GROUPS.map(group => {
-            const vis = group.items.filter(ok);
-            if (!vis.length) return null;
+            // Hide whole group if all items are hidden for this role
+            if (group.waiterHide && isWaiter)   return null;
+            if (group.displayHide && isDisplay) return null;
             return (
-              <div key={group.label}>
-                <SectionDiv label={group.label} isExpanded={expanded} />
-                <div className="space-y-0.5">
-                  {vis.map(item => {
-                    const active = item.exact
-                      ? pathname === item.href
-                      : pathname === item.href || pathname.startsWith(item.href + "/");
-                    const kids = item.children?.filter(ok) ?? [];
-                    return (
-                      <div key={item.href}>
-                        <NavRow href={item.href} label={item.label} I={item.I}
-                          isActive={active} isExpanded={expanded} onClick={close} />
-                        {active && kids.map(c => (
-                          <NavRow key={c.href} href={c.href} label={c.label} I={c.I}
-                            isActive={pathname === c.href || pathname.startsWith(c.href + "/")}
-                            isExpanded={expanded} indent onClick={close} />
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <NavGroupSection
+                key={group.id}
+                group={group}
+                pathname={pathname}
+                isExpanded={expanded}
+                open={openGroups.has(group.id)}
+                onToggle={() => toggleGroup(group.id)}
+                filterLeaf={filterLeaf}
+                onClick={close}
+              />
             );
           })}
 
-          {/* KDS */}
-          <SectionDiv label="מטבח (KDS)" isExpanded={expanded} />
-          <div className="space-y-0.5">
-            {KDS.map(v => (
-              <NavRow key={v.href} href={v.href} label={v.label} I={v.I}
-                isActive={pathname === v.href || pathname.startsWith(v.href + "/")}
-                isExpanded={expanded} onClick={close} />
-            ))}
-          </div>
+          {/* Collapsed: show all items as flat icons */}
+          {!expanded && (
+            <div className="space-y-0.5 mt-1">
+              {GROUPS.flatMap(g => g.items).filter(filterLeaf).map(item => (
+                <NavLink
+                  key={item.href} href={item.href} label={item.label} I={item.I}
+                  isActive={isLeafActive(item, pathname)}
+                  isExpanded={false} onClick={close}
+                />
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* Footer */}
         <div className="shrink-0 px-2 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          {/* User card */}
           <div
-            className="flex items-center rounded-xl mb-1"
+            className="flex items-center rounded-xl mb-1.5"
             style={{
               background: "rgba(255,255,255,0.04)",
               justifyContent: expanded ? "flex-start" : "center",
@@ -261,28 +421,21 @@ export default function Sidebar({
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
               style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
             >{initials}</div>
-            <div
-              className="min-w-0"
-              style={{ overflow: "hidden", maxWidth: expanded ? 140 : 0, opacity: expanded ? 1 : 0, transition: TRANS }}
-            >
+            <div className="min-w-0" style={{ overflow: "hidden", maxWidth: expanded ? 140 : 0, opacity: expanded ? 1 : 0, transition: TRANS }}>
               <div className="text-sm font-semibold text-white truncate">{user.name ?? user.email}</div>
               <span className={cn("text-xs px-1.5 py-0.5 rounded font-medium", ROLE_COLORS[user.role])}>
                 {ROLE_LABELS[user.role]}
               </span>
             </div>
           </div>
-
-          {/* Buttons */}
           {[
-            { label: "שנה סיסמה", Icon: Ic.Lock, onClick: onChangePassword, cls: "hover:text-white hover:bg-white/[0.06]" },
-            { label: "יציאה",     Icon: Ic.Logout, onClick: () => signOut({ callbackUrl: "/login" }), cls: "hover:text-red-400 hover:bg-red-500/10" },
+            { label: "שנה סיסמה", Icon: Ic.Lock,   fn: onChangePassword, extra: "hover:text-white hover:bg-white/[0.06]" },
+            { label: "יציאה",     Icon: Ic.Logout, fn: () => signOut({ callbackUrl: "/login" }), extra: "hover:text-red-400 hover:bg-red-500/10" },
           ].map(btn => (
-            <button
-              key={btn.label}
-              onClick={btn.onClick}
+            <button key={btn.label} onClick={btn.fn}
               title={!expanded ? btn.label : undefined}
-              className={cn("w-full flex items-center rounded-lg py-2 text-xs text-gray-500 transition-colors", btn.cls)}
-              style={{ justifyContent: expanded ? "flex-start" : "center", padding: expanded ? "8px 10px" : "8px 0", gap: expanded ? 8 : 0 }}
+              className={cn("w-full flex items-center rounded-lg py-2 text-xs text-gray-500 transition-colors", btn.extra)}
+              style={{ justifyContent: expanded ? "flex-start" : "center", padding: expanded ? "7px 10px" : "7px 0", gap: expanded ? 8 : 0 }}
             >
               <span className="shrink-0 flex"><btn.Icon /></span>
               <span style={{ overflow: "hidden", maxWidth: expanded ? 140 : 0, opacity: expanded ? 1 : 0, whiteSpace: "nowrap", transition: TRANS }}>
@@ -297,13 +450,11 @@ export default function Sidebar({
 
   return (
     <>
-      {/* ── Desktop: fixed full-height floating sidebar ── */}
+      {/* Desktop fixed sidebar */}
       <aside
         className="hidden md:block fixed z-30"
         style={{
-          right: 0,
-          top: 0,
-          bottom: 0,
+          right: 0, top: 0, bottom: 0,
           width: isExpanded ? SIDEBAR_W_EXPANDED : SIDEBAR_W_COLLAPSED,
           background: "#0f111a",
           borderLeft: "1px solid rgba(255,255,255,0.06)",
@@ -313,14 +464,14 @@ export default function Sidebar({
         onMouseEnter={() => !pinned && setHovered(true)}
         onMouseLeave={() => !pinned && setHovered(false)}
       >
-        <SidebarInner expanded={isExpanded} />
+        <SidebarBody expanded={isExpanded} />
       </aside>
 
-      {/* ── Mobile: overlay drawer ── */}
+      {/* Mobile overlay */}
       {isOpen && (
         <div className="md:hidden fixed inset-0 z-40 flex justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-          <div className="relative z-50 h-full overflow-hidden flex flex-col"
+          <div className="relative z-50 h-full flex flex-col overflow-hidden"
             style={{ width: SIDEBAR_W_EXPANDED, background: "#0f111a" }}>
             <button onClick={onClose}
               className="absolute top-4 left-4 text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors z-10">
@@ -328,7 +479,7 @@ export default function Sidebar({
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
-            <SidebarInner expanded close={onClose} />
+            <SidebarBody expanded close={onClose} />
           </div>
         </div>
       )}
