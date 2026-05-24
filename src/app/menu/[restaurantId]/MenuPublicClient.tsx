@@ -237,6 +237,16 @@ export default function MenuPublicClient({
   const [regLoading,      setRegLoading]      = useState(false);
   const [regSuccess,      setRegSuccess]      = useState(false);
   const [regError,        setRegError]        = useState("");
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+  // Check localStorage on mount — hide button if already registered
+  useEffect(() => {
+    try {
+      const key = `menu4u_customer_registered_${restaurant.id}`;
+      if (localStorage.getItem(key) === "1") setAlreadyRegistered(true);
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchMyOrders = useCallback(async (silent = false, view?: "mine" | "all", identity?: GuestIdentity | null) => {
     if (!tableNumber) return;
@@ -293,6 +303,13 @@ export default function MenuPublicClient({
     localStorage.setItem(key, JSON.stringify(identity));
     setGuestIdentity(identity);
     setShowRegistration(false);
+    // Register as Customer (ignore 409 duplicate — never update existing)
+    fetch(`/api/menu/${restaurant.id}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: identity.name, phone: identity.phone }),
+      keepalive: true,
+    }).catch(() => {});
     // Immediately fetch my orders with new identity
     fetchMyOrders(true, "mine", identity);
   }
@@ -476,16 +493,24 @@ export default function MenuPublicClient({
   }
 
   async function handleRegisterSubmit() {
-    if (!regForm.name.trim()) { setRegError("שם נדרש"); return; }
+    const name  = regForm.name.trim();
+    const phone = regForm.phone.trim().replace(/\s/g, "");
+    const email = regForm.email.trim();
+    if (!name)  { setRegError("שם נדרש"); return; }
+    if (!phone || phone.length < 9) { setRegError("מספר טלפון נדרש"); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setRegError("אימייל תקין נדרש"); return; }
     setRegLoading(true); setRegError("");
     try {
       const res = await fetch(`/api/menu/${restaurant.id}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: regForm.name.trim(), phone: regForm.phone.trim() || undefined, email: regForm.email.trim() || undefined }),
+        body: JSON.stringify({ name, phone, email }),
       });
       const data = await res.json();
       if (!res.ok) { setRegError(data.error ?? "שגיאה בהרשמה"); return; }
+      // Mark as registered in localStorage — hide button permanently
+      try { localStorage.setItem(`menu4u_customer_registered_${restaurant.id}`, "1"); } catch { /* ignore */ }
+      setAlreadyRegistered(true);
       setRegSuccess(true);
     } finally {
       setRegLoading(false);
@@ -1380,8 +1405,8 @@ export default function MenuPublicClient({
         </div>
       )}
 
-      {/* ── Floating registration card ── */}
-      <button
+      {/* ── Floating registration card — hidden once registered ── */}
+      {!alreadyRegistered && <button
         onClick={() => { setRegModalOpen(true); setRegSuccess(false); setRegError(""); setRegForm({ name: "", phone: "", email: "" }); }}
         style={{
           position: "fixed",
@@ -1417,7 +1442,7 @@ export default function MenuPublicClient({
           <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
         </svg>
         כל מי שרוצה 5% לארוחה מוזמן להירשם
-      </button>
+      </button>}
 
       {/* ── Registration modal ── */}
       {regModalOpen && (
@@ -1499,7 +1524,7 @@ export default function MenuPublicClient({
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>טלפון</label>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>טלפון *</label>
                   <input
                     type="tel"
                     value={regForm.phone}
@@ -1516,7 +1541,7 @@ export default function MenuPublicClient({
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>אימייל</label>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>אימייל *</label>
                   <input
                     type="email"
                     value={regForm.email}
