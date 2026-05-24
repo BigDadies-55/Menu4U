@@ -97,7 +97,7 @@ function ModifierGroupsEditor({ itemId }: { itemId: string }) {
               placeholder="שם קבוצה (לדוגמא: עשייה)"
               className="flex-1 text-sm px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
             />
-            <button onClick={() => removeGroup(gi)} className="text-red-400 hover:text-red-600 text-sm px-2">✕</button>
+            <button type="button" onClick={() => removeGroup(gi)} className="text-red-400 hover:text-red-600 text-sm px-2">✕</button>
           </div>
           <div className="flex gap-3 text-xs items-center flex-wrap">
             <label className="flex items-center gap-1 text-gray-600 cursor-pointer">
@@ -129,19 +129,19 @@ function ModifierGroupsEditor({ itemId }: { itemId: string }) {
                   className="w-16 text-center text-sm px-1 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
                   title="תוספת מחיר"
                 />
-                <button onClick={() => removeOption(gi, oi)} className="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                <button type="button" onClick={() => removeOption(gi, oi)} className="text-gray-400 hover:text-red-500 text-xs">✕</button>
               </div>
             ))}
           </div>
-          <button onClick={() => addOption(gi)} className="text-xs text-amber-700 hover:text-amber-900 font-medium">+ הוסף אפשרות</button>
+          <button type="button" onClick={() => addOption(gi)} className="text-xs text-amber-700 hover:text-amber-900 font-medium">+ הוסף אפשרות</button>
         </div>
       ))}
       <div className="flex gap-2">
-        <button onClick={addGroup} className="text-sm text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-xl px-3 py-1.5">
+        <button type="button" onClick={addGroup} className="text-sm text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-xl px-3 py-1.5">
           + קבוצת אפשרויות
         </button>
         {groups.length > 0 && (
-          <button onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+          <button type="button" onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
             {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור תגיות"}
           </button>
         )}
