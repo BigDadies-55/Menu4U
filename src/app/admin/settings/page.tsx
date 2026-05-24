@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const DEFAULTS = {
   siteName: "Menu4U", logo: null as string | null,
   domain: null as string | null, copyright: null as string | null,
-  adminPalette: "dark", adminBg: "#f0ece3",
+  adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null as string | null,
 };
 
 export default async function SettingsPage() {

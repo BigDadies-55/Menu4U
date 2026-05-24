@@ -40,24 +40,42 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
   }
 
-  // Load site config (with fallback when table doesn't exist yet)
-  let adminPalette = "dark";
-  let adminBg = "#f0ece3";
+  // Load site config — try with newest columns first, degrade gracefully
+  let adminPalette  = "dark";
+  let adminBg       = "#f0ece3";
+  let adminBgImage: string | null = null;
   let siteLogo: string | null = null;
   let siteName = "Menu4U";
   try {
-    type Row = { adminPalette: string; adminBg: string; logo: string | null; siteName: string };
-    const rows = await prisma.$queryRaw<Row[]>`
-      SELECT "adminPalette", "adminBg", "logo", "siteName" FROM "SiteConfig" WHERE id = 'default' LIMIT 1
+    // Full query (all columns including recently added ones)
+    type FullRow = { adminPalette: string; adminBg: string; adminBgImage: string | null; logo: string | null; siteName: string };
+    const rows = await prisma.$queryRaw<FullRow[]>`
+      SELECT "adminPalette", "adminBg", "adminBgImage", "logo", "siteName"
+      FROM "SiteConfig" WHERE id = 'default' LIMIT 1
     `;
     if (rows[0]) {
-      adminPalette = rows[0].adminPalette ?? "dark";
-      adminBg      = rows[0].adminBg      ?? "#f0ece3";
-      siteLogo     = rows[0].logo         ?? null;
-      siteName     = rows[0].siteName     ?? "Menu4U";
+      adminPalette  = rows[0].adminPalette  ?? "dark";
+      adminBg       = rows[0].adminBg       ?? "#f0ece3";
+      adminBgImage  = rows[0].adminBgImage  ?? null;
+      siteLogo      = rows[0].logo          ?? null;
+      siteName      = rows[0].siteName      ?? "Menu4U";
     }
   } catch {
-    // Table doesn't exist yet — use defaults
+    // Newer columns may not exist — fall back to base columns only
+    try {
+      type BaseRow = { adminPalette: string; logo: string | null; siteName: string };
+      const rows = await prisma.$queryRaw<BaseRow[]>`
+        SELECT "adminPalette", "logo", "siteName"
+        FROM "SiteConfig" WHERE id = 'default' LIMIT 1
+      `;
+      if (rows[0]) {
+        adminPalette = rows[0].adminPalette ?? "dark";
+        siteLogo     = rows[0].logo         ?? null;
+        siteName     = rows[0].siteName     ?? "Menu4U";
+      }
+    } catch {
+      // Table doesn't exist yet — use defaults
+    }
   }
 
   return (
@@ -66,6 +84,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       kdsView={kdsView}
       adminPalette={adminPalette}
       adminBg={adminBg}
+      adminBgImage={adminBgImage}
       siteLogo={siteLogo}
       siteName={siteName}
     >

@@ -11,20 +11,20 @@ const PALETTES = [
   { id: "rose",   label: "Rose",   bg: "#150a0e", accent: "#e11d48", preview: "linear-gradient(135deg,#150a0e,#220c13)", desc: "אדום כהה" },
 ] as const;
 
-/* ─── Background presets ─────────────────────────────────── */
+/* ─── Background color presets ───────────────────────────── */
 const BG_PRESETS = [
-  { id: "#f0ece3", label: "Sand",    desc: "חם — ברירת מחדל" },
-  { id: "#f8fafc", label: "White",   desc: "בהיר קריר" },
-  { id: "#f1f5f9", label: "Gray",    desc: "אפור בהיר" },
-  { id: "#1e2130", label: "Navy",    desc: "כחול כהה" },
-  { id: "#111827", label: "Charcoal",desc: "אפור כהה" },
+  { id: "#f0ece3", label: "Sand",     dark: false },
+  { id: "#f8fafc", label: "White",    dark: false },
+  { id: "#f1f5f9", label: "Gray",     dark: false },
+  { id: "#1e2130", label: "Navy",     dark: true  },
+  { id: "#111827", label: "Charcoal", dark: true  },
 ];
 
 /* ─── Types ──────────────────────────────────────────────── */
 type Config = {
   siteName: string; logo: string | null;
   domain: string | null; copyright: string | null;
-  adminPalette: string; adminBg: string;
+  adminPalette: string; adminBg: string; adminBgImage: string | null;
 };
 
 /* ─── Section wrapper ────────────────────────────────────── */
@@ -46,7 +46,9 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   const [saving,        setSaving]        = useState(false);
   const [saved,         setSaved]         = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBg,   setUploadingBg]   = useState(false);
   const fileRef    = useRef<HTMLInputElement>(null);
+  const bgImgRef   = useRef<HTMLInputElement>(null);
   const colorRef   = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof Config>(field: K, value: Config[K]) {
@@ -54,14 +56,14 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     setSaved(false);
   }
 
-  async function uploadLogo(file: File) {
-    setUploadingLogo(true);
+  async function uploadFile(file: File, field: "logo" | "adminBgImage", setLoading: (v: boolean) => void) {
+    setLoading(true);
     const fd = new FormData();
     fd.append("file", file);
     const res  = await fetch("/api/admin/upload", { method: "POST", body: fd });
     const data = await res.json();
-    if (data.url) update("logo", data.url);
-    setUploadingLogo(false);
+    if (data.url) update(field, data.url);
+    setLoading(false);
   }
 
   async function save() {
@@ -79,7 +81,6 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     }
   }
 
-  /* Is the current bg a custom color (not one of the presets)? */
   const isCustomBg = !BG_PRESETS.some(p => p.id === form.adminBg);
 
   return (
@@ -125,92 +126,177 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
           <p className="text-xs text-gray-400 mt-3">הצבע ישתנה בסיידבר לאחר שמירה ורענון הדף</p>
         </Section>
 
-        {/* ── Background color ── */}
-        <Section title="צבע רקע הפאנל" icon="🖌️">
-          {/* 5 presets */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
-            {BG_PRESETS.map(p => {
-              const active = form.adminBg === p.id;
-              const isDark = p.id.startsWith("#1") || p.id.startsWith("#0");
-              return (
+        {/* ── Background ── */}
+        <Section title="רקע פאנל הניהול" icon="🖌️">
+
+          {/* Tab: Color / Image */}
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-4 w-fit">
+            <button
+              onClick={() => update("adminBgImage", null)}
+              className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+              style={!form.adminBgImage
+                ? { background: "white", color: "#1f2937", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+                : { color: "#6b7280" }}
+            >
+              🎨 צבע
+            </button>
+            <button
+              onClick={() => bgImgRef.current?.click()}
+              className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+              style={form.adminBgImage
+                ? { background: "white", color: "#1f2937", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+                : { color: "#6b7280" }}
+            >
+              🖼️ תמונה
+            </button>
+          </div>
+
+          {/* ── Color mode ── */}
+          {!form.adminBgImage && (
+            <>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
+                {BG_PRESETS.map(p => {
+                  const active = form.adminBg === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => update("adminBg", p.id)}
+                      title={p.label}
+                      className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
+                      style={{
+                        background: p.id,
+                        borderColor: active ? "#f59e0b" : "rgba(0,0,0,0.08)",
+                        boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "none",
+                      }}
+                    >
+                      <div className="w-full h-8 rounded-md" style={{ background: p.id, border: "1px solid rgba(0,0,0,0.06)" }} />
+                      <span className="text-[10px] font-semibold" style={{ color: p.dark ? "#d1d5db" : "#4b5563" }}>
+                        {p.label}
+                      </span>
+                      {active && (
+                        <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* Custom color picker tile */}
                 <button
-                  key={p.id}
-                  onClick={() => update("adminBg", p.id)}
-                  title={`${p.label} — ${p.desc}`}
-                  className="relative flex flex-col items-center gap-1.5 rounded-xl p-2.5 border-2 transition-all"
+                  onClick={() => colorRef.current?.click()}
+                  title="צבע מותאם אישית"
+                  className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all overflow-hidden"
                   style={{
-                    background: p.id,
-                    borderColor: active ? "#f59e0b" : "rgba(0,0,0,0.08)",
-                    boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.25)" : "none",
+                    borderColor: isCustomBg ? "#f59e0b" : "rgba(0,0,0,0.08)",
+                    boxShadow: isCustomBg ? "0 0 0 3px rgba(245,158,11,0.3)" : "none",
+                    background: isCustomBg ? form.adminBg : "white",
                   }}
                 >
-                  {/* Color swatch fill */}
-                  <div className="w-full h-7 rounded-md" style={{ background: p.id, border: "1px solid rgba(0,0,0,0.06)" }} />
-                  <span className="text-[10px] font-semibold leading-tight" style={{ color: isDark ? "#e5e7eb" : "#374151" }}>
-                    {p.label}
-                  </span>
-                  {active && (
-                    <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                  <div
+                    className="w-full h-8 rounded-md"
+                    style={{
+                      background: "conic-gradient(from 0deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6, #ef4444)",
+                      opacity: isCustomBg ? 0.5 : 1,
+                    }}
+                  />
+                  <span className="text-[10px] font-semibold text-gray-600">Custom</span>
+                  {isCustomBg && (
+                    <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
                       <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     </div>
                   )}
                 </button>
-              );
-            })}
+                <input
+                  ref={colorRef}
+                  type="color"
+                  className="sr-only"
+                  value={isCustomBg ? form.adminBg : "#f0ece3"}
+                  onChange={e => update("adminBg", e.target.value)}
+                />
+              </div>
 
-            {/* Custom color button */}
-            <button
-              onClick={() => colorRef.current?.click()}
-              title="בחר צבע מותאם אישית"
-              className="relative flex flex-col items-center gap-1.5 rounded-xl p-2.5 border-2 transition-all"
-              style={{
-                borderColor: isCustomBg ? "#f59e0b" : "rgba(0,0,0,0.08)",
-                boxShadow: isCustomBg ? "0 0 0 3px rgba(245,158,11,0.25)" : "none",
-                background: isCustomBg ? form.adminBg : "white",
-              }}
-            >
+              {/* Current color strip */}
+              <div className="flex items-center gap-3 mt-1 p-3 rounded-xl border border-gray-100 bg-gray-50">
+                <div className="w-8 h-8 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminBg }} />
+                <span className="text-xs font-mono text-gray-600 uppercase flex-1">{form.adminBg}</span>
+                <button
+                  onClick={() => colorRef.current?.click()}
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
+                >
+                  בחר צבע
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ── Image mode ── */}
+          {form.adminBgImage && (
+            <div className="space-y-3">
+              {/* Preview */}
               <div
-                className="w-full h-7 rounded-md flex items-center justify-center"
+                className="w-full h-36 rounded-xl border border-gray-200 overflow-hidden relative bg-gray-100"
                 style={{
-                  background: isCustomBg
-                    ? `conic-gradient(from 0deg, #f59e0b, #ec4899, #3b82f6, #10b981, #f59e0b)`
-                    : `conic-gradient(from 0deg, #f59e0b, #ec4899, #3b82f6, #10b981, #f59e0b)`,
-                  opacity: isCustomBg ? 0.6 : 1,
+                  backgroundImage: `url(${form.adminBgImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
-              />
-              <span className="text-[10px] font-semibold text-gray-600 leading-tight">Custom</span>
-              {isCustomBg && (
-                <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
-                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+              >
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => bgImgRef.current?.click()}
+                    className="px-4 py-2 bg-white/90 rounded-xl text-sm font-semibold text-gray-800"
+                  >
+                    החלף תמונה
+                  </button>
                 </div>
-              )}
-            </button>
-            {/* Hidden native color picker */}
-            <input
-              ref={colorRef}
-              type="color"
-              className="sr-only"
-              value={isCustomBg ? form.adminBg : "#f0ece3"}
-              onChange={e => update("adminBg", e.target.value)}
-            />
-          </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => bgImgRef.current?.click()}
+                  disabled={uploadingBg}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                >
+                  {uploadingBg ? "מעלה..." : "החלף תמונה"}
+                </button>
+                <button
+                  onClick={() => update("adminBgImage", null)}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
+                >
+                  הסר תמונה
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">התמונה תכסה את כל הרקע בגודל מלא (cover)</p>
+            </div>
+          )}
 
-          {/* Current color preview */}
-          <div className="flex items-center gap-3 mt-2">
-            <div className="w-8 h-8 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminBg }} />
-            <span className="text-xs font-mono text-gray-500 uppercase">{form.adminBg}</span>
-            <button
-              onClick={() => colorRef.current?.click()}
-              className="text-xs text-amber-700 underline hover:no-underline"
-            >
-              שנה צבע
-            </button>
-          </div>
-          <p className="text-xs text-gray-400 mt-2">רקע אזור התוכן הראשי של פאנל הניהול</p>
+          {/* Hidden bg image file input */}
+          <input
+            ref={bgImgRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => {
+              const f = e.target.files?.[0];
+              if (f) uploadFile(f, "adminBgImage", setUploadingBg);
+              e.target.value = "";
+            }}
+          />
+
+          {/* Upload spinner overlay */}
+          {uploadingBg && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
+              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
+              </svg>
+              מעלה תמונה...
+            </div>
+          )}
         </Section>
 
         {/* ── Site name ── */}
@@ -263,8 +349,11 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
             </div>
           </div>
           <input
-            ref={fileRef} type="file" accept="image/*" className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f); e.target.value = ""; }}
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f, "logo", setUploadingLogo); e.target.value = ""; }}
           />
         </Section>
 

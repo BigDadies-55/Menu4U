@@ -12,12 +12,13 @@ interface Props {
   kdsView: string;
   adminPalette?: string;
   adminBg?: string;
+  adminBgImage?: string | null;
   siteLogo?: string | null;
   siteName?: string;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", siteLogo, siteName = "Menu4U", children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [showPasswordModal, setShowPasswordModal]  = useState(false);
@@ -65,7 +66,18 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
   }
 
   return (
-    <div className="min-h-screen" style={{ background: adminBg }} dir="rtl">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundColor: adminBg,
+        backgroundImage:    adminBgImage ? `url(${adminBgImage})` : undefined,
+        backgroundSize:     adminBgImage ? "cover" : undefined,
+        backgroundPosition: adminBgImage ? "center" : undefined,
+        backgroundRepeat:   adminBgImage ? "no-repeat" : undefined,
+        backgroundAttachment: adminBgImage ? "fixed" : undefined,
+      }}
+      dir="rtl"
+    >
 
       <Sidebar
         user={user} kdsView={kdsView}
