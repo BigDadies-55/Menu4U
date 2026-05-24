@@ -10,7 +10,7 @@ export default async function LayoutBuilderPage() {
   if (!session?.user) redirect("/login");
 
   const role = session.user.role;
-  if (role === "VIEWER" || role === "WAITER") redirect("/admin/orders");
+  if (["VIEWER", "WAITER", "EDITOR", "DISPLAY"].includes(role)) redirect("/admin/menus");
 
   const isSuperAdmin = role === "SUPER_ADMIN";
 

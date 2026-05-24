@@ -4,7 +4,7 @@ export const ROLE_HIERARCHY: Record<Role, number> = {
   SUPER_ADMIN: 4,
   ADMIN: 3,
   OWNER: 2,
-  EDITOR: 2,
+  EDITOR: 1, // can edit menu content only — NOT financial/settings/users
   VIEWER: 1,
   WAITER: 0,
   DISPLAY: 0,
@@ -26,8 +26,10 @@ export function isOwner(role: Role): boolean {
   return hasPermission(role, "OWNER");
 }
 
+// isEditor: can edit menu content (items, categories, menus, modifiers)
+// but NOT restaurant settings, users, financials, or layout
 export function isEditor(role: Role): boolean {
-  return isOwner(role);
+  return hasPermission(role, "OWNER") || role === "EDITOR";
 }
 
 export const ROLE_LABELS: Record<Role, string> = {

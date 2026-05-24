@@ -21,9 +21,10 @@ type NavItem = {
   exact?: boolean;
   superAdmin?: boolean;
   adminOnly?: boolean;
+  ownerOnly?: boolean;   // OWNER+ (blocks EDITOR)
   waiterHide?: boolean;
   displayHide?: boolean;
-  children?: { href: string; label: string; icon: string; waiterHide?: boolean; displayHide?: boolean }[];
+  children?: { href: string; label: string; icon: string; waiterHide?: boolean; displayHide?: boolean; ownerOnly?: boolean }[];
 };
 
 const navItems: NavItem[] = [
@@ -37,10 +38,10 @@ const navItems: NavItem[] = [
     exact: false,
     displayHide: true,
     children: [
-      { href: "/admin/orders/stats", label: "סטטיסטיקות", icon: "📊", waiterHide: true, displayHide: true },
+      { href: "/admin/orders/stats", label: "סטטיסטיקות", icon: "📊", waiterHide: true, displayHide: true, ownerOnly: true },
     ],
   },
-  { href: "/admin/layout-builder", label: "פריסת שולחנות", icon: "🗺", waiterHide: true, displayHide: true },
+  { href: "/admin/layout-builder", label: "פריסת שולחנות", icon: "🗺", ownerOnly: true, waiterHide: true, displayHide: true },
   { href: "/admin/users", label: "משתמשים", icon: "◍", adminOnly: true, waiterHide: true, displayHide: true },
   { href: "/admin/logs", label: "לוגים", icon: "◎", adminOnly: true, waiterHide: true, displayHide: true },
 ];
@@ -58,11 +59,15 @@ export default function Sidebar({ user, kdsView, isOpen = false, onClose, onChan
   const isWaiter = user.role === "WAITER";
   const isDisplay = user.role === "DISPLAY";
 
+  const isEditor = user.role === "EDITOR";
+  const isViewer = user.role === "VIEWER";
+
   const visibleItems = navItems.filter((item) => {
     if (item.waiterHide && isWaiter) return false;
     if (item.displayHide && isDisplay) return false;
     if (item.superAdmin && user.role !== "SUPER_ADMIN") return false;
     if (item.adminOnly && !["SUPER_ADMIN", "ADMIN"].includes(user.role)) return false;
+    if (item.ownerOnly && (isEditor || isViewer || isWaiter || isDisplay)) return false;
     return true;
   });
 
@@ -98,6 +103,7 @@ export default function Sidebar({ user, kdsView, isOpen = false, onClose, onChan
           const visibleChildren = item.children?.filter(child => {
             if (child.waiterHide && isWaiter) return false;
             if (child.displayHide && isDisplay) return false;
+            if (child.ownerOnly && (isEditor || isViewer || isWaiter || isDisplay)) return false;
             return true;
           });
           return (
