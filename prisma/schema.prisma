@@ -114,6 +114,7 @@ model Restaurant {
   orders          Order[]
   menuViews       MenuView[]
   tableSessions   TableSession[]
+  customers       Customer[]
 }
 
 model RestaurantUser {
@@ -302,4 +303,17 @@ model SiteConfig {
   copyright    String?
   adminPalette String   @default("dark")
   updatedAt    DateTime @updatedAt
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  phone        String?
+  email        String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }

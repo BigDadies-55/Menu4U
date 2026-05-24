@@ -166,6 +166,24 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminTopBarTextColor" TEXT NOT NULL DEFAULT '#374151';
     `);
+    await prisma.$executeRawUnsafe(`
+  CREATE TABLE IF NOT EXISTS "Customer" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "name"         TEXT NOT NULL,
+    "phone"        TEXT,
+    "email"        TEXT,
+    "notes"        TEXT,
+    "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Customer_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "Customer_restaurantId_fkey" FOREIGN KEY ("restaurantId")
+      REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  );
+`);
+    await prisma.$executeRawUnsafe(`
+  CREATE INDEX IF NOT EXISTS "Customer_restaurantId_idx" ON "Customer"("restaurantId");
+`);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

@@ -17,6 +17,7 @@ const PAGE_NAMES: { pattern: RegExp; name: string }[] = [
   { pattern: /^\/admin\/orders\/stats/,  name: "סטטיסטיקות הזמנות" },
   { pattern: /^\/admin\/orders/,         name: "הזמנות" },
   { pattern: /^\/admin\/layout-builder/, name: "פריסת שולחנות" },
+  { pattern: /^\/admin\/customers/, name: "לקוחות" },
   { pattern: /^\/admin\/kitchen-table/,  name: "KDS — תצוגת שולחן" },
   { pattern: /^\/admin\/kitchen-kanban/, name: "KDS — Kanban" },
   { pattern: /^\/admin\/kitchen-tickets/,name: "KDS — Ticket Board" },

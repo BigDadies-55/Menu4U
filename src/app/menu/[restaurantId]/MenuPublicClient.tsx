@@ -231,6 +231,13 @@ export default function MenuPublicClient({
   const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
 
+  // Customer newsletter/updates registration
+  const [regModalOpen,    setRegModalOpen]    = useState(false);
+  const [regForm,         setRegForm]         = useState({ name: "", phone: "", email: "" });
+  const [regLoading,      setRegLoading]      = useState(false);
+  const [regSuccess,      setRegSuccess]      = useState(false);
+  const [regError,        setRegError]        = useState("");
+
   const fetchMyOrders = useCallback(async (silent = false, view?: "mine" | "all", identity?: GuestIdentity | null) => {
     if (!tableNumber) return;
     if (!silent) setMyOrdersLoading(true);
