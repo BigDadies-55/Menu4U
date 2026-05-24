@@ -1107,14 +1107,14 @@ export default function MenuPublicClient({
       {/* Modifier selection modal */}
       {modifierItem && modifierGroups.length > 0 && (
         <div
-          style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={e => { if (e.target === e.currentTarget) { setModifierItem(null); setModifierGroups([]); setSelectedModifiers({}); } }}
         >
           <div style={{
             background: "var(--bg-card, #1a1a1a)",
-            borderRadius: "20px 20px 0 0",
-            width: "min(480px, 100vw)",
-            maxHeight: "80vh",
+            borderRadius: "20px",
+            width: "min(480px, 94vw)",
+            maxHeight: "85vh",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
