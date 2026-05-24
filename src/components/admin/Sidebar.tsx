@@ -98,12 +98,11 @@ function NavRow({
       )}
       style={{
         paddingRight: 17,
-        paddingLeft: isExpanded ? 12 : 17,
-        justifyContent: isExpanded ? "flex-start" : "center",
+        paddingLeft: 12,
         marginRight: indent ? 12 : 0,
       }}
     >
-      {/* icon */}
+      {/* icon — always at the right edge (RTL flex-start) */}
       <span className={cn(
         "shrink-0 flex items-center justify-center transition-colors",
         isActive ? "text-white" : "text-[#6b7280] group-hover:text-amber-400"
@@ -111,11 +110,12 @@ function NavRow({
         <NavIc />
       </span>
 
-      {/* label — fades in/out */}
+      {/* label — slides in from the left when expanded */}
       <span
-        className="whitespace-nowrap text-sm font-medium overflow-hidden transition-all duration-200"
+        className="whitespace-nowrap text-sm font-medium transition-all duration-200"
         style={{
-          maxWidth: isExpanded ? 180 : 0,
+          overflow: "hidden",
+          maxWidth: isExpanded ? 160 : 0,
           opacity: isExpanded ? 1 : 0,
           marginRight: isExpanded ? 10 : 0,
         }}
@@ -280,8 +280,8 @@ export default function Sidebar({
         <div className="px-3 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           {/* Avatar row */}
           <div
-            className="flex items-center gap-3 px-2 py-2.5 rounded-xl mb-1"
-            style={{ background: "rgba(255,255,255,0.04)" }}
+            className="flex items-center gap-3 py-2.5 rounded-xl mb-1"
+            style={{ background: "rgba(255,255,255,0.04)", paddingRight: 13, paddingLeft: 10 }}
           >
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
@@ -302,8 +302,7 @@ export default function Sidebar({
           <button
             onClick={onChangePassword}
             title={!isExpanded ? "שנה סיסמה" : undefined}
-            className="w-full flex items-center rounded-lg px-3 py-2 text-xs text-gray-500 hover:text-white hover:bg-white/[0.06] transition-colors"
-            style={{ justifyContent: isExpanded ? "flex-start" : "center", gap: isExpanded ? 10 : 0 }}
+            className="w-full flex items-center gap-2.5 rounded-lg px-[17px] py-2 text-xs text-gray-500 hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <span className="shrink-0 flex"><Ic.Lock /></span>
             <span className="whitespace-nowrap overflow-hidden transition-all duration-200"
@@ -314,8 +313,7 @@ export default function Sidebar({
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             title={!isExpanded ? "יציאה" : undefined}
-            className="w-full flex items-center rounded-lg px-3 py-2 text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            style={{ justifyContent: isExpanded ? "flex-start" : "center", gap: isExpanded ? 10 : 0 }}
+            className="w-full flex items-center gap-2.5 rounded-lg px-[17px] py-2 text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
           >
             <span className="shrink-0 flex"><Ic.Logout /></span>
             <span className="whitespace-nowrap overflow-hidden transition-all duration-200"
