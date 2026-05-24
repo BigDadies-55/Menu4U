@@ -27,9 +27,9 @@ type Order = {
 type Restaurant = { id: string; name: string };
 
 const ITEM_COLOR: Record<string, string> = {
-  PENDING: "#facc15",
-  PREPARING: "#38bdf8",
-  DONE: "#4ade80",
+  PENDING: "#d97706",    // amber-600  — readable on white
+  PREPARING: "#0284c7",  // sky-600    — readable on white
+  DONE: "#16a34a",       // green-600  — readable on white
 };
 
 const ITEM_LABEL: Record<string, string> = {
@@ -118,7 +118,7 @@ function TableCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-bold" style={{ color: "#111827" }}>שולחן {tableNumber}</span>
-            <span className={`text-sm font-semibold ${isUrgent ? "text-red-400 animate-pulse" : "text-blue-300"}`}>
+            <span className={`text-sm font-semibold ${isUrgent ? "text-red-500 animate-pulse" : "text-blue-600"}`}>
               ⏱ {fmtElapsed(mins)}
             </span>
           </div>
@@ -210,7 +210,7 @@ function TableCard({
                       {modifiers && modifiers.length > 0 && (
                         <div className="flex gap-1 flex-wrap mt-0.5">
                           {modifiers.map((m, i) => (
-                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#1e3a2e", color: "#4ade80" }}>
+                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#dcfce7", color: "#166534" }}>
                               {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                             </span>
                           ))}
@@ -234,7 +234,7 @@ function TableCard({
                         disabled={busy.has(itemId + "-back")}
                         title="חזור סטטוס"
                         className="shrink-0 rounded-lg transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
-                        style={{ background: "#1f2937", color: "#6b7280", width: 28, height: 28, fontSize: 13 }}
+                        style={{ background: "#e5e7eb", color: "#374151", width: 28, height: 28, fontSize: 13 }}
                       >
                         {busy.has(itemId + "-back") ? "·" : "←"}
                       </button>
@@ -243,9 +243,9 @@ function TableCard({
                       <button
                         onClick={() => handleItemAdvance(order.id, itemId)}
                         disabled={isBusy}
-                        className="shrink-0 rounded-xl font-bold text-black transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
+                        className="shrink-0 rounded-xl font-bold text-white transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
                         style={{
-                          background: itemStatus === "PREPARING" ? "#4ade80" : "#38bdf8",
+                          background: itemStatus === "PREPARING" ? "#16a34a" : "#0284c7",
                           padding: "10px 14px",
                           minHeight: 44,
                           minWidth: 80,
