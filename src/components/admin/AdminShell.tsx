@@ -15,10 +15,12 @@ interface Props {
   adminBgImage?: string | null;
   siteLogo?: string | null;
   siteName?: string;
+  adminSidebarBg?: string | null;
+  adminSidebarAccent?: string | null;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [showPasswordModal, setShowPasswordModal]  = useState(false);
@@ -87,6 +89,8 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
         adminPalette={adminPalette}
         siteLogo={siteLogo}
         siteName={siteName}
+        adminSidebarBg={adminSidebarBg}
+        adminSidebarAccent={adminSidebarAccent}
       />
 
       {/* Main — offset right so content is never under the sidebar */}

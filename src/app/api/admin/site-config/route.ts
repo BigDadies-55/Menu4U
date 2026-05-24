@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 const DEFAULTS = {
   id: "default", siteName: "Menu4U", logo: null, domain: null,
   copyright: null, adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null,
+  adminSidebarBg: null, adminSidebarAccent: null,
 };
 
 export async function GET() {
@@ -25,22 +26,25 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();
-  const { siteName, logo, domain, copyright, adminPalette, adminBg, adminBgImage } = body;
+  const { siteName, logo, domain, copyright, adminPalette, adminBg, adminBgImage, adminSidebarBg, adminSidebarAccent } = body;
   try {
     await prisma.$executeRawUnsafe(`
       UPDATE "SiteConfig" SET
-        "siteName"     = $1,
-        "logo"         = $2,
-        "domain"       = $3,
-        "copyright"    = $4,
-        "adminPalette" = $5,
-        "adminBg"      = $6,
-        "adminBgImage" = $7,
-        "updatedAt"    = NOW()
+        "siteName"           = $1,
+        "logo"               = $2,
+        "domain"             = $3,
+        "copyright"          = $4,
+        "adminPalette"       = $5,
+        "adminBg"            = $6,
+        "adminBgImage"       = $7,
+        "adminSidebarBg"     = $8,
+        "adminSidebarAccent" = $9,
+        "updatedAt"          = NOW()
       WHERE id = 'default'
     `, siteName ?? "Menu4U", logo ?? null, domain ?? null,
        copyright ?? null, adminPalette ?? "dark",
-       adminBg ?? "#f0ece3", adminBgImage ?? null);
+       adminBg ?? "#f0ece3", adminBgImage ?? null,
+       adminSidebarBg ?? null, adminSidebarAccent ?? null);
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });
     return NextResponse.json({ success: true });
   } catch {

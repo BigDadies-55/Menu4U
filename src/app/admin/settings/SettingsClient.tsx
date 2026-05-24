@@ -11,6 +11,25 @@ const PALETTES = [
   { id: "rose",   label: "Rose",   bg: "#150a0e", accent: "#e11d48", preview: "linear-gradient(135deg,#150a0e,#220c13)", desc: "אדום כהה" },
 ] as const;
 
+/* ─── Sidebar gradient presets ──────────────────────────── */
+const SIDEBAR_GRADIENT_PRESETS = [
+  { id: "linear-gradient(180deg,#0f111a,#1a1c2e)", label: "Dark Blue",   accent: "#f59e0b" },
+  { id: "linear-gradient(180deg,#130c1e,#1e1032)", label: "Deep Purple", accent: "#7c3aed" },
+  { id: "linear-gradient(180deg,#071510,#0d2218)", label: "Forest",      accent: "#16a34a" },
+  { id: "linear-gradient(180deg,#0a0f1e,#0d1a35)", label: "Ocean",      accent: "#2563eb" },
+  { id: "linear-gradient(180deg,#150a0e,#220c13)", label: "Crimson",     accent: "#e11d48" },
+  { id: "linear-gradient(180deg,#1a0533,#2d0a5e)", label: "Galaxy",      accent: "#a855f7" },
+  { id: "linear-gradient(180deg,#0a0a0a,#1a1a1a)", label: "Pure Black", accent: "#ffffff" },
+  { id: "linear-gradient(180deg,#1e293b,#334155)", label: "Slate",      accent: "#38bdf8" },
+] as const;
+
+const SIDEBAR_ANGLES = [
+  { label: "↓", value: "180deg" },
+  { label: "↘", value: "135deg" },
+  { label: "→", value: "90deg"  },
+  { label: "↗", value: "45deg"  },
+];
+
 /* ─── Solid color presets ────────────────────────────────── */
 const COLOR_PRESETS = [
   { id: "#f0ece3", label: "Sand",     dark: false },
@@ -53,9 +72,12 @@ type Config = {
   siteName: string; logo: string | null;
   domain: string | null; copyright: string | null;
   adminPalette: string; adminBg: string; adminBgImage: string | null;
+  adminSidebarBg: string | null;
+  adminSidebarAccent: string | null;
 };
 
 type BgTab = "color" | "gradient" | "image";
+type SidebarTab = "presets" | "gradient" | "custom";
 
 /* ─── Section wrapper ────────────────────────────────────── */
 function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
@@ -90,6 +112,12 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   const [customFrom,  setCustomFrom]  = useState("#f0ece3");
   const [customTo,    setCustomTo]    = useState("#ddd0c0");
   const [customAngle, setCustomAngle] = useState("135deg");
+
+  // Sidebar tab & custom gradient state
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("presets");
+  const [sbFrom,  setSbFrom]  = useState("#0f111a");
+  const [sbTo,    setSbTo]    = useState("#1a1c2e");
+  const [sbAngle, setSbAngle] = useState("180deg");
 
   const fileRef    = useRef<HTMLInputElement>(null);
   const bgImgRef   = useRef<HTMLInputElement>(null);

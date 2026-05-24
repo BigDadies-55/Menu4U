@@ -18,6 +18,7 @@ export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; acc
   blue:   { bg: "#080f1e", accent: "#2563eb", accentMuted: "rgba(37,99,235,0.15)",  accentText: "#60a5fa" },
   green:  { bg: "#071510", accent: "#16a34a", accentMuted: "rgba(22,163,74,0.15)",  accentText: "#4ade80" },
   rose:   { bg: "#150a0e", accent: "#e11d48", accentMuted: "rgba(225,29,72,0.15)",  accentText: "#fb7185" },
+  custom: { bg: "#0f111a", accent: "#f59e0b", accentMuted: "rgba(245,158,11,0.15)", accentText: "#fbbf24" },
 };
 
 /* ─── Icons ──────────────────────────────────────────────── */
@@ -119,6 +120,8 @@ interface SidebarProps {
   adminPalette?: string;
   siteLogo?: string | null;
   siteName?: string;
+  adminSidebarBg?: string | null;
+  adminSidebarAccent?: string | null;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -286,10 +289,17 @@ function NavGroupSection({ group, pathname, isExpanded, open, onToggle, filterLe
 /* ─── Main component ─────────────────────────────────────── */
 export default function Sidebar({
   user, kdsView, pinned, onTogglePin, isOpen = false, onOpen, onClose, onChangePassword,
-  adminPalette = "dark", siteLogo, siteName = "Menu4U",
+  adminPalette = "dark", siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent,
 }: SidebarProps) {
   const pathname  = usePathname();
-  const pal = ADMIN_PALETTE_MAP[adminPalette] ?? ADMIN_PALETTE_MAP.dark;
+  const pal = (() => {
+    if (adminPalette === "custom" && adminSidebarAccent) {
+      const accent = adminSidebarAccent;
+      const bg     = adminSidebarBg ?? "#0f111a";
+      return { bg, accent, accentMuted: `${accent}26`, accentText: accent };
+    }
+    return ADMIN_PALETTE_MAP[adminPalette ?? "dark"] ?? ADMIN_PALETTE_MAP.dark;
+  })();
 
   // openGroups: which accordion sections are open
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
