@@ -112,10 +112,8 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
       className="sticky top-0 z-20 flex items-center justify-between px-4 gap-3"
       style={{
         height: 40,
-        background: "rgba(255,255,255,0.85)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-        borderBottom: "1px solid #c9cdd4",
+        background: "transparent",
+        borderBottom: "1px solid #9ca3af",
         direction: "rtl",
       }}
     >
