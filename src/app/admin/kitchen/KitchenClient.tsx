@@ -97,7 +97,7 @@ function TableCard({
       {/* ── Header ── */}
       <div style={{
         background: "#1e293b",
-        padding: "14px 20px 10px",
+        padding: "14px 24px 12px",
         borderBottom: "1px solid #1e3a5f",
         display: "flex", alignItems: "center", gap: 16,
       }}>
@@ -157,7 +157,7 @@ function TableCard({
               {(active.length > 1 || order.notes || isPending) && (
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "6px 16px",
+                  padding: "6px 20px",
                   background: isPending ? "#292008" : isDelivered ? "#052e16" : "#111827",
                   borderBottom: "1px solid #1e293b",
                 }}>
@@ -196,7 +196,7 @@ function TableCard({
                     key={`${iid}-${tick}`}
                     style={{
                       display: "flex", alignItems: "center", gap: 12,
-                      padding: "12px 16px",
+                      padding: "12px 20px",
                       background: isDone && !isDelivered
                         ? "#052e16"
                         : isCancelled ? "#1a0000" : "transparent",
@@ -523,10 +523,10 @@ export default function KitchenClient({
       {/* ── Cards grid ── */}
       <div style={{
         flex: 1,
-        padding: "20px",
+        padding: "24px",
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        gap: 16,
+        gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))",
+        gap: 20,
         alignContent: "start",
         overflowY: "auto",
       }}>
