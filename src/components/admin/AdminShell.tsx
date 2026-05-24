@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import type { Role } from "@/generated/prisma/client";
 
-const SIDEBAR_COLLAPSED = 60 + 8 + 4;   // px — icon rail + gap + breathing room
-const SIDEBAR_PINNED    = 256 + 8 + 4;  // px — full width + gap + breathing room
+const SIDEBAR_COLLAPSED = 60;    // px — icon rail only
+const SIDEBAR_PINNED    = 256;   // px — full expanded width
 
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
