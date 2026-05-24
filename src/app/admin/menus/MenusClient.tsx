@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatPrice } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 
@@ -22,6 +22,20 @@ type Menu = {
 };
 type Restaurant = { id: string; name: string; menus: Menu[] };
 
+// Import file types
+type ImportItem = {
+  name: string; description?: string; price: number;
+  isVegetarian?: boolean; isVegan?: boolean; isGlutenFree?: boolean;
+  tags?: string[]; prepTime?: number | null; sortOrder?: number;
+};
+type ImportCategory = { name: string; sortOrder?: number; items: ImportItem[] };
+type ImportMenu = {
+  name: string; isPrimary?: boolean; scheduleDays?: string[];
+  scheduleFrom?: string | null; scheduleTo?: string | null;
+  categories: ImportCategory[];
+};
+type ImportFile = { version?: number; restaurantName?: string; exportedAt?: string; menus: ImportMenu[] };
+
 const DAYS_HE = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const emptyScheduleForm = { isPrimary: false, scheduleDays: [] as string[], scheduleFrom: "", scheduleTo: "" };
 
@@ -32,6 +46,88 @@ type ModOption = { id?: string; label: string; priceAdd: number; order: number }
 type ModGroup  = { id?: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[] };
 
 type TemplatePick = { id: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[]; item: { id: string; name: string } };
+
+const SAMPLE_DATA: ImportFile = {
+  "version": 1,
+  "restaurantName": "דוגמא - מסעדה",
+  "exportedAt": "2026-05-24T00:00:00.000Z",
+  "menus": [
+    {
+      "name": "תפריט ראשי",
+      "isPrimary": true,
+      "scheduleDays": [],
+      "scheduleFrom": null,
+      "scheduleTo": null,
+      "categories": [
+        {
+          "name": "מנות ראשונות",
+          "sortOrder": 0,
+          "items": [
+            { "name": "סלט ים תיכוני", "description": "עגבניות, מלפפון, זיתים ופטה", "price": 42, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": [], "prepTime": 5, "sortOrder": 0 },
+            { "name": "ברוסקטה קלאסית", "description": "לחם קלוי עם עגבניות ובזיליקום", "price": 38, "isVegetarian": true, "isVegan": true, "isGlutenFree": false, "tags": [], "prepTime": 8, "sortOrder": 1 },
+            { "name": "מרק עגבניות", "description": "מרק עגבניות טרי עם שמנת ובזיליקום", "price": 36, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": ["חם"], "prepTime": 10, "sortOrder": 2 }
+          ]
+        },
+        {
+          "name": "מנות עיקריות",
+          "sortOrder": 1,
+          "items": [
+            { "name": "סטייק אנטריקוט 300 גר'", "description": "סטייק בבישול לבחירה עם ירקות קלויים", "price": 148, "isVegetarian": false, "isVegan": false, "isGlutenFree": true, "tags": ["בשר", "ללא גלוטן"], "prepTime": 20, "sortOrder": 0 },
+            { "name": "פילה סלמון", "description": "פילה סלמון צלוי עם אורז ולימון", "price": 118, "isVegetarian": false, "isVegan": false, "isGlutenFree": true, "tags": ["דגים"], "prepTime": 18, "sortOrder": 1 },
+            { "name": "פסטה ארביאטה", "description": "פנה ברוטב עגבניות חריף עם שום", "price": 68, "isVegetarian": true, "isVegan": true, "isGlutenFree": false, "tags": ["חריף"], "prepTime": 15, "sortOrder": 2 },
+            { "name": "המבורגר ביתי", "description": "המבורגר 200 גר' עם חסה, עגבנייה ורוטב", "price": 88, "isVegetarian": false, "isVegan": false, "isGlutenFree": false, "tags": ["פופולרי"], "prepTime": 15, "sortOrder": 3 }
+          ]
+        },
+        {
+          "name": "קינוחים",
+          "sortOrder": 2,
+          "items": [
+            { "name": "קרם ברולה", "description": "קרם צרפתי קלאסי עם ציפוי סוכר", "price": 42, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": [], "prepTime": 5, "sortOrder": 0 },
+            { "name": "פונדנט שוקולד", "description": "עוגת שוקולד חמה עם גלידת וניל", "price": 48, "isVegetarian": true, "isVegan": false, "isGlutenFree": false, "tags": ["שוקולד", "חם"], "prepTime": 12, "sortOrder": 1 },
+            { "name": "טירמיסו", "description": "קינוח איטלקי קלאסי עם קפה ומסקרפונה", "price": 44, "isVegetarian": true, "isVegan": false, "isGlutenFree": false, "tags": [], "prepTime": 3, "sortOrder": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "תפריט שתייה",
+      "isPrimary": false,
+      "scheduleDays": [],
+      "scheduleFrom": null,
+      "scheduleTo": null,
+      "categories": [
+        {
+          "name": "משקאות חמים",
+          "sortOrder": 0,
+          "items": [
+            { "name": "אספרסו", "description": "קפה איטלקי קלאסי", "price": 12, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["קפה"], "prepTime": 3, "sortOrder": 0 },
+            { "name": "קפה לאטה", "description": "אספרסו עם חלב מוקצף", "price": 18, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": ["קפה"], "prepTime": 4, "sortOrder": 1 },
+            { "name": "תה נענע", "description": "תה נענע טרי", "price": 14, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": [], "prepTime": 3, "sortOrder": 2 }
+          ]
+        },
+        {
+          "name": "משקאות קרים",
+          "sortOrder": 1,
+          "items": [
+            { "name": "לימונדה טרייה", "description": "לימון, מנטה וסוכר", "price": 22, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["טרי"], "prepTime": 5, "sortOrder": 0 },
+            { "name": "מיץ תפוזים סחוט", "description": "מיץ תפוזים טרי", "price": 26, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["טרי", "בריא"], "prepTime": 3, "sortOrder": 1 }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+function downloadJson(data: unknown, filename: string) {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restaurantId: string }) {
   const [groups, setGroups] = useState<ModGroup[]>([]);
@@ -233,6 +329,16 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Import / Export state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importData, setImportData] = useState<ImportFile | null>(null);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importDone, setImportDone] = useState<number | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // ── helpers ──────────────────────────────────────────────────────────────
   function updateMenu(updater: (m: Menu) => Menu) {
     if (!selectedMenu) return;
@@ -256,6 +362,189 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
   function removeTag(tag: string) {
     setItemForm({ ...itemForm, tags: itemForm.tags.filter(t => t !== tag) });
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  function handleExport() {
+    if (!selectedRestaurant) return;
+    const exportData: ImportFile = {
+      version: 1,
+      restaurantName: selectedRestaurant.name,
+      exportedAt: new Date().toISOString(),
+      menus: selectedRestaurant.menus.map(menu => ({
+        name: menu.name,
+        isPrimary: menu.isPrimary,
+        scheduleDays: menu.scheduleDays ?? [],
+        scheduleFrom: menu.scheduleFrom ?? null,
+        scheduleTo: menu.scheduleTo ?? null,
+        categories: menu.categories.map(cat => ({
+          name: cat.name,
+          sortOrder: cat.sortOrder,
+          items: cat.items.map(item => ({
+            name: item.name,
+            description: item.description ?? "",
+            price: item.price,
+            isVegetarian: item.isVegetarian,
+            isVegan: item.isVegan,
+            isGlutenFree: item.isGlutenFree,
+            tags: item.tags ?? [],
+            prepTime: item.prepTime ?? null,
+            sortOrder: item.sortOrder,
+          })),
+        })),
+      })),
+    };
+    const safeName = selectedRestaurant.name.replace(/[^a-zA-Z0-9א-ת\s-]/g, "").trim().replace(/\s+/g, "-");
+    downloadJson(exportData, `${safeName}-menu.json`);
+  }
+
+  // ── Sample file download ──────────────────────────────────────────────────
+  function handleSampleDownload() {
+    downloadJson(SAMPLE_DATA, "menu4u-sample.json");
+  }
+
+  // ── Import file picker ────────────────────────────────────────────────────
+  function handleImportClick() {
+    setImportData(null);
+    setImportError(null);
+    setImportProgress(null);
+    setImportDone(null);
+    setImporting(false);
+    setShowImportModal(true);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string);
+        if (!parsed || !Array.isArray(parsed.menus)) {
+          setImportError("קובץ לא תקין: חסר מפתח menus");
+          return;
+        }
+        for (const menu of parsed.menus) {
+          if (!menu.name || !Array.isArray(menu.categories)) {
+            setImportError("קובץ לא תקין: לכל תפריט חייב להיות name ו-categories");
+            return;
+          }
+        }
+        setImportError(null);
+        setImportData(parsed as ImportFile);
+      } catch {
+        setImportError("שגיאה בפענוח הקובץ — ודא שהוא קובץ JSON תקין");
+      }
+      // Reset file input so same file can be picked again
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    reader.readAsText(file);
+  }
+
+  function getImportCounts(data: ImportFile) {
+    const menuCount = data.menus.length;
+    const categoryCount = data.menus.reduce((s, m) => s + m.categories.length, 0);
+    const itemCount = data.menus.reduce((s, m) => s + m.categories.reduce((cs, c) => cs + c.items.length, 0), 0);
+    return { menuCount, categoryCount, itemCount };
+  }
+
+  async function handleImport() {
+    if (!importData || !selectedRestaurant) return;
+    setImporting(true);
+    setImportError(null);
+
+    const { itemCount } = getImportCounts(importData);
+    let doneItems = 0;
+    setImportProgress({ current: 0, total: itemCount });
+
+    const createdMenus: Menu[] = [];
+
+    try {
+      for (const importMenu of importData.menus) {
+        // Create menu
+        const menuRes = await fetch("/api/admin/menus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: importMenu.name, restaurantId: selectedRestaurant.id }),
+        });
+        if (!menuRes.ok) throw new Error(`שגיאה ביצירת תפריט "${importMenu.name}"`);
+        const newMenuData = await menuRes.json();
+        const newMenu: Menu = { ...newMenuData, categories: [] };
+
+        const createdCategories: Category[] = [];
+
+        for (const importCat of importMenu.categories) {
+          // Create category
+          const catRes = await fetch("/api/admin/categories", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: importCat.name, menuId: newMenu.id, sortOrder: importCat.sortOrder ?? 0 }),
+          });
+          if (!catRes.ok) throw new Error(`שגיאה ביצירת קטגוריה "${importCat.name}"`);
+          const newCatData = await catRes.json();
+          const newCat: Category = { ...newCatData, items: [] };
+
+          const createdItems: Item[] = [];
+
+          for (const importItem of importCat.items) {
+            // Create item
+            const itemRes = await fetch("/api/admin/items", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: importItem.name,
+                description: importItem.description ?? "",
+                price: importItem.price,
+                categoryId: newCat.id,
+                isVegetarian: importItem.isVegetarian ?? false,
+                isVegan: importItem.isVegan ?? false,
+                isGlutenFree: importItem.isGlutenFree ?? false,
+                tags: importItem.tags ?? [],
+                prepTime: importItem.prepTime ?? null,
+                sortOrder: importItem.sortOrder ?? 0,
+              }),
+            });
+            if (!itemRes.ok) throw new Error(`שגיאה ביצירת פריט "${importItem.name}"`);
+            const newItem: Item = await itemRes.json();
+            createdItems.push(newItem);
+            doneItems++;
+            setImportProgress({ current: doneItems, total: itemCount });
+          }
+
+          createdCategories.push({ ...newCat, items: createdItems });
+        }
+
+        createdMenus.push({ ...newMenu, categories: createdCategories });
+      }
+
+      // Update state with new menus
+      const updatedRestaurant: Restaurant = {
+        ...selectedRestaurant,
+        menus: [...selectedRestaurant.menus, ...createdMenus],
+      };
+      setSelectedRestaurant(updatedRestaurant);
+      if (createdMenus.length > 0) {
+        setSelectedMenu(createdMenus[0]);
+      }
+
+      setImportDone(doneItems);
+      setImporting(false);
+      setImportProgress(null);
+    } catch (err: unknown) {
+      setImportError(err instanceof Error ? err.message : "שגיאה לא ידועה");
+      setImporting(false);
+      setImportProgress(null);
+    }
+  }
+
+  function closeImportModal() {
+    if (importing) return;
+    setShowImportModal(false);
+    setImportData(null);
+    setImportError(null);
+    setImportProgress(null);
+    setImportDone(null);
+    setImporting(false);
   }
 
   // ── Menu CRUD ─────────────────────────────────────────────────────────────
@@ -478,7 +767,41 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">ניהול תפריטים</h1>
+        {selectedRestaurant && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleExport}
+              disabled={importing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-400 text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-50"
+            >
+              📤 ייצא תפריט
+            </button>
+            <button
+              onClick={handleImportClick}
+              disabled={importing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-green-400 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
+            >
+              📥 ייבא תפריט
+            </button>
+            <button
+              onClick={handleSampleDownload}
+              disabled={importing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+            >
+              📄 קובץ דוגמא
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleFileChange}
+      />
 
       {restaurants.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">אין מסעדות זמינות</div>
@@ -855,6 +1178,142 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">ייבא תפריט</h2>
+              {!importing && (
+                <button onClick={closeImportModal} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+              )}
+            </div>
+
+            {/* Error */}
+            {importError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                {importError}
+              </div>
+            )}
+
+            {/* Done state */}
+            {importDone !== null && !importing && (
+              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+                <div className="text-2xl mb-1">✓</div>
+                <div className="font-semibold text-green-800">יובאו בהצלחה {importDone} פריטים</div>
+              </div>
+            )}
+
+            {/* Progress */}
+            {importProgress && importing && (
+              <div className="mb-4 space-y-2">
+                <div className="text-sm text-gray-600 text-center">
+                  מייבא פריטים... ({importProgress.current}/{importProgress.total})
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                  <div
+                    className="h-3 rounded-full transition-all duration-300"
+                    style={{
+                      width: importProgress.total > 0 ? `${(importProgress.current / importProgress.total) * 100}%` : "0%",
+                      background: "linear-gradient(135deg,#8B6914,#C9A84C)",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* No data yet — file picker UI */}
+            {!importData && importDone === null && !importing && (
+              <div
+                className="mb-5 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-amber-300 hover:bg-amber-50/30 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className="text-3xl mb-2">📂</div>
+                <div className="text-sm font-medium text-gray-700 mb-1">לחץ לבחירת קובץ JSON</div>
+                <div className="text-xs text-gray-400">קובץ ייצוא תואם בפורמט Menu4U</div>
+              </div>
+            )}
+
+            {/* Preview */}
+            {importData && importDone === null && (
+              <div className="mb-5 space-y-3">
+                {(() => {
+                  const { menuCount, categoryCount, itemCount } = getImportCounts(importData);
+                  return (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="font-semibold text-amber-900 mb-2">
+                        {importData.restaurantName ? `מקור: ${importData.restaurantName}` : "תצוגה מקדימה"}
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="bg-white rounded-lg py-2 px-1 border border-amber-100">
+                          <div className="text-xl font-bold text-amber-700">{menuCount}</div>
+                          <div className="text-xs text-gray-500">תפריטים</div>
+                        </div>
+                        <div className="bg-white rounded-lg py-2 px-1 border border-amber-100">
+                          <div className="text-xl font-bold text-amber-700">{categoryCount}</div>
+                          <div className="text-xs text-gray-500">קטגוריות</div>
+                        </div>
+                        <div className="bg-white rounded-lg py-2 px-1 border border-amber-100">
+                          <div className="text-xl font-bold text-amber-700">{itemCount}</div>
+                          <div className="text-xs text-gray-500">פריטים</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {importData.menus.map((menu, mi) => (
+                    <div key={mi} className="text-sm p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="font-medium text-gray-800">{menu.name}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {menu.categories.map(c => `${c.name} (${c.items.length})`).join(" · ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              {importDone !== null ? (
+                <button
+                  onClick={closeImportModal}
+                  className="flex-1 text-white py-2.5 rounded-lg font-medium"
+                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                >
+                  סגור
+                </button>
+              ) : importData && !importing ? (
+                <>
+                  <button
+                    onClick={handleImport}
+                    disabled={importing}
+                    className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
+                    style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                  >
+                    ייבא עכשיו
+                  </button>
+                  <button
+                    onClick={closeImportModal}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium"
+                  >
+                    ביטול
+                  </button>
+                </>
+              ) : !importing ? (
+                <button
+                  onClick={closeImportModal}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium"
+                >
+                  ביטול
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       )}
