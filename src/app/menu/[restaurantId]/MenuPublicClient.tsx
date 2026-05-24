@@ -1379,6 +1379,171 @@ export default function MenuPublicClient({
           </div>
         </div>
       )}
+
+      {/* ── Floating registration button ── */}
+      <button
+        onClick={() => { setRegModalOpen(true); setRegSuccess(false); setRegError(""); setRegForm({ name: "", phone: "", email: "" }); }}
+        style={{
+          position: "fixed",
+          bottom: 24,
+          left: 20,
+          zIndex: 60,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 18px",
+          borderRadius: 50,
+          background: "var(--gold, #c9a35d)",
+          color: "var(--bg, #111)",
+          border: "none",
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: "pointer",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
+          direction: "rtl",
+          whiteSpace: "nowrap",
+        }}
+        title="הירשם לעדכונים"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        הירשם לעדכונים
+      </button>
+
+      {/* ── Registration modal ── */}
+      {regModalOpen && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 70,
+            background: "rgba(0,0,0,0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setRegModalOpen(false); }}
+        >
+          <div style={{
+            position: "relative", zIndex: 71,
+            background: "var(--bg-card, #1c1c1c)",
+            borderRadius: 18,
+            padding: "28px 24px",
+            width: "min(360px, 92vw)",
+            border: "1px solid var(--border, rgba(255,255,255,0.12))",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+            direction: "rtl",
+          }}>
+            {/* Close button */}
+            <button
+              onClick={() => setRegModalOpen(false)}
+              style={{
+                position: "absolute", top: 14, left: 14,
+                background: "rgba(255,255,255,0.08)", border: "none",
+                borderRadius: 8, width: 28, height: 28,
+                cursor: "pointer", color: "var(--text, #fff)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 16, fontWeight: 700,
+              }}
+            >×</button>
+
+            {regSuccess ? (
+              <div style={{ textAlign: "center", padding: "12px 0" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
+                <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>נרשמת בהצלחה!</div>
+                <div style={{ color: "var(--text, #fff)", opacity: 0.6, fontSize: 14, marginBottom: 20 }}>
+                  תודה שנרשמת לעדכונים מ{restaurant.name}
+                </div>
+                <button
+                  onClick={() => setRegModalOpen(false)}
+                  style={{
+                    padding: "10px 28px", borderRadius: 50,
+                    background: "var(--gold, #c9a35d)", color: "var(--bg, #111)",
+                    border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                  }}
+                >סגור</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                  <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 20, marginBottom: 4 }}>הירשם לעדכונים</div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.55, fontSize: 13 }}>{restaurant.name}</div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>שם מלא *</label>
+                  <input
+                    type="text"
+                    value={regForm.name}
+                    onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="ישראל ישראלי"
+                    autoFocus
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid var(--border, rgba(255,255,255,0.15))",
+                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>טלפון</label>
+                  <input
+                    type="tel"
+                    value={regForm.phone}
+                    onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="050-0000000"
+                    dir="ltr"
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid var(--border, rgba(255,255,255,0.15))",
+                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box",
+                      textAlign: "right",
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>אימייל</label>
+                  <input
+                    type="email"
+                    value={regForm.email}
+                    onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="email@example.com"
+                    dir="ltr"
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid var(--border, rgba(255,255,255,0.15))",
+                      color: "var(--text, #fff)", outline: "none", boxSizing: "border-box",
+                      textAlign: "right",
+                    }}
+                  />
+                </div>
+
+                {regError && (
+                  <div style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
+                    {regError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleRegisterSubmit}
+                  disabled={regLoading || !regForm.name.trim()}
+                  style={{
+                    width: "100%", padding: "11px 16px", borderRadius: 50,
+                    background: "var(--gold, #c9a35d)", color: "var(--bg, #111)",
+                    border: "none", fontWeight: 700, fontSize: 14, cursor: regLoading || !regForm.name.trim() ? "not-allowed" : "pointer",
+                    opacity: regLoading || !regForm.name.trim() ? 0.55 : 1,
+                    transition: "opacity 150ms",
+                  }}
+                >
+                  {regLoading ? "שולח..." : "הירשם"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
