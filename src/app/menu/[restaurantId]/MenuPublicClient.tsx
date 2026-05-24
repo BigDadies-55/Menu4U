@@ -84,6 +84,8 @@ type Restaurant = {
   menus: { id: string; categories: Category[] }[];
 };
 
+type CartModifier = { groupName: string; label: string; priceAdd: number };
+
 type CartItem = {
   cartId: string;
   itemId: string;
@@ -92,7 +94,11 @@ type CartItem = {
   quantity: number;
   notes?: string;
   person?: number;
+  modifiers?: CartModifier[];
 };
+
+type ModOption = { id: string; label: string; priceAdd: number; order: number };
+type ModGroup  = { id: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[] };
 
 function getItemBadges(item: Item): string[] {
   const badges: string[] = [];

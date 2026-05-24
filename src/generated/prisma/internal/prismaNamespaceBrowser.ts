@@ -63,6 +63,9 @@ export const ModelName = {
   Order: 'Order',
   OrderStatusLog: 'OrderStatusLog',
   OrderItem: 'OrderItem',
+  ItemModifierGroup: 'ItemModifierGroup',
+  ItemModifier: 'ItemModifier',
+  OrderItemModifier: 'OrderItemModifier',
   MenuView: 'MenuView',
   AuditLog: 'AuditLog',
   TableSession: 'TableSession'
@@ -271,6 +274,40 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const ItemModifierGroupScalarFieldEnum = {
+  id: 'id',
+  itemId: 'itemId',
+  name: 'name',
+  required: 'required',
+  maxSelect: 'maxSelect',
+  order: 'order'
+} as const
+
+export type ItemModifierGroupScalarFieldEnum = (typeof ItemModifierGroupScalarFieldEnum)[keyof typeof ItemModifierGroupScalarFieldEnum]
+
+
+export const ItemModifierScalarFieldEnum = {
+  id: 'id',
+  groupId: 'groupId',
+  label: 'label',
+  priceAdd: 'priceAdd',
+  order: 'order'
+} as const
+
+export type ItemModifierScalarFieldEnum = (typeof ItemModifierScalarFieldEnum)[keyof typeof ItemModifierScalarFieldEnum]
+
+
+export const OrderItemModifierScalarFieldEnum = {
+  id: 'id',
+  orderItemId: 'orderItemId',
+  groupName: 'groupName',
+  label: 'label',
+  priceAdd: 'priceAdd'
+} as const
+
+export type OrderItemModifierScalarFieldEnum = (typeof OrderItemModifierScalarFieldEnum)[keyof typeof OrderItemModifierScalarFieldEnum]
 
 
 export const MenuViewScalarFieldEnum = {

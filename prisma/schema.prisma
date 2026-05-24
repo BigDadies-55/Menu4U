@@ -176,8 +176,9 @@ model Item {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[]
+  category        Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems      OrderItem[]
+  modifierGroups  ItemModifierGroup[]
 }
 
 model Order {
@@ -217,8 +218,41 @@ model OrderItem {
   notes      String?
   itemStatus String  @default("PENDING")
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  item  Item  @relation(fields: [itemId], references: [id])
+  order     Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item      Item                @relation(fields: [itemId], references: [id])
+  modifiers OrderItemModifier[]
+}
+
+model ItemModifierGroup {
+  id        String         @id @default(cuid())
+  itemId    String
+  name      String
+  required  Boolean        @default(false)
+  maxSelect Int            @default(1)
+  order     Int            @default(0)
+
+  item      Item           @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  options   ItemModifier[]
+}
+
+model ItemModifier {
+  id       String             @id @default(cuid())
+  groupId  String
+  label    String
+  priceAdd Float              @default(0)
+  order    Int                @default(0)
+
+  group    ItemModifierGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model OrderItemModifier {
+  id          String    @id @default(cuid())
+  orderItemId String
+  groupName   String
+  label       String
+  priceAdd    Float     @default(0)
+
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 }
 
 model MenuView {

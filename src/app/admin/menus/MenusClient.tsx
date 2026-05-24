@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatPrice } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 
@@ -27,6 +27,128 @@ const emptyScheduleForm = { isPrimary: false, scheduleDays: [] as string[], sche
 
 const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[], prepTime: "" };
 const emptyCategoryForm = { name: "", description: "", image: "" };
+
+type ModOption = { id?: string; label: string; priceAdd: number; order: number };
+type ModGroup  = { id?: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[] };
+
+function ModifierGroupsEditor({ itemId }: { itemId: string }) {
+  const [groups, setGroups] = useState<ModGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/admin/items/${itemId}/modifiers`)
+      .then(r => r.json())
+      .then(data => { setGroups(data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [itemId]);
+
+  function addGroup() {
+    setGroups(g => [...g, { name: "", required: false, maxSelect: 1, order: g.length, options: [] }]);
+  }
+
+  function removeGroup(gi: number) {
+    setGroups(g => g.filter((_, i) => i !== gi));
+  }
+
+  function updateGroup(gi: number, patch: Partial<ModGroup>) {
+    setGroups(g => g.map((grp, i) => i === gi ? { ...grp, ...patch } : grp));
+  }
+
+  function addOption(gi: number) {
+    setGroups(g => g.map((grp, i) => i === gi
+      ? { ...grp, options: [...grp.options, { label: "", priceAdd: 0, order: grp.options.length }] }
+      : grp));
+  }
+
+  function removeOption(gi: number, oi: number) {
+    setGroups(g => g.map((grp, i) => i === gi
+      ? { ...grp, options: grp.options.filter((_, j) => j !== oi) }
+      : grp));
+  }
+
+  function updateOption(gi: number, oi: number, patch: Partial<ModOption>) {
+    setGroups(g => g.map((grp, i) => i === gi
+      ? { ...grp, options: grp.options.map((opt, j) => j === oi ? { ...opt, ...patch } : opt) }
+      : grp));
+  }
+
+  async function save() {
+    setSaving(true);
+    await fetch(`/api/admin/items/${itemId}/modifiers`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(groups),
+    });
+    setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000);
+  }
+
+  if (loading) return <div className="text-sm text-gray-400 py-2">טוען...</div>;
+
+  return (
+    <div className="space-y-3">
+      {groups.map((grp, gi) => (
+        <div key={gi} className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+          <div className="flex items-center gap-2">
+            <input
+              value={grp.name}
+              onChange={e => updateGroup(gi, { name: e.target.value })}
+              placeholder="שם קבוצה (לדוגמא: עשייה)"
+              className="flex-1 text-sm px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+            />
+            <button onClick={() => removeGroup(gi)} className="text-red-400 hover:text-red-600 text-sm px-2">✕</button>
+          </div>
+          <div className="flex gap-3 text-xs items-center flex-wrap">
+            <label className="flex items-center gap-1 text-gray-600 cursor-pointer">
+              <input type="checkbox" checked={grp.required} onChange={e => updateGroup(gi, { required: e.target.checked })} className="rounded"/>
+              חובה
+            </label>
+            <label className="flex items-center gap-1.5 text-gray-600">
+              בחירה מקסימלית:
+              <input
+                type="number" min={1} max={10} value={grp.maxSelect}
+                onChange={e => updateGroup(gi, { maxSelect: parseInt(e.target.value) || 1 })}
+                className="w-12 text-center px-1 py-0.5 border border-gray-200 rounded text-xs bg-white"
+              />
+            </label>
+          </div>
+          <div className="space-y-1">
+            {grp.options.map((opt, oi) => (
+              <div key={oi} className="flex items-center gap-1.5">
+                <input
+                  value={opt.label}
+                  onChange={e => updateOption(gi, oi, { label: e.target.value })}
+                  placeholder="אפשרות (מדיום, גדול...)"
+                  className="flex-1 text-sm px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                />
+                <input
+                  type="number" min={0} step={0.5} value={opt.priceAdd}
+                  onChange={e => updateOption(gi, oi, { priceAdd: parseFloat(e.target.value) || 0 })}
+                  placeholder="₪0"
+                  className="w-16 text-center text-sm px-1 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                  title="תוספת מחיר"
+                />
+                <button onClick={() => removeOption(gi, oi)} className="text-gray-400 hover:text-red-500 text-xs">✕</button>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => addOption(gi)} className="text-xs text-amber-700 hover:text-amber-900 font-medium">+ הוסף אפשרות</button>
+        </div>
+      ))}
+      <div className="flex gap-2">
+        <button onClick={addGroup} className="text-sm text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-xl px-3 py-1.5">
+          + קבוצת אפשרויות
+        </button>
+        {groups.length > 0 && (
+          <button onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+            {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור תגיות"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function MenusClient({ restaurants, canEdit }: { restaurants: Restaurant[]; canEdit: boolean }) {
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(restaurants[0] ?? null);
@@ -564,6 +686,13 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   />
                 </div>
               </div>
+
+              {editItem && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">תגיות / אפשרויות</label>
+                  <ModifierGroupsEditor itemId={editItem.id} />
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>

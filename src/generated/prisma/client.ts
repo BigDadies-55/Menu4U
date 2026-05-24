@@ -102,6 +102,21 @@ export type OrderStatusLog = Prisma.OrderStatusLogModel
  */
 export type OrderItem = Prisma.OrderItemModel
 /**
+ * Model ItemModifierGroup
+ * 
+ */
+export type ItemModifierGroup = Prisma.ItemModifierGroupModel
+/**
+ * Model ItemModifier
+ * 
+ */
+export type ItemModifier = Prisma.ItemModifierModel
+/**
+ * Model OrderItemModifier
+ * 
+ */
+export type OrderItemModifier = Prisma.OrderItemModifierModel
+/**
  * Model MenuView
  * 
  */

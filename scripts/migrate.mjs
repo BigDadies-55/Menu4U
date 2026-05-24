@@ -79,6 +79,28 @@ const sqls = [
       ALTER TYPE "OrderStatus" ADD VALUE 'PAID';
     END IF;
   END $$;`,
+  `CREATE TABLE IF NOT EXISTS "ItemModifierGroup" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "itemId" TEXT NOT NULL REFERENCES "Item"("id") ON DELETE CASCADE,
+  "name" TEXT NOT NULL,
+  "required" BOOLEAN NOT NULL DEFAULT false,
+  "maxSelect" INTEGER NOT NULL DEFAULT 1,
+  "order" INTEGER NOT NULL DEFAULT 0
+)`,
+  `CREATE TABLE IF NOT EXISTS "ItemModifier" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "groupId" TEXT NOT NULL REFERENCES "ItemModifierGroup"("id") ON DELETE CASCADE,
+  "label" TEXT NOT NULL,
+  "priceAdd" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "order" INTEGER NOT NULL DEFAULT 0
+)`,
+  `CREATE TABLE IF NOT EXISTS "OrderItemModifier" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "orderItemId" TEXT NOT NULL REFERENCES "OrderItem"("id") ON DELETE CASCADE,
+  "groupName" TEXT NOT NULL,
+  "label" TEXT NOT NULL,
+  "priceAdd" DOUBLE PRECISION NOT NULL DEFAULT 0
+)`,
 ];
 
 async function run() {
