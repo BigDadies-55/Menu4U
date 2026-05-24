@@ -139,111 +139,76 @@ function BillModal({
           }}>✕</button>
         </div>
 
-        {/* Itemized list */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px" }}>
-          {validOrders.map((order, oi) => {
-            const validItems = order.items.filter(i => i.itemStatus !== "CANCELLED");
-            return (
-              <div key={order.id} style={{ marginBottom: 12 }}>
-                {validOrders.length > 1 && (
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 4, paddingBottom: 4, borderBottom: "1px dashed #e5e7eb" }}>
-                    הזמנה {oi + 1} · {fmtTime(order.createdAt)}
-                  </div>
-                )}
-                {validItems.map(({ id, quantity, price, item, modifiers }) => {
-                  const itemTotal = price * quantity + (modifiers?.reduce((s,m) => s + m.priceAdd * quantity, 0) ?? 0);
-                  return (
-                    <div key={id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 6, marginBottom: 6, borderBottom: "1px solid #f9fafb" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-                          {quantity > 1 && <span style={{ background: "#f3f4f6", borderRadius: 5, padding: "1px 5px", fontSize: 11, marginLeft: 4, fontWeight: 700, color: "#374151" }}>×{quantity}</span>}
-                          {item.name}
-                        </span>
-                        {modifiers && modifiers.length > 0 && (
-                          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>
-                            {modifiers.map(m => m.label + (m.priceAdd > 0 ? ` +₪${m.priceAdd}` : "")).join(" · ")}
-                          </div>
-                        )}
-                      </div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#111827", flexShrink: 0, marginRight: 8 }}>₪{itemTotal.toFixed(0)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+        {/* Summary + tip + payment */}
+        <div style={{ padding: "20px 20px 4px" }}>
 
-          {/* Divider */}
-          <div style={{ borderTop: "2px solid #e5e7eb", marginTop: 4, paddingTop: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", marginBottom: 10 }}>
-              <span>סכום ביניים</span>
-              <span>₪{subtotal.toFixed(2)}</span>
+          {/* Tip selector */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 8 }}>טיפ</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {TIP_OPTS.map(opt => (
+                <button key={opt.pct} type="button"
+                  onClick={() => { setTipPct(opt.pct); if (opt.pct !== -1) setCustomTip(""); }}
+                  style={{
+                    padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600,
+                    border: `2px solid ${tipPct === opt.pct ? "#7c3aed" : "#e5e7eb"}`,
+                    background: tipPct === opt.pct ? "#f3e8ff" : "#fff",
+                    color: tipPct === opt.pct ? "#7c3aed" : "#6b7280",
+                    cursor: "pointer",
+                  }}>
+                  {opt.label}
+                </button>
+              ))}
             </div>
-
-            {/* Tip */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>טיפ</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {TIP_OPTS.map(opt => (
-                  <button key={opt.pct} type="button"
-                    onClick={() => { setTipPct(opt.pct); if (opt.pct !== -1) setCustomTip(""); }}
-                    style={{
-                      padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                      border: `2px solid ${tipPct === opt.pct ? "#7c3aed" : "#e5e7eb"}`,
-                      background: tipPct === opt.pct ? "#f3e8ff" : "#fff",
-                      color: tipPct === opt.pct ? "#7c3aed" : "#6b7280",
-                      cursor: "pointer",
-                    }}>
-                    {opt.label}
-                  </button>
-                ))}
+            {tipPct === -1 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+                <span style={{ fontSize: 13, color: "#6b7280" }}>₪</span>
+                <input
+                  type="number" min="0" step="1"
+                  value={customTip}
+                  onChange={e => setCustomTip(e.target.value)}
+                  placeholder="סכום טיפ"
+                  style={{ border: "2px solid #7c3aed", borderRadius: 10, padding: "6px 12px", fontSize: 14, width: 110, outline: "none" }}
+                />
               </div>
-              {tipPct === -1 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
-                  <span style={{ fontSize: 12, color: "#6b7280" }}>₪</span>
-                  <input
-                    type="number" min="0" step="1"
-                    value={customTip}
-                    onChange={e => setCustomTip(e.target.value)}
-                    placeholder="סכום טיפ"
-                    style={{ border: "2px solid #7c3aed", borderRadius: 10, padding: "5px 10px", fontSize: 13, width: 100, outline: "none" }}
-                  />
-                </div>
-              )}
-              {tipAmount > 0 && (
-                <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 4 }}>
-                  טיפ: ₪{tipAmount.toFixed(2)}
-                </div>
-              )}
-            </div>
+            )}
+          </div>
 
-            {/* Payment method */}
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>אמצעי תשלום</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {PAY_METHODS.map(m => (
-                  <button key={m.value} type="button"
-                    onClick={() => setPayMethod(m.value)}
-                    style={{
-                      flex: 1, padding: "8px 0", borderRadius: 10, fontSize: 12, fontWeight: 600,
-                      border: `2px solid ${payMethod === m.value ? "#7c3aed" : "#e5e7eb"}`,
-                      background: payMethod === m.value ? "#f3e8ff" : "#fff",
-                      color: payMethod === m.value ? "#7c3aed" : "#6b7280",
-                      cursor: "pointer",
-                    }}>
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+          {/* Totals breakdown */}
+          <div style={{ background: "#f9fafb", borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+              <span>סכום מקורי</span>
+              <span style={{ fontWeight: 600, color: "#111827" }}>₪{subtotal.toFixed(2)}</span>
             </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#6b7280", marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
+              <span>טיפ</span>
+              <span style={{ fontWeight: 600, color: tipAmount > 0 ? "#7c3aed" : "#9ca3af" }}>
+                {tipAmount > 0 ? `₪${tipAmount.toFixed(2)}` : "—"}
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>סה"כ לתשלום</span>
+              <span style={{ fontWeight: 900, fontSize: 24, color: "#6d28d9" }}>₪{total.toFixed(2)}</span>
+            </div>
+          </div>
 
-            {/* Total */}
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              background: "#f5f3ff", borderRadius: 12, padding: "12px 16px",
-            }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: "#4c1d95" }}>סה"כ לתשלום</span>
-              <span style={{ fontWeight: 900, fontSize: 22, color: "#6d28d9" }}>₪{total.toFixed(2)}</span>
+          {/* Payment method */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 8 }}>אמצעי תשלום</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {PAY_METHODS.map(m => (
+                <button key={m.value} type="button"
+                  onClick={() => setPayMethod(m.value)}
+                  style={{
+                    flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    border: `2px solid ${payMethod === m.value ? "#7c3aed" : "#e5e7eb"}`,
+                    background: payMethod === m.value ? "#f3e8ff" : "#fff",
+                    color: payMethod === m.value ? "#7c3aed" : "#6b7280",
+                    cursor: "pointer",
+                  }}>
+                  {m.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
