@@ -10,21 +10,40 @@ export default async function RestaurantsPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role !== "SUPER_ADMIN") redirect("/admin");
 
-  const restaurants = await prisma.restaurant.findMany({
+  const rows = await prisma.restaurant.findMany({
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      logo: true,
+      email: true,
+      phone: true,
+      phone2: true,
+      orderPhone: true,
+      address: true,
+      website: true,
+      locationUrl: true,
+      isActive: true,
+      menuTheme: true,
+      menuPalette: true,
+      menuPaletteData: true,
+      ordersEnabled: true,
+      kdsView: true,
+      subscriptionFrom: true,
+      subscriptionTo: true,
+      createdAt: true,
       _count: { select: { menus: true, orders: true, restaurantUsers: true } },
     },
   });
 
-  // Serialize Date fields — Next.js RSC requires plain JSON-serializable props for client components
-  const serialized = restaurants.map(r => ({
+  // Convert Date fields to ISO strings for client component serialization
+  const restaurants = rows.map(r => ({
     ...r,
-    createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
-    updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt,
-    subscriptionFrom: r.subscriptionFrom instanceof Date ? r.subscriptionFrom.toISOString() : r.subscriptionFrom,
-    subscriptionTo: r.subscriptionTo instanceof Date ? r.subscriptionTo.toISOString() : r.subscriptionTo,
+    createdAt: r.createdAt.toISOString(),
+    subscriptionFrom: r.subscriptionFrom ? r.subscriptionFrom.toISOString() : null,
+    subscriptionTo: r.subscriptionTo ? r.subscriptionTo.toISOString() : null,
   }));
 
-  return <RestaurantsClient restaurants={serialized as Parameters<typeof RestaurantsClient>[0]["restaurants"]} />;
+  return <RestaurantsClient restaurants={restaurants} />;
 }
