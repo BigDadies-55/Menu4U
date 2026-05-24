@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AnalyticsSection from "./AnalyticsSection";
+import DashboardExtra from "./DashboardExtra";
 export const dynamic = "force-dynamic";
 
 async function getStats(userId: string, role: string) {
@@ -69,8 +70,14 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
+      {/* Live dashboard widgets — KPIs, chart, top items, recent orders */}
+      <DashboardExtra isSuperAdmin={session.user.role === "SUPER_ADMIN"} />
+
+      {/* Per-restaurant analytics (menu views) */}
       {stats.restaurantDetails && stats.restaurantDetails.length > 0 && (
-        <AnalyticsSection restaurants={stats.restaurantDetails} />
+        <div className="mt-6">
+          <AnalyticsSection restaurants={stats.restaurantDetails} />
+        </div>
       )}
     </div>
   );
