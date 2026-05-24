@@ -1064,28 +1064,22 @@ export default function MenuPublicClient({
               <div className="menu-modal-meta">
                 <div className="menu-modal-price-box">
                   <div className="menu-modal-price-label">מחיר</div>
-                  <div className="menu-modal-price">₪{modalItem.price}</div>
+                  <div className="menu-modal-price" style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.03em" }}>₪{modalItem.price}</div>
                 </div>
-                {modalItem.prepTime != null && (
-                  <div className="menu-modal-price-box">
-                    <div className="menu-modal-price-label">זמן הכנה</div>
-                    <div className="menu-modal-price" style={{ fontSize: "1.8rem" }}>⏱ {modalItem.prepTime}&apos;</div>
-                  </div>
-                )}
               </div>
               {restaurant.ordersEnabled && (
                 <button
                   onClick={() => { addToCart(modalItem); setModalItem(null); }}
                   style={{
-                    marginTop: 16,
+                    marginTop: 14,
                     width: "100%",
-                    padding: "12px 0",
+                    padding: "9px 0",
                     background: "var(--gold)",
                     color: "var(--bg)",
                     border: "none",
                     borderRadius: 10,
                     fontWeight: 700,
-                    fontSize: 16,
+                    fontSize: 14,
                     cursor: "pointer",
                   }}
                 >
@@ -1196,18 +1190,23 @@ export default function MenuPublicClient({
                     disabled={!isModifierValid()}
                     style={{
                       width: "100%",
-                      padding: "13px 0",
+                      padding: "9px 16px",
                       background: "var(--gold)",
                       color: "var(--bg, #111)",
                       border: "none",
-                      borderRadius: 12,
+                      borderRadius: 10,
                       fontWeight: 700,
-                      fontSize: 16,
+                      fontSize: 14,
                       cursor: isModifierValid() ? "pointer" : "not-allowed",
                       opacity: isModifierValid() ? 1 : 0.45,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
                     }}
                   >
-                    הוסף לסל · ₪{totalPrice}
+                    <span>הוסף לסל</span>
+                    <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 17, fontWeight: 600, letterSpacing: "0.02em" }}>₪{totalPrice}</span>
                   </button>
                 );
               })()}
