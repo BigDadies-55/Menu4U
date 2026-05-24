@@ -441,6 +441,69 @@ function TemplateCard({
   );
 }
 
+/* ─── Clear orders section ───────────────────────────────── */
+function ClearOrdersSection() {
+  const [confirm,  setConfirm]  = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [result,   setResult]   = useState<{ count: number } | null>(null);
+  const [error,    setError]    = useState("");
+
+  async function handleClear() {
+    setClearing(true); setError(""); setResult(null);
+    const res = await fetch("/api/admin/orders/clear", { method: "DELETE" });
+    const data = await res.json();
+    setClearing(false);
+    if (res.ok) { setResult({ count: data.deleted?.orders ?? 0 }); setConfirm(false); }
+    else setError(data.error ?? "שגיאה");
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-red-100">
+        <span className="text-lg">🗑️</span>
+        <h2 className="font-bold text-gray-900">ניקוי היסטוריית הזמנות</h2>
+      </div>
+      <div className="px-6 py-5">
+        {result ? (
+          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            נמחקו {result.count} הזמנות בהצלחה — הנתונים מתחילים מאפס.
+          </div>
+        ) : confirm ? (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
+              <span className="text-xl shrink-0">⚠️</span>
+              <div>
+                <div className="text-sm font-bold text-red-800">פעולה בלתי הפיכה!</div>
+                <div className="text-xs text-red-600 mt-0.5">כל ההזמנות, פריטי ההזמנות, ולוגי הסטטוס יימחקו לצמיתות. לא ניתן לשחזר.</div>
+              </div>
+            </div>
+            {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+            <div className="flex gap-2">
+              <button onClick={handleClear} disabled={clearing}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors">
+                {clearing ? "מוחק..." : "כן, מחק הכל"}
+              </button>
+              <button onClick={() => setConfirm(false)}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+                ביטול
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">מחק את כל ההזמנות מהמערכת והתחל מאפס. <span className="text-red-500 font-medium">פעולה בלתי הפיכה.</span></p>
+            <button onClick={() => setConfirm(true)}
+              className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors whitespace-nowrap">
+              מחק היסטוריה
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main ───────────────────────────────────────────────── */
 export default function SettingsClient({ config: initial }: { config: Config }) {
   const [form,          setForm]          = useState<Config>({ ...initial });
@@ -1026,6 +1089,9 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
             className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
           <p className="text-xs text-gray-400 mt-1.5">טקסט ברירת מחדל לכותרת תחתונה</p>
         </Section>
+
+        {/* ── Clear orders ── */}
+        <ClearOrdersSection />
 
         {/* ── Save ── */}
         <div className="flex items-center gap-3 pt-1">
