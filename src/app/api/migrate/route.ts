@@ -106,6 +106,21 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       UPDATE "User" SET "emailVerified" = "createdAt" WHERE "emailVerified" IS NULL;
     `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuPalette" TEXT NOT NULL DEFAULT '0';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuPaletteData" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "ordersEnabled" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tableLayoutJson" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "kdsView" TEXT NOT NULL DEFAULT 'STATION_DARK';
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {
