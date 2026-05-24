@@ -75,7 +75,7 @@ export default function AdminShell({ user, kdsView, children }: Props) {
       <main
         className="overflow-auto flex flex-col min-h-screen"
         style={{
-          marginRight: pinned ? SIDEBAR_PINNED : SIDEBAR_COLLAPSED,
+          marginRight: (pinned || sidebarOpen) ? SIDEBAR_PINNED : SIDEBAR_COLLAPSED,
           transition: "margin-right 230ms cubic-bezier(0.4,0,0.2,1)",
         }}
       >
@@ -86,7 +86,7 @@ export default function AdminShell({ user, kdsView, children }: Props) {
         <TopBar
           user={user}
           onChangePassword={openPasswordModal}
-          onOpenMobileSidebar={() => setSidebarOpen(true)}
+          onOpenMobileSidebar={() => setSidebarOpen(v => !v)}
         />
 
         {/* Page content */}

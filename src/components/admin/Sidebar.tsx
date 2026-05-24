@@ -265,7 +265,6 @@ export default function Sidebar({
   user, kdsView, pinned, onTogglePin, isOpen = false, onClose, onChangePassword,
 }: SidebarProps) {
   const pathname  = usePathname();
-  const [hovered, setHovered] = useState(false);
   // openGroups: which accordion sections are open
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
     // Auto-open group that contains the active item
@@ -290,7 +289,8 @@ export default function Sidebar({
     }
   }, [pathname]);
 
-  const isExpanded = pinned || hovered;
+  // isOpen controls desktop expansion (via hamburger click); pinned keeps it always open
+  const isExpanded = pinned || isOpen;
 
   const isWaiter  = user.role === "WAITER";
   const isDisplay = user.role === "DISPLAY";
@@ -400,6 +400,14 @@ export default function Sidebar({
 
   return (
     <>
+      {/* Desktop click-outside backdrop (only when open & not pinned) */}
+      {isOpen && !pinned && (
+        <div
+          className="hidden md:block fixed inset-0 z-20"
+          onClick={onClose}
+        />
+      )}
+
       {/* Desktop fixed sidebar */}
       <aside
         className="hidden md:block fixed z-30"
@@ -411,8 +419,6 @@ export default function Sidebar({
           transition: TRANS,
           overflow: "hidden",
         }}
-        onMouseEnter={() => !pinned && setHovered(true)}
-        onMouseLeave={() => !pinned && setHovered(false)}
       >
         <SidebarBody expanded={isExpanded} />
       </aside>
