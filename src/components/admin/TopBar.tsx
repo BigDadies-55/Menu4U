@@ -113,6 +113,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
       style={{
         height: 40,
         background: "transparent",
+        borderTop: "1px solid #9ca3af",
         borderBottom: "1px solid #9ca3af",
         direction: "rtl",
       }}
