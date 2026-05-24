@@ -2,22 +2,21 @@
 
 import { useState, useRef } from "react";
 
-/* ─── Theme definitions ─────────────────────────────────────── */
-const THEMES = [
-  { id: "luxury", label: "Luxury",  icon: "✦", accent: "#c9a35d", bg: "#0a0a0a", desc: "זהב ושחור אלגנטי" },
-  { id: "fresh",  label: "Fresh",   icon: "⚙", accent: "#f59e0b", bg: "#1a1a1a", desc: "תעשייתי מודרני" },
-  { id: "nature", label: "Nature",  icon: "❧", accent: "#4ade80", bg: "#030f06", desc: "ירוק ורענן" },
-  { id: "bold",   label: "Bold",    icon: "▲", accent: "#f472b6", bg: "#0f0512", desc: "סגול ורוד תוסס" },
+/* ─── Admin palette options ──────────────────────────────── */
+const PALETTES = [
+  { id: "dark",   label: "Dark",   bg: "#0f111a", accent: "#f59e0b", preview: "linear-gradient(135deg,#0f111a,#1a1c27)", accentLabel: "#f59e0b", desc: "ברירת מחדל — כהה עם זהב" },
+  { id: "purple", label: "Purple", bg: "#130c1e", accent: "#7c3aed", preview: "linear-gradient(135deg,#130c1e,#1e1032)", accentLabel: "#7c3aed", desc: "סגול כהה" },
+  { id: "blue",   label: "Blue",   bg: "#080f1e", accent: "#2563eb", preview: "linear-gradient(135deg,#080f1e,#0d1a35)", accentLabel: "#2563eb", desc: "כחול כהה" },
+  { id: "green",  label: "Green",  bg: "#071510", accent: "#16a34a", preview: "linear-gradient(135deg,#071510,#0d2218)", accentLabel: "#16a34a", desc: "ירוק כהה" },
+  { id: "rose",   label: "Rose",   bg: "#150a0e", accent: "#e11d48", preview: "linear-gradient(135deg,#150a0e,#220c13)", accentLabel: "#e11d48", desc: "אדום כהה" },
 ] as const;
 
-/* ─── Types ─────────────────────────────────────────────────── */
-type Restaurant = {
-  id: string; name: string; logo: string | null;
-  menuTheme: string; menuPalette: string;
-  customDomain: string | null; copyright: string | null;
+type Config = {
+  siteName: string; logo: string | null;
+  domain: string | null; copyright: string | null;
+  adminPalette: string;
 };
 
-/* ─── Section card ───────────────────────────────────────────── */
 function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -30,27 +29,15 @@ function Section({ title, icon, children }: { title: string; icon: string; child
   );
 }
 
-/* ─── Main ───────────────────────────────────────────────────── */
-export default function SettingsClient({
-  restaurants,
-  isSuperAdmin,
-}: {
-  restaurants: Restaurant[];
-  isSuperAdmin: boolean;
-}) {
-  const [selectedId, setSelectedId] = useState(restaurants[0].id);
-  const [form, setForm]             = useState<Record<string, Restaurant>>(() =>
-    Object.fromEntries(restaurants.map(r => [r.id, { ...r }]))
-  );
+export default function SettingsClient({ config: initial }: { config: Config }) {
+  const [form,         setForm]         = useState<Config>({ ...initial });
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
   const [uploadingLogo,setUploadingLogo]= useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const current = form[selectedId];
-
-  function update(field: keyof Restaurant, value: string | null) {
-    setForm(prev => ({ ...prev, [selectedId]: { ...prev[selectedId], [field]: value } }));
+  function update<K extends keyof Config>(field: K, value: Config[K]) {
+    setForm(prev => ({ ...prev, [field]: value }));
     setSaved(false);
   }
 
@@ -66,73 +53,55 @@ export default function SettingsClient({
 
   async function save() {
     setSaving(true);
-    const res = await fetch(`/api/admin/restaurants/${selectedId}`, {
+    const res = await fetch("/api/admin/site-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        menuTheme:    current.menuTheme,
-        logo:         current.logo,
-        customDomain: current.customDomain,
-        copyright:    current.copyright,
-      }),
+      body: JSON.stringify(form),
     });
     setSaving(false);
-    if (res.ok) { setSaved(true); setTimeout(() => setSaved(false), 2500); }
+    if (res.ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+      // Reload to apply palette change
+      setTimeout(() => window.location.reload(), 400);
+    }
   }
 
   return (
     <div className="p-4 md:p-8 max-w-2xl">
-
-      {/* Restaurant selector */}
-      {(isSuperAdmin || restaurants.length > 1) && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {restaurants.map(r => (
-            <button
-              key={r.id}
-              onClick={() => setSelectedId(r.id)}
-              className="px-4 py-1.5 rounded-lg text-sm font-semibold border transition-all"
-              style={selectedId === r.id
-                ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)", color: "#fff", borderColor: "transparent" }
-                : { background: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }}
-            >
-              {r.name}
-            </button>
-          ))}
-        </div>
-      )}
-
       <div className="space-y-5">
 
-        {/* ── Theme ── */}
-        <Section title="ערכת נושא לתפריט" icon="🎨">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {THEMES.map(t => {
-              const active = current.menuTheme === t.id;
+        {/* ── Palette ── */}
+        <Section title="פלטת צבעים לפאנל הניהול" icon="🎨">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {PALETTES.map(p => {
+              const active = form.adminPalette === p.id;
               return (
                 <button
-                  key={t.id}
-                  onClick={() => update("menuTheme", t.id)}
+                  key={p.id}
+                  onClick={() => update("adminPalette", p.id)}
                   className="relative rounded-xl overflow-hidden transition-all"
                   style={{
-                    background: t.bg,
-                    border: `2px solid ${active ? t.accent : "transparent"}`,
-                    boxShadow: active ? `0 0 0 3px ${t.accent}33` : "none",
+                    background: p.preview,
+                    border: `2px solid ${active ? p.accent : "transparent"}`,
+                    boxShadow: active ? `0 0 0 3px ${p.accent}33` : "none",
                   }}
                 >
                   {/* Preview */}
-                  <div className="h-20 flex flex-col items-center justify-center gap-1">
-                    <span className="text-2xl" style={{ color: t.accent }}>{t.icon}</span>
-                    <div className="w-8 h-0.5 rounded-full" style={{ background: t.accent }} />
-                    <div className="w-5 h-0.5 rounded-full opacity-50" style={{ background: t.accent }} />
+                  <div className="h-16 flex flex-col items-center justify-center gap-1.5 px-2">
+                    {/* Fake sidebar strip */}
+                    <div className="w-4 h-8 rounded-sm opacity-60" style={{ background: p.bg }} />
+                    {/* Accent bar */}
+                    <div className="w-6 h-1 rounded-full" style={{ background: p.accent }} />
                   </div>
-                  <div className="px-2 py-2 text-center" style={{ borderTop: `1px solid ${t.accent}22` }}>
-                    <div className="text-xs font-bold" style={{ color: t.accent }}>{t.label}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{t.desc}</div>
+                  <div className="px-1.5 py-2 text-center border-t" style={{ borderColor: `${p.accent}22` }}>
+                    <div className="text-[11px] font-bold" style={{ color: p.accent }}>{p.label}</div>
+                    <div className="text-[9px] text-gray-400 leading-tight mt-0.5">{p.desc}</div>
                   </div>
                   {active && (
-                    <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{ background: t.accent }}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3">
+                    <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center"
+                      style={{ background: p.accent }}>
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     </div>
@@ -141,24 +110,35 @@ export default function SettingsClient({
               );
             })}
           </div>
+          <p className="text-xs text-gray-400 mt-3">הצבע ישתנה בסיידבר לאחר שמירה ורענון הדף</p>
+        </Section>
+
+        {/* ── Site name ── */}
+        <Section title="שם האתר" icon="✏️">
+          <input
+            type="text"
+            value={form.siteName}
+            onChange={e => update("siteName", e.target.value)}
+            placeholder="Menu4U"
+            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          <p className="text-xs text-gray-400 mt-1.5">מוצג בסיידבר לצד הלוגו</p>
         </Section>
 
         {/* ── Logo ── */}
-        <Section title="לוגו האתר" icon="🖼️">
+        <Section title="לוגו האתר הראשי" icon="🖼️">
           <div className="flex items-center gap-5">
-            {/* Preview */}
             <div
               className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center shrink-0 overflow-hidden bg-gray-50 cursor-pointer hover:border-amber-400 transition-colors"
               onClick={() => fileRef.current?.click()}
               title="לחץ להעלאת לוגו"
             >
-              {current.logo ? (
-                <img src={current.logo} alt="לוגו" className="w-full h-full object-contain" />
+              {form.logo ? (
+                <img src={form.logo} alt="לוגו" className="w-full h-full object-contain" />
               ) : (
                 <span className="text-2xl text-gray-300">🏪</span>
               )}
             </div>
-
             <div className="flex-1 space-y-2">
               <p className="text-sm text-gray-500">מומלץ: PNG/SVG שקוף, לפחות 200×200px</p>
               <div className="flex gap-2">
@@ -170,7 +150,7 @@ export default function SettingsClient({
                 >
                   {uploadingLogo ? "מעלה..." : "העלה לוגו"}
                 </button>
-                {current.logo && (
+                {form.logo && (
                   <button
                     onClick={() => update("logo", null)}
                     className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
@@ -179,9 +159,7 @@ export default function SettingsClient({
                   </button>
                 )}
               </div>
-              {current.logo && (
-                <p className="text-xs text-gray-400 truncate max-w-[260px]">{current.logo}</p>
-              )}
+              {form.logo && <p className="text-xs text-gray-400 truncate max-w-[260px]">{form.logo}</p>}
             </div>
           </div>
           <input
@@ -192,41 +170,27 @@ export default function SettingsClient({
 
         {/* ── Domain ── */}
         <Section title="דומיין ראשי" icon="🌐">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              כתובת דומיין מותאם אישית
-            </label>
-            <input
-              type="text"
-              value={current.customDomain ?? ""}
-              onChange={e => update("customDomain", e.target.value || null)}
-              placeholder="לדוגמא: menu.myrestaurant.co.il"
-              dir="ltr"
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-            <p className="text-xs text-gray-400 mt-1.5">
-              השאר ריק לשימוש בכתובת הברירת מחדל של Menu4U
-            </p>
-          </div>
+          <input
+            type="text"
+            value={form.domain ?? ""}
+            onChange={e => update("domain", e.target.value || null)}
+            placeholder="לדוגמא: app.mysite.co.il"
+            dir="ltr"
+            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          <p className="text-xs text-gray-400 mt-1.5">הדומיין הראשי של פלטפורמת Menu4U</p>
         </Section>
 
         {/* ── Copyright ── */}
         <Section title="כל הזכויות שמורות" icon="©">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              טקסט כותרת תחתית
-            </label>
-            <input
-              type="text"
-              value={current.copyright ?? ""}
-              onChange={e => update("copyright", e.target.value || null)}
-              placeholder={`© ${new Date().getFullYear()} ${current.name} · כל הזכויות שמורות`}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-            <p className="text-xs text-gray-400 mt-1.5">
-              יוצג בתחתית עמוד התפריט של הלקוחות
-            </p>
-          </div>
+          <input
+            type="text"
+            value={form.copyright ?? ""}
+            onChange={e => update("copyright", e.target.value || null)}
+            placeholder={`© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות`}
+            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          <p className="text-xs text-gray-400 mt-1.5">טקסט ברירת מחדל לכותרת תחתונה</p>
         </Section>
 
         {/* ── Save ── */}

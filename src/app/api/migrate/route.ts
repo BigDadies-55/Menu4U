@@ -127,6 +127,21 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "copyright" TEXT;
     `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "SiteConfig" (
+        "id"           TEXT NOT NULL DEFAULT 'default',
+        "siteName"     TEXT NOT NULL DEFAULT 'Menu4U',
+        "logo"         TEXT,
+        "domain"       TEXT,
+        "copyright"    TEXT,
+        "adminPalette" TEXT NOT NULL DEFAULT 'dark',
+        "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "SiteConfig_pkey" PRIMARY KEY ("id")
+      );
+    `);
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "SiteConfig" ("id", "updatedAt") VALUES ('default', NOW()) ON CONFLICT DO NOTHING;
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

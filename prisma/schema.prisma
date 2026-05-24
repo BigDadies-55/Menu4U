@@ -293,3 +293,13 @@ model TableSession {
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
+
+model SiteConfig {
+  id           String   @id @default("default")
+  siteName     String   @default("Menu4U")
+  logo         String?
+  domain       String?
+  copyright    String?
+  adminPalette String   @default("dark")
+  updatedAt    DateTime @updatedAt
+}

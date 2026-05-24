@@ -1,72 +1,31 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import SettingsClient from "./SettingsClient";
 export const dynamic = "force-dynamic";
+
+const DEFAULTS = {
+  siteName: "Menu4U", logo: null as string | null,
+  domain: null as string | null, copyright: null as string | null,
+  adminPalette: "dark",
+};
 
 export default async function SettingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (session.user.role !== "SUPER_ADMIN") redirect("/admin");
 
-  const role   = session.user.role;
-  const userId = session.user.id;
-
-  // Fetch restaurants — fallback gracefully if new columns don't exist yet
-  let restaurants: {
-    id: string; name: string; logo: string | null; menuTheme: string;
-    menuPalette: string; customDomain: string | null; copyright: string | null;
-  }[] = [];
-
+  let config = { ...DEFAULTS };
   let needsMigration = false;
 
   try {
-    const where = role === "SUPER_ADMIN"
-      ? {}
-      : {
-          id: {
-            in: (await prisma.restaurantUser.findMany({
-              where: { userId },
-              select: { restaurantId: true },
-            })).map(l => l.restaurantId),
-          },
-        };
-
-    restaurants = await prisma.restaurant.findMany({
-      where,
-      orderBy: { name: "asc" },
-      select: {
-        id: true, name: true, logo: true, menuTheme: true,
-        menuPalette: true, customDomain: true, copyright: true,
-      },
-    });
+    const rows = await prisma.$queryRaw<typeof DEFAULTS[]>`
+      SELECT * FROM "SiteConfig" WHERE id = 'default' LIMIT 1
+    `;
+    if (rows[0]) config = { ...DEFAULTS, ...rows[0] };
+    else needsMigration = true;
   } catch {
-    // New columns don't exist yet — fetch without them
     needsMigration = true;
-    try {
-      const where = role === "SUPER_ADMIN"
-        ? {}
-        : {
-            id: {
-              in: (await prisma.restaurantUser.findMany({
-                where: { userId },
-                select: { restaurantId: true },
-              })).map(l => l.restaurantId),
-            },
-          };
-
-      const rows = await prisma.restaurant.findMany({
-        where,
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, logo: true, menuTheme: true, menuPalette: true },
-      });
-      restaurants = rows.map(r => ({ ...r, customDomain: null, copyright: null }));
-    } catch {
-      restaurants = [];
-    }
-  }
-
-  if (restaurants.length === 0) {
-    return <div className="p-8 text-center text-gray-500">אין מסעדות לניהול</div>;
   }
 
   return (
@@ -75,7 +34,7 @@ export default async function SettingsPage() {
         <div className="mx-4 mt-4 md:mx-8 flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50">
           <span>⚠️</span>
           <span className="text-sm text-amber-800">
-            שדות חדשים עדיין לא נוצרו במסד הנתונים.{" "}
+            טבלת הגדרות האתר עדיין לא נוצרה.{" "}
             <a href="/api/migrate" className="font-semibold underline hover:no-underline">
               לחץ כאן להרצת המיגרציה
             </a>
@@ -83,7 +42,7 @@ export default async function SettingsPage() {
           </span>
         </div>
       )}
-      <SettingsClient restaurants={restaurants} isSuperAdmin={role === "SUPER_ADMIN"} />
+      <SettingsClient config={config} />
     </>
   );
 }

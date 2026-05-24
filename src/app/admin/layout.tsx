@@ -27,7 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   // Determine which KDS views this user can see
-  let kdsView = "ALL"; // SUPER_ADMIN sees all
+  let kdsView = "ALL";
   if (!isSuperAdmin) {
     try {
       const link = await prisma.restaurantUser.findFirst({
@@ -40,5 +40,33 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
   }
 
-  return <AdminShell user={session.user} kdsView={kdsView}>{children}</AdminShell>;
+  // Load site config (with fallback when table doesn't exist yet)
+  let adminPalette = "dark";
+  let siteLogo: string | null = null;
+  let siteName = "Menu4U";
+  try {
+    type Row = { adminPalette: string; logo: string | null; siteName: string };
+    const rows = await prisma.$queryRaw<Row[]>`
+      SELECT "adminPalette", "logo", "siteName" FROM "SiteConfig" WHERE id = 'default' LIMIT 1
+    `;
+    if (rows[0]) {
+      adminPalette = rows[0].adminPalette ?? "dark";
+      siteLogo     = rows[0].logo ?? null;
+      siteName     = rows[0].siteName ?? "Menu4U";
+    }
+  } catch {
+    // Table doesn't exist yet — use defaults
+  }
+
+  return (
+    <AdminShell
+      user={session.user}
+      kdsView={kdsView}
+      adminPalette={adminPalette}
+      siteLogo={siteLogo}
+      siteName={siteName}
+    >
+      {children}
+    </AdminShell>
+  );
 }
