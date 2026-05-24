@@ -177,41 +177,194 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
         {/* ── Sidebar palette ── */}
         <Section title="פלטת צבעים לסיידבר" icon="🎨">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {PALETTES.map(p => {
-              const active = form.adminPalette === p.id;
+          {/* Tab switcher */}
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-5 w-fit">
+            {(["presets","gradient","custom"] as SidebarTab[]).map(tab => {
+              const labels = { presets: "🎨 פריסטים", gradient: "🌈 Gradient", custom: "✨ מותאם" };
               return (
-                <button
-                  key={p.id}
-                  onClick={() => update("adminPalette", p.id)}
-                  className="relative rounded-xl overflow-hidden transition-all"
-                  style={{
-                    background: p.preview,
-                    border: `2px solid ${active ? p.accent : "transparent"}`,
-                    boxShadow: active ? `0 0 0 3px ${p.accent}33` : "none",
-                  }}
-                >
-                  <div className="h-16 flex flex-col items-center justify-center gap-1.5 px-2">
-                    <div className="w-4 h-8 rounded-sm opacity-60" style={{ background: p.bg }} />
-                    <div className="w-6 h-1 rounded-full" style={{ background: p.accent }} />
-                  </div>
-                  <div className="px-1.5 py-2 text-center border-t" style={{ borderColor: `${p.accent}22` }}>
-                    <div className="text-[11px] font-bold" style={{ color: p.accent }}>{p.label}</div>
-                    <div className="text-[9px] text-gray-400 leading-tight mt-0.5">{p.desc}</div>
-                  </div>
-                  {active && (
-                    <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center"
-                      style={{ background: p.accent }}>
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </div>
-                  )}
+                <button key={tab} onClick={() => setSidebarTab(tab)}
+                  className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  style={sidebarTab === tab
+                    ? { background: "white", color: "#1f2937", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+                    : { color: "#6b7280" }}>
+                  {labels[tab]}
                 </button>
               );
             })}
           </div>
-          <p className="text-xs text-gray-400 mt-3">הצבע ישתנה בסיידבר לאחר שמירה ורענון הדף</p>
+
+          {/* ── PRESETS tab ── */}
+          {sidebarTab === "presets" && (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {PALETTES.map(p => {
+                  const active = form.adminPalette === p.id;
+                  return (
+                    <button key={p.id}
+                      onClick={() => { update("adminPalette", p.id); update("adminSidebarBg", null); update("adminSidebarAccent", null); }}
+                      className="relative rounded-xl overflow-hidden transition-all"
+                      style={{
+                        background: p.preview,
+                        border: `2px solid ${active ? p.accent : "transparent"}`,
+                        boxShadow: active ? `0 0 0 3px ${p.accent}33` : "none",
+                      }}
+                    >
+                      <div className="h-16 flex flex-col items-center justify-center gap-1.5 px-2">
+                        <div className="w-4 h-8 rounded-sm opacity-60" style={{ background: p.bg }} />
+                        <div className="w-6 h-1 rounded-full" style={{ background: p.accent }} />
+                      </div>
+                      <div className="px-1.5 py-2 text-center border-t" style={{ borderColor: `${p.accent}22` }}>
+                        <div className="text-[11px] font-bold" style={{ color: p.accent }}>{p.label}</div>
+                        <div className="text-[9px] text-gray-400 leading-tight mt-0.5">{p.desc}</div>
+                      </div>
+                      {active && (
+                        <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: p.accent }}>
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400 mt-3">הצבע ישתנה בסיידבר לאחר שמירה ורענון הדף</p>
+            </>
+          )}
+
+          {/* ── GRADIENT tab ── */}
+          {sidebarTab === "gradient" && (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+                {SIDEBAR_GRADIENT_PRESETS.map(p => {
+                  const isActive = form.adminPalette === "custom" && form.adminSidebarBg === p.id;
+                  return (
+                    <button key={p.id} onClick={() => { update("adminPalette","custom"); update("adminSidebarBg", p.id); update("adminSidebarAccent", p.accent); }}
+                      title={p.label}
+                      className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all overflow-hidden"
+                      style={{
+                        borderColor: isActive ? "#f59e0b" : "transparent",
+                        boxShadow: isActive ? "0 0 0 3px rgba(245,158,11,0.3)" : "0 0 0 1px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      {/* Mini sidebar preview */}
+                      <div className="w-full h-14 rounded-lg flex flex-col justify-start p-1.5 gap-1" style={{ background: p.id }}>
+                        <div className="w-full h-1.5 rounded-full" style={{ background: p.accent, opacity: 0.9 }} />
+                        <div className="w-3/4 h-1 rounded-full bg-white opacity-20" />
+                        <div className="w-2/3 h-1 rounded-full bg-white opacity-20" />
+                        <div className="w-3/4 h-1 rounded-full bg-white opacity-20" />
+                      </div>
+                      <span className="text-[10px] font-semibold text-gray-600">{p.label}</span>
+                      {isActive && (
+                        <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom gradient builder for sidebar */}
+              <div className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">בנה גרדיאנט מותאם לסיידבר</div>
+                <div className="h-16 rounded-xl border border-gray-100" style={{ background: `linear-gradient(${sbAngle},${sbFrom},${sbTo})` }} />
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-500">מ:</label>
+                    <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: sbFrom }} onClick={() => document.getElementById("sb-from")?.click()} />
+                    <input id="sb-from" type="color" className="sr-only" value={sbFrom}
+                      onChange={e => { setSbFrom(e.target.value); }} />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-500">עד:</label>
+                    <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: sbTo }} onClick={() => document.getElementById("sb-to")?.click()} />
+                    <input id="sb-to" type="color" className="sr-only" value={sbTo}
+                      onChange={e => { setSbTo(e.target.value); }} />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {SIDEBAR_ANGLES.map(a => (
+                      <button key={a.value} onClick={() => setSbAngle(a.value)}
+                        className="w-7 h-7 rounded-lg text-sm font-bold border transition-all"
+                        style={sbAngle === a.value
+                          ? { background: "#f59e0b", color: "#fff", borderColor: "#f59e0b" }
+                          : { background: "white", color: "#6b7280", borderColor: "#e5e7eb" }}>
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => { update("adminPalette","custom"); update("adminSidebarBg", `linear-gradient(${sbAngle},${sbFrom},${sbTo})`); }}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
+                    style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                    החל
+                  </button>
+                </div>
+                {/* Accent color for gradient */}
+                <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
+                  <span className="text-xs text-gray-500">צבע אקסנט:</span>
+                  <div className="w-7 h-7 rounded-lg border border-gray-300 cursor-pointer" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} onClick={() => document.getElementById("sb-accent-grad")?.click()} />
+                  <input id="sb-accent-grad" type="color" className="sr-only" value={form.adminSidebarAccent ?? "#f59e0b"}
+                    onChange={e => update("adminSidebarAccent", e.target.value)} />
+                  <span className="text-xs font-mono text-gray-500">{form.adminSidebarAccent ?? "#f59e0b"}</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── CUSTOM tab ── */}
+          {sidebarTab === "custom" && (
+            <div className="space-y-4">
+              {/* Preview */}
+              <div className="w-full h-24 rounded-xl overflow-hidden flex" style={{ border: "1px solid rgba(0,0,0,0.08)" }}>
+                {/* Fake sidebar strip */}
+                <div className="w-16 h-full flex flex-col justify-start p-2 gap-1.5" style={{ background: form.adminSidebarBg ?? "#0f111a" }}>
+                  <div className="w-full h-2 rounded-full" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} />
+                  <div className="w-3/4 h-1.5 rounded-full bg-white opacity-20" />
+                  <div className="w-2/3 h-1.5 rounded-full bg-white opacity-20" />
+                  <div className="w-3/4 h-1.5 rounded-full bg-white opacity-20" />
+                </div>
+                {/* Content area */}
+                <div className="flex-1 flex items-center justify-center bg-gray-50">
+                  <span className="text-xs text-gray-400">תצוגה מקדימה</span>
+                </div>
+              </div>
+
+              {/* Sidebar BG color */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">רקע סיידבר</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl border border-gray-200 cursor-pointer shrink-0"
+                    style={{ background: form.adminSidebarBg ?? "#0f111a" }}
+                    onClick={() => document.getElementById("sb-bg-custom")?.click()} />
+                  <input id="sb-bg-custom" type="color" className="sr-only"
+                    value={form.adminSidebarBg ?? "#0f111a"}
+                    onChange={e => { update("adminPalette","custom"); update("adminSidebarBg", e.target.value); }} />
+                  <span className="text-xs font-mono text-gray-600">{form.adminSidebarBg ?? "#0f111a"}</span>
+                  <button onClick={() => document.getElementById("sb-bg-custom")?.click()}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">
+                    בחר צבע
+                  </button>
+                </div>
+              </div>
+
+              {/* Accent color */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">צבע אקסנט (פריטים פעילים)</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl border border-gray-200 cursor-pointer shrink-0"
+                    style={{ background: form.adminSidebarAccent ?? "#f59e0b" }}
+                    onClick={() => document.getElementById("sb-accent-custom")?.click()} />
+                  <input id="sb-accent-custom" type="color" className="sr-only"
+                    value={form.adminSidebarAccent ?? "#f59e0b"}
+                    onChange={e => { update("adminPalette","custom"); update("adminSidebarAccent", e.target.value); }} />
+                  <span className="text-xs font-mono text-gray-600">{form.adminSidebarAccent ?? "#f59e0b"}</span>
+                  <button onClick={() => document.getElementById("sb-accent-custom")?.click()}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">
+                    בחר צבע
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </Section>
 
         {/* ── Background ── */}
