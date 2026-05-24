@@ -60,9 +60,9 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
 
   return (
     <div
-      className="sticky top-0 z-20 flex items-center justify-between px-5"
+      className="sticky top-0 z-20 flex items-center justify-between px-4"
       style={{
-        height: 56,
+        height: 40,
         background: "#fff",
         borderBottom: "1px solid #e5e7eb",
         direction: "rtl",
@@ -83,7 +83,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
         </button>
 
         {/* Page title */}
-        <h1 className="text-[15px] font-bold text-gray-900 tracking-tight">{pageName}</h1>
+        <h1 className="text-[13px] font-semibold text-gray-800 tracking-tight">{pageName}</h1>
       </div>
 
       {/* Left side: avatar + dropdown */}
@@ -92,16 +92,16 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
         <button
           onClick={() => setOpen(v => !v)}
           title={`${displayName} · ${ROLE_LABELS[user.role]}`}
-          className="relative flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-gray-50 transition-colors group"
+          className="relative flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-gray-50 transition-colors group"
         >
           {/* Name (hidden on small screens) */}
-          <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-[140px] truncate">
+          <span className="hidden sm:block text-xs font-medium text-gray-600 max-w-[130px] truncate">
             {displayName}
           </span>
 
           {/* Avatar circle */}
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ring-2 ring-white"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
             style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
           >
             {initials}
