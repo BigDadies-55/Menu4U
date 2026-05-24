@@ -33,6 +33,7 @@ const TYPE_ICON: Record<string, string> = {
   restaurant: "🍽️",
   menu:       "📋",
   item:       "🍕",
+  order:      "🧾",
   user:       "👤",
 };
 
@@ -110,10 +111,8 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
       className="sticky top-0 z-20 flex items-center justify-between px-4 gap-3"
       style={{
         height: 40,
-        background: "rgba(255,255,255,0.7)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        borderBottom: "1px solid rgba(229,231,235,0.6)",
+        background: "transparent",
+        borderBottom: "1px solid #e5e7eb",
         direction: "rtl",
       }}
     >

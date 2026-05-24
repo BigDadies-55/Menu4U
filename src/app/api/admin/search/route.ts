@@ -23,26 +23,30 @@ export async function GET(req: Request) {
     allowedIds = links.map(l => l.restaurantId);
   }
 
-  const restaurantWhere = allowedIds
-    ? { id: { in: allowedIds }, name: { contains: q, mode: "insensitive" as const } }
-    : { name: { contains: q, mode: "insensitive" as const } };
+  const restaurantFilter = allowedIds ? { restaurantId: { in: allowedIds } } : {};
 
-  const [restaurants, menus, items, users] = await Promise.all([
+  // Check if query looks like a table number or order ID fragment
+  const isNumeric = /^\d+$/.test(q);
+
+  const [restaurants, menus, items, orders, users] = await Promise.all([
     // Restaurants
     prisma.restaurant.findMany({
-      where: restaurantWhere,
+      where: {
+        ...(allowedIds ? { id: { in: allowedIds } } : {}),
+        name: { contains: q, mode: "insensitive" },
+      },
       select: { id: true, name: true },
-      take: 4,
+      take: 3,
     }),
 
     // Menus
     prisma.menu.findMany({
       where: {
         name: { contains: q, mode: "insensitive" },
-        ...(allowedIds ? { restaurantId: { in: allowedIds } } : {}),
+        ...restaurantFilter,
       },
       select: { id: true, name: true, restaurant: { select: { id: true, name: true } } },
-      take: 4,
+      take: 3,
     }),
 
     // Items
@@ -55,7 +59,31 @@ export async function GET(req: Request) {
         id: true, name: true,
         category: { select: { menu: { select: { restaurant: { select: { id: true, name: true } } } } } },
       },
-      take: 5,
+      take: 4,
+    }),
+
+    // Orders — search by table number, customer name, or order ID prefix
+    prisma.order.findMany({
+      where: {
+        ...restaurantFilter,
+        OR: [
+          ...(isNumeric ? [{ tableNumber: { contains: q } }] : []),
+          { customerName: { contains: q, mode: "insensitive" as const } },
+          { notes: { contains: q, mode: "insensitive" as const } },
+          { id: { startsWith: q } },
+        ],
+      },
+      select: {
+        id: true,
+        tableNumber: true,
+        customerName: true,
+        status: true,
+        totalAmount: true,
+        createdAt: true,
+        restaurant: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 4,
     }),
 
     // Users — only for admins
@@ -73,13 +101,20 @@ export async function GET(req: Request) {
       : Promise.resolve([]),
   ]);
 
+  const STATUS_HE: Record<string, string> = {
+    PENDING: "ממתין", CONFIRMED: "אושר", PREPARING: "בהכנה",
+    READY: "מוכן", DELIVERED: "הושלם", CANCELLED: "בוטל", PAID: "שולם",
+  };
+
   type Result = { type: string; id: string; label: string; sub: string; href: string };
   const results: Result[] = [
     ...restaurants.map(r => ({
-      type: "restaurant", id: r.id, label: r.name, sub: "מסעדה", href: "/admin/restaurants",
+      type: "restaurant", id: r.id, label: r.name, sub: "מסעדה",
+      href: "/admin/restaurants",
     })),
     ...menus.map(m => ({
-      type: "menu", id: m.id, label: m.name, sub: `תפריט · ${m.restaurant.name}`,
+      type: "menu", id: m.id, label: m.name,
+      sub: `תפריט · ${m.restaurant.name}`,
       href: `/admin/menus?restaurantId=${m.restaurant.id}`,
     })),
     ...items.map(i => ({
@@ -87,8 +122,17 @@ export async function GET(req: Request) {
       sub: `פריט · ${i.category.menu.restaurant.name}`,
       href: `/admin/menus?restaurantId=${i.category.menu.restaurant.id}`,
     })),
+    ...orders.map(o => ({
+      type: "order", id: o.id,
+      label: o.customerName
+        ? `${o.customerName}${o.tableNumber ? ` · שולחן ${o.tableNumber}` : ""}`
+        : o.tableNumber ? `שולחן ${o.tableNumber}` : `הזמנה`,
+      sub: `הזמנה · ${STATUS_HE[o.status] ?? o.status} · ₪${o.totalAmount.toFixed(0)} · ${o.restaurant.name}`,
+      href: "/admin/orders",
+    })),
     ...(users as { id: string; name: string | null; email: string }[]).map(u => ({
-      type: "user", id: u.id, label: u.name ?? u.email, sub: `משתמש · ${u.email}`,
+      type: "user", id: u.id, label: u.name ?? u.email,
+      sub: `משתמש · ${u.email}`,
       href: "/admin/users",
     })),
   ];
