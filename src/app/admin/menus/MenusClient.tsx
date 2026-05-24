@@ -31,11 +31,16 @@ const emptyCategoryForm = { name: "", description: "", image: "" };
 type ModOption = { id?: string; label: string; priceAdd: number; order: number };
 type ModGroup  = { id?: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[] };
 
-function ModifierGroupsEditor({ itemId }: { itemId: string }) {
+type TemplatePick = { id: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[]; item: { id: string; name: string } };
+
+function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restaurantId: string }) {
   const [groups, setGroups] = useState<ModGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [templates, setTemplates] = useState<TemplatePick[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/items/${itemId}/modifiers`)
@@ -43,6 +48,35 @@ function ModifierGroupsEditor({ itemId }: { itemId: string }) {
       .then(data => { setGroups(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, [itemId]);
+
+  async function openTemplates() {
+    setShowTemplates(true);
+    if (templates.length > 0) return;
+    setTemplatesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/restaurants/${restaurantId}/modifier-templates`);
+      const data: TemplatePick[] = await res.json();
+      // Exclude groups that belong to this item
+      setTemplates(data.filter(t => t.item.id !== itemId));
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }
+
+  function copyTemplate(t: TemplatePick) {
+    // Don't copy if a group with same name already exists
+    setGroups(g => {
+      if (g.some(grp => grp.name === t.name)) return g;
+      return [...g, {
+        name: t.name,
+        required: t.required,
+        maxSelect: t.maxSelect,
+        order: g.length,
+        options: t.options.map((o, i) => ({ label: o.label, priceAdd: o.priceAdd, order: i })),
+      }];
+    });
+    setShowTemplates(false);
+  }
 
   function addGroup() {
     setGroups(g => [...g, { name: "", required: false, maxSelect: 1, order: g.length, options: [] }]);
@@ -136,9 +170,40 @@ function ModifierGroupsEditor({ itemId }: { itemId: string }) {
           <button type="button" onClick={() => addOption(gi)} className="text-xs text-amber-700 hover:text-amber-900 font-medium">+ הוסף אפשרות</button>
         </div>
       ))}
-      <div className="flex gap-2">
+      {/* Template picker */}
+      {showTemplates && (
+        <div className="border border-amber-200 rounded-xl bg-amber-50 p-3 space-y-1.5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold text-amber-800">בחר קבוצה להעתיק</span>
+            <button type="button" onClick={() => setShowTemplates(false)} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+          </div>
+          {templatesLoading && <div className="text-xs text-gray-400 py-1">טוען...</div>}
+          {!templatesLoading && templates.length === 0 && (
+            <div className="text-xs text-gray-500 py-1">אין קבוצות מוגדרות בפריטים אחרים</div>
+          )}
+          {!templatesLoading && templates.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => copyTemplate(t)}
+              className="w-full text-right px-3 py-1.5 rounded-lg bg-white border border-amber-100 hover:border-amber-300 hover:bg-amber-50 transition-colors flex items-center justify-between gap-2"
+            >
+              <span className="text-sm font-medium text-gray-800">{t.name}</span>
+              <span className="text-xs text-gray-400 shrink-0">
+                {t.options.map(o => o.label).join(" / ")}
+                {" · "}מתוך: {t.item.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2 flex-wrap">
         <button type="button" onClick={addGroup} className="text-sm text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-xl px-3 py-1.5">
           + קבוצת אפשרויות
+        </button>
+        <button type="button" onClick={openTemplates} className="text-sm text-blue-700 hover:text-blue-900 font-medium border border-blue-200 bg-blue-50 rounded-xl px-3 py-1.5">
+          📋 העתק מתבנית
         </button>
         {groups.length > 0 && (
           <button type="button" onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
@@ -391,6 +456,10 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             c.id === selectedCategory.id ? { ...c, items: [...c.items, newItem] } : c
           ),
         }));
+        // Stay in edit mode so user can add modifier groups
+        setEditItem(newItem);
+        setLoading(false);
+        return;
       }
     }
 
@@ -687,10 +756,10 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 </div>
               </div>
 
-              {editItem && (
+              {editItem && selectedRestaurant && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">תגיות / אפשרויות</label>
-                  <ModifierGroupsEditor itemId={editItem.id} />
+                  <ModifierGroupsEditor itemId={editItem.id} restaurantId={selectedRestaurant.id} />
                 </div>
               )}
 
