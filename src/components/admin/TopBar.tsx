@@ -72,25 +72,18 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar }: 
     >
       {/* Right side: hamburger (mobile) + page title */}
       <div className="flex items-center gap-3">
-        {/* Mobile hamburger */}
+        {/* Hamburger (mirrored) — opens sidebar drawer */}
         <button
-          className="md:hidden text-gray-500 hover:text-gray-800 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          className="text-gray-500 hover:text-gray-800 p-1 rounded-lg hover:bg-gray-100 transition-colors"
           onClick={onOpenMobileSidebar}
+          style={{ transform: "scaleX(-1)" }}
         >
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
             <line x1="3" y1="6" x2="21" y2="6"/>
             <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="18" x2="15" y2="18"/>
           </svg>
         </button>
-
-        {/* Logo mark */}
-        <div
-          className="w-6 h-6 rounded-md flex items-center justify-center font-black text-[11px] text-white shrink-0"
-          style={{ background: "linear-gradient(135deg,#c9a35d,#8B6914)" }}
-        >
-          M
-        </div>
 
         {/* Page title */}
         <h1 className="text-[13px] font-semibold text-gray-800 tracking-tight">{pageName}</h1>
