@@ -101,6 +101,7 @@ const sqls = [
   "label" TEXT NOT NULL,
   "priceAdd" DOUBLE PRECISION NOT NULL DEFAULT 0
 )`,
+  `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedAt" TIMESTAMP(3);`,
 ];
 
 async function run() {
