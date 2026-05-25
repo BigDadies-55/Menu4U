@@ -1219,19 +1219,19 @@ export default function MenuPublicClient({
             {myOrders.length > 0 && !billMode && (
               <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
                 <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.5, textAlign: "center", marginBottom: 8 }}>
-                  בקש חשבון
+                  {t.requestBill}
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => setBillMode("mine")} style={{
                     flex: 1, padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 600,
                     border: "1.5px solid var(--gold)", background: "transparent",
                     color: "var(--gold)", cursor: "pointer",
-                  }}>💳 שלי בלבד</button>
+                  }}>💳 {t.myBill}</button>
                   <button onClick={() => { setOrdersView("all"); fetchMyOrders(false, "all"); setBillMode("all"); }} style={{
                     flex: 1, padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 600,
                     border: "1.5px solid var(--border)", background: "rgba(255,255,255,0.05)",
                     color: "var(--text)", cursor: "pointer",
-                  }}>🧾 כל השולחן</button>
+                  }}>🧾 {t.allBill}</button>
                 </div>
               </div>
             )}
@@ -1241,7 +1241,7 @@ export default function MenuPublicClient({
               <div style={{ borderTop: "1px solid var(--border)", padding: "16px", flexShrink: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 15 }}>
-                    🧾 {billMode === "mine" ? "החשבון שלי" : "חשבון השולחן"}
+                    🧾 {billMode === "mine" ? t.myBill : t.allBill}
                   </span>
                   <button onClick={() => setBillMode(null)} style={{ background: "none", border: "none", color: "var(--text)", cursor: "pointer", opacity: 0.6 }}>✕</button>
                 </div>
@@ -1290,11 +1290,11 @@ export default function MenuPublicClient({
               textAlign: "center",
             }}
           >
-            ההזמנה התקבלה!
+            {t.orderSent}
           </div>
           {tableNumber && (
             <div style={{ color: "var(--text)", fontSize: 18, opacity: 0.8 }}>
-              שולחן {tableNumber}
+              {t.tableLabel} {tableNumber}
             </div>
           )}
           <button
@@ -1311,7 +1311,7 @@ export default function MenuPublicClient({
               cursor: "pointer",
             }}
           >
-            סגור
+            {t.close}
           </button>
         </div>
       )}
@@ -1336,7 +1336,7 @@ export default function MenuPublicClient({
             )}
             <div className="menu-modal-body">
               <div className="menu-modal-types">
-                {getItemBadges(modalItem).map(b => <span key={b} className="menu-modal-type-tag">{b}</span>)}
+                {getItemBadges(modalItem, t).map(b => <span key={b} className="menu-modal-type-tag">{b}</span>)}
               </div>
               <h2 className="menu-modal-name">{modalItem.name}</h2>
               <div className="menu-modal-divider"><span>◆</span></div>
@@ -1363,7 +1363,7 @@ export default function MenuPublicClient({
                     cursor: "pointer",
                   }}
                 >
-                  הוסף לסל
+                  {t.addToCart}
                 </button>
               )}
             </div>
