@@ -302,7 +302,7 @@ function BillModal({
 
   return (
     <div style={{
-      position: "fixed", inset: 0, zIndex: 60,
+      position: "fixed", inset: 0, zIndex: 200,
       background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 16, direction: "rtl",
@@ -627,11 +627,14 @@ export default function CashierClient({
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  const orderTableKey = (o: Order) =>
+    (o.tableNumber && o.tableNumber.trim() !== "") ? o.tableNumber : "–";
+
   async function closeTable(tableNumber: string) {
-    const tableOrders = orders.filter(o => (o.tableNumber ?? "–") === tableNumber);
+    const tableOrders = orders.filter(o => orderTableKey(o) === tableNumber);
     const rid = tableOrders[0]?.restaurant?.id || restaurantId || restaurants[0]?.id;
     setSelectedTable(null);
-    setOrders(prev => prev.filter(o => (o.tableNumber ?? "–") !== tableNumber));
+    setOrders(prev => prev.filter(o => orderTableKey(o) !== tableNumber));
     try {
       await fetch("/api/admin/orders/close-table", {
         method: "POST",
@@ -661,8 +664,11 @@ export default function CashierClient({
     })
     .sort((a, b) => b.ageMin - a.ageMin); // longest waiting first
 
+  const tableKey = (o: Order) =>
+    (o.tableNumber && o.tableNumber.trim() !== "") ? o.tableNumber : "–";
+
   const selectedOrders = selectedTable
-    ? orders.filter(o => (o.tableNumber ?? "–") === selectedTable)
+    ? orders.filter(o => tableKey(o) === selectedTable)
     : [];
 
   return (
