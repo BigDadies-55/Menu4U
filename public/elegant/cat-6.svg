@@ -1,11 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
   <defs>
-    <radialGradient id="g" cx="50%" cy="50%" r="70%">
-      <stop offset="0%" stop-color="#1a1000"/>
-      <stop offset="60%" stop-color="#0d0800"/>
-      <stop offset="100%" stop-color="#040300"/>
+    <radialGradient id="g" cx="73%" cy="47%" r="63%">
+      <stop offset="0%" stop-color="#B09020"/>
+      <stop offset="42%" stop-color="#705800"/>
+      <stop offset="100%" stop-color="#1A1400"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="66%" cy="32%" r="40%">
+      <stop offset="0%" stop-color="#D4B83044"/>
+      <stop offset="100%" stop-color="#00000000"/>
     </radialGradient>
   </defs>
   <rect width="800" height="400" fill="url(#g)"/>
-  <text x="400" y="220" font-family="serif" font-size="72" fill="#c5a88022" text-anchor="middle">🍣</text>
+  <rect width="800" height="400" fill="url(#g2)"/>
+  <circle cx="610" cy="190" r="150" fill="rgba(200,170,50,0.07)"/>
+  <ellipse cx="700" cy="310" rx="90" ry="55" fill="rgba(220,190,70,0.06)"/>
 </svg>

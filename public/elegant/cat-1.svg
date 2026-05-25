@@ -1,16 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
   <defs>
-    <radialGradient id="g" cx="70%" cy="40%" r="70%">
-      <stop offset="0%" stop-color="#3d2000"/>
-      <stop offset="50%" stop-color="#1a0f00"/>
-      <stop offset="100%" stop-color="#080400"/>
+    <radialGradient id="g" cx="75%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#C87820"/>
+      <stop offset="40%" stop-color="#8B4A08"/>
+      <stop offset="100%" stop-color="#1C0A00"/>
     </radialGradient>
-    <radialGradient id="g2" cx="20%" cy="80%" r="50%">
-      <stop offset="0%" stop-color="#c5a88022"/>
+    <radialGradient id="g2" cx="65%" cy="30%" r="40%">
+      <stop offset="0%" stop-color="#E8A04066"/>
       <stop offset="100%" stop-color="#00000000"/>
     </radialGradient>
   </defs>
   <rect width="800" height="400" fill="url(#g)"/>
   <rect width="800" height="400" fill="url(#g2)"/>
-  <text x="400" y="220" font-family="serif" font-size="72" fill="#c5a88033" text-anchor="middle">🍽</text>
+  <circle cx="580" cy="180" r="140" fill="rgba(210,140,40,0.08)"/>
+  <circle cx="650" cy="240" r="90" fill="rgba(180,100,20,0.10)"/>
 </svg>

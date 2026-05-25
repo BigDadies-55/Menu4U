@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
   <defs>
     <radialGradient id="g" cx="50%" cy="40%" r="70%">
-      <stop offset="0%" stop-color="#2a1800"/>
-      <stop offset="100%" stop-color="#0a0500"/>
+      <stop offset="0%" stop-color="#A03020"/>
+      <stop offset="60%" stop-color="#601008"/>
+      <stop offset="100%" stop-color="#180000"/>
     </radialGradient>
   </defs>
   <rect width="200" height="200" fill="url(#g)"/>
-  <text x="100" y="115" font-size="48" text-anchor="middle" fill="#c5a88044">çΩ</text>
+  <circle cx="100" cy="90" r="60" fill="rgba(200,60,40,0.12)"/>
 </svg>

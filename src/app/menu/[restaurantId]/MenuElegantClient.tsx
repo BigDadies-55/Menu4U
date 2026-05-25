@@ -1,13 +1,28 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Cinzel, Rubik } from "next/font/google";
 import { buildPaletteStyle } from "@/lib/menuPalettes";
 import { getT, getItemName, getItemDesc, getCatName, type Translations, type Lang } from "@/lib/translations";
+
+// ── Fonts loaded at build time via next/font/google (no CDN, no flash) ───────
+const cinzelFont = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "600", "900"],
+  variable: "--font-cinzel",
+  display: "swap",
+});
+const rubikFont = Rubik({
+  subsets: ["latin", "hebrew"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-rubik",
+  display: "swap",
+});
 
 // ── Local fallback images (stored in /public/elegant/) ──────────────────────
 const CAT_FALLBACKS  = ["/elegant/cat-1.svg","/elegant/cat-2.svg","/elegant/cat-3.svg","/elegant/cat-4.svg","/elegant/cat-5.svg","/elegant/cat-6.svg"];
 const ITEM_FALLBACKS = ["/elegant/item-1.svg","/elegant/item-2.svg","/elegant/item-3.svg","/elegant/item-4.svg","/elegant/item-5.svg","/elegant/item-6.svg","/elegant/item-7.svg","/elegant/item-8.svg"];
-const HERO_FALLBACK  = "/elegant/cat-2.svg";
+const HERO_FALLBACK  = "/elegant/cat-1.svg";
 
 function catFallback(idx: number)  { return CAT_FALLBACKS[idx % CAT_FALLBACKS.length]; }
 function itemFallback(idx: number) { return ITEM_FALLBACKS[idx % ITEM_FALLBACKS.length]; }
@@ -277,16 +292,7 @@ export default function MenuElegantClient({
   // Language state
   const [lang, setLang] = useState<Lang>((restaurant.language as Lang) ?? "he");
 
-  // Load elegant fonts
-  useEffect(() => {
-    if (!document.getElementById("elegant-fonts")) {
-      const link = document.createElement("link");
-      link.id = "elegant-fonts";
-      link.rel = "stylesheet";
-      link.href = "https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&family=Cinzel:wght@400;600;900&display=swap";
-      document.head.appendChild(link);
-    }
-  }, []);
+  // Fonts loaded via next/font/google module-level declarations above
 
   // On mount: check if already registered; if not — auto-open modal on first ever visit
   useEffect(() => {
@@ -602,11 +608,14 @@ export default function MenuElegantClient({
   }
 
   return (
-    <div style={{
-      minHeight: "100vh", background: "#0D0D0D", color: "#fff",
-      fontFamily: "'Rubik', sans-serif", direction: t.dir,
-      overflowX: "hidden",
-    }}>
+    <div
+      className={`${cinzelFont.variable} ${rubikFont.variable}`}
+      style={{
+        minHeight: "100vh", background: "#0D0D0D", color: "#fff",
+        fontFamily: "var(--font-rubik, 'Rubik', sans-serif)", direction: t.dir,
+        overflowX: "hidden",
+      }}
+    >
 
       {/* ── Sticky Header (hidden on landing view) ── */}
       {elegantView !== "landing" && (
@@ -628,7 +637,7 @@ export default function MenuElegantClient({
           </button>
 
           {/* Restaurant name */}
-          <span style={{ fontFamily: "'Cinzel', serif", fontSize: 18, letterSpacing: 3, color: "#C5A880" }}>
+          <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 18, letterSpacing: 3, color: "#C5A880" }}>
             {restaurant.name}
           </span>
 
@@ -663,11 +672,11 @@ export default function MenuElegantClient({
               display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
               {restaurant.logo
                 ? <img src={restaurant.logo} alt={restaurant.name} style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
-                : <span style={{ fontFamily: "'Cinzel',serif", fontSize: 28, color: "#C5A880" }}>{restaurant.name[0]}</span>
+                : <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 28, color: "#C5A880" }}>{restaurant.name[0]}</span>
               }
             </div>
 
-            <h1 style={{ fontFamily: "'Cinzel',serif", fontSize: "clamp(32px,8vw,64px)", letterSpacing: 6, marginBottom: 8, color: "#fff" }}>
+            <h1 style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: "clamp(32px,8vw,64px)", letterSpacing: 6, marginBottom: 8, color: "#fff" }}>
               {restaurant.name}
             </h1>
             <p style={{ color: "#C5A880", fontWeight: 300, letterSpacing: "0.2em", fontSize: 11, textTransform: "uppercase", marginBottom: 32 }}>
@@ -760,7 +769,7 @@ export default function MenuElegantClient({
                 {/* Category background */}
                 <div style={{
                   position: "absolute", inset: 0,
-                  backgroundImage: `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.92) 35%, rgba(13,13,13,0.25) 100%), url('${cat.image || catFallback(catIdx)}')`,
+                  backgroundImage: `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.95) 40%, rgba(13,13,13,0.3) 100%), url('${cat.image || catFallback(catIdx)}')`,
                   backgroundSize: "cover", backgroundPosition: "center",
                   transition: "transform 300ms",
                 }} />
@@ -1415,7 +1424,7 @@ export default function MenuElegantClient({
                     }}
                   >
                     <span>{t.addToCart}</span>
-                    <span style={{ fontFamily: "'Cinzel', serif", fontSize: 17, fontWeight: 600, letterSpacing: "0.02em" }}>₪{totalPrice}</span>
+                    <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 17, fontWeight: 600, letterSpacing: "0.02em" }}>₪{totalPrice}</span>
                   </button>
                 );
               })()}
