@@ -19,10 +19,26 @@ const rubikFont = Rubik({
   display: "swap",
 });
 
-// ── Local fallback images (stored in /public/elegant/) ──────────────────────
-const CAT_FALLBACKS  = ["/elegant/cat-1.svg","/elegant/cat-2.svg","/elegant/cat-3.svg","/elegant/cat-4.svg","/elegant/cat-5.svg","/elegant/cat-6.svg"];
-const ITEM_FALLBACKS = ["/elegant/item-1.svg","/elegant/item-2.svg","/elegant/item-3.svg","/elegant/item-4.svg","/elegant/item-5.svg","/elegant/item-6.svg","/elegant/item-7.svg","/elegant/item-8.svg"];
-const HERO_FALLBACK  = "/elegant/cat-1.svg";
+// ── Fallback food images (Unsplash, loaded by the user's browser at runtime) ─
+const CAT_FALLBACKS = [
+  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",  // salad / starters
+  "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80",  // steak / mains
+  "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80",  // dessert
+  "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80",// drinks / wine
+  "https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=600&q=80",// caprese / light
+  "https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&w=600&q=80", // bruschetta
+];
+const ITEM_FALLBACKS = [
+  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=70",
+  "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=200&q=70",
+  "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=200&q=70",
+  "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=200&q=70",
+  "https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=200&q=70",
+  "https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&w=200&q=70",
+  "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=200&q=70", // salmon
+  "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=200&q=70",   // pasta
+];
+const HERO_FALLBACK = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80";
 
 function catFallback(idx: number)  { return CAT_FALLBACKS[idx % CAT_FALLBACKS.length]; }
 function itemFallback(idx: number) { return ITEM_FALLBACKS[idx % ITEM_FALLBACKS.length]; }
