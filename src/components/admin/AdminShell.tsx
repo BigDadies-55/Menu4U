@@ -4,8 +4,7 @@ import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import type { Role } from "@/generated/prisma/client";
 
-const SIDEBAR_COLLAPSED = 8;     // px — thin strip only
-const SIDEBAR_PINNED    = 256;   // px — full expanded width
+const SIDEBAR_PINNED = 256;   // always expanded
 
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
@@ -102,8 +101,7 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
       <main
         className="overflow-auto flex flex-col min-h-screen"
         style={{
-          marginRight: (pinned || sidebarOpen) ? SIDEBAR_PINNED : SIDEBAR_COLLAPSED,
-          transition: "margin-right 230ms cubic-bezier(0.4,0,0.2,1)",
+          marginRight: SIDEBAR_PINNED,
           color: adminContentTextColor,
         }}
       >
