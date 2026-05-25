@@ -7,7 +7,7 @@ type Modifier = { groupName: string; label: string; priceAdd: number };
 type OrderItem = {
   id: string; quantity: number; notes: string | null;
   itemStatus: string;
-  item: { name: string; prepTime: number | null };
+  item: { name: string; prepTime: number | null; category?: { name: string } };
   modifiers?: Modifier[];
 };
 type Order = {
@@ -32,43 +32,54 @@ function timerColor(mins: number) {
 
 /* ── Status config ── */
 const STATUS_DOT: Record<string, string> = {
-  PENDING:   "#f59e0b",
   PREPARING: "#38bdf8",
   DONE:      "#22c55e",
   CANCELLED: "#4b5563",
 };
 const STATUS_LABEL: Record<string, string> = {
-  PENDING:   "ממתין",
   PREPARING: "בהכנה",
   DONE:      "מוכן ✓",
   CANCELLED: "בוטל",
 };
 const NEXT_LABEL: Record<string, string> = {
-  PENDING:   "התחל →",
   PREPARING: "הוכן ✓",
 };
 
+const LS_STATION = "menu4u_kds_station_kitchen";
+
 /* ── Table card ── */
 function TableCard({
-  tableNumber, orders, canUpdate, tick,
-  onConfirm, onAdvance, onGoBack,
+  tableNumber, orders, canUpdate, tick, stationFilter,
+  onAdvance, onGoBack,
 }: {
-  tableNumber: string; orders: Order[]; canUpdate: boolean; tick: number;
-  onConfirm: (id: string) => void;
+  tableNumber: string; orders: Order[]; canUpdate: boolean; tick: number; stationFilter: string;
   onAdvance: (orderId: string, itemId: string) => void;
   onGoBack:  (orderId: string, itemId: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
 
   const active = orders.filter(o => o.status !== "CANCELLED");
-  const allItems = active.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED"));
+
+  // Apply station filter to items
+  function itemMatchesStation(item: OrderItem) {
+    if (!stationFilter) return true;
+    const f = stationFilter.toLowerCase();
+    const cat = item.item.category?.name?.toLowerCase() ?? "";
+    const nm  = item.item.name.toLowerCase();
+    return cat.includes(f) || nm.includes(f);
+  }
+
+  const allItems = active.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED" && itemMatchesStation(i)));
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
   const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
   const oldest = orders.reduce((a, b) => new Date(a.createdAt) < new Date(b.createdAt) ? a : b);
   const mins = elapsed(oldest.createdAt);
   const isUrgent = mins > 20 && doneCount < totalCount;
-  const totalAmt = active.reduce((s, o) => s + o.totalAmount, 0);
+  const allDone = totalCount > 0 && doneCount === totalCount;
+
+  // Skip card if station filter matches nothing
+  if (stationFilter && allItems.length === 0) return null;
 
   async function adv(orderId: string, itemId: string) {
     setBusy(p => new Set(p).add(itemId));
@@ -85,25 +96,27 @@ function TableCard({
 
   return (
     <div style={{
-      background: "#0f172a",
-      border: `2px solid ${isUrgent ? "#ef4444" : "#1e3a5f"}`,
+      background: allDone ? "#030f03" : "#0f172a",
+      border: `2px solid ${allDone ? "#16a34a" : isUrgent ? "#ef4444" : "#1e3a5f"}`,
       borderRadius: 20,
       display: "flex", flexDirection: "column",
       overflow: "hidden",
-      boxShadow: isUrgent
+      boxShadow: allDone
+        ? "0 0 0 3px #22c55e30, 0 8px 32px rgba(0,0,0,0.6)"
+        : isUrgent
         ? "0 0 0 3px #ef444430, 0 8px 32px rgba(0,0,0,0.6)"
         : "0 4px 24px rgba(0,0,0,0.5)",
     }}>
       {/* ── Header ── */}
       <div style={{
-        background: "#1e293b",
+        background: allDone ? "#052e16" : "#1e293b",
         padding: "14px 24px 12px",
-        borderBottom: "1px solid #1e3a5f",
+        borderBottom: `1px solid ${allDone ? "#166534" : "#1e3a5f"}`,
         display: "flex", alignItems: "center", gap: 16,
       }}>
         {/* Table number badge */}
         <div style={{
-          background: isUrgent ? "#ef4444" : "#facc15",
+          background: allDone ? "#22c55e" : isUrgent ? "#ef4444" : "#facc15",
           color: "#000",
           borderRadius: 12,
           minWidth: 64, height: 64,
@@ -116,9 +129,11 @@ function TableCard({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-            <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 15 }}>שולחן {tableNumber}</span>
+            <span style={{ color: allDone ? "#86efac" : "#f1f5f9", fontWeight: 700, fontSize: 15 }}>
+              שולחן {tableNumber}
+            </span>
             <span style={{
-              color: tColor, fontWeight: 800, fontSize: 17,
+              color: allDone ? "#22c55e" : tColor, fontWeight: 800, fontSize: 17,
               animation: isUrgent ? "pulse 1s infinite" : undefined,
             }}>
               ⏱ {fmtElapsed(mins)}
@@ -140,54 +155,50 @@ function TableCard({
           </div>
         </div>
 
-        <div style={{ textAlign: "left", flexShrink: 0 }}>
-          <div style={{ color: "#facc15", fontWeight: 800, fontSize: 18 }}>₪{totalAmt.toFixed(0)}</div>
-        </div>
+        {/* All done badge */}
+        {allDone && (
+          <div style={{
+            background: "#22c55e", color: "#000",
+            borderRadius: 10, padding: "6px 14px",
+            fontWeight: 900, fontSize: 13, flexShrink: 0,
+          }}>✓ מוכן!</div>
+        )}
       </div>
 
       {/* ── Orders ── */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {active.map((order, oidx) => {
-          const isPending   = order.status === "PENDING";
           const isDelivered = order.status === "DELIVERED";
 
           return (
             <div key={order.id}>
               {/* Order sub-header */}
-              {(active.length > 1 || order.notes || isPending) && (
+              {(active.length > 1 || order.notes) && (
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "6px 20px",
-                  background: isPending ? "#292008" : isDelivered ? "#052e16" : "#111827",
+                  background: isDelivered ? "#052e16" : "#111827",
                   borderBottom: "1px solid #1e293b",
                 }}>
                   <span style={{
                     fontSize: 11, fontWeight: 700,
-                    color: isPending ? "#fbbf24" : isDelivered ? "#4ade80" : "#64748b",
+                    color: isDelivered ? "#4ade80" : "#64748b",
                   }}>
-                    {isPending ? "🕐 ממתין לאישור" : isDelivered ? "✅ הושלם" : `הזמנה ${oidx + 1}`}
+                    {isDelivered ? "✅ הושלם" : `הזמנה ${oidx + 1}`}
                     {order.notes ? ` · 💬 ${order.notes}` : ""}
                   </span>
-                  {canUpdate && isPending && (
-                    <button
-                      onClick={() => onConfirm(order.id)}
-                      style={{
-                        background: "#facc15", color: "#000",
-                        border: "none", borderRadius: 8,
-                        padding: "6px 14px", fontWeight: 900, fontSize: 12,
-                        cursor: "pointer",
-                      }}
-                    >✓ אשר</button>
-                  )}
                 </div>
               )}
 
               {/* Items */}
               {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers }) => {
+                // Apply station filter
+                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers })) return null;
+
                 const dot       = STATUS_DOT[itemStatus]   ?? "#64748b";
                 const isDone    = itemStatus === "DONE" || isDelivered;
                 const isCancelled = itemStatus === "CANCELLED";
-                const nextLabel = !isPending && !isDelivered && !isCancelled ? NEXT_LABEL[itemStatus] : undefined;
+                const nextLabel = !isDelivered && !isCancelled ? NEXT_LABEL[itemStatus] : undefined;
                 const busyAdv   = busy.has(iid);
                 const busyBack  = busy.has(iid + "-b");
 
@@ -201,7 +212,7 @@ function TableCard({
                         ? "#052e16"
                         : isCancelled ? "#1a0000" : "transparent",
                       borderBottom: "1px solid #1e293b",
-                      opacity: isCancelled ? 0.5 : isPending ? 0.65 : 1,
+                      opacity: isCancelled ? 0.5 : 1,
                     }}
                   >
                     {/* Status dot */}
@@ -230,6 +241,17 @@ function TableCard({
                       }}>
                         {item.name}
                       </div>
+                      {/* Category tag */}
+                      {item.category?.name && (
+                        <div style={{
+                          display: "inline-block",
+                          color: "#475569", fontSize: 10, fontWeight: 600,
+                          marginTop: 2,
+                        }}>
+                          {item.category.name}
+                        </div>
+                      )}
+                      {/* Modifiers — no prices */}
                       {modifiers && modifiers.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 3 }}>
                           {modifiers.map((m, i) => (
@@ -237,7 +259,7 @@ function TableCard({
                               background: "#1e3a2e", color: "#4ade80",
                               fontSize: 11, padding: "1px 6px", borderRadius: 20,
                             }}>
-                              {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
+                              {m.label}
                             </span>
                           ))}
                         </div>
@@ -249,7 +271,7 @@ function TableCard({
                       )}
                     </div>
 
-                    {/* Status label (no button when done) */}
+                    {/* Status label */}
                     {!isDelivered && !isCancelled && (
                       <span style={{
                         background: dot + "25", color: dot,
@@ -266,7 +288,7 @@ function TableCard({
                     {canUpdate && !isDelivered && !isCancelled && (itemStatus === "PREPARING" || itemStatus === "DONE") && (
                       <button
                         onClick={() => back(order.id, iid)}
-                        disabled={busyBack}
+                        disabled={busy.has(iid + "-b")}
                         style={{
                           background: "#1e293b", color: "#64748b",
                           border: "1px solid #334155",
@@ -324,11 +346,26 @@ export default function KitchenClient({
   const [tick, setTick]                 = useState(0);
   const [lastCount, setLastCount]       = useState(0);
   const [newAlert, setNewAlert]         = useState(false);
+  const [allReadyAlert, setAllReadyAlert] = useState(false);
   const [fullscreen, setFullscreen]     = useState(false);
   const [countdown, setCountdown]       = useState(60);
   const [now, setNow]                   = useState(new Date());
+  const [stationFilter, setStationFilter] = useState("");
+  const prevAllDone = useRef(false);
   const audioCtx = useRef<AudioContext | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Load station filter from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_STATION);
+    if (saved) setStationFilter(saved);
+  }, []);
+
+  function saveStationFilter(val: string) {
+    setStationFilter(val);
+    if (val) localStorage.setItem(LS_STATION, val);
+    else localStorage.removeItem(LS_STATION);
+  }
 
   const fetchOrders = useCallback(async () => {
     const params = new URLSearchParams({ activeOnly: "1" });
@@ -336,7 +373,10 @@ export default function KitchenClient({
     const res = await fetch(`/api/admin/orders?${params}`);
     if (!res.ok) return;
     const data: Order[] = await res.json();
-    const active = data.filter(o => o.status !== "DELIVERED" && o.status !== "CANCELLED");
+    // KDS shows only CONFIRMED+ orders
+    const active = data.filter(o =>
+      o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "PENDING"
+    );
     if (active.length > lastCount && lastCount > 0) {
       setNewAlert(true);
       setTimeout(() => setNewAlert(false), 4000);
@@ -364,7 +404,7 @@ export default function KitchenClient({
     const url = `/api/admin/orders/stream?restaurantId=${restaurantId}`;
     const es = new EventSource(url);
     es.onmessage = () => { fetchOrders(); };
-    es.onerror = () => { es.close(); }; // Will fall back to polling
+    es.onerror = () => { es.close(); };
     return () => es.close();
   }, [restaurantId, fetchOrders]);
 
@@ -379,6 +419,28 @@ export default function KitchenClient({
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
+  // "All ready" notification
+  useEffect(() => {
+    const allItems = orders.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED"));
+    const isAllDone = allItems.length > 0 && allItems.every(i => i.itemStatus === "DONE");
+    if (isAllDone && !prevAllDone.current && orders.length > 0) {
+      setAllReadyAlert(true);
+      setTimeout(() => setAllReadyAlert(false), 6000);
+    }
+    prevAllDone.current = isAllDone;
+  }, [orders]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement) return;
+      if (e.key === "r" || e.key === "R") fetchOrders();
+      if (e.key === "f" || e.key === "F") toggleFullscreen();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [fetchOrders]);
+
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen?.();
@@ -389,20 +451,15 @@ export default function KitchenClient({
     }
   }
 
-  /* Group by table */
+  /* Group by table — sort by oldest order */
   const byTable = new Map<string, Order[]>();
-  for (const o of orders) {
+  const sortedOrders = [...orders].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+  for (const o of sortedOrders) {
     const key = o.tableNumber ?? o.customerName ?? "–";
     if (!byTable.has(key)) byTable.set(key, []);
     byTable.get(key)!.push(o);
-  }
-
-  async function handleConfirm(orderId: string) {
-    await fetch(`/api/admin/orders/${orderId}/status`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "PREPARING" }),
-    });
-    fetchOrders();
   }
 
   async function handleAdvance(orderId: string, itemId: string) {
@@ -417,7 +474,7 @@ export default function KitchenClient({
         ...o,
         items: o.items.map(i => {
           if (i.id !== itemId) return i;
-          const next = i.itemStatus === "PENDING" ? "PREPARING" : "DONE";
+          const next = i.itemStatus === "PREPARING" ? "DONE" : i.itemStatus;
           return { ...i, itemStatus: next };
         }),
       }));
@@ -434,7 +491,7 @@ export default function KitchenClient({
       ...o,
       items: o.items.map(i => {
         if (i.id !== itemId) return i;
-        const prev2 = i.itemStatus === "DONE" ? "PREPARING" : "PENDING";
+        const prev2 = i.itemStatus === "DONE" ? "PREPARING" : i.itemStatus;
         return { ...i, itemStatus: prev2 };
       }),
     }));
@@ -457,7 +514,7 @@ export default function KitchenClient({
         borderBottom: "1px solid #1e293b",
         padding: "10px 20px",
         display: "flex", alignItems: "center", gap: 16,
-        flexShrink: 0,
+        flexShrink: 0, flexWrap: "wrap",
       }}>
         {/* Logo / title */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -488,8 +545,41 @@ export default function KitchenClient({
           </select>
         )}
 
+        {/* Station filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: "#64748b", fontSize: 12 }}>🔧 עמדה:</span>
+          <input
+            type="text"
+            value={stationFilter}
+            onChange={e => saveStationFilter(e.target.value)}
+            placeholder="סנן לפי קטגוריה..."
+            style={{
+              background: "#1e293b", color: "#f1f5f9",
+              border: stationFilter ? "1px solid #c9a84c" : "1px solid #334155",
+              borderRadius: 8, padding: "4px 10px", fontSize: 12,
+              width: 160, outline: "none",
+            }}
+          />
+          {stationFilter && (
+            <button onClick={() => saveStationFilter("")}
+              style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>
+              ×
+            </button>
+          )}
+        </div>
+
         {/* Spacer */}
         <div style={{ flex: 1 }} />
+
+        {/* All ready alert */}
+        {allReadyAlert && (
+          <div style={{
+            background: "#22c55e", color: "#000",
+            padding: "6px 16px", borderRadius: 20,
+            fontWeight: 900, fontSize: 13,
+            animation: "pulse 1s infinite",
+          }}>🎉 כל ההזמנות מוכנות!</div>
+        )}
 
         {/* New order alert */}
         {newAlert && (
@@ -514,6 +604,7 @@ export default function KitchenClient({
         {/* Refresh + Fullscreen */}
         <button
           onClick={fetchOrders}
+          title="רענן (R)"
           style={{
             background: "#1e293b", color: "#94a3b8",
             border: "1px solid #334155", borderRadius: 8,
@@ -522,6 +613,7 @@ export default function KitchenClient({
         >↻ רענן</button>
         <button
           onClick={toggleFullscreen}
+          title="מסך מלא (F)"
           style={{
             background: "#1e293b", color: "#94a3b8",
             border: "1px solid #334155", borderRadius: 8,
@@ -548,7 +640,9 @@ export default function KitchenClient({
             minHeight: 300, gap: 16, color: "#1e293b",
           }}>
             <div style={{ fontSize: 72 }}>✅</div>
-            <div style={{ color: "#334155", fontWeight: 700, fontSize: 20 }}>אין הזמנות פעילות</div>
+            <div style={{ color: "#334155", fontWeight: 700, fontSize: 20 }}>
+              {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
+            </div>
             <div style={{ color: "#1e3a5f", fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
           </div>
         ) : (
@@ -559,7 +653,7 @@ export default function KitchenClient({
               orders={tableOrders}
               canUpdate={canUpdate}
               tick={tick}
-              onConfirm={handleConfirm}
+              stationFilter={stationFilter}
               onAdvance={handleAdvance}
               onGoBack={handleGoBack}
             />

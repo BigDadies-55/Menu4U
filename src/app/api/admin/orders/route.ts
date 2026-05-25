@@ -53,7 +53,7 @@ export async function GET(req: Request) {
       restaurant: { select: { id: true, name: true } },
       items: {
         include: {
-          item: { select: { name: true, prepTime: true } },
+          item: { select: { name: true, prepTime: true, category: { select: { name: true } } } },
           modifiers: { select: { groupName: true, label: true, priceAdd: true } },
         },
         orderBy: { id: "asc" },

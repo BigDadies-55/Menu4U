@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 type Modifier  = { groupName: string; label: string; priceAdd: number };
 type OrderItem = {
   id: string; quantity: number; notes: string | null; itemStatus: string;
-  item: { name: string; prepTime: number | null };
+  item: { name: string; prepTime: number | null; category?: { name: string } };
   modifiers?: Modifier[];
 };
 type Order = {
@@ -24,7 +24,6 @@ function fmtElapsed(m: number) {
   return `${Math.floor(m / 60)}h${m % 60}′`;
 }
 
-/* Urgency level 0/1/2 → color */
 function urgencyColor(mins: number, allDone: boolean) {
   if (allDone) return "#22c55e";
   if (mins >= 20) return "#ef4444";
@@ -32,23 +31,32 @@ function urgencyColor(mins: number, allDone: boolean) {
   return "#e2e8f0";
 }
 
+const LS_STATION = "menu4u_kds_station_tickets";
+
 /* ── Ticket card ── */
 function Ticket({
-  tableNumber, orders, canUpdate, tick,
-  onConfirm, onAdvance, onGoBack,
+  tableNumber, orders, canUpdate, tick, stationFilter,
+  onAdvance, onGoBack,
 }: {
   tableNumber: string;
   orders: Order[];
   canUpdate: boolean;
   tick: number;
-  onConfirm: (id: string) => void;
+  stationFilter: string;
   onAdvance: (orderId: string, itemId: string) => void;
   onGoBack:  (orderId: string, itemId: string) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
 
+  function itemMatchesStation(item: OrderItem) {
+    if (!stationFilter) return true;
+    const f = stationFilter.toLowerCase();
+    return (item.item.category?.name?.toLowerCase() ?? "").includes(f) ||
+           item.item.name.toLowerCase().includes(f);
+  }
+
   const active   = orders.filter(o => o.status !== "CANCELLED");
-  const allItems = active.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED"));
+  const allItems = active.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED" && itemMatchesStation(i)));
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
   const allDone  = totalCount > 0 && doneCount === totalCount;
@@ -56,7 +64,9 @@ function Ticket({
   const mins     = elapsed(oldest.createdAt);
   const isUrgent = mins >= 20 && !allDone;
   const accentColor = urgencyColor(mins, allDone);
-  const totalAmt = active.reduce((s, o) => s + o.totalAmount, 0);
+
+  // Skip if nothing matches station filter
+  if (stationFilter && allItems.length === 0) return null;
 
   async function adv(orderId: string, itemId: string) {
     setBusy(p => new Set(p).add(itemId));
@@ -72,11 +82,13 @@ function Ticket({
   return (
     <div style={{
       background: "#141414",
-      border: `1px solid ${isUrgent ? "#ef444460" : "#2a2a2a"}`,
+      border: `1px solid ${isUrgent ? "#ef444460" : allDone ? "#22c55e40" : "#2a2a2a"}`,
       borderTop: `4px solid ${accentColor}`,
       borderRadius: 4,
       fontFamily: "'Courier New', 'Courier', monospace",
-      boxShadow: isUrgent
+      boxShadow: allDone
+        ? `0 0 0 1px #22c55e30, 0 4px 24px rgba(0,0,0,0.7)`
+        : isUrgent
         ? `0 0 0 1px #ef444430, 0 4px 24px rgba(0,0,0,0.7)`
         : `0 4px 16px rgba(0,0,0,0.5)`,
       display: "flex", flexDirection: "column",
@@ -105,7 +117,7 @@ function Ticket({
           </div>
         </div>
 
-        {/* Right: time + amount */}
+        {/* Right: time + progress */}
         <div style={{ textAlign: "left", flexShrink: 0 }}>
           <div style={{
             color: accentColor,
@@ -115,7 +127,7 @@ function Ticket({
             ⏱ {fmtElapsed(mins)}
           </div>
           <div style={{ color: "#555", fontSize: 11, marginTop: 2 }}>
-            ₪{totalAmt.toFixed(0)} · {doneCount}/{totalCount}
+            {doneCount}/{totalCount} פריטים
           </div>
         </div>
       </div>
@@ -123,66 +135,35 @@ function Ticket({
       {/* ── Items ── */}
       <div style={{ flex: 1 }}>
         {active.map((order, oidx) => {
-          const isPending   = order.status === "PENDING";
           const isDelivered = order.status === "DELIVERED";
 
           return (
             <div key={order.id}>
-              {/* Order divider (only if multiple orders on table) */}
+              {/* Order divider */}
               {active.length > 1 && (
                 <div style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "5px 14px",
                   borderBottom: "1px dashed #222",
-                  background: isPending ? "#1a1200" : isDelivered ? "#0a1a0a" : "#111",
+                  background: isDelivered ? "#0a1a0a" : "#111",
                 }}>
                   <span style={{ color: "#444", fontSize: 10, fontWeight: 700, letterSpacing: 2 }}>
                     ORDER {oidx + 1}
                   </span>
-                  {isPending && (
-                    <span style={{ color: "#f59e0b", fontSize: 10, fontWeight: 700 }}>⚠ UNCONFIRMED</span>
-                  )}
-                  {canUpdate && isPending && (
-                    <button onClick={() => onConfirm(order.id)} style={{
-                      marginRight: "auto", background: "#f59e0b", color: "#000",
-                      border: "none", borderRadius: 3, padding: "2px 8px",
-                      fontSize: 10, fontWeight: 900, cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}>CONFIRM</button>
-                  )}
-                </div>
-              )}
-
-              {/* Single order unconfirmed banner */}
-              {active.length === 1 && isPending && (
-                <div style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "5px 14px", background: "#1a1200",
-                  borderBottom: "1px dashed #2a1500",
-                }}>
-                  <span style={{ color: "#f59e0b", fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>
-                    ⚠ AWAITING CONFIRMATION
-                  </span>
-                  {canUpdate && (
-                    <button onClick={() => onConfirm(order.id)} style={{
-                      background: "#f59e0b", color: "#000",
-                      border: "none", borderRadius: 3, padding: "3px 10px",
-                      fontSize: 10, fontWeight: 900, cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}>✓ CONFIRM</button>
-                  )}
                 </div>
               )}
 
               {/* Item rows */}
               {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers }) => {
+                // Station filter
+                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers })) return null;
+
                 const isDone      = itemStatus === "DONE" || isDelivered;
                 const isCancelled = itemStatus === "CANCELLED";
                 const isPreparing = itemStatus === "PREPARING";
                 const isBusy      = busy.has(iid);
                 const isBusyBack  = busy.has(iid + "b");
 
-                // Checkbox symbol
                 const checkbox = isDone
                   ? <span style={{ color: "#22c55e", fontSize: 14 }}>☑</span>
                   : isCancelled
@@ -197,7 +178,7 @@ function Ticket({
                     padding: "8px 14px",
                     borderBottom: "1px solid #1a1a1a",
                     background: isDone && !isDelivered ? "#081208" : "transparent",
-                    opacity: isCancelled ? 0.35 : isPending ? 0.7 : 1,
+                    opacity: isCancelled ? 0.35 : 1,
                   }}>
                     {/* Checkbox */}
                     <div style={{ flexShrink: 0, marginTop: 1 }}>{checkbox}</div>
@@ -222,6 +203,11 @@ function Ticket({
                       }}>
                         {item.name}
                       </div>
+                      {item.category?.name && (
+                        <div style={{ color: "#444", fontSize: 9, letterSpacing: 1, marginTop: 1 }}>
+                          {item.category.name.toUpperCase()}
+                        </div>
+                      )}
                       {modifiers && modifiers.length > 0 && (
                         <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
                           {modifiers.map((m, i) => (
@@ -231,7 +217,7 @@ function Ticket({
                               borderRadius: 2, padding: "1px 5px",
                               fontFamily: "inherit",
                             }}>
-                              {m.label}{m.priceAdd > 0 ? ` +${m.priceAdd}₪` : ""}
+                              {m.label}
                             </span>
                           ))}
                         </div>
@@ -243,8 +229,8 @@ function Ticket({
                       )}
                     </div>
 
-                    {/* Action buttons — right side */}
-                    {canUpdate && !isDelivered && !isCancelled && !isPending && (
+                    {/* Action buttons */}
+                    {canUpdate && !isDelivered && !isCancelled && (
                       <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                         {(isPreparing || isDone) && (
                           <button
@@ -310,18 +296,6 @@ function Ticket({
           })}
         </div>
 
-        {/* Single-order confirm button in footer */}
-        {active.length === 1 && active[0].status === "PENDING" && canUpdate && (
-          <button
-            onClick={() => onConfirm(active[0].id)}
-            style={{
-              background: "#f59e0b", color: "#000",
-              border: "none", borderRadius: 3,
-              padding: "6px 16px", fontWeight: 900, fontSize: 12,
-              cursor: "pointer", fontFamily: "inherit", letterSpacing: 1,
-            }}>✓ CONFIRM ORDER</button>
-        )}
-
         {allDone && (
           <span style={{ color: "#22c55e", fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>
             ● READY TO SERVE
@@ -353,11 +327,26 @@ export default function TicketsClient({
   const [tick, setTick]                 = useState(0);
   const [lastCount, setLastCount]       = useState(0);
   const [newAlert, setNewAlert]         = useState(false);
+  const [allReadyAlert, setAllReadyAlert] = useState(false);
   const [countdown, setCountdown]       = useState(60);
   const [now, setNow]                   = useState(new Date());
   const [fullscreen, setFullscreen]     = useState(false);
+  const [stationFilter, setStationFilter] = useState("");
+  const prevAllDone = useRef(false);
   const audioCtx     = useRef<AudioContext | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Load station filter from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_STATION);
+    if (saved) setStationFilter(saved);
+  }, []);
+
+  function saveStationFilter(val: string) {
+    setStationFilter(val);
+    if (val) localStorage.setItem(LS_STATION, val);
+    else localStorage.removeItem(LS_STATION);
+  }
 
   const fetchOrders = useCallback(async () => {
     const params = new URLSearchParams({ activeOnly: "1" });
@@ -365,7 +354,10 @@ export default function TicketsClient({
     const res = await fetch(`/api/admin/orders?${params}`);
     if (!res.ok) return;
     const data: Order[] = await res.json();
-    const active = data.filter(o => o.status !== "DELIVERED" && o.status !== "CANCELLED");
+    // KDS shows only CONFIRMED+ orders
+    const active = data.filter(o =>
+      o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "PENDING"
+    );
     if (active.length > lastCount && lastCount > 0) {
       setNewAlert(true);
       setTimeout(() => setNewAlert(false), 4000);
@@ -394,7 +386,7 @@ export default function TicketsClient({
     const url = `/api/admin/orders/stream?restaurantId=${restaurantId}`;
     const es = new EventSource(url);
     es.onmessage = () => { fetchOrders(); };
-    es.onerror = () => { es.close(); }; // Will fall back to polling
+    es.onerror = () => { es.close(); };
     return () => es.close();
   }, [restaurantId, fetchOrders]);
 
@@ -404,6 +396,28 @@ export default function TicketsClient({
       setNow(new Date());
     }, 1000);
     return () => clearInterval(iv);
+  }, [fetchOrders]);
+
+  // "All ready" notification
+  useEffect(() => {
+    const allItems = orders.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED"));
+    const isAllDone = allItems.length > 0 && allItems.every(i => i.itemStatus === "DONE");
+    if (isAllDone && !prevAllDone.current && orders.length > 0) {
+      setAllReadyAlert(true);
+      setTimeout(() => setAllReadyAlert(false), 6000);
+    }
+    prevAllDone.current = isAllDone;
+  }, [orders]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement) return;
+      if (e.key === "r" || e.key === "R") fetchOrders();
+      if (e.key === "f" || e.key === "F") toggleFullscreen();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [fetchOrders]);
 
   function toggleFullscreen() {
@@ -416,21 +430,18 @@ export default function TicketsClient({
     }
   }
 
-  /* Group by table */
+  /* Group by table — sorted oldest-first */
+  const sortedOrders = [...orders].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
   const byTable = new Map<string, Order[]>();
-  for (const o of orders) {
+  for (const o of sortedOrders) {
     const key = o.tableNumber ?? o.customerName ?? "–";
     if (!byTable.has(key)) byTable.set(key, []);
     byTable.get(key)!.push(o);
   }
 
-  async function handleConfirm(orderId: string) {
-    await fetch(`/api/admin/orders/${orderId}/status`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "PREPARING" }),
-    });
-    fetchOrders();
-  }
+  const restName = restaurants.find(r => r.id === restaurantId)?.name ?? "";
 
   async function handleAdvance(orderId: string, itemId: string) {
     const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
@@ -443,7 +454,7 @@ export default function TicketsClient({
       setOrders(prev => prev.map(o => o.id !== orderId ? o : {
         ...o,
         items: o.items.map(i => i.id !== itemId ? i : {
-          ...i, itemStatus: i.itemStatus === "PENDING" ? "PREPARING" : "DONE",
+          ...i, itemStatus: i.itemStatus === "PREPARING" ? "DONE" : i.itemStatus,
         }),
       }));
       setTick(t => t + 1);
@@ -458,13 +469,11 @@ export default function TicketsClient({
     setOrders(prev => prev.map(o => o.id !== orderId ? o : {
       ...o,
       items: o.items.map(i => i.id !== itemId ? i : {
-        ...i, itemStatus: i.itemStatus === "DONE" ? "PREPARING" : "PENDING",
+        ...i, itemStatus: i.itemStatus === "DONE" ? "PREPARING" : i.itemStatus,
       }),
     }));
     setTick(t => t + 1);
   }
-
-  const restName = restaurants.find(r => r.id === restaurantId)?.name ?? "";
 
   return (
     <div ref={containerRef} style={{
@@ -480,7 +489,7 @@ export default function TicketsClient({
         background: "#0a0a0a",
         borderBottom: "1px solid #1e1e1e",
         padding: "8px 20px",
-        display: "flex", alignItems: "center", gap: 14, flexShrink: 0,
+        display: "flex", alignItems: "center", gap: 14, flexShrink: 0, flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
@@ -502,7 +511,38 @@ export default function TicketsClient({
           </select>
         )}
 
+        {/* Station filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: "#555", fontSize: 11, fontFamily: "inherit" }}>STATION:</span>
+          <input
+            type="text"
+            value={stationFilter}
+            onChange={e => saveStationFilter(e.target.value)}
+            placeholder="filter..."
+            style={{
+              background: "#1a1a1a", color: "#ccc",
+              border: stationFilter ? "1px solid #c9a84c" : "1px solid #2a2a2a",
+              borderRadius: 3, padding: "3px 8px", fontSize: 11,
+              width: 120, outline: "none", fontFamily: "inherit",
+            }}
+          />
+          {stationFilter && (
+            <button onClick={() => saveStationFilter("")}
+              style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+              ×
+            </button>
+          )}
+        </div>
+
         <div style={{ flex: 1 }} />
+
+        {allReadyAlert && (
+          <div style={{
+            background: "#22c55e", color: "#000",
+            padding: "4px 12px", borderRadius: 3, fontWeight: 900, fontSize: 12,
+            fontFamily: "inherit", letterSpacing: 1,
+          }}>!! ALL READY !!</div>
+        )}
 
         {newAlert && (
           <div style={{
@@ -517,10 +557,12 @@ export default function TicketsClient({
         </span>
 
         <button onClick={fetchOrders}
+          title="R to refresh"
           style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", borderRadius: 3, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
           REFRESH
         </button>
         <button onClick={toggleFullscreen}
+          title="F for fullscreen"
           style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", borderRadius: 3, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
           {fullscreen ? "EXIT FS" : "FULLSCREEN"}
         </button>
@@ -543,7 +585,9 @@ export default function TicketsClient({
             fontFamily: "inherit",
           }}>
             <div style={{ fontSize: 64 }}>■</div>
-            <div style={{ color: "#333", fontWeight: 700, fontSize: 18, letterSpacing: 4 }}>NO OPEN TICKETS</div>
+            <div style={{ color: "#333", fontWeight: 700, fontSize: 18, letterSpacing: 4 }}>
+              {stationFilter ? `NO ITEMS FOR "${stationFilter.toUpperCase()}"` : "NO OPEN TICKETS"}
+            </div>
             <div style={{ color: "#2a2a2a", fontSize: 12, letterSpacing: 2 }}>
               {now.toLocaleTimeString("he-IL")}
             </div>
@@ -556,7 +600,7 @@ export default function TicketsClient({
               orders={tableOrders}
               canUpdate={canUpdate}
               tick={tick}
-              onConfirm={handleConfirm}
+              stationFilter={stationFilter}
               onAdvance={handleAdvance}
               onGoBack={handleGoBack}
             />

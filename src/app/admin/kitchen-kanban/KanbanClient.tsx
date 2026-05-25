@@ -7,7 +7,7 @@ type Modifier  = { groupName: string; label: string; priceAdd: number };
 type OrderItem = {
   id: string; quantity: number; notes: string | null;
   itemStatus: string;
-  item: { name: string; prepTime: number | null };
+  item: { name: string; prepTime: number | null; category?: { name: string } };
   modifiers?: Modifier[];
 };
 type Order = {
@@ -41,20 +41,20 @@ function timerColor(mins: number, urgent: boolean) {
 
 /* ── Column config ── */
 const COLS: { status: string; label: string; icon: string; accent: string; bg: string; border: string }[] = [
-  { status: "PENDING",   label: "ממתין",  icon: "🕐", accent: "#f59e0b", bg: "#1c1500", border: "#78350f" },
   { status: "PREPARING", label: "בהכנה",  icon: "🔵", accent: "#38bdf8", bg: "#001a2e", border: "#0369a1" },
   { status: "DONE",      label: "מוכן",   icon: "✅", accent: "#22c55e", bg: "#002211", border: "#166534" },
 ];
 
+const LS_STATION = "menu4u_kds_station_kanban";
+
 /* ── Item card ── */
 function KanbanCard({
   card, canUpdate, tick,
-  onConfirmOrder, onAdvance, onGoBack,
+  onAdvance, onGoBack,
 }: {
   card: KanbanCard;
   canUpdate: boolean;
   tick: number;
-  onConfirmOrder: (orderId: string) => void;
   onAdvance: (orderId: string, itemId: string) => void;
   onGoBack:  (orderId: string, itemId: string) => void;
 }) {
@@ -62,14 +62,13 @@ function KanbanCard({
   const [busyBack, setBusyBack] = useState(false);
 
   const mins        = elapsed(card.createdAt);
-  const isOrderPend = card.orderStatus === "PENDING";
   const col         = COLS.find(c => c.status === card.itemStatus) ?? COLS[0];
   const isCancelled = card.itemStatus === "CANCELLED";
   const isDone      = card.itemStatus === "DONE";
   const tColor      = timerColor(mins, mins >= 20);
 
-  const canAdvance  = canUpdate && !isOrderPend && !isDone && !isCancelled;
-  const canGoBack   = canUpdate && !isOrderPend && (card.itemStatus === "PREPARING" || card.itemStatus === "DONE");
+  const canAdvance  = canUpdate && !isDone && !isCancelled;
+  const canGoBack   = canUpdate && (card.itemStatus === "PREPARING" || card.itemStatus === "DONE");
 
   async function advance() {
     setBusy(true);
@@ -105,7 +104,7 @@ function KanbanCard({
         {/* Table badge */}
         <div style={{
           background: col.accent,
-          color: card.itemStatus === "PENDING" ? "#000" : "#fff",
+          color: card.itemStatus === "PREPARING" ? "#fff" : "#fff",
           borderRadius: 8,
           minWidth: 40, height: 40,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -133,24 +132,15 @@ function KanbanCard({
 
       {/* Item body */}
       <div style={{ padding: "10px 12px" }}>
-        {/* Unconfirmed order banner */}
-        {isOrderPend && (
+        {/* Category tag */}
+        {card.item.category?.name && (
           <div style={{
-            background: "#f59e0b22", border: "1px solid #f59e0b55",
-            borderRadius: 6, padding: "4px 8px", marginBottom: 8,
-            color: "#fbbf24", fontSize: 11, fontWeight: 700,
-            display: "flex", alignItems: "center", justifyContent: "space-between",
+            display: "inline-block",
+            background: "#1e293b", color: "#64748b",
+            fontSize: 10, padding: "2px 7px", borderRadius: 20,
+            marginBottom: 6, fontWeight: 600, letterSpacing: 0.5,
           }}>
-            <span>⚠️ ממתין לאישור הזמנה</span>
-            {canUpdate && (
-              <button
-                onClick={() => onConfirmOrder(card.orderId)}
-                style={{
-                  background: "#f59e0b", color: "#000",
-                  border: "none", borderRadius: 6,
-                  padding: "3px 10px", fontSize: 11, fontWeight: 900, cursor: "pointer",
-                }}>אשר</button>
-            )}
+            {card.item.category.name}
           </div>
         )}
 
@@ -164,7 +154,7 @@ function KanbanCard({
           {card.item.name}
         </div>
 
-        {/* Modifiers */}
+        {/* Modifiers — no prices */}
         {card.modifiers && card.modifiers.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
             {card.modifiers.map((m, i) => (
@@ -172,7 +162,7 @@ function KanbanCard({
                 background: "#1e3a2e", color: "#4ade80",
                 fontSize: 11, padding: "2px 7px", borderRadius: 20,
               }}>
-                {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
+                {m.label}
               </span>
             ))}
           </div>
@@ -219,11 +209,11 @@ function KanbanCard({
                     ? "0 2px 8px #22c55e50" : "0 2px 8px #38bdf850",
                 }}
               >
-                {busy ? "..." : card.itemStatus === "PENDING" ? "התחל →" : "הוכן ✓"}
+                {busy ? "..." : "הוכן ✓"}
               </button>
             )}
 
-            {isDone && !isOrderPend && (
+            {isDone && (
               <div style={{
                 flex: 1, textAlign: "center",
                 color: "#22c55e", fontWeight: 800, fontSize: 14,
@@ -254,8 +244,23 @@ export default function KanbanClient({
   const [countdown, setCountdown]       = useState(60);
   const [now, setNow]                   = useState(new Date());
   const [fullscreen, setFullscreen]     = useState(false);
+  const [stationFilter, setStationFilter] = useState("");
+  const [allReadyAlert, setAllReadyAlert] = useState(false);
+  const prevAllDone = useRef(false);
   const audioCtx  = useRef<AudioContext | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Load station filter from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_STATION);
+    if (saved) setStationFilter(saved);
+  }, []);
+
+  function saveStationFilter(val: string) {
+    setStationFilter(val);
+    if (val) localStorage.setItem(LS_STATION, val);
+    else localStorage.removeItem(LS_STATION);
+  }
 
   const fetchOrders = useCallback(async () => {
     const params = new URLSearchParams({ activeOnly: "1" });
@@ -263,7 +268,10 @@ export default function KanbanClient({
     const res = await fetch(`/api/admin/orders?${params}`);
     if (!res.ok) return;
     const data: Order[] = await res.json();
-    const active = data.filter(o => o.status !== "DELIVERED" && o.status !== "CANCELLED");
+    // KDS shows only CONFIRMED+ orders (not PENDING, not DELIVERED, not CANCELLED)
+    const active = data.filter(o =>
+      o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "PENDING"
+    );
     if (active.length > lastCount && lastCount > 0) {
       setNewAlert(true);
       setTimeout(() => setNewAlert(false), 4000);
@@ -292,7 +300,7 @@ export default function KanbanClient({
     const url = `/api/admin/orders/stream?restaurantId=${restaurantId}`;
     const es = new EventSource(url);
     es.onmessage = () => { fetchOrders(); };
-    es.onerror = () => { es.close(); }; // Will fall back to polling
+    es.onerror = () => { es.close(); };
     return () => es.close();
   }, [restaurantId, fetchOrders]);
 
@@ -302,6 +310,17 @@ export default function KanbanClient({
       setNow(new Date());
     }, 1000);
     return () => clearInterval(iv);
+  }, [fetchOrders]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement) return;
+      if (e.key === "r" || e.key === "R") fetchOrders();
+      if (e.key === "f" || e.key === "F") toggleFullscreen();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [fetchOrders]);
 
   function toggleFullscreen() {
@@ -314,12 +333,26 @@ export default function KanbanClient({
     }
   }
 
-  /* Flatten orders → KanbanCard[] per status, skip CANCELLED items */
-  const lanes: Record<string, KanbanCard[]> = { PENDING: [], PREPARING: [], DONE: [] };
-  for (const order of orders) {
+  /* Flatten orders → KanbanCard[] per status, skip CANCELLED & PENDING items */
+  const lanesPreparing: KanbanCard[] = [];
+  const lanesDone: KanbanCard[]      = [];
+
+  // Sort orders oldest-first so oldest float to top
+  const sortedOrders = [...orders].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+
+  for (const order of sortedOrders) {
     const tableLabel = order.tableNumber ?? order.customerName ?? "–";
     for (const item of order.items) {
-      if (item.itemStatus === "CANCELLED") continue;
+      if (item.itemStatus === "CANCELLED" || item.itemStatus === "PENDING") continue;
+      // Station filter: match against category name or item name
+      if (stationFilter) {
+        const f = stationFilter.toLowerCase();
+        const cat = item.item.category?.name?.toLowerCase() ?? "";
+        const nm  = item.item.name.toLowerCase();
+        if (!cat.includes(f) && !nm.includes(f)) continue;
+      }
       const card: KanbanCard = {
         ...item,
         orderId: order.id,
@@ -328,17 +361,24 @@ export default function KanbanClient({
         createdAt: order.createdAt,
         orderNotes: order.notes,
       };
-      if (lanes[item.itemStatus]) lanes[item.itemStatus].push(card);
+      if (item.itemStatus === "PREPARING") lanesPreparing.push(card);
+      else if (item.itemStatus === "DONE")  lanesDone.push(card);
     }
   }
 
-  async function handleConfirm(orderId: string) {
-    await fetch(`/api/admin/orders/${orderId}/status`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "PREPARING" }),
-    });
-    fetchOrders();
-  }
+  const lanes: Record<string, KanbanCard[]> = { PREPARING: lanesPreparing, DONE: lanesDone };
+  const totalItems = lanesPreparing.length + lanesDone.length;
+
+  // "All ready" notification: when all items are DONE
+  useEffect(() => {
+    const allItems = [...lanesPreparing, ...lanesDone];
+    const isAllDone = allItems.length > 0 && lanesPreparing.length === 0;
+    if (isAllDone && !prevAllDone.current) {
+      setAllReadyAlert(true);
+      setTimeout(() => setAllReadyAlert(false), 6000);
+    }
+    prevAllDone.current = isAllDone;
+  }, [lanesPreparing.length, lanesDone.length]);
 
   async function handleAdvance(orderId: string, itemId: string) {
     const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
@@ -352,7 +392,7 @@ export default function KanbanClient({
         ...o,
         items: o.items.map(i => i.id !== itemId ? i : {
           ...i,
-          itemStatus: i.itemStatus === "PENDING" ? "PREPARING" : "DONE",
+          itemStatus: i.itemStatus === "PREPARING" ? "DONE" : i.itemStatus,
         }),
       }));
       setTick(t => t + 1);
@@ -368,13 +408,12 @@ export default function KanbanClient({
       ...o,
       items: o.items.map(i => i.id !== itemId ? i : {
         ...i,
-        itemStatus: i.itemStatus === "DONE" ? "PREPARING" : "PENDING",
+        itemStatus: i.itemStatus === "DONE" ? "PREPARING" : i.itemStatus,
       }),
     }));
     setTick(t => t + 1);
   }
 
-  const totalItems = Object.values(lanes).reduce((s, l) => s + l.length, 0);
   const restName = restaurants.find(r => r.id === restaurantId)?.name ?? "";
 
   return (
@@ -390,7 +429,7 @@ export default function KanbanClient({
         background: "#111",
         borderBottom: "1px solid #222",
         padding: "10px 20px",
-        display: "flex", alignItems: "center", gap: 14, flexShrink: 0,
+        display: "flex", alignItems: "center", gap: 14, flexShrink: 0, flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
@@ -412,7 +451,39 @@ export default function KanbanClient({
           </select>
         )}
 
+        {/* Station filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: "#64748b", fontSize: 12 }}>🔧 עמדה:</span>
+          <input
+            type="text"
+            value={stationFilter}
+            onChange={e => saveStationFilter(e.target.value)}
+            placeholder="סנן לפי קטגוריה..."
+            style={{
+              background: "#1e293b", color: "#f1f5f9",
+              border: stationFilter ? "1px solid #c9a84c" : "1px solid #334155",
+              borderRadius: 8, padding: "4px 10px", fontSize: 12,
+              width: 160, outline: "none",
+            }}
+          />
+          {stationFilter && (
+            <button onClick={() => saveStationFilter("")}
+              style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>
+              ×
+            </button>
+          )}
+        </div>
+
         <div style={{ flex: 1 }} />
+
+        {allReadyAlert && (
+          <div style={{
+            background: "#22c55e", color: "#000",
+            padding: "6px 16px", borderRadius: 20,
+            fontWeight: 900, fontSize: 13,
+            animation: "pulse 1s infinite",
+          }}>🎉 כל ההזמנות מוכנות!</div>
+        )}
 
         {newAlert && (
           <div style={{
@@ -422,7 +493,7 @@ export default function KanbanClient({
           }}>🔔 הזמנה חדשה!</div>
         )}
 
-        {/* Lane counters in top bar */}
+        {/* Lane counters */}
         <div style={{ display: "flex", gap: 12 }}>
           {COLS.map(col => (
             <div key={col.status} style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -440,10 +511,12 @@ export default function KanbanClient({
         </span>
 
         <button onClick={fetchOrders}
+          title="רענן (R)"
           style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid #334155", borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
           ↻
         </button>
         <button onClick={toggleFullscreen}
+          title="מסך מלא (F)"
           style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid #334155", borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
           {fullscreen ? "⊠ צא" : "⛶ מסך מלא"}
         </button>
@@ -457,69 +530,81 @@ export default function KanbanClient({
           gap: 14, color: "#222",
         }}>
           <div style={{ fontSize: 80 }}>✅</div>
-          <div style={{ color: "#333", fontWeight: 700, fontSize: 22 }}>אין הזמנות פעילות</div>
+          <div style={{ color: "#333", fontWeight: 700, fontSize: 22 }}>
+            {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
+          </div>
           <div style={{ color: "#2a2a2a", fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
         </div>
       ) : (
         <div style={{
           flex: 1,
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateColumns: "repeat(2, 1fr)",
           gap: 0,
           overflow: "hidden",
         }}>
-          {COLS.map((col, ci) => (
-            <div key={col.status} style={{
-              display: "flex", flexDirection: "column",
-              borderRight: ci < COLS.length - 1 ? "1px solid #1a1a1a" : undefined,
-              overflow: "hidden",
-            }}>
-              {/* Column header */}
-              <div style={{
-                padding: "12px 16px",
-                background: `${col.accent}10`,
-                borderBottom: `2px solid ${col.accent}`,
-                display: "flex", alignItems: "center", gap: 10,
-                flexShrink: 0,
+          {COLS.map((col, ci) => {
+            const isAllDoneCol = col.status === "DONE" && lanesPreparing.length === 0 && lanesDone.length > 0;
+            return (
+              <div key={col.status} style={{
+                display: "flex", flexDirection: "column",
+                borderRight: ci < COLS.length - 1 ? "1px solid #1a1a1a" : undefined,
+                overflow: "hidden",
               }}>
-                <span style={{ fontSize: 20 }}>{col.icon}</span>
-                <span style={{ color: col.accent, fontWeight: 800, fontSize: 16 }}>{col.label}</span>
-                <span style={{
-                  background: col.accent, color: col.status === "PENDING" ? "#000" : "#fff",
-                  borderRadius: 20, padding: "2px 10px",
-                  fontWeight: 900, fontSize: 13,
-                }}>{lanes[col.status].length}</span>
-              </div>
+                {/* Column header */}
+                <div style={{
+                  padding: "12px 16px",
+                  background: isAllDoneCol ? "#052e16" : `${col.accent}10`,
+                  borderBottom: `2px solid ${isAllDoneCol ? "#22c55e" : col.accent}`,
+                  display: "flex", alignItems: "center", gap: 10,
+                  flexShrink: 0,
+                  transition: "background 0.5s",
+                }}>
+                  <span style={{ fontSize: 20 }}>{isAllDoneCol ? "🎉" : col.icon}</span>
+                  <span style={{ color: isAllDoneCol ? "#22c55e" : col.accent, fontWeight: 800, fontSize: 16 }}>
+                    {isAllDoneCol ? "הכל מוכן!" : col.label}
+                  </span>
+                  <span style={{
+                    background: isAllDoneCol ? "#22c55e" : col.accent,
+                    color: "#fff",
+                    borderRadius: 20, padding: "2px 10px",
+                    fontWeight: 900, fontSize: 13,
+                  }}>{lanes[col.status].length}</span>
+                </div>
 
-              {/* Cards */}
-              <div style={{
-                flex: 1, overflowY: "auto",
-                padding: 12,
-                display: "flex", flexDirection: "column", gap: 10,
-              }}>
-                {lanes[col.status].length === 0 ? (
-                  <div style={{
-                    flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#222", fontSize: 28, paddingTop: 40,
-                  }}>—</div>
-                ) : (
-                  lanes[col.status].map(card => (
-                    <KanbanCard
-                      key={`${card.id}-${tick}`}
-                      card={card}
-                      canUpdate={canUpdate}
-                      tick={tick}
-                      onConfirmOrder={handleConfirm}
-                      onAdvance={handleAdvance}
-                      onGoBack={handleGoBack}
-                    />
-                  ))
-                )}
+                {/* Cards */}
+                <div style={{
+                  flex: 1, overflowY: "auto",
+                  padding: 12,
+                  display: "flex", flexDirection: "column", gap: 10,
+                }}>
+                  {lanes[col.status].length === 0 ? (
+                    <div style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#222", fontSize: 28, paddingTop: 40,
+                    }}>—</div>
+                  ) : (
+                    lanes[col.status].map(card => (
+                      <KanbanCard
+                        key={`${card.id}-${tick}`}
+                        card={card}
+                        canUpdate={canUpdate}
+                        tick={tick}
+                        onAdvance={handleAdvance}
+                        onGoBack={handleGoBack}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
+      <style>{`
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+      `}</style>
     </div>
   );
 }
