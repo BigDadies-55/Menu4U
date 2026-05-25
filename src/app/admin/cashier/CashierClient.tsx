@@ -297,7 +297,8 @@ function BillModal({
 
   async function handleConfirm() {
     setPaying(true);
-    onConfirm();
+    await onConfirm();
+    setPaying(false);
   }
 
   return (
@@ -633,14 +634,20 @@ export default function CashierClient({
   async function closeTable(tableNumber: string) {
     const tableOrders = orders.filter(o => orderTableKey(o) === tableNumber);
     const rid = tableOrders[0]?.restaurant?.id || restaurantId || restaurants[0]?.id;
+    // "–" is the UI fallback for orders without a tableNumber (null in DB)
+    const apiTableNumber = tableNumber === "–" ? null : tableNumber;
     setSelectedTable(null);
     setOrders(prev => prev.filter(o => orderTableKey(o) !== tableNumber));
     try {
-      await fetch("/api/admin/orders/close-table", {
+      const res = await fetch("/api/admin/orders/close-table", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tableNumber, restaurantId: rid }),
+        body: JSON.stringify({ tableNumber: apiTableNumber, restaurantId: rid }),
       });
+      if (res.ok) {
+        // Re-sync from DB so the optimistic removal is confirmed and race conditions are resolved
+        await fetchOrders();
+      }
     } catch { /* ignore */ }
   }
 

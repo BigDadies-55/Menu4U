@@ -6,8 +6,11 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { tableNumber, restaurantId } = await req.json();
-  if (!tableNumber || !restaurantId) {
+  const body = await req.json();
+  const { restaurantId } = body;
+  // tableNumber may be null (orders placed without a table number)
+  const tableNumber: string | null = body.tableNumber ?? null;
+  if (tableNumber === undefined || !restaurantId) {
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
   }
 
