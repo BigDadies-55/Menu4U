@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import MenuPublicClient from "./MenuPublicClient";
+import MenuElegantClient from "./MenuElegantClient";
 import MenuExpired from "./MenuExpired";
 
 export async function generateMetadata(
@@ -95,20 +96,23 @@ export default async function PublicMenuPage(
   const previewAc = sp.previewAc;
   const previewBg = sp.previewBg;
 
-  const effectiveTheme = previewTheme || restaurant.menuTheme;
+  const effectiveTheme = previewTheme || (restaurant.menuTheme ?? "elegant");
   const effectivePalette = previewPalette || restaurant.menuPalette || '0';
   const effectivePaletteData = (previewPalette === 'custom' && previewAc && previewBg)
     ? JSON.stringify({ ac: previewAc, bg: previewBg })
     : restaurant.menuPaletteData;
 
-  return <MenuPublicClient
-    restaurant={{
-      ...restaurant,
-      menus: visibleMenus,
-      menuTheme: effectiveTheme,
-      menuPalette: effectivePalette,
-      menuPaletteData: effectivePaletteData ?? null,
-    }}
-    tableNumber={sp.table || null}
-  />;
+  const restaurantData = {
+    ...restaurant,
+    menus: visibleMenus,
+    menuTheme: effectiveTheme,
+    menuPalette: effectivePalette,
+    menuPaletteData: effectivePaletteData ?? null,
+  };
+
+  if (effectiveTheme === "elegant") {
+    return <MenuElegantClient restaurant={restaurantData} tableNumber={sp.table || null} />;
+  }
+
+  return <MenuPublicClient restaurant={restaurantData} tableNumber={sp.table || null} />;
 }

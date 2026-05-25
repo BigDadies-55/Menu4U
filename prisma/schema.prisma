@@ -96,7 +96,7 @@ model Restaurant {
   website       String?
   locationUrl   String?
   isActive      Boolean  @default(true)
-  menuTheme     String   @default("luxury")
+  menuTheme     String   @default("elegant")
   menuPalette     String   @default("0")
   menuPaletteData String?
   ordersEnabled   Boolean @default(false)
