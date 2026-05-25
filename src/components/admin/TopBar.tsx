@@ -7,28 +7,29 @@ import { signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/client";
 import { ROLE_LABELS } from "@/lib/permissions";
 
-/* ─── Page-name map ─────────────────────────────────────────── */
-const PAGE_NAMES: { pattern: RegExp; name: string }[] = [
-  { pattern: /^\/admin\/settings/,        name: "הגדרות" },
-  { pattern: /^\/admin\/restaurants/,    name: "מסעדות" },
-  { pattern: /^\/admin\/menus/,          name: "תפריטים" },
-  { pattern: /^\/admin\/users/,          name: "משתמשים" },
-  { pattern: /^\/admin\/logs/,           name: "לוגים" },
-  { pattern: /^\/admin\/orders\/stats/,  name: "סטטיסטיקות הזמנות" },
-  { pattern: /^\/admin\/orders/,         name: "הזמנות" },
-  { pattern: /^\/admin\/layout-builder/, name: "פריסת שולחנות" },
-  { pattern: /^\/admin\/customers/, name: "לקוחות" },
-  { pattern: /^\/admin\/kitchen-table/,  name: "KDS — תצוגת שולחן" },
-  { pattern: /^\/admin\/kitchen-kanban/, name: "KDS — Kanban" },
-  { pattern: /^\/admin\/kitchen-tickets/,name: "KDS — Ticket Board" },
-  { pattern: /^\/admin\/kitchen/,        name: "KDS — Station Dark" },
+/* ─── Page map: page name + group label ────────────────────── */
+type PageEntry = { pattern: RegExp; name: string; group?: string };
+const PAGE_ENTRIES: PageEntry[] = [
+  { pattern: /^\/admin\/restaurants/,    name: "מסעדות",              group: "ניהול"  },
+  { pattern: /^\/admin\/menus/,          name: "תפריטים",             group: "ניהול"  },
+  { pattern: /^\/admin\/users/,          name: "משתמשים",             group: "ניהול"  },
+  { pattern: /^\/admin\/logs/,           name: "לוגים",               group: "ניהול"  },
+  { pattern: /^\/admin\/settings/,       name: "הגדרות",              group: "ניהול"  },
+  { pattern: /^\/admin\/orders\/stats/,  name: "סטטיסטיקות",         group: "שירות"  },
+  { pattern: /^\/admin\/orders/,         name: "הזמנות",              group: "שירות"  },
+  { pattern: /^\/admin\/layout-builder/, name: "פריסת שולחנות",      group: "שירות"  },
+  { pattern: /^\/admin\/customers/,      name: "לקוחות",              group: "שירות"  },
+  { pattern: /^\/admin\/kitchen-table/,  name: "תצוגת שולחן",        group: "KDS"    },
+  { pattern: /^\/admin\/kitchen-kanban/, name: "Kanban",              group: "KDS"    },
+  { pattern: /^\/admin\/kitchen-tickets/,name: "Ticket Board",        group: "KDS"    },
+  { pattern: /^\/admin\/kitchen/,        name: "Station Dark",        group: "KDS"    },
   { pattern: /^\/admin\/?$/,             name: "דשבורד" },
 ];
-function getPageName(pathname: string) {
-  for (const { pattern, name } of PAGE_NAMES) {
-    if (pattern.test(pathname)) return name;
+function getPageEntry(pathname: string): PageEntry {
+  for (const entry of PAGE_ENTRIES) {
+    if (entry.pattern.test(pathname)) return entry;
   }
-  return "ניהול";
+  return { pattern: /.*/, name: "ניהול" };
 }
 
 /* ─── Type icons ─────────────────────────────────────────────── */
@@ -55,7 +56,6 @@ interface Props {
 export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, adminTopBarBg, adminTopBarTextColor = "#374151" }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
-  const pageName = getPageName(pathname);
 
   /* ── Avatar dropdown ── */
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -123,7 +123,8 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
 
   const initials    = (user.name ?? user.email ?? "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   const displayName = user.name ?? user.email ?? "";
-  const isRoot      = /^\/admin\/?$/.test(pathname);
+  const pageEntry   = getPageEntry(pathname);
+  const isRoot      = !pageEntry.group;
 
   // Derive a slightly muted version for secondary elements (icons, username)
   const iconColor   = adminTopBarTextColor;
@@ -159,14 +160,14 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
           style={{ color: adminTopBarTextColor }}
         >
           {isRoot ? (
-            pageName
+            pageEntry.name
           ) : (
             <>
-              <Link href="/admin" style={{ color: adminTopBarTextColor, opacity: 0.55, fontWeight: 400 }} className="hover:opacity-80 transition-opacity">
-                דשבורד
-              </Link>
+              <span style={{ color: adminTopBarTextColor, opacity: 0.5, fontWeight: 400 }}>
+                {pageEntry.group}
+              </span>
               <span style={{ opacity: 0.35, fontSize: 11 }}>/</span>
-              <span>{pageName}</span>
+              <span>{pageEntry.name}</span>
             </>
           )}
         </h1>
