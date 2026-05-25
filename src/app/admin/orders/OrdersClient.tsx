@@ -588,6 +588,7 @@ export default function OrdersClient({
   const [posItems, setPosItems] = useState<{ name: string; price: number; course: number; qty: number }[]>([]);
   const [posNewItem, setPosNewItem] = useState({ name: "", price: "", course: 1, qty: 1 });
   const [posSubmitting, setPosSubmitting] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
@@ -608,6 +609,18 @@ export default function OrdersClient({
     const iv = setInterval(() => fetchOrders(), 10000);
     return () => clearInterval(iv);
   }, [fetchOrders]);
+
+  // Keyboard shortcut: F = toggle fullscreen, Escape = exit fullscreen
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if (e.key === "f" || e.key === "F") setIsFullscreen(prev => !prev);
+      if (e.key === "Escape") setIsFullscreen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   async function advanceItem(orderId: string, itemId: string) {
     const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
@@ -749,7 +762,14 @@ export default function OrdersClient({
     : [];
 
   return (
-    <div className="p-4 md:p-8">
+    <div
+      className={isFullscreen ? "" : "p-4 md:p-8"}
+      style={isFullscreen ? {
+        position: "fixed", inset: 0, zIndex: 999,
+        background: "#f8fafc", overflowY: "auto",
+        padding: "16px 20px",
+      } : undefined}
+    >
       {billTableKey && billOrders.length > 0 && (
         <BillModal
           tableNumber={billTableKey}
@@ -932,6 +952,21 @@ export default function OrdersClient({
             <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
+          </button>
+          <button
+            onClick={() => setIsFullscreen(prev => !prev)}
+            title={isFullscreen ? "יציאה ממסך מלא (Esc)" : "מסך מלא (F)"}
+            className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            {isFullscreen ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
+            )}
           </button>
         </div>
         {/* Date range filter */}

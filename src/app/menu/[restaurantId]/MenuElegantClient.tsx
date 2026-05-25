@@ -799,13 +799,31 @@ export default function MenuElegantClient({
                   }}>
                   {/* Text side */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
                       <h4 style={{ fontSize: 15, fontWeight: 500, color: "#fff", letterSpacing: "0.02em", margin: 0 }}>
                         {getItemName(item, lang)}
                       </h4>
-                      <span style={{ color: "#C5A880", fontWeight: 700, fontSize: 14, flexShrink: 0, marginRight: 8 }}>
-                        ₪{item.price}
-                      </span>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0, marginRight: 8 }}>
+                        <span style={{ color: "#C5A880", fontWeight: 700, fontSize: 14 }}>
+                          ₪{item.price}
+                        </span>
+                        {restaurant.ordersEnabled && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openAddToCart(item); }}
+                            style={{
+                              background: "#C5A880", color: "#0D0D0D",
+                              border: "none", borderRadius: 8,
+                              width: 30, height: 30,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 16, cursor: "pointer",
+                              flexShrink: 0,
+                            }}
+                            title={t.addToCart}
+                          >
+                            🛒
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {getItemDesc(item, lang) && (
                       <p style={{ color: "#a3a3a3", fontSize: 12, fontWeight: 300, lineHeight: 1.5,
