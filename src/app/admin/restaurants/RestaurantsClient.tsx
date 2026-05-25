@@ -31,16 +31,17 @@ type Restaurant = {
 };
 
 const THEMES = [
-  { value: 'luxury', label: 'Luxury',     labelHe: 'יוקרה',    icon: '✦', previewBg: '#0a0a0a', previewAccent: '#c9a35d' },
-  { value: 'fresh',  label: 'Industrial', labelHe: 'אינדסטריאל', icon: '⚙', previewBg: '#1a1a1a', previewAccent: '#f59e0b' },
-  { value: 'nature', label: 'Nature',     labelHe: 'טבע',       icon: '❧', previewBg: '#030f06', previewAccent: '#4ade80' },
-  { value: 'bold',   label: 'Bold',       labelHe: 'נועז',      icon: '▲', previewBg: '#0f0512', previewAccent: '#f472b6' },
+  { value: 'elegant', label: 'Elegant',    labelHe: 'אלגנט',     icon: '✦', previewBg: '#0D0D0D', previewAccent: '#C5A880' },
+  { value: 'luxury',  label: 'Luxury',     labelHe: 'יוקרה',     icon: '◈', previewBg: '#0a0a0a', previewAccent: '#c9a35d' },
+  { value: 'fresh',   label: 'Industrial', labelHe: 'אינדסטריאל', icon: '⚙', previewBg: '#1a1a1a', previewAccent: '#f59e0b' },
+  { value: 'nature',  label: 'Nature',     labelHe: 'טבע',        icon: '❧', previewBg: '#030f06', previewAccent: '#4ade80' },
+  { value: 'bold',    label: 'Bold',       labelHe: 'נועז',       icon: '▲', previewBg: '#0f0512', previewAccent: '#f472b6' },
 ];
 
 const emptyForm = {
   name: "", description: "", logo: "", email: "", phone: "",
   phone2: "", orderPhone: "", address: "", website: "", locationUrl: "",
-  menuTheme: "luxury", subscriptionFrom: "", subscriptionTo: "",
+  menuTheme: "elegant", subscriptionFrom: "", subscriptionTo: "",
   menuPalette: "0",
   menuCustomAc: "#c9a35d",
   menuCustomBg: "#0a0a0a",
@@ -99,7 +100,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       email: r.email ?? "", phone: r.phone ?? "", phone2: r.phone2 ?? "",
       orderPhone: r.orderPhone ?? "", address: r.address ?? "",
       website: r.website ?? "", locationUrl: r.locationUrl ?? "",
-      menuTheme: r.menuTheme ?? "luxury",
+      menuTheme: r.menuTheme ?? "elegant",
       subscriptionFrom: toDateInput(r.subscriptionFrom),
       subscriptionTo: toDateInput(r.subscriptionTo),
       menuPalette: r.menuPalette ?? "0",
@@ -272,7 +273,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
               {/* Theme selector */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">עיצוב תפריט</label>
-                <div className="grid grid-cols-4 gap-2 mb-3">
+                <div className="grid grid-cols-5 gap-2 mb-3">
                   {THEMES.map(t => {
                     const isActive = form.menuTheme === t.value;
                     return (
