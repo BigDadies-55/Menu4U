@@ -303,6 +303,10 @@ function TableCard({
   const hasReady   = nonCancelledOrders.some(o => o.status === "READY");
   const allPaid    = nonCancelledOrders.length > 0 && nonCancelledOrders.every(o => ["PAID","CANCELLED"].includes(o.status));
 
+  // Border / header color
+  const cardBorder = hasPending ? "#f59e0b" : isUrgent ? "#ef4444" : highlighted ? "#c9a84c" : "#e5e7eb";
+  const headerBg   = hasPending ? "#fffbeb" : isUrgent ? "#fef2f2" : "#f9fafb";
+
   async function smartAction() {
     setActioning(true);
     if (hasPending) {
@@ -362,21 +366,20 @@ function TableCard({
     <div
       id={`table-${tableNumber}`}
       className="bg-white rounded-2xl border overflow-hidden shadow-sm"
-      style={{
-        borderColor: highlighted ? "#c9a84c" : isUrgent ? "#ef4444" : "#e5e7eb",
-        outline: highlighted ? "2px solid #c9a84c" : undefined,
-      }}
+      style={{ borderColor: cardBorder, borderWidth: hasPending ? 2 : 1 }}
     >
       {/* Table header */}
       <div
         className="px-3 pt-2 pb-1.5"
-        style={{ background: isUrgent ? "#fef2f2" : "#f9fafb", borderBottom: "1px solid #e5e7eb" }}
+        style={{ background: headerBg, borderBottom: `1px solid ${hasPending ? "#fcd34d" : "#e5e7eb"}` }}
       >
         <div className="flex items-center gap-1.5">
           <div
             className="w-8 h-8 rounded-lg border-2 flex items-center justify-center font-black text-xs shrink-0 cursor-pointer"
             style={isClosed
               ? { background: "#f3f4f6", borderColor: "#d1d5db", color: "#9ca3af" }
+              : hasPending
+              ? { background: "#fef3c7", borderColor: "#f59e0b", color: "#92400e" }
               : { background: "#fef3c7", borderColor: "#fcd34d", color: "#92400e" }
             }
             onClick={() => setIsCollapsed(true)}
@@ -384,7 +387,15 @@ function TableCard({
           >
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
-          <span className="font-bold text-gray-900 text-sm flex-1">שולחן {tableNumber}</span>
+          <span className="font-bold text-gray-900 text-sm flex-1">
+            {tableNumber === "–" ? "ללא שולחן" : `שולחן ${tableNumber}`}
+          </span>
+          {hasPending && (
+            <span className="text-xs px-1.5 py-0.5 rounded-full font-bold shrink-0 animate-pulse"
+              style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}>
+              🕐 ממתין לאישור
+            </span>
+          )}
           {orders.some(o => o.orderSource === "WAITER") && (
             <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold shrink-0" style={{ background: "#ede9fe", color: "#7c3aed" }}>
               🧑‍🍳 POS
@@ -392,7 +403,7 @@ function TableCard({
           )}
           <span className="font-black text-gray-900 text-lg shrink-0">₪{totalAmount.toFixed(0)}</span>
         </div>
-        <div className={`flex justify-between mt-0.5 text-xs ${isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
+        <div className={`flex justify-between mt-0.5 text-xs ${hasPending ? "text-amber-600 font-semibold" : isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
           <span>⏱ {timeSince(oldestOrder.createdAt)} · {allItems.length} מנות</span>
           <span>{nonCancelledOrders.length} הזמנות</span>
         </div>
@@ -474,7 +485,7 @@ function TableCard({
             })()}
 
             {/* Items — status badge only, no advance buttons */}
-            <div className="divide-y divide-gray-50" style={{ opacity: isPending || isDelivered || isPaid || isCancelled ? 0.55 : 1 }}>
+            <div className="divide-y divide-gray-50" style={{ opacity: isDelivered || isPaid || isCancelled ? 0.55 : 1 }}>
               {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt }) => {
                 const isItemCancelled = itemStatus === "CANCELLED";
                 const isHeld = heldUntilFired;
@@ -553,12 +564,13 @@ function TableCard({
 
       {/* Smart footer action */}
       {nonCancelledOrders.length > 0 && (
-        <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
+        <div className="px-3 py-2 border-t bg-gray-50/50"
+          style={{ borderColor: hasPending ? "#fcd34d" : "#f1f5f9" }}>
           <button
             type="button"
             onClick={smartAction}
             disabled={smartBtn.disabled}
-            className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all disabled:cursor-not-allowed"
+            className={`w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:cursor-not-allowed ${hasPending ? "animate-pulse" : ""}`}
             style={{ background: smartBtn.color, opacity: smartBtn.disabled ? 0.5 : 1 }}
           >
             {smartBtn.label}
@@ -747,14 +759,13 @@ export default function OrdersClient({
   }
 
   // Build table map — include ALL statuses so closed tables show collapsed
+  // Orders without tableNumber are grouped under "–"
   const allTableOrders = new Map<string, Order[]>();
-  [...orders]
-    .filter(o => o.tableNumber && o.tableNumber.trim() !== "")
-    .forEach(o => {
-      const key = o.tableNumber!;
-      if (!allTableOrders.has(key)) allTableOrders.set(key, []);
-      allTableOrders.get(key)!.push(o);
-    });
+  [...orders].forEach(o => {
+    const key = (o.tableNumber && o.tableNumber.trim() !== "") ? o.tableNumber : "–";
+    if (!allTableOrders.has(key)) allTableOrders.set(key, []);
+    allTableOrders.get(key)!.push(o);
+  });
 
   // Determine which tables to show and sort
   type TableEntry = { table: string; tableOrders: Order[]; isClosed: boolean; urgency: number };
