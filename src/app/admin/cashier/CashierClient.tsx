@@ -643,6 +643,8 @@ export default function CashierClient({
     setOrders(prev => prev.filter(o => orderTableKey(o) !== tableNumber));
     setErrorMsg(null);
 
+    console.log("[closeTable] sending", { tableNumber, apiTableNumber, rid, orderCount: tableOrders.length, orderIds: tableOrders.map(o => o.id) });
+
     try {
       const res = await fetch("/api/admin/orders/close-table", {
         method: "POST",
@@ -650,11 +652,21 @@ export default function CashierClient({
         body: JSON.stringify({ tableNumber: apiTableNumber, restaurantId: rid }),
       });
 
+      const resBody = await res.json().catch(() => ({}));
+      console.log("[closeTable] response", res.status, resBody);
+
       if (!res.ok) {
         // API failed → restore the table in state so user can retry
-        const errBody = await res.json().catch(() => ({}));
-        const msg = errBody?.error ?? `שגיאת שרת ${res.status}`;
+        const msg = resBody?.error ?? `שגיאת שרת ${res.status}`;
         setErrorMsg(`שגיאה בסגירת שולחן: ${msg}`);
+        setOrders(prev => [...prev, ...tableOrders]);
+        return;
+      }
+
+      // Warn if no orders were actually closed (tableNumber mismatch or already paid)
+      if (resBody.closed === 0) {
+        console.warn("[closeTable] API returned closed:0 — no orders found in DB for this table");
+        setErrorMsg(`לא נמצאו הזמנות פתוחות לשולחן זה (tableNumber=${JSON.stringify(apiTableNumber)}, rid=${rid})`);
         setOrders(prev => [...prev, ...tableOrders]);
         return;
       }
