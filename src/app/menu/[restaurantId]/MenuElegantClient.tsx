@@ -19,29 +19,9 @@ const rubikFont = Rubik({
   display: "swap",
 });
 
-// ── Fallback food images (Unsplash, loaded by the user's browser at runtime) ─
-const CAT_FALLBACKS = [
-  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",  // salad / starters
-  "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80",  // steak / mains
-  "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80",  // dessert
-  "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80",// drinks / wine
-  "https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=600&q=80",// caprese / light
-  "https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&w=600&q=80", // bruschetta
-];
-const ITEM_FALLBACKS = [
-  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=70",
-  "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=200&q=70",
-  "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=200&q=70",
-  "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=200&q=70",
-  "https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=200&q=70",
-  "https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&w=200&q=70",
-  "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=200&q=70", // salmon
-  "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=200&q=70",   // pasta
-];
-const HERO_FALLBACK = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80";
+// ── No fallback images — only show images that were explicitly uploaded ───────
+// Categories/items without images render as clean dark gradient cards (text-only).
 
-function catFallback(idx: number)  { return CAT_FALLBACKS[idx % CAT_FALLBACKS.length]; }
-function itemFallback(idx: number) { return ITEM_FALLBACKS[idx % ITEM_FALLBACKS.length]; }
 
 type TableOrderItem = {
   id: string;
@@ -667,7 +647,7 @@ export default function MenuElegantClient({
       {elegantView === "landing" && (
         <section style={{
           minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "space-between",
-          backgroundImage: `linear-gradient(to top, rgba(13,13,13,1) 30%, rgba(13,13,13,0.4) 70%, rgba(13,13,13,0.8) 100%), url('${HERO_FALLBACK}')`,
+          backgroundImage: "linear-gradient(160deg, #1a1000 0%, #0D0D0D 40%, #0a0a12 100%)",
           backgroundSize: "cover", backgroundPosition: "center",
           position: "relative",
         }}>
@@ -753,7 +733,7 @@ export default function MenuElegantClient({
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {categories.map((cat, catIdx) => (
+            {categories.map((cat) => (
               <div key={cat.id} onClick={() => openCategory(cat)} style={{
                 position: "relative", height: 140, borderRadius: 18, overflow: "hidden",
                 cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
@@ -761,7 +741,9 @@ export default function MenuElegantClient({
                 {/* Category background */}
                 <div style={{
                   position: "absolute", inset: 0,
-                  backgroundImage: `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.95) 40%, rgba(13,13,13,0.3) 100%), url('${cat.image || catFallback(catIdx)}')`,
+                  backgroundImage: cat.image
+                    ? `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.95) 40%, rgba(13,13,13,0.3) 100%), url('${cat.image}')`
+                    : `linear-gradient(135deg, #161208 0%, #1e1a10 40%, #141414 100%)`,
                   backgroundSize: "cover", backgroundPosition: "center",
                   transition: "transform 300ms",
                 }} />
@@ -804,7 +786,7 @@ export default function MenuElegantClient({
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {selectedCat.items.filter(i => i.isActive !== false).map((item, itemIdx) => {
+            {selectedCat.items.filter(i => i.isActive !== false).map((item) => {
               const badges = getItemBadges(item, t);
               return (
                 <div key={item.id} onClick={() => { track("item", item.id, item.name); setModalItem(item); }}
@@ -841,10 +823,12 @@ export default function MenuElegantClient({
                       </div>
                     )}
                   </div>
-                  {/* Thumbnail — always shown */}
-                  <div style={{ width: 80, height: 80, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
-                    <img src={item.image || itemFallback(itemIdx)} alt={getItemName(item, lang)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
+                  {/* Thumbnail — only when image is uploaded */}
+                  {item.image && (
+                    <div style={{ width: 80, height: 80, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
+                      <img src={item.image} alt={getItemName(item, lang)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -940,11 +924,13 @@ export default function MenuElegantClient({
               cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center",
             }}>×</button>
 
-            <img
-              src={modalItem.image || itemFallback(selectedCat ? selectedCat.items.findIndex(i => i.id === modalItem.id) : 0)}
-              alt={getItemName(modalItem, lang)}
-              style={{ width: "100%", height: 220, objectFit: "cover" }}
-            />
+            {modalItem.image && (
+              <img
+                src={modalItem.image}
+                alt={getItemName(modalItem, lang)}
+                style={{ width: "100%", height: 220, objectFit: "cover" }}
+              />
+            )}
 
             <div style={{ padding: "20px 24px", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
