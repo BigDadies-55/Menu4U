@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./menu.css";
 import { buildPaletteStyle } from "@/lib/menuPalettes";
-import { getT, type Translations, type Lang } from "@/lib/translations";
+import { getT, type Translations } from "@/lib/translations";
 
 type TableOrderItem = {
   id: string;
@@ -731,7 +731,7 @@ export default function MenuPublicClient({
                         style={{ cursor: "pointer" }}
                       >
                         <div className="menu-type-labels">
-                          {getItemBadges(item).map(b => <span key={b} className="menu-type-tag">{b}</span>)}
+                          {getItemBadges(item, t).map(b => <span key={b} className="menu-type-tag">{b}</span>)}
                         </div>
                         <h3 className="menu-card-name">{item.name}</h3>
                         <p className="menu-card-desc">{item.description ?? ""}</p>
@@ -1409,7 +1409,7 @@ export default function MenuPublicClient({
             {/* Groups */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
               {modifierGroupsLoading ? (
-                <div style={{ textAlign: "center", color: "var(--text)", opacity: 0.4 }}>טוען...</div>
+                <div style={{ textAlign: "center", color: "var(--text)", opacity: 0.4 }}>{t.loading}</div>
               ) : modifierGroups.map(grp => (
                 <div key={grp.id} style={{ marginBottom: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
@@ -1485,7 +1485,7 @@ export default function MenuPublicClient({
                       gap: 8,
                     }}
                   >
-                    <span>הוסף לסל</span>
+                    <span>{t.addToCart}</span>
                     <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 17, fontWeight: 600, letterSpacing: "0.02em" }}>₪{totalPrice}</span>
                   </button>
                 );
@@ -1521,7 +1521,7 @@ export default function MenuPublicClient({
           textAlign: "center",
           lineHeight: 1.35,
         }}
-        title="כל מי שרוצה 5% לארוחה מוזמן להירשם"
+        title={t.floatingBtn}
       >
         {/* Gift icon */}
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 2 }}>
@@ -1531,7 +1531,7 @@ export default function MenuPublicClient({
           <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
           <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
         </svg>
-        כל מי שרוצה 5% לארוחה מוזמן להירשם
+        {t.floatingBtn}
       </button>}
 
       {/* ── Registration modal (3 steps) ── */}
@@ -1577,14 +1577,14 @@ export default function MenuPublicClient({
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div style={{ fontSize: 36, marginBottom: 6 }}>🎁</div>
                   <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 18, marginBottom: 6, lineHeight: 1.3 }}>
-                    קבל 5% הנחה לארוחה הבאה!
+                    {t.get5Percent}
                   </div>
-                  <div style={{ color: "var(--text, #fff)", opacity: 0.6, fontSize: 13, marginBottom: 2 }}>הירשם ותקבל קוד קופון למייל</div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.6, fontSize: 13, marginBottom: 2 }}>{t.registerGetCoupon}</div>
                   <div style={{ color: "var(--text, #fff)", opacity: 0.45, fontSize: 12 }}>{restaurant.name}</div>
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>שם מלא *</label>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.nameField}</label>
                   <input type="text" value={regForm.name} onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="ישראל ישראלי" autoFocus
                     onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
@@ -1594,7 +1594,7 @@ export default function MenuPublicClient({
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>טלפון *</label>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.phoneField}</label>
                   <input type="tel" value={regForm.phone} onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
                     placeholder="050-0000000" dir="ltr"
                     onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
@@ -1604,7 +1604,7 @@ export default function MenuPublicClient({
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>אימייל *</label>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.emailField}</label>
                   <input type="email" value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
                     placeholder="email@example.com" dir="ltr"
                     onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
@@ -1622,7 +1622,7 @@ export default function MenuPublicClient({
                     border: "none", fontWeight: 700, fontSize: 14,
                     cursor: regLoading ? "not-allowed" : "pointer",
                     opacity: regLoading ? 0.55 : 1, transition: "opacity 150ms" }}>
-                  {regLoading ? "שולח..." : "הירשם וקבל קוד →"}
+                  {regLoading ? t.sending : t.registerBtn}
                 </button>
               </>
             )}
@@ -1633,17 +1633,17 @@ export default function MenuPublicClient({
                 <div style={{ textAlign: "center", marginBottom: 24 }}>
                   <div style={{ fontSize: 36, marginBottom: 8 }}>📧</div>
                   <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
-                    קוד אימות נשלח!
+                    {t.otpSentTitle}
                   </div>
                   <div style={{ color: "var(--text, #fff)", opacity: 0.65, fontSize: 13, lineHeight: 1.5 }}>
-                    שלחנו קוד בן 6 ספרות ל<br />
+                    {t.otpSentSub}<br />
                     <span style={{ fontWeight: 600, opacity: 1, direction: "ltr", display: "inline-block" }}>{regForm.email}</span>
                   </div>
-                  <div style={{ color: "var(--text, #fff)", opacity: 0.4, fontSize: 12, marginTop: 6 }}>הקוד תקף ל-15 דקות</div>
+                  <div style={{ color: "var(--text, #fff)", opacity: 0.4, fontSize: 12, marginTop: 6 }}>{t.otpValidFor}</div>
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>קוד אימות *</label>
+                  <label style={{ display: "block", fontSize: 11, color: "var(--text, #fff)", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.otpCode}</label>
                   <input type="text" inputMode="numeric" value={regOtp} onChange={e => setRegOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="• • • • • •" autoFocus maxLength={6}
                     onKeyDown={e => { if (e.key === "Enter") handleVerifyOtp(); }}
@@ -1662,12 +1662,12 @@ export default function MenuPublicClient({
                     border: "none", fontWeight: 700, fontSize: 14,
                     cursor: regLoading || regOtp.length < 6 ? "not-allowed" : "pointer",
                     opacity: regLoading || regOtp.length < 6 ? 0.55 : 1, transition: "opacity 150ms" }}>
-                  {regLoading ? "מאמת..." : "אמת קוד ←"}
+                  {regLoading ? t.verifying : t.verifyBtn}
                 </button>
                 <button onClick={() => { setRegStep("form"); setRegError(""); }}
                   style={{ width: "100%", marginTop: 10, padding: "8px", background: "none", border: "none",
                     color: "var(--text, #fff)", opacity: 0.45, fontSize: 12, cursor: "pointer" }}>
-                  ← חזרה לטופס
+                  {t.backToForm}
                 </button>
               </>
             )}
@@ -1677,10 +1677,10 @@ export default function MenuPublicClient({
               <div style={{ textAlign: "center", padding: "12px 0" }}>
                 <div style={{ fontSize: 44, marginBottom: 12 }}>🎉</div>
                 <div style={{ color: "var(--gold, #c9a35d)", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-                  ברוך הבא לקהילה!
+                  {t.couponTitle}
                 </div>
                 <div style={{ color: "var(--text, #fff)", opacity: 0.65, fontSize: 14, marginBottom: 20 }}>
-                  הנה קוד ה-5% שלך לארוחה הבאה
+                  {t.couponSub}
                 </div>
                 {/* Coupon display */}
                 <div style={{
@@ -1692,14 +1692,14 @@ export default function MenuPublicClient({
                     {regCoupon}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text, #fff)", opacity: 0.45, marginTop: 8 }}>
-                    הצג קוד זה למלצר בסיום הארוחה
+                    {t.couponNote}
                   </div>
                 </div>
                 <button onClick={() => setRegModalOpen(false)}
                   style={{ padding: "11px 36px", borderRadius: 50,
                     background: "var(--gold, #c9a35d)", color: "var(--bg, #111)",
                     border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                  תודה, סגור
+                  {t.closeThanks}
                 </button>
               </div>
             )}

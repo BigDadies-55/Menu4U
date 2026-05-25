@@ -30,6 +30,7 @@ export default async function RestaurantsPage() {
       menuPaletteData: true,
       ordersEnabled: true,
       kdsView: true,
+      language: true,
       subscriptionFrom: true,
       subscriptionTo: true,
       createdAt: true,
