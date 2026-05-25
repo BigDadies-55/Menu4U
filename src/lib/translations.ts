@@ -353,3 +353,37 @@ export const TRANSLATIONS: Record<Lang, Translations> = { he, en, ru, fr };
 export function getT(lang?: string | null): Translations {
   return TRANSLATIONS[(lang as Lang) ?? "he"] ?? TRANSLATIONS.he;
 }
+
+/** Shape stored in Item.translations / Category.translations */
+export type ItemTranslations = {
+  en?: { name?: string; description?: string };
+  ru?: { name?: string; description?: string };
+  fr?: { name?: string; description?: string };
+};
+export type CategoryTranslations = {
+  en?: { name?: string };
+  ru?: { name?: string };
+  fr?: { name?: string };
+};
+
+/** Return translated name for an item, fallback to original */
+export function getItemName(item: { name: string; translations?: ItemTranslations | null }, lang: string): string {
+  if (lang === "he" || !lang) return item.name;
+  const t = item.translations as ItemTranslations | null | undefined;
+  return t?.[lang as keyof ItemTranslations]?.name?.trim() || item.name;
+}
+
+/** Return translated description for an item, fallback to original */
+export function getItemDesc(item: { description?: string | null; translations?: ItemTranslations | null }, lang: string): string | null {
+  if (lang === "he" || !lang) return item.description ?? null;
+  const t = item.translations as ItemTranslations | null | undefined;
+  const translated = t?.[lang as keyof ItemTranslations]?.description?.trim();
+  return translated || item.description || null;
+}
+
+/** Return translated name for a category, fallback to original */
+export function getCatName(cat: { name: string; translations?: CategoryTranslations | null }, lang: string): string {
+  if (lang === "he" || !lang) return cat.name;
+  const t = cat.translations as CategoryTranslations | null | undefined;
+  return t?.[lang as keyof CategoryTranslations]?.name?.trim() || cat.name;
+}

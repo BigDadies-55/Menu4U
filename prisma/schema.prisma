@@ -150,15 +150,16 @@ model Menu {
 }
 
 model Category {
-  id          String   @id @default(cuid())
-  menuId      String
-  name        String
-  description String?
-  image       String?
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  menuId       String
+  name         String
+  description  String?
+  image        String?
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  translations Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   menu  Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
   items Item[]
@@ -178,6 +179,7 @@ model Item {
   tags         String[]
   prepTime     Int?
   sortOrder    Int      @default(0)
+  translations Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

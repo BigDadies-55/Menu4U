@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./menu.css";
 import { buildPaletteStyle } from "@/lib/menuPalettes";
-import { getT, type Translations } from "@/lib/translations";
+import { getT, getItemName, getItemDesc, getCatName, type Translations, type Lang } from "@/lib/translations";
 
 type TableOrderItem = {
   id: string;
@@ -64,6 +64,7 @@ type Item = {
   isGlutenFree: boolean;
   tags: string[];
   prepTime: number | null;
+  translations?: Record<string, { name?: string; description?: string }> | null;
 };
 
 type Category = {
@@ -71,6 +72,7 @@ type Category = {
   name: string;
   image: string | null;
   items: Item[];
+  translations?: Record<string, { name?: string }> | null;
 };
 
 type Restaurant = {
@@ -646,7 +648,7 @@ export default function MenuPublicClient({
                       <div className="menu-tile-bolt menu-tile-bolt-br" />
                       <div className="menu-tile-industrial-number">{String(idx + 1).padStart(2, '0')}</div>
                       <div className="menu-tile-content">
-                        <h2 className="menu-tile-name">{cat.name}</h2>
+                        <h2 className="menu-tile-name">{getCatName(cat, lang)}</h2>
                         <div className="menu-tile-cta">לתפריט ←</div>
                       </div>
                     </div>
@@ -658,7 +660,7 @@ export default function MenuPublicClient({
                     <div key={cat.id} className="menu-category-tile" onClick={() => openCategory(cat)}>
                       <div className="menu-tile-nature-img" style={img ? { backgroundImage: `url('${img}')` } : {}} />
                       <div className="menu-tile-content">
-                        <h2 className="menu-tile-name">{cat.name}</h2>
+                        <h2 className="menu-tile-name">{getCatName(cat, lang)}</h2>
                         <div className="menu-tile-divider" />
                         <div className="menu-tile-nature-count">{cat.items.length} מנות</div>
                         <div className="menu-tile-arrow">←</div>
@@ -674,7 +676,7 @@ export default function MenuPublicClient({
                       <div className="menu-tile-overlay" />
                       <div className="menu-tile-bold-number">{String(idx + 1).padStart(2, '0')}</div>
                       <div className="menu-tile-content">
-                        <h2 className="menu-tile-name">{cat.name}</h2>
+                        <h2 className="menu-tile-name">{getCatName(cat, lang)}</h2>
                         <div className="menu-tile-cta">הכנס →</div>
                       </div>
                     </div>
@@ -706,7 +708,7 @@ export default function MenuPublicClient({
           <div className="menu-page-anim">
             <button className="menu-back-btn" onClick={goHome}>{t.dir === "rtl" ? "→" : "←"} {t.back}</button>
             <div className="menu-page-header">
-              <h2 className="menu-page-title">{selectedCat.name}</h2>
+              <h2 className="menu-page-title">{getCatName(selectedCat, lang)}</h2>
               <div className="menu-page-ornament"><span>◆</span></div>
               <div className="menu-page-subtitle">{selectedCat.items.length} מנות מיוחדות</div>
             </div>
@@ -733,8 +735,8 @@ export default function MenuPublicClient({
                         <div className="menu-type-labels">
                           {getItemBadges(item, t).map(b => <span key={b} className="menu-type-tag">{b}</span>)}
                         </div>
-                        <h3 className="menu-card-name">{item.name}</h3>
-                        <p className="menu-card-desc">{item.description ?? ""}</p>
+                        <h3 className="menu-card-name">{getItemName(item, lang)}</h3>
+                        <p className="menu-card-desc">{getItemDesc(item, lang) ?? ""}</p>
                         <div className="menu-price" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                           ₪{item.price}
                           {item.prepTime != null && (
@@ -1338,9 +1340,9 @@ export default function MenuPublicClient({
               <div className="menu-modal-types">
                 {getItemBadges(modalItem, t).map(b => <span key={b} className="menu-modal-type-tag">{b}</span>)}
               </div>
-              <h2 className="menu-modal-name">{modalItem.name}</h2>
+              <h2 className="menu-modal-name">{getItemName(modalItem, lang)}</h2>
               <div className="menu-modal-divider"><span>◆</span></div>
-              {modalItem.description && <p className="menu-modal-desc">{modalItem.description}</p>}
+              {(getItemDesc(modalItem, lang)) && <p className="menu-modal-desc">{getItemDesc(modalItem, lang)}</p>}
               <div className="menu-modal-meta">
                 <div className="menu-modal-price-box">
                   <div className="menu-modal-price-label">מחיר</div>

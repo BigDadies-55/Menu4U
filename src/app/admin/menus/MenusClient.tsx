@@ -4,15 +4,20 @@ import { useState, useEffect, useRef } from "react";
 import { formatPrice } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 
+type ItemTranslationsMap = { en?: { name?: string; description?: string }; ru?: { name?: string; description?: string }; fr?: { name?: string; description?: string } };
+type CatTranslationsMap  = { en?: { name?: string }; ru?: { name?: string }; fr?: { name?: string } };
+
 type Item = {
   id: string; name: string; description: string | null; price: number;
   image: string | null; isActive: boolean; isVegetarian: boolean;
   isVegan: boolean; isGlutenFree: boolean; tags: string[]; prepTime: number | null; sortOrder: number;
+  translations?: ItemTranslationsMap | null;
 };
 
 type Category = {
   id: string; name: string; image: string | null;
   items: Item[]; isActive: boolean; sortOrder: number;
+  translations?: CatTranslationsMap | null;
 };
 
 type Menu = {
@@ -39,8 +44,10 @@ type ImportFile = { version?: number; restaurantName?: string; exportedAt?: stri
 const DAYS_HE = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const emptyScheduleForm = { isPrimary: false, scheduleDays: [] as string[], scheduleFrom: "", scheduleTo: "" };
 
-const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[], prepTime: "" };
-const emptyCategoryForm = { name: "", description: "", image: "" };
+const emptyItemTr  = (): ItemTranslationsMap => ({ en: { name: "", description: "" }, ru: { name: "", description: "" }, fr: { name: "", description: "" } });
+const emptyCatTr   = (): CatTranslationsMap  => ({ en: { name: "" }, ru: { name: "" }, fr: { name: "" } });
+const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[], prepTime: "", translations: emptyItemTr() };
+const emptyCategoryForm = { name: "", description: "", image: "", translations: emptyCatTr() };
 
 type ModOption = { id?: string; label: string; priceAdd: number; order: number };
 type ModGroup  = { id?: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[] };
@@ -853,6 +860,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   function openEditItem(cat: Category, item: Item) {
     setSelectedCategory(cat);
     setEditItem(item);
+    const existingTr = item.translations ?? {};
     setItemForm({
       name: item.name,
       description: item.description ?? "",
@@ -863,6 +871,11 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       isGlutenFree: item.isGlutenFree,
       tags: item.tags ?? [],
       prepTime: item.prepTime != null ? String(item.prepTime) : "",
+      translations: {
+        en: { name: existingTr.en?.name ?? "", description: existingTr.en?.description ?? "" },
+        ru: { name: existingTr.ru?.name ?? "", description: existingTr.ru?.description ?? "" },
+        fr: { name: existingTr.fr?.name ?? "", description: existingTr.fr?.description ?? "" },
+      },
     });
     setTagInput("");
     setShowItemForm(true);
@@ -1172,6 +1185,26 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 value={categoryForm.image}
                 onChange={url => setCategoryForm({ ...categoryForm, image: url })}
               />
+              {/* Category translations */}
+              <details className="border border-gray-200 rounded-xl overflow-hidden">
+                <summary className="px-4 py-3 text-sm font-semibold text-gray-700 cursor-pointer select-none bg-gray-50 hover:bg-gray-100">
+                  🌐 תרגומים (EN · RU · FR)
+                </summary>
+                <div className="p-4 space-y-3">
+                  {(["en", "ru", "fr"] as const).map(lang => (
+                    <div key={lang} className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-gray-400 w-6 shrink-0">{lang.toUpperCase()}</span>
+                      <input
+                        value={categoryForm.translations?.[lang]?.name ?? ""}
+                        onChange={e => setCategoryForm({ ...categoryForm, translations: { ...categoryForm.translations, [lang]: { name: e.target.value } } })}
+                        placeholder={lang === "en" ? "Category name..." : lang === "ru" ? "Название категории..." : "Nom de la catégorie..."}
+                        dir="ltr"
+                        className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </details>
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
                   {loading ? "יוצר..." : "צור"}
@@ -1281,6 +1314,34 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   <ModifierGroupsEditor itemId={editItem.id} restaurantId={selectedRestaurant.id} />
                 </div>
               )}
+
+              {/* ── Translations ── */}
+              <details className="border border-gray-200 rounded-xl overflow-hidden">
+                <summary className="px-4 py-3 text-sm font-semibold text-gray-700 cursor-pointer select-none bg-gray-50 hover:bg-gray-100 flex items-center gap-2">
+                  🌐 תרגומים (EN · RU · FR)
+                </summary>
+                <div className="p-4 space-y-4">
+                  {(["en", "ru", "fr"] as const).map(lang => (
+                    <div key={lang} className="border border-gray-100 rounded-lg p-3 space-y-2">
+                      <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">{lang === "en" ? "🇬🇧 English" : lang === "ru" ? "🇷🇺 Русский" : "🇫🇷 Français"}</div>
+                      <input
+                        value={itemForm.translations?.[lang]?.name ?? ""}
+                        onChange={e => setItemForm({ ...itemForm, translations: { ...itemForm.translations, [lang]: { ...itemForm.translations?.[lang], name: e.target.value } } })}
+                        placeholder="Item name..."
+                        dir="ltr"
+                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                      <textarea
+                        value={itemForm.translations?.[lang]?.description ?? ""}
+                        onChange={e => setItemForm({ ...itemForm, translations: { ...itemForm.translations, [lang]: { ...itemForm.translations?.[lang], description: e.target.value } } })}
+                        placeholder="Description..."
+                        dir="ltr" rows={2}
+                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </details>
 
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>

@@ -200,6 +200,12 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "language" TEXT NOT NULL DEFAULT 'he';
     `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "translations" JSONB;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "translations" JSONB;
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {
