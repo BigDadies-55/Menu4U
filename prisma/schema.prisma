@@ -230,6 +230,7 @@ model OrderItem {
   heldUntilFired  Boolean   @default(false) // true = ממתין ל-fire לפני שיורד למטבח
   firedAt         DateTime?                 // מתי הפריט "הוצת" למטבח
   doneAt          DateTime?                 // מתי הפריט הושלם
+  servedAt        DateTime?                 // מתי המנה הוגשה לשולחן בפועל
 
   order     Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
   item      Item                @relation(fields: [itemId], references: [id])

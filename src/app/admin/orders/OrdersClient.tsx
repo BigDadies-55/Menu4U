@@ -14,6 +14,7 @@ type OrderItem = {
   heldUntilFired: boolean;
   firedAt: string | null;
   doneAt: string | null;
+  servedAt: string | null;
   item: { name: string };
   modifiers?: OrderItemModifier[];
 };
@@ -256,6 +257,7 @@ function TableCard({
   highlighted,
   showAll,
   onItemCancel,
+  onItemServe,
   onOrderCancel,
   onConfirmOrder,
   onDeliverOrder,
@@ -268,6 +270,7 @@ function TableCard({
   highlighted?: boolean;
   showAll?: boolean;
   onItemCancel: (orderId: string, itemId: string) => Promise<void>;
+  onItemServe: (orderId: string, itemId: string, served: boolean) => Promise<void>;
   onOrderCancel: (orderId: string) => Promise<void>;
   onConfirmOrder: (orderId: string) => Promise<void>;
   onDeliverOrder: (orderId: string) => Promise<void>;
@@ -327,6 +330,12 @@ function TableCard({
     setBusy(prev => new Set(prev).add(itemId + "-cancel"));
     await onItemCancel(orderId, itemId);
     setBusy(prev => { const n = new Set(prev); n.delete(itemId + "-cancel"); return n; });
+  }
+
+  async function toggleServe(orderId: string, itemId: string, currentlyServed: boolean) {
+    setBusy(prev => new Set(prev).add(itemId + "-serve"));
+    await onItemServe(orderId, itemId, !currentlyServed);
+    setBusy(prev => { const n = new Set(prev); n.delete(itemId + "-serve"); return n; });
   }
 
   // Smart button appearance
@@ -484,23 +493,27 @@ function TableCard({
               );
             })()}
 
-            {/* Items — status badge only, no advance buttons */}
+            {/* Items */}
             <div className="divide-y divide-gray-50" style={{ opacity: isDelivered || isPaid || isCancelled ? 0.55 : 1 }}>
-              {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt }) => {
+              {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt, servedAt }) => {
                 const isItemCancelled = itemStatus === "CANCELLED";
                 const isHeld = heldUntilFired;
                 const isDone = itemStatus === "DONE" || isDelivered || isReady || isPaid;
+                const isServed = !!servedAt;
+                const isServeBusy = busy.has(itemId + "-serve");
                 const isCancelBusy = busy.has(itemId + "-cancel");
                 const canCancel = !isPending && !isDelivered && !isReady && !isPaid && !isCancelled && !isItemCancelled && !isDone;
+                // Show serve button when item is cooked (DONE) or order is READY/DELIVERED, and order is not yet PAID/CANCELLED
+                const canServe = !isItemCancelled && !isCancelled && !isPaid && (itemStatus === "DONE" || isReady || isDelivered);
 
                 return (
                   <div
                     key={itemId}
-                    className={`flex items-center gap-1.5 px-2 py-1 ${isDone || isItemCancelled ? "opacity-50" : ""}`}
-                    style={isHeld ? { background: "#faf5ff" } : undefined}
+                    className={`flex items-center gap-1.5 px-2 py-1 ${isItemCancelled ? "opacity-40" : ""}`}
+                    style={isHeld ? { background: "#faf5ff" } : isServed ? { background: "#f0fdf4" } : undefined}
                   >
                     <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold shrink-0
-                      ${isItemCancelled ? "bg-red-50 text-red-400" : isHeld ? "bg-purple-50 text-purple-500" : "bg-gray-100 text-gray-600"}`}>
+                      ${isItemCancelled ? "bg-red-50 text-red-400" : isHeld ? "bg-purple-50 text-purple-500" : isServed ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"}`}>
                       {quantity}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -509,7 +522,7 @@ function TableCard({
                           <span className="text-xs shrink-0">{COURSE_EMOJI[course] ?? "🍽"}</span>
                         )}
                         <span className={`text-sm font-semibold truncate
-                          ${isDone || isItemCancelled ? "line-through text-gray-400" : isHeld ? "text-purple-700" : "text-gray-900"}`}>
+                          ${isItemCancelled ? "line-through text-gray-400" : isHeld ? "text-purple-700" : isServed ? "text-green-700" : "text-gray-900"}`}>
                           {item.name}
                           {isHeld && <span className="text-purple-400 font-normal text-xs"> · ממתין להצתה</span>}
                         </span>
@@ -522,7 +535,7 @@ function TableCard({
                           }
                         </div>
                       )}
-                      {modifiers && modifiers.length > 0 && !isDone && !isItemCancelled && (
+                      {modifiers && modifiers.length > 0 && !isItemCancelled && (
                         <div className="flex gap-1 flex-wrap mt-0.5">
                           {modifiers.map((m, i) => (
                             <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#1e3a2e", color: "#4ade80" }}>
@@ -531,19 +544,34 @@ function TableCard({
                           ))}
                         </div>
                       )}
-                      {notes && !isDone && !isItemCancelled && (
+                      {notes && !isItemCancelled && (
                         <div className="text-xs text-gray-400 italic truncate">{notes}</div>
                       )}
                     </div>
-                    {/* Status badge */}
-                    {!isDelivered && !isPaid && !isHeld && (
+
+                    {/* Status badge (only when not yet served) */}
+                    {!isServed && !isDelivered && !isPaid && !isHeld && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus] ?? ""}`}>
                         {ITEM_STATUS_LABEL[itemStatus] ?? itemStatus}
                       </span>
                     )}
-                    {isDone && !isItemCancelled && (
-                      <span className="shrink-0 text-green-500 text-sm">✓</span>
+
+                    {/* Serve button / served indicator */}
+                    {canServe && (
+                      <button
+                        onClick={() => toggleServe(order.id, itemId, isServed)}
+                        disabled={isServeBusy}
+                        title={isServed ? "בטל הגשה" : "הגש לשולחן"}
+                        className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
+                        style={isServed
+                          ? { background: "#dcfce7", color: "#16a34a", border: "1px solid #86efac" }
+                          : { background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }
+                        }
+                      >
+                        {isServeBusy ? "·" : isServed ? "✓ הוגש" : "🍽 הגש"}
+                      </button>
                     )}
+
                     {canCancel && (
                       <button
                         onClick={() => cancelItem(order.id, itemId)}
@@ -661,6 +689,20 @@ export default function OrdersClient({
       if (o.id !== orderId) return o;
       const updatedItems = o.items.map(i => i.id === itemId ? { ...i, itemStatus } : i);
       return { ...o, status: orderReady ? "READY" : o.status, items: updatedItems };
+    }));
+  }
+
+  async function serveItem(orderId: string, itemId: string, served: boolean) {
+    const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(served ? { serve: true } : { unserve: true }),
+    });
+    if (!res.ok) return;
+    const { servedAt } = await res.json();
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      return { ...o, items: o.items.map(i => i.id === itemId ? { ...i, servedAt: servedAt ?? null } : i) };
     }));
   }
 
@@ -1112,6 +1154,7 @@ export default function OrdersClient({
                   highlighted={highlightTable === table}
                   showAll={filter === "all"}
                   onItemCancel={cancelItem}
+                  onItemServe={serveItem}
                   onOrderCancel={cancelOrder}
                   onConfirmOrder={confirmOrder}
                   onDeliverOrder={deliverOrder}
@@ -1134,6 +1177,7 @@ export default function OrdersClient({
                   highlighted={highlightTable === table}
                   showAll={filter === "all"}
                   onItemCancel={cancelItem}
+                  onItemServe={serveItem}
                   onOrderCancel={cancelOrder}
                   onConfirmOrder={confirmOrder}
                   onDeliverOrder={deliverOrder}

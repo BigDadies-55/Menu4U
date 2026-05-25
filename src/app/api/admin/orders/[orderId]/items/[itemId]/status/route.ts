@@ -24,10 +24,14 @@ export async function PATCH(
   // Read optional body
   let cancel = false;
   let goBack = false;
+  let serve  = false;
+  let unserve = false;
   try {
     const body = await req.json();
-    cancel = !!body?.cancel;
-    goBack = !!body?.goBack;
+    cancel  = !!body?.cancel;
+    goBack  = !!body?.goBack;
+    serve   = !!body?.serve;
+    unserve = !!body?.unserve;
   } catch { /* no body — forward advance */ }
 
   const order = await prisma.order.findUnique({
@@ -38,6 +42,20 @@ export async function PATCH(
 
   const orderItem = order.items.find(i => i.id === itemId);
   if (!orderItem) return NextResponse.json({ error: "Item not found" }, { status: 404 });
+
+  /* ── Serve / un-serve a single item (physical delivery to table) ── */
+  if (serve || unserve) {
+    if (orderItem.itemStatus === "CANCELLED") {
+      return NextResponse.json({ error: "Item is cancelled" }, { status: 400 });
+    }
+    const servedAt = serve ? new Date() : null;
+    await prisma.orderItem.update({
+      where: { id: itemId },
+      data: { servedAt },
+    });
+    sseNotify(order.restaurantId);
+    return NextResponse.json({ servedAt: servedAt?.toISOString() ?? null });
+  }
 
   /* ── Cancel a single item ── */
   if (cancel) {
