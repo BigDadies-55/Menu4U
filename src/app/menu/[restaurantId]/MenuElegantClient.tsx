@@ -4,6 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { buildPaletteStyle } from "@/lib/menuPalettes";
 import { getT, getItemName, getItemDesc, getCatName, type Translations, type Lang } from "@/lib/translations";
 
+// ── Local fallback images (stored in /public/elegant/) ──────────────────────
+const CAT_FALLBACKS  = ["/elegant/cat-1.svg","/elegant/cat-2.svg","/elegant/cat-3.svg","/elegant/cat-4.svg","/elegant/cat-5.svg","/elegant/cat-6.svg"];
+const ITEM_FALLBACKS = ["/elegant/item-1.svg","/elegant/item-2.svg","/elegant/item-3.svg","/elegant/item-4.svg","/elegant/item-5.svg","/elegant/item-6.svg","/elegant/item-7.svg","/elegant/item-8.svg"];
+const HERO_FALLBACK  = "/elegant/cat-2.svg";
+
+function catFallback(idx: number)  { return CAT_FALLBACKS[idx % CAT_FALLBACKS.length]; }
+function itemFallback(idx: number) { return ITEM_FALLBACKS[idx % ITEM_FALLBACKS.length]; }
+
 type TableOrderItem = {
   id: string;
   quantity: number;
@@ -645,7 +653,7 @@ export default function MenuElegantClient({
       {elegantView === "landing" && (
         <section style={{
           minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "space-between",
-          backgroundImage: `linear-gradient(to top, rgba(13,13,13,1) 30%, rgba(13,13,13,0.4) 70%, rgba(13,13,13,0.8) 100%), url('${restaurant.logo ?? "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80"}')`,
+          backgroundImage: `linear-gradient(to top, rgba(13,13,13,1) 30%, rgba(13,13,13,0.4) 70%, rgba(13,13,13,0.8) 100%), url('${HERO_FALLBACK}')`,
           backgroundSize: "cover", backgroundPosition: "center",
           position: "relative",
         }}>
@@ -744,7 +752,7 @@ export default function MenuElegantClient({
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {categories.map(cat => (
+            {categories.map((cat, catIdx) => (
               <div key={cat.id} onClick={() => openCategory(cat)} style={{
                 position: "relative", height: 140, borderRadius: 18, overflow: "hidden",
                 cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
@@ -752,9 +760,7 @@ export default function MenuElegantClient({
                 {/* Category background */}
                 <div style={{
                   position: "absolute", inset: 0,
-                  backgroundImage: cat.image
-                    ? `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.95) 40%, rgba(13,13,13,0.3) 100%), url('${cat.image}')`
-                    : `linear-gradient(135deg, #1a1a1a, #2a2a2a)`,
+                  backgroundImage: `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.92) 35%, rgba(13,13,13,0.25) 100%), url('${cat.image || catFallback(catIdx)}')`,
                   backgroundSize: "cover", backgroundPosition: "center",
                   transition: "transform 300ms",
                 }} />
@@ -797,7 +803,7 @@ export default function MenuElegantClient({
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {selectedCat.items.filter(i => i.isActive !== false).map(item => {
+            {selectedCat.items.filter(i => i.isActive !== false).map((item, itemIdx) => {
               const badges = getItemBadges(item, t);
               return (
                 <div key={item.id} onClick={() => { track("item", item.id, item.name); setModalItem(item); }}
@@ -834,12 +840,10 @@ export default function MenuElegantClient({
                       </div>
                     )}
                   </div>
-                  {/* Thumbnail */}
-                  {item.image && (
-                    <div style={{ width: 80, height: 80, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
-                      <img src={item.image} alt={getItemName(item, lang)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    </div>
-                  )}
+                  {/* Thumbnail — always shown */}
+                  <div style={{ width: 80, height: 80, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
+                    <img src={item.image || itemFallback(itemIdx)} alt={getItemName(item, lang)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
                 </div>
               );
             })}
@@ -935,7 +939,11 @@ export default function MenuElegantClient({
               cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center",
             }}>×</button>
 
-            {modalItem.image && <img src={modalItem.image} alt={getItemName(modalItem, lang)} style={{ width: "100%", height: 220, objectFit: "cover" }} />}
+            <img
+              src={modalItem.image || itemFallback(selectedCat ? selectedCat.items.findIndex(i => i.id === modalItem.id) : 0)}
+              alt={getItemName(modalItem, lang)}
+              style={{ width: "100%", height: 220, objectFit: "cover" }}
+            />
 
             <div style={{ padding: "20px 24px", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
