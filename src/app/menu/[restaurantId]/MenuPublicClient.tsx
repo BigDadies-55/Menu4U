@@ -248,6 +248,9 @@ export default function MenuPublicClient({
   const [regError,          setRegError]          = useState("");
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
+  // Language state — user-selected, persisted in localStorage
+  const [lang, setLang] = useState<Lang>((restaurant.language as Lang) ?? "he");
+
   // On mount: check if already registered; if not — auto-open modal on first ever visit
   useEffect(() => {
     try {
@@ -338,7 +341,22 @@ export default function MenuPublicClient({
     fetchMyOrders(true, "mine", identity);
   }
 
-  const t = getT(restaurant.language);
+  // Read language preference from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`menu4u_lang_${restaurant.id}`) as Lang | null;
+      const initial: Lang = (saved && ["he","en","ru","fr"].includes(saved) ? saved : (restaurant.language as Lang)) ?? "he";
+      setLang(initial);
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function switchLang(l: Lang) {
+    setLang(l);
+    try { localStorage.setItem(`menu4u_lang_${restaurant.id}`, l); } catch {}
+  }
+
+  const t = getT(lang);
 
   const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
@@ -392,9 +410,9 @@ export default function MenuPublicClient({
 
   useEffect(() => {
     document.documentElement.dir = t.dir;
-    document.documentElement.lang = restaurant.language ?? "he";
+    document.documentElement.lang = lang;
     return () => { document.documentElement.dir = "rtl"; document.documentElement.lang = "he"; };
-  }, [t.dir, restaurant.language]);
+  }, [t.dir, lang]);
 
   async function openAddToCart(item: Item) {
     setModifierGroupsLoading(true);
@@ -583,6 +601,26 @@ export default function MenuPublicClient({
                 <img src={restaurant.logo} alt={restaurant.name} className="menu-logo-img" />
               </button>
             )}
+          </div>
+          {/* Language switcher */}
+          <div style={{
+            display: "flex", gap: 4, alignItems: "center",
+            background: "rgba(0,0,0,0.25)", borderRadius: 20, padding: "3px 6px",
+          }}>
+            {(["he","en","ru","fr"] as const).map(l => (
+              <button key={l} onClick={() => switchLang(l)}
+                style={{
+                  background: lang === l ? "var(--gold, #c9a35d)" : "transparent",
+                  color: lang === l ? "var(--bg, #111)" : "var(--text, #fff)",
+                  border: "none", borderRadius: 12, padding: "3px 8px",
+                  fontSize: 11, fontWeight: 700, cursor: "pointer",
+                  opacity: lang === l ? 1 : 0.6,
+                  transition: "all 150ms",
+                }}
+              >
+                {l === "he" ? "עב" : l.toUpperCase()}
+              </button>
+            ))}
           </div>
         </div>
       </header>
@@ -1050,10 +1088,10 @@ export default function MenuPublicClient({
                 padding: "16px 20px 12px",
               }}>
                 <div>
-                  <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>📋 הזמנות</span>
+                  <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>📋 {t.myOrders}</span>
                   {tableNumber && (
                     <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.55, marginTop: 2 }}>
-                      שולחן <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong>
+                      {t.tableLabel} <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong>
                       {guestIdentity && <span style={{ marginRight: 6, color: "var(--gold)", opacity: 0.8 }}>• {guestIdentity.name}</span>}
                     </div>
                   )}
@@ -1083,7 +1121,7 @@ export default function MenuPublicClient({
                     background: ordersView === v ? "var(--gold)" : "transparent",
                     color: ordersView === v ? "var(--bg)" : "var(--text)",
                   }}>
-                    {v === "mine" ? "שלי" : "כל השולחן"}
+                    {v === "mine" ? t.myOrders : t.allOrders}
                   </button>
                 ))}
               </div>
@@ -1093,12 +1131,12 @@ export default function MenuPublicClient({
             <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
               {myOrdersLoading ? (
                 <div style={{ textAlign: "center", color: "var(--text)", opacity: 0.4, marginTop: 40 }}>
-                  טוען...
+                  {t.loading}
                 </div>
               ) : myOrders.length === 0 ? (
                 <div style={{ textAlign: "center", color: "var(--text)", opacity: 0.4, marginTop: 60 }}>
                   <div style={{ fontSize: 40, marginBottom: 12 }}>🍽</div>
-                  <div>אין הזמנות פעילות לשולחן זה</div>
+                  <div>{t.noOrders}</div>
                 </div>
               ) : (
                 myOrders.map(order => {
