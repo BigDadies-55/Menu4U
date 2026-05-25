@@ -573,6 +573,7 @@ export default function CashierClient({
   const [refreshing, setRefreshing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const knownTableKeys = useRef<Set<string>>(
     new Set(
@@ -636,19 +637,36 @@ export default function CashierClient({
     const rid = tableOrders[0]?.restaurant?.id || restaurantId || restaurants[0]?.id;
     // "–" is the UI fallback for orders without a tableNumber (null in DB)
     const apiTableNumber = tableNumber === "–" ? null : tableNumber;
+
+    // Optimistically remove table from UI
     setSelectedTable(null);
     setOrders(prev => prev.filter(o => orderTableKey(o) !== tableNumber));
+    setErrorMsg(null);
+
     try {
       const res = await fetch("/api/admin/orders/close-table", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tableNumber: apiTableNumber, restaurantId: rid }),
       });
-      if (res.ok) {
-        // Re-sync from DB so the optimistic removal is confirmed and race conditions are resolved
-        await fetchOrders();
+
+      if (!res.ok) {
+        // API failed → restore the table in state so user can retry
+        const errBody = await res.json().catch(() => ({}));
+        const msg = errBody?.error ?? `שגיאת שרת ${res.status}`;
+        setErrorMsg(`שגיאה בסגירת שולחן: ${msg}`);
+        setOrders(prev => [...prev, ...tableOrders]);
+        return;
       }
-    } catch { /* ignore */ }
+
+      // Success → re-sync from DB to confirm and avoid race with polling
+      await fetchOrders();
+    } catch (err) {
+      // Network error → restore orders and show message
+      setErrorMsg("שגיאת תקשורת — נא לנסות שוב");
+      setOrders(prev => [...prev, ...tableOrders]);
+      console.error("[closeTable]", err);
+    }
   }
 
   // Group orders by table
@@ -687,6 +705,26 @@ export default function CashierClient({
       } : { padding: "16px 20px" }}
       dir="rtl"
     >
+      {/* Error toast */}
+      {errorMsg && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 500,
+          background: "#ef4444", color: "#fff",
+          padding: "14px 20px", borderRadius: 14,
+          fontWeight: 700, fontSize: 14,
+          boxShadow: "0 8px 32px rgba(239,68,68,0.35)",
+          display: "flex", alignItems: "center", gap: 12,
+          direction: "rtl",
+        }}>
+          <span>⚠️ {errorMsg}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMsg(null)}
+            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: 18, lineHeight: 1 }}
+          >✕</button>
+        </div>
+      )}
+
       {/* Bill Modal */}
       {selectedTable && selectedOrders.length > 0 && (
         <BillModal

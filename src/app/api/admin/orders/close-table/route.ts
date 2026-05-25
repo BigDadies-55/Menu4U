@@ -9,9 +9,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { restaurantId } = body;
   // tableNumber may be null (orders placed without a table number)
-  const tableNumber: string | null = body.tableNumber ?? null;
-  if (tableNumber === undefined || !restaurantId) {
-    return NextResponse.json({ error: "Missing params" }, { status: 400 });
+  const tableNumber: string | null = body.tableNumber !== undefined ? (body.tableNumber || null) : null;
+
+  if (!restaurantId) {
+    return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
   }
 
   // Auth: non-superadmin must belong to this restaurant
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
   const openOrders = await prisma.order.findMany({
     where: {
       restaurantId,
-      tableNumber,
+      tableNumber,   // null → WHERE tableNumber IS NULL; string → WHERE tableNumber = ?
       status: { notIn: ["CANCELLED", "PAID"] },
     },
     select: { id: true, status: true, totalAmount: true, createdAt: true },
@@ -41,37 +42,39 @@ export async function POST(req: Request) {
   const totalAmount = openOrders.reduce((s, o) => s + o.totalAmount, 0);
   const openedAt = openOrders[0]?.createdAt ?? new Date();
 
-  // Mark all open orders as PAID
-  await prisma.$transaction([
-    prisma.order.updateMany({
-      where: { id: { in: openOrders.map(o => o.id) } },
-      data: { status: "PAID" },
-    }),
-    prisma.orderStatusLog.createMany({
+  // ── CRITICAL: mark orders PAID (standalone update — not bundled with optional logging) ──
+  await prisma.order.updateMany({
+    where: { id: { in: openOrders.map(o => o.id) } },
+    data: { status: "PAID" },
+  });
+
+  // ── BEST-EFFORT: status log (failure here must NOT roll back the PAID update) ──
+  try {
+    await prisma.orderStatusLog.createMany({
       data: openOrders.map(o => ({
-        id: `close-${o.id}-${Date.now()}`,
         orderId: o.id,
         fromStatus: o.status,
         toStatus: "PAID",
-        changedBy: session.user.id,
+        changedBy: session.user.id ?? null,
       })),
       skipDuplicates: true,
-    }),
-  ]);
-
-  // Best-effort: record table session (non-critical, won't fail the close)
-  try {
-    await prisma.tableSession.create({
-      data: {
-        id: `ts-${restaurantId}-${tableNumber}-${Date.now()}`,
-        restaurantId,
-        tableNumber,
-        openedAt,
-        closedAt: new Date(),
-        totalAmount,
-        orderCount: openOrders.length,
-      },
     });
+  } catch { /* non-critical */ }
+
+  // ── BEST-EFFORT: table session record ──
+  try {
+    if (tableNumber) {   // only when there's a real table number (String field is non-nullable)
+      await prisma.tableSession.create({
+        data: {
+          restaurantId,
+          tableNumber,
+          openedAt,
+          closedAt: new Date(),
+          totalAmount,
+          orderCount: openOrders.length,
+        },
+      });
+    }
   } catch { /* migration may not have run yet — ignore */ }
 
   return NextResponse.json({ closed: openOrders.length, totalAmount });
