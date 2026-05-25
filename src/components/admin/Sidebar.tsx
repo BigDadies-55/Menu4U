@@ -13,12 +13,12 @@ export const SIDEBAR_W_EXPANDED  = 256;
 
 /* ─── Admin palettes ─────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
-  dark:   { bg: "#0f111a", accent: "#f59e0b", accentMuted: "rgba(245,158,11,0.15)",  accentText: "#fbbf24" },
-  purple: { bg: "#130c1e", accent: "#7c3aed", accentMuted: "rgba(124,58,237,0.15)", accentText: "#a78bfa" },
-  blue:   { bg: "#080f1e", accent: "#2563eb", accentMuted: "rgba(37,99,235,0.15)",  accentText: "#60a5fa" },
-  green:  { bg: "#071510", accent: "#16a34a", accentMuted: "rgba(22,163,74,0.15)",  accentText: "#4ade80" },
-  rose:   { bg: "#150a0e", accent: "#e11d48", accentMuted: "rgba(225,29,72,0.15)",  accentText: "#fb7185" },
-  custom: { bg: "#0f111a", accent: "#f59e0b", accentMuted: "rgba(245,158,11,0.15)", accentText: "#fbbf24" },
+  dark:   { bg: "#0d0f18", accent: "#c9a84c", accentMuted: "rgba(201,168,76,0.15)",  accentText: "#e0c47a" },
+  purple: { bg: "#120b1e", accent: "#9333ea", accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
+  blue:   { bg: "#080f1e", accent: "#3b82f6", accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
+  green:  { bg: "#071510", accent: "#22c55e", accentMuted: "rgba(34,197,94,0.15)",  accentText: "#86efac" },
+  rose:   { bg: "#150a0e", accent: "#f43f5e", accentMuted: "rgba(244,63,94,0.15)",  accentText: "#fda4af" },
+  custom: { bg: "#0d0f18", accent: "#c9a84c", accentMuted: "rgba(201,168,76,0.15)", accentText: "#e0c47a" },
 };
 
 /* ─── Icons ──────────────────────────────────────────────── */

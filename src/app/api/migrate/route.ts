@@ -143,7 +143,7 @@ export async function GET(req: Request) {
       INSERT INTO "SiteConfig" ("id", "updatedAt") VALUES ('default', NOW()) ON CONFLICT DO NOTHING;
     `);
     await prisma.$executeRawUnsafe(`
-      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminBg" TEXT NOT NULL DEFAULT '#f0ece3';
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminBg" TEXT NOT NULL DEFAULT '#f5f7fa';
     `);
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminBgImage" TEXT;

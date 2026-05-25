@@ -42,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Load site config — try with newest columns first, degrade gracefully
   let adminPalette  = "dark";
-  let adminBg       = "#f0ece3";
+  let adminBg       = "#f5f7fa";
   let adminBgImage: string | null = null;
   let siteLogo: string | null = null;
   let siteName = "Menu4U";
@@ -70,7 +70,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     `;
     if (rows[0]) {
       adminPalette           = rows[0].adminPalette           ?? "dark";
-      adminBg                = rows[0].adminBg                ?? "#f0ece3";
+      adminBg                = rows[0].adminBg                ?? "#f5f7fa";
       adminBgImage           = rows[0].adminBgImage           ?? null;
       siteLogo               = rows[0].logo                   ?? null;
       siteName               = rows[0].siteName               ?? "Menu4U";

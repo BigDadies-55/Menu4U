@@ -42,24 +42,24 @@ export default async function AdminDashboard() {
   const stats = await getStats(session.user.id, session.user.role);
 
   const cards = [
-    { label: "מסעדות", value: stats.restaurants, icon: "🍽️", color: "bg-amber-50 text-amber-700" },
+    { label: "מסעדות",       value: stats.restaurants, icon: "🍽️" },
     ...(stats.users !== null
-      ? [{ label: "משתמשים", value: stats.users, icon: "👥", color: "bg-purple-50 text-purple-600" }]
+      ? [{ label: "משתמשים", value: stats.users,        icon: "👥" }]
       : []),
-    { label: "פריטים בתפריט", value: stats.items, icon: "🍕", color: "bg-green-50 text-green-600" },
+    { label: "פריטים בתפריט", value: stats.items,      icon: "🍕" },
   ];
 
   return (
     <div className="p-4 md:p-8">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {cards.map(card => (
-          <div key={card.label} className="bg-white rounded-xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 ${card.color}`}>
-              {card.icon}
-            </div>
+          <div key={card.label}
+            className="bg-white rounded-xl px-4 py-4 shadow-sm flex items-center gap-3"
+            style={{ border: "1px solid #e8ecf1", borderRight: "3px solid #c9a84c" }}>
+            <div className="text-2xl shrink-0">{card.icon}</div>
             <div>
-              <div className="text-lg font-bold text-gray-900 leading-tight">{card.value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{card.label}</div>
+              <div className="text-2xl font-bold leading-none" style={{ color: "#0f172a" }}>{card.value}</div>
+              <div className="text-xs mt-1.5" style={{ color: "#94a3b8" }}>{card.label}</div>
             </div>
           </div>
         ))}
