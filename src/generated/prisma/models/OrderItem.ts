@@ -50,6 +50,7 @@ export type OrderItemMinAggregateOutputType = {
   heldUntilFired: boolean | null
   firedAt: Date | null
   doneAt: Date | null
+  servedAt: Date | null
 }
 
 export type OrderItemMaxAggregateOutputType = {
@@ -64,6 +65,7 @@ export type OrderItemMaxAggregateOutputType = {
   heldUntilFired: boolean | null
   firedAt: Date | null
   doneAt: Date | null
+  servedAt: Date | null
 }
 
 export type OrderItemCountAggregateOutputType = {
@@ -78,6 +80,7 @@ export type OrderItemCountAggregateOutputType = {
   heldUntilFired: number
   firedAt: number
   doneAt: number
+  servedAt: number
   _all: number
 }
 
@@ -106,6 +109,7 @@ export type OrderItemMinAggregateInputType = {
   heldUntilFired?: true
   firedAt?: true
   doneAt?: true
+  servedAt?: true
 }
 
 export type OrderItemMaxAggregateInputType = {
@@ -120,6 +124,7 @@ export type OrderItemMaxAggregateInputType = {
   heldUntilFired?: true
   firedAt?: true
   doneAt?: true
+  servedAt?: true
 }
 
 export type OrderItemCountAggregateInputType = {
@@ -134,6 +139,7 @@ export type OrderItemCountAggregateInputType = {
   heldUntilFired?: true
   firedAt?: true
   doneAt?: true
+  servedAt?: true
   _all?: true
 }
 
@@ -235,6 +241,7 @@ export type OrderItemGroupByOutputType = {
   heldUntilFired: boolean
   firedAt: Date | null
   doneAt: Date | null
+  servedAt: Date | null
   _count: OrderItemCountAggregateOutputType | null
   _avg: OrderItemAvgAggregateOutputType | null
   _sum: OrderItemSumAggregateOutputType | null
@@ -272,6 +279,7 @@ export type OrderItemWhereInput = {
   heldUntilFired?: Prisma.BoolFilter<"OrderItem"> | boolean
   firedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   doneAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
+  servedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   order?: Prisma.XOR<Prisma.OrderScalarRelationFilter, Prisma.OrderWhereInput>
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
   modifiers?: Prisma.OrderItemModifierListRelationFilter
@@ -289,6 +297,7 @@ export type OrderItemOrderByWithRelationInput = {
   heldUntilFired?: Prisma.SortOrder
   firedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   doneAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  servedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   order?: Prisma.OrderOrderByWithRelationInput
   item?: Prisma.ItemOrderByWithRelationInput
   modifiers?: Prisma.OrderItemModifierOrderByRelationAggregateInput
@@ -309,6 +318,7 @@ export type OrderItemWhereUniqueInput = Prisma.AtLeast<{
   heldUntilFired?: Prisma.BoolFilter<"OrderItem"> | boolean
   firedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   doneAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
+  servedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   order?: Prisma.XOR<Prisma.OrderScalarRelationFilter, Prisma.OrderWhereInput>
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
   modifiers?: Prisma.OrderItemModifierListRelationFilter
@@ -326,6 +336,7 @@ export type OrderItemOrderByWithAggregationInput = {
   heldUntilFired?: Prisma.SortOrder
   firedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   doneAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  servedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.OrderItemCountOrderByAggregateInput
   _avg?: Prisma.OrderItemAvgOrderByAggregateInput
   _max?: Prisma.OrderItemMaxOrderByAggregateInput
@@ -348,6 +359,7 @@ export type OrderItemScalarWhereWithAggregatesInput = {
   heldUntilFired?: Prisma.BoolWithAggregatesFilter<"OrderItem"> | boolean
   firedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
   doneAt?: Prisma.DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
+  servedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
 }
 
 export type OrderItemCreateInput = {
@@ -360,6 +372,7 @@ export type OrderItemCreateInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
   order: Prisma.OrderCreateNestedOneWithoutItemsInput
   item: Prisma.ItemCreateNestedOneWithoutOrderItemsInput
   modifiers?: Prisma.OrderItemModifierCreateNestedManyWithoutOrderItemInput
@@ -377,6 +390,7 @@ export type OrderItemUncheckedCreateInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedCreateNestedManyWithoutOrderItemInput
 }
 
@@ -390,6 +404,7 @@ export type OrderItemUpdateInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   order?: Prisma.OrderUpdateOneRequiredWithoutItemsNestedInput
   item?: Prisma.ItemUpdateOneRequiredWithoutOrderItemsNestedInput
   modifiers?: Prisma.OrderItemModifierUpdateManyWithoutOrderItemNestedInput
@@ -407,6 +422,7 @@ export type OrderItemUncheckedUpdateInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedUpdateManyWithoutOrderItemNestedInput
 }
 
@@ -422,6 +438,7 @@ export type OrderItemCreateManyInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
 }
 
 export type OrderItemUpdateManyMutationInput = {
@@ -434,6 +451,7 @@ export type OrderItemUpdateManyMutationInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type OrderItemUncheckedUpdateManyInput = {
@@ -448,6 +466,7 @@ export type OrderItemUncheckedUpdateManyInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type OrderItemListRelationFilter = {
@@ -472,6 +491,7 @@ export type OrderItemCountOrderByAggregateInput = {
   heldUntilFired?: Prisma.SortOrder
   firedAt?: Prisma.SortOrder
   doneAt?: Prisma.SortOrder
+  servedAt?: Prisma.SortOrder
 }
 
 export type OrderItemAvgOrderByAggregateInput = {
@@ -492,6 +512,7 @@ export type OrderItemMaxOrderByAggregateInput = {
   heldUntilFired?: Prisma.SortOrder
   firedAt?: Prisma.SortOrder
   doneAt?: Prisma.SortOrder
+  servedAt?: Prisma.SortOrder
 }
 
 export type OrderItemMinOrderByAggregateInput = {
@@ -506,6 +527,7 @@ export type OrderItemMinOrderByAggregateInput = {
   heldUntilFired?: Prisma.SortOrder
   firedAt?: Prisma.SortOrder
   doneAt?: Prisma.SortOrder
+  servedAt?: Prisma.SortOrder
 }
 
 export type OrderItemSumOrderByAggregateInput = {
@@ -627,6 +649,7 @@ export type OrderItemCreateWithoutItemInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
   order: Prisma.OrderCreateNestedOneWithoutItemsInput
   modifiers?: Prisma.OrderItemModifierCreateNestedManyWithoutOrderItemInput
 }
@@ -642,6 +665,7 @@ export type OrderItemUncheckedCreateWithoutItemInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedCreateNestedManyWithoutOrderItemInput
 }
 
@@ -686,6 +710,7 @@ export type OrderItemScalarWhereInput = {
   heldUntilFired?: Prisma.BoolFilter<"OrderItem"> | boolean
   firedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   doneAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
+  servedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
 }
 
 export type OrderItemCreateWithoutOrderInput = {
@@ -698,6 +723,7 @@ export type OrderItemCreateWithoutOrderInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
   item: Prisma.ItemCreateNestedOneWithoutOrderItemsInput
   modifiers?: Prisma.OrderItemModifierCreateNestedManyWithoutOrderItemInput
 }
@@ -713,6 +739,7 @@ export type OrderItemUncheckedCreateWithoutOrderInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedCreateNestedManyWithoutOrderItemInput
 }
 
@@ -752,6 +779,7 @@ export type OrderItemCreateWithoutModifiersInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
   order: Prisma.OrderCreateNestedOneWithoutItemsInput
   item: Prisma.ItemCreateNestedOneWithoutOrderItemsInput
 }
@@ -768,6 +796,7 @@ export type OrderItemUncheckedCreateWithoutModifiersInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
 }
 
 export type OrderItemCreateOrConnectWithoutModifiersInput = {
@@ -796,6 +825,7 @@ export type OrderItemUpdateWithoutModifiersInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   order?: Prisma.OrderUpdateOneRequiredWithoutItemsNestedInput
   item?: Prisma.ItemUpdateOneRequiredWithoutOrderItemsNestedInput
 }
@@ -812,6 +842,7 @@ export type OrderItemUncheckedUpdateWithoutModifiersInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type OrderItemCreateManyItemInput = {
@@ -825,6 +856,7 @@ export type OrderItemCreateManyItemInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
 }
 
 export type OrderItemUpdateWithoutItemInput = {
@@ -837,6 +869,7 @@ export type OrderItemUpdateWithoutItemInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   order?: Prisma.OrderUpdateOneRequiredWithoutItemsNestedInput
   modifiers?: Prisma.OrderItemModifierUpdateManyWithoutOrderItemNestedInput
 }
@@ -852,6 +885,7 @@ export type OrderItemUncheckedUpdateWithoutItemInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedUpdateManyWithoutOrderItemNestedInput
 }
 
@@ -866,6 +900,7 @@ export type OrderItemUncheckedUpdateManyWithoutItemInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type OrderItemCreateManyOrderInput = {
@@ -879,6 +914,7 @@ export type OrderItemCreateManyOrderInput = {
   heldUntilFired?: boolean
   firedAt?: Date | string | null
   doneAt?: Date | string | null
+  servedAt?: Date | string | null
 }
 
 export type OrderItemUpdateWithoutOrderInput = {
@@ -891,6 +927,7 @@ export type OrderItemUpdateWithoutOrderInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutOrderItemsNestedInput
   modifiers?: Prisma.OrderItemModifierUpdateManyWithoutOrderItemNestedInput
 }
@@ -906,6 +943,7 @@ export type OrderItemUncheckedUpdateWithoutOrderInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedUpdateManyWithoutOrderItemNestedInput
 }
 
@@ -920,6 +958,7 @@ export type OrderItemUncheckedUpdateManyWithoutOrderInput = {
   heldUntilFired?: Prisma.BoolFieldUpdateOperationsInput | boolean
   firedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   doneAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 
@@ -965,6 +1004,7 @@ export type OrderItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   heldUntilFired?: boolean
   firedAt?: boolean
   doneAt?: boolean
+  servedAt?: boolean
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
   modifiers?: boolean | Prisma.OrderItem$modifiersArgs<ExtArgs>
@@ -983,6 +1023,7 @@ export type OrderItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   heldUntilFired?: boolean
   firedAt?: boolean
   doneAt?: boolean
+  servedAt?: boolean
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["orderItem"]>
@@ -999,6 +1040,7 @@ export type OrderItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   heldUntilFired?: boolean
   firedAt?: boolean
   doneAt?: boolean
+  servedAt?: boolean
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["orderItem"]>
@@ -1015,9 +1057,10 @@ export type OrderItemSelectScalar = {
   heldUntilFired?: boolean
   firedAt?: boolean
   doneAt?: boolean
+  servedAt?: boolean
 }
 
-export type OrderItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "itemId" | "quantity" | "price" | "notes" | "itemStatus" | "course" | "heldUntilFired" | "firedAt" | "doneAt", ExtArgs["result"]["orderItem"]>
+export type OrderItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "itemId" | "quantity" | "price" | "notes" | "itemStatus" | "course" | "heldUntilFired" | "firedAt" | "doneAt" | "servedAt", ExtArgs["result"]["orderItem"]>
 export type OrderItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
@@ -1052,6 +1095,7 @@ export type $OrderItemPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     heldUntilFired: boolean
     firedAt: Date | null
     doneAt: Date | null
+    servedAt: Date | null
   }, ExtArgs["result"]["orderItem"]>
   composites: {}
 }
@@ -1489,6 +1533,7 @@ export interface OrderItemFieldRefs {
   readonly heldUntilFired: Prisma.FieldRef<"OrderItem", 'Boolean'>
   readonly firedAt: Prisma.FieldRef<"OrderItem", 'DateTime'>
   readonly doneAt: Prisma.FieldRef<"OrderItem", 'DateTime'>
+  readonly servedAt: Prisma.FieldRef<"OrderItem", 'DateTime'>
 }
     
 
