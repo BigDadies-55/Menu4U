@@ -502,7 +502,7 @@ function TableCard({
                 const isServed = !!servedAt;
                 const isServeBusy = busy.has(itemId + "-serve");
                 const isCancelBusy = busy.has(itemId + "-cancel");
-                const canCancel = !isPending && !isDelivered && !isReady && !isPaid && !isCancelled && !isItemCancelled && !isDone;
+                const canCancel = !isDelivered && !isReady && !isPaid && !isCancelled && !isItemCancelled && !isDone;
                 // Show serve button when item is cooked (DONE) or order is READY/DELIVERED, and order is not yet PAID/CANCELLED
                 const canServe = !isItemCancelled && !isCancelled && !isPaid && (itemStatus === "DONE" || isReady || isDelivered);
 
