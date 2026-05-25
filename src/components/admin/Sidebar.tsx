@@ -62,6 +62,8 @@ type NavLeaf = {
   href: string; label: string; I: React.FC;
   exact?: boolean; superAdmin?: boolean; adminOnly?: boolean;
   ownerOnly?: boolean; waiterHide?: boolean; displayHide?: boolean;
+  /** Paths that, when active, should NOT highlight this item */
+  excludeStartsWith?: string[];
   children?: NavLeaf[];
 };
 
@@ -92,7 +94,7 @@ const GROUPS: NavGroup[] = [
     id: "service", label: "שירות", I: Ic.Service,
     displayHide: true,
     items: [
-      { href: "/admin/orders",       label: "הזמנות",          I: Ic.Orders,    displayHide: true },
+      { href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
       { href: "/admin/cashier",      label: "קאשייר",           I: Ic.Cashier,   displayHide: true },
       { href: "/admin/orders/stats", label: "סטטיסטיקות",      I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
@@ -131,6 +133,7 @@ interface SidebarProps {
 /* ─── Helpers ────────────────────────────────────────────── */
 function isLeafActive(leaf: NavLeaf, pathname: string): boolean {
   if (leaf.exact) return pathname === leaf.href;
+  if (leaf.excludeStartsWith?.some(p => pathname === p || pathname.startsWith(p + "/"))) return false;
   return pathname === leaf.href || pathname.startsWith(leaf.href + "/");
 }
 

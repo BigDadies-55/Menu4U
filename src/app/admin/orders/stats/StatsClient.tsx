@@ -55,95 +55,149 @@ const SOURCE_LABELS: Record<string, string> = {
   POS:    "קופה",
 };
 
-/* ── Gauge (semicircle speedometer) ────────────────────────── */
-function GaugeArc({
-  value,        // 0–max
+/* ── Modern ring gauge ─────────────────────────────────────── */
+function RingGauge({
+  value,
   max,
   label,
   sublabel,
-  color,
-  size = 140,
   displayValue,
-  thresholds,   // optional: [{at: 0.5, color:"#f00"}, ...]
+  thresholds,
+  size = 148,
 }: {
   value: number;
   max: number;
   label: string;
   sublabel?: string;
-  color: string;
-  size?: number;
   displayValue?: string;
-  thresholds?: { at: number; color: string }[]; // fraction of max
+  thresholds: { at: number; color: string; bg: string }[];
+  size?: number;
 }) {
-  const cx = size / 2;
-  const cy = size / 2 + 10;
-  const r = (size / 2) - 14;
-  const startAngle = -210; // degrees (pointing lower-left)
-  const sweepAngle = 240;  // degrees total arc
-
   const pct = Math.min(1, Math.max(0, max > 0 ? value / max : 0));
 
-  // Determine color based on thresholds
-  let arcColor = color;
-  if (thresholds) {
-    for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
-      if (pct >= t.at) arcColor = t.color;
-    }
+  // Pick color tier
+  let color = thresholds[0].color;
+  let bgLight = thresholds[0].bg;
+  for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
+    if (pct >= t.at) { color = t.color; bgLight = t.bg; }
   }
 
-  function polarToXY(angleDeg: number, radius: number) {
-    const rad = (angleDeg * Math.PI) / 180;
-    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
-  }
-
-  function describeArc(startDeg: number, endDeg: number, radius: number) {
-    const s = polarToXY(startDeg, radius);
-    const e = polarToXY(endDeg, radius);
-    const large = endDeg - startDeg > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${radius} ${radius} 0 ${large} 1 ${e.x} ${e.y}`;
-  }
-
-  const bgEnd = startAngle + sweepAngle;
-  const fillEnd = startAngle + sweepAngle * pct;
-
-  // Needle
-  const needleAngle = startAngle + sweepAngle * pct;
-  const needleTip = polarToXY(needleAngle, r - 8);
-  const needleBase1 = polarToXY(needleAngle - 90, 6);
-  const needleBase2 = polarToXY(needleAngle + 90, 6);
+  // SVG ring geometry
+  const cx = size / 2, cy = size / 2;
+  const strokeW = 10;
+  const r = cx - strokeW / 2 - 2;
+  const circumference = 2 * Math.PI * r;
+  // 270° arc: starts at 135° (bottom-left), goes clockwise 270°
+  const GAP = 90; // degrees left open (at the bottom)
+  const arcFraction = (360 - GAP) / 360;
+  const dashTotal = circumference * arcFraction;
+  const dashFill  = dashTotal * pct;
+  // rotate so arc starts at 135° (bottom-left gap)
+  const rotateAngle = 90 + GAP / 2; // 135°
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-      <svg width={size} height={size * 0.72} viewBox={`0 0 ${size} ${size * 0.72}`}>
-        {/* Background arc */}
-        <path
-          d={describeArc(startAngle, bgEnd, r)}
-          fill="none" stroke="#e5e7eb" strokeWidth={10} strokeLinecap="round"
-        />
-        {/* Filled arc */}
-        {pct > 0 && (
-          <path
-            d={describeArc(startAngle, fillEnd, r)}
-            fill="none" stroke={arcColor} strokeWidth={10} strokeLinecap="round"
-            style={{ transition: "stroke-dasharray 0.6s ease, stroke 0.3s" }}
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <defs>
+            <linearGradient id={`rg-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={color} stopOpacity="0.6" />
+              <stop offset="100%" stopColor={color} stopOpacity="1" />
+            </linearGradient>
+          </defs>
+          {/* Track */}
+          <circle
+            cx={cx} cy={cy} r={r}
+            fill="none"
+            stroke="#f1f5f9"
+            strokeWidth={strokeW}
+            strokeDasharray={`${dashTotal} ${circumference}`}
+            strokeLinecap="round"
+            transform={`rotate(${rotateAngle} ${cx} ${cy})`}
           />
+          {/* Fill */}
+          {pct > 0 && (
+            <circle
+              cx={cx} cy={cy} r={r}
+              fill="none"
+              stroke={`url(#rg-${label})`}
+              strokeWidth={strokeW}
+              strokeDasharray={`${dashFill} ${circumference}`}
+              strokeLinecap="round"
+              transform={`rotate(${rotateAngle} ${cx} ${cy})`}
+              style={{ transition: "stroke-dasharray 0.7s cubic-bezier(.4,0,.2,1)" }}
+            />
+          )}
+        </svg>
+
+        {/* Center content */}
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          paddingBottom: 8,
+        }}>
+          {/* Colored dot */}
+          <div style={{
+            width: 8, height: 8, borderRadius: "50%",
+            background: color, marginBottom: 4,
+            boxShadow: `0 0 8px ${color}80`,
+          }} />
+          {/* Value */}
+          <div style={{
+            fontSize: size * 0.175,
+            fontWeight: 800,
+            lineHeight: 1,
+            color: "#0f172a",
+            letterSpacing: "-0.03em",
+            fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif",
+          }}>
+            {displayValue ?? (Number.isFinite(value) ? String(Math.round(value)) : "—")}
+          </div>
+          {/* Light percentage bar */}
+          <div style={{
+            marginTop: 6,
+            width: size * 0.36,
+            height: 3,
+            borderRadius: 99,
+            background: "#f1f5f9",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              height: "100%",
+              width: `${pct * 100}%`,
+              background: color,
+              borderRadius: 99,
+              transition: "width 0.7s cubic-bezier(.4,0,.2,1)",
+            }} />
+          </div>
+          {/* Subtle bg tint */}
+          <div style={{
+            position: "absolute", inset: strokeW + 6,
+            borderRadius: "50%",
+            background: bgLight,
+            zIndex: -1,
+          }} />
+        </div>
+      </div>
+
+      {/* Label */}
+      <div style={{ textAlign: "center", lineHeight: 1.3 }}>
+        <div style={{
+          fontSize: 13, fontWeight: 700, color: "#1e293b",
+          fontFamily: "'Inter', system-ui, sans-serif",
+          letterSpacing: "-0.01em",
+        }}>
+          {label}
+        </div>
+        {sublabel && (
+          <div style={{
+            fontSize: 11, color: "#94a3b8", marginTop: 3,
+            fontFamily: "'Inter', system-ui, sans-serif",
+          }}>
+            {sublabel}
+          </div>
         )}
-        {/* Center pivot dot */}
-        <circle cx={cx} cy={cy} r={5} fill={arcColor} />
-        {/* Needle */}
-        <polygon
-          points={`${needleTip.x},${needleTip.y} ${needleBase1.x},${needleBase1.y} ${needleBase2.x},${needleBase2.y}`}
-          fill={arcColor} opacity={0.85}
-        />
-        {/* Value text */}
-        <text x={cx} y={cy - 18} textAnchor="middle"
-          style={{ fontSize: size * 0.155, fontWeight: 800, fill: "#111827", fontFamily: "sans-serif" }}>
-          {displayValue ?? (Number.isFinite(value) ? (value % 1 === 0 ? value : value.toFixed(1)) : "—")}
-        </text>
-      </svg>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{label}</div>
-        {sublabel && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{sublabel}</div>}
       </div>
     </div>
   );
@@ -327,58 +381,64 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
 
           {/* ── Gauge dashboard ── */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">🎯 מדדי ביצוע</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center">
-              <GaugeArc
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 style={{ fontSize: 17, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em", fontFamily: "'Inter', system-ui, sans-serif" }}>
+                  מדדי ביצוע
+                </h2>
+                <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 2, fontFamily: "'Inter', system-ui, sans-serif" }}>
+                  ביצועי שירות בזמן אמת
+                </p>
+              </div>
+              <span style={{ fontSize: 22 }}>🎯</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
+              <RingGauge
                 value={stats.completionRate}
                 max={100}
                 label="שיעור השלמה"
                 sublabel="DELIVERED + PAID"
                 displayValue={`${stats.completionRate.toFixed(0)}%`}
-                color="#22c55e"
                 thresholds={[
-                  { at: 0,    color: "#ef4444" },
-                  { at: 0.5,  color: "#f59e0b" },
-                  { at: 0.75, color: "#22c55e" },
+                  { at: 0,    color: "#ef4444", bg: "rgba(239,68,68,0.04)" },
+                  { at: 0.5,  color: "#f59e0b", bg: "rgba(245,158,11,0.04)" },
+                  { at: 0.75, color: "#22c55e", bg: "rgba(34,197,94,0.04)" },
                 ]}
               />
-              <GaugeArc
+              <RingGauge
                 value={stats.cancelRate}
                 max={30}
                 label="שיעור ביטולים"
                 sublabel="יעד: פחות מ-5%"
                 displayValue={`${stats.cancelRate.toFixed(1)}%`}
-                color="#ef4444"
                 thresholds={[
-                  { at: 0,    color: "#22c55e" },
-                  { at: 0.17, color: "#f59e0b" }, // 5/30
-                  { at: 0.33, color: "#ef4444" }, // 10/30
+                  { at: 0,    color: "#22c55e", bg: "rgba(34,197,94,0.04)" },
+                  { at: 0.17, color: "#f59e0b", bg: "rgba(245,158,11,0.04)" },
+                  { at: 0.33, color: "#ef4444", bg: "rgba(239,68,68,0.04)" },
                 ]}
               />
-              <GaugeArc
+              <RingGauge
                 value={stats.totalTime.count > 0 ? stats.totalTime.avg : 0}
                 max={60}
                 label="זמן שירות ממוצע"
-                sublabel="יעד: פחות מ-30 דק'"
+                sublabel="יעד: פחות מ-30 דק׳"
                 displayValue={stats.totalTime.count > 0 ? fmtMin(stats.totalTime.avg) : "—"}
-                color="#3b82f6"
                 thresholds={[
-                  { at: 0,    color: "#22c55e" },
-                  { at: 0.5,  color: "#f59e0b" }, // 30 min
-                  { at: 0.67, color: "#ef4444" }, // 40 min
+                  { at: 0,    color: "#22c55e", bg: "rgba(34,197,94,0.04)" },
+                  { at: 0.5,  color: "#f59e0b", bg: "rgba(245,158,11,0.04)" },
+                  { at: 0.67, color: "#ef4444", bg: "rgba(239,68,68,0.04)" },
                 ]}
               />
-              <GaugeArc
+              <RingGauge
                 value={stats.deliveredToPayTime?.count > 0 ? stats.deliveredToPayTime.avg : 0}
                 max={30}
                 label="המתנה לתשלום"
                 sublabel="DELIVERED → PAID"
                 displayValue={stats.deliveredToPayTime?.count > 0 ? fmtMin(stats.deliveredToPayTime.avg) : "—"}
-                color="#c9a84c"
                 thresholds={[
-                  { at: 0,    color: "#22c55e" },
-                  { at: 0.33, color: "#f59e0b" }, // 10 min
-                  { at: 0.67, color: "#ef4444" }, // 20 min
+                  { at: 0,    color: "#22c55e", bg: "rgba(34,197,94,0.04)" },
+                  { at: 0.33, color: "#f59e0b", bg: "rgba(245,158,11,0.04)" },
+                  { at: 0.67, color: "#ef4444", bg: "rgba(239,68,68,0.04)" },
                 ]}
               />
             </div>
