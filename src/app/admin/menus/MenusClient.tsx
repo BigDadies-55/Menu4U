@@ -968,6 +968,18 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     ? [...selectedMenu.categories].sort((a, b) => a.sortOrder - b.sortOrder)
     : [];
 
+  // Collapsed categories — all start collapsed; stores IDs of *expanded* ones
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  function toggleCat(id: string) {
+    setExpandedCats(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  // Reset when menu changes
+  useEffect(() => { setExpandedCats(new Set()); }, [selectedMenu?.id]);
+
   // #3 — hide menu selector when restaurant has only 1 menu (reduces complexity)
   const isSingleMenu = (selectedRestaurant?.menus.length ?? 0) <= 1;
 
@@ -1142,13 +1154,23 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     )}
                   </div>
                 ) : (
-                  sortedCategories.map((cat, idx) => (
-                    <div key={cat.id} className="bg-white rounded-xl shadow-sm border border-gray-100">
-                      <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-                        {cat.image && <img src={cat.image} alt={cat.name} className="w-10 h-10 rounded-lg object-cover" />}
+                  sortedCategories.map((cat, idx) => {
+                    const isExpanded = expandedCats.has(cat.id);
+                    return (
+                    <div key={cat.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                      {/* Category header — always visible, click to expand */}
+                      <div
+                        className="p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                        onClick={() => toggleCat(cat.id)}
+                      >
+                        {cat.image && <img src={cat.image} alt={cat.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />}
                         <h3 className="font-semibold text-gray-900 flex-1">{cat.name}</h3>
+                        {/* Item count badge */}
+                        <span className="text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 shrink-0">
+                          {cat.items.length} פריטים
+                        </span>
                         {canEdit && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                             <div className="flex flex-col gap-0.5">
                               <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
                                 className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none">▲</button>
@@ -1160,57 +1182,69 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                             <button onClick={() => deleteCategory(cat.id)} className="text-sm text-red-400 hover:text-red-600">מחק</button>
                           </div>
                         )}
+                        {/* Chevron */}
+                        <svg
+                          className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
                       </div>
-                      <div className="divide-y divide-gray-50">
-                        {cat.items.length === 0 ? (
-                          <div className="p-6 text-center">
-                            <div className="text-2xl mb-1">🍽️</div>
-                            <p className="text-sm text-gray-400 mb-2">אין פריטים בקטגוריה זו</p>
-                            {canEdit && (
-                              <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                                className="text-xs text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-lg px-3 py-1.5">
-                                + הוסף פריט ראשון
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          cat.items.map(item => (
-                            <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap">
-                              {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`font-medium ${!item.isActive ? "text-gray-400 line-through" : "text-gray-900"}`}>{item.name}</span>
-                                  {item.isVegetarian && <span title="צמחוני" className="text-green-500 text-xs">🌿</span>}
-                                  {item.isVegan && <span title="טבעוני" className="text-green-600 text-xs">🌱</span>}
-                                  {item.isGlutenFree && <span title="ללא גלוטן" className="text-yellow-500 text-xs font-bold">GF</span>}
-                                  {item.prepTime != null && (
-                                    <span className="bg-blue-50 text-blue-600 text-xs px-1.5 py-0.5 rounded-full font-medium">⏱ {item.prepTime}&apos;</span>
-                                  )}
-                                  {item.tags?.map(tag => (
-                                    <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{tag}</span>
-                                  ))}
-                                </div>
-                                {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
-                              </div>
-                              <div className="flex items-center gap-3 shrink-0">
-                                <span className="font-semibold text-gray-900">{formatPrice(item.price)}</span>
-                                {canEdit && (
-                                  <>
-                                    <button onClick={() => openEditItem(cat, item)} className="text-xs text-blue-500 hover:text-blue-700">ערוך</button>
-                                    <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
-                                      className={`text-xs ${item.isActive ? "text-gray-400 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}>
-                                      {item.isActive ? "השבת" : "הפעל"}
-                                    </button>
-                                    <button onClick={() => deleteItem(cat.id, item.id)} className="text-xs text-red-400 hover:text-red-600">מחק</button>
-                                  </>
-                                )}
-                              </div>
+
+                      {/* Items — only when expanded */}
+                      {isExpanded && (
+                        <div className="divide-y divide-gray-50 border-t border-gray-100">
+                          {cat.items.length === 0 ? (
+                            <div className="p-6 text-center">
+                              <div className="text-2xl mb-1">🍽️</div>
+                              <p className="text-sm text-gray-400 mb-2">אין פריטים בקטגוריה זו</p>
+                              {canEdit && (
+                                <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-lg px-3 py-1.5">
+                                  + הוסף פריט ראשון
+                                </button>
+                              )}
                             </div>
-                          ))
-                        )}
-                      </div>
+                          ) : (
+                            cat.items.map(item => (
+                              <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap">
+                                {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`font-medium ${!item.isActive ? "text-gray-400 line-through" : "text-gray-900"}`}>{item.name}</span>
+                                    {item.isVegetarian && <span title="צמחוני" className="text-green-500 text-xs">🌿</span>}
+                                    {item.isVegan && <span title="טבעוני" className="text-green-600 text-xs">🌱</span>}
+                                    {item.isGlutenFree && <span title="ללא גלוטן" className="text-yellow-500 text-xs font-bold">GF</span>}
+                                    {item.prepTime != null && (
+                                      <span className="bg-blue-50 text-blue-600 text-xs px-1.5 py-0.5 rounded-full font-medium">⏱ {item.prepTime}&apos;</span>
+                                    )}
+                                    {item.tags?.map(tag => (
+                                      <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{tag}</span>
+                                    ))}
+                                  </div>
+                                  {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <span className="font-semibold text-gray-900">{formatPrice(item.price)}</span>
+                                  {canEdit && (
+                                    <>
+                                      <button onClick={() => openEditItem(cat, item)} className="text-xs text-blue-500 hover:text-blue-700">ערוך</button>
+                                      <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
+                                        className={`text-xs ${item.isActive ? "text-gray-400 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}>
+                                        {item.isActive ? "השבת" : "הפעל"}
+                                      </button>
+                                      <button onClick={() => deleteItem(cat.id, item.id)} className="text-xs text-red-400 hover:text-red-600">מחק</button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
