@@ -92,13 +92,9 @@ const GROUPS: NavGroup[] = [
     id: "service", label: "שירות", I: Ic.Service,
     displayHide: true,
     items: [
-      {
-        href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true,
-        children: [
-          { href: "/admin/orders/stats", label: "סטטיסטיקות", I: Ic.Stats, waiterHide: true, displayHide: true, ownerOnly: true },
-        ],
-      },
-      { href: "/admin/cashier", label: "קאשייר", I: Ic.Cashier, displayHide: true },
+      { href: "/admin/orders",       label: "הזמנות",          I: Ic.Orders,    displayHide: true },
+      { href: "/admin/cashier",      label: "קאשייר",           I: Ic.Cashier,   displayHide: true },
+      { href: "/admin/orders/stats", label: "סטטיסטיקות",      I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
       { href: "/admin/customers",      label: "לקוחות",         I: Ic.Customers, displayHide: true },
     ],

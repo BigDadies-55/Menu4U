@@ -74,6 +74,7 @@ export async function GET(req: Request) {
         restaurantId: true,
         status: true,
         totalAmount: true,
+        orderSource: true,
         createdAt: true,
         updatedAt: true,
         restaurant: { select: { name: true } },
@@ -105,9 +106,11 @@ export async function GET(req: Request) {
 
   // Compute per-status durations (minutes)
   const durations: Record<string, number[]> = {
-    PENDING: [], CONFIRMED: [], PREPARING: [], READY: [],
+    PENDING: [], CONFIRMED: [], PREPARING: [], READY: [], DELIVERED: [],
   };
-  const totalTimes: number[] = [];
+  const totalTimes: number[] = [];     // PENDING → DELIVERED
+  const totalTimesPaid: number[] = []; // PENDING → PAID (full cycle including payment)
+  const deliveredToPayTimes: number[] = []; // DELIVERED → PAID
 
   for (const order of orders) {
     const logs = (logsByOrder.get(order.id) ?? []).sort(
@@ -117,21 +120,33 @@ export async function GET(req: Request) {
 
     let prevTime = new Date(order.createdAt).getTime();
     let prevStatus = "PENDING";
+    let deliveredTime: number | null = null;
 
     for (const log of logs) {
       const duration = (new Date(log.changedAt).getTime() - prevTime) / 60000;
       if (durations[prevStatus] !== undefined && duration >= 0) {
         durations[prevStatus].push(duration);
       }
+      if (log.toStatus === "DELIVERED") {
+        deliveredTime = new Date(log.changedAt).getTime();
+      }
+      if (log.toStatus === "PAID" && deliveredTime !== null) {
+        const payWait = (new Date(log.changedAt).getTime() - deliveredTime) / 60000;
+        if (payWait >= 0) deliveredToPayTimes.push(payWait);
+      }
       prevTime = new Date(log.changedAt).getTime();
       prevStatus = log.toStatus;
     }
 
-    // Total time: createdAt → last log
     const last = logs[logs.length - 1];
-    if (["DELIVERED"].includes(last.toStatus)) {
-      const total = (new Date(last.changedAt).getTime() - new Date(order.createdAt).getTime()) / 60000;
-      totalTimes.push(total);
+    const createdMs = new Date(order.createdAt).getTime();
+    const lastMs = new Date(last.changedAt).getTime();
+
+    if (last.toStatus === "DELIVERED") {
+      totalTimes.push((lastMs - createdMs) / 60000);
+    }
+    if (last.toStatus === "PAID") {
+      totalTimesPaid.push((lastMs - createdMs) / 60000);
     }
   }
 
@@ -159,15 +174,28 @@ export async function GET(req: Request) {
     });
   }
 
-  // Status distribution
+  // Status distribution — now includes PAID
   const statusCounts: Record<string, number> = {
-    PENDING: 0, CONFIRMED: 0, PREPARING: 0, READY: 0, DELIVERED: 0, CANCELLED: 0,
+    PENDING: 0, CONFIRMED: 0, PREPARING: 0, READY: 0,
+    DELIVERED: 0, PAID: 0, CANCELLED: 0,
   };
   for (const o of orders) statusCounts[o.status] = (statusCounts[o.status] ?? 0) + 1;
 
-  // Total revenue
+  // Order source breakdown
+  const bySource: Record<string, number> = {};
+  for (const o of orders) {
+    const src = o.orderSource ?? "ONLINE";
+    bySource[src] = (bySource[src] ?? 0) + 1;
+  }
+
+  // Revenue: exclude CANCELLED only
   const totalRevenue = orders
     .filter(o => o.status !== "CANCELLED")
+    .reduce((s, o) => s + o.totalAmount, 0);
+
+  // Paid revenue specifically (only truly closed tables)
+  const paidRevenue = orders
+    .filter(o => o.status === "PAID")
     .reduce((s, o) => s + o.totalAmount, 0);
 
   // Average items per order
@@ -185,22 +213,41 @@ export async function GET(req: Request) {
     return avg(times);
   })();
 
+  // Completion = DELIVERED + PAID (both are "done")
+  const completedCount = (statusCounts.DELIVERED ?? 0) + (statusCounts.PAID ?? 0);
+
+  // Combined total times (PENDING → DELIVERED) + (PENDING → PAID)
+  const allCompletionTimes = [...totalTimes, ...totalTimesPaid];
+
   const stats = {
     period: fromParam ? spanDays : days,
     totalOrders: orders.length,
     totalRevenue,
-    avgOrderValue: orders.length ? totalRevenue / orders.filter(o => o.status !== "CANCELLED").length : 0,
+    paidRevenue,
+    avgOrderValue: completedCount > 0 ? totalRevenue / completedCount : 0,
     avgItems: Math.round(avgItems * 10) / 10,
     statusCounts,
+    bySource,
     cancelRate: orders.length ? (statusCounts.CANCELLED / orders.length) * 100 : 0,
-    completionRate: orders.length ? (statusCounts.DELIVERED / orders.length) * 100 : 0,
+    completionRate: orders.length ? (completedCount / orders.length) * 100 : 0,
+    paidRate: orders.length ? ((statusCounts.PAID ?? 0) / orders.length) * 100 : 0,
     durations: {
-      PENDING: { avg: avg(durations.PENDING), median: median(durations.PENDING), count: durations.PENDING.length },
+      PENDING:   { avg: avg(durations.PENDING),   median: median(durations.PENDING),   count: durations.PENDING.length },
       CONFIRMED: { avg: avg(durations.CONFIRMED), median: median(durations.CONFIRMED), count: durations.CONFIRMED.length },
       PREPARING: { avg: avg(durations.PREPARING), median: median(durations.PREPARING), count: durations.PREPARING.length },
-      READY: { avg: avg(durations.READY), median: median(durations.READY), count: durations.READY.length },
+      READY:     { avg: avg(durations.READY),     median: median(durations.READY),     count: durations.READY.length },
+      DELIVERED: { avg: avg(durations.DELIVERED), median: median(durations.DELIVERED), count: durations.DELIVERED.length },
     },
-    totalTime: { avg: avg(totalTimes), median: median(totalTimes), count: totalTimes.length },
+    deliveredToPayTime: {
+      avg: avg(deliveredToPayTimes),
+      median: median(deliveredToPayTimes),
+      count: deliveredToPayTimes.length,
+    },
+    totalTime: {
+      avg: avg(allCompletionTimes),
+      median: median(allCompletionTimes),
+      count: allCompletionTimes.length,
+    },
     avgExpectedPrepTime,
     byHour,
     byDay,
