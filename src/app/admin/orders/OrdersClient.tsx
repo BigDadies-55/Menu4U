@@ -665,9 +665,15 @@ export default function OrdersClient({
 
   useEffect(() => {
     fetchOrders();
-    const iv = setInterval(() => fetchOrders(), 10000);
-    return () => clearInterval(iv);
-  }, [fetchOrders]);
+    // SSE — instant refresh on any order change
+    const sseUrl = `/api/admin/orders/stream${restaurantId ? `?restaurantId=${restaurantId}` : ""}`;
+    const es = new EventSource(sseUrl);
+    es.onmessage = () => { fetchOrders(); };
+    es.onerror   = () => { es.close(); };
+    // Fallback polling every 30s (SSE covers the fast path)
+    const iv = setInterval(() => fetchOrders(), 30000);
+    return () => { es.close(); clearInterval(iv); };
+  }, [fetchOrders, restaurantId]);
 
   // Keyboard shortcuts
   useEffect(() => {
