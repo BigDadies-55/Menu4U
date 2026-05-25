@@ -127,6 +127,7 @@ type Restaurant = {
   menuPaletteData?: string | null;
   ordersEnabled?: boolean;
   language?: string | null;
+  welcomeText?: string | null;
   menus: { id: string; categories: Category[] }[];
 };
 
@@ -657,20 +658,8 @@ export default function MenuElegantClient({
             {restaurant.name}
           </span>
 
-          {/* Language switcher */}
-          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.06)", borderRadius: 20, padding: "3px 6px" }}>
-            {(["he","en","ru","fr"] as const).map(l => (
-              <button key={l} onClick={() => switchLang(l)} style={{
-                background: lang === l ? "#C5A880" : "transparent",
-                color: lang === l ? "#0D0D0D" : "#fff",
-                border: "none", borderRadius: 12, padding: "3px 8px",
-                fontSize: 10, fontWeight: 700, cursor: "pointer",
-                opacity: lang === l ? 1 : 0.5,
-              }}>
-                {l === "he" ? "עב" : l.toUpperCase()}
-              </button>
-            ))}
-          </div>
+          {/* Spacer to keep header balanced */}
+          <div style={{ width: 60 }} />
         </header>
       )}
 
@@ -701,9 +690,10 @@ export default function MenuElegantClient({
 
             <div style={{ width: 48, height: 1, background: "rgba(197,168,128,0.5)", marginBottom: 32 }} />
 
-            {restaurant.address && (
-              <p style={{ maxWidth: 360, color: "#d4d4d4", fontSize: 15, fontWeight: 300, lineHeight: 1.7, marginBottom: 40 }}>
-                {restaurant.address}
+            {/* Welcome text (set in admin) or address fallback */}
+            {(restaurant.welcomeText || restaurant.address) && (
+              <p style={{ maxWidth: 360, color: "#d4d4d4", fontSize: 15, fontWeight: 300, lineHeight: 1.8, marginBottom: 40, whiteSpace: "pre-line" }}>
+                {restaurant.welcomeText || restaurant.address}
               </p>
             )}
 
@@ -746,20 +736,6 @@ export default function MenuElegantClient({
             )}
           </div>
 
-          {/* Language switcher on landing */}
-          <div style={{ position: "absolute", top: 16, left: 16, display: "flex", gap: 3, background: "rgba(0,0,0,0.4)", borderRadius: 20, padding: "3px 6px" }}>
-            {(["he","en","ru","fr"] as const).map(l => (
-              <button key={l} onClick={() => switchLang(l)} style={{
-                background: lang === l ? "#C5A880" : "transparent",
-                color: lang === l ? "#0D0D0D" : "#fff",
-                border: "none", borderRadius: 12, padding: "3px 8px",
-                fontSize: 10, fontWeight: 700, cursor: "pointer",
-                opacity: lang === l ? 1 : 0.55,
-              }}>
-                {l === "he" ? "עב" : l.toUpperCase()}
-              </button>
-            ))}
-          </div>
         </section>
       )}
 

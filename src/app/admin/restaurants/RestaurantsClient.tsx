@@ -24,6 +24,7 @@ type Restaurant = {
   ordersEnabled: boolean;
   kdsView: string;
   language: string;
+  welcomeText: string | null;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   createdAt: string;
@@ -48,6 +49,7 @@ const emptyForm = {
   ordersEnabled: false,
   kdsView: "STATION_DARK",
   language: "he",
+  welcomeText: "",
 };
 
 function toDateInput(val: string | null | undefined): string {
@@ -109,6 +111,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       ordersEnabled: r.ordersEnabled ?? false,
       kdsView: r.kdsView ?? "STATION_DARK",
       language: r.language ?? "he",
+      welcomeText: r.welcomeText ?? "",
     });
     setShowForm(true);
   }
@@ -148,6 +151,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       ordersEnabled: form.ordersEnabled,
       kdsView: form.kdsView,
       language: form.language,
+      welcomeText: form.welcomeText || null,
     };
 
     if (editTarget) {
@@ -424,6 +428,19 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   <option value="ru">Русский (ru)</option>
                   <option value="fr">Français (fr)</option>
                 </select>
+              </div>
+
+              {/* Welcome text */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">💬 טקסט ברוכים הבאים (מוצג בתפריט הציבורי מתחת לשם)</label>
+                <textarea
+                  value={form.welcomeText}
+                  onChange={e => setForm(f => ({ ...f, welcomeText: e.target.value }))}
+                  rows={4}
+                  placeholder="ברוכים הבאים אלינו..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm resize-y"
+                  dir="auto"
+                />
               </div>
 
               {/* Subscription */}

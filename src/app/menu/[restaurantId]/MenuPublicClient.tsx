@@ -604,26 +604,6 @@ export default function MenuPublicClient({
               </button>
             )}
           </div>
-          {/* Language switcher */}
-          <div style={{
-            display: "flex", gap: 4, alignItems: "center",
-            background: "rgba(0,0,0,0.25)", borderRadius: 20, padding: "3px 6px",
-          }}>
-            {(["he","en","ru","fr"] as const).map(l => (
-              <button key={l} onClick={() => switchLang(l)}
-                style={{
-                  background: lang === l ? "var(--gold, #c9a35d)" : "transparent",
-                  color: lang === l ? "var(--bg, #111)" : "var(--text, #fff)",
-                  border: "none", borderRadius: 12, padding: "3px 8px",
-                  fontSize: 11, fontWeight: 700, cursor: "pointer",
-                  opacity: lang === l ? 1 : 0.6,
-                  transition: "all 150ms",
-                }}
-              >
-                {l === "he" ? "עב" : l.toUpperCase()}
-              </button>
-            ))}
-          </div>
         </div>
       </header>
 

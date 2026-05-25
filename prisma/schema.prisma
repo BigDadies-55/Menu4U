@@ -105,6 +105,7 @@ model Restaurant {
   customDomain  String?
   copyright     String?
   language      String    @default("he")
+  welcomeText   String?
   subscriptionFrom DateTime?
   subscriptionTo   DateTime?
   createdAt     DateTime @default(now())
