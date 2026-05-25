@@ -55,101 +55,6 @@ const SOURCE_LABELS: Record<string, string> = {
   POS:    "קופה",
 };
 
-/* ── Gauge (semicircle speedometer) ────────────────────────── */
-function GaugeArc({
-  value,        // 0–max
-  max,
-  label,
-  sublabel,
-  color,
-  size = 140,
-  displayValue,
-  thresholds,   // optional: [{at: 0.5, color:"#f00"}, ...]
-}: {
-  value: number;
-  max: number;
-  label: string;
-  sublabel?: string;
-  color: string;
-  size?: number;
-  displayValue?: string;
-  thresholds?: { at: number; color: string }[]; // fraction of max
-}) {
-  const cx = size / 2;
-  const cy = size / 2 + 10;
-  const r = (size / 2) - 14;
-  const startAngle = -210; // degrees (pointing lower-left)
-  const sweepAngle = 240;  // degrees total arc
-
-  const pct = Math.min(1, Math.max(0, max > 0 ? value / max : 0));
-
-  // Determine color based on thresholds
-  let arcColor = color;
-  if (thresholds) {
-    for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
-      if (pct >= t.at) arcColor = t.color;
-    }
-  }
-
-  function polarToXY(angleDeg: number, radius: number) {
-    const rad = (angleDeg * Math.PI) / 180;
-    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
-  }
-
-  function describeArc(startDeg: number, endDeg: number, radius: number) {
-    const s = polarToXY(startDeg, radius);
-    const e = polarToXY(endDeg, radius);
-    const large = endDeg - startDeg > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${radius} ${radius} 0 ${large} 1 ${e.x} ${e.y}`;
-  }
-
-  const bgEnd = startAngle + sweepAngle;
-  const fillEnd = startAngle + sweepAngle * pct;
-
-  // Needle
-  const needleAngle = startAngle + sweepAngle * pct;
-  const needleTip = polarToXY(needleAngle, r - 8);
-  const needleBase1 = polarToXY(needleAngle - 90, 6);
-  const needleBase2 = polarToXY(needleAngle + 90, 6);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-      <svg width={size} height={size * 0.72} viewBox={`0 0 ${size} ${size * 0.72}`}>
-        {/* Background arc */}
-        <path
-          d={describeArc(startAngle, bgEnd, r)}
-          fill="none" stroke="#e5e7eb" strokeWidth={10} strokeLinecap="round"
-        />
-        {/* Filled arc */}
-        {pct > 0 && (
-          <path
-            d={describeArc(startAngle, fillEnd, r)}
-            fill="none" stroke={arcColor} strokeWidth={10} strokeLinecap="round"
-            style={{ transition: "stroke-dasharray 0.6s ease, stroke 0.3s" }}
-          />
-        )}
-        {/* Center pivot dot */}
-        <circle cx={cx} cy={cy} r={5} fill={arcColor} />
-        {/* Needle */}
-        <polygon
-          points={`${needleTip.x},${needleTip.y} ${needleBase1.x},${needleBase1.y} ${needleBase2.x},${needleBase2.y}`}
-          fill={arcColor} opacity={0.85}
-        />
-        {/* Value text */}
-        <text x={cx} y={cy - 18} textAnchor="middle"
-          style={{ fontSize: size * 0.155, fontWeight: 800, fill: "#111827", fontFamily: "sans-serif" }}>
-          {displayValue ?? (Number.isFinite(value) ? (value % 1 === 0 ? value : value.toFixed(1)) : "—")}
-        </text>
-      </svg>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{label}</div>
-        {sublabel && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{sublabel}</div>}
-      </div>
-    </div>
-  );
-}
-
-/* ── Mini bar ─────────────────────────────────────────────── */
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.max(4, (value / max) * 100) : 4;
   return (
@@ -159,7 +64,6 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
   );
 }
 
-/* ── Recommendations ─────────────────────────────────────── */
 function genRecommendations(s: Stats): { icon: string; text: string; severity: "warn" | "info" | "ok" }[] {
   const recs: { icon: string; text: string; severity: "warn" | "info" | "ok" }[] = [];
 
@@ -173,7 +77,7 @@ function genRecommendations(s: Stats): { icon: string; text: string; severity: "
   if (PENDING.count > 0 && PENDING.avg > 4) {
     recs.push({
       icon: "⏰",
-      text: `ממוצע המתנה לאישור הזמנה: ${fmtMin(PENDING.avg)}. מומלץ לאשר תוך 2-3 דק'.`,
+      text: `ממוצע המתנה לאישור הזמנה: ${fmtMin(PENDING.avg)}. מומלץ לאשר תוך 2-3 דק' כדי לשפר חוויית לקוח.`,
       severity: PENDING.avg > 8 ? "warn" : "info",
     });
   } else if (PENDING.count > 0) {
@@ -185,53 +89,113 @@ function genRecommendations(s: Stats): { icon: string; text: string; severity: "
     if (overrun > 8) {
       recs.push({
         icon: "👨‍🍳",
-        text: `זמן הכנה ממוצע (${fmtMin(PREPARING.avg)}) גבוה ב-${fmtMin(overrun)} מהמוגדר (${fmtMin(s.avgExpectedPrepTime)}).`,
+        text: `זמן ההכנה הממוצע (${fmtMin(PREPARING.avg)}) גבוה ב-${fmtMin(overrun)} מהזמן המוגדר למנות (${fmtMin(s.avgExpectedPrepTime)}). שקול לעדכן זמני הכנה בתפריט.`,
         severity: "warn",
       });
     } else if (overrun < -5) {
-      recs.push({ icon: "🚀", text: `הצוות מהיר יותר מהצפוי! ${fmtMin(PREPARING.avg)} לעומת ${fmtMin(s.avgExpectedPrepTime)} מוגדר.`, severity: "ok" });
+      recs.push({
+        icon: "🚀",
+        text: `הצוות מהיר יותר מהצפוי! הכנה ממוצעת ${fmtMin(PREPARING.avg)} לעומת ${fmtMin(s.avgExpectedPrepTime)} מוגדר.`,
+        severity: "ok",
+      });
     }
   }
 
   if (s.totalTime.count > 0) {
-    if (s.totalTime.avg > 40)
-      recs.push({ icon: "⚡", text: `זמן שירות כולל ממוצע: ${fmtMin(s.totalTime.avg)}. יעד מומלץ: פחות מ-30 דק'.`, severity: "warn" });
-    else
-      recs.push({ icon: "🏆", text: `זמן שירות ממוצע מלא: ${fmtMin(s.totalTime.avg)} — תוצאה טובה.`, severity: "ok" });
+    if (s.totalTime.avg > 40) {
+      recs.push({
+        icon: "⚡",
+        text: `זמן השלמה כולל ממוצע: ${fmtMin(s.totalTime.avg)}. לקוחות מצפים לפחות מ-30 דק'. בדוק איפה צווארי הבקבוק.`,
+        severity: "warn",
+      });
+    } else {
+      recs.push({
+        icon: "🏆",
+        text: `זמן שירות ממוצע מלא: ${fmtMin(s.totalTime.avg)} — תוצאה טובה.`,
+        severity: "ok",
+      });
+    }
   }
 
-  if (READY.count > 0 && READY.avg > 5)
-    recs.push({ icon: "🔔", text: `הזמנות מחכות ${fmtMin(READY.avg)} בממוצע לאחר שמוכנות. שקול לשפר תהליך הגשה.`, severity: READY.avg > 10 ? "warn" : "info" });
+  if (READY.count > 0 && READY.avg > 5) {
+    recs.push({
+      icon: "🔔",
+      text: `הזמנות מחכות ${fmtMin(READY.avg)} בממוצע לאחר שמוכנות. הגדרת התראות לצוות ההגשה תוכל לשפר.`,
+      severity: READY.avg > 10 ? "warn" : "info",
+    });
+  }
 
+  // Payment wait time
   if (s.deliveredToPayTime.count > 0) {
-    if (s.deliveredToPayTime.avg > 10)
-      recs.push({ icon: "💳", text: `זמן ממוצע מהגשה לתשלום: ${fmtMin(s.deliveredToPayTime.avg)}. שקול לשפר זרימת הקאשייר.`, severity: s.deliveredToPayTime.avg > 20 ? "warn" : "info" });
-    else
-      recs.push({ icon: "💳", text: `סגירת חשבון מהירה: ${fmtMin(s.deliveredToPayTime.avg)} בממוצע — יעיל.`, severity: "ok" });
+    if (s.deliveredToPayTime.avg > 10) {
+      recs.push({
+        icon: "💳",
+        text: `זמן ממוצע מהגשה לתשלום: ${fmtMin(s.deliveredToPayTime.avg)}. שקול לשפר את זרימת הקאשייר.`,
+        severity: s.deliveredToPayTime.avg > 20 ? "warn" : "info",
+      });
+    } else {
+      recs.push({
+        icon: "💳",
+        text: `זמן ממוצע לסגירת חשבון: ${fmtMin(s.deliveredToPayTime.avg)} — מהיר ויעיל.`,
+        severity: "ok",
+      });
+    }
   }
 
-  if (s.paidRate > 0)
-    recs.push({ icon: "🏦", text: `${s.paidRate.toFixed(0)}% מהזמנות עברו סגירת חשבון דיגיטלית (${fmt(s.paidRevenue)}).`, severity: "info" });
+  // Paid rate
+  if (s.paidRate > 0) {
+    recs.push({
+      icon: "🏦",
+      text: `${s.paidRate.toFixed(0)}% מהזמנות עברו סגירת חשבון דיגיטלית (${fmt(s.paidRevenue)} הכנסות מאושרות).`,
+      severity: "info",
+    });
+  }
 
-  if (s.cancelRate > 15)
-    recs.push({ icon: "⚠️", text: `שיעור ביטולים גבוה: ${s.cancelRate.toFixed(1)}%. בדוק אם הזמנות מגיעות בשעות סגורות.`, severity: "warn" });
-  else if (s.cancelRate > 0)
-    recs.push({ icon: "📋", text: `שיעור ביטולים: ${s.cancelRate.toFixed(1)}% — תקין.`, severity: "ok" });
+  if (s.cancelRate > 15) {
+    recs.push({
+      icon: "⚠️",
+      text: `שיעור ביטולים גבוה: ${s.cancelRate.toFixed(1)}%. בדוק אם הזמנות מגיעות בשעות סגורות.`,
+      severity: "warn",
+    });
+  } else if (s.cancelRate > 0) {
+    recs.push({
+      icon: "📋",
+      text: `שיעור ביטולים: ${s.cancelRate.toFixed(1)}% — תקין.`,
+      severity: "ok",
+    });
+  }
 
   const peakCount = s.byHour[s.peakHour];
-  if (peakCount > 0)
-    recs.push({ icon: "📈", text: `שעת שיא: ${s.peakHour}:00–${s.peakHour + 1}:00 עם ${peakCount} הזמנות. וודא שיש מספיק צוות.`, severity: "info" });
+  if (peakCount > 0) {
+    recs.push({
+      icon: "📈",
+      text: `שעת שיא: ${s.peakHour}:00–${s.peakHour + 1}:00 עם ${peakCount} הזמנות. וודא שיש מספיק צוות בשעה זו.`,
+      severity: "info",
+    });
+  }
 
-  if (s.totalRevenue > 0)
-    recs.push({ icon: "💰", text: `סה"כ הכנסות: ${fmt(s.totalRevenue)} ב-${s.period} ימים. ממוצע ${fmt(s.avgOrderValue)} להזמנה.`, severity: "info" });
+  if (s.totalRevenue > 0) {
+    recs.push({
+      icon: "💰",
+      text: `סה"כ הכנסות: ${fmt(s.totalRevenue)} ב-${s.period} ימים. ממוצע ${fmt(s.avgOrderValue)} להזמנה.`,
+      severity: "info",
+    });
+  }
 
   return recs;
 }
 
-function todayStr() { return new Date().toISOString().slice(0, 10); }
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
 
-/* ── Main component ─────────────────────────────────────── */
-export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants: Restaurant[]; isSuperAdmin: boolean }) {
+export default function StatsClient({
+  restaurants,
+  isSuperAdmin,
+}: {
+  restaurants: Restaurant[];
+  isSuperAdmin: boolean;
+}) {
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [period, setPeriod] = useState(30);
   const [dateFrom, setDateFrom] = useState("");
@@ -242,8 +206,12 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
   const fetchStats = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (dateFrom) { params.set("from", dateFrom); if (dateTo) params.set("to", dateTo); }
-    else params.set("days", String(period));
+    if (dateFrom) {
+      params.set("from", dateFrom);
+      if (dateTo) params.set("to", dateTo);
+    } else {
+      params.set("days", String(period));
+    }
     if (restaurantId) params.set("restaurantId", restaurantId);
     const res = await fetch(`/api/admin/orders/stats?${params}`);
     if (res.ok) setStats(await res.json());
@@ -254,15 +222,14 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
 
   const recommendations = stats ? genRecommendations(stats) : [];
   const maxByHour = stats ? Math.max(...stats.byHour, 1) : 1;
-  const maxByDay  = stats ? Math.max(...stats.byDay.map(d => d.count), 1) : 1;
+  const maxByDay = stats ? Math.max(...stats.byDay.map(d => d.count), 1) : 1;
   const maxDuration = stats
-    ? Math.max(...Object.values(stats.durations).map(d => d.avg), (stats.deliveredToPayTime?.avg ?? 0), 1)
+    ? Math.max(...Object.values(stats.durations).map(d => d.avg), stats.deliveredToPayTime.avg, 1)
     : 1;
 
   return (
     <div className="p-4 md:p-8 space-y-6" dir="rtl">
-
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">📊 סטטיסטיקות הזמנות</h1>
@@ -286,12 +253,17 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
           </div>
           <div className="flex items-center gap-1.5 border border-gray-200 rounded-xl px-3 py-1.5 bg-white">
             <span className="text-xs text-gray-400">מ-</span>
-            <input type="date" value={dateFrom} max={dateTo || todayStr()} onChange={e => setDateFrom(e.target.value)}
+            <input type="date" value={dateFrom} max={dateTo || todayStr()}
+              onChange={e => setDateFrom(e.target.value)}
               className="text-sm text-gray-700 focus:outline-none bg-transparent" />
             <span className="text-xs text-gray-400 mx-1">עד</span>
-            <input type="date" value={dateTo} min={dateFrom || undefined} max={todayStr()} onChange={e => setDateTo(e.target.value)}
+            <input type="date" value={dateTo} min={dateFrom || undefined} max={todayStr()}
+              onChange={e => setDateTo(e.target.value)}
               className="text-sm text-gray-700 focus:outline-none bg-transparent" />
-            {dateFrom && <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-gray-400 hover:text-gray-700 text-xs mr-1">✕</button>}
+            {dateFrom && (
+              <button onClick={() => { setDateFrom(""); setDateTo(""); }}
+                className="text-gray-400 hover:text-gray-700 text-xs mr-1">✕</button>
+            )}
           </div>
         </div>
       </div>
@@ -305,14 +277,14 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
         </div>
       ) : stats && (
         <>
-          {/* ── KPI cards ── */}
+          {/* KPI cards — now 5 */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label: "הזמנות",         value: stats.totalOrders,                                          sub: `${stats.period} ימים`,                                      color: "#f59e0b" },
-              { label: "הכנסות",          value: fmt(stats.totalRevenue),                                    sub: `ממוצע ${fmt(stats.avgOrderValue)} להזמנה`,                 color: "#22c55e" },
-              { label: "שולמו בקאשייר",   value: fmt(stats.paidRevenue ?? 0),                                sub: `${stats.statusCounts?.PAID ?? 0} הזמנות סגורות`,           color: "#c9a84c" },
-              { label: "זמן שירות ממוצע", value: stats.totalTime?.count ? fmtMin(stats.totalTime.avg) : "—", sub: stats.totalTime?.count ? `${stats.totalTime.count} הזמנות` : "אין לוגים עדיין", color: "#3b82f6" },
-              { label: "שיעור השלמה",     value: `${stats.completionRate.toFixed(0)}%`,                      sub: `${stats.cancelRate.toFixed(1)}% בוטלו`,                    color: "#a855f7" },
+              { label: "הזמנות",        value: stats.totalOrders,                                         sub: `${stats.period} ימים`,                                      color: "#f59e0b" },
+              { label: "הכנסות",         value: fmt(stats.totalRevenue),                                   sub: `ממוצע ${fmt(stats.avgOrderValue)} להזמנה`,                 color: "#22c55e" },
+              { label: "שולמו בקאשייר",  value: fmt(stats.paidRevenue),                                    sub: `${stats.statusCounts.PAID ?? 0} הזמנות סגורות`,            color: "#c9a84c" },
+              { label: "זמן שירות ממוצע",value: stats.totalTime.count ? fmtMin(stats.totalTime.avg) : "—", sub: stats.totalTime.count ? `${stats.totalTime.count} הזמנות` : "אין לוגים עדיין", color: "#3b82f6" },
+              { label: "שיעור השלמה",    value: `${stats.completionRate.toFixed(0)}%`,                     sub: `${stats.cancelRate.toFixed(1)}% בוטלו`,                    color: "#a855f7" },
             ].map(({ label, value, sub, color }) => (
               <div key={label} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
                 <div className="text-xs text-gray-500 font-medium mb-1">{label}</div>
@@ -325,67 +297,8 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             ))}
           </div>
 
-          {/* ── Gauge dashboard ── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">🎯 מדדי ביצוע</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center">
-              <GaugeArc
-                value={stats.completionRate}
-                max={100}
-                label="שיעור השלמה"
-                sublabel="DELIVERED + PAID"
-                displayValue={`${stats.completionRate.toFixed(0)}%`}
-                color="#22c55e"
-                thresholds={[
-                  { at: 0,    color: "#ef4444" },
-                  { at: 0.5,  color: "#f59e0b" },
-                  { at: 0.75, color: "#22c55e" },
-                ]}
-              />
-              <GaugeArc
-                value={stats.cancelRate}
-                max={30}
-                label="שיעור ביטולים"
-                sublabel="יעד: פחות מ-5%"
-                displayValue={`${stats.cancelRate.toFixed(1)}%`}
-                color="#ef4444"
-                thresholds={[
-                  { at: 0,    color: "#22c55e" },
-                  { at: 0.17, color: "#f59e0b" }, // 5/30
-                  { at: 0.33, color: "#ef4444" }, // 10/30
-                ]}
-              />
-              <GaugeArc
-                value={stats.totalTime.count > 0 ? stats.totalTime.avg : 0}
-                max={60}
-                label="זמן שירות ממוצע"
-                sublabel="יעד: פחות מ-30 דק'"
-                displayValue={stats.totalTime.count > 0 ? fmtMin(stats.totalTime.avg) : "—"}
-                color="#3b82f6"
-                thresholds={[
-                  { at: 0,    color: "#22c55e" },
-                  { at: 0.5,  color: "#f59e0b" }, // 30 min
-                  { at: 0.67, color: "#ef4444" }, // 40 min
-                ]}
-              />
-              <GaugeArc
-                value={stats.deliveredToPayTime?.count > 0 ? stats.deliveredToPayTime.avg : 0}
-                max={30}
-                label="המתנה לתשלום"
-                sublabel="DELIVERED → PAID"
-                displayValue={stats.deliveredToPayTime?.count > 0 ? fmtMin(stats.deliveredToPayTime.avg) : "—"}
-                color="#c9a84c"
-                thresholds={[
-                  { at: 0,    color: "#22c55e" },
-                  { at: 0.33, color: "#f59e0b" }, // 10 min
-                  { at: 0.67, color: "#ef4444" }, // 20 min
-                ]}
-              />
-            </div>
-          </div>
-
-          {/* ── Order source breakdown ── */}
-          {stats.bySource && Object.keys(stats.bySource).length > 1 && (
+          {/* Order source breakdown */}
+          {Object.keys(stats.bySource).length > 1 && (
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
               <h2 className="text-lg font-bold text-gray-900 mb-4">📱 מקור הזמנות</h2>
               <div className="flex gap-4 flex-wrap">
@@ -403,7 +316,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             </div>
           )}
 
-          {/* ── Time per stage ── */}
+          {/* Status flow — time per stage — now includes DELIVERED→PAID */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-gray-900 mb-1">⏱ זמן ממוצע בכל שלב</h2>
             <p className="text-xs text-gray-400 mb-5">
@@ -422,22 +335,24 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                         <span className="text-sm font-medium text-gray-700">{STAGE_LABELS[st]}</span>
                       </div>
                       <div className="text-left text-sm">
-                        {d?.count > 0 ? (
+                        {d.count > 0 ? (
                           <>
                             <span className="font-bold text-gray-900">{fmtMin(d.avg)}</span>
                             <span className="text-gray-400 mr-2 text-xs">מדיאן {fmtMin(d.median)}</span>
                             <span className="text-gray-300 text-xs">({d.count})</span>
                           </>
-                        ) : <span className="text-gray-300 text-sm">—</span>}
+                        ) : (
+                          <span className="text-gray-300 text-sm">—</span>
+                        )}
                       </div>
                     </div>
-                    <MiniBar value={d?.count > 0 ? d.avg : 0} max={maxDuration} color={STAGE_COLORS[st]} />
+                    <MiniBar value={d.count > 0 ? d.avg : 0} max={maxDuration} color={STAGE_COLORS[st]} />
                   </div>
                 );
               })}
 
               {/* DELIVERED → PAID */}
-              {stats.deliveredToPayTime?.count > 0 && (
+              {stats.deliveredToPayTime.count > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
@@ -455,7 +370,8 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
               )}
             </div>
 
-            {stats.totalTime?.count > 0 && (
+            {/* Total */}
+            {stats.totalTime.count > 0 && (
               <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-700">⏱ זמן כולל (PENDING → DELIVERED/PAID)</span>
                 <span className="font-bold text-gray-900">
@@ -466,7 +382,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             )}
           </div>
 
-          {/* ── Hourly chart ── */}
+          {/* Hourly chart */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-gray-900 mb-1">🕐 הזמנות לפי שעה</h2>
             <p className="text-xs text-gray-400 mb-5">התפלגות ב-{stats.period} ימים האחרונים</p>
@@ -476,9 +392,11 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                 const isPeak = h === stats.peakHour && count > 0;
                 return (
                   <div key={h} className="flex-1 flex flex-col items-center gap-1" title={`${h}:00 — ${count} הזמנות`}>
-                    <div className="w-full rounded-t transition-all duration-500"
+                    <div className="w-full rounded-t transition-all duration-500 cursor-pointer"
                       style={{ height: `${heightPct}%`, background: isPeak ? "#f59e0b" : "#e5e7eb" }} />
-                    {h % 4 === 0 && <span className="text-[9px] text-gray-400">{h}</span>}
+                    {(h % 4 === 0) && (
+                      <span className="text-[9px] text-gray-400">{h}</span>
+                    )}
                   </div>
                 );
               })}
@@ -490,7 +408,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             )}
           </div>
 
-          {/* ── Daily volume ── */}
+          {/* Daily volume */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-gray-900 mb-1">📅 נפח יומי</h2>
             <p className="text-xs text-gray-400 mb-5">מספר הזמנות לפי יום</p>
@@ -509,18 +427,19 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             </div>
           </div>
 
-          {/* ── Recommendations ── */}
+          {/* Recommendations */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-gray-900 mb-4">💡 המלצות</h2>
             <div className="space-y-3">
               {recommendations.map((rec, i) => {
-                const bg  = rec.severity === "warn" ? "bg-red-50 border-red-200"   : rec.severity === "ok" ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-200";
+                const bg = rec.severity === "warn" ? "bg-red-50 border-red-200" : rec.severity === "ok" ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-200";
                 const dot = rec.severity === "warn" ? "bg-red-400" : rec.severity === "ok" ? "bg-green-400" : "bg-blue-400";
                 return (
                   <div key={i} className={`flex gap-3 p-4 rounded-xl border ${bg}`}>
                     <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${dot}`} />
                     <div className="text-sm text-gray-700">
-                      <span className="ml-1">{rec.icon}</span>{rec.text}
+                      <span className="ml-1">{rec.icon}</span>
+                      {rec.text}
                     </div>
                   </div>
                 );
@@ -528,18 +447,18 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             </div>
           </div>
 
-          {/* ── Status distribution ── */}
+          {/* Status distribution — now includes PAID */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-gray-900 mb-4">🍽 פילוג סטטוסים</h2>
             <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
               {[
-                { s: "PENDING",   label: "ממתין", color: "bg-yellow-100 text-yellow-800" },
-                { s: "CONFIRMED", label: "אושר",  color: "bg-blue-100 text-blue-800" },
-                { s: "PREPARING", label: "בהכנה", color: "bg-amber-100 text-amber-800" },
-                { s: "READY",     label: "מוכן",  color: "bg-green-100 text-green-800" },
-                { s: "DELIVERED", label: "נמסר",  color: "bg-gray-100 text-gray-700" },
-                { s: "PAID",      label: "שולם",  color: "bg-emerald-100 text-emerald-800" },
-                { s: "CANCELLED", label: "בוטל",  color: "bg-red-100 text-red-700" },
+                { s: "PENDING",   label: "ממתין",  color: "bg-yellow-100 text-yellow-800" },
+                { s: "CONFIRMED", label: "אושר",   color: "bg-blue-100 text-blue-800" },
+                { s: "PREPARING", label: "בהכנה",  color: "bg-amber-100 text-amber-800" },
+                { s: "READY",     label: "מוכן",   color: "bg-green-100 text-green-800" },
+                { s: "DELIVERED", label: "נמסר",   color: "bg-gray-100 text-gray-700" },
+                { s: "PAID",      label: "שולם",   color: "bg-emerald-100 text-emerald-800" },
+                { s: "CANCELLED", label: "בוטל",   color: "bg-red-100 text-red-700" },
               ].map(({ s, label, color }) => (
                 <div key={s} className={`rounded-xl p-3 text-center ${color}`}>
                   <div className="text-2xl font-bold">{stats.statusCounts[s] ?? 0}</div>
