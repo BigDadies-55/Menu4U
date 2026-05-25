@@ -44,6 +44,10 @@ const ACTION_LABELS: Record<string, string> = {
   REMOVE_USER_FROM_RESTAURANT: "הסרה ממסעדה",
   CHANGE_PASSWORD: "שינוי סיסמה",
   RUN_MIGRATION: "הרצת מיגרציה",
+  CREATE_WAITER_ORDER: "הזמנת מלצר",
+  UPDATE_ORDER_STATUS: "שינוי סטטוס הזמנה",
+  CLOSE_TABLE: "סגירת שולחן / תשלום",
+  CLEAR_ALL_ORDERS: "מחיקת כל ההזמנות",
 };
 
 const ACTION_DOT: Record<string, string> = {
@@ -69,6 +73,10 @@ const ACTION_DOT: Record<string, string> = {
   REMOVE_USER_FROM_RESTAURANT: "#f97316",
   CHANGE_PASSWORD: "#8b5cf6",
   RUN_MIGRATION: "#8b5cf6",
+  CREATE_WAITER_ORDER: "#c9a84c",
+  UPDATE_ORDER_STATUS: "#0891b2",
+  CLOSE_TABLE: "#10b981",
+  CLEAR_ALL_ORDERS: "#ef4444",
 };
 
 const ALL_ACTIONS = Object.keys(ACTION_LABELS);
@@ -184,7 +192,7 @@ export default function LogsClient() {
               className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
             >
               <option value="">הכל</option>
-              {["restaurant","menu","category","item","user","restaurantUser","system"].map(e => (
+              {["restaurant","menu","category","item","user","restaurantUser","order","system"].map(e => (
                 <option key={e} value={e}>{e}</option>
               ))}
             </select>

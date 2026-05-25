@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -82,6 +83,18 @@ export async function POST(req: Request) {
       });
     }
   } catch { /* migration may not have run yet — ignore */ }
+
+  // ── Audit log ──
+  await logAudit({
+    userId: session.user.id,
+    userEmail: session.user.email,
+    action: "CLOSE_TABLE",
+    entity: "order",
+    entityId: restaurantId,
+    entityName: `שולחן ${tableNumber ?? "ללא שולחן"} · ₪${totalAmount.toFixed(0)} · ${openOrders.length} הזמנות`,
+    meta: { tableNumber, restaurantId, orderIds: openOrders.map(o => o.id), totalAmount },
+    ip: getIp(req),
+  });
 
   return NextResponse.json({ closed: openOrders.length, totalAmount });
 }
