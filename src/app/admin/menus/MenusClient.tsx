@@ -427,7 +427,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
           📋 העתק מתבנית
         </button>
         {groups.length > 0 && (
-          <button type="button" onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "#c9a84c" }}>
+          <button type="button" onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
             {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור תגיות"}
           </button>
         )}
@@ -1092,7 +1092,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   <div className="p-6 text-center">
                     <div className="text-2xl mb-2">📋</div>
                     <p className="text-xs text-gray-400 mb-3">אין תפריטים עדיין</p>
-                    {canEdit && <button onClick={() => setShowMenuForm(true)} className="text-xs text-white px-3 py-1.5 rounded-lg font-medium" style={{ background: "#c9a84c" }}>+ צור תפריט ראשון</button>}
+                    {canEdit && <button onClick={() => setShowMenuForm(true)} className="text-xs text-white px-3 py-1.5 rounded-lg font-medium" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>+ צור תפריט ראשון</button>}
                   </div>
                 )}
               </div>
@@ -1122,7 +1122,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   {canEdit && (
                     <button onClick={() => setShowCategoryForm(true)}
                       className="text-white px-4 py-2 rounded-lg text-sm font-medium"
-                      style={{ background: "#c9a84c" }}>
+                      style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                       + קטגוריה חדשה
                     </button>
                   )}
@@ -1136,7 +1136,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     {canEdit && (
                       <button onClick={() => setShowCategoryForm(true)}
                         className="inline-flex items-center gap-1.5 text-white px-5 py-2.5 rounded-lg text-sm font-medium"
-                        style={{ background: "#c9a84c" }}>
+                        style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                         + קטגוריה חדשה
                       </button>
                     )}
@@ -1230,7 +1230,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
               </div>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c" }}>
+                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "יוצר..." : "צור"}
                 </button>
                 <button type="button" onClick={() => setShowMenuForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -1277,7 +1277,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 </div>
               </details>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c" }}>
+                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "יוצר..." : "צור"}
                 </button>
                 <button type="button" onClick={() => setShowCategoryForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -1415,7 +1415,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               </details>
 
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c" }}>
+                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "שומר..." : editItem ? "שמור שינויים" : "הוסף פריט"}
                 </button>
                 <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -1497,7 +1497,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <div className="flex gap-3 pt-1">
                 <button type="submit" disabled={loading}
                   className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
-                  style={{ background: "#c9a84c" }}>
+                  style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "שומר..." : "שמור"}
                 </button>
                 <button type="button" onClick={() => setScheduleMenu(null)}
@@ -1649,7 +1649,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 <button
                   onClick={closeImportModal}
                   className="flex-1 text-white py-2.5 rounded-lg font-medium"
-                  style={{ background: "#c9a84c" }}
+                  style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}
                 >
                   סגור
                 </button>
@@ -1659,7 +1659,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     onClick={handleImport}
                     disabled={importing}
                     className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
-                    style={{ background: "#c9a84c" }}
+                    style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}
                   >
                     ייבא עכשיו
                   </button>

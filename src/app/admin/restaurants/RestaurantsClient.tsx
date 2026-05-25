@@ -64,6 +64,7 @@ const emptyForm = {
 const BTN_PRIMARY = {
   background: "#c9a84c",
   color: "#000",
+  boxShadow: "0 2px 8px rgba(201,168,76,0.35)",
 } as const;
 
 function toDateInput(val: string | null | undefined): string {

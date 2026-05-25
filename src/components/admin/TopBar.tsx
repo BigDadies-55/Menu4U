@@ -265,7 +265,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
           </span>
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
+            style={{ background: "linear-gradient(135deg,#8B6914,#c9a84c)" }}
           >
             {initials}
           </div>

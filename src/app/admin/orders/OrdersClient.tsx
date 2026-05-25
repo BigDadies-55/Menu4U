@@ -693,7 +693,7 @@ export default function OrdersClient({
             {(["active", "all"] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${filter === f ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-                style={filter === f ? { background: "#c9a84c" } : undefined}>
+                style={filter === f ? { background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" } : undefined}>
                 {f === "active" ? "פעילות" : "הכל"}
               </button>
             ))}
