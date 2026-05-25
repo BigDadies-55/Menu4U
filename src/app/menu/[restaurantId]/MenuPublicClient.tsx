@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./menu.css";
 import { buildPaletteStyle } from "@/lib/menuPalettes";
+import { getT, type Translations, type Lang } from "@/lib/translations";
 
 type TableOrderItem = {
   id: string;
@@ -85,6 +86,7 @@ type Restaurant = {
   menuPalette?: string | null;
   menuPaletteData?: string | null;
   ordersEnabled?: boolean;
+  language?: string | null;
   menus: { id: string; categories: Category[] }[];
 };
 
@@ -104,11 +106,11 @@ type CartItem = {
 type ModOption = { id: string; label: string; priceAdd: number; order: number };
 type ModGroup  = { id: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[] };
 
-function getItemBadges(item: Item): string[] {
+function getItemBadges(item: Item, t: Translations): string[] {
   const badges: string[] = [];
-  if (item.isVegetarian) badges.push("🌿 צמחוני");
-  if (item.isVegan) badges.push("🌱 טבעוני");
-  if (item.isGlutenFree) badges.push("ללא גלוטן");
+  if (item.isVegetarian) badges.push(t.vegBadge);
+  if (item.isVegan) badges.push(t.veganBadge);
+  if (item.isGlutenFree) badges.push(t.gfBadge);
   return [...badges, ...item.tags];
 }
 
@@ -116,10 +118,12 @@ function GuestRegistrationModal({
   onSave,
   restaurantName,
   tableNumber,
+  t,
 }: {
   onSave: (identity: { name: string; phone: string }) => void;
   restaurantName: string;
   tableNumber: string;
+  t: Translations;
 }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -128,8 +132,8 @@ function GuestRegistrationModal({
   function handleSubmit() {
     const trimName = name.trim();
     const trimPhone = phone.trim().replace(/\s/g, "");
-    if (!trimName) { setError("נא להזין שם"); return; }
-    if (!trimPhone || trimPhone.length < 9) { setError("נא להזין מספר טלפון תקין"); return; }
+    if (!trimName) { setError(t.nameRequired); return; }
+    if (!trimPhone || trimPhone.length < 9) { setError(t.phoneInvalid); return; }
     onSave({ name: trimName, phone: trimPhone });
   }
 
@@ -142,12 +146,12 @@ function GuestRegistrationModal({
       textAlign: "center",
     }}>
       <div style={{ fontSize: 36, marginBottom: 8 }}>👋</div>
-      <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 20, marginBottom: 4 }}>ברוך הבא!</div>
+      <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 20, marginBottom: 4 }}>{t.welcome}</div>
       <div style={{ color: "var(--text)", opacity: 0.6, fontSize: 14, marginBottom: 20 }}>
-        {restaurantName} • שולחן {tableNumber}
+        {restaurantName} • {t.tableLabel} {tableNumber}
       </div>
-      <div style={{ textAlign: "right", marginBottom: 14 }}>
-        <label style={{ display: "block", fontSize: 12, color: "var(--text)", opacity: 0.6, marginBottom: 4 }}>שם מלא *</label>
+      <div style={{ textAlign: t.dir === "rtl" ? "right" : "left", marginBottom: 14 }}>
+        <label style={{ display: "block", fontSize: 12, color: "var(--text)", opacity: 0.6, marginBottom: 4 }}>{t.fullName}</label>
         <input
           type="text"
           value={name}
@@ -161,14 +165,15 @@ function GuestRegistrationModal({
           }}
         />
       </div>
-      <div style={{ textAlign: "right", marginBottom: 20 }}>
-        <label style={{ display: "block", fontSize: 12, color: "var(--text)", opacity: 0.6, marginBottom: 4 }}>מספר טלפון *</label>
+      <div style={{ textAlign: t.dir === "rtl" ? "right" : "left", marginBottom: 20 }}>
+        <label style={{ display: "block", fontSize: 12, color: "var(--text)", opacity: 0.6, marginBottom: 4 }}>{t.phoneNumber}</label>
         <input
           type="tel"
           value={phone}
           onChange={e => setPhone(e.target.value)}
           placeholder="050-0000000"
           inputMode="numeric"
+          dir="ltr"
           style={{
             width: "100%", padding: "10px 12px", borderRadius: 9, fontSize: 15,
             background: "rgba(255,255,255,0.06)", border: "1px solid var(--border)",
@@ -186,7 +191,7 @@ function GuestRegistrationModal({
           border: "none", fontWeight: 700, fontSize: 16, cursor: "pointer",
         }}
       >
-        המשך לתפריט ←
+        {t.enter}
       </button>
       <div style={{ fontSize: 11, color: "var(--text)", opacity: 0.35, marginTop: 12 }}>
         הפרטים משמשים לזיהוי הזמנתך בלבד
@@ -333,6 +338,8 @@ export default function MenuPublicClient({
     fetchMyOrders(true, "mine", identity);
   }
 
+  const t = getT(restaurant.language);
+
   const theme = restaurant.menuTheme ?? 'luxury';
   const categories = restaurant.menus.flatMap(m => m.categories);
 
@@ -382,6 +389,12 @@ export default function MenuPublicClient({
     document.body.style.overflow = (modalItem || cartOpen || myOrdersOpen) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [modalItem, cartOpen, myOrdersOpen]);
+
+  useEffect(() => {
+    document.documentElement.dir = t.dir;
+    document.documentElement.lang = restaurant.language ?? "he";
+    return () => { document.documentElement.dir = "rtl"; document.documentElement.lang = "he"; };
+  }, [t.dir, restaurant.language]);
 
   async function openAddToCart(item: Item) {
     setModifierGroupsLoading(true);
@@ -500,12 +513,12 @@ export default function MenuPublicClient({
           notes: "",
         }),
       });
-      if (!res.ok) throw new Error("שגיאה בשליחת ההזמנה");
+      if (!res.ok) throw new Error(t.orderError);
       setCart([]);
       setCartOpen(false);
       setOrderSuccess(true);
     } catch (err: unknown) {
-      setOrderError(err instanceof Error ? err.message : "שגיאה בשליחת ההזמנה");
+      setOrderError(err instanceof Error ? err.message : t.orderError);
     } finally {
       setOrderLoading(false);
     }
@@ -515,9 +528,9 @@ export default function MenuPublicClient({
     const name  = regForm.name.trim();
     const phone = regForm.phone.trim().replace(/\s/g, "");
     const email = regForm.email.trim();
-    if (!name)  { setRegError("שם נדרש"); return; }
-    if (!phone || phone.length < 9) { setRegError("מספר טלפון נדרש"); return; }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setRegError("אימייל תקין נדרש"); return; }
+    if (!name)  { setRegError(t.nameField); return; }
+    if (!phone || phone.length < 9) { setRegError(t.phoneField); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setRegError(t.emailInvalid); return; }
     setRegLoading(true); setRegError("");
     try {
       const res = await fetch(`/api/menu/${restaurant.id}/register`, {
@@ -526,7 +539,7 @@ export default function MenuPublicClient({
         body: JSON.stringify({ name, phone, email }),
       });
       const data = await res.json();
-      if (!res.ok) { setRegError(data.error ?? "שגיאה בהרשמה"); return; }
+      if (!res.ok) { setRegError(data.error ?? t.registrationError); return; }
       setRegPendingId(data.pendingId);
       setRegOtp("");
       setRegStep("otp");
@@ -536,7 +549,7 @@ export default function MenuPublicClient({
   }
 
   async function handleVerifyOtp() {
-    if (!regOtp.trim()) { setRegError("יש להזין את הקוד"); return; }
+    if (!regOtp.trim()) { setRegError(t.otpRequired); return; }
     setRegLoading(true); setRegError("");
     try {
       const res = await fetch(`/api/menu/${restaurant.id}/verify-otp`, {
@@ -545,7 +558,7 @@ export default function MenuPublicClient({
         body: JSON.stringify({ pendingId: regPendingId, otp: regOtp.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) { setRegError(data.error ?? "שגיאה באימות"); return; }
+      if (!res.ok) { setRegError(data.error ?? t.verifyError); return; }
       // Mark as registered in localStorage — hide button permanently
       try { localStorage.setItem(`menu4u_customer_registered_${restaurant.id}`, "1"); } catch { /* ignore */ }
       setAlreadyRegistered(true);
@@ -653,7 +666,7 @@ export default function MenuPublicClient({
         {/* Category — items grid */}
         {view === "category" && selectedCat && (
           <div className="menu-page-anim">
-            <button className="menu-back-btn" onClick={goHome}>→ חזרה לתפריט</button>
+            <button className="menu-back-btn" onClick={goHome}>{t.dir === "rtl" ? "→" : "←"} {t.back}</button>
             <div className="menu-page-header">
               <h2 className="menu-page-title">{selectedCat.name}</h2>
               <div className="menu-page-ornament"><span>◆</span></div>
@@ -708,7 +721,7 @@ export default function MenuPublicClient({
                             letterSpacing: 0.5,
                           }}
                         >
-                          הוסף לסל
+                          {t.addToCart}
                         </button>
                       )}
                     </div>
@@ -723,13 +736,13 @@ export default function MenuPublicClient({
       {/* Floating action bar */}
       <div className="menu-floating-actions">
         {restaurant.phone && (
-          <a href={`tel:${restaurant.phone}`} className="menu-action-btn menu-btn-phone">📞 התקשרו</a>
+          <a href={`tel:${restaurant.phone}`} className="menu-action-btn menu-btn-phone">📞 {t.call}</a>
         )}
         {restaurant.locationUrl && (
-          <a href={restaurant.locationUrl} target="_blank" rel="noopener noreferrer" className="menu-action-btn menu-btn-map">📍 נווט</a>
+          <a href={restaurant.locationUrl} target="_blank" rel="noopener noreferrer" className="menu-action-btn menu-btn-map">📍 {t.navigate}</a>
         )}
         {restaurant.website && (
-          <a href={restaurant.website} target="_blank" rel="noopener noreferrer" className="menu-action-btn menu-btn-order">🌐 אתר</a>
+          <a href={restaurant.website} target="_blank" rel="noopener noreferrer" className="menu-action-btn menu-btn-order">🌐 {t.website}</a>
         )}
       </div>
 
@@ -755,8 +768,8 @@ export default function MenuPublicClient({
             boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
             zIndex: 40,
           }}
-          aria-label="הזמנות השולחן"
-          title="מה הזמנתי?"
+          aria-label={t.myOrders}
+          title={t.myOrders}
         >
           📋
         </button>
@@ -853,7 +866,7 @@ export default function MenuPublicClient({
                 borderBottom: "1px solid var(--border)",
               }}
             >
-              <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>סל הזמנות</span>
+              <span style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18 }}>{t.cart}</span>
               <button
                 onClick={() => setCartOpen(false)}
                 style={{
@@ -884,7 +897,7 @@ export default function MenuPublicClient({
                   alignItems: "center",
                 }}
               >
-                <span>שולחן: <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong></span>
+                <span>{t.tableLabel}: <strong style={{ color: "var(--gold)" }}>{tableNumber}</strong></span>
                 {guestIdentity && (
                   <span style={{ fontSize: 12, color: "var(--gold)" }}>👤 {guestIdentity.name}</span>
                 )}
@@ -942,7 +955,7 @@ export default function MenuPublicClient({
                       {/* Notes */}
                       <input
                         type="text"
-                        placeholder="הערה למנה..."
+                        placeholder={t.notePlaceholder}
                         value={c.notes ?? ""}
                         onChange={e => updateNotes(c.cartId, e.target.value)}
                         style={{
@@ -999,7 +1012,7 @@ export default function MenuPublicClient({
                   opacity: cart.length === 0 || orderLoading ? 0.5 : 1,
                 }}
               >
-                {orderLoading ? "שולח..." : "שלח הזמנה"}
+                {orderLoading ? t.sending : t.sendOrder}
               </button>
             </div>
           </div>
@@ -1010,7 +1023,7 @@ export default function MenuPublicClient({
       {showRegistration && tableNumber && restaurant.ordersEnabled && (
         <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)" }} />
-          <GuestRegistrationModal onSave={saveGuestIdentity} restaurantName={restaurant.name} tableNumber={tableNumber} />
+          <GuestRegistrationModal onSave={saveGuestIdentity} restaurantName={restaurant.name} tableNumber={tableNumber} t={t} />
         </div>
       )}
 

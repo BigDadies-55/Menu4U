@@ -104,6 +104,7 @@ model Restaurant {
   kdsView       String   @default("STATION_DARK")
   customDomain  String?
   copyright     String?
+  language      String    @default("he")
   subscriptionFrom DateTime?
   subscriptionTo   DateTime?
   createdAt     DateTime @default(now())

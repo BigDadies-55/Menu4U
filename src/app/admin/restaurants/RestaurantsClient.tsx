@@ -23,6 +23,7 @@ type Restaurant = {
   menuPaletteData: string | null;
   ordersEnabled: boolean;
   kdsView: string;
+  language: string;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   createdAt: string;
@@ -45,6 +46,7 @@ const emptyForm = {
   menuCustomBg: "#0a0a0a",
   ordersEnabled: false,
   kdsView: "STATION_DARK",
+  language: "he",
 };
 
 function toDateInput(val: string | null | undefined): string {
@@ -105,6 +107,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       menuCustomBg: (() => { try { return JSON.parse(r.menuPaletteData ?? '{}').bg ?? '#0a0a0a'; } catch { return '#0a0a0a'; } })(),
       ordersEnabled: r.ordersEnabled ?? false,
       kdsView: r.kdsView ?? "STATION_DARK",
+      language: r.language ?? "he",
     });
     setShowForm(true);
   }
@@ -143,6 +146,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       subscriptionTo: form.subscriptionTo ? new Date(form.subscriptionTo).toISOString() : null,
       ordersEnabled: form.ordersEnabled,
       kdsView: form.kdsView,
+      language: form.language,
     };
 
     if (editTarget) {
@@ -404,6 +408,21 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Language selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">🌐 שפת תפריט ציבורי</label>
+                <select
+                  value={form.language}
+                  onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                >
+                  <option value="he">עברית (he)</option>
+                  <option value="en">English (en)</option>
+                  <option value="ru">Русский (ru)</option>
+                  <option value="fr">Français (fr)</option>
+                </select>
               </div>
 
               {/* Subscription */}
