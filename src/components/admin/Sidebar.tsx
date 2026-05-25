@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@/generated/prisma/client";
@@ -7,6 +7,10 @@ import type { Role } from "@/generated/prisma/client";
 /* ─── Width ──────────────────────────────────────────────── */
 export const SIDEBAR_W_COLLAPSED = 256;
 export const SIDEBAR_W_EXPANDED  = 256;
+export const SIDEBAR_MIN_W = 180;
+export const SIDEBAR_MAX_W = 420;
+export const SIDEBAR_DEFAULT_W = 256;
+const LS_KEY = "menu4u_sidebar_w";
 
 /* ─── Admin palettes ─────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
@@ -286,6 +290,49 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
+  /* ── Resizable width ── */
+  const [sidebarW, setSidebarW] = useState(SIDEBAR_DEFAULT_W);
+  const dragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Load persisted width on mount + publish CSS variable
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_KEY);
+    const w = saved ? Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, parseInt(saved))) : SIDEBAR_DEFAULT_W;
+    setSidebarW(w);
+    document.documentElement.style.setProperty("--sidebar-w", `${w}px`);
+  }, []);
+
+  const startResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    setIsDragging(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    function onMove(ev: MouseEvent) {
+      if (!dragging.current) return;
+      const newW = Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, window.innerWidth - ev.clientX));
+      setSidebarW(newW);
+      document.documentElement.style.setProperty("--sidebar-w", `${newW}px`);
+    }
+
+    function onUp() {
+      dragging.current = false;
+      setIsDragging(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      // Persist
+      const cur = parseInt(document.documentElement.style.getPropertyValue("--sidebar-w")) || SIDEBAR_DEFAULT_W;
+      localStorage.setItem(LS_KEY, String(cur));
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, []);
+
   const pal = (() => {
     if (adminPalette === "custom" && adminSidebarAccent) {
       const accent = adminSidebarAccent;
@@ -441,17 +488,50 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Desktop — always visible, full width */}
+      {/* Desktop — always visible, resizable */}
       <aside
         className="hidden md:block fixed z-30"
         style={{
           right: 0, top: 0, bottom: 0,
-          width: SIDEBAR_W_EXPANDED,
+          width: sidebarW,
           background: pal.bg,
           borderLeft: "1px solid rgba(255,255,255,0.07)",
         }}
       >
         <Body />
+
+        {/* ── Drag handle ── */}
+        <div
+          onMouseDown={startResize}
+          className="resize-handle group"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: 5,
+            bottom: 0,
+            cursor: "col-resize",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          title="גרור לשינוי רוחב"
+        >
+          {/* Visual indicator — shows on hover/drag */}
+          <div
+            style={{
+              width: 3,
+              height: "100%",
+              borderRadius: 99,
+              background: isDragging
+                ? pal.accent
+                : "transparent",
+              transition: "background 150ms",
+            }}
+            className="group-hover:bg-white/20"
+          />
+        </div>
       </aside>
 
       {/* Mobile overlay */}

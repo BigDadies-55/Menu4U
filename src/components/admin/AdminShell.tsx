@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import type { Role } from "@/generated/prisma/client";
 
-const SIDEBAR_PINNED = 256;   // always expanded
+const SIDEBAR_PINNED = 256; // default; actual value driven by --sidebar-w CSS var
 
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
@@ -101,12 +101,15 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
       <main
         className="overflow-auto flex flex-col min-h-screen"
         style={{
-          marginRight: SIDEBAR_PINNED,
+          marginRight: `var(--sidebar-w, ${SIDEBAR_PINNED}px)`,
           color: adminContentTextColor,
         }}
       >
         {/* On mobile: no right margin */}
-        <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
+        <style>{`
+          @media (max-width: 767px) { main { margin-right: 0 !important; } }
+          aside .resize-handle:hover > div { background: rgba(255,255,255,0.18) !important; }
+        `}</style>
 
         {/* Top bar — sticky, full width of main */}
         <TopBar
