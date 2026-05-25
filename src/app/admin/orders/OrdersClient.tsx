@@ -47,14 +47,15 @@ const ITEM_NEXT_LABEL: Record<string, string> = {
   PREPARING: "הוכן ✓",
 };
 
+/* #5 — Unified semantic status palette */
 const ORDER_STATUS_BADGE: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
+  PENDING:   "bg-yellow-100 text-yellow-800",
   CONFIRMED: "bg-blue-100 text-blue-800",
-  PREPARING: "bg-amber-100 text-amber-800",
-  READY: "bg-green-100 text-green-800",
-  DELIVERED: "bg-gray-100 text-gray-600",
-  CANCELLED: "bg-red-100 text-red-700",
-  PAID: "bg-purple-100 text-purple-800",
+  PREPARING: "bg-orange-100 text-orange-800",
+  READY:     "bg-green-100 text-green-800",
+  DELIVERED: "bg-gray-100 text-gray-500",
+  CANCELLED: "bg-gray-200 text-gray-600",
+  PAID:      "bg-emerald-100 text-emerald-800",
 };
 
 function timeSince(dateStr: string): string {
@@ -81,6 +82,13 @@ function BillModal({
   const [customTip, setCustomTip] = useState("");
   const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
   const [confirming, setConfirming] = useState(false);
+
+  /* #7 — Escape closes modal */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const validOrders = orders.filter(o => !["CANCELLED","PAID"].includes(o.status));
   const subtotal = validOrders.reduce((s, o) => s + o.totalAmount, 0);
@@ -123,7 +131,7 @@ function BillModal({
         {/* Header */}
         <div style={{
           padding: "16px 20px", borderBottom: "1px solid #f1f5f9",
-          background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+          background: "#c9a84c",
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
           <div>
@@ -151,9 +159,9 @@ function BillModal({
                   onClick={() => { setTipPct(opt.pct); if (opt.pct !== -1) setCustomTip(""); }}
                   style={{
                     padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600,
-                    border: `2px solid ${tipPct === opt.pct ? "#7c3aed" : "#e5e7eb"}`,
-                    background: tipPct === opt.pct ? "#f3e8ff" : "#fff",
-                    color: tipPct === opt.pct ? "#7c3aed" : "#6b7280",
+                    border: `2px solid ${tipPct === opt.pct ? "#c9a84c" : "#e5e7eb"}`,
+                    background: tipPct === opt.pct ? "#fdf8ec" : "#fff",
+                    color: tipPct === opt.pct ? "#8B6914" : "#6b7280",
                     cursor: "pointer",
                   }}>
                   {opt.label}
@@ -168,7 +176,7 @@ function BillModal({
                   value={customTip}
                   onChange={e => setCustomTip(e.target.value)}
                   placeholder="סכום טיפ"
-                  style={{ border: "2px solid #7c3aed", borderRadius: 10, padding: "6px 12px", fontSize: 14, width: 110, outline: "none" }}
+                  style={{ border: "2px solid #c9a84c", borderRadius: 10, padding: "6px 12px", fontSize: 14, width: 110, outline: "none" }}
                 />
               </div>
             )}
@@ -182,7 +190,7 @@ function BillModal({
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#6b7280", marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
               <span>טיפ</span>
-              <span style={{ fontWeight: 600, color: tipAmount > 0 ? "#7c3aed" : "#9ca3af" }}>
+              <span style={{ fontWeight: 600, color: tipAmount > 0 ? "#8B6914" : "#9ca3af" }}>
                 {tipAmount > 0 ? `₪${tipAmount.toFixed(2)}` : "—"}
               </span>
             </div>
@@ -201,9 +209,9 @@ function BillModal({
                   onClick={() => setPayMethod(m.value)}
                   style={{
                     flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 600,
-                    border: `2px solid ${payMethod === m.value ? "#7c3aed" : "#e5e7eb"}`,
-                    background: payMethod === m.value ? "#f3e8ff" : "#fff",
-                    color: payMethod === m.value ? "#7c3aed" : "#6b7280",
+                    border: `2px solid ${payMethod === m.value ? "#c9a84c" : "#e5e7eb"}`,
+                    background: payMethod === m.value ? "#fdf8ec" : "#fff",
+                    color: payMethod === m.value ? "#8B6914" : "#6b7280",
                     cursor: "pointer",
                   }}>
                   {m.label}
@@ -221,7 +229,7 @@ function BillModal({
           }}>ביטול</button>
           <button type="button" onClick={handleConfirm} disabled={confirming} style={{
             flex: 2, padding: "11px 0", borderRadius: 12, border: "none",
-            background: confirming ? "#a78bfa" : "linear-gradient(135deg,#7c3aed,#a855f7)",
+            background: confirming ? "#d4b96a" : "#c9a84c",
             color: "#fff", fontWeight: 800, fontSize: 15, cursor: confirming ? "wait" : "pointer",
           }}>
             {confirming ? "שומר..." : "✓ אשר תשלום"}
@@ -369,7 +377,7 @@ function TableCard({
                     onClick={() => confirmOrder(order.id)}
                     disabled={confirmingOrder === order.id}
                     className="px-3 py-1 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
-                    style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)" }}
+                    style={{ background: "#16a34a" }}
                   >
                     {confirmingOrder === order.id ? "..." : "✓ אשר"}
                   </button>
@@ -378,18 +386,31 @@ function TableCard({
                   <button
                     onClick={() => onDeliverOrder(order.id)}
                     className="px-3 py-1 rounded-xl text-xs font-bold text-white transition-all"
-                    style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
+                    style={{ background: "#0891b2" }}
                   >
                     🛎 סופק לשולחן
                   </button>
                 )}
                 {!isPending && !isDelivered && !isReady && !isPaid && !isCancelled && (
-                  <button
-                    onClick={() => onOrderCancel(order.id)}
-                    className="text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
-                  >
-                    ✕ בטל
-                  </button>
+                  confirmingOrder === order.id + "-cancel" ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => { setConfirmingOrder(null); onOrderCancel(order.id); }}
+                        className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-lg transition-colors"
+                      >✕ בטל</button>
+                      <button
+                        onClick={() => setConfirmingOrder(null)}
+                        className="text-xs text-gray-500 hover:text-gray-700 px-2 py-0.5 rounded-lg hover:bg-gray-100 transition-colors"
+                      >ביטול</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmingOrder(order.id + "-cancel")}
+                      className="text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
+                    >
+                      ✕ בטל
+                    </button>
+                  )
                 )}
               </div>
             </div>
@@ -439,7 +460,7 @@ function TableCard({
                         onClick={() => advanceItem(order.id, itemId)}
                         disabled={isBusy}
                         className="shrink-0 px-2 py-0.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all"
-                        style={{ background: itemStatus === "PREPARING" ? "#22c55e" : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                        style={{ background: itemStatus === "PREPARING" ? "#16a34a" : "#c9a84c" }}
                       >
                         {isBusy ? "..." : nextLabel}
                       </button>
@@ -474,7 +495,7 @@ function TableCard({
               onClick={showBill}
               disabled={isPaidTable}
               className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: isPaidTable ? "#9ca3af" : "linear-gradient(135deg,#7c3aed,#a855f7)" }}
+              style={{ background: isPaidTable ? "#9ca3af" : "#c9a84c" }}
               title={isPaidTable ? "השולחן כבר שולם" : undefined}
             >
               {isPaidTable ? "✓ שולם" : "💳 הצג חשבון ותשלום"}
@@ -555,7 +576,6 @@ export default function OrdersClient({
   }
 
   async function cancelOrder(orderId: string) {
-    if (!confirm("לבטל הזמנה זו?")) return;
     await fetch(`/api/admin/orders/${orderId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -673,7 +693,7 @@ export default function OrdersClient({
             {(["active", "all"] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${filter === f ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-                style={filter === f ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}>
+                style={filter === f ? { background: "#c9a84c" } : undefined}>
                 {f === "active" ? "פעילות" : "הכל"}
               </button>
             ))}

@@ -427,7 +427,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
           📋 העתק מתבנית
         </button>
         {groups.length > 0 && (
-          <button type="button" onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+          <button type="button" onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "#c9a84c" }}>
             {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור תגיות"}
           </button>
         )}
@@ -463,8 +463,25 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [importDone, setImportDone] = useState<number | null>(null);
   const [exportDropdown, setExportDropdown] = useState(false);
   const [sampleDropdown, setSampleDropdown] = useState(false);
+  // #8 — inline destructive confirmation (no browser confirm())
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: "menu" | "category" | "item"; id: string; extra?: string; label: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // #7 — Escape closes top-most open modal
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (showItemForm) { setShowItemForm(false); setEditItem(null); setTagInput(""); return; }
+      if (scheduleMenu) { setScheduleMenu(null); return; }
+      if (showCategoryForm) { setShowCategoryForm(false); return; }
+      if (showMenuForm) { setShowMenuForm(false); return; }
+      if (showImportModal && !importing) { closeImportModal(); return; }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showItemForm, scheduleMenu, showCategoryForm, showMenuForm, showImportModal, importing]);
 
   // ── helpers ──────────────────────────────────────────────────────────────
   function updateMenu(updater: (m: Menu) => Menu) {
@@ -736,13 +753,18 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   }
 
   async function deleteMenu(menuId: string) {
-    if (!confirm("למחוק את התפריט? כל הקטגוריות והפריטים שלו יימחקו.")) return;
+    const menu = selectedRestaurant?.menus.find(m => m.id === menuId);
+    setDeleteConfirm({ type: "menu", id: menuId, label: menu?.name ?? "תפריט" });
+  }
+
+  async function _doDeleteMenu(menuId: string) {
     await fetch(`/api/admin/menus/${menuId}`, { method: "DELETE" });
     if (selectedRestaurant) {
       const updated = { ...selectedRestaurant, menus: selectedRestaurant.menus.filter(m => m.id !== menuId) };
       setSelectedRestaurant(updated);
       setSelectedMenu(updated.menus[0] ?? null);
     }
+    setDeleteConfirm(null);
   }
 
   // ── Menu schedule / primary ───────────────────────────────────────────────
@@ -805,10 +827,15 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     setLoading(false);
   }
 
-  async function deleteCategory(catId: string) {
-    if (!confirm("למחוק את הקטגוריה? כל הפריטים שלה יימחקו.")) return;
+  function deleteCategory(catId: string) {
+    const cat = selectedMenu?.categories.find(c => c.id === catId);
+    setDeleteConfirm({ type: "category", id: catId, label: cat?.name ?? "קטגוריה" });
+  }
+
+  async function _doDeleteCategory(catId: string) {
     await fetch(`/api/admin/categories/${catId}`, { method: "DELETE" });
     updateMenu(m => ({ ...m, categories: m.categories.filter(c => c.id !== catId) }));
+    setDeleteConfirm(null);
   }
 
   async function moveCategoryOrder(catId: string, direction: "up" | "down") {
@@ -832,8 +859,12 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
   // ── Item CRUD ─────────────────────────────────────────────────────────────
 
-  async function deleteItem(catId: string, itemId: string) {
-    if (!confirm("למחוק את הפריט?")) return;
+  function deleteItem(catId: string, itemId: string) {
+    const item = selectedMenu?.categories.find(c => c.id === catId)?.items.find(i => i.id === itemId);
+    setDeleteConfirm({ type: "item", id: itemId, extra: catId, label: item?.name ?? "פריט" });
+  }
+
+  async function _doDeleteItem(itemId: string, catId: string) {
     await fetch(`/api/admin/items/${itemId}`, { method: "DELETE" });
     updateMenu(m => ({
       ...m,
@@ -841,6 +872,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
         c.id === catId ? { ...c, items: c.items.filter(i => i.id !== itemId) } : c
       ),
     }));
+    setDeleteConfirm(null);
   }
 
   async function toggleItem(catId: string, itemId: string, isActive: boolean) {
@@ -936,6 +968,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     ? [...selectedMenu.categories].sort((a, b) => a.sortOrder - b.sortOrder)
     : [];
 
+  // #3 — hide menu selector when restaurant has only 1 menu (reduces complexity)
+  const isSingleMenu = (selectedRestaurant?.menus.length ?? 0) <= 1;
+
   return (
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
@@ -1028,7 +1063,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               ))}
             </div>
 
-            {selectedRestaurant && (
+            {selectedRestaurant && !isSingleMenu && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                   <span className="font-semibold text-sm text-gray-700">תפריטים</span>
@@ -1053,7 +1088,25 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     )}
                   </div>
                 ))}
-                {selectedRestaurant.menus.length === 0 && <p className="p-4 text-xs text-gray-400">אין תפריטים</p>}
+                {selectedRestaurant.menus.length === 0 && (
+                  <div className="p-6 text-center">
+                    <div className="text-2xl mb-2">📋</div>
+                    <p className="text-xs text-gray-400 mb-3">אין תפריטים עדיין</p>
+                    {canEdit && <button onClick={() => setShowMenuForm(true)} className="text-xs text-white px-3 py-1.5 rounded-lg font-medium" style={{ background: "#c9a84c" }}>+ צור תפריט ראשון</button>}
+                  </div>
+                )}
+              </div>
+            )}
+            {/* #3 — single-menu: show settings icon inline */}
+            {selectedRestaurant && isSingleMenu && selectedMenu && canEdit && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-3 flex items-center justify-between">
+                  <span className="text-xs text-gray-500 font-medium">{selectedMenu.name}</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openSchedule(selectedMenu)} className="text-gray-400 hover:text-amber-500 text-xs px-1.5 py-1 rounded hover:bg-gray-50" title="הגדרות תפריט">⚙️</button>
+                    <button onClick={() => setShowMenuForm(true)} className="text-xs text-amber-600 hover:text-amber-700 font-medium px-1.5 py-1 rounded hover:bg-amber-50">+ תפריט נוסף</button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -1069,15 +1122,24 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   {canEdit && (
                     <button onClick={() => setShowCategoryForm(true)}
                       className="text-white px-4 py-2 rounded-lg text-sm font-medium"
-                      style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                      style={{ background: "#c9a84c" }}>
                       + קטגוריה חדשה
                     </button>
                   )}
                 </div>
 
                 {sortedCategories.length === 0 ? (
-                  <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">
-                    אין קטגוריות. לחץ על &quot;קטגוריה חדשה&quot;.
+                  <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+                    <div className="text-4xl mb-3">🗂️</div>
+                    <div className="font-medium text-gray-700 mb-1">אין קטגוריות עדיין</div>
+                    <div className="text-sm text-gray-400 mb-4">הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
+                    {canEdit && (
+                      <button onClick={() => setShowCategoryForm(true)}
+                        className="inline-flex items-center gap-1.5 text-white px-5 py-2.5 rounded-lg text-sm font-medium"
+                        style={{ background: "#c9a84c" }}>
+                        + קטגוריה חדשה
+                      </button>
+                    )}
                   </div>
                 ) : (
                   sortedCategories.map((cat, idx) => (
@@ -1101,7 +1163,16 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                       </div>
                       <div className="divide-y divide-gray-50">
                         {cat.items.length === 0 ? (
-                          <p className="p-4 text-sm text-gray-400">אין פריטים בקטגוריה זו</p>
+                          <div className="p-6 text-center">
+                            <div className="text-2xl mb-1">🍽️</div>
+                            <p className="text-sm text-gray-400 mb-2">אין פריטים בקטגוריה זו</p>
+                            {canEdit && (
+                              <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                                className="text-xs text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-lg px-3 py-1.5">
+                                + הוסף פריט ראשון
+                              </button>
+                            )}
+                          </div>
                         ) : (
                           cat.items.map(item => (
                             <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap">
@@ -1159,7 +1230,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
               </div>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c" }}>
                   {loading ? "יוצר..." : "צור"}
                 </button>
                 <button type="button" onClick={() => setShowMenuForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -1206,7 +1277,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 </div>
               </details>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c" }}>
                   {loading ? "יוצר..." : "צור"}
                 </button>
                 <button type="button" onClick={() => setShowCategoryForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -1290,7 +1361,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                           ? "border-amber-400 text-white"
                           : "border-gray-200 text-gray-600 hover:bg-gray-50"
                       }`}
-                      style={itemForm.prepTime === String(m) ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)" } : undefined}
+                      style={itemForm.prepTime === String(m) ? { background: "#c9a84c" } : undefined}
                     >
                       {m}&apos;
                     </button>
@@ -1344,7 +1415,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               </details>
 
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c" }}>
                   {loading ? "שומר..." : editItem ? "שמור שינויים" : "הוסף פריט"}
                 </button>
                 <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
@@ -1426,7 +1497,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <div className="flex gap-3 pt-1">
                 <button type="submit" disabled={loading}
                   className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                  style={{ background: "#c9a84c" }}>
                   {loading ? "שומר..." : "שמור"}
                 </button>
                 <button type="button" onClick={() => setScheduleMenu(null)}
@@ -1435,6 +1506,43 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* #8 — Destructive Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div className="text-4xl mb-3 text-center">🗑️</div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">אישור מחיקה</h3>
+            <p className="text-sm text-gray-500 text-center mb-1">
+              {deleteConfirm.type === "menu" && "כל הקטגוריות והפריטים של התפריט יימחקו."}
+              {deleteConfirm.type === "category" && "כל הפריטים בקטגוריה יימחקו."}
+              {deleteConfirm.type === "item" && ""}
+            </p>
+            <p className="text-sm font-semibold text-gray-800 text-center mb-5">
+              &ldquo;{deleteConfirm.label}&rdquo;
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  if (deleteConfirm.type === "menu") _doDeleteMenu(deleteConfirm.id);
+                  else if (deleteConfirm.type === "category") _doDeleteCategory(deleteConfirm.id);
+                  else if (deleteConfirm.type === "item") _doDeleteItem(deleteConfirm.id, deleteConfirm.extra!);
+                }}
+                className="flex-1 py-2.5 rounded-lg font-semibold text-white text-sm"
+                style={{ background: "#ef4444" }}
+              >
+                מחק
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-2.5 rounded-lg font-medium text-gray-700 text-sm bg-gray-100 hover:bg-gray-200"
+              >
+                ביטול
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1476,7 +1584,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     className="h-3 rounded-full transition-all duration-300"
                     style={{
                       width: importProgress.total > 0 ? `${(importProgress.current / importProgress.total) * 100}%` : "0%",
-                      background: "linear-gradient(135deg,#8B6914,#C9A84C)",
+                      background: "#c9a84c",
                     }}
                   />
                 </div>
@@ -1541,7 +1649,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 <button
                   onClick={closeImportModal}
                   className="flex-1 text-white py-2.5 rounded-lg font-medium"
-                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                  style={{ background: "#c9a84c" }}
                 >
                   סגור
                 </button>
@@ -1551,7 +1659,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     onClick={handleImport}
                     disabled={importing}
                     className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
-                    style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                    style={{ background: "#c9a84c" }}
                   >
                     ייבא עכשיו
                   </button>

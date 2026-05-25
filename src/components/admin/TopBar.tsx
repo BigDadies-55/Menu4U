@@ -81,6 +81,18 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  /* Cmd+K / Ctrl+K opens search (#9) */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   /* Focus input when search opens */
   useEffect(() => {
     if (searchOpen) setTimeout(() => inputRef.current?.focus(), 50);
@@ -111,6 +123,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
 
   const initials    = (user.name ?? user.email ?? "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   const displayName = user.name ?? user.email ?? "";
+  const isRoot      = /^\/admin\/?$/.test(pathname);
 
   // Derive a slightly muted version for secondary elements (icons, username)
   const iconColor   = adminTopBarTextColor;
@@ -140,11 +153,22 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
             <line x1="3" y1="18" x2="15" y2="18"/>
           </svg>
         </button>
+        {/* Breadcrumb (#10) */}
         <h1
-          className="text-[13px] font-semibold tracking-tight whitespace-nowrap"
+          className="text-[13px] font-semibold tracking-tight whitespace-nowrap flex items-center gap-1"
           style={{ color: adminTopBarTextColor }}
         >
-          {pageName}
+          {isRoot ? (
+            pageName
+          ) : (
+            <>
+              <Link href="/admin" style={{ color: adminTopBarTextColor, opacity: 0.55, fontWeight: 400 }} className="hover:opacity-80 transition-opacity">
+                דשבורד
+              </Link>
+              <span style={{ opacity: 0.35, fontSize: 11 }}>/</span>
+              <span>{pageName}</span>
+            </>
+          )}
         </h1>
       </div>
 
@@ -184,7 +208,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
             onClick={() => { setSearchOpen(v => !v); if (searchOpen) { setQuery(""); setResults([]); } }}
             className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-black/[0.06] shrink-0"
             style={{ color: iconColor }}
-            title="חיפוש"
+            title="חיפוש (Ctrl+K)"
           >
             {searchOpen ? (
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" viewBox="0 0 24 24">
