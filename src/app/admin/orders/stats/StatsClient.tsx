@@ -55,141 +55,147 @@ const SOURCE_LABELS: Record<string, string> = {
   POS:    "קופה",
 };
 
-/* ── Speedometer gauge (semicircle with needle) ─────────────── */
-function SpeedometerGauge({
-  value, max, label, sublabel, displayValue, thresholds, size = 200,
+/* ── Ring gauge (270° donut) ─────────────────────────────── */
+function RingGauge({
+  value,
+  max,
+  label,
+  sublabel,
+  displayValue,
+  thresholds,
+  size = 148,
 }: {
-  value: number; max: number; label: string; sublabel?: string;
+  value: number;
+  max: number;
+  label: string;
+  sublabel?: string;
   displayValue?: string;
   thresholds: { at: number; color: string; bg: string }[];
   size?: number;
 }) {
   const pct = Math.min(1, Math.max(0, max > 0 ? value / max : 0));
 
-  const cx  = size / 2;
-  const cy  = size * 0.60;
-  const r   = size * 0.41;
-  const sw  = size * 0.074;
-
-  // Build color segments from thresholds
-  const sorted = [...thresholds].sort((a, b) => a.at - b.at);
-  const segs = sorted.map((t, i) => ({
-    from: t.at,
-    to:   i < sorted.length - 1 ? sorted[i + 1].at : 1,
-    color: t.color,
-  }));
-
-  // Current active color
-  let activeColor = segs[0].color;
-  for (const s of segs) { if (pct >= s.from) activeColor = s.color; }
-
-  // Point on arc: fraction 0 = left (180°), fraction 1 = right (0°), via top (90°)
-  function pt(f: number, radius: number) {
-    const a = (1 - f) * Math.PI;
-    return { x: cx + radius * Math.cos(a), y: cy - radius * Math.sin(a) };
+  // Pick color tier
+  let color = thresholds[0].color;
+  let bgLight = thresholds[0].bg;
+  for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
+    if (pct >= t.at) { color = t.color; bgLight = t.bg; }
   }
 
-  function arcD(f1: number, f2: number, radius: number) {
-    if (Math.abs(f2 - f1) < 0.0001) return "";
-    const p1 = pt(f1, radius), p2 = pt(f2, radius);
-    const large = (f2 - f1) > 0.5 ? 1 : 0;
-    return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${radius} ${radius} 0 ${large} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
-  }
-
-  // Needle
-  const needlePt  = pt(pct, r * 0.76);
-  const perpAngle = (1 - pct) * Math.PI + Math.PI / 2;
-  const bw = sw * 0.42;
-  const b1 = { x: cx + bw * Math.cos(perpAngle), y: cy - bw * Math.sin(perpAngle) };
-  const b2 = { x: cx - bw * Math.cos(perpAngle), y: cy + bw * Math.sin(perpAngle) };
-
-  const svgH = cy + sw * 0.6 + 18;
-
-  // Min/max label pts
-  const lPt = pt(0, r + sw * 0.5 + 8);
-  const rPt = pt(1, r + sw * 0.5 + 8);
-  const maxLabel = max === 100 ? "100%" : max === 30 ? "30m" : max === 60 ? "60m" : String(max);
+  // SVG ring geometry
+  const cx = size / 2, cy = size / 2;
+  const strokeW = 10;
+  const r = cx - strokeW / 2 - 2;
+  const circumference = 2 * Math.PI * r;
+  const GAP = 90; // degrees left open at the bottom
+  const arcFraction = (360 - GAP) / 360;
+  const dashTotal = circumference * arcFraction;
+  const dashFill  = dashTotal * pct;
+  const rotateAngle = 90 + GAP / 2; // 135°
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-      <div style={{ position: "relative" }}>
-        <svg width={size} height={Math.ceil(svgH)} viewBox={`0 0 ${size} ${svgH.toFixed(1)}`}>
-
-          {/* Background track */}
-          <path d={arcD(0, 1, r)} fill="none" stroke="#e2e8f0" strokeWidth={sw} strokeLinecap="round" />
-
-          {/* Dim color bands */}
-          {segs.map((seg, i) => {
-            const gap = 0.009;
-            const f1 = i === 0              ? seg.from : seg.from + gap;
-            const f2 = i === segs.length-1  ? seg.to   : seg.to   - gap;
-            const d  = arcD(f1, f2, r);
-            if (!d) return null;
-            return <path key={`dim-${i}`} d={d} fill="none" stroke={seg.color}
-              strokeWidth={sw} strokeLinecap="round" opacity={0.2} />;
-          })}
-
-          {/* Bright fill up to current value */}
-          {pct > 0 && segs.map((seg, i) => {
-            const from = Math.max(seg.from, 0);
-            const to   = Math.min(seg.to, pct);
-            if (to <= from + 0.0001) return null;
-            const gap = 0.009;
-            const f1 = i === 0             ? from : from + (from === seg.from ? gap : 0);
-            const f2 = to < seg.to - 0.001 ? to   : (i < segs.length-1 ? to - gap : to);
-            const d  = arcD(f1, Math.max(f1 + 0.001, f2), r);
-            if (!d) return null;
-            return <path key={`on-${i}`} d={d} fill="none" stroke={seg.color}
-              strokeWidth={sw + 0.5} strokeLinecap="round" opacity={0.95}
-              style={{ transition: "all 0.7s cubic-bezier(.4,0,.2,1)" }} />;
-          })}
-
-          {/* Needle */}
-          <polygon
-            points={`${needlePt.x.toFixed(2)},${needlePt.y.toFixed(2)} ${b1.x.toFixed(2)},${b1.y.toFixed(2)} ${b2.x.toFixed(2)},${b2.y.toFixed(2)}`}
-            fill="#0f172a"
-            style={{ transition: "all 0.7s cubic-bezier(.4,0,.2,1)" }}
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <defs>
+            <linearGradient id={`rg-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={color} stopOpacity="0.6" />
+              <stop offset="100%" stopColor={color} stopOpacity="1" />
+            </linearGradient>
+          </defs>
+          {/* Track */}
+          <circle
+            cx={cx} cy={cy} r={r}
+            fill="none"
+            stroke="#f1f5f9"
+            strokeWidth={strokeW}
+            strokeDasharray={`${dashTotal} ${circumference}`}
+            strokeLinecap="round"
+            transform={`rotate(${rotateAngle} ${cx} ${cy})`}
           />
-
-          {/* Hub */}
-          <circle cx={cx} cy={cy} r={sw * 0.72} fill="#0f172a" />
-          <circle cx={cx} cy={cy} r={sw * 0.36} fill="#64748b" />
-
-          {/* Min / max labels */}
-          <text x={lPt.x - 3} y={lPt.y + 4} textAnchor="end"
-            style={{ fontSize: sw * 1.05, fill: "#94a3b8", fontFamily: "'Inter',system-ui", fontWeight: 600 }}>0</text>
-          <text x={rPt.x + 3} y={rPt.y + 4} textAnchor="start"
-            style={{ fontSize: sw * 1.05, fill: "#94a3b8", fontFamily: "'Inter',system-ui", fontWeight: 600 }}>{maxLabel}</text>
+          {/* Fill */}
+          {pct > 0 && (
+            <circle
+              cx={cx} cy={cy} r={r}
+              fill="none"
+              stroke={`url(#rg-${label})`}
+              strokeWidth={strokeW}
+              strokeDasharray={`${dashFill} ${circumference}`}
+              strokeLinecap="round"
+              transform={`rotate(${rotateAngle} ${cx} ${cy})`}
+              style={{ transition: "stroke-dasharray 0.7s cubic-bezier(.4,0,.2,1)" }}
+            />
+          )}
         </svg>
 
-        {/* Value text centered above hub */}
+        {/* Center content */}
         <div style={{
-          position: "absolute",
-          left: 0, right: 0,
-          bottom: svgH * 0.26,
-          textAlign: "center",
-          pointerEvents: "none",
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          paddingBottom: 8,
         }}>
-          <span style={{
-            fontSize: size * 0.165,
+          {/* Colored dot */}
+          <div style={{
+            width: 7, height: 7, borderRadius: "50%",
+            background: color, marginBottom: 4,
+            boxShadow: `0 0 8px ${color}80`,
+          }} />
+          {/* Value */}
+          <div style={{
+            fontSize: size * 0.135,
             fontWeight: 800,
-            color: activeColor,
-            fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
-            letterSpacing: "-0.04em",
             lineHeight: 1,
-            textShadow: `0 0 20px ${activeColor}40`,
+            color: "#0f172a",
+            letterSpacing: "-0.03em",
+            fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif",
           }}>
-            {displayValue}
-          </span>
+            {displayValue ?? (Number.isFinite(value) ? String(Math.round(value)) : "—")}
+          </div>
+          {/* Mini progress bar */}
+          <div style={{
+            marginTop: 6,
+            width: size * 0.36,
+            height: 3,
+            borderRadius: 99,
+            background: "#f1f5f9",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              height: "100%",
+              width: `${pct * 100}%`,
+              background: color,
+              borderRadius: 99,
+              transition: "width 0.7s cubic-bezier(.4,0,.2,1)",
+            }} />
+          </div>
+          {/* Subtle bg tint */}
+          <div style={{
+            position: "absolute", inset: strokeW + 6,
+            borderRadius: "50%",
+            background: bgLight,
+            zIndex: -1,
+          }} />
         </div>
       </div>
 
-      <div style={{ textAlign: "center" }}>
+      {/* Label */}
+      <div style={{ textAlign: "center", lineHeight: 1.3 }}>
         <div style={{
           fontSize: 13, fontWeight: 700, color: "#1e293b",
-          fontFamily: "'Inter',system-ui", letterSpacing: "-0.01em",
-        }}>{label}</div>
-        {sublabel && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, fontFamily: "'Inter',system-ui" }}>{sublabel}</div>}
+          fontFamily: "'Inter', system-ui, sans-serif",
+          letterSpacing: "-0.01em",
+        }}>
+          {label}
+        </div>
+        {sublabel && (
+          <div style={{
+            fontSize: 11, color: "#94a3b8", marginTop: 3,
+            fontFamily: "'Inter', system-ui, sans-serif",
+          }}>
+            {sublabel}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -385,7 +391,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
               <span style={{ fontSize: 22 }}>🎯</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
-              <SpeedometerGauge
+              <RingGauge
                 value={stats.completionRate}
                 max={100}
                 label="שיעור השלמה"
@@ -397,7 +403,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                   { at: 0.75, color: "#22c55e", bg: "rgba(34,197,94,0.04)" },
                 ]}
               />
-              <SpeedometerGauge
+              <RingGauge
                 value={stats.cancelRate}
                 max={30}
                 label="שיעור ביטולים"
@@ -409,7 +415,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                   { at: 0.33, color: "#ef4444", bg: "rgba(239,68,68,0.04)" },
                 ]}
               />
-              <SpeedometerGauge
+              <RingGauge
                 value={stats.totalTime.count > 0 ? stats.totalTime.avg : 0}
                 max={60}
                 label="זמן שירות ממוצע"
@@ -421,7 +427,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                   { at: 0.67, color: "#ef4444", bg: "rgba(239,68,68,0.04)" },
                 ]}
               />
-              <SpeedometerGauge
+              <RingGauge
                 value={stats.deliveredToPayTime?.count > 0 ? stats.deliveredToPayTime.avg : 0}
                 max={30}
                 label="המתנה לתשלום"
