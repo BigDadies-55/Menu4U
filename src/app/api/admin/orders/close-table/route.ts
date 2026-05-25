@@ -24,11 +24,17 @@ export async function POST(req: Request) {
     if (!link) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // All non-cancelled, non-paid orders for this table
+  // All non-cancelled, non-paid orders for this table.
+  // When tableNumber is null we match BOTH null and "" because some orders
+  // arrive with tableNumber="" (empty string) from the public menu form.
+  const tableFilter = tableNumber === null
+    ? { OR: [{ tableNumber: null as string | null }, { tableNumber: "" }] }
+    : { tableNumber };
+
   const openOrders = await prisma.order.findMany({
     where: {
       restaurantId,
-      tableNumber,   // null → WHERE tableNumber IS NULL; string → WHERE tableNumber = ?
+      ...tableFilter,
       status: { notIn: ["CANCELLED", "PAID"] },
     },
     select: { id: true, status: true, totalAmount: true, createdAt: true },
