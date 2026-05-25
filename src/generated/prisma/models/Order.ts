@@ -43,6 +43,7 @@ export type OrderMinAggregateOutputType = {
   status: $Enums.OrderStatus | null
   totalAmount: number | null
   notes: string | null
+  orderSource: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -56,6 +57,7 @@ export type OrderMaxAggregateOutputType = {
   status: $Enums.OrderStatus | null
   totalAmount: number | null
   notes: string | null
+  orderSource: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -69,6 +71,7 @@ export type OrderCountAggregateOutputType = {
   status: number
   totalAmount: number
   notes: number
+  orderSource: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -92,6 +95,7 @@ export type OrderMinAggregateInputType = {
   status?: true
   totalAmount?: true
   notes?: true
+  orderSource?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -105,6 +109,7 @@ export type OrderMaxAggregateInputType = {
   status?: true
   totalAmount?: true
   notes?: true
+  orderSource?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -118,6 +123,7 @@ export type OrderCountAggregateInputType = {
   status?: true
   totalAmount?: true
   notes?: true
+  orderSource?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -218,6 +224,7 @@ export type OrderGroupByOutputType = {
   status: $Enums.OrderStatus
   totalAmount: number
   notes: string | null
+  orderSource: string
   createdAt: Date
   updatedAt: Date
   _count: OrderCountAggregateOutputType | null
@@ -254,6 +261,7 @@ export type OrderWhereInput = {
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFilter<"Order"> | number
   notes?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderSource?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
@@ -270,6 +278,7 @@ export type OrderOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  orderSource?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   restaurant?: Prisma.RestaurantOrderByWithRelationInput
@@ -289,6 +298,7 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFilter<"Order"> | number
   notes?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderSource?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
@@ -305,6 +315,7 @@ export type OrderOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  orderSource?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.OrderCountOrderByAggregateInput
@@ -326,6 +337,7 @@ export type OrderScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
   totalAmount?: Prisma.FloatWithAggregatesFilter<"Order"> | number
   notes?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  orderSource?: Prisma.StringWithAggregatesFilter<"Order"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Order"> | Date | string
 }
@@ -338,6 +350,7 @@ export type OrderCreateInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutOrdersInput
@@ -354,6 +367,7 @@ export type OrderUncheckedCreateInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
@@ -368,6 +382,7 @@ export type OrderUpdateInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutOrdersNestedInput
@@ -384,6 +399,7 @@ export type OrderUncheckedUpdateInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -399,6 +415,7 @@ export type OrderCreateManyInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -411,6 +428,7 @@ export type OrderUpdateManyMutationInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -424,6 +442,7 @@ export type OrderUncheckedUpdateManyInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -447,6 +466,7 @@ export type OrderCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  orderSource?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -464,6 +484,7 @@ export type OrderMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  orderSource?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -477,6 +498,7 @@ export type OrderMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  orderSource?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -572,6 +594,7 @@ export type OrderCreateWithoutRestaurantInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
@@ -586,6 +609,7 @@ export type OrderUncheckedCreateWithoutRestaurantInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
@@ -630,6 +654,7 @@ export type OrderScalarWhereInput = {
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFilter<"Order"> | number
   notes?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderSource?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
 }
@@ -642,6 +667,7 @@ export type OrderCreateWithoutStatusLogsInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutOrdersInput
@@ -657,6 +683,7 @@ export type OrderUncheckedCreateWithoutStatusLogsInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
@@ -686,6 +713,7 @@ export type OrderUpdateWithoutStatusLogsInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutOrdersNestedInput
@@ -701,6 +729,7 @@ export type OrderUncheckedUpdateWithoutStatusLogsInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -714,6 +743,7 @@ export type OrderCreateWithoutItemsInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutOrdersInput
@@ -729,6 +759,7 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   statusLogs?: Prisma.OrderStatusLogUncheckedCreateNestedManyWithoutOrderInput
@@ -758,6 +789,7 @@ export type OrderUpdateWithoutItemsInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutOrdersNestedInput
@@ -773,6 +805,7 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   statusLogs?: Prisma.OrderStatusLogUncheckedUpdateManyWithoutOrderNestedInput
@@ -786,6 +819,7 @@ export type OrderCreateManyRestaurantInput = {
   status?: $Enums.OrderStatus
   totalAmount: number
   notes?: string | null
+  orderSource?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -798,6 +832,7 @@ export type OrderUpdateWithoutRestaurantInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
@@ -812,6 +847,7 @@ export type OrderUncheckedUpdateWithoutRestaurantInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -826,6 +862,7 @@ export type OrderUncheckedUpdateManyWithoutRestaurantInput = {
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderSource?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -879,6 +916,7 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   status?: boolean
   totalAmount?: boolean
   notes?: boolean
+  orderSource?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
@@ -896,6 +934,7 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   status?: boolean
   totalAmount?: boolean
   notes?: boolean
+  orderSource?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
@@ -910,6 +949,7 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   status?: boolean
   totalAmount?: boolean
   notes?: boolean
+  orderSource?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
@@ -924,11 +964,12 @@ export type OrderSelectScalar = {
   status?: boolean
   totalAmount?: boolean
   notes?: boolean
+  orderSource?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "status" | "totalAmount" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "status" | "totalAmount" | "notes" | "orderSource" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
@@ -958,6 +999,7 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     status: $Enums.OrderStatus
     totalAmount: number
     notes: string | null
+    orderSource: string
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["order"]>
@@ -1394,6 +1436,7 @@ export interface OrderFieldRefs {
   readonly status: Prisma.FieldRef<"Order", 'OrderStatus'>
   readonly totalAmount: Prisma.FieldRef<"Order", 'Float'>
   readonly notes: Prisma.FieldRef<"Order", 'String'>
+  readonly orderSource: Prisma.FieldRef<"Order", 'String'>
   readonly createdAt: Prisma.FieldRef<"Order", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Order", 'DateTime'>
 }

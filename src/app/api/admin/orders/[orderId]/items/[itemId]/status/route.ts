@@ -73,13 +73,21 @@ export async function PATCH(
   const nextItemStatus = ITEM_NEXT[orderItem.itemStatus];
   if (!nextItemStatus) return NextResponse.json({ error: "Already done" }, { status: 400 });
 
+  const now = new Date();
   await prisma.orderItem.update({
     where: { id: itemId },
-    data: { itemStatus: nextItemStatus },
+    data: {
+      itemStatus: nextItemStatus,
+      // Record firedAt when item first enters PREPARING (if not already set from fire-course)
+      ...(nextItemStatus === "PREPARING" && !orderItem.firedAt ? { firedAt: now } : {}),
+      // Record completion time
+      ...(nextItemStatus === "DONE" ? { doneAt: now } : {}),
+    },
   });
 
-  // Check if all non-cancelled items are now DONE
+  // Check if all non-cancelled, non-held items are now DONE
   const allDone = order.items.every(i => {
+    if (i.heldUntilFired) return true; // held items don't block order completion
     if (i.id === itemId) return nextItemStatus === "DONE";
     return i.itemStatus === "DONE" || i.itemStatus === "CANCELLED";
   });

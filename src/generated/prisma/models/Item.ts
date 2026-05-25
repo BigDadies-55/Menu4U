@@ -86,6 +86,7 @@ export type ItemCountAggregateOutputType = {
   tags: number
   prepTime: number
   sortOrder: number
+  translations: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -152,6 +153,7 @@ export type ItemCountAggregateInputType = {
   tags?: true
   prepTime?: true
   sortOrder?: true
+  translations?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -257,6 +259,7 @@ export type ItemGroupByOutputType = {
   tags: string[]
   prepTime: number | null
   sortOrder: number
+  translations: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
   _count: ItemCountAggregateOutputType | null
@@ -298,6 +301,7 @@ export type ItemWhereInput = {
   tags?: Prisma.StringNullableListFilter<"Item">
   prepTime?: Prisma.IntNullableFilter<"Item"> | number | null
   sortOrder?: Prisma.IntFilter<"Item"> | number
+  translations?: Prisma.JsonNullableFilter<"Item">
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   category?: Prisma.XOR<Prisma.CategoryScalarRelationFilter, Prisma.CategoryWhereInput>
@@ -319,6 +323,7 @@ export type ItemOrderByWithRelationInput = {
   tags?: Prisma.SortOrder
   prepTime?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
+  translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   category?: Prisma.CategoryOrderByWithRelationInput
@@ -343,6 +348,7 @@ export type ItemWhereUniqueInput = Prisma.AtLeast<{
   tags?: Prisma.StringNullableListFilter<"Item">
   prepTime?: Prisma.IntNullableFilter<"Item"> | number | null
   sortOrder?: Prisma.IntFilter<"Item"> | number
+  translations?: Prisma.JsonNullableFilter<"Item">
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   category?: Prisma.XOR<Prisma.CategoryScalarRelationFilter, Prisma.CategoryWhereInput>
@@ -364,6 +370,7 @@ export type ItemOrderByWithAggregationInput = {
   tags?: Prisma.SortOrder
   prepTime?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
+  translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ItemCountOrderByAggregateInput
@@ -390,6 +397,7 @@ export type ItemScalarWhereWithAggregatesInput = {
   tags?: Prisma.StringNullableListFilter<"Item">
   prepTime?: Prisma.IntNullableWithAggregatesFilter<"Item"> | number | null
   sortOrder?: Prisma.IntWithAggregatesFilter<"Item"> | number
+  translations?: Prisma.JsonNullableWithAggregatesFilter<"Item">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
 }
@@ -407,6 +415,7 @@ export type ItemCreateInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   category: Prisma.CategoryCreateNestedOneWithoutItemsInput
@@ -428,6 +437,7 @@ export type ItemUncheckedCreateInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutItemInput
@@ -447,6 +457,7 @@ export type ItemUpdateInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.CategoryUpdateOneRequiredWithoutItemsNestedInput
@@ -468,6 +479,7 @@ export type ItemUncheckedUpdateInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutItemNestedInput
@@ -488,6 +500,7 @@ export type ItemCreateManyInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -505,6 +518,7 @@ export type ItemUpdateManyMutationInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -523,6 +537,7 @@ export type ItemUncheckedUpdateManyInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -551,6 +566,7 @@ export type ItemCountOrderByAggregateInput = {
   tags?: Prisma.SortOrder
   prepTime?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
+  translations?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -706,6 +722,7 @@ export type ItemCreateWithoutCategoryInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemCreateNestedManyWithoutItemInput
@@ -725,6 +742,7 @@ export type ItemUncheckedCreateWithoutCategoryInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutItemInput
@@ -774,6 +792,7 @@ export type ItemScalarWhereInput = {
   tags?: Prisma.StringNullableListFilter<"Item">
   prepTime?: Prisma.IntNullableFilter<"Item"> | number | null
   sortOrder?: Prisma.IntFilter<"Item"> | number
+  translations?: Prisma.JsonNullableFilter<"Item">
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
 }
@@ -791,6 +810,7 @@ export type ItemCreateWithoutOrderItemsInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   category: Prisma.CategoryCreateNestedOneWithoutItemsInput
@@ -811,6 +831,7 @@ export type ItemUncheckedCreateWithoutOrderItemsInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   modifierGroups?: Prisma.ItemModifierGroupUncheckedCreateNestedManyWithoutItemInput
@@ -845,6 +866,7 @@ export type ItemUpdateWithoutOrderItemsInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.CategoryUpdateOneRequiredWithoutItemsNestedInput
@@ -865,6 +887,7 @@ export type ItemUncheckedUpdateWithoutOrderItemsInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   modifierGroups?: Prisma.ItemModifierGroupUncheckedUpdateManyWithoutItemNestedInput
@@ -883,6 +906,7 @@ export type ItemCreateWithoutModifierGroupsInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   category: Prisma.CategoryCreateNestedOneWithoutItemsInput
@@ -903,6 +927,7 @@ export type ItemUncheckedCreateWithoutModifierGroupsInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutItemInput
@@ -937,6 +962,7 @@ export type ItemUpdateWithoutModifierGroupsInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.CategoryUpdateOneRequiredWithoutItemsNestedInput
@@ -957,6 +983,7 @@ export type ItemUncheckedUpdateWithoutModifierGroupsInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutItemNestedInput
@@ -975,6 +1002,7 @@ export type ItemCreateManyCategoryInput = {
   tags?: Prisma.ItemCreatetagsInput | string[]
   prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -992,6 +1020,7 @@ export type ItemUpdateWithoutCategoryInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUpdateManyWithoutItemNestedInput
@@ -1011,6 +1040,7 @@ export type ItemUncheckedUpdateWithoutCategoryInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutItemNestedInput
@@ -1030,6 +1060,7 @@ export type ItemUncheckedUpdateManyWithoutCategoryInput = {
   tags?: Prisma.ItemUpdatetagsInput | string[]
   prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1088,6 +1119,7 @@ export type ItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   tags?: boolean
   prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
@@ -1110,6 +1142,7 @@ export type ItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   tags?: boolean
   prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
@@ -1129,6 +1162,7 @@ export type ItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   tags?: boolean
   prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
@@ -1148,11 +1182,12 @@ export type ItemSelectScalar = {
   tags?: boolean
   prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "name" | "description" | "price" | "image" | "isActive" | "isVegetarian" | "isVegan" | "isGlutenFree" | "tags" | "prepTime" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["item"]>
+export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "name" | "description" | "price" | "image" | "isActive" | "isVegetarian" | "isVegan" | "isGlutenFree" | "tags" | "prepTime" | "sortOrder" | "translations" | "createdAt" | "updatedAt", ExtArgs["result"]["item"]>
 export type ItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
   orderItems?: boolean | Prisma.Item$orderItemsArgs<ExtArgs>
@@ -1187,6 +1222,7 @@ export type $ItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     tags: string[]
     prepTime: number | null
     sortOrder: number
+    translations: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["item"]>
@@ -1628,6 +1664,7 @@ export interface ItemFieldRefs {
   readonly tags: Prisma.FieldRef<"Item", 'String[]'>
   readonly prepTime: Prisma.FieldRef<"Item", 'Int'>
   readonly sortOrder: Prisma.FieldRef<"Item", 'Int'>
+  readonly translations: Prisma.FieldRef<"Item", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Item", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Item", 'DateTime'>
 }

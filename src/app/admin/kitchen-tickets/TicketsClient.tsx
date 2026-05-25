@@ -6,6 +6,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 type Modifier  = { groupName: string; label: string; priceAdd: number };
 type OrderItem = {
   id: string; quantity: number; notes: string | null; itemStatus: string;
+  course: number;
+  heldUntilFired: boolean;
+  firedAt: string | null;
+  doneAt: string | null;
   item: { name: string; prepTime: number | null; category?: { name: string } };
   modifiers?: Modifier[];
 };
@@ -56,7 +60,9 @@ function Ticket({
   }
 
   const active   = orders.filter(o => o.status !== "CANCELLED");
-  const allItems = active.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED" && itemMatchesStation(i)));
+  const allItems = active.flatMap(o => o.items.filter(i =>
+    i.itemStatus !== "CANCELLED" && !i.heldUntilFired && itemMatchesStation(i)
+  ));
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
   const allDone  = totalCount > 0 && doneCount === totalCount;
@@ -154,9 +160,11 @@ function Ticket({
               )}
 
               {/* Item rows */}
-              {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers }) => {
+              {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt }) => {
+                // Skip held items
+                if (heldUntilFired) return null;
                 // Station filter
-                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers })) return null;
+                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt })) return null;
 
                 const isDone      = itemStatus === "DONE" || isDelivered;
                 const isCancelled = itemStatus === "CANCELLED";

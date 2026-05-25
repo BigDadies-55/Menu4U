@@ -7,6 +7,10 @@ type Modifier  = { groupName: string; label: string; priceAdd: number };
 type OrderItem = {
   id: string; quantity: number; notes: string | null;
   itemStatus: string;
+  course: number;
+  heldUntilFired: boolean;
+  firedAt: string | null;
+  doneAt: string | null;
   item: { name: string; prepTime: number | null; category?: { name: string } };
   modifiers?: Modifier[];
 };
@@ -346,6 +350,8 @@ export default function KanbanClient({
     const tableLabel = order.tableNumber ?? order.customerName ?? "–";
     for (const item of order.items) {
       if (item.itemStatus === "CANCELLED" || item.itemStatus === "PENDING") continue;
+      // Hide items held for firing (courses not yet fired)
+      if (item.heldUntilFired) continue;
       // Station filter: match against category name or item name
       if (stationFilter) {
         const f = stationFilter.toLowerCase();

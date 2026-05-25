@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sseNotify } from "@/lib/sse";
 import { NextResponse } from "next/server";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -56,10 +58,114 @@ export async function GET(req: Request) {
           item: { select: { name: true, prepTime: true, category: { select: { name: true } } } },
           modifiers: { select: { groupName: true, label: true, priceAdd: true } },
         },
-        orderBy: { id: "asc" },
+        orderBy: [{ course: "asc" }, { id: "asc" }],
       },
     },
   });
 
   return NextResponse.json(orders);
+}
+
+/* ── POST: Create a waiter-side order (goes directly to CONFIRMED) ── */
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const { restaurantId, tableNumber, notes, items } = body;
+
+  if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return NextResponse.json({ error: "No items" }, { status: 400 });
+  }
+
+  // Verify access
+  if (session.user.role !== "SUPER_ADMIN") {
+    const access = await prisma.restaurantUser.findUnique({
+      where: { userId_restaurantId: { userId: session.user.id, restaurantId } },
+    });
+    if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Validate items
+  type CartItem = { itemId: string; quantity: number; notes?: string; course?: number; modifiers?: { groupName: string; label: string; priceAdd: number }[] };
+  const itemIds = items.map((i: CartItem) => i.itemId);
+  const dbItems = await prisma.item.findMany({
+    where: { id: { in: itemIds }, isActive: true },
+    select: { id: true, price: true },
+  });
+  const priceMap = Object.fromEntries(dbItems.map(i => [i.id, i.price]));
+  const validItems = items.filter((i: CartItem) => priceMap[i.itemId]);
+  if (validItems.length === 0) return NextResponse.json({ error: "No valid items" }, { status: 400 });
+
+  const totalAmount = validItems.reduce(
+    (sum: number, i: CartItem) =>
+      sum + (priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0)) * i.quantity,
+    0
+  );
+
+  // Waiter orders go directly to CONFIRMED; course 2+ items are held
+  const order = await prisma.order.create({
+    data: {
+      restaurantId,
+      tableNumber: tableNumber ?? null,
+      notes: notes ?? null,
+      totalAmount,
+      status: "CONFIRMED",        // ← skip PENDING
+      orderSource: "WAITER",
+      items: {
+        create: validItems.map((i: CartItem) => {
+          const course = i.course ?? 1;
+          return {
+            itemId: i.itemId,
+            quantity: i.quantity,
+            price: priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0),
+            notes: i.notes ?? null,
+            course,
+            heldUntilFired: course > 1, // courses 2+ are held until fired
+          };
+        }),
+      },
+    },
+    include: {
+      items: {
+        include: {
+          item: { select: { name: true, prepTime: true, category: { select: { name: true } } } },
+          modifiers: true,
+        },
+      },
+    },
+  });
+
+  // Create modifiers
+  for (let idx = 0; idx < validItems.length; idx++) {
+    const ci = validItems[idx] as CartItem;
+    if (ci.modifiers && ci.modifiers.length > 0) {
+      const orderItem = order.items[idx];
+      if (orderItem) {
+        await prisma.orderItemModifier.createMany({
+          data: ci.modifiers.map((m, midx) => ({
+            id: `oim-${orderItem.id}-${midx}`,
+            orderItemId: orderItem.id,
+            groupName: m.groupName,
+            label: m.label,
+            priceAdd: m.priceAdd,
+          })),
+        });
+      }
+    }
+  }
+
+  await logAudit({
+    userId: session.user.id,
+    userEmail: session.user.email,
+    action: "CREATE_WAITER_ORDER",
+    entity: "order",
+    entityId: order.id,
+    entityName: `שולחן ${tableNumber ?? "–"} · ₪${totalAmount.toFixed(0)}`,
+    ip: getIp(req),
+  });
+
+  sseNotify(restaurantId);
+  return NextResponse.json(order, { status: 201 });
 }

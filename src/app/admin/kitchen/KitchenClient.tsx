@@ -7,6 +7,10 @@ type Modifier = { groupName: string; label: string; priceAdd: number };
 type OrderItem = {
   id: string; quantity: number; notes: string | null;
   itemStatus: string;
+  course: number;
+  heldUntilFired: boolean;
+  firedAt: string | null;
+  doneAt: string | null;
   item: { name: string; prepTime: number | null; category?: { name: string } };
   modifiers?: Modifier[];
 };
@@ -50,11 +54,12 @@ const LS_STATION = "menu4u_kds_station_kitchen";
 /* ── Table card ── */
 function TableCard({
   tableNumber, orders, canUpdate, tick, stationFilter,
-  onAdvance, onGoBack,
+  onAdvance, onGoBack, onFireCourse,
 }: {
   tableNumber: string; orders: Order[]; canUpdate: boolean; tick: number; stationFilter: string;
   onAdvance: (orderId: string, itemId: string) => void;
   onGoBack:  (orderId: string, itemId: string) => void;
+  onFireCourse: (orderId: string, course: number) => void;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
 
@@ -69,7 +74,9 @@ function TableCard({
     return cat.includes(f) || nm.includes(f);
   }
 
-  const allItems = active.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED" && itemMatchesStation(i)));
+  const allItems = active.flatMap(o => o.items.filter(i =>
+    i.itemStatus !== "CANCELLED" && !i.heldUntilFired && itemMatchesStation(i)
+  ));
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
   const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
@@ -163,6 +170,40 @@ function TableCard({
             fontWeight: 900, fontSize: 13, flexShrink: 0,
           }}>✓ מוכן!</div>
         )}
+
+        {/* Fire course buttons — show when there are held items */}
+        {canUpdate && (() => {
+          const heldByCourse = new Map<number, { orderId: string; count: number }>();
+          for (const o of active) {
+            for (const item of o.items) {
+              if (item.heldUntilFired) {
+                const existing = heldByCourse.get(item.course);
+                if (existing) existing.count++;
+                else heldByCourse.set(item.course, { orderId: o.id, count: 1 });
+              }
+            }
+          }
+          if (heldByCourse.size === 0) return null;
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+              {Array.from(heldByCourse.entries()).map(([course, { orderId, count }]) => (
+                <button
+                  key={course}
+                  onClick={() => onFireCourse(orderId, course)}
+                  style={{
+                    background: "linear-gradient(135deg,#7c3aed,#a78bfa)",
+                    color: "#fff", border: "none",
+                    borderRadius: 8, padding: "6px 12px",
+                    fontWeight: 800, fontSize: 12, cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  🔥 הצת {course === 2 ? "עיקרי" : "קינוח"} ({count})
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Orders ── */}
@@ -191,9 +232,11 @@ function TableCard({
               )}
 
               {/* Items */}
-              {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers }) => {
+              {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt }) => {
+                // Skip held items (not yet fired to kitchen)
+                if (heldUntilFired) return null;
                 // Apply station filter
-                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers })) return null;
+                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt })) return null;
 
                 const dot       = STATUS_DOT[itemStatus]   ?? "#64748b";
                 const isDone    = itemStatus === "DONE" || isDelivered;
@@ -241,16 +284,32 @@ function TableCard({
                       }}>
                         {item.name}
                       </div>
-                      {/* Category tag */}
-                      {item.category?.name && (
-                        <div style={{
-                          display: "inline-block",
-                          color: "#475569", fontSize: 10, fontWeight: 600,
-                          marginTop: 2,
-                        }}>
-                          {item.category.name}
-                        </div>
-                      )}
+                      {/* Course + category + timing */}
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+                        {course > 1 && (
+                          <span style={{
+                            background: course === 2 ? "#7c3aed22" : "#d97706", color: course === 2 ? "#a78bfa" : "#000",
+                            fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 20,
+                          }}>
+                            {course === 2 ? "🍖 עיקרי" : "🍮 קינוח"}
+                          </span>
+                        )}
+                        {item.category?.name && (
+                          <span style={{ color: "#475569", fontSize: 10, fontWeight: 600 }}>
+                            {item.category.name}
+                          </span>
+                        )}
+                        {firedAt && doneAt && (
+                          <span style={{ color: "#22c55e", fontSize: 10 }}>
+                            ⏱ {Math.round((new Date(doneAt).getTime() - new Date(firedAt).getTime()) / 60000)} דק'
+                          </span>
+                        )}
+                        {firedAt && !doneAt && (
+                          <span style={{ color: "#38bdf8", fontSize: 10 }}>
+                            🔥 {Math.round((Date.now() - new Date(firedAt).getTime()) / 60000)} דק' בהכנה
+                          </span>
+                        )}
+                      </div>
                       {/* Modifiers — no prices */}
                       {modifiers && modifiers.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 3 }}>
@@ -462,6 +521,15 @@ export default function KitchenClient({
     byTable.get(key)!.push(o);
   }
 
+  async function handleFireCourse(orderId: string, course: number) {
+    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ course }),
+    });
+    fetchOrders();
+  }
+
   async function handleAdvance(orderId: string, itemId: string) {
     const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -656,6 +724,7 @@ export default function KitchenClient({
               stationFilter={stationFilter}
               onAdvance={handleAdvance}
               onGoBack={handleGoBack}
+              onFireCourse={handleFireCourse}
             />
           ))
         )}

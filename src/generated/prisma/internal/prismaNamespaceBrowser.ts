@@ -69,7 +69,8 @@ export const ModelName = {
   MenuView: 'MenuView',
   AuditLog: 'AuditLog',
   TableSession: 'TableSession',
-  SiteConfig: 'SiteConfig'
+  SiteConfig: 'SiteConfig',
+  Customer: 'Customer'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -165,6 +166,8 @@ export const RestaurantScalarFieldEnum = {
   kdsView: 'kdsView',
   customDomain: 'customDomain',
   copyright: 'copyright',
+  language: 'language',
+  welcomeText: 'welcomeText',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
   createdAt: 'createdAt',
@@ -211,6 +214,7 @@ export const CategoryScalarFieldEnum = {
   image: 'image',
   isActive: 'isActive',
   sortOrder: 'sortOrder',
+  translations: 'translations',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -232,6 +236,7 @@ export const ItemScalarFieldEnum = {
   tags: 'tags',
   prepTime: 'prepTime',
   sortOrder: 'sortOrder',
+  translations: 'translations',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -248,6 +253,7 @@ export const OrderScalarFieldEnum = {
   status: 'status',
   totalAmount: 'totalAmount',
   notes: 'notes',
+  orderSource: 'orderSource',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -274,7 +280,11 @@ export const OrderItemScalarFieldEnum = {
   quantity: 'quantity',
   price: 'price',
   notes: 'notes',
-  itemStatus: 'itemStatus'
+  itemStatus: 'itemStatus',
+  course: 'course',
+  heldUntilFired: 'heldUntilFired',
+  firedAt: 'firedAt',
+  doneAt: 'doneAt'
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
@@ -366,6 +376,20 @@ export const SiteConfigScalarFieldEnum = {
 } as const
 
 export type SiteConfigScalarFieldEnum = (typeof SiteConfigScalarFieldEnum)[keyof typeof SiteConfigScalarFieldEnum]
+
+
+export const CustomerScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  name: 'name',
+  phone: 'phone',
+  email: 'email',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
 
 
 export const SortOrder = {

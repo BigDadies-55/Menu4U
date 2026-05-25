@@ -7,6 +7,10 @@ type Modifier = { groupName: string; label: string; priceAdd: number };
 type OrderItem = {
   id: string; quantity: number; notes: string | null;
   itemStatus: string;
+  course: number;
+  heldUntilFired: boolean;
+  firedAt: string | null;
+  doneAt: string | null;
   item: { name: string; prepTime: number | null; category?: { name: string } };
   modifiers?: Modifier[];
 };
@@ -119,7 +123,9 @@ function TableGroupCard({
            item.item.name.toLowerCase().includes(f);
   }
 
-  const allItems = orders.flatMap(o => o.items.filter(i => i.itemStatus !== "CANCELLED" && itemMatchesStation(i)));
+  const allItems = orders.flatMap(o => o.items.filter(i =>
+    i.itemStatus !== "CANCELLED" && !i.heldUntilFired && itemMatchesStation(i)
+  ));
   const allDone  = allItems.length > 0 && allItems.every(i => i.itemStatus === "DONE");
 
   // Skip card if station filter matches nothing
@@ -210,9 +216,11 @@ function TableGroupCard({
               </div>
 
               {/* Items */}
-              {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers }) => {
+              {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt }) => {
+                // Skip held items (waiting to be fired)
+                if (heldUntilFired) return null;
                 // Apply station filter
-                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers })) return null;
+                if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt })) return null;
 
                 const isCancelled = itemStatus === "CANCELLED";
                 const isDone      = itemStatus === "DONE";

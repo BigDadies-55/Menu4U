@@ -17,7 +17,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { tableNumber, customerName, customerPhone, notes, items } = body;
+  const { tableNumber, customerName, customerPhone, notes, items, orderSource } = body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "No items" }, { status: 400 });
@@ -32,7 +32,7 @@ export async function POST(
   const priceMap = Object.fromEntries(dbItems.map(i => [i.id, i.price]));
 
   type CartModifier = { groupName: string; label: string; priceAdd: number };
-  type CartItem = { itemId: string; quantity: number; notes?: string; modifiers?: CartModifier[] };
+  type CartItem = { itemId: string; quantity: number; notes?: string; course?: number; modifiers?: CartModifier[] };
 
   // Only include items that exist
   const validItems = items.filter((i: CartItem) => priceMap[i.itemId]);
@@ -55,13 +55,21 @@ export async function POST(
       customerPhone: customerPhone ?? null,
       notes: notes ?? null,
       totalAmount,
+      orderSource: orderSource ?? "CUSTOMER",
+      // Waiter orders are auto-confirmed
+      ...(orderSource === "WAITER" ? { status: "CONFIRMED" as const } : {}),
       items: {
-        create: validItems.map((i: CartItem) => ({
-          itemId: i.itemId,
-          quantity: i.quantity,
-          price: priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0),
-          notes: i.notes ?? null,
-        })),
+        create: validItems.map((i: CartItem) => {
+          const course = i.course ?? 1;
+          return {
+            itemId: i.itemId,
+            quantity: i.quantity,
+            price: priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0),
+            notes: i.notes ?? null,
+            course,
+            heldUntilFired: course > 1, // courses 2+ are held until explicitly fired
+          };
+        }),
       },
     },
     include: { items: true },

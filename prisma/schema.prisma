@@ -198,6 +198,7 @@ model Order {
   status        OrderStatus @default(PENDING)
   totalAmount   Float
   notes         String?
+  orderSource   String      @default("CUSTOMER") // CUSTOMER | WAITER | PHONE
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -218,13 +219,17 @@ model OrderStatusLog {
 }
 
 model OrderItem {
-  id         String  @id @default(cuid())
-  orderId    String
-  itemId     String
-  quantity   Int
-  price      Float
-  notes      String?
-  itemStatus String  @default("PENDING")
+  id              String    @id @default(cuid())
+  orderId         String
+  itemId          String
+  quantity        Int
+  price           Float
+  notes           String?
+  itemStatus      String    @default("PENDING")
+  course          Int       @default(1)     // 1=ראשון, 2=עיקרי, 3=קינוח
+  heldUntilFired  Boolean   @default(false) // true = ממתין ל-fire לפני שיורד למטבח
+  firedAt         DateTime?                 // מתי הפריט "הוצת" למטבח
+  doneAt          DateTime?                 // מתי הפריט הושלם
 
   order     Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
   item      Item                @relation(fields: [itemId], references: [id])

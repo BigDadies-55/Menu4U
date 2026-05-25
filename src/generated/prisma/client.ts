@@ -136,3 +136,8 @@ export type TableSession = Prisma.TableSessionModel
  * 
  */
 export type SiteConfig = Prisma.SiteConfigModel
+/**
+ * Model Customer
+ * 
+ */
+export type Customer = Prisma.CustomerModel

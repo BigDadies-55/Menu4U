@@ -212,6 +212,22 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "welcomeText" TEXT;
     `);
+    // Course management + POS source + timing fields
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderSource" TEXT NOT NULL DEFAULT 'CUSTOMER';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "course" INTEGER NOT NULL DEFAULT 1;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "heldUntilFired" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "firedAt" TIMESTAMP(3);
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "doneAt" TIMESTAMP(3);
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {
