@@ -1098,7 +1098,9 @@ export default function MenuElegantClient({
             </div>
 
             {/* ── Note edit mini-modal ── */}
-            {editNoteCartId && (
+            {editNoteCartId && (() => {
+              const editingItem = cart.find(c => c.cartId === editNoteCartId);
+              return (
               <div style={{
                 position: "absolute", inset: 0, zIndex: 10,
                 background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
@@ -1108,8 +1110,21 @@ export default function MenuElegantClient({
                   width: "100%", background: "#1a1612", borderRadius: "18px 18px 0 0",
                   padding: "20px 20px 28px", boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
                 }} onClick={e => e.stopPropagation()}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <span style={{ color: "#C5A880", fontWeight: 700, fontSize: 15 }}>✏️ {t.notePlaceholder || "הערה לפריט"}</span>
+                  {/* Item name header */}
+                  <div style={{
+                    marginBottom: 14, padding: "10px 14px", borderRadius: 10,
+                    background: "rgba(197,168,128,0.1)", border: "1px solid rgba(197,168,128,0.2)",
+                  }}>
+                    <div style={{ fontSize: 11, color: "rgba(197,168,128,0.7)", marginBottom: 3, textTransform: "uppercase", letterSpacing: ".05em" }}>הערה עבור</div>
+                    <div style={{ color: "#C5A880", fontWeight: 700, fontSize: 15 }}>{editingItem?.name}</div>
+                    {editingItem && (
+                      <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, marginTop: 2 }}>
+                        ×{editingItem.quantity} · ₪{editingItem.price * editingItem.quantity}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: 13 }}>✏️ הוסף הערה</span>
                     <button onClick={() => setEditNoteCartId(null)}
                       style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer" }}>✕</button>
                   </div>
@@ -1142,7 +1157,7 @@ export default function MenuElegantClient({
                   </div>
                 </div>
               </div>
-            )}
+            );})()}
 
             {/* Footer */}
             <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
