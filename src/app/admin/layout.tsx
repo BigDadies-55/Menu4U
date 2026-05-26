@@ -68,22 +68,31 @@ export default async function AdminLayout({ children }: { children: React.ReactN
              "adminTopBarBg", "adminTopBarTextColor"
       FROM "SiteConfig" WHERE id = 'default' LIMIT 1
     `;
-    // Legacy light backgrounds that should be replaced with dark default
-    const LEGACY_LIGHT_BG = new Set(["#f7f5f2","#f0ece3","#f8fafc","#f1f5f9","#ffffff","#f9fafb"]);
-    const LEGACY_LIGHT_TEXT = new Set(["#111827","#374151","#1e293b"]);
+    // Detect light backgrounds (plain hex starting with #f/#e/#d/#c/#b/#a, or light gradients)
+    function isLightBg(bg: string): boolean {
+      if (!bg) return true;
+      // Plain light hex: #f..., #e..., #d..., #c..., #b..., #a..., #9...
+      if (/^#[98765432fedcbaFEDCBA]/i.test(bg)) return true;
+      // Gradient — light if it doesn't contain any dark hex (#0xx, #1xx, #2xx, #3xx)
+      if (bg.includes("gradient") && !/gradient.*#[0-3][0-9a-fA-F]{4,5}/i.test(bg)) return true;
+      return false;
+    }
+    function isLightText(t: string): boolean {
+      return /^#[0-6]/i.test(t);
+    }
 
     if (rows[0]) {
       adminPalette           = rows[0].adminPalette           ?? "dark";
       const rawBg            = rows[0].adminBg                ?? "#1a1d23";
-      adminBg                = LEGACY_LIGHT_BG.has(rawBg) ? "#1a1d23" : rawBg;
+      adminBg                = isLightBg(rawBg) ? "#1a1d23" : rawBg;
       adminBgImage           = rows[0].adminBgImage           ?? null;
       siteLogo               = rows[0].logo                   ?? null;
       siteName               = rows[0].siteName               ?? "Menu4U";
       adminSidebarBg         = rows[0].adminSidebarBg         ?? null;
       adminSidebarAccent     = rows[0].adminSidebarAccent     ?? null;
       adminSidebarTextColor  = rows[0].adminSidebarTextColor  ?? "#9ca3af";
-      const rawTextColor     = rows[0].adminContentTextColor  ?? "#e9ecef";
-      adminContentTextColor  = LEGACY_LIGHT_TEXT.has(rawTextColor) ? "#e9ecef" : rawTextColor;
+      const rawText          = rows[0].adminContentTextColor  ?? "#e9ecef";
+      adminContentTextColor  = isLightText(rawText) ? "#e9ecef" : rawText;
       adminTopBarBg          = rows[0].adminTopBarBg          ?? null;
       adminTopBarTextColor   = rows[0].adminTopBarTextColor   ?? "#adb5bd";
     }
