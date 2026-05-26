@@ -64,6 +64,10 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
   const [avatarOpen, setAvatarOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
 
+  /* ── Favorites dropdown ── */
+  const [favsOpen, setFavsOpen] = useState(false);
+  const favsRef = useRef<HTMLDivElement>(null);
+
   /* ── Search ── */
   const [searchOpen,    setSearchOpen]    = useState(false);
   const [query,         setQuery]         = useState("");
@@ -76,6 +80,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false);
+      if (favsRef.current  && !favsRef.current.contains(e.target as Node))   setFavsOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchOpen(false); setQuery(""); setResults([]);
       }
@@ -176,39 +181,78 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
         </h1>
       </div>
 
-      {/* ── Center: Favorites chips ── */}
-      {favorites.length > 0 && (
-        <div className="hidden md:flex items-center gap-1 flex-1 overflow-x-auto mx-3" style={{ scrollbarWidth: "none" }}>
-          {favorites.map(fav => (
-            <Link
-              key={fav.href}
-              href={fav.href}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium whitespace-nowrap transition-colors hover:bg-black/[0.07] group"
-              style={{ color: adminTopBarTextColor, opacity: 0.85 }}
-              title={fav.label}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24"
-                fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                style={{ color: "#f59e0b", flexShrink: 0 }}>
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-              {fav.label}
-              {/* ✕ remove on hover */}
-              {onToggleFavorite && (
-                <span
-                  onClick={e => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(fav.href, fav.label); }}
-                  className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-[10px] leading-none ml-0.5 hover:text-red-400 cursor-pointer"
-                  title="הסר ממועדפים"
-                >✕</span>
-              )}
-            </Link>
-          ))}
-          <div style={{ width: 1, height: 16, background: adminTopBarTextColor + "33", flexShrink: 0 }} />
-        </div>
-      )}
-
-      {/* ── Left: search + avatar ── */}
+      {/* ── Left: favorites + search + avatar ── */}
       <div className="flex items-center gap-1 shrink-0">
+
+        {/* ── Favorites dropdown ── */}
+        <div ref={favsRef} className="relative">
+          <button
+            onClick={() => setFavsOpen(v => !v)}
+            className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-black/[0.06] relative"
+            style={{ color: favsOpen ? "#f59e0b" : iconColor }}
+            title="מועדפים"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24"
+              fill={favorites.length > 0 ? "#f59e0b" : "none"}
+              stroke={favorites.length > 0 ? "#f59e0b" : "currentColor"}
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            {favorites.length > 0 && (
+              <span className="absolute -top-0.5 -left-0.5 min-w-[14px] h-[14px] rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5"
+                style={{ background: "#f59e0b", lineHeight: 1 }}>
+                {favorites.length}
+              </span>
+            )}
+          </button>
+
+          {favsOpen && (
+            <div
+              className="absolute top-full mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+              style={{ left: 0, minWidth: 200, maxWidth: 260, direction: "rtl" }}
+            >
+              <div className="px-4 py-2.5 border-b border-gray-100">
+                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">מועדפים</div>
+              </div>
+              {favorites.length === 0 ? (
+                <div className="px-4 py-5 text-center text-sm text-gray-400">
+                  <div className="text-2xl mb-1">⭐</div>
+                  אין מועדפים עדיין
+                </div>
+              ) : (
+                <div className="py-1">
+                  {favorites.map(fav => (
+                    <div key={fav.href} className="flex items-center group hover:bg-gray-50 transition-colors">
+                      <Link
+                        href={fav.href}
+                        onClick={() => setFavsOpen(false)}
+                        className="flex items-center gap-2.5 flex-1 px-4 py-2.5 text-sm text-gray-700"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24"
+                          fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          className="shrink-0">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        <span className="font-medium truncate">{fav.label}</span>
+                      </Link>
+                      {onToggleFavorite && (
+                        <button
+                          onClick={() => onToggleFavorite(fav.href, fav.label)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-2 text-gray-300 hover:text-red-400"
+                          title="הסר ממועדפים"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Search */}
         <div ref={searchRef} className="flex items-center relative" style={{ direction: "rtl" }}>
