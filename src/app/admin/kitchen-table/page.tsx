@@ -5,6 +5,8 @@ import TableKdsClient from "./TableKdsClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "🪑 תצוגת שולחן | Menu4U" };
+
 export default async function KitchenTablePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

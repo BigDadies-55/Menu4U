@@ -5,6 +5,8 @@ import CustomersClient from "./CustomersClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "👤 לקוחות | Menu4U" };
+
 export default async function CustomersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

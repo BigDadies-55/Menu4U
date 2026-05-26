@@ -5,6 +5,8 @@ import KanbanClient from "./KanbanClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "🗂 קנבן מטבח | Menu4U" };
+
 export default async function KitchenKanbanPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

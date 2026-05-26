@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import SettingsClient from "./SettingsClient";
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "⚙️ הגדרות | Menu4U" };
+
 const DEFAULTS = {
   siteName: "Menu4U", logo: null as string | null,
   domain: null as string | null, copyright: null as string | null,

@@ -5,6 +5,8 @@ import RestaurantsClient from "./RestaurantsClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "🏪 מסעדות | Menu4U" };
+
 export default async function RestaurantsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

@@ -5,6 +5,8 @@ import CashierClient from "./CashierClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "💳 קופה | Menu4U" };
+
 export default async function CashierPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

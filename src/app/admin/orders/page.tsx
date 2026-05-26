@@ -5,6 +5,8 @@ import OrdersClient from "./OrdersClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "📋 הזמנות | Menu4U" };
+
 export default async function OrdersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

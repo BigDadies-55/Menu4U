@@ -5,6 +5,8 @@ import TicketsClient from "./TicketsClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "🎫 כרטיסיות מטבח | Menu4U" };
+
 export default async function KitchenTicketsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

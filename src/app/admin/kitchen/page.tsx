@@ -5,6 +5,8 @@ import KitchenClient from "./KitchenClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "👨‍🍳 מטבח | Menu4U" };
+
 export default async function KitchenPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

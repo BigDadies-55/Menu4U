@@ -5,6 +5,8 @@ import DashboardClient from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "📊 לוח בקרה | Menu4U" };
+
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

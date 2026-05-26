@@ -5,6 +5,8 @@ import MenusClient from "./MenusClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "🍽 תפריטים | Menu4U" };
+
 const ITEM_SELECT = {
   id: true, name: true, description: true, price: true, image: true,
   isActive: true, isVegetarian: true, isVegan: true, isGlutenFree: true,
