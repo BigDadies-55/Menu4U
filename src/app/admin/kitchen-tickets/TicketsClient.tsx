@@ -10,7 +10,7 @@ type OrderItem = {
   heldUntilFired: boolean;
   firedAt: string | null;
   doneAt: string | null;
-  item: { name: string; prepTime: number | null; category?: { name: string } };
+  item: { name: string; prepTime: number | null; category?: { name: string; autoReady?: boolean } };
   modifiers?: Modifier[];
 };
 type Order = {
@@ -61,7 +61,7 @@ function Ticket({
 
   const active   = orders.filter(o => o.status !== "CANCELLED");
   const allItems = active.flatMap(o => o.items.filter(i =>
-    i.itemStatus !== "CANCELLED" && !i.heldUntilFired && itemMatchesStation(i)
+    i.itemStatus !== "CANCELLED" && !i.heldUntilFired && !i.item.category?.autoReady && itemMatchesStation(i)
   ));
   const doneCount = allItems.filter(i => i.itemStatus === "DONE").length;
   const totalCount = allItems.length;
@@ -163,6 +163,8 @@ function Ticket({
               {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt }) => {
                 // Skip held items
                 if (heldUntilFired) return null;
+                // Skip items marked as no-kitchen (autoReady / ללא מטבח)
+                if (item.category?.autoReady) return null;
                 // Station filter
                 if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt })) return null;
 

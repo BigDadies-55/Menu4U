@@ -55,7 +55,7 @@ export async function GET(req: Request) {
       restaurant: { select: { id: true, name: true } },
       items: {
         include: {
-          item: { select: { name: true, prepTime: true, category: { select: { name: true } } } },
+          item: { select: { name: true, prepTime: true, category: { select: { name: true, autoReady: true } } } },
           modifiers: { select: { groupName: true, label: true, priceAdd: true } },
         },
         orderBy: [{ course: "asc" }, { id: "asc" }],
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
     include: {
       items: {
         include: {
-          item: { select: { name: true, prepTime: true, category: { select: { name: true } } } },
+          item: { select: { name: true, prepTime: true, category: { select: { name: true, autoReady: true } } } },
           modifiers: true,
         },
       },

@@ -11,7 +11,7 @@ type OrderItem = {
   heldUntilFired: boolean;
   firedAt: string | null;
   doneAt: string | null;
-  item: { name: string; prepTime: number | null; category?: { name: string } };
+  item: { name: string; prepTime: number | null; category?: { name: string; autoReady?: boolean } };
   modifiers?: Modifier[];
 };
 type Order = {
@@ -352,6 +352,8 @@ export default function KanbanClient({
       if (item.itemStatus === "CANCELLED" || item.itemStatus === "PENDING") continue;
       // Hide items held for firing (courses not yet fired)
       if (item.heldUntilFired) continue;
+      // Skip items marked as no-kitchen (autoReady / ללא מטבח)
+      if (item.item.category?.autoReady) continue;
       // Station filter: match against category name or item name
       if (stationFilter) {
         const f = stationFilter.toLowerCase();

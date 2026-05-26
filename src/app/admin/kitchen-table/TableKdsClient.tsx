@@ -11,7 +11,7 @@ type OrderItem = {
   heldUntilFired: boolean;
   firedAt: string | null;
   doneAt: string | null;
-  item: { name: string; prepTime: number | null; category?: { name: string } };
+  item: { name: string; prepTime: number | null; category?: { name: string; autoReady?: boolean } };
   modifiers?: Modifier[];
 };
 type Order = {
@@ -124,7 +124,7 @@ function TableGroupCard({
   }
 
   const allItems = orders.flatMap(o => o.items.filter(i =>
-    i.itemStatus !== "CANCELLED" && !i.heldUntilFired && itemMatchesStation(i)
+    i.itemStatus !== "CANCELLED" && !i.heldUntilFired && !i.item.category?.autoReady && itemMatchesStation(i)
   ));
   const allDone  = allItems.length > 0 && allItems.every(i => i.itemStatus === "DONE");
 
@@ -219,6 +219,8 @@ function TableGroupCard({
               {order.items.map(({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt }) => {
                 // Skip held items (waiting to be fired)
                 if (heldUntilFired) return null;
+                // Skip items marked as no-kitchen (autoReady / ללא מטבח)
+                if (item.category?.autoReady) return null;
                 // Apply station filter
                 if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt })) return null;
 
