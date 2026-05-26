@@ -14,9 +14,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Check BACKUP_SCHEDULE env var
-  const schedule = process.env.BACKUP_SCHEDULE;
-  if (!schedule || schedule === "off") {
+  // 2. Check BACKUP_SCHEDULE env var (strip quotes/whitespace in case user added them)
+  const scheduleRaw = (process.env.BACKUP_SCHEDULE ?? "")
+    .toLowerCase().trim()
+    .replace(/^["'​ ]+|["'​ ]+$/g, "").trim();
+  const schedule = ["daily", "weekly"].includes(scheduleRaw) ? scheduleRaw : "off";
+
+  if (schedule === "off") {
     console.log("[cron/backup] Skipping — BACKUP_SCHEDULE is off or not set");
     return NextResponse.json({ skipped: true });
   }

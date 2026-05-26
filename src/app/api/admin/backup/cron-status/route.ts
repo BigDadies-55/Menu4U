@@ -16,7 +16,12 @@ export async function GET() {
 
   const hasCronSecret    = cronSecretRaw.length > 0;
   const hasGmail         = gmailUser.length > 0 && gmailPass.length > 0;
-  const scheduleNorm     = scheduleRaw.toLowerCase().trim();
+  // Strip surrounding quotes, whitespace, invisible chars
+  const scheduleNorm     = scheduleRaw
+    .toLowerCase()
+    .trim()
+    .replace(/^["'​ ]+|["'​ ]+$/g, "") // remove quotes + invisible chars
+    .trim();
   const schedule         = ["daily", "weekly"].includes(scheduleNorm)
     ? scheduleNorm
     : scheduleNorm === "off" ? "off" : null;
