@@ -42,14 +42,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Load site config — try with newest columns first, degrade gracefully
   let adminPalette  = "dark";
-  let adminBg       = "#f7f5f2";
+  let adminBg       = "#1a1d23";
   let adminBgImage: string | null = null;
   let siteLogo: string | null = null;
   let siteName = "Menu4U";
   let adminSidebarBg: string | null = null;
   let adminSidebarAccent: string | null = null;
   let adminSidebarTextColor = "#9ca3af";
-  let adminContentTextColor = "#111827";
+  let adminContentTextColor = "#e9ecef";
   let adminTopBarBg: string | null = null;
   let adminTopBarTextColor = "#374151";
   try {

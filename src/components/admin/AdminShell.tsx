@@ -23,7 +23,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#111827", adminTopBarBg, adminTopBarTextColor = "#374151", children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#1a1d23", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#e9ecef", adminTopBarBg, adminTopBarTextColor = "#adb5bd", children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [favorites, toggleFavorite] = useFavorites();

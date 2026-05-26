@@ -837,9 +837,10 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
   const tabBarStyle: React.CSSProperties = {
     display: "flex",
-    background: "transparent",
+    background: "#212529",
+    borderRadius: "14px 14px 0 0",
     borderBottom: `2px solid ${C.border}`,
-    padding: "0 4px",
+    padding: "0 12px",
   };
 
   function topTabStyle(id: TopTab): React.CSSProperties {
@@ -860,9 +861,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   const subTabBarStyle: React.CSSProperties = {
     display: "flex",
     borderBottom: `1px solid ${C.border}`,
-    padding: "0 4px",
-    background: "transparent",
-    marginTop: 16,
+    padding: "0 20px",
+    background: "rgba(0,0,0,0.2)",
   };
 
   function subTabStyle(id: AdvTab): React.CSSProperties {
@@ -893,9 +893,12 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
         ))}
       </div>
 
-      {/* ── Content ── */}
+      {/* ── Card ── */}
       <div style={{
-        background: "transparent",
+        background: C.cardBg,
+        border: `1px solid ${C.border}`,
+        borderTop: "none",
+        borderRadius: "0 0 16px 16px",
         overflow: "hidden",
       }}>
 
@@ -906,12 +909,11 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
             <div style={{
               display: "grid",
               gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "0 1px",
+              gap: 1,
               background: C.border,
-              marginTop: 16,
             }}>
               {/* שם האתר */}
-              <div style={{ background: "transparent", padding: "20px 22px" }}>
+              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
                   fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>✏️</span> שם האתר
@@ -922,7 +924,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               </div>
 
               {/* דומיין ראשי */}
-              <div style={{ background: "transparent", padding: "20px 22px" }}>
+              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
                   fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>🌐</span> דומיין ראשי
@@ -934,7 +936,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               </div>
 
               {/* זכויות יוצרים */}
-              <div style={{ background: "transparent", padding: "20px 22px" }}>
+              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
                   fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>©</span> זכויות יוצרים
@@ -946,7 +948,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               </div>
 
               {/* לוגו */}
-              <div style={{ background: "transparent", padding: "20px 22px" }}>
+              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
                   fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>🖼️</span> לוגו האתר
@@ -990,8 +992,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
             {/* Save bar */}
             <div style={{ display: "flex", alignItems: "center", gap: 12,
-              borderTop: `1px solid ${C.border}`, padding: "16px 4px",
-              background: "transparent" }}>
+              borderTop: `1px solid ${C.border}`, padding: "14px 22px",
+              background: "rgba(0,0,0,0.12)" }}>
               <button onClick={save} disabled={saving} style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 background: "linear-gradient(135deg,#8B6914,#C9A84C)",
@@ -1024,7 +1026,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
             </div>
 
             {/* Sub-tab content */}
-            <div style={{ padding: "24px 0 28px" }}>
+            <div style={{ padding: "24px 24px 28px" }}>
               {advTab === "backup"  && <BackupSection />}
               {advTab === "restore" && <RestoreSection />}
               {advTab === "clear"   && <ClearOrdersSection />}
