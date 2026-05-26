@@ -68,18 +68,24 @@ export default async function AdminLayout({ children }: { children: React.ReactN
              "adminTopBarBg", "adminTopBarTextColor"
       FROM "SiteConfig" WHERE id = 'default' LIMIT 1
     `;
+    // Legacy light backgrounds that should be replaced with dark default
+    const LEGACY_LIGHT_BG = new Set(["#f7f5f2","#f0ece3","#f8fafc","#f1f5f9","#ffffff","#f9fafb"]);
+    const LEGACY_LIGHT_TEXT = new Set(["#111827","#374151","#1e293b"]);
+
     if (rows[0]) {
       adminPalette           = rows[0].adminPalette           ?? "dark";
-      adminBg                = rows[0].adminBg                ?? "#f7f5f2";
+      const rawBg            = rows[0].adminBg                ?? "#1a1d23";
+      adminBg                = LEGACY_LIGHT_BG.has(rawBg) ? "#1a1d23" : rawBg;
       adminBgImage           = rows[0].adminBgImage           ?? null;
       siteLogo               = rows[0].logo                   ?? null;
       siteName               = rows[0].siteName               ?? "Menu4U";
       adminSidebarBg         = rows[0].adminSidebarBg         ?? null;
       adminSidebarAccent     = rows[0].adminSidebarAccent     ?? null;
       adminSidebarTextColor  = rows[0].adminSidebarTextColor  ?? "#9ca3af";
-      adminContentTextColor  = rows[0].adminContentTextColor  ?? "#111827";
+      const rawTextColor     = rows[0].adminContentTextColor  ?? "#e9ecef";
+      adminContentTextColor  = LEGACY_LIGHT_TEXT.has(rawTextColor) ? "#e9ecef" : rawTextColor;
       adminTopBarBg          = rows[0].adminTopBarBg          ?? null;
-      adminTopBarTextColor   = rows[0].adminTopBarTextColor   ?? "#374151";
+      adminTopBarTextColor   = rows[0].adminTopBarTextColor   ?? "#adb5bd";
     }
   } catch {
     // Newer columns may not exist — fall back to base columns only
