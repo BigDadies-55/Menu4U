@@ -41,31 +41,9 @@ export default async function AdminDashboard() {
 
   const stats = await getStats(session.user.id, session.user.role);
 
-  const cards = [
-    { label: "מסעדות",       value: stats.restaurants, icon: "🍽️" },
-    ...(stats.users !== null
-      ? [{ label: "משתמשים", value: stats.users,        icon: "👥" }]
-      : []),
-    { label: "פריטים בתפריט", value: stats.items,      icon: "🍕" },
-  ];
-
   return (
-    <div className="p-4 md:p-8">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        {cards.map(card => (
-          <div key={card.label}
-            className="bg-white rounded-xl px-4 py-4 shadow-sm flex items-center gap-3"
-            style={{ border: "1px solid #e8ecf1", borderRight: "3px solid #c9a84c" }}>
-            <div className="text-2xl shrink-0">{card.icon}</div>
-            <div>
-              <div className="text-2xl font-bold leading-none" style={{ color: "#0f172a" }}>{card.value}</div>
-              <div className="text-xs mt-1.5" style={{ color: "#94a3b8" }}>{card.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Live dashboard widgets — KPIs, chart, top items */}
+    <div className="p-4 md:p-8" style={{ background: "#1a1d23", minHeight: "100vh" }}>
+      {/* Live dashboard widgets — KPIs, chart, top items, tables, bottom row */}
       <DashboardExtra
         isSuperAdmin={session.user.role === "SUPER_ADMIN"}
         restaurants={(stats.restaurantDetails ?? []).map(r => ({ id: r.id, name: r.name }))}

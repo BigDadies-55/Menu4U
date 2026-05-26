@@ -46,6 +46,8 @@ export async function GET(req: Request) {
     topItemsRaw,
     menuViewsToday,
     subscriptions,
+    statusCounts,
+    cancelledToday,
   ] = await Promise.all([
     // Today's orders count + revenue
     prisma.order.aggregate({
@@ -104,6 +106,18 @@ export async function GET(req: Request) {
       },
       select: { id: true, name: true, subscriptionTo: true },
     }),
+
+    // Status counts for today
+    prisma.order.groupBy({
+      by: ["status"],
+      where: { ...restaurantWhere, createdAt: { gte: todayStart } },
+      _count: { id: true },
+    }),
+
+    // Cancelled orders today
+    prisma.order.count({
+      where: { ...restaurantWhere, createdAt: { gte: todayStart }, status: "CANCELLED" },
+    }),
   ]);
 
   // Resolve item names for top items
@@ -134,6 +148,60 @@ export async function GET(req: Request) {
     });
   }
 
+  // Build statusCounts object
+  const statusCountsObj: Record<string, number> = {};
+  for (const s of statusCounts) statusCountsObj[s.status] = s._count.id;
+
+  // Week stats from last 7 days of byDay
+  const last7 = byDay.slice(-7);
+  const weekRevenue = last7.reduce((s, d) => s + d.revenue, 0);
+  const weekOrders  = last7.reduce((s, d) => s + d.orders,  0);
+
+  // Restaurant stats: per-restaurant completion rate (last 30 days), only when not filtering by specific restaurant
+  let restaurantStats: { id: string; name: string; total: number; completed: number; pct: number }[] = [];
+  if (!restaurantId) {
+    const allRestaurantIds = allowedIds ?? (await prisma.restaurant.findMany({ select: { id: true } })).map(r => r.id);
+    const restaurantNames = await prisma.restaurant.findMany({
+      where: { id: { in: allRestaurantIds } },
+      select: { id: true, name: true },
+    });
+    const nameByRestaurant = Object.fromEntries(restaurantNames.map(r => [r.id, r.name]));
+
+    const thirtyDaysAgoStats = new Date();
+    thirtyDaysAgoStats.setDate(thirtyDaysAgoStats.getDate() - 30);
+    thirtyDaysAgoStats.setHours(0, 0, 0, 0);
+
+    const statsPerRestaurant = await prisma.order.groupBy({
+      by: ["restaurantId", "status"],
+      where: {
+        restaurantId: { in: allRestaurantIds },
+        createdAt: { gte: thirtyDaysAgoStats },
+        status: { not: "CANCELLED" },
+      },
+      _count: { id: true },
+    });
+
+    const totalsMap: Record<string, { total: number; completed: number }> = {};
+    for (const row of statsPerRestaurant) {
+      if (!totalsMap[row.restaurantId]) totalsMap[row.restaurantId] = { total: 0, completed: 0 };
+      totalsMap[row.restaurantId].total += row._count.id;
+      if (row.status === "DELIVERED" || row.status === "PAID") {
+        totalsMap[row.restaurantId].completed += row._count.id;
+      }
+    }
+
+    restaurantStats = allRestaurantIds.map(id => {
+      const t = totalsMap[id] ?? { total: 0, completed: 0 };
+      return {
+        id,
+        name: nameByRestaurant[id] ?? id,
+        total: t.total,
+        completed: t.completed,
+        pct: t.total > 0 ? Math.round((t.completed / t.total) * 100) : 0,
+      };
+    }).filter(r => r.total > 0);
+  }
+
   return NextResponse.json({
     kpis: {
       todayRevenue: todayOrders._sum.totalAmount ?? 0,
@@ -149,5 +217,9 @@ export async function GET(req: Request) {
       name: s.name,
       subscriptionTo: s.subscriptionTo?.toISOString() ?? null,
     })),
+    statusCounts: statusCountsObj,
+    weekStats: { revenue: weekRevenue, orders: weekOrders },
+    cancelledToday,
+    restaurantStats,
   });
 }
