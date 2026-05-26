@@ -8,7 +8,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const groups = await prisma.itemModifierGroup.findMany({
-    where: { id },
+    where: { itemId: id },           // ← was: { id } (group id, wrong field)
     include: { options: { orderBy: { order: "asc" } } },
     orderBy: { order: "asc" },
   });
@@ -28,12 +28,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   // Delete groups not in the new list
   const keepGroupIds = groups.filter(g => g.id).map(g => g.id as string);
   await prisma.itemModifierGroup.deleteMany({
-    where: { id, id: { notIn: keepGroupIds } },
+    where: { itemId: id, id: { notIn: keepGroupIds } }, // ← was: { id, id: ... } (double id, wrong field)
   });
 
   for (const [gi, group] of groups.entries()) {
     const groupData = {
-      id,
+      itemId: id,                    // ← was: id (wrong field name)
       name: group.name,
       required: group.required ?? false,
       maxSelect: group.maxSelect ?? 1,
@@ -63,7 +63,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 
   const result = await prisma.itemModifierGroup.findMany({
-    where: { id },
+    where: { itemId: id },           // ← was: { id } (wrong field)
     include: { options: { orderBy: { order: "asc" } } },
     orderBy: { order: "asc" },
   });
