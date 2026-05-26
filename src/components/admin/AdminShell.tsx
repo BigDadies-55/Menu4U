@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import Sidebar from "./Sidebar";
+import Sidebar, { useFavorites } from "./Sidebar";
 import TopBar from "./TopBar";
 import type { Role } from "@/generated/prisma/client";
 
@@ -26,6 +26,7 @@ interface Props {
 export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#f0ece3", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#111827", adminTopBarBg, adminTopBarTextColor = "#374151", children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
+  const [favorites, toggleFavorite] = useFavorites();
   const [showPasswordModal, setShowPasswordModal]  = useState(false);
   const [pwForm,   setPwForm]   = useState({ current: "", next: "" });
   const [pwLoading,setPwLoading]= useState(false);
@@ -95,6 +96,8 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
         adminSidebarBg={adminSidebarBg}
         adminSidebarAccent={adminSidebarAccent}
         adminSidebarTextColor={adminSidebarTextColor}
+        favorites={favorites}
+        onToggleFavorite={toggleFavorite}
       />
 
       {/* Main — offset right so content is never under the sidebar */}
@@ -118,6 +121,8 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
           onOpenMobileSidebar={() => setSidebarOpen(v => !v)}
           adminTopBarBg={adminTopBarBg}
           adminTopBarTextColor={adminTopBarTextColor}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
         />
 
         {/* Page content */}

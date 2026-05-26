@@ -6,6 +6,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/client";
 import { ROLE_LABELS } from "@/lib/permissions";
+import type { Favorite } from "./Sidebar";
 
 /* ─── Page map: page name + group label ────────────────────── */
 type PageEntry = { pattern: RegExp; name: string; group?: string };
@@ -51,9 +52,11 @@ interface Props {
   onOpenMobileSidebar: () => void;
   adminTopBarBg?: string | null;
   adminTopBarTextColor?: string;
+  favorites?: Favorite[];
+  onToggleFavorite?: (href: string, label: string) => void;
 }
 
-export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, adminTopBarBg, adminTopBarTextColor = "#374151" }: Props) {
+export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, adminTopBarBg, adminTopBarTextColor = "#374151", favorites = [], onToggleFavorite }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
 
@@ -172,6 +175,37 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
           )}
         </h1>
       </div>
+
+      {/* ── Center: Favorites chips ── */}
+      {favorites.length > 0 && (
+        <div className="hidden md:flex items-center gap-1 flex-1 overflow-x-auto mx-3" style={{ scrollbarWidth: "none" }}>
+          {favorites.map(fav => (
+            <Link
+              key={fav.href}
+              href={fav.href}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium whitespace-nowrap transition-colors hover:bg-black/[0.07] group"
+              style={{ color: adminTopBarTextColor, opacity: 0.85 }}
+              title={fav.label}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24"
+                fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ color: "#f59e0b", flexShrink: 0 }}>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              {fav.label}
+              {/* ✕ remove on hover */}
+              {onToggleFavorite && (
+                <span
+                  onClick={e => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(fav.href, fav.label); }}
+                  className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-[10px] leading-none ml-0.5 hover:text-red-400 cursor-pointer"
+                  title="הסר ממועדפים"
+                >✕</span>
+              )}
+            </Link>
+          ))}
+          <div style={{ width: 1, height: 16, background: adminTopBarTextColor + "33", flexShrink: 0 }} />
+        </div>
+      )}
 
       {/* ── Left: search + avatar ── */}
       <div className="flex items-center gap-1 shrink-0">
