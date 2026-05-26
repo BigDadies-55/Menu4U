@@ -627,21 +627,31 @@ function BackupSection() {
   );
 }
 
+/* ─── Restore diff types ─────────────────────────────────── */
+type FieldChange = { field: string; from: string; to: string };
+type DiffEntry   = { type: string; name: string; action: "create" | "update"; changes?: FieldChange[] };
+type DiffResult  = { toCreate: number; toUpdate: number; noChange: number; entries: DiffEntry[] };
+
+const TYPE_LABELS: Record<string, string> = {
+  restaurant: "מסעדה", menu: "תפריט", category: "קטגוריה",
+  item: "פריט", modifierGroup: "קבוצת תוספות", modifier: "תוספת",
+};
+
 /* ─── Restore section ────────────────────────────────────── */
 function RestoreSection() {
   const [file,          setFile]          = useState<File | null>(null);
   const [backupData,    setBackupData]    = useState<BackupJSON | null>(null);
+  const [previewing,    setPreviewing]    = useState(false);
+  const [diff,          setDiff]          = useState<DiffResult | null>(null);
+  const [confirm,       setConfirm]       = useState(false);
   const [restoring,     setRestoring]     = useState(false);
   const [restoreResult, setRestoreResult] = useState<{ created: number; updated: number } | null>(null);
   const [error,         setError]         = useState("");
-  const dropRef = useRef<HTMLDivElement>(null);
+  const [showAllDiff,   setShowAllDiff]   = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function parseFile(f: File) {
-    setFile(f);
-    setError("");
-    setRestoreResult(null);
-    setBackupData(null);
+    setFile(f); setError(""); setRestoreResult(null); setBackupData(null); setDiff(null); setConfirm(false);
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
@@ -656,26 +666,38 @@ function RestoreSection() {
     reader.readAsText(f);
   }
 
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    const dropped = e.dataTransfer.files[0];
-    if (dropped) parseFile(dropped);
-  }
-
-  async function doRestore(scope: "menus") {
+  async function previewDiff() {
     if (!backupData) return;
-    setRestoring(true);
-    setError("");
-    setRestoreResult(null);
+    setPreviewing(true); setError(""); setDiff(null); setConfirm(false);
     try {
       const res = await fetch("/api/admin/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backup: backupData, scope }),
+        body: JSON.stringify({ backup: backupData, scope: "menus", mode: "preview" }),
+      });
+      const data = await res.json() as DiffResult & { error?: string };
+      if (!res.ok) throw new Error(data.error ?? `שגיאה ${res.status}`);
+      setDiff(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "שגיאה בבדיקת שינויים");
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  async function doRestore() {
+    if (!backupData) return;
+    setRestoring(true); setError(""); setRestoreResult(null); setConfirm(false);
+    try {
+      const res = await fetch("/api/admin/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ backup: backupData, scope: "menus", mode: "restore" }),
       });
       const data = await res.json() as { created?: number; updated?: number; error?: string };
       if (!res.ok) throw new Error(data.error ?? `שגיאה ${res.status}`);
       setRestoreResult({ created: data.created ?? 0, updated: data.updated ?? 0 });
+      setDiff(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "שגיאה בשחזור");
     } finally {
@@ -683,8 +705,13 @@ function RestoreSection() {
     }
   }
 
-  const meta = backupData?._meta;
+  const meta   = backupData?._meta;
   const counts = meta?.counts;
+  const SHOW_N = 8;
+  const diffEntries  = diff?.entries ?? [];
+  const createItems  = diffEntries.filter(e => e.action === "create");
+  const updateItems  = diffEntries.filter(e => e.action === "update");
+  const visibleEntries = showAllDiff ? diffEntries : diffEntries.slice(0, SHOW_N);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-green-100 overflow-hidden">
@@ -696,11 +723,10 @@ function RestoreSection() {
 
         {/* Drop zone */}
         <div
-          ref={dropRef}
           onDragOver={e => e.preventDefault()}
-          onDrop={handleDrop}
+          onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) parseFile(f); }}
           onClick={() => inputRef.current?.click()}
-          className="w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 py-8 cursor-pointer transition-colors"
+          className="w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 py-7 cursor-pointer transition-colors"
           style={{ borderColor: backupData ? "#34d399" : "#d1d5db", background: backupData ? "rgba(52,211,153,0.04)" : "#f9fafb" }}
         >
           <span className="text-3xl">{backupData ? "✅" : "📂"}</span>
@@ -708,14 +734,17 @@ function RestoreSection() {
             {file ? file.name : "גרור קובץ גיבוי (JSON) לכאן, או לחץ לבחירה"}
           </span>
           {file && !backupData && <span className="text-xs text-gray-400">מנתח...</span>}
+          {backupData && (
+            <button
+              className="text-xs text-gray-400 underline mt-1"
+              onClick={e => { e.stopPropagation(); setFile(null); setBackupData(null); setDiff(null); setRestoreResult(null); setError(""); }}
+            >
+              החלף קובץ
+            </button>
+          )}
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(f); e.target.value = ""; }}
-        />
+        <input ref={inputRef} type="file" accept=".json,application/json" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(f); e.target.value = ""; }} />
 
         {/* Error */}
         {error && (
@@ -725,77 +754,176 @@ function RestoreSection() {
           </div>
         )}
 
-        {/* Preview card */}
+        {/* Backup metadata */}
         {backupData && meta && (
           <div className="border border-gray-100 rounded-xl p-4 space-y-3 bg-gray-50">
             <div className="text-sm font-bold text-gray-800">פרטי הגיבוי</div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600">
-              {meta.exportedAt && (
-                <>
-                  <span className="text-gray-400">יוצא ב:</span>
-                  <span>{new Date(meta.exportedAt).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" })}</span>
-                </>
-              )}
-              {meta.exportedBy && (
-                <>
-                  <span className="text-gray-400">יוצא ע״י:</span>
-                  <span className="font-mono">{meta.exportedBy}</span>
-                </>
-              )}
-              {meta.restaurantIds && (
-                <>
-                  <span className="text-gray-400">מסעדות:</span>
-                  <span>{meta.restaurantIds.length}</span>
-                </>
-              )}
-              <span className="text-gray-400">גרסה:</span>
-              <span>{meta.version}</span>
+              {meta.exportedAt && (<><span className="text-gray-400">יוצא ב:</span><span>{new Date(meta.exportedAt).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" })}</span></>)}
+              {meta.exportedBy && (<><span className="text-gray-400">יוצא ע״י:</span><span className="font-mono">{meta.exportedBy}</span></>)}
+              {meta.restaurantIds && (<><span className="text-gray-400">מסעדות:</span><span>{meta.restaurantIds.length}</span></>)}
+              <span className="text-gray-400">גרסה:</span><span>{meta.version}</span>
             </div>
             {counts && Object.keys(counts).length > 0 && (
-              <div>
-                <div className="text-xs font-semibold text-gray-500 mb-2">ספירות</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(counts).map(([key, val]) => (
-                    <div key={key} className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center">
-                      <div className="text-base font-bold text-gray-800">{val}</div>
-                      <div className="text-[10px] text-gray-400">{key}</div>
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {Object.entries(counts).map(([key, val]) => (
+                  <div key={key} className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center">
+                    <div className="text-base font-bold text-gray-800">{val}</div>
+                    <div className="text-[10px] text-gray-400">{key}</div>
+                  </div>
+                ))}
               </div>
+            )}
+
+            {/* Check changes button */}
+            {!diff && (
+              <button
+                onClick={previewDiff}
+                disabled={previewing}
+                className="flex items-center gap-2 mt-2 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg,#6366f1,#818cf8)", color: "#fff" }}
+              >
+                {previewing ? (
+                  <><svg className="animate-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>בודק...</>
+                ) : (
+                  <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="15.65" y2="15.65"/></svg>🔍 בדוק שינויים לפני שחזור</>
+                )}
+              </button>
             )}
           </div>
         )}
 
-        {/* Result */}
-        {restoreResult && (
-          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl border border-green-200">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            שחזור הושלם — נוצרו {restoreResult.created} רשומות, עודכנו {restoreResult.updated} רשומות
+        {/* ── DIFF PANEL ── */}
+        {diff && (
+          <div className="border border-indigo-100 rounded-xl overflow-hidden">
+            {/* Summary bar */}
+            <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 border-b border-indigo-100 flex-wrap">
+              <span className="text-sm font-bold text-indigo-800">תוצאת הבדיקה</span>
+              <div className="flex gap-2 flex-wrap">
+                {diff.toCreate > 0 && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                    ✚ {diff.toCreate} רשומות חדשות
+                  </span>
+                )}
+                {diff.toUpdate > 0 && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                    ✎ {diff.toUpdate} רשומות יידרסו
+                  </span>
+                )}
+                {diff.noChange > 0 && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
+                    ✓ {diff.noChange} ללא שינוי
+                  </span>
+                )}
+                {diff.toCreate === 0 && diff.toUpdate === 0 && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                    ✓ אין שינויים — הנתונים זהים
+                  </span>
+                )}
+              </div>
+              <button onClick={() => { setDiff(null); setShowAllDiff(false); }} className="mr-auto text-xs text-indigo-400 hover:text-indigo-600">× סגור</button>
+            </div>
+
+            {/* Entries list */}
+            {diffEntries.length > 0 && (
+              <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+                {visibleEntries.map((entry, i) => (
+                  <div key={i} className="flex items-start gap-3 px-4 py-2.5">
+                    {/* Badge */}
+                    <span className={`shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      entry.action === "create" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {entry.action === "create" ? "חדש" : "עדכון"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-gray-800 truncate">
+                        {entry.name}
+                        <span className="font-normal text-gray-400 mr-1">— {TYPE_LABELS[entry.type] ?? entry.type}</span>
+                      </div>
+                      {entry.changes && entry.changes.length > 0 && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                          {entry.changes.map((fc, j) => (
+                            <span key={j} className="text-[11px] text-gray-500">
+                              <span className="font-medium text-gray-700">{fc.field}:</span>{" "}
+                              <span className="line-through text-red-400">{fc.from}</span>
+                              {" → "}
+                              <span className="text-green-600 font-medium">{fc.to}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {diffEntries.length > SHOW_N && (
+                  <div className="px-4 py-2 bg-gray-50 text-center">
+                    <button onClick={() => setShowAllDiff(v => !v)} className="text-xs text-indigo-500 font-semibold hover:underline">
+                      {showAllDiff ? "הצג פחות ▲" : `הצג עוד ${diffEntries.length - SHOW_N} שינויים ▼`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Warning for overwrites */}
+            {diff.toUpdate > 0 && !confirm && (
+              <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-t border-amber-100">
+                <span className="text-lg shrink-0">⚠️</span>
+                <div className="flex-1">
+                  <div className="text-xs font-bold text-amber-800">{diff.toUpdate} רשומות קיימות יידרסו</div>
+                  <div className="text-xs text-amber-700 mt-0.5">שינויים שביצעת מאז הגיבוי יאבדו לנצח.</div>
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center gap-2 flex-wrap">
+              {!confirm ? (
+                <>
+                  <button
+                    onClick={() => diff.toUpdate > 0 ? setConfirm(true) : doRestore()}
+                    disabled={restoring || (diff.toCreate === 0 && diff.toUpdate === 0)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
+                    style={{ background: "linear-gradient(135deg,#059669,#34d399)" }}
+                  >
+                    {restoring
+                      ? <><svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>משחזר...</>
+                      : "🔄 שחזר תפריטים"}
+                  </button>
+                  <button onClick={() => { setDiff(null); setShowAllDiff(false); }} className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+                    ביטול
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="w-full text-xs font-bold text-red-700 mb-1">⚠️ האם לדרוס {diff.toUpdate} רשומות קיימות?</div>
+                  <button onClick={doRestore} disabled={restoring}
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors">
+                    {restoring ? "משחזר..." : "כן, דרוס והמשך"}
+                  </button>
+                  <button onClick={() => setConfirm(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+                    חזור
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Actions */}
-        {backupData && (
-          <div className="space-y-3">
-            <button
-              onClick={() => doRestore("menus")}
-              disabled={restoring}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-all"
-              style={{ background: "linear-gradient(135deg,#059669,#34d399)" }}
-            >
-              {restoring ? (
-                <>
-                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
-                  משחזר...
-                </>
-              ) : "🔄 שחזר תפריטים"}
-            </button>
-            <p className="text-xs text-gray-400">
-              לשחזור מלא של הזמנות ולקוחות, השתמש בגיבוי Neon DB
-            </p>
+        {/* Success result */}
+        {restoreResult && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl border border-green-200">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              שחזור הושלם! נוצרו {restoreResult.created} רשומות חדשות, עודכנו {restoreResult.updated} רשומות קיימות.
+            </div>
           </div>
         )}
+
+        {/* Neon note */}
+        <p className="text-xs text-gray-400 pt-1">
+          לשחזור מלא של הזמנות, לקוחות ולוגים — השתמש בגיבוי Neon DB.
+        </p>
       </div>
     </div>
   );
