@@ -245,16 +245,54 @@ type DesignSection = "templates" | "custom";
 type MainTab    = "sidebar" | "topbar" | "background";
 type BgTab      = "color" | "gradient" | "image";
 type SidebarTab = "presets" | "gradient" | "custom";
+type TopTab     = "הגדרות" | "גיבוי";
 
-/* ─── Section wrapper ────────────────────────────────────── */
-function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+/* ─── BackupJSON type ────────────────────────────────────── */
+interface BackupMeta {
+  version: number;
+  exportedAt?: string;
+  exportedBy?: string;
+  restaurantIds?: string[];
+  counts?: Record<string, number>;
+}
+
+interface BackupJSON {
+  _meta: BackupMeta;
+  restaurants?: unknown[];
+  menus?: unknown[];
+  categories?: unknown[];
+  items?: unknown[];
+  modifierGroups?: unknown[];
+  modifiers?: unknown[];
+  [key: string]: unknown;
+}
+
+/* ─── CollapsibleSection (accordion) ────────────────────── */
+function CollapsibleSection({
+  title, icon, children, redBorder,
+}: {
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+  redBorder?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
+    <div
+      className="bg-white rounded-2xl shadow-sm overflow-hidden"
+      style={{ border: redBorder ? "1px solid #fca5a5" : "1px solid #f3f4f6" }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-6 py-4 text-right hover:bg-gray-50 transition-colors"
+        style={{ borderBottom: open ? (redBorder ? "1px solid #fca5a5" : "1px solid #f3f4f6") : "none" }}
+      >
         <span className="text-lg">{icon}</span>
-        <h2 className="font-bold text-gray-900">{title}</h2>
-      </div>
-      <div className="px-6 py-5">{children}</div>
+        <h2 className="font-bold text-gray-900 flex-1 text-right">{title}</h2>
+        <span className="text-gray-400 text-sm select-none">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && <div className="px-6 py-5">{children}</div>}
     </div>
   );
 }
@@ -375,7 +413,7 @@ function TemplateCard({
           {/* Sidebar strip */}
           <div
             className="flex flex-col justify-start p-1.5 gap-1 shrink-0"
-            style={{ width: 38, background: tpl.adminSidebarBg ?? tpl.previewSidebar }}
+            style={{ width: 38, background: tpl.adminSidebarBg ?? (tpl as { previewSidebar: string }).previewSidebar }}
           >
             <div className="w-full h-2 rounded-full" style={{ background: tpl.previewAccent }} />
             <div className="w-4/5 h-1 rounded-full opacity-40" style={{ background: tpl.adminSidebarTextColor }} />
@@ -465,7 +503,7 @@ function BackupSection() {
       const res = await fetch(url);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `שגיאה ${res.status}`);
+        throw new Error((data as { error?: string }).error ?? `שגיאה ${res.status}`);
       }
       const blob = await res.blob();
       const a = document.createElement("a");
@@ -589,6 +627,180 @@ function BackupSection() {
   );
 }
 
+/* ─── Restore section ────────────────────────────────────── */
+function RestoreSection() {
+  const [file,          setFile]          = useState<File | null>(null);
+  const [backupData,    setBackupData]    = useState<BackupJSON | null>(null);
+  const [restoring,     setRestoring]     = useState(false);
+  const [restoreResult, setRestoreResult] = useState<{ created: number; updated: number } | null>(null);
+  const [error,         setError]         = useState("");
+  const dropRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function parseFile(f: File) {
+    setFile(f);
+    setError("");
+    setRestoreResult(null);
+    setBackupData(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const json = JSON.parse(ev.target?.result as string) as BackupJSON;
+        if (!json._meta?.version) throw new Error("קובץ לא תקין: חסר _meta.version");
+        setBackupData(json);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "שגיאה בפענוח הקובץ");
+        setFile(null);
+      }
+    };
+    reader.readAsText(f);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) parseFile(dropped);
+  }
+
+  async function doRestore(scope: "menus") {
+    if (!backupData) return;
+    setRestoring(true);
+    setError("");
+    setRestoreResult(null);
+    try {
+      const res = await fetch("/api/admin/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ backup: backupData, scope }),
+      });
+      const data = await res.json() as { created?: number; updated?: number; error?: string };
+      if (!res.ok) throw new Error(data.error ?? `שגיאה ${res.status}`);
+      setRestoreResult({ created: data.created ?? 0, updated: data.updated ?? 0 });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "שגיאה בשחזור");
+    } finally {
+      setRestoring(false);
+    }
+  }
+
+  const meta = backupData?._meta;
+  const counts = meta?.counts;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-green-100 overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-green-100">
+        <span className="text-lg">🔄</span>
+        <h2 className="font-bold text-gray-900">שחזור גיבוי</h2>
+      </div>
+      <div className="px-6 py-5 space-y-4">
+
+        {/* Drop zone */}
+        <div
+          ref={dropRef}
+          onDragOver={e => e.preventDefault()}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          className="w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 py-8 cursor-pointer transition-colors"
+          style={{ borderColor: backupData ? "#34d399" : "#d1d5db", background: backupData ? "rgba(52,211,153,0.04)" : "#f9fafb" }}
+        >
+          <span className="text-3xl">{backupData ? "✅" : "📂"}</span>
+          <span className="text-sm text-gray-500">
+            {file ? file.name : "גרור קובץ גיבוי (JSON) לכאן, או לחץ לבחירה"}
+          </span>
+          {file && !backupData && <span className="text-xs text-gray-400">מנתח...</span>}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(f); e.target.value = ""; }}
+        />
+
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 px-4 py-3 rounded-xl border border-red-200">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {error}
+          </div>
+        )}
+
+        {/* Preview card */}
+        {backupData && meta && (
+          <div className="border border-gray-100 rounded-xl p-4 space-y-3 bg-gray-50">
+            <div className="text-sm font-bold text-gray-800">פרטי הגיבוי</div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600">
+              {meta.exportedAt && (
+                <>
+                  <span className="text-gray-400">יוצא ב:</span>
+                  <span>{new Date(meta.exportedAt).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" })}</span>
+                </>
+              )}
+              {meta.exportedBy && (
+                <>
+                  <span className="text-gray-400">יוצא ע״י:</span>
+                  <span className="font-mono">{meta.exportedBy}</span>
+                </>
+              )}
+              {meta.restaurantIds && (
+                <>
+                  <span className="text-gray-400">מסעדות:</span>
+                  <span>{meta.restaurantIds.length}</span>
+                </>
+              )}
+              <span className="text-gray-400">גרסה:</span>
+              <span>{meta.version}</span>
+            </div>
+            {counts && Object.keys(counts).length > 0 && (
+              <div>
+                <div className="text-xs font-semibold text-gray-500 mb-2">ספירות</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.entries(counts).map(([key, val]) => (
+                    <div key={key} className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center">
+                      <div className="text-base font-bold text-gray-800">{val}</div>
+                      <div className="text-[10px] text-gray-400">{key}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Result */}
+        {restoreResult && (
+          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl border border-green-200">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            שחזור הושלם — נוצרו {restoreResult.created} רשומות, עודכנו {restoreResult.updated} רשומות
+          </div>
+        )}
+
+        {/* Actions */}
+        {backupData && (
+          <div className="space-y-3">
+            <button
+              onClick={() => doRestore("menus")}
+              disabled={restoring}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-all"
+              style={{ background: "linear-gradient(135deg,#059669,#34d399)" }}
+            >
+              {restoring ? (
+                <>
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+                  משחזר...
+                </>
+              ) : "🔄 שחזר תפריטים"}
+            </button>
+            <p className="text-xs text-gray-400">
+              לשחזור מלא של הזמנות ולקוחות, השתמש בגיבוי Neon DB
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Clear orders section ───────────────────────────────── */
 function ClearOrdersSection() {
   const [confirm,  setConfirm]  = useState(false);
@@ -599,56 +811,50 @@ function ClearOrdersSection() {
   async function handleClear() {
     setClearing(true); setError(""); setResult(null);
     const res = await fetch("/api/admin/orders/clear", { method: "DELETE" });
-    const data = await res.json();
+    const data = await res.json() as { deleted?: { orders?: number }; error?: string };
     setClearing(false);
     if (res.ok) { setResult({ count: data.deleted?.orders ?? 0 }); setConfirm(false); }
     else setError(data.error ?? "שגיאה");
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-red-100">
-        <span className="text-lg">🗑️</span>
-        <h2 className="font-bold text-gray-900">ניקוי היסטוריית הזמנות</h2>
-      </div>
-      <div className="px-6 py-5">
-        {result ? (
-          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            נמחקו {result.count} הזמנות בהצלחה — הנתונים מתחילים מאפס.
-          </div>
-        ) : confirm ? (
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
-              <span className="text-xl shrink-0">⚠️</span>
-              <div>
-                <div className="text-sm font-bold text-red-800">פעולה בלתי הפיכה!</div>
-                <div className="text-xs text-red-600 mt-0.5">כל ההזמנות, פריטי ההזמנות, ולוגי הסטטוס יימחקו לצמיתות. לא ניתן לשחזר.</div>
-              </div>
-            </div>
-            {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-            <div className="flex gap-2">
-              <button onClick={handleClear} disabled={clearing}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors">
-                {clearing ? "מוחק..." : "כן, מחק הכל"}
-              </button>
-              <button onClick={() => setConfirm(false)}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
-                ביטול
-              </button>
+    <>
+      {result ? (
+        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          נמחקו {result.count} הזמנות בהצלחה — הנתונים מתחילים מאפס.
+        </div>
+      ) : confirm ? (
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div>
+              <div className="text-sm font-bold text-red-800">פעולה בלתי הפיכה!</div>
+              <div className="text-xs text-red-600 mt-0.5">כל ההזמנות, פריטי ההזמנות, ולוגי הסטטוס יימחקו לצמיתות. לא ניתן לשחזר.</div>
             </div>
           </div>
-        ) : (
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-gray-500">מחק את כל ההזמנות מהמערכת והתחל מאפס. <span className="text-red-500 font-medium">פעולה בלתי הפיכה.</span></p>
-            <button onClick={() => setConfirm(true)}
-              className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors whitespace-nowrap">
-              מחק היסטוריה
+          {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+          <div className="flex gap-2">
+            <button onClick={handleClear} disabled={clearing}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors">
+              {clearing ? "מוחק..." : "כן, מחק הכל"}
+            </button>
+            <button onClick={() => setConfirm(false)}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+              ביטול
             </button>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-gray-500">מחק את כל ההזמנות מהמערכת והתחל מאפס. <span className="text-red-500 font-medium">פעולה בלתי הפיכה.</span></p>
+          <button onClick={() => setConfirm(true)}
+            className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors whitespace-nowrap">
+            מחק היסטוריה
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -659,6 +865,9 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   const [saved,         setSaved]         = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBg,   setUploadingBg]   = useState(false);
+
+  // Top-level tab
+  const [topTab, setTopTab] = useState<TopTab>("הגדרות");
 
   // Design section: templates vs DIY
   const [designSection, setDesignSection] = useState<DesignSection>("templates");
@@ -724,7 +933,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     const fd = new FormData();
     fd.append("file", file);
     const res  = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    const data = await res.json();
+    const data = await res.json() as { url?: string };
     if (data.url) { update(field, data.url); if (field === "adminBgImage") setBgTab("image"); }
     setLoading(false);
   }
@@ -746,189 +955,174 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
   return (
     <div className="p-4 md:p-8 max-w-2xl">
-      <div className="space-y-5">
 
-        {/* ═══════════════════ DESIGN SECTION ═══════════════════ */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
-            <span className="text-lg">🎨</span>
-            <h2 className="font-bold text-gray-900">עיצוב פאנל הניהול</h2>
-          </div>
+      {/* ═══════════════════ TOP-LEVEL TABS ═══════════════════ */}
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-2xl mb-6 w-fit">
+        {(["הגדרות", "גיבוי"] as TopTab[]).map(tab => {
+          const label = tab === "הגדרות" ? "⚙️ הגדרות" : "💾 גיבוי ושחזור";
+          return (
+            <button key={tab} onClick={() => setTopTab(tab)}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap"
+              style={topTab === tab
+                ? { background: "white", color: "#1f2937", boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }
+                : { color: "#6b7280" }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
-          {/* ── Two main boxes ── */}
-          <div className="p-5 grid grid-cols-2 gap-3 border-b border-gray-100">
+      {/* ═══════════════════ TAB 1: הגדרות ═══════════════════ */}
+      {topTab === "הגדרות" && (
+        <div className="space-y-3">
 
-            {/* Box 1: עיצוב */}
-            <button
-              onClick={() => setDesignSection("templates")}
-              className="relative rounded-2xl overflow-hidden transition-all group"
-              style={{
-                border: designSection === "templates" ? "2px solid #c9a84c" : "2px solid #e5e7eb",
-                boxShadow: designSection === "templates" ? "0 0 0 3px rgba(201,168,76,0.15), 0 4px 16px rgba(0,0,0,0.08)" : "none",
-              }}
-            >
-              {/* Gradient preview background */}
-              <div className="h-20 relative flex flex-col" style={{ background: "linear-gradient(135deg,#080a12,#111827)" }}>
-                {/* mini topbar */}
-                <div className="h-5 flex items-center px-2 gap-1.5 shrink-0" style={{ background: "rgba(8,10,18,0.95)", borderBottom: "1px solid rgba(201,168,76,0.2)" }}>
-                  <div className="h-1 w-6 rounded-full" style={{ background: "#c9a84c", opacity: 0.8 }} />
-                </div>
-                <div className="flex-1 flex flex-row-reverse">
-                  <div className="w-8 h-full p-1 flex flex-col gap-0.5" style={{ background: "linear-gradient(180deg,#080a12,#0f1118)" }}>
-                    <div className="h-1.5 w-full rounded-full" style={{ background: "#c9a84c" }} />
-                    <div className="h-0.5 w-3/4 rounded-full" style={{ background: "#d4af37", opacity: 0.4 }} />
-                    <div className="h-0.5 w-1/2 rounded-full" style={{ background: "#d4af37", opacity: 0.4 }} />
-                    <div className="h-0.5 w-3/4 rounded-full" style={{ background: "#d4af37", opacity: 0.4 }} />
+          {/* 1. עיצוב פאנל הניהול */}
+          <CollapsibleSection title="עיצוב פאנל הניהול" icon="🎨">
+
+            {/* ── Two main boxes ── */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-5 mb-5">
+
+              {/* Box 1: עיצוב */}
+              <button
+                onClick={() => setDesignSection("templates")}
+                className="relative rounded-2xl overflow-hidden transition-all group"
+                style={{
+                  border: designSection === "templates" ? "2px solid #c9a84c" : "2px solid #e5e7eb",
+                  boxShadow: designSection === "templates" ? "0 0 0 3px rgba(201,168,76,0.15), 0 4px 16px rgba(0,0,0,0.08)" : "none",
+                }}
+              >
+                {/* Gradient preview background */}
+                <div className="h-20 relative flex flex-col" style={{ background: "linear-gradient(135deg,#080a12,#111827)" }}>
+                  {/* mini topbar */}
+                  <div className="h-5 flex items-center px-2 gap-1.5 shrink-0" style={{ background: "rgba(8,10,18,0.95)", borderBottom: "1px solid rgba(201,168,76,0.2)" }}>
+                    <div className="h-1 w-6 rounded-full" style={{ background: "#c9a84c", opacity: 0.8 }} />
                   </div>
-                  <div className="flex-1 p-1.5 flex flex-col gap-1">
-                    <div className="h-3 rounded opacity-20" style={{ background: "#e8e0d0" }} />
-                    <div className="grid grid-cols-3 gap-0.5">
-                      {[1,2,3].map(i => <div key={i} className="h-4 rounded opacity-[0.1]" style={{ background: "#e8e0d0" }} />)}
+                  <div className="flex-1 flex flex-row-reverse">
+                    <div className="w-8 h-full p-1 flex flex-col gap-0.5" style={{ background: "linear-gradient(180deg,#080a12,#0f1118)" }}>
+                      <div className="h-1.5 w-full rounded-full" style={{ background: "#c9a84c" }} />
+                      <div className="h-0.5 w-3/4 rounded-full" style={{ background: "#d4af37", opacity: 0.4 }} />
+                      <div className="h-0.5 w-1/2 rounded-full" style={{ background: "#d4af37", opacity: 0.4 }} />
+                      <div className="h-0.5 w-3/4 rounded-full" style={{ background: "#d4af37", opacity: 0.4 }} />
+                    </div>
+                    <div className="flex-1 p-1.5 flex flex-col gap-1">
+                      <div className="h-3 rounded opacity-20" style={{ background: "#e8e0d0" }} />
+                      <div className="grid grid-cols-3 gap-0.5">
+                        {[1,2,3].map(i => <div key={i} className="h-4 rounded opacity-[0.1]" style={{ background: "#e8e0d0" }} />)}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {/* Stars decoration */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {[{x:"20%",y:"15%"},{x:"70%",y:"25%"},{x:"45%",y:"65%"},{x:"80%",y:"70%"}].map((s,i) => (
-                    <div key={i} className="absolute w-0.5 h-0.5 rounded-full bg-white opacity-60" style={{ left:s.x, top:s.y }} />
-                  ))}
-                </div>
-              </div>
-              <div className="px-3 py-2.5 text-right">
-                <div className="text-sm font-bold text-gray-900">עיצוב</div>
-                <div className="text-[11px] text-gray-400">5 תבניות יוקרה מוכנות</div>
-              </div>
-              {designSection === "templates" && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#c9a84c" }}>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-              )}
-            </button>
-
-            {/* Box 2: עשה זאת בעצמך */}
-            <button
-              onClick={() => setDesignSection("custom")}
-              className="relative rounded-2xl overflow-hidden transition-all group"
-              style={{
-                border: designSection === "custom" ? "2px solid #6366f1" : "2px solid #e5e7eb",
-                boxShadow: designSection === "custom" ? "0 0 0 3px rgba(99,102,241,0.12), 0 4px 16px rgba(0,0,0,0.08)" : "none",
-              }}
-            >
-              {/* Colorful DIY preview */}
-              <div className="h-20 relative overflow-hidden" style={{ background: "linear-gradient(135deg,#f0f4f8,#dce6f0)" }}>
-                {/* color swatches grid */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="grid grid-cols-4 gap-1 p-2">
-                    {["#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#ec4899","#06b6d4"].map(c => (
-                      <div key={c} className="w-5 h-5 rounded-md" style={{ background: c }} />
+                  {/* Stars decoration */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {[{x:"20%",y:"15%"},{x:"70%",y:"25%"},{x:"45%",y:"65%"},{x:"80%",y:"70%"}].map((s,i) => (
+                      <div key={i} className="absolute w-0.5 h-0.5 rounded-full bg-white opacity-60" style={{ left:s.x, top:s.y }} />
                     ))}
                   </div>
                 </div>
-                {/* paint icon */}
-                <div className="absolute bottom-1.5 left-1.5 text-lg opacity-30">🎨</div>
-              </div>
-              <div className="px-3 py-2.5 text-right">
-                <div className="text-sm font-bold text-gray-900">עשה זאת בעצמך</div>
-                <div className="text-[11px] text-gray-400">התאמה אישית מלאה</div>
-              </div>
-              {designSection === "custom" && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#6366f1" }}>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <div className="px-3 py-2.5 text-right">
+                  <div className="text-sm font-bold text-gray-900">עיצוב</div>
+                  <div className="text-[11px] text-gray-400">5 תבניות יוקרה מוכנות</div>
                 </div>
-              )}
-            </button>
-          </div>
+                {designSection === "templates" && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#c9a84c" }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                )}
+              </button>
 
-          {/* ══════════ TEMPLATES SECTION ══════════ */}
-          {designSection === "templates" && (
-            <div className="px-5 py-5">
-              <p className="text-xs text-gray-400 mb-4">לחץ על תבנית להחלתה — לאחר מכן לחץ שמור</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {LUXURY_TEMPLATES.map(tpl => (
-                  <TemplateCard
-                    key={tpl.id}
-                    tpl={tpl}
-                    isActive={isActiveTemplate(tpl)}
-                    onApply={() => applyTemplate(tpl)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ══════════ CUSTOM / DIY SECTION ══════════ */}
-          {designSection === "custom" && (
-            <div className="px-5 py-5">
-
-              {/* Inner tabs: Sidebar / TopBar / Background */}
-              <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-6 w-fit">
-                {([["sidebar","🗂️ סיידבר"],["topbar","🔝 פאנל עליון"],["background","🖼️ רקע"]] as [MainTab,string][]).map(([id,label]) => (
-                  <button key={id} onClick={() => setMainTab(id)}
-                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap"
-                    style={mainTab === id
-                      ? { background: "white", color: "#1f2937", boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }
-                      : { color: "#6b7280" }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {/* ── SIDEBAR ── */}
-              {mainTab === "sidebar" && (
-                <>
-                  <SubTabs
-                    tabs={[{id:"presets",label:"🎨 פריסטים"},{id:"gradient",label:"🌈 Gradient"},{id:"custom",label:"✨ מותאם"}]}
-                    active={sidebarTab} onChange={setSidebarTab} />
-
-                  {sidebarTab === "presets" && (
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      {PALETTES.map(p => {
-                        const active = form.adminPalette === p.id;
-                        return (
-                          <button key={p.id}
-                            onClick={() => { update("adminPalette", p.id); update("adminSidebarBg", null); update("adminSidebarAccent", null); }}
-                            className="relative rounded-xl overflow-hidden transition-all"
-                            style={{ background: p.preview, border: `2px solid ${active ? p.accent : "transparent"}`,
-                              boxShadow: active ? `0 0 0 3px ${p.accent}33` : "none" }}>
-                            <div className="h-16 flex flex-col items-center justify-center gap-1.5 px-2">
-                              <div className="w-4 h-8 rounded-sm opacity-60" style={{ background: p.bg }} />
-                              <div className="w-6 h-1 rounded-full" style={{ background: p.accent }} />
-                            </div>
-                            <div className="px-1.5 py-2 text-center border-t" style={{ borderColor: `${p.accent}22` }}>
-                              <div className="text-[11px] font-bold" style={{ color: p.accent }}>{p.label}</div>
-                              <div className="text-[9px] text-gray-400 mt-0.5">{p.desc}</div>
-                            </div>
-                            {active && (
-                              <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: p.accent }}>
-                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
+              {/* Box 2: עשה זאת בעצמך */}
+              <button
+                onClick={() => setDesignSection("custom")}
+                className="relative rounded-2xl overflow-hidden transition-all group"
+                style={{
+                  border: designSection === "custom" ? "2px solid #6366f1" : "2px solid #e5e7eb",
+                  boxShadow: designSection === "custom" ? "0 0 0 3px rgba(99,102,241,0.12), 0 4px 16px rgba(0,0,0,0.08)" : "none",
+                }}
+              >
+                {/* Colorful DIY preview */}
+                <div className="h-20 relative overflow-hidden" style={{ background: "linear-gradient(135deg,#f0f4f8,#dce6f0)" }}>
+                  {/* color swatches grid */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="grid grid-cols-4 gap-1 p-2">
+                      {["#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#ec4899","#06b6d4"].map(c => (
+                        <div key={c} className="w-5 h-5 rounded-md" style={{ background: c }} />
+                      ))}
                     </div>
-                  )}
+                  </div>
+                  {/* paint icon */}
+                  <div className="absolute bottom-1.5 left-1.5 text-lg opacity-30">🎨</div>
+                </div>
+                <div className="px-3 py-2.5 text-right">
+                  <div className="text-sm font-bold text-gray-900">עשה זאת בעצמך</div>
+                  <div className="text-[11px] text-gray-400">התאמה אישית מלאה</div>
+                </div>
+                {designSection === "custom" && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#6366f1" }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                )}
+              </button>
+            </div>
 
-                  {sidebarTab === "gradient" && (
-                    <>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
-                        {SIDEBAR_GRADIENT_PRESETS.map(p => {
-                          const isActive = form.adminPalette === "custom" && form.adminSidebarBg === p.id;
+            {/* ══════════ TEMPLATES SECTION ══════════ */}
+            {designSection === "templates" && (
+              <div>
+                <p className="text-xs text-gray-400 mb-4">לחץ על תבנית להחלתה — לאחר מכן לחץ שמור</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {LUXURY_TEMPLATES.map(tpl => (
+                    <TemplateCard
+                      key={tpl.id}
+                      tpl={tpl}
+                      isActive={isActiveTemplate(tpl)}
+                      onApply={() => applyTemplate(tpl)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ══════════ CUSTOM / DIY SECTION ══════════ */}
+            {designSection === "custom" && (
+              <div>
+                {/* Inner tabs: Sidebar / TopBar / Background */}
+                <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-6 w-fit">
+                  {([["sidebar","🗂️ סיידבר"],["topbar","🔝 פאנל עליון"],["background","🖼️ רקע"]] as [MainTab,string][]).map(([id,label]) => (
+                    <button key={id} onClick={() => setMainTab(id)}
+                      className="px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap"
+                      style={mainTab === id
+                        ? { background: "white", color: "#1f2937", boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }
+                        : { color: "#6b7280" }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* ── SIDEBAR ── */}
+                {mainTab === "sidebar" && (
+                  <>
+                    <SubTabs
+                      tabs={[{id:"presets",label:"🎨 פריסטים"},{id:"gradient",label:"🌈 Gradient"},{id:"custom",label:"✨ מותאם"}]}
+                      active={sidebarTab} onChange={setSidebarTab} />
+
+                    {sidebarTab === "presets" && (
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        {PALETTES.map(p => {
+                          const active = form.adminPalette === p.id;
                           return (
                             <button key={p.id}
-                              onClick={() => { update("adminPalette","custom"); update("adminSidebarBg",p.id); update("adminSidebarAccent",p.accent); }}
-                              className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
-                              style={{ borderColor: isActive ? "#f59e0b" : "transparent",
-                                boxShadow: isActive ? "0 0 0 3px rgba(245,158,11,0.3)" : "0 0 0 1px rgba(0,0,0,0.1)" }}>
-                              <div className="w-full h-14 rounded-lg flex flex-col justify-start p-1.5 gap-1" style={{ background: p.id }}>
-                                <div className="w-full h-1.5 rounded-full" style={{ background: p.accent, opacity: 0.9 }} />
-                                <div className="w-3/4 h-1 rounded-full bg-white opacity-20" />
-                                <div className="w-2/3 h-1 rounded-full bg-white opacity-20" />
-                                <div className="w-3/4 h-1 rounded-full bg-white opacity-20" />
+                              onClick={() => { update("adminPalette", p.id); update("adminSidebarBg", null); update("adminSidebarAccent", null); }}
+                              className="relative rounded-xl overflow-hidden transition-all"
+                              style={{ background: p.preview, border: `2px solid ${active ? p.accent : "transparent"}`,
+                                boxShadow: active ? `0 0 0 3px ${p.accent}33` : "none" }}>
+                              <div className="h-16 flex flex-col items-center justify-center gap-1.5 px-2">
+                                <div className="w-4 h-8 rounded-sm opacity-60" style={{ background: p.bg }} />
+                                <div className="w-6 h-1 rounded-full" style={{ background: p.accent }} />
                               </div>
-                              <span className="text-[10px] font-semibold text-gray-600">{p.label}</span>
-                              {isActive && (
-                                <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                              <div className="px-1.5 py-2 text-center border-t" style={{ borderColor: `${p.accent}22` }}>
+                                <div className="text-[11px] font-bold" style={{ color: p.accent }}>{p.label}</div>
+                                <div className="text-[9px] text-gray-400 mt-0.5">{p.desc}</div>
+                              </div>
+                              {active && (
+                                <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: p.accent }}>
                                   <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
                                 </div>
                               )}
@@ -936,330 +1130,366 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                           );
                         })}
                       </div>
-                      <div className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">בנה גרדיאנט מותאם לסיידבר</div>
-                        <div className="h-14 rounded-xl border border-gray-100" style={{ background: `linear-gradient(${sbAngle},${sbFrom},${sbTo})` }} />
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-1.5">
-                            <label className="text-xs text-gray-500">מ:</label>
-                            <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: sbFrom }} onClick={() => document.getElementById("sb-from")?.click()} />
-                            <input id="sb-from" type="color" className="sr-only" value={sbFrom} onChange={e => setSbFrom(e.target.value)} />
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <label className="text-xs text-gray-500">עד:</label>
-                            <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: sbTo }} onClick={() => document.getElementById("sb-to")?.click()} />
-                            <input id="sb-to" type="color" className="sr-only" value={sbTo} onChange={e => setSbTo(e.target.value)} />
-                          </div>
-                          <div className="flex gap-1">
-                            {SIDEBAR_ANGLES.map(a => (
-                              <button key={a.value} onClick={() => setSbAngle(a.value)}
-                                className="w-7 h-7 rounded-lg text-sm font-bold border transition-all"
-                                style={sbAngle === a.value ? { background: "#f59e0b", color: "#fff", borderColor: "#f59e0b" } : { background: "white", color: "#6b7280", borderColor: "#e5e7eb" }}>
-                                {a.label}
+                    )}
+
+                    {sidebarTab === "gradient" && (
+                      <>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+                          {SIDEBAR_GRADIENT_PRESETS.map(p => {
+                            const isActive = form.adminPalette === "custom" && form.adminSidebarBg === p.id;
+                            return (
+                              <button key={p.id}
+                                onClick={() => { update("adminPalette","custom"); update("adminSidebarBg",p.id); update("adminSidebarAccent",p.accent); }}
+                                className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
+                                style={{ borderColor: isActive ? "#f59e0b" : "transparent",
+                                  boxShadow: isActive ? "0 0 0 3px rgba(245,158,11,0.3)" : "0 0 0 1px rgba(0,0,0,0.1)" }}>
+                                <div className="w-full h-14 rounded-lg flex flex-col justify-start p-1.5 gap-1" style={{ background: p.id }}>
+                                  <div className="w-full h-1.5 rounded-full" style={{ background: p.accent, opacity: 0.9 }} />
+                                  <div className="w-3/4 h-1 rounded-full bg-white opacity-20" />
+                                  <div className="w-2/3 h-1 rounded-full bg-white opacity-20" />
+                                  <div className="w-3/4 h-1 rounded-full bg-white opacity-20" />
+                                </div>
+                                <span className="text-[10px] font-semibold text-gray-600">{p.label}</span>
+                                {isActive && (
+                                  <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                  </div>
+                                )}
                               </button>
-                            ))}
+                            );
+                          })}
+                        </div>
+                        <div className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">בנה גרדיאנט מותאם לסיידבר</div>
+                          <div className="h-14 rounded-xl border border-gray-100" style={{ background: `linear-gradient(${sbAngle},${sbFrom},${sbTo})` }} />
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <label className="text-xs text-gray-500">מ:</label>
+                              <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: sbFrom }} onClick={() => document.getElementById("sb-from")?.click()} />
+                              <input id="sb-from" type="color" className="sr-only" value={sbFrom} onChange={e => setSbFrom(e.target.value)} />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <label className="text-xs text-gray-500">עד:</label>
+                              <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: sbTo }} onClick={() => document.getElementById("sb-to")?.click()} />
+                              <input id="sb-to" type="color" className="sr-only" value={sbTo} onChange={e => setSbTo(e.target.value)} />
+                            </div>
+                            <div className="flex gap-1">
+                              {SIDEBAR_ANGLES.map(a => (
+                                <button key={a.value} onClick={() => setSbAngle(a.value)}
+                                  className="w-7 h-7 rounded-lg text-sm font-bold border transition-all"
+                                  style={sbAngle === a.value ? { background: "#f59e0b", color: "#fff", borderColor: "#f59e0b" } : { background: "white", color: "#6b7280", borderColor: "#e5e7eb" }}>
+                                  {a.label}
+                                </button>
+                              ))}
+                            </div>
+                            <button onClick={() => { update("adminPalette","custom"); update("adminSidebarBg",`linear-gradient(${sbAngle},${sbFrom},${sbTo})`); }}
+                              className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
+                              style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                              החל
+                            </button>
                           </div>
-                          <button onClick={() => { update("adminPalette","custom"); update("adminSidebarBg",`linear-gradient(${sbAngle},${sbFrom},${sbTo})`); }}
-                            className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
-                            style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
-                            החל
-                          </button>
+                          <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                            <span className="text-xs text-gray-500">אקסנט:</span>
+                            <div className="w-7 h-7 rounded-lg border border-gray-300 cursor-pointer" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} onClick={() => document.getElementById("sb-accent-grad")?.click()} />
+                            <input id="sb-accent-grad" type="color" className="sr-only" value={form.adminSidebarAccent ?? "#f59e0b"} onChange={e => update("adminSidebarAccent", e.target.value)} />
+                            <span className="text-xs font-mono text-gray-500">{form.adminSidebarAccent ?? "#f59e0b"}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                          <span className="text-xs text-gray-500">אקסנט:</span>
-                          <div className="w-7 h-7 rounded-lg border border-gray-300 cursor-pointer" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} onClick={() => document.getElementById("sb-accent-grad")?.click()} />
-                          <input id="sb-accent-grad" type="color" className="sr-only" value={form.adminSidebarAccent ?? "#f59e0b"} onChange={e => update("adminSidebarAccent", e.target.value)} />
-                          <span className="text-xs font-mono text-gray-500">{form.adminSidebarAccent ?? "#f59e0b"}</span>
+                      </>
+                    )}
+
+                    {sidebarTab === "custom" && (
+                      <div className="space-y-4">
+                        <div className="w-full h-24 rounded-xl overflow-hidden flex border border-gray-100">
+                          <div className="w-16 h-full flex flex-col justify-start p-2 gap-1.5" style={{ background: form.adminSidebarBg ?? "#0f111a" }}>
+                            <div className="w-full h-2 rounded-full" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} />
+                            <div className="w-3/4 h-1.5 rounded-full" style={{ background: form.adminSidebarTextColor, opacity: 0.5 }} />
+                            <div className="w-2/3 h-1.5 rounded-full" style={{ background: form.adminSidebarTextColor, opacity: 0.5 }} />
+                            <div className="w-3/4 h-1.5 rounded-full" style={{ background: form.adminSidebarTextColor, opacity: 0.5 }} />
+                          </div>
+                          <div className="flex-1 flex items-center justify-center" style={{ background: form.adminBg }}>
+                            <span className="text-xs" style={{ color: form.adminContentTextColor, opacity: 0.6 }}>תצוגה מקדימה</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">רקע סיידבר</label>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl border border-gray-200 cursor-pointer" style={{ background: form.adminSidebarBg ?? "#0f111a" }} onClick={() => document.getElementById("sb-bg-custom")?.click()} />
+                            <input id="sb-bg-custom" type="color" className="sr-only" value={form.adminSidebarBg ?? "#0f111a"} onChange={e => { update("adminPalette","custom"); update("adminSidebarBg", e.target.value); }} />
+                            <span className="text-xs font-mono text-gray-600">{form.adminSidebarBg ?? "#0f111a"}</span>
+                            <button onClick={() => document.getElementById("sb-bg-custom")?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר</button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">צבע אקסנט (פריטים פעילים)</label>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl border border-gray-200 cursor-pointer" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} onClick={() => document.getElementById("sb-accent-custom")?.click()} />
+                            <input id="sb-accent-custom" type="color" className="sr-only" value={form.adminSidebarAccent ?? "#f59e0b"} onChange={e => { update("adminPalette","custom"); update("adminSidebarAccent", e.target.value); }} />
+                            <span className="text-xs font-mono text-gray-600">{form.adminSidebarAccent ?? "#f59e0b"}</span>
+                            <button onClick={() => document.getElementById("sb-accent-custom")?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר</button>
+                          </div>
                         </div>
                       </div>
-                    </>
-                  )}
+                    )}
 
-                  {sidebarTab === "custom" && (
-                    <div className="space-y-4">
-                      <div className="w-full h-24 rounded-xl overflow-hidden flex border border-gray-100">
-                        <div className="w-16 h-full flex flex-col justify-start p-2 gap-1.5" style={{ background: form.adminSidebarBg ?? "#0f111a" }}>
-                          <div className="w-full h-2 rounded-full" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} />
-                          <div className="w-3/4 h-1.5 rounded-full" style={{ background: form.adminSidebarTextColor, opacity: 0.5 }} />
-                          <div className="w-2/3 h-1.5 rounded-full" style={{ background: form.adminSidebarTextColor, opacity: 0.5 }} />
-                          <div className="w-3/4 h-1.5 rounded-full" style={{ background: form.adminSidebarTextColor, opacity: 0.5 }} />
+                    <ColorPickerRow label="צבע טקסט סיידבר" presets={SIDEBAR_TEXT_PRESETS} value={form.adminSidebarTextColor} onChange={v => update("adminSidebarTextColor", v)} inputId="sb-text-custom" />
+                  </>
+                )}
+
+                {/* ── TOP BAR ── */}
+                {mainTab === "topbar" && (
+                  <>
+                    <div className="w-full rounded-xl overflow-hidden border border-gray-100 mb-5">
+                      <div className="flex items-center justify-between px-3 gap-2"
+                        style={{ height: 36, background: form.adminTopBarBg ?? "transparent", borderBottom: `1px solid ${form.adminTopBarTextColor}33`, backgroundColor: form.adminTopBarBg ?? "rgba(240,236,227,0.5)" }}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-3 flex flex-col gap-0.5">
+                            <div className="h-0.5 rounded-full w-full" style={{ background: form.adminTopBarTextColor }} />
+                            <div className="h-0.5 rounded-full w-full" style={{ background: form.adminTopBarTextColor }} />
+                            <div className="h-0.5 rounded-full w-3/4" style={{ background: form.adminTopBarTextColor }} />
+                          </div>
+                          <span className="text-[11px] font-semibold" style={{ color: form.adminTopBarTextColor }}>שם הדף</span>
                         </div>
-                        <div className="flex-1 flex items-center justify-center" style={{ background: form.adminBg }}>
-                          <span className="text-xs" style={{ color: form.adminContentTextColor, opacity: 0.6 }}>תצוגה מקדימה</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">רקע סיידבר</label>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl border border-gray-200 cursor-pointer" style={{ background: form.adminSidebarBg ?? "#0f111a" }} onClick={() => document.getElementById("sb-bg-custom")?.click()} />
-                          <input id="sb-bg-custom" type="color" className="sr-only" value={form.adminSidebarBg ?? "#0f111a"} onChange={e => { update("adminPalette","custom"); update("adminSidebarBg", e.target.value); }} />
-                          <span className="text-xs font-mono text-gray-600">{form.adminSidebarBg ?? "#0f111a"}</span>
-                          <button onClick={() => document.getElementById("sb-bg-custom")?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר</button>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">צבע אקסנט (פריטים פעילים)</label>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl border border-gray-200 cursor-pointer" style={{ background: form.adminSidebarAccent ?? "#f59e0b" }} onClick={() => document.getElementById("sb-accent-custom")?.click()} />
-                          <input id="sb-accent-custom" type="color" className="sr-only" value={form.adminSidebarAccent ?? "#f59e0b"} onChange={e => { update("adminPalette","custom"); update("adminSidebarAccent", e.target.value); }} />
-                          <span className="text-xs font-mono text-gray-600">{form.adminSidebarAccent ?? "#f59e0b"}</span>
-                          <button onClick={() => document.getElementById("sb-accent-custom")?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר</button>
+                        <div className="flex items-center gap-2">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={form.adminTopBarTextColor} strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="15.65" y2="15.65"/></svg>
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>A</div>
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  <ColorPickerRow label="צבע טקסט סיידבר" presets={SIDEBAR_TEXT_PRESETS} value={form.adminSidebarTextColor} onChange={v => update("adminSidebarTextColor", v)} inputId="sb-text-custom" />
-                </>
-              )}
-
-              {/* ── TOP BAR ── */}
-              {mainTab === "topbar" && (
-                <>
-                  <div className="w-full rounded-xl overflow-hidden border border-gray-100 mb-5">
-                    <div className="flex items-center justify-between px-3 gap-2"
-                      style={{ height: 36, background: form.adminTopBarBg ?? "transparent", borderBottom: `1px solid ${form.adminTopBarTextColor}33`, backgroundColor: form.adminTopBarBg ?? "rgba(240,236,227,0.5)" }}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-3 flex flex-col gap-0.5">
-                          <div className="h-0.5 rounded-full w-full" style={{ background: form.adminTopBarTextColor }} />
-                          <div className="h-0.5 rounded-full w-full" style={{ background: form.adminTopBarTextColor }} />
-                          <div className="h-0.5 rounded-full w-3/4" style={{ background: form.adminTopBarTextColor }} />
-                        </div>
-                        <span className="text-[11px] font-semibold" style={{ color: form.adminTopBarTextColor }}>שם הדף</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={form.adminTopBarTextColor} strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="15.65" y2="15.65"/></svg>
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>A</div>
+                      <div className="h-8 flex items-center px-3" style={{ background: form.adminBg }}>
+                        <span className="text-[10px] opacity-40" style={{ color: form.adminContentTextColor }}>תוכן הדף...</span>
                       </div>
                     </div>
-                    <div className="h-8 flex items-center px-3" style={{ background: form.adminBg }}>
-                      <span className="text-[10px] opacity-40" style={{ color: form.adminContentTextColor }}>תוכן הדף...</span>
-                    </div>
-                  </div>
 
-                  <div className="mb-5">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">רקע פאנל עליון</label>
-                    <div className="flex items-center gap-2 mb-3 flex-wrap">
-                      <button onClick={() => update("adminTopBarBg", null)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-semibold transition-all"
-                        style={{ borderColor: form.adminTopBarBg === null ? "#f59e0b" : "rgba(0,0,0,0.1)", boxShadow: form.adminTopBarBg === null ? "0 0 0 3px rgba(245,158,11,0.2)" : "none", background: form.adminTopBarBg === null ? "rgba(245,158,11,0.06)" : "white", color: form.adminTopBarBg === null ? "#92400e" : "#6b7280" }}>
-                        <span>✦</span> שקוף (ברירת מחדל)
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
-                      {TOPBAR_BG_PRESETS.map(p => {
-                        const active = form.adminTopBarBg === p.id;
-                        return (
-                          <button key={p.id} onClick={() => update("adminTopBarBg", p.id)} title={p.label}
-                            className="relative flex flex-col items-center gap-1 rounded-xl p-2 border-2 transition-all"
-                            style={{ background: p.id, borderColor: active ? "#f59e0b" : "rgba(0,0,0,0.08)", boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
-                            <div className="w-full h-7 rounded-md border border-black/[0.06]" style={{ background: p.id }} />
-                            <span className="text-[9px] font-semibold" style={{ color: p.dark ? "#d1d5db" : "#4b5563" }}>{p.label}</span>
-                            {active && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
-                          </button>
-                        );
-                      })}
-                      <button onClick={() => topBarBgRef.current?.click()} title="צבע מותאם"
-                        className="relative flex flex-col items-center gap-1 rounded-xl p-2 border-2 transition-all"
-                        style={{ background: isCustomTopBarBg ? (form.adminTopBarBg ?? "white") : "white", borderColor: isCustomTopBarBg ? "#f59e0b" : "rgba(0,0,0,0.08)", boxShadow: isCustomTopBarBg ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
-                        <div className="w-full h-7 rounded-md" style={{ background: "conic-gradient(from 0deg,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6,#ef4444)", opacity: isCustomTopBarBg ? 0.5 : 1 }} />
-                        <span className="text-[9px] font-semibold text-gray-600">Custom</span>
-                        {isCustomTopBarBg && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
-                      </button>
-                      <input ref={topBarBgRef} type="color" className="sr-only" value={isCustomTopBarBg ? (form.adminTopBarBg ?? "#ffffff") : "#ffffff"} onChange={e => update("adminTopBarBg", e.target.value)} />
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
-                      <div className="w-7 h-7 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminTopBarBg ?? "transparent", backgroundImage: form.adminTopBarBg === null ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 8px 8px" : undefined }} />
-                      <span className="text-xs font-mono text-gray-600 flex-1">{form.adminTopBarBg ?? "transparent"}</span>
-                      <button onClick={() => topBarBgRef.current?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר צבע</button>
-                    </div>
-                  </div>
-                  <ColorPickerRow label="צבע טקסט פאנל עליון" presets={TOPBAR_TEXT_PRESETS} value={form.adminTopBarTextColor} onChange={v => update("adminTopBarTextColor", v)} inputId="topbar-text-custom" />
-                </>
-              )}
-
-              {/* ── BACKGROUND ── */}
-              {mainTab === "background" && (
-                <>
-                  <SubTabs
-                    tabs={[{id:"color",label:"🎨 צבע"},{id:"gradient",label:"🌈 Gradient"},{id:"image",label:"🖼️ תמונה"}]}
-                    active={bgTab}
-                    onChange={tab => { if (tab === "image") bgImgRef.current?.click(); else { setBgTab(tab); if (tab !== "image") update("adminBgImage", null); if (tab === "color" && isGradient(form.adminBg)) update("adminBg","#f0ece3"); if (tab === "gradient" && !isGradient(form.adminBg)) update("adminBg",GRADIENT_PRESETS[0].id); } }}
-                  />
-
-                  {bgTab === "color" && (
-                    <>
+                    <div className="mb-5">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">רקע פאנל עליון</label>
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        <button onClick={() => update("adminTopBarBg", null)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-semibold transition-all"
+                          style={{ borderColor: form.adminTopBarBg === null ? "#f59e0b" : "rgba(0,0,0,0.1)", boxShadow: form.adminTopBarBg === null ? "0 0 0 3px rgba(245,158,11,0.2)" : "none", background: form.adminTopBarBg === null ? "rgba(245,158,11,0.06)" : "white", color: form.adminTopBarBg === null ? "#92400e" : "#6b7280" }}>
+                          <span>✦</span> שקוף (ברירת מחדל)
+                        </button>
+                      </div>
                       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
-                        {COLOR_PRESETS.map(p => {
-                          const active = form.adminBg === p.id;
+                        {TOPBAR_BG_PRESETS.map(p => {
+                          const active = form.adminTopBarBg === p.id;
                           return (
-                            <button key={p.id} onClick={() => update("adminBg", p.id)} title={p.label}
-                              className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
+                            <button key={p.id} onClick={() => update("adminTopBarBg", p.id)} title={p.label}
+                              className="relative flex flex-col items-center gap-1 rounded-xl p-2 border-2 transition-all"
                               style={{ background: p.id, borderColor: active ? "#f59e0b" : "rgba(0,0,0,0.08)", boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
-                              <div className="w-full h-8 rounded-md" style={{ background: p.id, border: "1px solid rgba(0,0,0,0.06)" }} />
-                              <span className="text-[10px] font-semibold" style={{ color: p.dark ? "#d1d5db" : "#4b5563" }}>{p.label}</span>
+                              <div className="w-full h-7 rounded-md border border-black/[0.06]" style={{ background: p.id }} />
+                              <span className="text-[9px] font-semibold" style={{ color: p.dark ? "#d1d5db" : "#4b5563" }}>{p.label}</span>
                               {active && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
                             </button>
                           );
                         })}
-                        <button onClick={() => colorRef.current?.click()} title="צבע מותאם"
-                          className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
-                          style={{ background: isCustomBgColor ? form.adminBg : "white", borderColor: isCustomBgColor ? "#f59e0b" : "rgba(0,0,0,0.08)", boxShadow: isCustomBgColor ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
-                          <div className="w-full h-8 rounded-md" style={{ background: "conic-gradient(from 0deg,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6,#ef4444)", opacity: isCustomBgColor ? 0.5 : 1 }} />
-                          <span className="text-[10px] font-semibold text-gray-600">Custom</span>
-                          {isCustomBgColor && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
+                        <button onClick={() => topBarBgRef.current?.click()} title="צבע מותאם"
+                          className="relative flex flex-col items-center gap-1 rounded-xl p-2 border-2 transition-all"
+                          style={{ background: isCustomTopBarBg ? (form.adminTopBarBg ?? "white") : "white", borderColor: isCustomTopBarBg ? "#f59e0b" : "rgba(0,0,0,0.08)", boxShadow: isCustomTopBarBg ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
+                          <div className="w-full h-7 rounded-md" style={{ background: "conic-gradient(from 0deg,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6,#ef4444)", opacity: isCustomTopBarBg ? 0.5 : 1 }} />
+                          <span className="text-[9px] font-semibold text-gray-600">Custom</span>
+                          {isCustomTopBarBg && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
                         </button>
-                        <input ref={colorRef} type="color" className="sr-only" value={isCustomBgColor ? form.adminBg : "#f0ece3"} onChange={e => update("adminBg", e.target.value)} />
+                        <input ref={topBarBgRef} type="color" className="sr-only" value={isCustomTopBarBg ? (form.adminTopBarBg ?? "#ffffff") : "#ffffff"} onChange={e => update("adminTopBarBg", e.target.value)} />
                       </div>
                       <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
-                        <div className="w-8 h-8 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminBg }} />
-                        <span className="text-xs font-mono text-gray-600 uppercase flex-1">{form.adminBg}</span>
-                        <button onClick={() => colorRef.current?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר צבע</button>
+                        <div className="w-7 h-7 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminTopBarBg ?? "transparent", backgroundImage: form.adminTopBarBg === null ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 8px 8px" : undefined }} />
+                        <span className="text-xs font-mono text-gray-600 flex-1">{form.adminTopBarBg ?? "transparent"}</span>
+                        <button onClick={() => topBarBgRef.current?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר צבע</button>
                       </div>
-                    </>
-                  )}
-
-                  {bgTab === "gradient" && (
-                    <>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mb-4">
-                        {GRADIENT_PRESETS.map(p => {
-                          const active = form.adminBg === p.id;
-                          return (
-                            <button key={p.id} onClick={() => { update("adminBg", p.id); update("adminBgImage", null); }} title={p.label}
-                              className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
-                              style={{ borderColor: active ? "#f59e0b" : "transparent", boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "0 0 0 1px rgba(0,0,0,0.08)" }}>
-                              <div className="w-full h-10 rounded-lg" style={{ background: p.id }} />
-                              <span className="text-[10px] font-semibold text-gray-600">{p.label}</span>
-                              {active && <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3"
-                        style={{ borderColor: isCustomBgGrad ? "#f59e0b" : undefined, background: isCustomBgGrad ? "rgba(245,158,11,0.03)" : undefined }}>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{isCustomBgGrad ? "✨ גרדיאנט מותאם" : "בנה גרדיאנט מותאם"}</div>
-                        <div className="w-full h-10 rounded-xl border border-gray-100" style={{ background: `linear-gradient(${customAngle},${customFrom},${customTo})` }} />
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-1.5">
-                            <label className="text-xs text-gray-500">מ:</label>
-                            <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: customFrom }} onClick={() => document.getElementById("grad-from")?.click()} />
-                            <input id="grad-from" type="color" className="sr-only" value={customFrom} onChange={e => { setCustomFrom(e.target.value); applyCustomGradient(e.target.value, customTo, customAngle); }} />
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <label className="text-xs text-gray-500">עד:</label>
-                            <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: customTo }} onClick={() => document.getElementById("grad-to")?.click()} />
-                            <input id="grad-to" type="color" className="sr-only" value={customTo} onChange={e => { setCustomTo(e.target.value); applyCustomGradient(customFrom, e.target.value, customAngle); }} />
-                          </div>
-                          <div className="flex gap-1">
-                            {ANGLES.map(a => (
-                              <button key={a.value} onClick={() => { setCustomAngle(a.value); applyCustomGradient(customFrom, customTo, a.value); }}
-                                className="w-7 h-7 rounded-lg text-sm font-bold border transition-all"
-                                style={customAngle === a.value ? { background: "#f59e0b", color: "#fff", borderColor: "#f59e0b" } : { background: "white", color: "#6b7280", borderColor: "#e5e7eb" }}>
-                                {a.label}
-                              </button>
-                            ))}
-                          </div>
-                          <button onClick={() => applyCustomGradient()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>החל</button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {bgTab === "image" && (
-                    <div className="space-y-3">
-                      {form.adminBgImage ? (
-                        <>
-                          <div className="w-full h-40 rounded-xl border border-gray-200 overflow-hidden relative"
-                            style={{ backgroundImage: `url(${form.adminBgImage})`, backgroundSize: "cover", backgroundPosition: "center" }}>
-                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                              <button onClick={() => bgImgRef.current?.click()} className="px-4 py-2 bg-white/90 rounded-xl text-sm font-semibold text-gray-800">החלף תמונה</button>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => bgImgRef.current?.click()} disabled={uploadingBg} className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>{uploadingBg ? "מעלה..." : "החלף"}</button>
-                            <button onClick={() => { update("adminBgImage", null); setBgTab("color"); }} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors">הסר</button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-amber-400 transition-colors bg-gray-50" onClick={() => bgImgRef.current?.click()}>
-                          {uploadingBg ? <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
-                            : <><span className="text-3xl text-gray-300">🖼️</span><span className="text-sm text-gray-400">לחץ להעלאת תמונת רקע</span></>}
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-400">התמונה תכסה את כל הרקע (cover + fixed)</p>
                     </div>
-                  )}
+                    <ColorPickerRow label="צבע טקסט פאנל עליון" presets={TOPBAR_TEXT_PRESETS} value={form.adminTopBarTextColor} onChange={v => update("adminTopBarTextColor", v)} inputId="topbar-text-custom" />
+                  </>
+                )}
 
-                  <ColorPickerRow label="צבע טקסט אזור התוכן" presets={CONTENT_TEXT_PRESETS} value={form.adminContentTextColor} onChange={v => update("adminContentTextColor", v)} inputId="content-text-custom" />
-                  <input ref={bgImgRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f,"adminBgImage",setUploadingBg); e.target.value = ""; }} />
-                </>
-              )}
-            </div>
-          )}
-        </div>
+                {/* ── BACKGROUND ── */}
+                {mainTab === "background" && (
+                  <>
+                    <SubTabs<BgTab>
+                      tabs={[{id:"color" as BgTab,label:"🎨 צבע"},{id:"gradient" as BgTab,label:"🌈 Gradient"},{id:"image" as BgTab,label:"🖼️ תמונה"}]}
+                      active={bgTab}
+                      onChange={(tab) => { const t = tab as BgTab; if (t === "image") bgImgRef.current?.click(); else { setBgTab(t); update("adminBgImage", null); if (t === "color" && isGradient(form.adminBg)) update("adminBg","#f0ece3"); if (t === "gradient" && !isGradient(form.adminBg)) update("adminBg",GRADIENT_PRESETS[0].id); } }}
+                    />
 
-        {/* ── Site name ── */}
-        <Section title="שם האתר" icon="✏️">
-          <input type="text" value={form.siteName} onChange={e => update("siteName", e.target.value)} placeholder="Menu4U"
-            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-          <p className="text-xs text-gray-400 mt-1.5">מוצג בסיידבר לצד הלוגו</p>
-        </Section>
+                    {bgTab === "color" && (
+                      <>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
+                          {COLOR_PRESETS.map(p => {
+                            const active = form.adminBg === p.id;
+                            return (
+                              <button key={p.id} onClick={() => update("adminBg", p.id)} title={p.label}
+                                className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
+                                style={{ background: p.id, borderColor: active ? "#f59e0b" : "rgba(0,0,0,0.08)", boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
+                                <div className="w-full h-8 rounded-md" style={{ background: p.id, border: "1px solid rgba(0,0,0,0.06)" }} />
+                                <span className="text-[10px] font-semibold" style={{ color: p.dark ? "#d1d5db" : "#4b5563" }}>{p.label}</span>
+                                {active && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
+                              </button>
+                            );
+                          })}
+                          <button onClick={() => colorRef.current?.click()} title="צבע מותאם"
+                            className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
+                            style={{ background: isCustomBgColor ? form.adminBg : "white", borderColor: isCustomBgColor ? "#f59e0b" : "rgba(0,0,0,0.08)", boxShadow: isCustomBgColor ? "0 0 0 3px rgba(245,158,11,0.3)" : "none" }}>
+                            <div className="w-full h-8 rounded-md" style={{ background: "conic-gradient(from 0deg,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6,#ef4444)", opacity: isCustomBgColor ? 0.5 : 1 }} />
+                            <span className="text-[10px] font-semibold text-gray-600">Custom</span>
+                            {isCustomBgColor && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
+                          </button>
+                          <input ref={colorRef} type="color" className="sr-only" value={isCustomBgColor ? form.adminBg : "#f0ece3"} onChange={e => update("adminBg", e.target.value)} />
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
+                          <div className="w-8 h-8 rounded-lg border border-gray-200 shrink-0" style={{ background: form.adminBg }} />
+                          <span className="text-xs font-mono text-gray-600 uppercase flex-1">{form.adminBg}</span>
+                          <button onClick={() => colorRef.current?.click()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">בחר צבע</button>
+                        </div>
+                      </>
+                    )}
 
-        {/* ── Logo ── */}
-        <Section title="לוגו האתר הראשי" icon="🖼️">
-          <div className="flex items-center gap-5">
-            <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center shrink-0 overflow-hidden bg-gray-50 cursor-pointer hover:border-amber-400 transition-colors" onClick={() => fileRef.current?.click()}>
-              {form.logo ? <img src={form.logo} alt="לוגו" className="w-full h-full object-contain" /> : <span className="text-2xl text-gray-300">🏪</span>}
-            </div>
-            <div className="flex-1 space-y-2">
-              <p className="text-sm text-gray-500">מומלץ: PNG/SVG שקוף, לפחות 200×200px</p>
-              <div className="flex gap-2">
-                <button onClick={() => fileRef.current?.click()} disabled={uploadingLogo} className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>{uploadingLogo ? "מעלה..." : "העלה לוגו"}</button>
-                {form.logo && <button onClick={() => update("logo", null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors">הסר</button>}
+                    {bgTab === "gradient" && (
+                      <>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mb-4">
+                          {GRADIENT_PRESETS.map(p => {
+                            const active = form.adminBg === p.id;
+                            return (
+                              <button key={p.id} onClick={() => { update("adminBg", p.id); update("adminBgImage", null); }} title={p.label}
+                                className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 transition-all"
+                                style={{ borderColor: active ? "#f59e0b" : "transparent", boxShadow: active ? "0 0 0 3px rgba(245,158,11,0.3)" : "0 0 0 1px rgba(0,0,0,0.08)" }}>
+                                <div className="w-full h-10 rounded-lg" style={{ background: p.id }} />
+                                <span className="text-[10px] font-semibold text-gray-600">{p.label}</span>
+                                {active && <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3"
+                          style={{ borderColor: isCustomBgGrad ? "#f59e0b" : undefined, background: isCustomBgGrad ? "rgba(245,158,11,0.03)" : undefined }}>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{isCustomBgGrad ? "✨ גרדיאנט מותאם" : "בנה גרדיאנט מותאם"}</div>
+                          <div className="w-full h-10 rounded-xl border border-gray-100" style={{ background: `linear-gradient(${customAngle},${customFrom},${customTo})` }} />
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <label className="text-xs text-gray-500">מ:</label>
+                              <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: customFrom }} onClick={() => document.getElementById("grad-from")?.click()} />
+                              <input id="grad-from" type="color" className="sr-only" value={customFrom} onChange={e => { setCustomFrom(e.target.value); applyCustomGradient(e.target.value, customTo, customAngle); }} />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <label className="text-xs text-gray-500">עד:</label>
+                              <div className="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer" style={{ background: customTo }} onClick={() => document.getElementById("grad-to")?.click()} />
+                              <input id="grad-to" type="color" className="sr-only" value={customTo} onChange={e => { setCustomTo(e.target.value); applyCustomGradient(customFrom, e.target.value, customAngle); }} />
+                            </div>
+                            <div className="flex gap-1">
+                              {ANGLES.map(a => (
+                                <button key={a.value} onClick={() => { setCustomAngle(a.value); applyCustomGradient(customFrom, customTo, a.value); }}
+                                  className="w-7 h-7 rounded-lg text-sm font-bold border transition-all"
+                                  style={customAngle === a.value ? { background: "#f59e0b", color: "#fff", borderColor: "#f59e0b" } : { background: "white", color: "#6b7280", borderColor: "#e5e7eb" }}>
+                                  {a.label}
+                                </button>
+                              ))}
+                            </div>
+                            <button onClick={() => applyCustomGradient()} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>החל</button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {bgTab === "image" && (
+                      <div className="space-y-3">
+                        {form.adminBgImage ? (
+                          <>
+                            <div className="w-full h-40 rounded-xl border border-gray-200 overflow-hidden relative"
+                              style={{ backgroundImage: `url(${form.adminBgImage})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+                              <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                <button onClick={() => bgImgRef.current?.click()} className="px-4 py-2 bg-white/90 rounded-xl text-sm font-semibold text-gray-800">החלף תמונה</button>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => bgImgRef.current?.click()} disabled={uploadingBg} className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>{uploadingBg ? "מעלה..." : "החלף"}</button>
+                              <button onClick={() => { update("adminBgImage", null); setBgTab("color"); }} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors">הסר</button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-amber-400 transition-colors bg-gray-50" onClick={() => bgImgRef.current?.click()}>
+                            {uploadingBg ? <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+                              : <><span className="text-3xl text-gray-300">🖼️</span><span className="text-sm text-gray-400">לחץ להעלאת תמונת רקע</span></>}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-400">התמונה תכסה את כל הרקע (cover + fixed)</p>
+                      </div>
+                    )}
+
+                    <ColorPickerRow label="צבע טקסט אזור התוכן" presets={CONTENT_TEXT_PRESETS} value={form.adminContentTextColor} onChange={v => update("adminContentTextColor", v)} inputId="content-text-custom" />
+                    <input ref={bgImgRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f,"adminBgImage",setUploadingBg); e.target.value = ""; }} />
+                  </>
+                )}
               </div>
-              {form.logo && <p className="text-xs text-gray-400 truncate max-w-[260px]">{form.logo}</p>}
+            )}
+          </CollapsibleSection>
+
+          {/* 2. שם האתר */}
+          <CollapsibleSection title="שם האתר" icon="✏️">
+            <input type="text" value={form.siteName} onChange={e => update("siteName", e.target.value)} placeholder="Menu4U"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            <p className="text-xs text-gray-400 mt-1.5">מוצג בסיידבר לצד הלוגו</p>
+          </CollapsibleSection>
+
+          {/* 3. לוגו האתר */}
+          <CollapsibleSection title="לוגו האתר" icon="🖼️">
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center shrink-0 overflow-hidden bg-gray-50 cursor-pointer hover:border-amber-400 transition-colors" onClick={() => fileRef.current?.click()}>
+                {form.logo ? <img src={form.logo} alt="לוגו" className="w-full h-full object-contain" /> : <span className="text-2xl text-gray-300">🏪</span>}
+              </div>
+              <div className="flex-1 space-y-2">
+                <p className="text-sm text-gray-500">מומלץ: PNG/SVG שקוף, לפחות 200×200px</p>
+                <div className="flex gap-2">
+                  <button onClick={() => fileRef.current?.click()} disabled={uploadingLogo} className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>{uploadingLogo ? "מעלה..." : "העלה לוגו"}</button>
+                  {form.logo && <button onClick={() => update("logo", null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors">הסר</button>}
+                </div>
+                {form.logo && <p className="text-xs text-gray-400 truncate max-w-[260px]">{form.logo}</p>}
+              </div>
             </div>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f,"logo",setUploadingLogo); e.target.value = ""; }} />
+          </CollapsibleSection>
+
+          {/* 4. דומיין ראשי */}
+          <CollapsibleSection title="דומיין ראשי" icon="🌐">
+            <input type="text" value={form.domain ?? ""} onChange={e => update("domain", e.target.value || null)} placeholder="לדוגמא: app.mysite.co.il" dir="ltr"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            <p className="text-xs text-gray-400 mt-1.5">הדומיין הראשי של פלטפורמת Menu4U</p>
+          </CollapsibleSection>
+
+          {/* 5. זכויות יוצרים */}
+          <CollapsibleSection title="זכויות יוצרים" icon="©">
+            <input type="text" value={form.copyright ?? ""} onChange={e => update("copyright", e.target.value || null)}
+              placeholder={`© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות`}
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            <p className="text-xs text-gray-400 mt-1.5">טקסט ברירת מחדל לכותרת תחתונה</p>
+          </CollapsibleSection>
+
+          {/* 6. ניקוי הזמנות */}
+          <CollapsibleSection title="ניקוי הזמנות" icon="🗑️" redBorder>
+            <ClearOrdersSection />
+          </CollapsibleSection>
+
+          {/* ── Save button ── */}
+          <div className="flex items-center gap-3 pt-1">
+            <button onClick={save} disabled={saving}
+              className="px-6 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition-all"
+              style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+              {saving ? "שומר..." : "שמור הגדרות"}
+            </button>
+            {saved && (
+              <span className="text-sm text-green-600 font-medium flex items-center gap-1.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                נשמר בהצלחה!
+              </span>
+            )}
           </div>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f,"logo",setUploadingLogo); e.target.value = ""; }} />
-        </Section>
-
-        {/* ── Domain ── */}
-        <Section title="דומיין ראשי" icon="🌐">
-          <input type="text" value={form.domain ?? ""} onChange={e => update("domain", e.target.value || null)} placeholder="לדוגמא: app.mysite.co.il" dir="ltr"
-            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-          <p className="text-xs text-gray-400 mt-1.5">הדומיין הראשי של פלטפורמת Menu4U</p>
-        </Section>
-
-        {/* ── Copyright ── */}
-        <Section title="כל הזכויות שמורות" icon="©">
-          <input type="text" value={form.copyright ?? ""} onChange={e => update("copyright", e.target.value || null)}
-            placeholder={`© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות`}
-            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-          <p className="text-xs text-gray-400 mt-1.5">טקסט ברירת מחדל לכותרת תחתונה</p>
-        </Section>
-
-        {/* ── Clear orders ── */}
-        <ClearOrdersSection />
-
-        {/* ── Backup ── */}
-        <BackupSection />
-
-        {/* ── Save ── */}
-        <div className="flex items-center gap-3 pt-1">
-          <button onClick={save} disabled={saving}
-            className="px-6 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition-all"
-            style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
-            {saving ? "שומר..." : "שמור הגדרות"}
-          </button>
-          {saved && (
-            <span className="text-sm text-green-600 font-medium flex items-center gap-1.5">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              נשמר בהצלחה!
-            </span>
-          )}
         </div>
+      )}
 
-      </div>
+      {/* ═══════════════════ TAB 2: גיבוי ושחזור ═══════════════════ */}
+      {topTab === "גיבוי" && (
+        <div className="space-y-5">
+          <BackupSection />
+          <RestoreSection />
+        </div>
+      )}
     </div>
   );
 }
