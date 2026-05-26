@@ -271,6 +271,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);   // tracks unsaved changes
   const [templates, setTemplates] = useState<TemplatePick[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -278,7 +279,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
   useEffect(() => {
     fetch(`/api/admin/items/${itemId}/modifiers`)
       .then(r => r.json())
-      .then(data => { setGroups(data); setLoading(false); })
+      .then(data => { setGroups(data); setLoading(false); setDirty(false); })
       .catch(() => setLoading(false));
   }, [itemId]);
 
@@ -297,48 +298,51 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
   }
 
   function copyTemplate(t: TemplatePick) {
-    // Don't copy if a group with same name already exists
     setGroups(g => {
       if (g.some(grp => grp.name === t.name)) return g;
       return [...g, {
-        name: t.name,
-        required: t.required,
-        maxSelect: t.maxSelect,
-        order: g.length,
+        name: t.name, required: t.required, maxSelect: t.maxSelect, order: g.length,
         options: t.options.map((o, i) => ({ label: o.label, priceAdd: o.priceAdd, order: i })),
       }];
     });
+    setDirty(true);
     setShowTemplates(false);
   }
 
   function addGroup() {
     setGroups(g => [...g, { name: "", required: false, maxSelect: 1, order: g.length, options: [] }]);
+    setDirty(true);
   }
 
   function removeGroup(gi: number) {
     setGroups(g => g.filter((_, i) => i !== gi));
+    setDirty(true);
   }
 
   function updateGroup(gi: number, patch: Partial<ModGroup>) {
     setGroups(g => g.map((grp, i) => i === gi ? { ...grp, ...patch } : grp));
+    setDirty(true);
   }
 
   function addOption(gi: number) {
     setGroups(g => g.map((grp, i) => i === gi
       ? { ...grp, options: [...grp.options, { label: "", priceAdd: 0, order: grp.options.length }] }
       : grp));
+    setDirty(true);
   }
 
   function removeOption(gi: number, oi: number) {
     setGroups(g => g.map((grp, i) => i === gi
       ? { ...grp, options: grp.options.filter((_, j) => j !== oi) }
       : grp));
+    setDirty(true);
   }
 
   function updateOption(gi: number, oi: number, patch: Partial<ModOption>) {
     setGroups(g => g.map((grp, i) => i === gi
       ? { ...grp, options: grp.options.map((opt, j) => j === oi ? { ...opt, ...patch } : opt) }
       : grp));
+    setDirty(true);
   }
 
   async function save() {
@@ -350,9 +354,9 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
         body: JSON.stringify(groups),
       });
       if (res.ok) {
-        // Sync local state with DB response so IDs are always accurate
-        const saved: ModGroup[] = await res.json();
-        setGroups(saved);
+        const updated: ModGroup[] = await res.json();
+        setGroups(updated);   // sync IDs from DB
+        setDirty(false);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       }
@@ -448,7 +452,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
         <button type="button" onClick={openTemplates} style={{ border: "1px solid rgba(51,154,240,0.4)", background: "rgba(51,154,240,0.08)", color: "#339af0", borderRadius: 12, padding: "6px 12px", fontSize: 13 }}>
           📋 העתק מתבנית
         </button>
-        {groups.length > 0 && (
+        {dirty && (
           <button type="button" onClick={save} disabled={saving} className="disabled:opacity-50" style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)", borderRadius: 12, padding: "6px 16px", fontSize: 13, fontWeight: 600 }}>
             {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור תגיות"}
           </button>
