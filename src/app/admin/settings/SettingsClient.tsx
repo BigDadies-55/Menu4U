@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 /* ─── Luxury templates ───────────────────────────────────── */
 const LUXURY_TEMPLATES = [
@@ -436,6 +436,154 @@ function TemplateCard({
         >
           {isActive ? "✓ עיצוב פעיל" : "החל עיצוב"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Backup section ─────────────────────────────────────── */
+function BackupSection() {
+  const [restaurants, setRestaurants] = useState<{ id: string; name: string }[]>([]);
+  const [restaurantId, setRestaurantId] = useState(""); // "" = all
+  const [downloading, setDownloading] = useState(false);
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/restaurants").then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setRestaurants(d);
+    }).catch(() => {});
+  }, []);
+
+  async function downloadBackup() {
+    setDownloading(true);
+    setError("");
+    try {
+      const url = restaurantId
+        ? `/api/admin/backup?restaurantId=${restaurantId}`
+        : "/api/admin/backup";
+      const res = await fetch(url);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `שגיאה ${res.status}`);
+      }
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.download = `menu4u-backup-${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      const now = new Date().toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
+      setLastBackup(now);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "שגיאה בהורדת הגיבוי");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-blue-100">
+        <span className="text-lg">💾</span>
+        <h2 className="font-bold text-gray-900">גיבוי נתוני המערכת</h2>
+      </div>
+      <div className="px-6 py-5 space-y-4">
+        {/* Info */}
+        <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
+          <span className="text-xl shrink-0">ℹ️</span>
+          <div className="text-sm text-blue-800">
+            <div className="font-semibold mb-1">מה כלול בגיבוי?</div>
+            <div className="text-xs text-blue-700 space-y-0.5">
+              <div>• מסעדות, משתמשים, תפריטים, קטגוריות, פריטים ותוספות</div>
+              <div>• הזמנות, פריטי הזמנות, לוגי סטטוס, לקוחות, ישיבות שולחן</div>
+              <div>• לוגי ביקורת (Audit logs) ונתוני צפיות</div>
+              <div className="text-blue-600 font-medium pt-1">🔒 סיסמאות לא נכללות בגיבוי</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Restaurant selector */}
+        {restaurants.length > 1 && (
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+              היקף הגיבוי
+            </label>
+            <select
+              value={restaurantId}
+              onChange={e => setRestaurantId(e.target.value)}
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+            >
+              <option value="">כל המסעדות</option>
+              {restaurants.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 px-4 py-3 rounded-xl border border-red-200">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {error}
+          </div>
+        )}
+
+        {/* Success / last backup */}
+        {lastBackup && (
+          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            גיבוי הורד בהצלחה — {lastBackup}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={downloadBackup}
+            disabled={downloading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-all"
+            style={{ background: "linear-gradient(135deg,#1d4ed8,#3b82f6)" }}
+          >
+            {downloading ? (
+              <>
+                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+                מכין גיבוי...
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                הורד גיבוי (JSON)
+              </>
+            )}
+          </button>
+
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>
+            מומלץ: גבה לפחות פעם בשבוע
+          </div>
+        </div>
+
+        {/* Google Drive hint */}
+        <div className="border border-dashed border-gray-200 rounded-xl p-4 bg-gray-50">
+          <div className="flex items-start gap-3">
+            <span className="text-xl shrink-0 mt-0.5">📁</span>
+            <div>
+              <div className="text-sm font-semibold text-gray-700">Google Drive</div>
+              <div className="text-xs text-gray-500 mt-1">
+                להעלאה אוטומטית ל-Google Drive, הורד את קובץ ה-JSON ואחסן אותו ב-Drive ידנית,
+                או הגדר Google Drive API עם{" "}
+                <code className="bg-gray-200 px-1 rounded text-xs">GOOGLE_CLIENT_ID</code>
+                {" "}ו-<code className="bg-gray-200 px-1 rounded text-xs">GOOGLE_CLIENT_SECRET</code>
+                {" "}בהגדרות Vercel.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1092,6 +1240,9 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
         {/* ── Clear orders ── */}
         <ClearOrdersSection />
+
+        {/* ── Backup ── */}
+        <BackupSection />
 
         {/* ── Save ── */}
         <div className="flex items-center gap-3 pt-1">
