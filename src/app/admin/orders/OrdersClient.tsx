@@ -45,21 +45,53 @@ const ITEM_STATUS_LABEL: Record<string, string> = {
 const COURSE_LABEL: Record<number, string> = { 1: "ראשון", 2: "עיקרי", 3: "קינוח" };
 const COURSE_EMOJI: Record<number, string> = { 1: "🥗", 2: "🍖", 3: "🍮" };
 
-const ITEM_STATUS_COLOR: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  PREPARING: "bg-blue-100 text-blue-700",
-  DONE: "bg-green-100 text-green-700",
-  CANCELLED: "bg-red-100 text-red-500 line-through",
+/* ── Dark theme palette ── */
+const D = {
+  card:     "#212529",
+  border:   "#2d3239",
+  inputBg:  "#2d3239",
+  inputBrd: "#3a3f47",
+  rowBg:    "#1e2128",
+  text:     "#e9ecef",
+  sub:      "#adb5bd",
+  muted:    "#6c757d",
+  amber:    "#fcc419",
+  blue:     "#339af0",
+  green:    "#51cf66",
+  red:      "#ff6b6b",
+  purple:   "#a78bfa",
+} as const;
+
+const DK_INPUT: React.CSSProperties = {
+  background: D.inputBg, border: `1px solid ${D.inputBrd}`, color: D.text,
+  borderRadius: 10, padding: "8px 12px", fontSize: 13,
+  outline: "none", width: "100%", fontFamily: "inherit",
 };
 
+const ITEM_STATUS_STYLE: Record<string, React.CSSProperties> = {
+  PENDING:   { background: "rgba(252,196,25,.15)",  color: "#fcc419" },
+  PREPARING: { background: "rgba(51,154,240,.15)",  color: "#339af0" },
+  DONE:      { background: "rgba(81,207,102,.15)",  color: "#51cf66" },
+  CANCELLED: { background: "rgba(255,107,107,.12)", color: "#ff6b6b", textDecoration: "line-through" },
+  HELD:      { background: "rgba(167,139,250,.15)", color: "#a78bfa" },
+};
+
+const ORDER_STATUS_STYLE: Record<string, React.CSSProperties> = {
+  PENDING:   { background: "rgba(252,196,25,.15)",  color: "#fcc419" },
+  CONFIRMED: { background: "rgba(51,154,240,.15)",  color: "#339af0" },
+  PREPARING: { background: "rgba(255,152,0,.15)",   color: "#ffa94d" },
+  READY:     { background: "rgba(81,207,102,.15)",  color: "#51cf66" },
+  DELIVERED: { background: "rgba(108,117,125,.15)", color: "#6c757d" },
+  CANCELLED: { background: "rgba(108,117,125,.12)", color: "#6c757d" },
+  PAID:      { background: "rgba(81,207,102,.2)",   color: "#51cf66" },
+};
+
+// Keep old maps for any remaining usage (unused but avoids TS errors)
+const ITEM_STATUS_COLOR: Record<string, string> = {
+  PENDING: "", PREPARING: "", DONE: "", CANCELLED: "",
+};
 const ORDER_STATUS_BADGE: Record<string, string> = {
-  PENDING:   "bg-yellow-100 text-yellow-800",
-  CONFIRMED: "bg-blue-100 text-blue-800",
-  PREPARING: "bg-orange-100 text-orange-800",
-  READY:     "bg-green-100 text-green-800",
-  DELIVERED: "bg-gray-100 text-gray-500",
-  CANCELLED: "bg-gray-200 text-gray-600",
-  PAID:      "bg-emerald-100 text-emerald-800",
+  PENDING: "", CONFIRMED: "", PREPARING: "", READY: "", DELIVERED: "", CANCELLED: "", PAID: "",
 };
 
 function timeSince(dateStr: string): string {
@@ -134,97 +166,78 @@ function BillModal({
     { pct: -1, label: "אחר" },
   ];
 
+  const lbl = (t: string) => (
+    <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>{t}</div>
+  );
+
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 60,
-      background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 16, direction: "rtl",
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 20, width: "100%", maxWidth: 480,
-        maxHeight: "90vh", display: "flex", flexDirection: "column",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.3)", overflow: "hidden",
-      }}>
-        <div style={{
-          padding: "16px 20px", borderBottom: "1px solid #f1f5f9",
-          background: "#c9a84c",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-        }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, direction: "rtl" }}>
+      <div style={{ background: D.card, borderRadius: 18, border: `1px solid ${D.border}`, boxShadow: "0 24px 60px rgba(0,0,0,.5)", width: "100%", maxWidth: 480, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{ padding: "16px 20px", background: "linear-gradient(135deg,#8B6914,#C9A84C)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>💳 חשבון — שולחן {tableNumber}</div>
             <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 2 }}>
               {validOrders.length} הזמנות · {validOrders[0] ? fmtTime(validOrders[0].createdAt) : ""}
             </div>
           </div>
-          <button type="button" onClick={onClose} style={{
-            background: "rgba(255,255,255,0.2)", border: "none",
-            borderRadius: "50%", width: 32, height: 32, color: "#fff",
-            fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>✕</button>
+          <button type="button" onClick={onClose} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
         </div>
 
-        <div style={{ padding: "20px 20px 4px" }}>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 8 }}>טיפ</div>
+        <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 16, overflowY: "auto" }}>
+          {/* Tip */}
+          <div>
+            {lbl("טיפ")}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {TIP_OPTS.map(opt => (
                 <button key={opt.pct} type="button"
                   onClick={() => { setTipPct(opt.pct); if (opt.pct !== -1) setCustomTip(""); }}
-                  style={{
-                    padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600,
-                    border: `2px solid ${tipPct === opt.pct ? "#c9a84c" : "#e5e7eb"}`,
-                    background: tipPct === opt.pct ? "#fdf8ec" : "#fff",
-                    color: tipPct === opt.pct ? "#8B6914" : "#6b7280",
-                    cursor: "pointer",
-                  }}>
+                  style={{ padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    border: `1px solid ${tipPct === opt.pct ? D.amber : D.inputBrd}`,
+                    background: tipPct === opt.pct ? "rgba(252,196,25,.15)" : D.inputBg,
+                    color: tipPct === opt.pct ? D.amber : D.sub }}>
                   {opt.label}
                 </button>
               ))}
             </div>
             {tipPct === -1 && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
-                <span style={{ fontSize: 13, color: "#6b7280" }}>₪</span>
-                <input
-                  type="number" min="0" step="1"
-                  value={customTip} onChange={e => setCustomTip(e.target.value)}
-                  placeholder="סכום טיפ"
-                  style={{ border: "2px solid #c9a84c", borderRadius: 10, padding: "6px 12px", fontSize: 14, width: 110, outline: "none" }}
-                />
+                <span style={{ fontSize: 13, color: D.muted }}>₪</span>
+                <input type="number" min="0" step="1" value={customTip} onChange={e => setCustomTip(e.target.value)}
+                  placeholder="סכום טיפ" style={{ ...DK_INPUT, width: 110 }} />
               </div>
             )}
           </div>
 
-          <div style={{ background: "#f9fafb", borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+          {/* Summary */}
+          <div style={{ background: D.inputBg, borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: D.sub, marginBottom: 8 }}>
               <span>סכום מקורי</span>
-              <span style={{ fontWeight: 600, color: "#111827" }}>₪{subtotal.toFixed(2)}</span>
+              <span style={{ fontWeight: 600, color: D.text }}>₪{subtotal.toFixed(2)}</span>
             </div>
             {tipAmount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: D.sub, marginBottom: 8 }}>
                 <span>טיפ</span>
-                <span style={{ fontWeight: 600, color: "#111827" }}>₪{tipAmount.toFixed(2)}</span>
+                <span style={{ fontWeight: 600, color: D.text }}>₪{tipAmount.toFixed(2)}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 800, color: "#111827", borderTop: "1px solid #e5e7eb", paddingTop: 8 }}>
-              <span>סה&quot;כ</span>
-              <span style={{ color: "#c9a84c" }}>₪{total.toFixed(2)}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 900, borderTop: `1px solid ${D.inputBrd}`, paddingTop: 10 }}>
+              <span style={{ color: D.text }}>סה&quot;כ</span>
+              <span style={{ color: D.amber }}>₪{total.toFixed(2)}</span>
             </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 8 }}>אמצעי תשלום</div>
+          {/* Payment method */}
+          <div>
+            {lbl("אמצעי תשלום")}
             <div style={{ display: "flex", gap: 8 }}>
               {PAY_METHODS.map(m => (
-                <button key={m.value} type="button"
-                  onClick={() => setPayMethod(m.value)}
-                  style={{
-                    flex: 1, padding: "8px 0", borderRadius: 12, fontSize: 13, fontWeight: 600,
-                    border: `2px solid ${payMethod === m.value ? "#c9a84c" : "#e5e7eb"}`,
-                    background: payMethod === m.value ? "#fdf8ec" : "#fff",
-                    color: payMethod === m.value ? "#8B6914" : "#6b7280",
-                    cursor: "pointer",
-                  }}>
+                <button key={m.value} type="button" onClick={() => setPayMethod(m.value)}
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    border: `1px solid ${payMethod === m.value ? D.amber : D.inputBrd}`,
+                    background: payMethod === m.value ? "rgba(252,196,25,.15)" : D.inputBg,
+                    color: payMethod === m.value ? D.amber : D.sub }}>
                   {m.label}
                 </button>
               ))}
@@ -232,16 +245,14 @@ function BillModal({
           </div>
         </div>
 
-        <div style={{ padding: "12px 20px", borderTop: "1px solid #f1f5f9", display: "flex", gap: 10 }}>
-          <button type="button" onClick={onClose} style={{
-            flex: 1, padding: "11px 0", borderRadius: 12, border: "2px solid #e5e7eb",
-            background: "#fff", color: "#6b7280", fontWeight: 600, fontSize: 14, cursor: "pointer",
-          }}>ביטול</button>
-          <button type="button" onClick={handleConfirm} disabled={confirming} style={{
-            flex: 2, padding: "11px 0", borderRadius: 12, border: "none",
-            background: confirming ? "#d4b96a" : "#c9a84c",
-            color: "#fff", fontWeight: 800, fontSize: 15, cursor: confirming ? "wait" : "pointer",
-          }}>
+        {/* Footer */}
+        <div style={{ padding: "12px 20px", borderTop: `1px solid ${D.border}`, display: "flex", gap: 10 }}>
+          <button type="button" onClick={onClose}
+            style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+            ביטול
+          </button>
+          <button type="button" onClick={handleConfirm} disabled={confirming}
+            style={{ flex: 2, padding: "11px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#8B6914,#C9A84C)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: confirming ? "wait" : "pointer", opacity: confirming ? 0.7 : 1 }}>
             {confirming ? "שומר..." : "✓ אשר תשלום"}
           </button>
         </div>
@@ -352,78 +363,66 @@ function TableCard({
   if (isCollapsed) {
     const lastOrder = nonCancelledOrders[nonCancelledOrders.length - 1];
     return (
-      <div
-        onClick={() => setIsCollapsed(false)}
-        className="bg-white rounded-xl border border-gray-100 px-4 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
-        style={highlighted ? { outline: "2px solid #c9a84c" } : undefined}
-      >
-        <div className="w-7 h-7 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center font-black text-gray-500 text-xs shrink-0">
+      <div onClick={() => setIsCollapsed(false)}
+        style={{ background: D.card, borderRadius: 10, border: `1px solid ${highlighted ? D.amber : D.border}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: D.inputBg, border: `1px solid ${D.inputBrd}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 11, color: D.muted, flexShrink: 0 }}>
           {tableNumber === "–" ? "?" : tableNumber}
         </div>
-        <span className="text-sm font-semibold text-gray-500">שולחן {tableNumber}</span>
-        <span className="text-xs text-gray-400 flex-1">
+        <span style={{ fontSize: 13, fontWeight: 600, color: D.sub }}>שולחן {tableNumber}</span>
+        <span style={{ fontSize: 12, color: D.muted, flex: 1 }}>
           {allPaid ? "✓ שולם" : "✓ סופק"} · ₪{totalAmount.toFixed(0)}
           {lastOrder ? ` · ${fmtTime(lastOrder.createdAt)}` : ""}
         </span>
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <svg width="14" height="14" fill="none" stroke={D.muted} strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
       </div>
     );
   }
 
+  // Header colors based on state
+  const hdrBg   = hasPending ? "#2a2310" : isUrgent ? "#2a1a1a" : "#252930";
+  const hdrBdr  = hasPending ? "rgba(252,196,25,.3)" : isUrgent ? "rgba(255,107,107,.3)" : D.border;
+  const numStyle: React.CSSProperties = hasPending
+    ? { background: "rgba(252,196,25,.18)", border: `1.5px solid ${D.amber}`, color: D.amber }
+    : isUrgent
+    ? { background: "rgba(255,107,107,.15)", border: "1.5px solid #ff6b6b", color: "#ff6b6b" }
+    : { background: D.inputBg, border: `1.5px solid ${D.inputBrd}`, color: D.muted };
+  const subTextColor = hasPending ? D.amber : isUrgent ? D.red : D.muted;
+
   return (
-    <div
-      id={`table-${tableNumber}`}
-      className="bg-white rounded-2xl border overflow-hidden shadow-sm"
-      style={{ borderColor: cardBorder, borderWidth: hasPending ? 2 : 1 }}
-    >
+    <div id={`table-${tableNumber}`}
+      style={{ borderRadius: 14, overflow: "hidden", border: `${hasPending ? 2 : 1}px solid ${cardBorder}`, background: D.card }}>
+
       {/* Table header */}
-      <div
-        className="px-3 pt-2 pb-1.5"
-        style={{ background: headerBg, borderBottom: `1px solid ${hasPending ? "#fcd34d" : "#e5e7eb"}` }}
-      >
-        <div className="flex items-center gap-1.5">
-          <div
-            className="w-8 h-8 rounded-lg border-2 flex items-center justify-center font-black text-xs shrink-0 cursor-pointer"
-            style={isClosed
-              ? { background: "#f3f4f6", borderColor: "#d1d5db", color: "#9ca3af" }
-              : hasPending
-              ? { background: "#fef3c7", borderColor: "#f59e0b", color: "#92400e" }
-              : { background: "#fef3c7", borderColor: "#fcd34d", color: "#92400e" }
-            }
-            onClick={() => setIsCollapsed(true)}
-            title="קפל שולחן"
-          >
+      <div style={{ padding: "10px 12px 8px", background: hdrBg, borderBottom: `1px solid ${hdrBdr}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div onClick={() => setIsCollapsed(true)} title="קפל שולחן"
+            style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, flexShrink: 0, cursor: "pointer", ...numStyle }}>
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
-          <span className="font-bold text-gray-900 text-sm flex-1">
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1, color: D.text }}>
             {tableNumber === "–" ? "ללא שולחן" : `שולחן ${tableNumber}`}
           </span>
           {hasPending && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full font-bold shrink-0 animate-pulse"
-              style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}>
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, flexShrink: 0, background: "rgba(252,196,25,.15)", color: D.amber, border: `1px solid rgba(252,196,25,.3)` }}>
               🕐 ממתין לאישור
             </span>
           )}
           {orders.some(o => o.orderSource === "WAITER") && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold shrink-0" style={{ background: "#ede9fe", color: "#7c3aed" }}>
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, flexShrink: 0, background: "rgba(124,58,237,.2)", color: D.purple, border: "1px solid rgba(124,58,237,.3)" }}>
               🧑‍🍳 POS
             </span>
           )}
-          <span className="font-black text-gray-900 text-lg shrink-0">₪{totalAmount.toFixed(0)}</span>
+          <span style={{ fontWeight: 900, fontSize: 18, color: D.text, flexShrink: 0 }}>₪{totalAmount.toFixed(0)}</span>
         </div>
-        <div className={`flex justify-between mt-0.5 text-xs ${hasPending ? "text-amber-600 font-semibold" : isUrgent ? "text-red-500 font-semibold" : "text-gray-400"}`}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 11, color: subTextColor, fontWeight: hasPending || isUrgent ? 600 : 400 }}>
           <span>⏱ {timeSince(oldestOrder.createdAt)} · {allItems.length} מנות</span>
           <span>{nonCancelledOrders.length} הזמנות</span>
         </div>
-        {/* Progress bar */}
         {allItems.length > 0 && (
-          <div className="flex gap-1 mt-1.5">
+          <div style={{ display: "flex", gap: 3, marginTop: 6 }}>
             {allItems.map(i => (
-              <div key={i.id} className="h-1.5 flex-1 rounded-full"
-                style={{ background: i.itemStatus === "DONE" ? "#22c55e" : i.itemStatus === "PREPARING" ? "#38bdf8" : "#e5e7eb" }}
-              />
+              <div key={i.id} style={{ height: 4, flex: 1, borderRadius: 2,
+                background: i.itemStatus === "DONE" ? D.green : i.itemStatus === "PREPARING" ? D.blue : D.inputBrd }} />
             ))}
           </div>
         )}
@@ -437,37 +436,30 @@ function TableCard({
         const isPaid      = order.status === "PAID";
         const isCancelled = order.status === "CANCELLED";
 
+        const orderHdrBg = isPending ? "#262010" : isReady ? "#161e1a" : isPaid ? "#161520" : isCancelled ? "#1f1616" : D.rowBg;
+        const orderStatusLabel = isPending ? "🕐 ממתין" : isDelivered ? "✓ סופק" : isReady ? "✅ מוכן"
+          : isPaid ? "💜 שולם" : isCancelled ? "✕ בוטל" : "הזמנה";
+        const orderStatusColor = isPending ? D.amber : isDelivered ? D.muted : isReady ? D.green
+          : isPaid ? D.purple : isCancelled ? D.red : D.sub;
+
         return (
-          <div key={order.id} style={{ borderTop: idx > 0 ? "1px solid #f3f4f6" : undefined }}>
+          <div key={order.id} style={{ borderTop: idx > 0 ? `1px solid ${D.border}` : undefined }}>
             {/* Order sub-header */}
-            <div
-              className="flex items-center justify-between px-2 py-1"
-              style={{
-                background: isPending ? "#fefce8" : isDelivered ? "#f9fafb" : isReady ? "#f0fdf4"
-                  : isPaid ? "#faf5ff" : isCancelled ? "#fef2f2" : "#fafafa",
-              }}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`text-xs font-bold shrink-0 ${
-                  isPending ? "text-yellow-700" : isDelivered ? "text-gray-400"
-                  : isReady ? "text-green-700" : isPaid ? "text-purple-600"
-                  : isCancelled ? "text-red-400 line-through" : "text-gray-500"}`}>
-                  {isPending ? "🕐 ממתין" : isDelivered ? "✓ סופק" : isReady ? "✅ מוכן"
-                    : isPaid ? "💜 שולם" : isCancelled ? "✕ בוטל" : "הזמנה"}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", background: orderHdrBg }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, flexShrink: 0, color: orderStatusColor }}>
+                  {orderStatusLabel}
                 </span>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span style={{ fontSize: 11, color: D.muted, flexShrink: 0 }}>
                   {order.items.length} מנות · ₪{order.totalAmount.toFixed(0)} · {timeSince(order.createdAt)}
                 </span>
                 {order.notes && (
-                  <span className="text-xs text-gray-400 italic truncate">· 💬 {order.notes}</span>
+                  <span style={{ fontSize: 11, color: D.muted, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>· 💬 {order.notes}</span>
                 )}
               </div>
-              {/* Cancel order (only for non-terminal, non-pending orders) */}
               {!isPending && !isDelivered && !isReady && !isPaid && !isCancelled && (
-                <button
-                  onClick={() => onOrderCancel(order.id)}
-                  className="text-xs text-red-400 hover:text-red-600 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
-                >
+                <button onClick={() => onOrderCancel(order.id)}
+                  style={{ fontSize: 11, color: D.red, background: "rgba(255,107,107,.1)", border: "none", borderRadius: 8, padding: "2px 8px", cursor: "pointer", flexShrink: 0 }}>
                   ✕ בטל
                 </button>
               )}
@@ -479,14 +471,10 @@ function TableCard({
               order.items.forEach(i => { if (i.heldUntilFired) heldByCourse.set(i.course, (heldByCourse.get(i.course) ?? 0) + 1); });
               if (heldByCourse.size === 0) return null;
               return (
-                <div className="px-2 py-1.5 flex gap-2 flex-wrap" style={{ background: "#faf5ff", borderBottom: "1px solid #e9d5ff" }}>
+                <div style={{ padding: "6px 10px", display: "flex", gap: 6, flexWrap: "wrap", background: "#1e1528", borderBottom: `1px solid #2d1f4a` }}>
                   {Array.from(heldByCourse.entries()).map(([course, count]) => (
-                    <button
-                      key={course}
-                      onClick={() => onFireCourse(order.id, course)}
-                      className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold text-white"
-                      style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
-                    >
+                    <button key={course} onClick={() => onFireCourse(order.id, course)}
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#fff", border: "none", cursor: "pointer", background: "linear-gradient(135deg,#5b21b6,#7c3aed)" }}>
                       🔥 הצת {COURSE_LABEL[course] ?? `קורס ${course}`} ({count} מנות)
                     </button>
                   ))}
@@ -495,7 +483,7 @@ function TableCard({
             })()}
 
             {/* Items */}
-            <div className="divide-y divide-gray-50" style={{ opacity: isDelivered || isPaid || isCancelled ? 0.55 : 1 }}>
+            <div style={{ opacity: isDelivered || isPaid || isCancelled ? 0.55 : 1 }}>
               {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt, servedAt }) => {
                 const isItemCancelled = itemStatus === "CANCELLED";
                 const isHeld = heldUntilFired;
@@ -504,82 +492,73 @@ function TableCard({
                 const isServeBusy = busy.has(itemId + "-serve");
                 const isCancelBusy = busy.has(itemId + "-cancel");
                 const canCancel = !isDelivered && !isReady && !isPaid && !isCancelled && !isItemCancelled && !isDone;
-                // Show serve button when item is cooked (DONE) or order is READY/DELIVERED, and order is not yet PAID/CANCELLED
                 const canServe = !isItemCancelled && !isCancelled && !isPaid && (itemStatus === "DONE" || isReady || isDelivered);
 
+                const rowBgStyle: React.CSSProperties = isHeld ? { background: "#1a1528" } : isServed ? { background: "#141e18" } : {};
+                const qtyStyle: React.CSSProperties = isItemCancelled
+                  ? { background: "rgba(255,107,107,.12)", color: D.red }
+                  : isHeld ? { background: "rgba(167,139,250,.18)", color: D.purple }
+                  : isServed ? { background: "rgba(81,207,102,.15)", color: D.green }
+                  : { background: D.inputBg, color: D.muted };
+                const nameColor = isItemCancelled ? D.muted : isHeld ? D.purple : isServed ? D.green : D.text;
+
                 return (
-                  <div
-                    key={itemId}
-                    className={`flex items-center gap-1.5 px-2 py-1 ${isItemCancelled ? "opacity-40" : ""}`}
-                    style={isHeld ? { background: "#faf5ff" } : isServed ? { background: "#f0fdf4" } : undefined}
-                  >
-                    <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold shrink-0
-                      ${isItemCancelled ? "bg-red-50 text-red-400" : isHeld ? "bg-purple-50 text-purple-500" : isServed ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"}`}>
+                  <div key={itemId}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderTop: `1px solid #1a1d23`, opacity: isItemCancelled ? 0.45 : 1, ...rowBgStyle }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, ...qtyStyle }}>
                       {quantity}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        {course > 1 && (
-                          <span className="text-xs shrink-0">{COURSE_EMOJI[course] ?? "🍽"}</span>
-                        )}
-                        <span className={`text-sm font-semibold truncate
-                          ${isItemCancelled ? "line-through text-gray-400" : isHeld ? "text-purple-700" : isServed ? "text-green-700" : "text-gray-900"}`}>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        {course > 1 && <span style={{ fontSize: 11, flexShrink: 0 }}>{COURSE_EMOJI[course] ?? "🍽"}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: nameColor, textDecoration: isItemCancelled ? "line-through" : undefined }}>
                           {item.name}
-                          {isHeld && <span className="text-purple-400 font-normal text-xs"> · ממתין להצתה</span>}
+                          {isHeld && <span style={{ color: "#7c3aed", fontWeight: 400, fontSize: 11 }}> · ממתין להצתה</span>}
                         </span>
                       </div>
                       {firedAt && (
-                        <div className="text-xs text-gray-400 mt-0.5">
+                        <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>
                           {doneAt
                             ? `⏱ ${Math.round((new Date(doneAt).getTime() - new Date(firedAt).getTime()) / 60000)} דק' להכנה`
-                            : `🔥 הוצת לפני ${Math.round((Date.now() - new Date(firedAt).getTime()) / 60000)} דק'`
-                          }
+                            : `🔥 הוצת לפני ${Math.round((Date.now() - new Date(firedAt).getTime()) / 60000)} דק'`}
                         </div>
                       )}
                       {modifiers && modifiers.length > 0 && !isItemCancelled && (
-                        <div className="flex gap-1 flex-wrap mt-0.5">
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 2 }}>
                           {modifiers.map((m, i) => (
-                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#1e3a2e", color: "#4ade80" }}>
+                            <span key={i} style={{ fontSize: 10, padding: "1px 7px", borderRadius: 20, background: "#1e3a2e", color: D.green }}>
                               {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                             </span>
                           ))}
                         </div>
                       )}
                       {notes && !isItemCancelled && (
-                        <div className="text-xs text-gray-400 italic truncate">{notes}</div>
+                        <div style={{ fontSize: 11, color: D.muted, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{notes}</div>
                       )}
                     </div>
 
-                    {/* Status badge (only when not yet served) */}
                     {!isServed && !isDelivered && !isPaid && !isHeld && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${ITEM_STATUS_COLOR[itemStatus] ?? ""}`}>
+                      <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 600, flexShrink: 0, ...(ITEM_STATUS_STYLE[itemStatus] ?? {}) }}>
                         {ITEM_STATUS_LABEL[itemStatus] ?? itemStatus}
                       </span>
                     )}
 
-                    {/* Serve button / served indicator */}
                     {canServe && (
-                      <button
-                        onClick={() => toggleServe(order.id, itemId, isServed)}
-                        disabled={isServeBusy}
+                      <button onClick={() => toggleServe(order.id, itemId, isServed)} disabled={isServeBusy}
                         title={isServed ? "בטל הגשה" : "הגש לשולחן"}
-                        className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
-                        style={isServed
-                          ? { background: "#dcfce7", color: "#16a34a", border: "1px solid #86efac" }
-                          : { background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }
-                        }
-                      >
+                        style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                          opacity: isServeBusy ? 0.4 : 1,
+                          background: isServed ? "rgba(81,207,102,.15)" : "rgba(51,154,240,.15)",
+                          color: isServed ? D.green : D.blue,
+                          border: `1px solid ${isServed ? "rgba(81,207,102,.35)" : "rgba(51,154,240,.35)"}` }}>
                         {isServeBusy ? "·" : isServed ? "✓ הוגש" : "🍽 הגש"}
                       </button>
                     )}
 
                     {canCancel && (
-                      <button
-                        onClick={() => cancelItem(order.id, itemId)}
-                        disabled={isCancelBusy}
+                      <button onClick={() => cancelItem(order.id, itemId)} disabled={isCancelBusy}
                         title="בטל פריט"
-                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors text-xs"
-                      >
+                        style={{ flexShrink: 0, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", color: D.red, background: "rgba(255,107,107,.1)", border: "none", cursor: "pointer", fontSize: 11, opacity: isCancelBusy ? 0.4 : 1 }}>
                         {isCancelBusy ? "·" : "✕"}
                       </button>
                     )}
@@ -591,17 +570,12 @@ function TableCard({
         );
       })}
 
-      {/* Smart footer action */}
+      {/* Smart footer */}
       {nonCancelledOrders.length > 0 && (
-        <div className="px-3 py-2 border-t bg-gray-50/50"
-          style={{ borderColor: hasPending ? "#fcd34d" : "#f1f5f9" }}>
-          <button
-            type="button"
-            onClick={smartAction}
-            disabled={smartBtn.disabled}
-            className={`w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:cursor-not-allowed ${hasPending ? "animate-pulse" : ""}`}
-            style={{ background: smartBtn.color, opacity: smartBtn.disabled ? 0.5 : 1 }}
-          >
+        <div style={{ padding: "10px 12px", borderTop: `1px solid ${hasPending ? "rgba(252,196,25,.3)" : D.border}` }}>
+          <button type="button" onClick={smartAction} disabled={smartBtn.disabled}
+            style={{ width: "100%", padding: "11px 0", borderRadius: 10, fontSize: 14, fontWeight: 700, color: "#fff", border: "none", cursor: smartBtn.disabled ? "not-allowed" : "pointer",
+              background: smartBtn.color, opacity: smartBtn.disabled ? 0.5 : 1 }}>
             {smartBtn.label}
           </button>
         </div>
@@ -875,12 +849,11 @@ export default function OrdersClient({
 
   return (
     <div
-      className={isFullscreen ? "" : "p-4 md:p-8"}
       style={isFullscreen ? {
         position: "fixed", inset: 0, zIndex: 999,
-        background: "#f8fafc", overflowY: "auto",
-        padding: "12px 16px",
-      } : undefined}
+        background: "#1a1d23", overflowY: "auto",
+        padding: "12px 16px", color: D.text,
+      } : { padding: "24px 28px", color: D.text }}
     >
       {/* Bill Modal */}
       {billTableKey && billOrders.length > 0 && (
@@ -894,109 +867,93 @@ export default function OrdersClient({
 
       {/* Waiter POS Modal */}
       {showPosModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, direction: "rtl" }}>
-          <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 520, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", overflow: "hidden" }}>
-            <div style={{ padding: "16px 20px", background: "linear-gradient(135deg,#7c3aed,#a855f7)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, direction: "rtl" }}>
+          <div style={{ background: D.card, borderRadius: 18, border: `1px solid ${D.border}`, boxShadow: "0 24px 60px rgba(0,0,0,.5)", width: "100%", maxWidth: 520, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", background: "linear-gradient(135deg,#5b21b6,#7c3aed)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>🧑‍🍳 הזמנה חדשה (POS)</div>
                 <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 2 }}>ישירות למטבח · ללא המתנה לאישור</div>
               </div>
               <button type="button" onClick={() => setShowPosModal(false)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>שולחן *</label>
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 120 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>שולחן *</div>
                   {tableLayouts.length > 0 ? (
                     <select value={posTable}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setPosTable(val);
-                        const cell = tableLayouts.find(c => c.tableNumber === val);
-                        if (cell?.seats) setPosCovers(String(cell.seats));
-                      }}
-                      style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}>
+                      onChange={e => { const val=e.target.value; setPosTable(val); const cell=tableLayouts.find(c=>c.tableNumber===val); if(cell?.seats) setPosCovers(String(cell.seats)); }}
+                      style={DK_INPUT}>
                       <option value="">בחר שולחן</option>
-                      {tableLayouts.map(c => (
-                        <option key={c.tableNumber} value={c.tableNumber!}>
-                          שולחן {c.tableNumber}{c.seats ? ` (${c.seats} מקומות)` : ""}
-                        </option>
-                      ))}
+                      {tableLayouts.map(c => <option key={c.tableNumber} value={c.tableNumber!}>שולחן {c.tableNumber}{c.seats?` (${c.seats} מקומות)`:""}</option>)}
                     </select>
                   ) : (
-                    <input value={posTable} onChange={e => setPosTable(e.target.value)} placeholder="מספר שולחן"
-                      style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    <input value={posTable} onChange={e => setPosTable(e.target.value)} placeholder="מספר שולחן" style={DK_INPUT} />
                   )}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>👥 סועדים</label>
-                  <input type="number" min="1" max="50" value={posCovers} onChange={e => setPosCovers(e.target.value)} placeholder="כמות"
-                    style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                <div style={{ flex: 1, minWidth: 80 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>👥 סועדים</div>
+                  <input type="number" min="1" max="50" value={posCovers} onChange={e => setPosCovers(e.target.value)} placeholder="כמות" style={DK_INPUT} />
                 </div>
-                <div style={{ flex: 2 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>הערות</label>
-                  <input value={posNotes} onChange={e => setPosNotes(e.target.value)} placeholder="הערות להזמנה..."
-                    style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                <div style={{ flex: 2, minWidth: 140 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>הערות</div>
+                  <input value={posNotes} onChange={e => setPosNotes(e.target.value)} placeholder="הערות להזמנה..." style={DK_INPUT} />
                 </div>
               </div>
-              <div style={{ background: "#f9fafb", borderRadius: 14, padding: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10 }}>הוסף פריט</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <input value={posNewItem.name} onChange={e => setPosNewItem(p => ({ ...p, name: e.target.value }))} placeholder="שם המנה"
-                    style={{ flex: 3, minWidth: 120, border: "2px solid #e5e7eb", borderRadius: 8, padding: "6px 10px", fontSize: 13, outline: "none" }} />
-                  <input type="number" min="0" step="0.5" value={posNewItem.price} onChange={e => setPosNewItem(p => ({ ...p, price: e.target.value }))} placeholder="₪ מחיר"
-                    style={{ flex: 1, minWidth: 70, border: "2px solid #e5e7eb", borderRadius: 8, padding: "6px 10px", fontSize: 13, outline: "none" }} />
-                  <select value={posNewItem.course} onChange={e => setPosNewItem(p => ({ ...p, course: Number(e.target.value) }))}
-                    style={{ flex: 1, minWidth: 80, border: "2px solid #e5e7eb", borderRadius: 8, padding: "6px 8px", fontSize: 13, outline: "none" }}>
+              <div style={{ background: D.inputBg, borderRadius: 12, padding: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>הוסף פריט</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <input value={posNewItem.name} onChange={e => setPosNewItem(p=>({...p,name:e.target.value}))} placeholder="שם המנה"
+                    style={{ flex: 3, minWidth: 120, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, outline: "none" }} />
+                  <input type="number" min="0" step="0.5" value={posNewItem.price} onChange={e => setPosNewItem(p=>({...p,price:e.target.value}))} placeholder="₪ מחיר"
+                    style={{ flex: 1, minWidth: 70, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, outline: "none" }} />
+                  <select value={posNewItem.course} onChange={e => setPosNewItem(p=>({...p,course:Number(e.target.value)}))}
+                    style={{ flex: 1, minWidth: 85, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 8px", fontSize: 13, outline: "none" }}>
                     <option value={1}>🥗 ראשון</option>
                     <option value={2}>🍖 עיקרי</option>
                     <option value={3}>🍮 קינוח</option>
                   </select>
-                  <input type="number" min="1" max="20" value={posNewItem.qty} onChange={e => setPosNewItem(p => ({ ...p, qty: Number(e.target.value) }))}
-                    style={{ width: 48, border: "2px solid #e5e7eb", borderRadius: 8, padding: "6px 8px", fontSize: 13, outline: "none", textAlign: "center" }} />
+                  <input type="number" min="1" max="20" value={posNewItem.qty} onChange={e => setPosNewItem(p=>({...p,qty:Number(e.target.value)}))}
+                    style={{ width: 44, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 8px", fontSize: 13, outline: "none", textAlign: "center" }} />
                   <button type="button"
-                    onClick={() => {
-                      if (!posNewItem.name || !posNewItem.price) return;
-                      setPosItems(prev => [...prev, { name: posNewItem.name, price: Number(posNewItem.price), course: posNewItem.course, qty: posNewItem.qty }]);
-                      setPosNewItem({ name: "", price: "", course: posNewItem.course, qty: 1 });
-                    }}
-                    style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                    onClick={() => { if(!posNewItem.name||!posNewItem.price) return; setPosItems(prev=>[...prev,{name:posNewItem.name,price:Number(posNewItem.price),course:posNewItem.course,qty:posNewItem.qty}]); setPosNewItem({name:"",price:"",course:posNewItem.course,qty:1}); }}
+                    style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
                     + הוסף
                   </button>
                 </div>
               </div>
               {posItems.length > 0 && (
-                <div style={{ background: "#f9fafb", borderRadius: 14, padding: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 8 }}>פריטים בהזמנה</div>
+                <div style={{ background: D.inputBg, borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>פריטים בהזמנה</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {posItems.map((item, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", borderRadius: 8, padding: "6px 10px", border: "1px solid #e5e7eb" }}>
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1e2128", borderRadius: 8, padding: "7px 10px", border: `1px solid ${D.inputBrd}` }}>
                         <span style={{ fontSize: 14 }}>{COURSE_EMOJI[item.course] ?? "🍽"}</span>
-                        <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>×{item.qty} {item.name}</span>
-                        <span style={{ fontSize: 13, color: "#6b7280" }}>₪{(item.price * item.qty).toFixed(0)}</span>
+                        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: D.text }}>×{item.qty} {item.name}</span>
+                        <span style={{ fontSize: 13, color: D.sub }}>₪{(item.price * item.qty).toFixed(0)}</span>
                         {item.course > 1 && (
-                          <span style={{ fontSize: 11, color: "#7c3aed", background: "#ede9fe", padding: "2px 6px", borderRadius: 20 }}>{COURSE_LABEL[item.course]}</span>
+                          <span style={{ fontSize: 11, color: D.purple, background: "rgba(124,58,237,.2)", padding: "2px 7px", borderRadius: 20 }}>{COURSE_LABEL[item.course]}</span>
                         )}
-                        <button type="button" onClick={() => setPosItems(prev => prev.filter((_, i) => i !== idx))}
-                          style={{ color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontSize: 16 }}>×</button>
+                        <button type="button" onClick={() => setPosItems(prev => prev.filter((_,i) => i !== idx))}
+                          style={{ color: D.red, background: "none", border: "none", cursor: "pointer", fontSize: 16 }}>×</button>
                       </div>
                     ))}
-                    <div style={{ textAlign: "left", fontSize: 15, fontWeight: 800, color: "#111827", paddingTop: 4 }}>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: D.text, paddingTop: 6, borderTop: `1px solid ${D.inputBrd}`, marginTop: 2 }}>
                       סה&quot;כ: ₪{posItems.reduce((s, i) => s + i.price * i.qty, 0).toFixed(0)}
                     </div>
                   </div>
                 </div>
               )}
               {posItems.some(i => i.course > 1) && (
-                <div style={{ background: "#ede9fe", borderRadius: 10, padding: "8px 14px", fontSize: 12, color: "#6d28d9" }}>
+                <div style={{ background: "rgba(124,58,237,.12)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: D.purple, border: "1px solid rgba(124,58,237,.25)" }}>
                   🔥 מנות עיקריות/קינוח יוחזקו עד שתלחץ &quot;הצת קורס&quot; על השולחן
                 </div>
               )}
             </div>
-            <div style={{ padding: "12px 20px", borderTop: "1px solid #f1f5f9", display: "flex", gap: 10 }}>
-              <button type="button" onClick={() => setShowPosModal(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "2px solid #e5e7eb", background: "#fff", color: "#6b7280", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>ביטול</button>
-              <button type="button" onClick={createWaiterOrder} disabled={posSubmitting || !posTable || posItems.length === 0}
-                style={{ flex: 2, padding: "11px 0", borderRadius: 12, border: "none", background: posSubmitting || !posTable || posItems.length === 0 ? "#c4b5fd" : "#7c3aed", color: "#fff", fontWeight: 800, fontSize: 15, cursor: posSubmitting || !posTable || posItems.length === 0 ? "not-allowed" : "pointer" }}>
+            <div style={{ padding: "12px 20px", borderTop: `1px solid ${D.border}`, display: "flex", gap: 10 }}>
+              <button type="button" onClick={() => setShowPosModal(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>ביטול</button>
+              <button type="button" onClick={createWaiterOrder} disabled={posSubmitting||!posTable||posItems.length===0}
+                style={{ flex: 2, padding: "11px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#5b21b6,#7c3aed)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: posSubmitting||!posTable||posItems.length===0?"not-allowed":"pointer", opacity: posSubmitting||!posTable||posItems.length===0?0.55:1 }}>
                 {posSubmitting ? "שולח..." : "🔥 שלח למטבח"}
               </button>
             </div>
@@ -1005,160 +962,136 @@ export default function OrdersClient({
       )}
 
       {/* ── Compact Control Bar ── */}
-      <div className="flex flex-wrap items-center gap-2 mb-3" dir="rtl">
-        {/* Restaurant selector */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 14 }} dir="rtl">
         {isSuperAdmin && restaurants.length > 0 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-            className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+            style={{ ...DK_INPUT, width: "auto", padding: "8px 12px", fontSize: 13 }}>
             <option value="">כל המסעדות</option>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
-        {/* Active / All filter */}
-        <div className="flex rounded-xl overflow-hidden border border-gray-200">
+        <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: `1px solid ${D.inputBrd}` }}>
           {(["active", "all"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${filter === f ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-              style={filter === f ? { background: "#c9a84c" } : undefined}>
+              style={{ padding: "8px 18px", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
+                background: filter === f ? "linear-gradient(135deg,#8B6914,#C9A84C)" : D.inputBg,
+                color: filter === f ? "#fff" : D.sub }}>
               {f === "active" ? "פעילות" : "הכל"}
             </button>
           ))}
         </div>
-        {/* POS */}
         <button onClick={() => setShowPosModal(true)}
-          className="px-3 py-2 rounded-xl text-sm font-bold text-white"
-          style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>
+          style={{ padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "#fff", border: "none", cursor: "pointer", background: "linear-gradient(135deg,#5b21b6,#7c3aed)" }}>
           🧑‍🍳 הזמנה חדשה
         </button>
-        {/* Date filter popover trigger */}
-        <div className="relative">
-          <button
-            onClick={() => setShowDateFilter(p => !p)}
-            className={`p-2 rounded-xl border text-sm font-medium transition-colors ${showDateFilter || dateFrom || dateTo ? "border-amber-400 bg-amber-50 text-amber-700" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
-            title="סינון תאריך"
-          >
-            📅{dateFrom || dateTo ? " ✦" : ""}
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setShowDateFilter(p => !p)} title="סינון תאריך"
+            style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${showDateFilter||dateFrom||dateTo ? D.amber : D.inputBrd}`, background: showDateFilter||dateFrom||dateTo ? "rgba(252,196,25,.1)" : D.inputBg, color: showDateFilter||dateFrom||dateTo ? D.amber : D.sub, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            📅{dateFrom || dateTo ? "✦" : ""}
           </button>
           {showDateFilter && (
-            <div className="absolute top-10 right-0 z-20 bg-white border border-gray-200 rounded-2xl shadow-xl p-4 flex flex-col gap-3 min-w-[260px]" dir="rtl">
-              <div className="text-xs font-semibold text-gray-500">סינון לפי תאריך</div>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 w-4">מ-</span>
+            <div style={{ position: "absolute", top: 42, right: 0, zIndex: 20, background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,.4)", padding: 16, display: "flex", flexDirection: "column", gap: 10, minWidth: 260 }} dir="rtl">
+              <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em" }}>סינון לפי תאריך</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: D.muted, width: 24 }}>מ-</span>
                   <input type="datetime-local" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                    style={{ flex: 1, ...DK_INPUT, padding: "6px 10px", fontSize: 12 }} />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 w-4">עד-</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: D.muted, width: 24 }}>עד-</span>
                   <input type="datetime-local" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                    style={{ flex: 1, ...DK_INPUT, padding: "6px 10px", fontSize: 12 }} />
                 </div>
               </div>
               {(dateFrom || dateTo) && (
                 <button onClick={() => { setDateFrom(""); setDateTo(""); setShowDateFilter(false); }}
-                  className="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors text-center">
+                  style={{ fontSize: 12, color: D.red, background: "rgba(255,107,107,.1)", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}>
                   ✕ נקה סינון
                 </button>
               )}
             </div>
           )}
         </div>
-        {/* Sound toggle */}
         <button onClick={() => setSoundEnabled(p => !p)} title={soundEnabled ? "כבה צליל" : "הפעל צליל"}
-          className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors text-base">
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {soundEnabled ? "🔔" : "🔕"}
         </button>
-        {/* Refresh */}
         <button onClick={() => fetchOrders(true)} disabled={refreshing}
-          className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50">
-          <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: refreshing ? 0.5 : 1 }}>
+          <svg width="16" height="16" style={{ animation: refreshing ? "spin 1s linear infinite" : undefined }} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
-        {/* Fullscreen */}
         <button onClick={() => setIsFullscreen(p => !p)} title={isFullscreen ? "יציאה ממסך מלא (Esc)" : "מסך מלא (F)"}
-          className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors">
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {isFullscreen ? (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-            </svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"/></svg>
           ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-            </svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
           )}
         </button>
-        {/* Stats line */}
-        <span className="text-xs text-gray-400 mr-auto">
+        <span style={{ fontSize: 12, color: D.muted, marginRight: "auto" }}>
           {tableEntries.filter(e => !e.isClosed).length} שולחנות · {totalItems} מנות · {lastRefresh.toLocaleTimeString("he-IL")}
         </span>
       </div>
 
       {/* ── Action Rail ── */}
       {hasRail && (
-        <div className="grid grid-cols-3 gap-2 mb-4 rounded-2xl overflow-hidden border border-gray-100 shadow-sm bg-white" dir="rtl">
-          {/* Needs confirm */}
-          <div className="p-3" style={{ background: railConfirm.length ? "#fefce8" : "#fafafa" }}>
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-base">🕐</span>
-              <span className="text-xs font-bold text-yellow-700">לאישור</span>
-              {railConfirm.length > 0 && (
-                <span className="text-xs font-black bg-yellow-200 text-yellow-800 rounded-full w-5 h-5 flex items-center justify-center">{railConfirm.length}</span>
-              )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderRadius: 14, overflow: "hidden", border: `1px solid ${D.border}`, marginBottom: 16, background: D.card }} dir="rtl">
+          {/* Confirm */}
+          <div style={{ padding: 12, borderRight: `3px solid ${D.amber}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+              <span>🕐</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: D.amber, textTransform: "uppercase", letterSpacing: ".05em" }}>לאישור</span>
+              {railConfirm.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(252,196,25,.2)", color: D.amber, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railConfirm.length}</span>}
             </div>
-            <div className="flex flex-wrap gap-1">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
               {railConfirm.length === 0
-                ? <span className="text-xs text-gray-300">אין</span>
+                ? <span style={{ fontSize: 11, color: D.muted }}>אין</span>
                 : railConfirm.map(t => (
                   <button key={t} onClick={() => scrollToTable(t)}
-                    className="text-xs font-bold px-2 py-0.5 rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors">
+                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(252,196,25,.15)", color: D.amber, border: `1px solid rgba(252,196,25,.3)`, cursor: "pointer" }}>
                     {t}
                   </button>
-                ))
-              }
+                ))}
             </div>
           </div>
-          {/* Needs serve */}
-          <div className="p-3 border-r border-l border-gray-100" style={{ background: railServe.length ? "#f0fdf4" : "#fafafa" }}>
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-base">✅</span>
-              <span className="text-xs font-bold text-green-700">להגשה</span>
-              {railServe.length > 0 && (
-                <span className="text-xs font-black bg-green-200 text-green-800 rounded-full w-5 h-5 flex items-center justify-center">{railServe.length}</span>
-              )}
+          {/* Serve */}
+          <div style={{ padding: 12, borderRight: `1px solid ${D.border}`, borderLeft: `1px solid ${D.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+              <span>✅</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: D.blue, textTransform: "uppercase", letterSpacing: ".05em" }}>להגשה</span>
+              {railServe.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(51,154,240,.2)", color: D.blue, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railServe.length}</span>}
             </div>
-            <div className="flex flex-wrap gap-1">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
               {railServe.length === 0
-                ? <span className="text-xs text-gray-300">אין</span>
+                ? <span style={{ fontSize: 11, color: D.muted }}>אין</span>
                 : railServe.map(t => (
                   <button key={t} onClick={() => scrollToTable(t)}
-                    className="text-xs font-bold px-2 py-0.5 rounded-lg bg-green-100 text-green-800 hover:bg-green-200 transition-colors">
+                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(51,154,240,.15)", color: D.blue, border: `1px solid rgba(51,154,240,.3)`, cursor: "pointer" }}>
                     {t}
                   </button>
-                ))
-              }
+                ))}
             </div>
           </div>
-          {/* Needs bill */}
-          <div className="p-3" style={{ background: railBill.length ? "#fdf8ec" : "#fafafa" }}>
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-base">💳</span>
-              <span className="text-xs font-bold" style={{ color: "#8B6914" }}>לחשבון</span>
-              {railBill.length > 0 && (
-                <span className="text-xs font-black rounded-full w-5 h-5 flex items-center justify-center" style={{ background: "#fde68a", color: "#8B6914" }}>{railBill.length}</span>
-              )}
+          {/* Bill */}
+          <div style={{ padding: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+              <span>💳</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: D.green, textTransform: "uppercase", letterSpacing: ".05em" }}>לחשבון</span>
+              {railBill.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(81,207,102,.2)", color: D.green, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railBill.length}</span>}
             </div>
-            <div className="flex flex-wrap gap-1">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
               {railBill.length === 0
-                ? <span className="text-xs text-gray-300">אין</span>
+                ? <span style={{ fontSize: 11, color: D.muted }}>אין</span>
                 : railBill.map(t => (
                   <button key={t} onClick={() => scrollToTable(t)}
-                    className="text-xs font-bold px-2 py-0.5 rounded-lg hover:opacity-80 transition-colors"
-                    style={{ background: "#fef3c7", color: "#8B6914" }}>
+                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(81,207,102,.15)", color: D.green, border: `1px solid rgba(81,207,102,.3)`, cursor: "pointer" }}>
                     {t}
                   </button>
-                ))
-              }
+                ))}
             </div>
           </div>
         </div>
@@ -1166,7 +1099,7 @@ export default function OrdersClient({
 
       {/* ── Status summary chips ── */}
       {activeOrders.length > 0 && (
-        <div className="flex gap-2 mb-4 flex-wrap" dir="rtl">
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }} dir="rtl">
           {(["PENDING","CONFIRMED","PREPARING","READY","DELIVERED","PAID","CANCELLED"] as const).map(s => {
             const count = activeOrders.filter(o => o.status === s).length;
             if (!count) return null;
@@ -1175,7 +1108,7 @@ export default function OrdersClient({
               READY: "מוכנות", DELIVERED: "סופקו", PAID: "שולמו", CANCELLED: "בוטלו",
             };
             return (
-              <div key={s} className={`px-3 py-1 rounded-full text-xs font-semibold ${ORDER_STATUS_BADGE[s]}`}>
+              <div key={s} style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, ...(ORDER_STATUS_STYLE[s] ?? {}) }}>
                 {count} {label[s]}
               </div>
             );
@@ -1185,54 +1118,36 @@ export default function OrdersClient({
 
       {/* ── Tables grid ── */}
       {tableEntries.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center text-gray-400">
-          <div className="text-5xl mb-3">🍽</div>
-          <div className="font-medium text-lg">אין הזמנות {filter === "active" ? "פעילות" : ""}</div>
-          <div className="text-sm mt-1">הדף מתרענן אוטומטית כל 10 שניות</div>
+        <div style={{ background: D.card, borderRadius: 16, border: `1px solid ${D.border}`, padding: "64px 32px", textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🍽</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: D.sub }}>אין הזמנות {filter === "active" ? "פעילות" : ""}</div>
+          <div style={{ fontSize: 13, color: D.muted, marginTop: 6 }}>הדף מתרענן אוטומטית כל 10 שניות</div>
         </div>
       ) : (
-        <div className="flex flex-col gap-3" dir="rtl">
-          {/* Active tables — grid */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }} dir="rtl">
           {tableEntries.filter(e => !e.isClosed).length > 0 && (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", alignItems: "start" }}>
               {tableEntries.filter(e => !e.isClosed).map(({ table, tableOrders: tOrds }) => (
                 <TableCard
-                  key={table}
-                  tableNumber={table}
-                  orders={tOrds}
-                  isClosed={false}
-                  highlighted={highlightTable === table}
-                  showAll={filter === "all"}
-                  onItemCancel={cancelItem}
-                  onItemServe={serveItem}
-                  onOrderCancel={cancelOrder}
-                  onConfirmOrder={confirmOrder}
-                  onDeliverOrder={deliverOrder}
-                  onShowBill={setBillTableKey}
-                  onFireCourse={fireCourse}
+                  key={table} tableNumber={table} orders={tOrds}
+                  isClosed={false} highlighted={highlightTable === table} showAll={filter === "all"}
+                  onItemCancel={cancelItem} onItemServe={serveItem} onOrderCancel={cancelOrder}
+                  onConfirmOrder={confirmOrder} onDeliverOrder={deliverOrder}
+                  onShowBill={setBillTableKey} onFireCourse={fireCourse}
                 />
               ))}
             </div>
           )}
-          {/* Closed tables — collapsed list */}
           {tableEntries.filter(e => e.isClosed).length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <div className="text-xs font-semibold text-gray-400 px-1">שולחנות סגורים</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, paddingRight: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>שולחנות סגורים</div>
               {tableEntries.filter(e => e.isClosed).map(({ table, tableOrders: tOrds }) => (
                 <TableCard
-                  key={table}
-                  tableNumber={table}
-                  orders={tOrds}
-                  isClosed
-                  highlighted={highlightTable === table}
-                  showAll={filter === "all"}
-                  onItemCancel={cancelItem}
-                  onItemServe={serveItem}
-                  onOrderCancel={cancelOrder}
-                  onConfirmOrder={confirmOrder}
-                  onDeliverOrder={deliverOrder}
-                  onShowBill={setBillTableKey}
-                  onFireCourse={fireCourse}
+                  key={table} tableNumber={table} orders={tOrds}
+                  isClosed highlighted={highlightTable === table} showAll={filter === "all"}
+                  onItemCancel={cancelItem} onItemServe={serveItem} onOrderCancel={cancelOrder}
+                  onConfirmOrder={confirmOrder} onDeliverOrder={deliverOrder}
+                  onShowBill={setBillTableKey} onFireCourse={fireCourse}
                 />
               ))}
             </div>
