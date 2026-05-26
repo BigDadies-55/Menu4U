@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu UX Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #111;
+    font-family: 'Rubik', sans-serif;
+    color: #fff;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    color: #C5A880;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 48px;
+  }
+
+  .sections {
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #C5A880;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(197,168,128,0.2);
+  }
+
+  .phones {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .phone-label {
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .phone-label.good { color: #C5A880; }
+
+  .phone {
+    width: 320px;
+    background: #0D0D0D;
+    border-radius: 36px;
+    border: 2px solid #2a2a2a;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+    min-height: 580px;
+  }
+
+  /* ════════════════════════════════════════
+     SCREEN 1 — CURRENT ITEMS LIST
+     ════════════════════════════════════════ */
+  .header-bar {
+    background: rgba(13,13,13,0.95);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-back { color: #C5A880; font-size: 13px; }
+  .header-name { font-family:'Cinzel',serif; font-size: 15px; letter-spacing: 3px; color: #C5A880; }
+
+  .items-section { padding: 20px 14px; }
+  .items-section-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+  }
+  .items-section-head h2 { font-size: 20px; font-weight: 300; }
+  .items-section-head .count {
+    font-size: 10px; background: #1F1F1F;
+    border: 1px solid rgba(197,168,128,0.2); color: #C5A880;
+    padding: 4px 10px; border-radius: 20px;
+  }
+
+  /* OLD item card */
+  .item-card-old {
+    background: #161616;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .item-card-old .text { flex: 1; }
+  .item-card-old h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .item-card-old p { font-size: 11px; color: #666; line-height: 1.4; }
+  .item-card-old .price-col { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; margin-right:6px; }
+  .item-card-old .price { color: #C5A880; font-weight: 700; font-size: 13px; }
+  .item-card-old .add-btn {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: #C5A880; color: #0D0D0D;
+    border: none; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor:pointer;
+  }
+  .item-card-old .thumb {
+    width: 74px; height: 74px; border-radius: 10px; overflow: hidden; flex-shrink:0;
+  }
+  .item-card-old .thumb img { width:100%;height:100%;object-fit:cover; }
+
+  /* ════════════════════════════════════════
+     SCREEN 2 — IMPROVED: IMAGE-FIRST CARD
+     ════════════════════════════════════════ */
+  .item-card-new {
+    background: #161616;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    transition: border-color 200ms;
+  }
+  .item-card-new .img-top {
+    width: 100%;
+    height: 140px;
+    position: relative;
+    overflow: hidden;
+    background: #1a1a1a;
+  }
+  .item-card-new .img-top img {
+    width:100%;height:100%;object-fit:cover;
+    display:block;
+    transition: transform 300ms;
+  }
+  .item-card-new:hover .img-top img { transform: scale(1.04); }
+  .item-card-new .img-top .price-badge {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(13,13,13,0.85);
+    border: 1px solid rgba(197,168,128,0.4);
+    color: #C5A880; font-weight: 700; font-size: 13px;
+    padding: 4px 10px; border-radius: 20px;
+    backdrop-filter: blur(6px);
+  }
+  .item-card-new .img-top .qty-badge {
+    position: absolute; bottom: 10px; left: 10px;
+    min-width: 24px; height: 24px; border-radius: 12px;
+    background: #C5A880; color: #0D0D0D;
+    font-size: 11px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 6px;
+    border: 2px solid #161616;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .item-card-new .img-top .tag {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(239,68,68,0.85);
+    color: #fff; font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .item-card-new .body {
+    padding: 12px 14px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .item-card-new .body .info { flex: 1; }
+  .item-card-new .body h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .item-card-new .body p { font-size: 11px; color: #666; line-height: 1.4; }
+  .item-card-new .body .meta { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .item-card-new .body .chip {
+    font-size: 10px; padding: 2px 8px; border-radius: 20px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #666;
+  }
+  .item-card-new .body .chip.green { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.2); color: #4ade80; }
+  .item-card-new .add-col {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .item-card-new .add-col .price { color: #C5A880; font-weight: 700; font-size: 14px; }
+  .add-btn-round {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #C5A880; color: #0D0D0D;
+    border: none; font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .qty-controls {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .qty-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 700; cursor: pointer; line-height: 1;
+  }
+  .qty-btn.minus { border: 1.5px solid rgba(197,168,128,0.5); background: none; color: #C5A880; }
+  .qty-btn.plus  { background: #C5A880; color: #0D0D0D; border: none; }
+  .qty-num { color: #C5A880; font-weight: 800; font-size: 14px; min-width: 20px; text-align: center; }
+
+  /* Item with accent bar (in cart) */
+  .item-in-cart {
+    background: rgba(197,168,128,0.05) !important;
+    border-color: rgba(197,168,128,0.28) !important;
+  }
+  .item-in-cart .accent-bar {
+    position: absolute; top: 0; bottom: 0; right: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #C5A880, #a8895e);
+    border-radius: 0 18px 18px 0;
+  }
+
+  /* ════════════════════════════════════════
+     SCREEN 3 — CATEGORY HERO + STICKY HEADER
+     ════════════════════════════════════════ */
+  .cat-hero {
+    width: 100%;
+    height: 170px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cat-hero img { width:100%;height:100%;object-fit:cover;display:block; filter:brightness(0.5); }
+  .cat-hero .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(13,13,13,0.9) 100%);
+  }
+  .cat-hero .hero-text {
+    position: absolute; bottom: 18px; right: 20px; left: 20px;
+  }
+  .cat-hero .hero-text h2 { font-size: 26px; font-weight: 300; letter-spacing: 0.03em; }
+  .cat-hero .hero-text span {
+    font-size: 11px; color: #a3a3a3;
+    background: rgba(0,0,0,0.4); padding: 3px 10px; border-radius: 20px;
+  }
+
+  .sticky-bar {
+    background: rgba(13,13,13,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(197,168,128,0.12);
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .sticky-bar .cat-name { font-size: 13px; font-weight: 500; color: #C5A880; }
+  .sticky-bar .cart-pill {
+    background: #C5A880; color: #0D0D0D;
+    border: none; border-radius: 50px;
+    padding: 6px 14px; font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
+  }
+
+  /* ════════════════════════════════════════
+     SCREEN 4 — CATEGORIES with search
+     ════════════════════════════════════════ */
+  .search-bar {
+    margin: 0 14px 16px;
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+  }
+  .search-bar .icon { color: #555; font-size: 14px; }
+  .search-bar input {
+    flex: 1; background: none; border: none; outline: none;
+    color: #fff; font-size: 13px;
+    font-family: 'Rubik', sans-serif;
+  }
+  .search-bar input::placeholder { color: #444; }
+
+  .cat-card {
+    position: relative; height: 130px; border-radius: 16px; overflow: hidden;
+    cursor: pointer; margin: 0 14px 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .cat-card .bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    transition: transform 350ms ease;
+  }
+  .cat-card:hover .bg { transform: scale(1.04); }
+  .cat-card .overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to left, rgba(13,13,13,0.95) 40%, rgba(13,13,13,0.25) 100%);
+  }
+  .cat-card .text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 20px;
+  }
+  .cat-card .text h3 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .cat-card .text p { font-size: 11px; color: #a3a3a3; }
+  .cat-card .arrow {
+    position: absolute; top: 50%; transform: translateY(-50%); left: 18px;
+    color: rgba(197,168,128,0.6); font-size: 18px;
+  }
+  .cat-card .cart-badge {
+    position: absolute; top: 10px; left: 46px;
+    min-width: 22px; height: 22px; border-radius: 11px;
+    background: #C5A880; color: #0D0D0D;
+    font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .cat-card.in-cart {
+    box-shadow: 0 4px 24px rgba(197,168,128,0.2), 0 0 0 1.5px rgba(197,168,128,0.3);
+  }
+
+  /* floating cart */
+  .float-cart {
+    position: absolute; bottom: 18px; right: 16px; left: 16px;
+    background: #C5A880; color: #0D0D0D;
+    border-radius: 50px; padding: 13px 20px;
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 6px 24px rgba(197,168,128,0.4);
+    cursor: pointer;
+  }
+  .float-cart .badge {
+    background: rgba(0,0,0,0.2); border-radius: 20px;
+    padding: 2px 10px; font-size: 12px;
+  }
+
+  /* ARROW LABEL */
+  .arrow-label {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #C5A880;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .arrow-line {
+    width: 40px; height: 1px;
+    background: rgba(197,168,128,0.5);
+  }
+
+  .highlight-box {
+    border: 1px dashed rgba(197,168,128,0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    background: rgba(197,168,128,0.03);
+    margin-top: 32px;
+  }
+  .highlight-box h3 { color: #C5A880; font-size: 13px; margin-bottom: 12px; }
+  .highlight-box ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .highlight-box li {
+    font-size: 12px; color: #a3a3a3; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .highlight-box li span { color: #C5A880; font-size: 14px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<h1>MENU · UX IMPROVEMENTS</h1>
+<p class="subtitle">הצעות לשיפור ויזואלי — לחץ אחר בקשה לאישור לפני מימוש</p>
+
+<div class="sections">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 1. ITEM CARDS                             -->
+  <!-- ══════════════════════════════════════════ -->
+  <div>
+    <div class="section-title">① כרטיסי פריטים — לפני ואחרי</div>
+    <div class="phones">
+
+      <!-- BEFORE -->
+      <div class="phone-wrap">
+        <div class="phone-label">לפני</div>
+        <div class="phone" style="min-height:500px;">
+          <div class="header-bar">
+            <span class="header-back">‹ חזור</span>
+            <span class="header-name">MENU</span>
+            <div style="width:40px"></div>
+          </div>
+          <div class="items-section">
+            <div class="items-section-head">
+              <h2>מנות עיקריות</h2>
+              <span class="count">6 מנות</span>
+            </div>
+
+            <div class="item-card-old">
+              <div class="text">
+                <h4>שניצל ירושלמי</h4>
+                <p>חזה עוף פריך בפירורי לחם מיוחדים</p>
+              </div>
+              <div class="price-col">
+                <span class="price">₪82</span>
+                <button class="add-btn">🛒</button>
+              </div>
+              <div class="thumb"><img src="https://images.unsplash.com/photo-1562967914-608f82629710?w=200&q=60" /></div>
+            </div>
+
+            <div class="item-card-old">
+              <div class="text">
+                <h4>פסטה טרטופו</h4>
+                <p>פסטה עם שמנת כמהין ופרמזן</p>
+              </div>
+              <div class="price-col">
+                <span class="price">₪94</span>
+                <button class="add-btn">🛒</button>
+              </div>
+              <div class="thumb"><img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=200&q=60" /></div>
+            </div>
+
+            <div class="item-card-old">
+              <div class="text">
+                <h4>אנטריקוט 300 גרם</h4>
+                <p>בקר פרמיום מוגש עם ירקות צלויים</p>
+              </div>
+              <div class="price-col">
+                <span class="price">₪168</span>
+                <button class="add-btn">🛒</button>
+              </div>
+              <div class="thumb"><img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200&q=60" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER: IMAGE-FIRST -->
+      <div class="phone-wrap">
+        <div class="phone-label good">✦ הצעה — Image-first cards</div>
+        <div class="phone" style="min-height:500px; overflow-y:scroll; max-height:620px;">
+
+          <!-- Sticky bar -->
+          <div class="sticky-bar">
+            <span class="cat-name">✦ מנות עיקריות</span>
+            <button class="cart-pill">🛒 2 פריטים · ₪176</button>
+          </div>
+
+          <!-- Items -->
+          <div style="padding: 14px 14px 80px;">
+
+            <!-- Item 1 - in cart qty 2 -->
+            <div class="item-card-new item-in-cart" style="position:relative;">
+              <div class="accent-bar"></div>
+              <div class="img-top">
+                <img src="https://images.unsplash.com/photo-1562967914-608f82629710?w=400&q=70" />
+                <div class="img-top price-badge">₪82</div>
+                <div class="img-top qty-badge">×2</div>
+                <div class="img-top tag">🔥 פופולרי</div>
+              </div>
+              <div class="body">
+                <div class="info">
+                  <h4>שניצל ירושלמי</h4>
+                  <p>חזה עוף פריך בפירורי לחם עם לימון ועשבי תיבול</p>
+                  <div class="meta">
+                    <span class="chip green">🌿 צמחוני</span>
+                    <span class="chip">⏱ 12′</span>
+                  </div>
+                </div>
+                <div class="add-col">
+                  <div class="qty-controls">
+                    <button class="qty-btn minus">−</button>
+                    <span class="qty-num">2</span>
+                    <button class="qty-btn plus">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Item 2 - not in cart -->
+            <div class="item-card-new">
+              <div class="img-top">
+                <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&q=70" />
+                <div class="img-top price-badge">₪94</div>
+              </div>
+              <div class="body">
+                <div class="info">
+                  <h4>פסטה טרטופו</h4>
+                  <p>פסטה עם שמנת כמהין טרי ופרמזן מיושן</p>
+                  <div class="meta">
+                    <span class="chip green">🌿 צמחוני</span>
+                    <span class="chip">⏱ 18′</span>
+                  </div>
+                </div>
+                <div class="add-col">
+                  <button class="add-btn-round">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Item 3 - not in cart, no image -->
+            <div class="item-card-new" style="position:relative;">
+              <div class="body" style="padding: 14px;">
+                <div class="info">
+                  <h4>אנטריקוט 300 גרם</h4>
+                  <p>בקר פרמיום מוגש עם ירקות צלויים ורוטב יין אדום</p>
+                  <div class="meta">
+                    <span class="chip">⏱ 25′</span>
+                  </div>
+                </div>
+                <div class="add-col">
+                  <span style="color:#C5A880;font-weight:700;font-size:14px;margin-bottom:6px;">₪168</span>
+                  <button class="add-btn-round">+</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Float cart -->
+          <div class="float-cart">
+            <span>🛒 הזמנה</span>
+            <span>2 פריטים</span>
+            <span class="badge">₪176</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="highlight-box">
+      <h3>✦ מה משתנה בכרטיסי פריטים</h3>
+      <ul>
+        <li><span>📸</span> תמונה ב-100% רוחב למעלה (140px) — בולטת יותר, פרמיום</li>
+        <li><span>💰</span> מחיר כ-badge שקוף מעל התמונה (תחתון-ימין) — לא מפריע לתמונה</li>
+        <li><span>🔢</span> Badge כמות (×2) תחתון-שמאל — גלוי תמיד כשבסל</li>
+        <li><span>➕</span> כפתור + עגול → כאשר בסל: הופך ל-− qty + בשורה אחת</li>
+        <li><span>🔥</span> Badge "פופולרי / חדש" שניתן לסמן מה-Admin</li>
+        <li><span>⏱</span> Chip זמן הכנה + תגי ירקוני/טבעוני/ללא גלוטן</li>
+        <li><span>📌</span> Sticky bar עם שם קטגוריה + כפתור סל בעת גלילה</li>
+        <li><span>🏷</span> כרטיס "בסל" — רקע זהוב עמום + פס גבול ימין</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 2. CATEGORY HERO                          -->
+  <!-- ══════════════════════════════════════════ -->
+  <div>
+    <div class="section-title">② מסך קטגוריה — Hero image + sticky name</div>
+    <div class="phones">
+
+      <div class="phone-wrap">
+        <div class="phone-label">לפני — סתם כותרת</div>
+        <div class="phone" style="min-height:440px;">
+          <div class="header-bar">
+            <span class="header-back">‹ חזור</span>
+            <span class="header-name">MENU</span>
+            <div style="width:40px"></div>
+          </div>
+          <div style="padding:24px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+              <h2 style="font-size:22px;font-weight:300;">מנות עיקריות</h2>
+              <span style="font-size:10px;background:#1F1F1F;border:1px solid rgba(197,168,128,0.2);color:#C5A880;padding:4px 10px;border-radius:20px;">6 מנות</span>
+            </div>
+            <div class="item-card-old">
+              <div class="text"><h4>שניצל ירושלמי</h4><p>חזה עוף פריך...</p></div>
+              <div class="price-col"><span class="price">₪82</span><button class="add-btn">🛒</button></div>
+              <div class="thumb"><img src="https://images.unsplash.com/photo-1562967914-608f82629710?w=200&q=60" /></div>
+            </div>
+            <div class="item-card-old">
+              <div class="text"><h4>פסטה טרטופו</h4><p>שמנת כמהין...</p></div>
+              <div class="price-col"><span class="price">₪94</span><button class="add-btn">🛒</button></div>
+              <div class="thumb"><img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=200&q=60" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone-label good">✦ הצעה — Category hero</div>
+        <div class="phone" style="min-height:440px;overflow:hidden;">
+          <!-- Category hero -->
+          <div class="cat-hero">
+            <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=70" />
+            <div class="hero-overlay"></div>
+            <div class="hero-text">
+              <h2>מנות עיקריות</h2>
+              <span style="margin-top:6px;display:inline-block;">6 מנות מיוחדות</span>
+            </div>
+          </div>
+          <!-- Sticky bar after scroll -->
+          <div class="sticky-bar" style="top:0;">
+            <span class="cat-name">✦ מנות עיקריות</span>
+            <button class="cart-pill">🛒 1 · ₪82</button>
+          </div>
+          <div style="padding: 12px 14px;">
+            <div class="item-card-new item-in-cart" style="position:relative;">
+              <div class="accent-bar"></div>
+              <div class="img-top" style="height:120px;">
+                <img src="https://images.unsplash.com/photo-1562967914-608f82629710?w=400&q=70" />
+                <div class="img-top price-badge">₪82</div>
+                <div class="img-top qty-badge">×1</div>
+              </div>
+              <div class="body">
+                <div class="info"><h4>שניצל ירושלמי</h4><p>חזה עוף פריך בפירורי לחם</p></div>
+                <div class="add-col">
+                  <div class="qty-controls">
+                    <button class="qty-btn minus">−</button>
+                    <span class="qty-num">1</span>
+                    <button class="qty-btn plus">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 3. CATEGORIES LIST with search            -->
+  <!-- ══════════════════════════════════════════ -->
+  <div>
+    <div class="section-title">③ מסך קטגוריות — עם חיפוש</div>
+    <div class="phones">
+
+      <div class="phone-wrap">
+        <div class="phone-label good">✦ הצעה — חיפוש + hover effect</div>
+        <div class="phone" style="min-height:500px;">
+          <div class="header-bar">
+            <span class="header-back">‹ חזור</span>
+            <span class="header-name" style="font-size:14px;">MENU</span>
+            <div style="width:40px"></div>
+          </div>
+          <div style="padding-top:16px;">
+            <div style="text-align:center;margin-bottom:16px;">
+              <h2 style="font-size:22px;font-weight:300;letter-spacing:0.05em;">התפריט שלנו</h2>
+              <div style="width:36px;height:1px;background:rgba(197,168,128,0.4);margin:12px auto 0;"></div>
+            </div>
+            <div class="search-bar">
+              <span class="icon">🔍</span>
+              <input type="text" placeholder="חפש קטגוריה..." />
+            </div>
+            <div class="cat-card in-cart" style="background:#0D0D0D;">
+              <div class="bg" style="background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=70');"></div>
+              <div class="overlay"></div>
+              <div class="text">
+                <h3>מנות עיקריות</h3>
+                <p>6 מנות מיוחדות</p>
+              </div>
+              <div class="arrow">‹</div>
+              <div class="cart-badge">3</div>
+            </div>
+            <div class="cat-card" style="background:#0D0D0D;">
+              <div class="bg" style="background-image:url('https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&q=70');"></div>
+              <div class="overlay"></div>
+              <div class="text">
+                <h3>ארוחות בוקר</h3>
+                <p>12 מנות</p>
+              </div>
+              <div class="arrow">‹</div>
+            </div>
+            <div class="cat-card" style="background:#0D0D0D;">
+              <div class="bg" style="background-image:url('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=600&q=70');"></div>
+              <div class="overlay"></div>
+              <div class="text">
+                <h3>קינוחים</h3>
+                <p>8 מנות</p>
+              </div>
+              <div class="arrow">‹</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="highlight-box" style="max-width:900px;margin:48px auto 0;">
+  <h3>סיכום הצעות לפי עדיפות</h3>
+  <ul>
+    <li><span>🥇</span> <strong>Image-first cards</strong> — הכי מהותי לניראות. תמונה מלאה למעלה במקום thumbnail קטן</li>
+    <li><span>🥈</span> <strong>Category hero image</strong> — כניסה לקטגוריה עם תמונת hero מלאת-רוחב ושם מעל</li>
+    <li><span>🥉</span> <strong>Sticky bar + float cart</strong> — שם קטגוריה נשאר גלוי + כפתור סל גדול צף בתחתית</li>
+    <li><span>4️⃣</span> <strong>חיפוש קטגוריות</strong> — שורת חיפוש מעל רשימת הקטגוריות</li>
+    <li><span>5️⃣</span> <strong>Popular/New badge</strong> — סימון "🔥 פופולרי" מה-Admin</li>
+  </ul>
+</div>
+
+<p style="text-align:center;color:#333;font-size:11px;margin:40px 0;">
+  פתח קובץ זה ב-Browser לצפייה מלאה · Menu4U UX Preview
+</p>
+
+</body>
+</html>
