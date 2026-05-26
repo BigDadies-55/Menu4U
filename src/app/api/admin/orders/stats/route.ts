@@ -75,6 +75,8 @@ export async function GET(req: Request) {
         status: true,
         totalAmount: true,
         orderSource: true,
+        tableNumber: true,
+        coversCount: true,
         createdAt: true,
         updatedAt: true,
         restaurant: { select: { name: true } },
@@ -213,6 +215,21 @@ export async function GET(req: Request) {
     return avg(times);
   })();
 
+  // Average revenue per diner
+  const ordersWithCovers = orders.filter(o => o.status !== "CANCELLED" && (o.coversCount ?? 0) > 0);
+  const totalCovers = ordersWithCovers.reduce((s, o) => s + (o.coversCount ?? 0), 0);
+  const totalRevenueWithCovers = ordersWithCovers.reduce((s, o) => s + o.totalAmount, 0);
+  const avgRevenuePerCover = totalCovers > 0 ? totalRevenueWithCovers / totalCovers : 0;
+
+  // Unique tables served (distinct non-empty tableNumbers, excluding cancelled-only tables)
+  const activeTableNumbers = new Set<string>();
+  for (const o of orders) {
+    if (o.status !== "CANCELLED" && o.tableNumber && o.tableNumber.trim() !== "") {
+      activeTableNumbers.add(o.tableNumber.trim());
+    }
+  }
+  const uniqueTables = activeTableNumbers.size;
+
   // Completion = DELIVERED + PAID (both are "done")
   const completedCount = (statusCounts.DELIVERED ?? 0) + (statusCounts.PAID ?? 0);
 
@@ -222,6 +239,9 @@ export async function GET(req: Request) {
   const stats = {
     period: fromParam ? spanDays : days,
     totalOrders: orders.length,
+    uniqueTables,
+    totalCovers,
+    avgRevenuePerCover,
     totalRevenue,
     paidRevenue,
     avgOrderValue: completedCount > 0 ? totalRevenue / completedCount : 0,

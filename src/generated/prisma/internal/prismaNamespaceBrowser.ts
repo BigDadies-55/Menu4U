@@ -253,6 +253,7 @@ export const OrderScalarFieldEnum = {
   status: 'status',
   totalAmount: 'totalAmount',
   notes: 'notes',
+  coversCount: 'coversCount',
   orderSource: 'orderSource',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

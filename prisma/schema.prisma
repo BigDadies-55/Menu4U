@@ -198,6 +198,7 @@ model Order {
   status        OrderStatus @default(PENDING)
   totalAmount   Float
   notes         String?
+  coversCount   Int?                              // כמות סועדים בשולחן
   orderSource   String      @default("CUSTOMER") // CUSTOMER | WAITER | PHONE
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt

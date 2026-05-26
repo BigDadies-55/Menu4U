@@ -7,6 +7,9 @@ type DurationStat = { avg: number; median: number; count: number };
 type Stats = {
   period: number;
   totalOrders: number;
+  uniqueTables: number;
+  totalCovers: number;
+  avgRevenuePerCover: number;
   totalRevenue: number;
   paidRevenue: number;
   avgOrderValue: number;
@@ -358,13 +361,14 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
       ) : stats && (
         <>
           {/* ── KPI cards ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             {[
-              { label: "הזמנות",         value: stats.totalOrders,                                          sub: `${stats.period} ימים`,                                      color: "#f59e0b" },
-              { label: "הכנסות",          value: fmt(stats.totalRevenue),                                    sub: `ממוצע ${fmt(stats.avgOrderValue)} להזמנה`,                 color: "#22c55e" },
-              { label: "שולמו בקאשייר",   value: fmt(stats.paidRevenue ?? 0),                                sub: `${stats.statusCounts?.PAID ?? 0} הזמנות סגורות`,           color: "#c9a84c" },
-              { label: "זמן שירות ממוצע", value: stats.totalTime?.count ? fmtMin(stats.totalTime.avg) : "—", sub: stats.totalTime?.count ? `${stats.totalTime.count} הזמנות` : "אין לוגים עדיין", color: "#3b82f6" },
-              { label: "שיעור השלמה",     value: `${stats.completionRate.toFixed(0)}%`,                      sub: `${stats.cancelRate.toFixed(1)}% בוטלו`,                    color: "#a855f7" },
+              { label: "הזמנות",           value: stats.totalOrders,                                          sub: `${stats.period} ימים`,                                      color: "#f59e0b" },
+              { label: "שולחנות",           value: stats.uniqueTables,                                         sub: "שולחנות ייחודיים",                                           color: "#f97316" },
+              { label: "ממוצע לסועד",       value: stats.avgRevenuePerCover > 0 ? fmt(stats.avgRevenuePerCover) : "—", sub: stats.totalCovers > 0 ? `${stats.totalCovers} סועדים` : "אין נתון סועדים", color: "#ec4899" },
+              { label: "הכנסות",            value: fmt(stats.totalRevenue),                                    sub: `ממוצע ${fmt(stats.avgOrderValue)} להזמנה`,                 color: "#22c55e" },
+              { label: "זמן שירות ממוצע",   value: stats.totalTime?.count ? fmtMin(stats.totalTime.avg) : "—", sub: stats.totalTime?.count ? `${stats.totalTime.count} הזמנות` : "אין לוגים עדיין", color: "#3b82f6" },
+              { label: "שיעור השלמה",       value: `${stats.completionRate.toFixed(0)}%`,                      sub: `${stats.cancelRate.toFixed(1)}% בוטלו`,                    color: "#a855f7" },
             ].map(({ label, value, sub, color }) => (
               <div key={label} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
                 <div className="text-xs text-gray-500 font-medium mb-1">{label}</div>

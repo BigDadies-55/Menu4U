@@ -16,6 +16,7 @@ export async function register() {
     // All migrations are idempotent (IF NOT EXISTS / IF EXISTS guards)
     const migrations = [
       `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedAt" TIMESTAMP(3);`,
+      `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "coversCount" INTEGER;`,
     ];
 
     for (const sql of migrations) {

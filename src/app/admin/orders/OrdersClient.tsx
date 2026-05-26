@@ -632,6 +632,7 @@ export default function OrdersClient({
   const [billTableKey, setBillTableKey] = useState<string | null>(null);
   const [showPosModal, setShowPosModal] = useState(false);
   const [posTable, setPosTable]         = useState("");
+  const [posCovers, setPosCovers]       = useState("");
   const [posNotes, setPosNotes]         = useState("");
   const [posItems, setPosItems]         = useState<{ name: string; price: number; course: number; qty: number }[]>([]);
   const [posNewItem, setPosNewItem]     = useState({ name: "", price: "", course: 1, qty: 1 });
@@ -768,10 +769,10 @@ export default function OrdersClient({
     await fetch("/api/admin/orders/waiter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restaurantId: rid, tableNumber: posTable, notes: posNotes || null, items: posItems }),
+      body: JSON.stringify({ restaurantId: rid, tableNumber: posTable, notes: posNotes || null, coversCount: posCovers ? parseInt(posCovers) : null, items: posItems }),
     });
     setShowPosModal(false);
-    setPosTable(""); setPosNotes(""); setPosItems([]);
+    setPosTable(""); setPosCovers(""); setPosNotes(""); setPosItems([]);
     setPosNewItem({ name: "", price: "", course: 1, qty: 1 });
     setPosSubmitting(false);
     fetchOrders(false);
@@ -887,6 +888,11 @@ export default function OrdersClient({
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>שולחן *</label>
                   <input value={posTable} onChange={e => setPosTable(e.target.value)} placeholder="מספר שולחן"
+                    style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>👥 סועדים</label>
+                  <input type="number" min="1" max="50" value={posCovers} onChange={e => setPosCovers(e.target.value)} placeholder="כמות"
                     style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ flex: 2 }}>

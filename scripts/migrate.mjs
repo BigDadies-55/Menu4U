@@ -102,6 +102,7 @@ const sqls = [
   "priceAdd" DOUBLE PRECISION NOT NULL DEFAULT 0
 )`,
   `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedAt" TIMESTAMP(3);`,
+  `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "coversCount" INTEGER;`,
 ];
 
 async function run() {

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { restaurantId, tableNumber, notes, items } = body;
+  const { restaurantId, tableNumber, notes, coversCount, items } = body;
 
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
   if (!tableNumber)  return NextResponse.json({ error: "tableNumber required" }, { status: 400 });
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
       restaurantId,
       tableNumber,
       notes: notes ?? null,
+      coversCount: coversCount ? Number(coversCount) : null,
       totalAmount,
       status: "CONFIRMED",
       orderSource: "WAITER",
