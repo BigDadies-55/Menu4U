@@ -543,6 +543,23 @@ export default function MenuElegantClient({
     setCart(prev => prev.map(c => c.cartId === cartId ? { ...c, notes } : c));
   }
 
+  /** Remove one unit from the most-recently-added entry of a given itemId */
+  function removeOneByItemId(itemId: string) {
+    const entry = [...cart].reverse().find(c => c.itemId === itemId);
+    if (entry) updateQty(entry.cartId, -1);
+  }
+
+  /** Total qty across all cart entries for a given itemId */
+  function cartQtyByItem(itemId: string): number {
+    return cart.filter(c => c.itemId === itemId).reduce((s, c) => s + c.quantity, 0);
+  }
+
+  /** Total qty for all items belonging to a category */
+  function cartQtyByCat(catId: string): number {
+    const ids = new Set(categories.find(c => c.id === catId)?.items.map(i => i.id) ?? []);
+    return cart.filter(c => ids.has(c.itemId)).reduce((s, c) => s + c.quantity, 0);
+  }
+
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
   const cartTotal = cart.reduce((s, c) => s + c.price * c.quantity, 0);
 
@@ -919,19 +936,28 @@ export default function MenuElegantClient({
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {categories.map((cat) => (
-              <div key={cat.id} onClick={() => openCategory(cat)} style={{
-                position: "relative", height: 140, borderRadius: 18, overflow: "hidden",
-                cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-              }}>
+            {categories.map((cat) => {
+              const catQty = cartQtyByCat(cat.id);
+              return (
+              <div key={cat.id} onClick={() => openCategory(cat)}
+                onMouseEnter={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1.04)"); }}
+                onMouseLeave={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1)"); }}
+                style={{
+                  position: "relative", height: 140, borderRadius: 18, overflow: "hidden",
+                  cursor: "pointer",
+                  boxShadow: catQty > 0
+                    ? "0 4px 24px rgba(197,168,128,0.22), 0 0 0 1.5px rgba(197,168,128,0.35)"
+                    : "0 4px 16px rgba(0,0,0,0.4)",
+                  transition: "box-shadow 200ms",
+                }}>
                 {/* Category background */}
-                <div style={{
+                <div className="cat-bg" style={{
                   position: "absolute", inset: 0,
                   backgroundImage: cat.image
                     ? `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.95) 40%, rgba(13,13,13,0.3) 100%), url('${cat.image}')`
                     : `linear-gradient(135deg, #161208 0%, #1e1a10 40%, #141414 100%)`,
                   backgroundSize: "cover", backgroundPosition: "center",
-                  transition: "transform 300ms",
+                  transition: "transform 350ms ease",
                 }} />
                 {/* Text */}
                 <div style={{
@@ -954,8 +980,24 @@ export default function MenuElegantClient({
                 }}>
                   {t.dir === "rtl" ? "‹" : "›"}
                 </div>
+                {/* Cart qty badge */}
+                {catQty > 0 && (
+                  <div style={{
+                    position: "absolute", top: 12,
+                    ...(t.dir === "rtl" ? { left: 12 } : { right: 50 }),
+                    minWidth: 24, height: 24, borderRadius: 12,
+                    background: "#C5A880", color: "#0D0D0D",
+                    fontSize: 12, fontWeight: 800,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "0 6px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                  }}>
+                    {catQty}
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -974,19 +1016,37 @@ export default function MenuElegantClient({
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {selectedCat.items.filter(i => i.isActive !== false).map((item) => {
               const badges = getItemBadges(item, t);
+              const qty = cartQtyByItem(item.id);
+              const inCart = qty > 0;
               return (
                 <div key={item.id} onClick={() => { track("item", item.id, item.name); setModalItem(item); }}
                   style={{
-                    background: "#161616", border: "1px solid rgba(255,255,255,0.05)",
+                    position: "relative",
+                    background: inCart ? "rgba(197,168,128,0.06)" : "#161616",
+                    border: inCart
+                      ? "1px solid rgba(197,168,128,0.3)"
+                      : "1px solid rgba(255,255,255,0.05)",
                     borderRadius: 18, overflow: "hidden",
                     display: "flex", alignItems: "center", padding: 12,
                     cursor: "pointer", gap: 12,
                     transition: "border-color 200ms, background 200ms",
                   }}>
+
+                  {/* Gold left accent bar when in cart */}
+                  {inCart && (
+                    <div style={{
+                      position: "absolute",
+                      top: 0, bottom: 0,
+                      ...(t.dir === "rtl" ? { right: 0 } : { left: 0 }),
+                      width: 3, borderRadius: "18px 0 0 18px",
+                      background: "linear-gradient(to bottom, #C5A880, #a8895e)",
+                    }} />
+                  )}
+
                   {/* Text side */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                      <h4 style={{ fontSize: 15, fontWeight: 500, color: "#fff", letterSpacing: "0.02em", margin: 0 }}>
+                      <h4 style={{ fontSize: 15, fontWeight: 500, color: inCart ? "#e8d4b4" : "#fff", letterSpacing: "0.02em", margin: 0 }}>
                         {getItemName(item, lang)}
                       </h4>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0, marginRight: 8 }}>
@@ -994,20 +1054,50 @@ export default function MenuElegantClient({
                           ₪{item.price}
                         </span>
                         {restaurant.ordersEnabled && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openAddToCart(item); }}
-                            style={{
-                              background: "#C5A880", color: "#0D0D0D",
-                              border: "none", borderRadius: 8,
-                              width: 30, height: 30,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 16, cursor: "pointer",
-                              flexShrink: 0,
-                            }}
-                            title={t.addToCart}
-                          >
-                            🛒
-                          </button>
+                          inCart ? (
+                            /* ── +/− inline controls ── */
+                            <div
+                              onClick={e => e.stopPropagation()}
+                              style={{ display: "flex", alignItems: "center", gap: 4 }}
+                            >
+                              <button
+                                onClick={e => { e.stopPropagation(); removeOneByItemId(item.id); }}
+                                style={{
+                                  width: 28, height: 28, borderRadius: "50%",
+                                  border: "1.5px solid rgba(197,168,128,0.6)",
+                                  background: "none", color: "#C5A880",
+                                  fontSize: 18, fontWeight: 700, lineHeight: 1,
+                                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                }}
+                              >−</button>
+                              <span style={{ color: "#C5A880", fontWeight: 800, fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                                {qty}
+                              </span>
+                              <button
+                                onClick={e => { e.stopPropagation(); openAddToCart(item); }}
+                                style={{
+                                  width: 28, height: 28, borderRadius: "50%",
+                                  background: "#C5A880", color: "#0D0D0D",
+                                  border: "none", fontSize: 18, fontWeight: 700, lineHeight: 1,
+                                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                }}
+                              >+</button>
+                            </div>
+                          ) : (
+                            /* ── Add to cart button ── */
+                            <button
+                              onClick={e => { e.stopPropagation(); openAddToCart(item); }}
+                              style={{
+                                width: 30, height: 30, borderRadius: "50%",
+                                background: "#C5A880", color: "#0D0D0D",
+                                border: "none",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontSize: 20, fontWeight: 700, lineHeight: 1,
+                                cursor: "pointer", flexShrink: 0,
+                              }}
+                              title={t.addToCart}
+                            >+</button>
+                          )
                         )}
                       </div>
                     </div>
@@ -1026,11 +1116,53 @@ export default function MenuElegantClient({
                         ))}
                       </div>
                     )}
+                    {/* Prep time chip */}
+                    {item.prepTime != null && (
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 8,
+                        fontSize: 10, color: "#6c757d", background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "2px 8px" }}>
+                        ⏱ {item.prepTime}&apos;
+                      </div>
+                    )}
                   </div>
-                  {/* Thumbnail — only when image is uploaded */}
+
+                  {/* Thumbnail + qty badge */}
                   {item.image && (
-                    <div style={{ width: 80, height: 80, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
-                      <img src={item.image} alt={getItemName(item, lang)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <div style={{ position: "relative", width: 88, height: 88, borderRadius: 12, overflow: "visible", flexShrink: 0 }}>
+                      <div style={{ width: 88, height: 88, borderRadius: 12, overflow: "hidden" }}>
+                        <img src={item.image} alt={getItemName(item, lang)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                      {/* Quantity badge — bottom left of thumbnail */}
+                      {inCart && (
+                        <div style={{
+                          position: "absolute", bottom: -6, left: -6,
+                          minWidth: 22, height: 22, borderRadius: 11,
+                          background: "#C5A880", color: "#0D0D0D",
+                          fontSize: 11, fontWeight: 900,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          padding: "0 5px",
+                          border: "2px solid #161616",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+                        }}>
+                          {qty}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Qty badge when NO image */}
+                  {!item.image && inCart && (
+                    <div style={{
+                      position: "absolute", bottom: 10, left: 10,
+                      minWidth: 22, height: 22, borderRadius: 11,
+                      background: "#C5A880", color: "#0D0D0D",
+                      fontSize: 11, fontWeight: 900,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: "0 5px",
+                      border: "2px solid #161616",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+                    }}>
+                      {qty}
                     </div>
                   )}
                 </div>
