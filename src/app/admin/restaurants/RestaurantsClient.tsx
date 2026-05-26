@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { MENU_PALETTES } from "@/lib/menuPalettes";
 
@@ -67,22 +67,67 @@ const BTN_PRIMARY = {
   boxShadow: "0 2px 8px rgba(201,168,76,0.35)",
 } as const;
 
+/* ── Dark input style ── */
+const DARK_INPUT: React.CSSProperties = {
+  background: "#2d3239",
+  border: "1px solid #3a3f47",
+  color: "#e9ecef",
+  borderRadius: 8,
+  padding: "8px 12px",
+  fontSize: 14,
+  width: "100%",
+  outline: "none",
+};
+
+/* ── Dark select style ── */
+const DARK_SELECT: React.CSSProperties = {
+  background: "#2d3239",
+  border: "1px solid #3a3f47",
+  color: "#e9ecef",
+  borderRadius: 8,
+  padding: "8px 12px",
+  fontSize: 14,
+  width: "100%",
+  outline: "none",
+};
+
+/* ── Action button style ── */
+const ACTION_BTN: React.CSSProperties = {
+  background: "#2d3239",
+  border: "1px solid #3a3f47",
+  borderRadius: 8,
+  width: 32,
+  height: 32,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  color: "#adb5bd",
+};
+
 function toDateInput(val: string | null | undefined): string {
   if (!val) return "";
   return new Date(val).toISOString().slice(0, 10);
 }
 
-function getSubscriptionStatus(r: Restaurant): { label: string; cls: string } {
+function getSubscriptionStatus(r: Restaurant): { label: string; style: React.CSSProperties } {
   const now = new Date();
-  if (!r.subscriptionFrom && !r.subscriptionTo) return { label: "ללא מנוי", cls: "bg-gray-100 text-gray-500" };
-  if (r.subscriptionFrom && now < new Date(r.subscriptionFrom)) return { label: "טרם התחיל", cls: "bg-blue-100 text-blue-600" };
-  if (r.subscriptionTo && now > new Date(r.subscriptionTo)) return { label: "פג תוקף", cls: "bg-red-100 text-red-600" };
+  if (!r.subscriptionFrom && !r.subscriptionTo)
+    return { label: "ללא מנוי", style: { background: "rgba(108,117,125,0.15)", color: "#6c757d" } };
+  if (r.subscriptionFrom && now < new Date(r.subscriptionFrom))
+    return { label: "טרם התחיל", style: { background: "rgba(51,154,240,0.15)", color: "#339af0" } };
+  if (r.subscriptionTo && now > new Date(r.subscriptionTo))
+    return { label: "פג תוקף", style: { background: "rgba(255,107,107,0.15)", color: "#ff6b6b" } };
   if (r.subscriptionTo) {
     const daysLeft = Math.ceil((new Date(r.subscriptionTo).getTime() - now.getTime()) / 86400000);
-    if (daysLeft <= 7) return { label: `${daysLeft} ימים נותרו`, cls: "bg-orange-100 text-orange-600" };
-    return { label: `פעיל עד ${new Date(r.subscriptionTo).toLocaleDateString("he-IL")}`, cls: "bg-green-100 text-green-700" };
+    if (daysLeft <= 7)
+      return { label: `${daysLeft} ימים נותרו`, style: { background: "rgba(255,146,43,0.15)", color: "#ff922b" } };
+    return {
+      label: `פעיל עד ${new Date(r.subscriptionTo).toLocaleDateString("he-IL")}`,
+      style: { background: "rgba(81,207,102,0.15)", color: "#51cf66" },
+    };
   }
-  return { label: "פעיל", cls: "bg-green-100 text-green-700" };
+  return { label: "פעיל", style: { background: "rgba(81,207,102,0.15)", color: "#51cf66" } };
 }
 
 export default function RestaurantsClient({ restaurants: initial }: { restaurants: Restaurant[] }) {
@@ -231,24 +276,24 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
   const field = (label: string, key: keyof typeof form, opts?: { type?: string; dir?: string; placeholder?: string }) => (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#adb5bd", marginBottom: 4 }}>{label}</label>
       <input
         type={opts?.type ?? "text"}
         value={form[key] as string}
         onChange={e => setForm({ ...form, [key]: e.target.value })}
         dir={opts?.dir}
         placeholder={opts?.placeholder}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+        style={DARK_INPUT}
       />
     </div>
   );
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8" style={{ background: "#1a1d23", minHeight: "100vh", color: "#e9ecef" }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">ניהול מסעדות</h1>
-          <p className="text-gray-500 mt-1">{restaurants.length} מסעדות במערכת</p>
+          <h1 className="text-2xl font-bold" style={{ color: "#e9ecef" }}>ניהול מסעדות</h1>
+          <p className="mt-1" style={{ color: "#6c757d" }}>{restaurants.length} מסעדות במערכת</p>
         </div>
         <button onClick={openCreate}
           className="text-black px-5 py-2.5 rounded-lg font-semibold text-sm transition-opacity hover:opacity-80"
@@ -261,32 +306,35 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
           <div className="flex min-h-full items-start justify-center p-4 py-6">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+            <div className="shadow-xl w-full max-w-2xl" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }}>
 
               {/* Modal header */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-900">
+              <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid #2d3239" }}>
+                <h2 className="text-lg font-bold" style={{ color: "#e9ecef" }}>
                   {editTarget ? `עריכת מסעדה — ${editTarget.name}` : "מסעדה חדשה"}
                 </h2>
                 <button onClick={() => setShowForm(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 text-lg">
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-lg transition-colors"
+                  style={{ color: "#6c757d", background: "transparent" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#2d3239"; (e.currentTarget as HTMLButtonElement).style.color = "#e9ecef"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "#6c757d"; }}>
                   ✕
                 </button>
               </div>
 
               {/* Tabs */}
-              <div className="flex border-b border-gray-100 px-4">
+              <div className="flex px-4" style={{ borderBottom: "1px solid #2d3239" }}>
                 {TABS.map(tab => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
-                      activeTab === tab.id
-                        ? "border-amber-500 text-amber-700"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    )}
+                    className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors"
+                    style={{
+                      borderBottom: activeTab === tab.id ? "2px solid #fcc419" : "2px solid transparent",
+                      color: activeTab === tab.id ? "#fcc419" : "#6c757d",
+                      background: "transparent",
+                    }}
                   >
                     <span>{tab.icon}</span>
                     <span>{tab.label}</span>
@@ -319,7 +367,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         {field("טלפון הזמנות", "orderPhone", { dir: "ltr" })}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#adb5bd", marginBottom: 4 }}>
                           📍 לינק מיקום (Google Maps)
                         </label>
                         <input
@@ -328,16 +376,16 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                           onChange={e => setForm({ ...form, locationUrl: e.target.value })}
                           placeholder="https://maps.google.com/..."
                           dir="ltr"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                          style={DARK_INPUT}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">תיאור</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#adb5bd", marginBottom: 4 }}>תיאור</label>
                         <textarea
                           value={form.description}
                           onChange={e => setForm({ ...form, description: e.target.value })}
                           rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                          style={{ ...DARK_INPUT, resize: "vertical" } as React.CSSProperties}
                         />
                       </div>
                     </>
@@ -348,7 +396,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     <>
                       {/* Theme selector */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">עיצוב תפריט</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#adb5bd", marginBottom: 8 }}>עיצוב תפריט</label>
                         <div className="grid grid-cols-5 gap-2 mb-3">
                           {THEMES.map(t => {
                             const isActive = form.menuTheme === t.value;
@@ -371,7 +419,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                         {/* Palette row */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-gray-400 font-medium pl-1">פלטה:</span>
+                          <span className="text-xs font-medium pl-1" style={{ color: "#6c757d" }}>פלטה:</span>
                           {(MENU_PALETTES[form.menuTheme] ?? []).map((p, i) => {
                             const pid = String(i);
                             const isActive = form.menuPalette === pid;
@@ -389,40 +437,43 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                           })}
                           <button type="button"
                             onClick={() => setForm(f => ({ ...f, menuPalette: "custom" }))}
-                            className={cn(
-                              "flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium transition-all",
-                              form.menuPalette === "custom"
-                                ? "border-amber-400 bg-amber-50 text-amber-700"
-                                : "border-gray-200 text-gray-500 hover:border-gray-400"
-                            )}>
+                            className="flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium transition-all"
+                            style={form.menuPalette === "custom"
+                              ? { borderColor: "#fcc419", background: "rgba(252,196,25,0.1)", color: "#fcc419" }
+                              : { borderColor: "#3a3f47", color: "#6c757d", background: "transparent" }}>
                             🎨 מותאם
                           </button>
                         </div>
 
                         {form.menuPalette === "custom" && (
-                          <div className="mt-3 flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                          <div className="mt-3 flex gap-4 p-3 rounded-xl" style={{ background: "#1a1d23", border: "1px solid #2d3239" }}>
                             <div className="flex items-center gap-2">
-                              <label className="text-xs text-gray-500 font-medium whitespace-nowrap">צבע ראשי</label>
+                              <label className="text-xs font-medium whitespace-nowrap" style={{ color: "#6c757d" }}>צבע ראשי</label>
                               <input type="color" value={form.menuCustomAc}
                                 onChange={e => setForm(f => ({ ...f, menuCustomAc: e.target.value }))}
-                                className="w-8 h-8 rounded border border-gray-300 cursor-pointer p-0.5"
+                                className="w-8 h-8 rounded cursor-pointer p-0.5"
+                                style={{ border: "1px solid #3a3f47" }}
                               />
-                              <span className="text-xs text-gray-400 font-mono">{form.menuCustomAc}</span>
+                              <span className="text-xs font-mono" style={{ color: "#6c757d" }}>{form.menuCustomAc}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <label className="text-xs text-gray-500 font-medium whitespace-nowrap">רקע</label>
+                              <label className="text-xs font-medium whitespace-nowrap" style={{ color: "#6c757d" }}>רקע</label>
                               <input type="color" value={form.menuCustomBg}
                                 onChange={e => setForm(f => ({ ...f, menuCustomBg: e.target.value }))}
-                                className="w-8 h-8 rounded border border-gray-300 cursor-pointer p-0.5"
+                                className="w-8 h-8 rounded cursor-pointer p-0.5"
+                                style={{ border: "1px solid #3a3f47" }}
                               />
-                              <span className="text-xs text-gray-400 font-mono">{form.menuCustomBg}</span>
+                              <span className="text-xs font-mono" style={{ color: "#6c757d" }}>{form.menuCustomBg}</span>
                             </div>
                           </div>
                         )}
 
                         {editTarget && (
                           <button type="button" onClick={() => setPreviewOpen(true)}
-                            className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-amber-400 hover:text-amber-600 text-sm font-medium transition-all">
+                            className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed text-sm font-medium transition-all"
+                            style={{ borderColor: "#3a3f47", color: "#6c757d" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#fcc419"; (e.currentTarget as HTMLButtonElement).style.color = "#fcc419"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#3a3f47"; (e.currentTarget as HTMLButtonElement).style.color = "#6c757d"; }}>
                             👁 תצוגה מקדימה של התפריט
                           </button>
                         )}
@@ -430,10 +481,10 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                       {/* Language */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">🌐 שפת תפריט ציבורי</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#adb5bd", marginBottom: 8 }}>🌐 שפת תפריט ציבורי</label>
                         <select value={form.language}
                           onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm">
+                          style={DARK_SELECT}>
                           <option value="he">עברית (he)</option>
                           <option value="en">English (en)</option>
                           <option value="ru">Русский (ru)</option>
@@ -443,13 +494,13 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                       {/* Welcome text */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">💬 טקסט ברוכים הבאים</label>
-                        <p className="text-xs text-gray-400 mb-2">יוצג בתפריט הציבורי מתחת לשם המסעדה</p>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#adb5bd", marginBottom: 8 }}>💬 טקסט ברוכים הבאים</label>
+                        <p className="text-xs mb-2" style={{ color: "#6c757d" }}>יוצג בתפריט הציבורי מתחת לשם המסעדה</p>
                         <textarea value={form.welcomeText}
                           onChange={e => setForm(f => ({ ...f, welcomeText: e.target.value }))}
                           rows={4}
                           placeholder="ברוכים הבאים אלינו..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm resize-y"
+                          style={{ ...DARK_INPUT, resize: "vertical" } as React.CSSProperties}
                           dir="auto"
                         />
                       </div>
@@ -460,27 +511,23 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   {activeTab === "orders" && (
                     <>
                       {/* Orders toggle */}
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: "#1a1d23", border: "1px solid #2d3239" }}>
                         <div>
-                          <div className="font-semibold text-gray-800 text-sm">הזמנות מהתפריט</div>
-                          <div className="text-xs text-gray-500 mt-0.5">לקוחות יוכלו להזמין ישירות מהתפריט</div>
+                          <div className="font-semibold text-sm" style={{ color: "#e9ecef" }}>הזמנות מהתפריט</div>
+                          <div className="text-xs mt-0.5" style={{ color: "#6c757d" }}>לקוחות יוכלו להזמין ישירות מהתפריט</div>
                         </div>
                         <button type="button"
                           onClick={() => setForm(f => ({ ...f, ordersEnabled: !f.ordersEnabled }))}
-                          className={cn(
-                            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                            form.ordersEnabled ? "bg-amber-500" : "bg-gray-300"
-                          )}>
-                          <span className={cn(
-                            "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
-                            form.ordersEnabled ? "translate-x-1" : "translate-x-6"
-                          )} />
+                          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                          style={{ background: form.ordersEnabled ? "#fcc419" : "#3a3f47" }}>
+                          <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                            style={{ transform: form.ordersEnabled ? "translateX(4px)" : "translateX(24px)" }} />
                         </button>
                       </div>
 
                       {/* KDS View */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">תצוגת מטבח מועדפת (KDS)</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#adb5bd", marginBottom: 8 }}>תצוגת מטבח מועדפת (KDS)</label>
                         <div className="grid grid-cols-2 gap-2">
                           {[
                             { value: "DASHBOARD",    label: "תצוגת שולחן", icon: "📺", desc: "קלאסי, לפי שולחן" },
@@ -492,15 +539,14 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                             return (
                               <button key={opt.value} type="button"
                                 onClick={() => setForm(f => ({ ...f, kdsView: opt.value }))}
-                                className={cn(
-                                  "flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all",
-                                  isActive
-                                    ? "border-amber-500 bg-amber-50"
-                                    : "border-gray-200 hover:border-amber-300 hover:bg-amber-50/50"
-                                )}>
+                                className="flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all"
+                                style={{
+                                  background: isActive ? "#2d1f00" : "#1a1d23",
+                                  borderColor: isActive ? "#fcc419" : "#2d3239",
+                                }}>
                                 <span className="text-xl mb-1">{opt.icon}</span>
-                                <span className={cn("text-sm font-semibold", isActive ? "text-amber-800" : "text-gray-700")}>{opt.label}</span>
-                                <span className="text-xs text-gray-400 mt-0.5">{opt.desc}</span>
+                                <span className="text-sm font-semibold" style={{ color: isActive ? "#fcc419" : "#e9ecef" }}>{opt.label}</span>
+                                <span className="text-xs mt-0.5" style={{ color: "#6c757d" }}>{opt.desc}</span>
                               </button>
                             );
                           })}
@@ -511,34 +557,40 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                   {/* ── Tab: מנוי ── */}
                   {activeTab === "subscription" && (
-                    <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+                    <div className="rounded-xl p-4 space-y-3" style={{ background: "#1a1d23", border: "1px solid #2d3239", borderRadius: 12 }}>
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-gray-700">📅 תוקף מנוי</label>
+                        <label className="text-sm font-semibold" style={{ color: "#adb5bd" }}>📅 תוקף מנוי</label>
                         <button type="button" onClick={setTrial}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border-2 border-amber-400 text-amber-700 hover:bg-amber-50 transition-colors">
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border-2 transition-colors"
+                          style={{ borderColor: "#fcc419", color: "#fcc419", background: "transparent" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(252,196,25,0.1)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
                           🎁 30 ימים ניסיון
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">מתאריך</label>
+                          <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4 }}>מתאריך</label>
                           <input type="date" value={form.subscriptionFrom}
                             onChange={e => setForm({ ...form, subscriptionFrom: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                            style={DARK_INPUT}
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">עד תאריך</label>
+                          <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4 }}>עד תאריך</label>
                           <input type="date" value={form.subscriptionTo}
                             onChange={e => setForm({ ...form, subscriptionTo: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                            style={DARK_INPUT}
                           />
                         </div>
                       </div>
                       {(form.subscriptionFrom || form.subscriptionTo) && (
                         <button type="button"
                           onClick={() => setForm({ ...form, subscriptionFrom: "", subscriptionTo: "" })}
-                          className="text-xs text-gray-400 hover:text-red-500 underline">
+                          className="text-xs underline transition-colors"
+                          style={{ color: "#6c757d" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#ff6b6b"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6c757d"; }}>
                           הסר תאריכים (ללא הגבלת תוקף)
                         </button>
                       )}
@@ -549,14 +601,15 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                 {/* Form footer */}
                 <div className="px-6 pb-5 flex gap-3">
-                  {error && <p className="text-red-600 text-sm flex-1">{error}</p>}
+                  {error && <p className="text-sm flex-1" style={{ color: "#ff6b6b" }}>{error}</p>}
                   <button type="submit" disabled={loading}
                     className="flex-1 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-50 transition-opacity hover:opacity-80"
                     style={BTN_PRIMARY}>
                     {loading ? "שומר..." : editTarget ? "שמור שינויים" : "צור מסעדה"}
                   </button>
                   <button type="button" onClick={() => setShowForm(false)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium text-sm">
+                    className="flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors"
+                    style={{ background: "#2d3239", color: "#e9ecef", border: "1px solid #3a3f47" }}>
                     ביטול
                   </button>
                 </div>
@@ -569,13 +622,14 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       {/* ── Delete confirmation modal ── */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">🗑️</div>
-            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">מחיקת מסעדה</h3>
-            <p className="text-sm text-gray-500 text-center mb-4">
-              פעולה זו תמחק לצמיתות את <strong>{deleteConfirm.name}</strong> עם כל התפריטים, הפריטים וההזמנות שלה.
+          <div className="shadow-2xl w-full max-w-sm p-6" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"
+              style={{ background: "rgba(255,107,107,0.15)" }}>🗑️</div>
+            <h3 className="text-lg font-bold text-center mb-1" style={{ color: "#e9ecef" }}>מחיקת מסעדה</h3>
+            <p className="text-sm text-center mb-4" style={{ color: "#adb5bd" }}>
+              פעולה זו תמחק לצמיתות את <strong style={{ color: "#e9ecef" }}>{deleteConfirm.name}</strong> עם כל התפריטים, הפריטים וההזמנות שלה.
             </p>
-            <p className="text-xs font-semibold text-gray-600 mb-2">
+            <p className="text-xs font-semibold mb-2" style={{ color: "#adb5bd" }}>
               כדי לאשר, הקלד את שם המסעדה:
             </p>
             <input
@@ -583,7 +637,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
               value={deleteInput}
               onChange={e => setDeleteInput(e.target.value)}
               placeholder={deleteConfirm.name}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mb-4"
+              style={{ ...DARK_INPUT, marginBottom: 16 }}
               autoFocus
               onKeyDown={e => { if (e.key === "Enter" && deleteInput === deleteConfirm.name) confirmDelete(); }}
             />
@@ -591,12 +645,16 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
               <button
                 onClick={confirmDelete}
                 disabled={deleteInput !== deleteConfirm.name}
-                className="flex-1 py-2.5 rounded-lg font-semibold text-sm text-white bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                className="flex-1 py-2.5 rounded-lg font-semibold text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                style={{ background: "#ff6b6b" }}
+                onMouseEnter={e => { if (deleteInput === deleteConfirm.name) (e.currentTarget as HTMLButtonElement).style.background = "#e05555"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#ff6b6b"; }}>
                 מחק לצמיתות
               </button>
               <button
                 onClick={() => { setDeleteConfirm(null); setDeleteInput(""); }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium text-sm">
+                className="flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors"
+                style={{ background: "#2d3239", color: "#e9ecef", border: "1px solid #3a3f47" }}>
                 ביטול
               </button>
             </div>
@@ -681,27 +739,27 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       )}
 
       {/* ── Restaurants table ── */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: "1px solid #e8ecf1" }}>
+      <div className="overflow-hidden" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12 }}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 text-right">
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">מסעדה</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">פרטי קשר</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סטטיסטיקות</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">נוצר</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">סטטוס</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">מנוי</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">פעולות</th>
+              <tr className="text-right" style={{ background: "#1a1d23" }}>
+                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: "#6c757d" }}>מסעדה</th>
+                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: "#6c757d" }}>פרטי קשר</th>
+                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: "#6c757d" }}>סטטיסטיקות</th>
+                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: "#6c757d" }}>נוצר</th>
+                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: "#6c757d" }}>סטטוס</th>
+                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: "#6c757d" }}>מנוי</th>
+                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: "#6c757d" }}>פעולות</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {restaurants.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-16 text-center">
                     <div className="text-4xl mb-3">🍽️</div>
-                    <div className="text-gray-500 font-medium mb-1">אין מסעדות עדיין</div>
-                    <div className="text-gray-400 text-sm mb-4">לחץ על "הוסף מסעדה" כדי להתחיל</div>
+                    <div className="font-medium mb-1" style={{ color: "#adb5bd" }}>אין מסעדות עדיין</div>
+                    <div className="text-sm mb-4" style={{ color: "#6c757d" }}>לחץ על &quot;הוסף מסעדה&quot; כדי להתחיל</div>
                     <button onClick={openCreate}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
                       style={BTN_PRIMARY}>
@@ -711,67 +769,99 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                 </tr>
               ) : (
                 restaurants.map(r => (
-                  <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={r.id} className="transition-colors"
+                    style={{ borderTop: "1px solid #2d3239", background: "#212529" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#2a2e35"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#212529"; }}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {r.logo ? (
-                          <img src={r.logo} alt={r.name} className="w-10 h-10 rounded-xl object-cover border shrink-0" />
+                          <img src={r.logo} alt={r.name} className="w-10 h-10 rounded-xl object-cover shrink-0"
+                            style={{ border: "1px solid #2d3239" }} />
                         ) : (
-                          <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-700 font-bold shrink-0">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0"
+                            style={{ background: "linear-gradient(135deg, #fcc419, #e67700)", color: "#fff" }}>
                             {r.name[0]}
                           </div>
                         )}
                         <div>
-                          <div className="font-medium text-gray-900">{r.name}</div>
-                          {r.address && <div className="text-xs text-gray-400">{r.address}</div>}
+                          <div className="font-medium" style={{ color: "#e9ecef" }}>{r.name}</div>
+                          {r.address && <div className="text-xs" style={{ color: "#6c757d" }}>{r.address}</div>}
                           <div className="flex items-center gap-2 mt-0.5">
                             {r.website && (
                               <a href={r.website} target="_blank" rel="noopener noreferrer"
-                                className="text-xs text-blue-400 hover:text-blue-600 transition-colors" dir="ltr">🌐 אתר</a>
+                                className="text-xs transition-colors" dir="ltr" style={{ color: "#339af0" }}>🌐 אתר</a>
                             )}
                             {r.locationUrl && (
                               <a href={r.locationUrl} target="_blank" rel="noopener noreferrer"
-                                className="text-xs text-amber-600 hover:text-amber-800 transition-colors font-medium">📍 מיקום</a>
+                                className="text-xs font-medium transition-colors" style={{ color: "#fcc419" }}>📍 מיקום</a>
                             )}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 space-y-0.5">
+                    <td className="px-6 py-4 text-sm space-y-0.5" style={{ color: "#adb5bd" }}>
                       {r.email && <div dir="ltr">{r.email}</div>}
                       {r.phone && <div dir="ltr">📞 {r.phone}</div>}
                       {r.phone2 && <div dir="ltr">📞 {r.phone2}</div>}
                       {r.orderPhone && <div dir="ltr">🛒 {r.orderPhone}</div>}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm" style={{ color: "#adb5bd" }}>
                       <div>{r._count.menus} תפריטים</div>
                       <div>{r._count.orders} הזמנות</div>
                       <div>{r._count.restaurantUsers} משתמשים</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap" style={{ color: "#adb5bd" }}>{formatDate(r.createdAt)}</td>
                     <td className="px-6 py-4">
-                      <span className={cn("text-xs px-2.5 py-1 rounded-full font-medium",
-                        r.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
+                      <span style={{
+                        ...(r.isActive
+                          ? { background: "rgba(81,207,102,0.15)", color: "#51cf66" }
+                          : { background: "rgba(108,117,125,0.15)", color: "#6c757d" }),
+                        padding: "3px 10px",
+                        borderRadius: 999,
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}>
                         {r.isActive ? "פעיל" : "לא פעיל"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {(() => { const s = getSubscriptionStatus(r); return (
-                        <span className={cn("text-xs px-2.5 py-1 rounded-full font-medium", s.cls)}>{s.label}</span>
-                      ); })()}
+                      {(() => {
+                        const s = getSubscriptionStatus(r);
+                        return (
+                          <span style={{ ...s.style, fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 999 }}>
+                            {s.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => openEdit(r)} title="ערוך" className="text-base hover:scale-110 transition-transform">✏️</button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEdit(r)} title="ערוך" style={ACTION_BTN}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fcc419"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#adb5bd"; }}>
+                          ✏️
+                        </button>
                         <a href={`/menu/${r.id}`} target="_blank" rel="noopener noreferrer"
-                          title="תפריט ציבורי" className="text-base hover:scale-110 transition-transform inline-block">🌐</a>
+                          title="תפריט ציבורי"
+                          style={{ ...ACTION_BTN, textDecoration: "none" } as React.CSSProperties}
+                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#339af0"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#adb5bd"; }}>
+                          🌐
+                        </a>
                         <button onClick={() => toggleActive(r.id, r.isActive)} title={r.isActive ? "השבת" : "הפעל"}
-                          className="text-base hover:scale-110 transition-transform">
+                          style={ACTION_BTN}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fcc419"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#adb5bd"; }}>
                           {r.isActive ? "⏸️" : "▶️"}
                         </button>
                         <button
                           onClick={() => { setDeleteConfirm({ id: r.id, name: r.name }); setDeleteInput(""); }}
-                          title="מחק" className="text-base hover:scale-110 transition-transform">🗑️</button>
+                          title="מחק" style={ACTION_BTN}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#ff6b6b"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#ff6b6b"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#adb5bd"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#3a3f47"; }}>
+                          🗑️
+                        </button>
                       </div>
                     </td>
                   </tr>
