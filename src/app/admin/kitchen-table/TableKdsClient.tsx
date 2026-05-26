@@ -327,7 +327,7 @@ export default function TableKdsClient({
   const [restaurantId, setRestaurantId] = useState(defaultRestaurantId ?? "");
   const [orders, setOrders]             = useState<Order[]>([]);
   const [tick, setTick]                 = useState(0);
-  const [lastCount, setLastCount]       = useState(0);
+  const lastCountRef                    = useRef(0);          // ← ref, not state — avoids fetchOrders instability
   const [newAlert, setNewAlert]         = useState(false);
   const [allReadyAlert, setAllReadyAlert] = useState(false);
   const [fullscreen, setFullscreen]     = useState(false);
@@ -353,48 +353,66 @@ export default function TableKdsClient({
   const fetchOrders = useCallback(async () => {
     const params = new URLSearchParams({ activeOnly: "1" });
     if (restaurantId) params.set("restaurantId", restaurantId);
-    const res = await fetch(`/api/admin/orders?${params}`);
-    if (!res.ok) return;
-    const data: Order[] = await res.json();
-    // KDS shows only CONFIRMED+ orders
-    const active = data.filter(o =>
-      o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "PENDING"
-    );
-    if (active.length > lastCount && lastCount > 0) {
-      setNewAlert(true);
-      setTimeout(() => setNewAlert(false), 4000);
-      try {
-        audioCtx.current ??= new AudioContext();
-        const osc = audioCtx.current.createOscillator();
-        const gain = audioCtx.current.createGain();
-        osc.connect(gain); gain.connect(audioCtx.current.destination);
-        osc.frequency.value = 880; gain.gain.setValueAtTime(0.4, audioCtx.current.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.current.currentTime + 0.5);
-        osc.start(); osc.stop(audioCtx.current.currentTime + 0.5);
-      } catch { /* audio blocked */ }
-    }
-    setLastCount(active.length);
-    setOrders(active);
-    setTick(t => t + 1);
-    setCountdown(60);
-  }, [restaurantId, lastCount]);
+    try {
+      const res = await fetch(`/api/admin/orders?${params}`);
+      if (!res.ok) return;
+      const data: Order[] = await res.json();
+      // KDS shows only CONFIRMED+ orders
+      const active = data.filter(o =>
+        o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "PENDING"
+      );
+      if (active.length > lastCountRef.current && lastCountRef.current > 0) {
+        setNewAlert(true);
+        setTimeout(() => setNewAlert(false), 4000);
+        try {
+          audioCtx.current ??= new AudioContext();
+          const osc = audioCtx.current.createOscillator();
+          const gain = audioCtx.current.createGain();
+          osc.connect(gain); gain.connect(audioCtx.current.destination);
+          osc.frequency.value = 880; gain.gain.setValueAtTime(0.4, audioCtx.current.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.current.currentTime + 0.5);
+          osc.start(); osc.stop(audioCtx.current.currentTime + 0.5);
+        } catch { /* audio blocked */ }
+      }
+      lastCountRef.current = active.length;
+      setOrders(active);
+      setTick(t => t + 1);
+      setCountdown(60);
+    } catch { /* network error — will retry on next interval */ }
+  }, [restaurantId]);    // ← only restaurantId, no lastCount
 
-  useEffect(() => { if (restaurantId) fetchOrders(); }, [restaurantId]);
+  useEffect(() => { if (restaurantId) fetchOrders(); }, [restaurantId, fetchOrders]);
 
-  // SSE real-time updates
+  // SSE real-time updates — only reconnects when restaurantId changes
   useEffect(() => {
     if (!restaurantId) return;
-    const url = `/api/admin/orders/stream?restaurantId=${restaurantId}`;
-    const es = new EventSource(url);
-    es.onmessage = () => { fetchOrders(); };
-    es.onerror = () => { es.close(); };
-    return () => es.close();
+    let es: EventSource;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    function connect() {
+      es = new EventSource(`/api/admin/orders/stream?restaurantId=${restaurantId}`);
+      es.onmessage = () => { fetchOrders(); };
+      es.onerror = () => {
+        es.close();
+        // Auto-reconnect after 5 s
+        reconnectTimer = setTimeout(connect, 5000);
+      };
+    }
+    connect();
+    return () => { es?.close(); clearTimeout(reconnectTimer); };
   }, [restaurantId, fetchOrders]);
 
+  // Countdown + clock — stable interval, no fetchOrders dependency
   useEffect(() => {
     const interval = setInterval(() => {
-      setCountdown(c => { if (c <= 1) { fetchOrders(); return 60; } return c - 1; });
       setNow(new Date());
+      setCountdown(c => {
+        if (c <= 1) {
+          fetchOrders();
+          return 60;
+        }
+        return c - 1;
+      });
     }, 1000);
     return () => clearInterval(interval);
   }, [fetchOrders]);

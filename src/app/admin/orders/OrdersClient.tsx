@@ -618,39 +618,63 @@ export default function OrdersClient({
   const [tableLayouts, setTableLayouts]     = useState<TableLayout[]>([]);
   const knownOrderIds = useRef<Set<string>>(new Set(initialOrders.map(o => o.id)));
 
+  // Use refs for values read inside the callback but shouldn't recreate it
+  const filterRef      = useRef(filter);
+  const dateFromRef    = useRef(dateFrom);
+  const dateToRef      = useRef(dateTo);
+  const soundEnabledRef = useRef(soundEnabled);
+  useEffect(() => { filterRef.current = filter; }, [filter]);
+  useEffect(() => { dateFromRef.current = dateFrom; }, [dateFrom]);
+  useEffect(() => { dateToRef.current = dateTo; }, [dateTo]);
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     const params = new URLSearchParams();
     if (restaurantId) params.set("restaurantId", restaurantId);
-    if (filter === "active") params.set("activeOnly", "1");
-    if (dateFrom) params.set("from", new Date(dateFrom).toISOString());
-    if (dateTo) params.set("to", new Date(dateTo).toISOString());
+    if (filterRef.current === "active") params.set("activeOnly", "1");
+    if (dateFromRef.current) params.set("from", new Date(dateFromRef.current).toISOString());
+    if (dateToRef.current) params.set("to", new Date(dateToRef.current).toISOString());
     try {
       const res = await fetch(`/api/admin/orders?${params}`);
       if (res.ok) {
         const newOrders: Order[] = await res.json();
         // Sound alert for new PENDING orders
         const newPending = newOrders.filter(o => o.status === "PENDING" && !knownOrderIds.current.has(o.id));
-        if (newPending.length > 0 && soundEnabled) playBeep();
+        if (newPending.length > 0 && soundEnabledRef.current) playBeep();
         newOrders.forEach(o => knownOrderIds.current.add(o.id));
         setOrders(newOrders);
         setLastRefresh(new Date());
       }
-    } catch { /* ignore */ }
+    } catch { /* network error, will retry */ }
     if (showSpinner) setRefreshing(false);
-  }, [restaurantId, filter, dateFrom, dateTo, soundEnabled]);
+  }, [restaurantId]);    // ← only restaurantId; filter/dates/sound via refs
 
+  // Fetch fresh data when filter/date params change (without recreating SSE)
+  useEffect(() => { fetchOrders(); }, [fetchOrders, filter, dateFrom, dateTo]);
+
+  // SSE — only reconnects when restaurantId changes
   useEffect(() => {
     fetchOrders();
-    // SSE — instant refresh on any order change
     const sseUrl = `/api/admin/orders/stream${restaurantId ? `?restaurantId=${restaurantId}` : ""}`;
-    const es = new EventSource(sseUrl);
-    es.onmessage = () => { fetchOrders(); };
-    es.onerror   = () => { es.close(); };
-    // Fallback polling every 30s (SSE covers the fast path)
+    let es: EventSource;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    function connect() {
+      es = new EventSource(sseUrl);
+      es.onmessage = () => { fetchOrders(); };
+      es.onerror   = () => {
+        es.close();
+        // Auto-reconnect after 5 s
+        reconnectTimer = setTimeout(connect, 5000);
+      };
+    }
+    connect();
+
+    // Fallback polling every 30s
     const iv = setInterval(() => fetchOrders(), 30000);
-    return () => { es.close(); clearInterval(iv); };
-  }, [fetchOrders, restaurantId]);
+    return () => { es?.close(); clearTimeout(reconnectTimer); clearInterval(iv); };
+  }, [restaurantId, fetchOrders]);
 
   // Fetch table layout (seats per table) when restaurant changes
   useEffect(() => {

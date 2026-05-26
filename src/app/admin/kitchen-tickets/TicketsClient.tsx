@@ -335,7 +335,7 @@ export default function TicketsClient({
   const [restaurantId, setRestaurantId] = useState(defaultRestaurantId ?? "");
   const [orders, setOrders]             = useState<Order[]>([]);
   const [tick, setTick]                 = useState(0);
-  const [lastCount, setLastCount]       = useState(0);
+  const lastCountRef                    = useRef(0);
   const [newAlert, setNewAlert]         = useState(false);
   const [allReadyAlert, setAllReadyAlert] = useState(false);
   const [countdown, setCountdown]       = useState(60);
@@ -368,7 +368,7 @@ export default function TicketsClient({
     const active = data.filter(o =>
       o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "PENDING"
     );
-    if (active.length > lastCount && lastCount > 0) {
+    if (active.length > lastCountRef.current && lastCountRef.current > 0) {
       setNewAlert(true);
       setTimeout(() => setNewAlert(false), 4000);
       try {
@@ -382,22 +382,26 @@ export default function TicketsClient({
         osc.start(); osc.stop(audioCtx.current.currentTime + 0.5);
       } catch { /* audio blocked */ }
     }
-    setLastCount(active.length);
+    lastCountRef.current = active.length;
     setOrders(active);
     setTick(t => t + 1);
     setCountdown(60);
-  }, [restaurantId, lastCount]);
+  }, [restaurantId]);    // ← stable, no lastCount dependency
 
-  useEffect(() => { if (restaurantId) fetchOrders(); }, [restaurantId]);
+  useEffect(() => { if (restaurantId) fetchOrders(); }, [restaurantId, fetchOrders]);
 
-  // SSE real-time updates
+  // SSE real-time updates — auto-reconnect on error
   useEffect(() => {
     if (!restaurantId) return;
-    const url = `/api/admin/orders/stream?restaurantId=${restaurantId}`;
-    const es = new EventSource(url);
-    es.onmessage = () => { fetchOrders(); };
-    es.onerror = () => { es.close(); };
-    return () => es.close();
+    let es: EventSource;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+    function connect() {
+      es = new EventSource(`/api/admin/orders/stream?restaurantId=${restaurantId}`);
+      es.onmessage = () => { fetchOrders(); };
+      es.onerror = () => { es.close(); reconnectTimer = setTimeout(connect, 5000); };
+    }
+    connect();
+    return () => { es?.close(); clearTimeout(reconnectTimer); };
   }, [restaurantId, fetchOrders]);
 
   useEffect(() => {
