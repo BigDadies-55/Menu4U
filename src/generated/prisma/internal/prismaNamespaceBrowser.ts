@@ -61,6 +61,7 @@ export const ModelName = {
   Category: 'Category',
   Item: 'Item',
   Order: 'Order',
+  OrderCounter: 'OrderCounter',
   OrderStatusLog: 'OrderStatusLog',
   OrderItem: 'OrderItem',
   ItemModifierGroup: 'ItemModifierGroup',
@@ -253,6 +254,7 @@ export const OrderScalarFieldEnum = {
   customerName: 'customerName',
   customerPhone: 'customerPhone',
   status: 'status',
+  orderNumber: 'orderNumber',
   totalAmount: 'totalAmount',
   notes: 'notes',
   coversCount: 'coversCount',
@@ -262,6 +264,14 @@ export const OrderScalarFieldEnum = {
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const OrderCounterScalarFieldEnum = {
+  restaurantId: 'restaurantId',
+  counter: 'counter'
+} as const
+
+export type OrderCounterScalarFieldEnum = (typeof OrderCounterScalarFieldEnum)[keyof typeof OrderCounterScalarFieldEnum]
 
 
 export const OrderStatusLogScalarFieldEnum = {

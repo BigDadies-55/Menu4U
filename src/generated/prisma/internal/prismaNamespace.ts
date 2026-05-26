@@ -394,6 +394,7 @@ export const ModelName = {
   Category: 'Category',
   Item: 'Item',
   Order: 'Order',
+  OrderCounter: 'OrderCounter',
   OrderStatusLog: 'OrderStatusLog',
   OrderItem: 'OrderItem',
   ItemModifierGroup: 'ItemModifierGroup',
@@ -419,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1160,6 +1161,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.OrderCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.OrderCountAggregateOutputType> | number
+        }
+      }
+    }
+    OrderCounter: {
+      payload: Prisma.$OrderCounterPayload<ExtArgs>
+      fields: Prisma.OrderCounterFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.OrderCounterFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.OrderCounterFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>
+        }
+        findFirst: {
+          args: Prisma.OrderCounterFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.OrderCounterFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>
+        }
+        findMany: {
+          args: Prisma.OrderCounterFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>[]
+        }
+        create: {
+          args: Prisma.OrderCounterCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>
+        }
+        createMany: {
+          args: Prisma.OrderCounterCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.OrderCounterCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>[]
+        }
+        delete: {
+          args: Prisma.OrderCounterDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>
+        }
+        update: {
+          args: Prisma.OrderCounterUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>
+        }
+        deleteMany: {
+          args: Prisma.OrderCounterDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.OrderCounterUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.OrderCounterUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>[]
+        }
+        upsert: {
+          args: Prisma.OrderCounterUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderCounterPayload>
+        }
+        aggregate: {
+          args: Prisma.OrderCounterAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOrderCounter>
+        }
+        groupBy: {
+          args: Prisma.OrderCounterGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrderCounterGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.OrderCounterCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrderCounterCountAggregateOutputType> | number
         }
       }
     }
@@ -2106,6 +2181,7 @@ export const OrderScalarFieldEnum = {
   customerName: 'customerName',
   customerPhone: 'customerPhone',
   status: 'status',
+  orderNumber: 'orderNumber',
   totalAmount: 'totalAmount',
   notes: 'notes',
   coversCount: 'coversCount',
@@ -2115,6 +2191,14 @@ export const OrderScalarFieldEnum = {
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const OrderCounterScalarFieldEnum = {
+  restaurantId: 'restaurantId',
+  counter: 'counter'
+} as const
+
+export type OrderCounterScalarFieldEnum = (typeof OrderCounterScalarFieldEnum)[keyof typeof OrderCounterScalarFieldEnum]
 
 
 export const OrderStatusLogScalarFieldEnum = {
@@ -2520,6 +2604,7 @@ export type GlobalOmitConfig = {
   category?: Prisma.CategoryOmit
   item?: Prisma.ItemOmit
   order?: Prisma.OrderOmit
+  orderCounter?: Prisma.OrderCounterOmit
   orderStatusLog?: Prisma.OrderStatusLogOmit
   orderItem?: Prisma.OrderItemOmit
   itemModifierGroup?: Prisma.ItemModifierGroupOmit

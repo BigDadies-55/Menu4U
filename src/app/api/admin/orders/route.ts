@@ -71,6 +71,15 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Inline migrations
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "OrderCounter" (
+      "restaurantId" TEXT PRIMARY KEY,
+      "counter"      INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+
   const body = await req.json();
   const { restaurantId, tableNumber, notes, items } = body;
 
@@ -105,13 +114,25 @@ export async function POST(req: Request) {
     0
   );
 
+  // Get next order number for this restaurant (atomic)
+  const counterResult = await prisma.$queryRawUnsafe<{ counter: bigint }[]>(
+    `INSERT INTO "OrderCounter" ("restaurantId", "counter")
+     VALUES ($1, 1)
+     ON CONFLICT ("restaurantId") DO UPDATE SET "counter" = "OrderCounter"."counter" + 1
+     RETURNING "counter"`,
+    restaurantId
+  );
+  const orderNumber = Number(counterResult[0]?.counter ?? 1);
+
   // Waiter orders go directly to CONFIRMED; course 2+ items are held
-  const order = await prisma.order.create({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const order = await (prisma.order.create as any)({
     data: {
       restaurantId,
       tableNumber: tableNumber ?? null,
       notes: notes ?? null,
       totalAmount,
+      orderNumber,
       status: "CONFIRMED",        // ← skip PENDING
       orderSource: "WAITER",
       items: {

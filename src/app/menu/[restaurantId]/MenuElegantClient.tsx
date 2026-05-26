@@ -47,6 +47,7 @@ const ITEM_STATUS_COLOR: Record<string, string> = {
 type TableOrder = {
   id: string;
   status: string;
+  orderNumber: number | null;
   totalAmount: number;
   createdAt: string;
   notes: string | null;
@@ -279,6 +280,10 @@ export default function MenuElegantClient({
   const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
 
+  // Thank-you screen (shown when an order transitions to PAID)
+  const [showThankYou, setShowThankYou] = useState(false);
+  const prevOrderStatusesRef = useRef<Map<string, string>>(new Map());
+
   // Customer newsletter/updates registration
   const [regModalOpen,      setRegModalOpen]      = useState(false);
   const [regForm,           setRegForm]           = useState({ name: "", phone: "", email: "" });
@@ -329,7 +334,40 @@ export default function MenuElegantClient({
         url += `&phone=${encodeURIComponent(currentIdentity.phone)}`;
       }
       const res = await fetch(url);
-      if (res.ok) setMyOrders(await res.json());
+      if (res.ok) {
+        const fetchedOrders: TableOrder[] = await res.json();
+
+        // Detect PAID transitions — if any previously-active order is now PAID → thank-you
+        const prev = prevOrderStatusesRef.current;
+        let justPaid = false;
+        for (const order of fetchedOrders) {
+          const prevStatus = prev.get(order.id);
+          if (prevStatus && prevStatus !== "PAID" && order.status === "PAID") {
+            justPaid = true;
+          }
+        }
+        // Update ref with current statuses
+        const next = new Map<string, string>();
+        for (const order of fetchedOrders) { next.set(order.id, order.status); }
+        prevOrderStatusesRef.current = next;
+
+        setMyOrders(fetchedOrders);
+
+        if (justPaid) {
+          setShowThankYou(true);
+          setTimeout(() => {
+            setShowThankYou(false);
+            setCart([]);
+            setGuestIdentity(null);
+            try {
+              const guestKey = `menu4u_guest_${restaurant.id}_${tableNumber}`;
+              localStorage.removeItem(guestKey);
+            } catch { /* ignore */ }
+            prevOrderStatusesRef.current = new Map();
+            setElegantView("landing");
+          }, 4000);
+        }
+      }
     } finally {
       if (!silent) setMyOrdersLoading(false);
     }
@@ -1698,21 +1736,29 @@ export default function MenuElegantClient({
                 </div>
               ) : (
                 myOrders.map(order => {
-                  const statusColor = STATUS_COLOR[order.status] ?? "#999";
-                  const statusLabel = STATUS_LABEL[order.status] ?? order.status;
+                  const isPaid = order.status === "PAID";
+                  const statusColor = isPaid ? "#4ade80" : (STATUS_COLOR[order.status] ?? "#999");
+                  const statusLabel = isPaid ? "✓ שולם" : (STATUS_LABEL[order.status] ?? order.status);
                   return (
                     <div key={order.id} style={{
                       marginBottom: 14, borderRadius: 12, overflow: "hidden",
-                      border: `1.5px solid ${statusColor}44`,
-                      background: `${statusColor}0a`,
+                      border: isPaid ? "1.5px solid rgba(74,222,128,0.4)" : `1.5px solid ${statusColor}44`,
+                      background: isPaid ? "rgba(74,222,128,0.05)" : `${statusColor}0a`,
+                      opacity: isPaid ? 0.85 : 1,
                     }}>
                       <div style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
                         padding: "8px 14px",
-                        background: `${statusColor}18`,
-                        borderBottom: `1px solid ${statusColor}33`,
+                        background: isPaid ? "rgba(74,222,128,0.1)" : `${statusColor}18`,
+                        borderBottom: isPaid ? "1px solid rgba(74,222,128,0.25)" : `1px solid ${statusColor}33`,
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {order.orderNumber && (
+                            <span style={{
+                              fontSize: 13, fontWeight: 900, color: statusColor,
+                              fontFamily: "'Cinzel', serif", letterSpacing: "0.04em",
+                            }}>#{order.orderNumber}</span>
+                          )}
                           <span style={{ fontSize: 13, fontWeight: 700, color: statusColor }}>{statusLabel}</span>
                           {ordersView === "all" && order.customerName && (
                             <span style={{ fontSize: 11, color: "#C5A880", fontWeight: 600 }}>👤 {order.customerName}</span>
@@ -1720,47 +1766,54 @@ export default function MenuElegantClient({
                         </div>
                         <span style={{ fontSize: 12, color: "#fff", opacity: 0.5 }}>₪{order.totalAmount.toFixed(0)}</span>
                       </div>
-                      <div style={{ padding: "10px 14px" }}>
-                        {order.items.map(oi => {
-                          const iColor = ITEM_STATUS_COLOR[oi.itemStatus] ?? statusColor;
-                          const iLabel = ITEM_STATUS_LABEL[oi.itemStatus];
-                          return (
-                            <div key={oi.id} style={{
-                              display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
-                              padding: "6px 8px", borderRadius: 8,
-                              background: oi.itemStatus === "DONE" ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.03)",
-                            }}>
-                              <span style={{
-                                width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
-                                background: iColor, color: "#000",
-                                display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                              }}>{oi.quantity}</span>
-                              <div style={{ flex: 1 }}>
+                      {!isPaid && (
+                        <div style={{ padding: "10px 14px" }}>
+                          {order.items.map(oi => {
+                            const iColor = ITEM_STATUS_COLOR[oi.itemStatus] ?? statusColor;
+                            const iLabel = ITEM_STATUS_LABEL[oi.itemStatus];
+                            return (
+                              <div key={oi.id} style={{
+                                display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
+                                padding: "6px 8px", borderRadius: 8,
+                                background: oi.itemStatus === "DONE" ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.03)",
+                              }}>
                                 <span style={{
-                                  fontSize: 13, color: "#fff",
-                                  textDecoration: oi.itemStatus === "DONE" ? "line-through" : "none",
-                                  opacity: oi.itemStatus === "DONE" ? 0.5 : 1,
-                                }}>{oi.item.name}</span>
-                                {oi.notes && (
-                                  <div style={{ fontSize: 11, color: "#fff", opacity: 0.45, fontStyle: "italic" }}>{oi.notes}</div>
-                                )}
+                                  width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
+                                  background: iColor, color: "#000",
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                                }}>{oi.quantity}</span>
+                                <div style={{ flex: 1 }}>
+                                  <span style={{
+                                    fontSize: 13, color: "#fff",
+                                    textDecoration: oi.itemStatus === "DONE" ? "line-through" : "none",
+                                    opacity: oi.itemStatus === "DONE" ? 0.5 : 1,
+                                  }}>{oi.item.name}</span>
+                                  {oi.notes && (
+                                    <div style={{ fontSize: 11, color: "#fff", opacity: 0.45, fontStyle: "italic" }}>{oi.notes}</div>
+                                  )}
+                                </div>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 20,
+                                  background: iColor + "22", color: iColor, whiteSpace: "nowrap",
+                                }}>{iLabel}</span>
                               </div>
-                              <span style={{
-                                fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 20,
-                                background: iColor + "22", color: iColor, whiteSpace: "nowrap",
-                              }}>{iLabel}</span>
+                            );
+                          })}
+                          {order.notes && (
+                            <div style={{
+                              marginTop: 6, fontSize: 12, color: "#fff", opacity: 0.5,
+                              fontStyle: "italic", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 6,
+                            }}>
+                              💬 {order.notes}
                             </div>
-                          );
-                        })}
-                        {order.notes && (
-                          <div style={{
-                            marginTop: 6, fontSize: 12, color: "#fff", opacity: 0.5,
-                            fontStyle: "italic", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 6,
-                          }}>
-                            💬 {order.notes}
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
+                      {isPaid && (
+                        <div style={{ padding: "8px 14px", fontSize: 12, color: "#4ade80", opacity: 0.7, textAlign: "center" }}>
+                          {order.items.length} פריטים · ₪{order.totalAmount.toFixed(0)}
+                        </div>
+                      )}
                     </div>
                   );
                 })
@@ -1933,6 +1986,20 @@ export default function MenuElegantClient({
               })()}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Thank-you / payment received overlay ── */}
+      {showThankYou && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(10,9,8,0.97)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 20,
+        }}>
+          <div style={{ fontSize: 64 }}>🙏</div>
+          <div style={{ fontFamily: "'Cinzel', serif", fontSize: 28, color: "#C5A880", fontWeight: 700 }}>תודה רבה</div>
+          <div style={{ color: "#9e9e9e", fontSize: 16 }}>התשלום התקבל. נשמח לראותך שוב!</div>
         </div>
       )}
 

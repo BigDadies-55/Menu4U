@@ -14,17 +14,19 @@ export async function GET(
     return NextResponse.json({ error: "Missing table" }, { status: 400 });
   }
 
-  const orders = await prisma.order.findMany({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const orders = await (prisma.order.findMany as any)({
     where: {
       restaurantId,
       tableNumber,
-      status: { notIn: ["DELIVERED", "CANCELLED", "PAID"] },
+      status: { notIn: ["CANCELLED"] },
       ...(phone ? { customerPhone: phone } : {}),
     },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       status: true,
+      orderNumber: true,
       totalAmount: true,
       createdAt: true,
       notes: true,

@@ -23,6 +23,7 @@ type Order = {
   id: string;
   tableNumber: string | null;
   status: string;
+  orderNumber?: number | null;
   totalAmount: number;
   notes: string | null;
   createdAt: string;
@@ -450,6 +451,11 @@ function TableCard({
                 <span style={{ fontSize: 11, fontWeight: 700, flexShrink: 0, color: orderStatusColor }}>
                   {orderStatusLabel}
                 </span>
+                {order.orderNumber != null && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: D.amber, flexShrink: 0 }}>
+                    #{order.orderNumber}
+                  </span>
+                )}
                 <span style={{ fontSize: 11, color: D.muted, flexShrink: 0 }}>
                   {order.items.length} מנות · ₪{order.totalAmount.toFixed(0)} · {timeSince(order.createdAt)}
                 </span>

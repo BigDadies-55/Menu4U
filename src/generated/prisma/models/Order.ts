@@ -27,11 +27,13 @@ export type AggregateOrder = {
 }
 
 export type OrderAvgAggregateOutputType = {
+  orderNumber: number | null
   totalAmount: number | null
   coversCount: number | null
 }
 
 export type OrderSumAggregateOutputType = {
+  orderNumber: number | null
   totalAmount: number | null
   coversCount: number | null
 }
@@ -43,6 +45,7 @@ export type OrderMinAggregateOutputType = {
   customerName: string | null
   customerPhone: string | null
   status: $Enums.OrderStatus | null
+  orderNumber: number | null
   totalAmount: number | null
   notes: string | null
   coversCount: number | null
@@ -58,6 +61,7 @@ export type OrderMaxAggregateOutputType = {
   customerName: string | null
   customerPhone: string | null
   status: $Enums.OrderStatus | null
+  orderNumber: number | null
   totalAmount: number | null
   notes: string | null
   coversCount: number | null
@@ -73,6 +77,7 @@ export type OrderCountAggregateOutputType = {
   customerName: number
   customerPhone: number
   status: number
+  orderNumber: number
   totalAmount: number
   notes: number
   coversCount: number
@@ -84,11 +89,13 @@ export type OrderCountAggregateOutputType = {
 
 
 export type OrderAvgAggregateInputType = {
+  orderNumber?: true
   totalAmount?: true
   coversCount?: true
 }
 
 export type OrderSumAggregateInputType = {
+  orderNumber?: true
   totalAmount?: true
   coversCount?: true
 }
@@ -100,6 +107,7 @@ export type OrderMinAggregateInputType = {
   customerName?: true
   customerPhone?: true
   status?: true
+  orderNumber?: true
   totalAmount?: true
   notes?: true
   coversCount?: true
@@ -115,6 +123,7 @@ export type OrderMaxAggregateInputType = {
   customerName?: true
   customerPhone?: true
   status?: true
+  orderNumber?: true
   totalAmount?: true
   notes?: true
   coversCount?: true
@@ -130,6 +139,7 @@ export type OrderCountAggregateInputType = {
   customerName?: true
   customerPhone?: true
   status?: true
+  orderNumber?: true
   totalAmount?: true
   notes?: true
   coversCount?: true
@@ -232,6 +242,7 @@ export type OrderGroupByOutputType = {
   customerName: string | null
   customerPhone: string | null
   status: $Enums.OrderStatus
+  orderNumber: number | null
   totalAmount: number
   notes: string | null
   coversCount: number | null
@@ -270,6 +281,7 @@ export type OrderWhereInput = {
   customerName?: Prisma.StringNullableFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableFilter<"Order"> | string | null
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  orderNumber?: Prisma.IntNullableFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatFilter<"Order"> | number
   notes?: Prisma.StringNullableFilter<"Order"> | string | null
   coversCount?: Prisma.IntNullableFilter<"Order"> | number | null
@@ -288,6 +300,7 @@ export type OrderOrderByWithRelationInput = {
   customerName?: Prisma.SortOrderInput | Prisma.SortOrder
   customerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
+  orderNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   coversCount?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -309,6 +322,7 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   customerName?: Prisma.StringNullableFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableFilter<"Order"> | string | null
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  orderNumber?: Prisma.IntNullableFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatFilter<"Order"> | number
   notes?: Prisma.StringNullableFilter<"Order"> | string | null
   coversCount?: Prisma.IntNullableFilter<"Order"> | number | null
@@ -327,6 +341,7 @@ export type OrderOrderByWithAggregationInput = {
   customerName?: Prisma.SortOrderInput | Prisma.SortOrder
   customerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
+  orderNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   coversCount?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -350,6 +365,7 @@ export type OrderScalarWhereWithAggregatesInput = {
   customerName?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   status?: Prisma.EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
+  orderNumber?: Prisma.IntNullableWithAggregatesFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatWithAggregatesFilter<"Order"> | number
   notes?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   coversCount?: Prisma.IntNullableWithAggregatesFilter<"Order"> | number | null
@@ -364,6 +380,7 @@ export type OrderCreateInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -382,6 +399,7 @@ export type OrderUncheckedCreateInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -398,6 +416,7 @@ export type OrderUpdateInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -416,6 +435,7 @@ export type OrderUncheckedUpdateInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -433,6 +453,7 @@ export type OrderCreateManyInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -447,6 +468,7 @@ export type OrderUpdateManyMutationInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -462,6 +484,7 @@ export type OrderUncheckedUpdateManyInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -487,6 +510,7 @@ export type OrderCountOrderByAggregateInput = {
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  orderNumber?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   coversCount?: Prisma.SortOrder
@@ -496,6 +520,7 @@ export type OrderCountOrderByAggregateInput = {
 }
 
 export type OrderAvgOrderByAggregateInput = {
+  orderNumber?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   coversCount?: Prisma.SortOrder
 }
@@ -507,6 +532,7 @@ export type OrderMaxOrderByAggregateInput = {
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  orderNumber?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   coversCount?: Prisma.SortOrder
@@ -522,6 +548,7 @@ export type OrderMinOrderByAggregateInput = {
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  orderNumber?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   coversCount?: Prisma.SortOrder
@@ -531,6 +558,7 @@ export type OrderMinOrderByAggregateInput = {
 }
 
 export type OrderSumOrderByAggregateInput = {
+  orderNumber?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   coversCount?: Prisma.SortOrder
 }
@@ -620,6 +648,7 @@ export type OrderCreateWithoutRestaurantInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -636,6 +665,7 @@ export type OrderUncheckedCreateWithoutRestaurantInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -682,6 +712,7 @@ export type OrderScalarWhereInput = {
   customerName?: Prisma.StringNullableFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableFilter<"Order"> | string | null
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  orderNumber?: Prisma.IntNullableFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatFilter<"Order"> | number
   notes?: Prisma.StringNullableFilter<"Order"> | string | null
   coversCount?: Prisma.IntNullableFilter<"Order"> | number | null
@@ -696,6 +727,7 @@ export type OrderCreateWithoutStatusLogsInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -713,6 +745,7 @@ export type OrderUncheckedCreateWithoutStatusLogsInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -744,6 +777,7 @@ export type OrderUpdateWithoutStatusLogsInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -761,6 +795,7 @@ export type OrderUncheckedUpdateWithoutStatusLogsInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -776,6 +811,7 @@ export type OrderCreateWithoutItemsInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -793,6 +829,7 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -824,6 +861,7 @@ export type OrderUpdateWithoutItemsInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -841,6 +879,7 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -856,6 +895,7 @@ export type OrderCreateManyRestaurantInput = {
   customerName?: string | null
   customerPhone?: string | null
   status?: $Enums.OrderStatus
+  orderNumber?: number | null
   totalAmount: number
   notes?: string | null
   coversCount?: number | null
@@ -870,6 +910,7 @@ export type OrderUpdateWithoutRestaurantInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -886,6 +927,7 @@ export type OrderUncheckedUpdateWithoutRestaurantInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -902,6 +944,7 @@ export type OrderUncheckedUpdateManyWithoutRestaurantInput = {
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coversCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -957,6 +1000,7 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   customerName?: boolean
   customerPhone?: boolean
   status?: boolean
+  orderNumber?: boolean
   totalAmount?: boolean
   notes?: boolean
   coversCount?: boolean
@@ -976,6 +1020,7 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   customerName?: boolean
   customerPhone?: boolean
   status?: boolean
+  orderNumber?: boolean
   totalAmount?: boolean
   notes?: boolean
   coversCount?: boolean
@@ -992,6 +1037,7 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   customerName?: boolean
   customerPhone?: boolean
   status?: boolean
+  orderNumber?: boolean
   totalAmount?: boolean
   notes?: boolean
   coversCount?: boolean
@@ -1008,6 +1054,7 @@ export type OrderSelectScalar = {
   customerName?: boolean
   customerPhone?: boolean
   status?: boolean
+  orderNumber?: boolean
   totalAmount?: boolean
   notes?: boolean
   coversCount?: boolean
@@ -1016,7 +1063,7 @@ export type OrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "status" | "totalAmount" | "notes" | "coversCount" | "orderSource" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "status" | "orderNumber" | "totalAmount" | "notes" | "coversCount" | "orderSource" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
@@ -1044,6 +1091,7 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     customerName: string | null
     customerPhone: string | null
     status: $Enums.OrderStatus
+    orderNumber: number | null
     totalAmount: number
     notes: string | null
     coversCount: number | null
@@ -1482,6 +1530,7 @@ export interface OrderFieldRefs {
   readonly customerName: Prisma.FieldRef<"Order", 'String'>
   readonly customerPhone: Prisma.FieldRef<"Order", 'String'>
   readonly status: Prisma.FieldRef<"Order", 'OrderStatus'>
+  readonly orderNumber: Prisma.FieldRef<"Order", 'Int'>
   readonly totalAmount: Prisma.FieldRef<"Order", 'Float'>
   readonly notes: Prisma.FieldRef<"Order", 'String'>
   readonly coversCount: Prisma.FieldRef<"Order", 'Int'>

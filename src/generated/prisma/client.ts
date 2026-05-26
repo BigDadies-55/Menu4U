@@ -92,6 +92,11 @@ export type Item = Prisma.ItemModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model OrderCounter
+ * 
+ */
+export type OrderCounter = Prisma.OrderCounterModel
+/**
  * Model OrderStatusLog
  * 
  */

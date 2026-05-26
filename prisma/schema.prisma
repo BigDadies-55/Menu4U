@@ -118,6 +118,7 @@ model Restaurant {
   menuViews       MenuView[]
   tableSessions   TableSession[]
   customers       Customer[]
+  orderCounter    OrderCounter?
 }
 
 model RestaurantUser {
@@ -198,6 +199,7 @@ model Order {
   customerName  String?
   customerPhone String?
   status        OrderStatus @default(PENDING)
+  orderNumber   Int?
   totalAmount   Float
   notes         String?
   coversCount   Int?                              // כמות סועדים בשולחן
@@ -208,6 +210,12 @@ model Order {
   restaurant  Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   items       OrderItem[]
   statusLogs  OrderStatusLog[]
+}
+
+model OrderCounter {
+  restaurantId String @id
+  counter      Int    @default(0)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
 
 model OrderStatusLog {
