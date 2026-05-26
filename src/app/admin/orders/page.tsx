@@ -12,6 +12,17 @@ export default async function OrdersPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
 
+  // Ensure orderNumber column + counter table exist before querying
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "OrderCounter" (
+        "restaurantId" TEXT PRIMARY KEY,
+        "counter"      INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+  } catch { /* ignore */ }
+
   const role = session.user.role;
   const userId = session.user.id;
   const isSuperAdmin = role === "SUPER_ADMIN";

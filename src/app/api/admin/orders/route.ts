@@ -8,6 +8,9 @@ export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Ensure orderNumber column exists before SELECT
+  try { await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`); } catch { /* ignore */ }
+
   const { searchParams } = new URL(req.url);
   const restaurantId = searchParams.get("restaurantId");
   const activeOnly = searchParams.get("activeOnly") === "1";
