@@ -48,3 +48,4 @@ next-env.d.ts
 prisma/seed.ts
 dashboard-preview.html
 stats-preview.html
+pages-preview.html
