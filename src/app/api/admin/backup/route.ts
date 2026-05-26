@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isOwner } from "@/lib/permissions";
+import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
 import type { Role } from "@/generated/prisma";
 
@@ -177,6 +178,20 @@ export async function GET(req: Request) {
 
   const json = JSON.stringify(backup, null, 2);
   const filename = `menu4u-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+  await logAudit({
+    userId: session.user.id,
+    userEmail: session.user.email,
+    action: "EXPORT_BACKUP",
+    entity: "backup",
+    entityName: `גיבוי ידני · ${allowedIds.length} מסעדות`,
+    meta: {
+      restaurantIds: allowedIds,
+      counts: backup._meta.counts,
+      trigger: "manual",
+    },
+    ip: getIp(req),
+  });
 
   return new Response(json, {
     headers: {

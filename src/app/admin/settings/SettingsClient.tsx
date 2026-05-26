@@ -480,16 +480,28 @@ function TemplateCard({
 }
 
 /* ─── Backup section ─────────────────────────────────────── */
+type HistoryEntry = {
+  id: string;
+  createdAt: string;
+  userEmail?: string | null;
+  entityName?: string | null;
+  meta?: { trigger?: string; counts?: Record<string, number> } | null;
+};
+
 function BackupSection() {
   const [restaurants, setRestaurants] = useState<{ id: string; name: string }[]>([]);
   const [restaurantId, setRestaurantId] = useState(""); // "" = all
   const [downloading, setDownloading] = useState(false);
   const [lastBackup, setLastBackup] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/restaurants").then(r => r.json()).then(d => {
       if (Array.isArray(d)) setRestaurants(d);
+    }).catch(() => {});
+    fetch("/api/admin/backup/history").then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setHistory(d);
     }).catch(() => {});
   }, []);
 
@@ -563,6 +575,33 @@ function BackupSection() {
           </div>
         )}
 
+        {/* Backup history */}
+        {history.length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">גיבוי אחרון</div>
+            <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
+              {history.slice(0, 3).map((entry) => {
+                const trigger = (entry.meta as { trigger?: string } | null)?.trigger;
+                const label = trigger === "cron" ? "גיבוי אוטומטי" : "גיבוי ידני";
+                const dateStr = new Date(entry.createdAt).toLocaleString("he-IL", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                });
+                const who = trigger === "cron" ? "auto" : (entry.userEmail ?? "—");
+                return (
+                  <div key={entry.id} className="flex items-center gap-3 px-4 py-2.5 bg-white text-sm">
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[11px] font-semibold ${trigger === "cron" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+                      {label}
+                    </span>
+                    <span className="text-gray-600 font-mono text-xs">{dateStr}</span>
+                    <span className="text-gray-400 text-xs truncate">{who}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Error */}
         {error && (
           <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 px-4 py-3 rounded-xl border border-red-200">
@@ -618,6 +657,25 @@ function BackupSection() {
                 <code className="bg-gray-200 px-1 rounded text-xs">GOOGLE_CLIENT_ID</code>
                 {" "}ו-<code className="bg-gray-200 px-1 rounded text-xs">GOOGLE_CLIENT_SECRET</code>
                 {" "}בהגדרות Vercel.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Auto-backup info box */}
+        <div className="border border-dashed border-indigo-200 rounded-xl p-4 bg-indigo-50/50">
+          <div className="flex items-start gap-3">
+            <span className="text-xl shrink-0 mt-0.5">⏰</span>
+            <div>
+              <div className="text-sm font-semibold text-indigo-800 mb-1">גיבוי אוטומטי</div>
+              <div className="text-xs text-indigo-700 space-y-1">
+                <div>הגדר את משתני הסביבה הבאים ב-Vercel כדי לאפשר גיבוי אוטומטי:</div>
+                <div className="pt-1 space-y-0.5">
+                  <div>• <code className="bg-indigo-100 px-1 rounded">CRON_SECRET</code> — מחרוזת סודית (random string)</div>
+                  <div>• <code className="bg-indigo-100 px-1 rounded">BACKUP_SCHEDULE</code> — <code className="bg-indigo-100 px-1 rounded">&quot;daily&quot;</code> | <code className="bg-indigo-100 px-1 rounded">&quot;weekly&quot;</code> | <code className="bg-indigo-100 px-1 rounded">&quot;off&quot;</code></div>
+                  <div>• <code className="bg-indigo-100 px-1 rounded">GMAIL_USER</code> / <code className="bg-indigo-100 px-1 rounded">GMAIL_APP_PASSWORD</code> — כבר מוגדר</div>
+                </div>
+                <div className="pt-1 text-indigo-600">לאחר ההגדרה, הגיבוי יישלח אוטומטית למייל של כל SUPER_ADMIN.</div>
               </div>
             </div>
           </div>
