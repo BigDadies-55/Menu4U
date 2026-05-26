@@ -1020,9 +1020,13 @@ export default function MenuElegantClient({
                   const matchingItems = q
                     ? cat.items.filter(i => getItemName(i, lang).toLowerCase().includes(q))
                     : [];
+                  // best image: cat.image → first item with image → null
+                  const catImg = cat.image
+                    || cat.items.find(i => i.image)?.image
+                    || null;
                   return (
                   <div key={cat.id} onClick={() => openCategory(cat)}
-                onMouseEnter={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1.04)"); }}
+                onMouseEnter={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1.06)"); }}
                 onMouseLeave={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1)"); }}
                 style={{
                   position: "relative", height: 140, borderRadius: 18, overflow: "hidden",
@@ -1032,15 +1036,32 @@ export default function MenuElegantClient({
                     : "0 4px 16px rgba(0,0,0,0.4)",
                   transition: "box-shadow 200ms",
                 }}>
-                {/* Category background */}
-                <div className="cat-bg" style={{
-                  position: "absolute", inset: 0,
-                  backgroundImage: cat.image
-                    ? `linear-gradient(to ${t.dir === "rtl" ? "right" : "left"}, rgba(13,13,13,0.95) 40%, rgba(13,13,13,0.3) 100%), url('${cat.image}')`
-                    : `linear-gradient(135deg, #161208 0%, #1e1a10 40%, #141414 100%)`,
-                  backgroundSize: "cover", backgroundPosition: "center",
-                  transition: "transform 350ms ease",
-                }} />
+                {/* Category background image */}
+                {catImg ? (
+                  <>
+                    {/* actual photo — behind the text overlay */}
+                    <div className="cat-bg" style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url('${catImg}')`,
+                      backgroundSize: "cover", backgroundPosition: "center",
+                      transition: "transform 350ms ease",
+                    }} />
+                    {/* dark overlay: strong on the text side, transparent on photo side */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      background: t.dir === "rtl"
+                        ? "linear-gradient(to right, rgba(10,10,10,0.92) 38%, rgba(10,10,10,0.35) 100%)"
+                        : "linear-gradient(to left,  rgba(10,10,10,0.92) 38%, rgba(10,10,10,0.35) 100%)",
+                    }} />
+                  </>
+                ) : (
+                  /* no image at all → dark branded gradient */
+                  <div className="cat-bg" style={{
+                    position: "absolute", inset: 0,
+                    background: "linear-gradient(135deg, #1a130a 0%, #1e1a10 50%, #131313 100%)",
+                    transition: "transform 350ms ease",
+                  }} />
+                )}
                 {/* Text */}
                 <div style={{
                   position: "absolute", inset: 0,
