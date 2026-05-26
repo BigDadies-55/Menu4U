@@ -251,6 +251,7 @@ export default function MenuElegantClient({
 
   const [selectedCat, setSelectedCat] = useState<Category | null>(null);
   const [modalItem, setModalItem] = useState<Item | null>(null);
+  const [catSearch, setCatSearch] = useState("");
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -426,6 +427,7 @@ export default function MenuElegantClient({
   function openCategory(cat: Category) {
     track("category", cat.id, cat.name);
     setSelectedCat(cat);
+    setCatSearch("");
     elegantNavigateTo("items");
   }
 
@@ -924,22 +926,102 @@ export default function MenuElegantClient({
 
       {/* ── CATEGORIES SCREEN ── */}
       {elegantView === "categories" && (
-        <section style={{ padding: "32px 20px", maxWidth: 540, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <h2 style={{ fontSize: 28, fontWeight: 300, letterSpacing: "0.05em", marginBottom: 8 }}>
+        <section style={{ padding: "28px 20px 80px", maxWidth: 540, margin: "0 auto" }}>
+
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <h2 style={{ fontSize: 26, fontWeight: 300, letterSpacing: "0.05em", marginBottom: 6 }}>
               {lang === "he" ? "התפריט שלנו" : lang === "en" ? "Our Menu" : lang === "ru" ? "Наше меню" : "Notre Menu"}
             </h2>
-            <p style={{ color: "#a3a3a3", fontSize: 12, fontWeight: 300 }}>
-              {lang === "he" ? "בחרו קטגוריה" : lang === "en" ? "Choose a category" : lang === "ru" ? "Выберите категорию" : "Choisissez une catégorie"}
-            </p>
-            <div style={{ width: 40, height: 1, background: "rgba(197,168,128,0.4)", margin: "16px auto 0" }} />
+            <div style={{ width: 36, height: 1, background: "rgba(197,168,128,0.4)", margin: "12px auto 0" }} />
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {categories.map((cat) => {
-              const catQty = cartQtyByCat(cat.id);
+          {/* Search bar */}
+          {categories.length > 3 && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              background: "rgba(255,255,255,0.04)",
+              border: `1px solid ${catSearch ? "rgba(197,168,128,0.4)" : "rgba(255,255,255,0.08)"}`,
+              borderRadius: 14, padding: "11px 16px",
+              marginBottom: 20,
+              transition: "border-color 200ms",
+            }}>
+              {/* Search icon */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke={catSearch ? "#C5A880" : "#555"} strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: "stroke 200ms" }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                value={catSearch}
+                onChange={e => setCatSearch(e.target.value)}
+                placeholder={
+                  lang === "he" ? "חפש קטגוריה או מנה..." :
+                  lang === "en" ? "Search category or dish..." :
+                  lang === "ru" ? "Поиск..." : "Rechercher..."
+                }
+                style={{
+                  flex: 1, background: "none", border: "none", outline: "none",
+                  color: "#fff", fontSize: 14,
+                  fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                }}
+                dir={t.dir}
+              />
+              {catSearch && (
+                <button
+                  onClick={() => setCatSearch("")}
+                  style={{
+                    background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%",
+                    width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#aaa", fontSize: 13, cursor: "pointer", flexShrink: 0,
+                  }}
+                >✕</button>
+              )}
+            </div>
+          )}
+
+          {/* Filtered categories */}
+          {(() => {
+            const q = catSearch.trim().toLowerCase();
+            const filtered = q
+              ? categories.filter(cat =>
+                  getCatName(cat, lang).toLowerCase().includes(q) ||
+                  cat.items.some(i => getItemName(i, lang).toLowerCase().includes(q))
+                )
+              : categories;
+
+            if (filtered.length === 0) {
               return (
-              <div key={cat.id} onClick={() => openCategory(cat)}
+                <div style={{ textAlign: "center", padding: "48px 0", color: "#555" }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+                  <div style={{ fontSize: 14 }}>
+                    {lang === "he" ? `לא נמצאו תוצאות עבור "${catSearch}"` : `No results for "${catSearch}"`}
+                  </div>
+                  <button
+                    onClick={() => setCatSearch("")}
+                    style={{
+                      marginTop: 16, background: "none", border: "1px solid rgba(197,168,128,0.3)",
+                      color: "#C5A880", borderRadius: 20, padding: "6px 18px",
+                      fontSize: 13, cursor: "pointer",
+                    }}
+                  >
+                    {lang === "he" ? "נקה חיפוש" : "Clear search"}
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {filtered.map((cat) => {
+                  const catQty = cartQtyByCat(cat.id);
+                  // highlight matching item names when searching
+                  const matchingItems = q
+                    ? cat.items.filter(i => getItemName(i, lang).toLowerCase().includes(q))
+                    : [];
+                  return (
+                  <div key={cat.id} onClick={() => openCategory(cat)}
                 onMouseEnter={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1.04)"); }}
                 onMouseLeave={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1)"); }}
                 style={{
@@ -968,9 +1050,17 @@ export default function MenuElegantClient({
                   <h3 style={{ fontSize: 20, fontWeight: 500, color: "#fff", letterSpacing: "0.03em", marginBottom: 4 }}>
                     {getCatName(cat, lang)}
                   </h3>
-                  <p style={{ color: "#a3a3a3", fontSize: 12, fontWeight: 300 }}>
-                    {cat.items.filter(i => i.isActive !== false).length} {lang === "he" ? "מנות" : lang === "en" ? "dishes" : lang === "ru" ? "блюд" : "plats"}
-                  </p>
+                  {/* show matching dishes when searching, otherwise item count */}
+                  {matchingItems.length > 0 ? (
+                    <p style={{ color: "#C5A880", fontSize: 11, fontWeight: 500 }}>
+                      🔍 {matchingItems.slice(0, 2).map(i => getItemName(i, lang)).join(" · ")}
+                      {matchingItems.length > 2 ? ` +${matchingItems.length - 2}` : ""}
+                    </p>
+                  ) : (
+                    <p style={{ color: "#a3a3a3", fontSize: 12, fontWeight: 300 }}>
+                      {cat.items.filter(i => i.isActive !== false).length} {lang === "he" ? "מנות" : lang === "en" ? "dishes" : lang === "ru" ? "блюд" : "plats"}
+                    </p>
+                  )}
                 </div>
                 {/* Arrow */}
                 <div style={{
@@ -998,7 +1088,10 @@ export default function MenuElegantClient({
               </div>
               );
             })}
-          </div>
+              </div>
+            );
+          })()}
+
         </section>
       )}
 
