@@ -1241,10 +1241,24 @@ export default function MenuElegantClient({
                   </div>
 
                   {/* Thumbnail + qty badge */}
-                  {item.image && (
+                  {(item.image || restaurant.logo) && (
                     <div style={{ position: "relative", width: 88, height: 88, borderRadius: 12, overflow: "visible", flexShrink: 0 }}>
-                      <div style={{ width: 88, height: 88, borderRadius: 12, overflow: "hidden" }}>
-                        <img src={item.image} alt={getItemName(item, lang)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div style={{
+                        width: 88, height: 88, borderRadius: 12, overflow: "hidden",
+                        background: item.image ? undefined : "rgba(255,255,255,0.04)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        border: item.image ? undefined : "1px solid rgba(197,168,128,0.15)",
+                      }}>
+                        <img
+                          src={item.image || restaurant.logo!}
+                          alt={getItemName(item, lang)}
+                          style={{
+                            width: "100%", height: "100%",
+                            objectFit: item.image ? "cover" : "contain",
+                            padding: item.image ? 0 : 10,
+                            opacity: item.image ? 1 : 0.45,
+                          }}
+                        />
                       </div>
                       {/* Quantity badge — bottom left of thumbnail */}
                       {inCart && (
@@ -1264,8 +1278,8 @@ export default function MenuElegantClient({
                     </div>
                   )}
 
-                  {/* Qty badge when NO image */}
-                  {!item.image && inCart && (
+                  {/* Qty badge when neither item image nor logo */}
+                  {!item.image && !restaurant.logo && inCart && (
                     <div style={{
                       position: "absolute", bottom: 10, left: 10,
                       minWidth: 22, height: 22, borderRadius: 11,
