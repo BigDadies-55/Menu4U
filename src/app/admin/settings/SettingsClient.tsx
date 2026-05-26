@@ -882,7 +882,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
   /* ─────────────────────── render ─────────────────────────── */
   return (
-    <div style={{ padding: "24px 24px 32px", maxWidth: 780 }}>
+    <div style={{ padding: "24px 24px 32px" }}>
 
       {/* ── Top tab bar ── */}
       <div style={tabBarStyle}>
@@ -905,10 +905,10 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
         {/* ════ TAB: הגדרות ════ */}
         {topTab === "settings" && (
           <>
-            {/* 2×2 grid */}
+            {/* 4-col grid — full width */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(4, 1fr)",
               gap: 1,
               background: C.border,
             }}>
