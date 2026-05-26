@@ -32,6 +32,7 @@ type Order = {
 };
 
 type Restaurant = { id: string; name: string };
+type TableLayout = { tableNumber?: string; seats?: number };
 
 const ITEM_STATUS_LABEL: Record<string, string> = {
   PENDING: "ממתין",
@@ -640,6 +641,7 @@ export default function OrdersClient({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [highlightTable, setHighlightTable] = useState<string | null>(null);
+  const [tableLayouts, setTableLayouts]     = useState<TableLayout[]>([]);
   const knownOrderIds = useRef<Set<string>>(new Set(initialOrders.map(o => o.id)));
 
   const fetchOrders = useCallback(async (showSpinner = false) => {
@@ -675,6 +677,24 @@ export default function OrdersClient({
     const iv = setInterval(() => fetchOrders(), 30000);
     return () => { es.close(); clearInterval(iv); };
   }, [fetchOrders, restaurantId]);
+
+  // Fetch table layout (seats per table) when restaurant changes
+  useEffect(() => {
+    const rid = restaurantId || restaurants[0]?.id;
+    if (!rid) return;
+    fetch(`/api/admin/restaurants/${rid}/layout`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.tableLayoutJson) return;
+        try {
+          const cells: TableLayout[] = JSON.parse(data.tableLayoutJson).filter(
+            (c: TableLayout) => c.tableNumber && c.tableNumber.trim()
+          );
+          setTableLayouts(cells);
+        } catch { /* ignore */ }
+      })
+      .catch(() => {});
+  }, [restaurantId, restaurants]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -887,8 +907,26 @@ export default function OrdersClient({
               <div style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>שולחן *</label>
-                  <input value={posTable} onChange={e => setPosTable(e.target.value)} placeholder="מספר שולחן"
-                    style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                  {tableLayouts.length > 0 ? (
+                    <select value={posTable}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setPosTable(val);
+                        const cell = tableLayouts.find(c => c.tableNumber === val);
+                        if (cell?.seats) setPosCovers(String(cell.seats));
+                      }}
+                      style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}>
+                      <option value="">בחר שולחן</option>
+                      {tableLayouts.map(c => (
+                        <option key={c.tableNumber} value={c.tableNumber!}>
+                          שולחן {c.tableNumber}{c.seats ? ` (${c.seats} מקומות)` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input value={posTable} onChange={e => setPosTable(e.target.value)} placeholder="מספר שולחן"
+                      style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                  )}
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>👥 סועדים</label>
