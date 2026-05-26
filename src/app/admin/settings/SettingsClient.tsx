@@ -482,11 +482,12 @@ function TemplateCard({
 /* ─── Auto-backup status widget ─────────────────────────── */
 type CronStatus = {
   isActive: boolean;
-  schedule: "daily" | "weekly" | "off" | null;
+  schedule: string | null;
   hasCronSecret: boolean;
   hasGmail: boolean;
   nextRun: string | null;
   missing: string[];
+  debug?: Record<string, string | boolean>;
 };
 
 function AutoBackupStatus() {
@@ -543,39 +544,69 @@ function AutoBackupStatus() {
     );
   }
 
-  // Not active — show what's missing
+  // Not active — show what's missing + debug
+  const [showDebug, setShowDebug] = useState(false);
   return (
-    <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
-      <div className="flex items-start gap-3">
-        <span className="text-xl shrink-0 mt-0.5">⏰</span>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="text-sm font-semibold text-indigo-800">גיבוי אוטומטי</div>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-600">לא פעיל</span>
-          </div>
-          <div className="text-xs text-indigo-700 space-y-1">
-            <div>הגדר את הפרמטרים הבאים ב-Vercel → Environment Variables:</div>
-            <div className="pt-1 space-y-1">
-              {[
-                { key: "CRON_SECRET",     ok: status.hasCronSecret, desc: "מחרוזת סודית כלשהי" },
-                { key: "BACKUP_SCHEDULE", ok: !!status.schedule && status.schedule !== "off", desc: '"daily" | "weekly"' },
-                { key: "GMAIL_USER / GMAIL_APP_PASSWORD", ok: status.hasGmail, desc: "כבר מוגדר ✓" },
-              ].map(row => (
-                <div key={row.key} className="flex items-center gap-2">
-                  <span className={row.ok ? "text-green-500" : "text-amber-500"}>
-                    {row.ok ? "✓" : "○"}
-                  </span>
-                  <code className="bg-indigo-100 px-1 rounded text-[11px]">{row.key}</code>
-                  <span className="text-indigo-500">{row.desc}</span>
-                </div>
-              ))}
+    <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-xl shrink-0 mt-0.5">⏰</span>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-sm font-semibold text-indigo-800">גיבוי אוטומטי</div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-600">לא פעיל</span>
             </div>
-            <div className="pt-1 text-indigo-600 font-medium">
-              לאחר עדכון המשתנים — בצע Redeploy ב-Vercel.
+            <div className="text-xs text-indigo-700 space-y-1">
+              <div className="pt-1 space-y-1.5">
+                {[
+                  { key: "CRON_SECRET",     ok: status.hasCronSecret, desc: "מחרוזת סודית כלשהי" },
+                  { key: "BACKUP_SCHEDULE", ok: !!status.schedule && status.schedule !== "off", desc: '"daily" או "weekly"' },
+                  { key: "GMAIL_USER / GMAIL_APP_PASSWORD", ok: status.hasGmail, desc: "נדרש לשליחת המייל" },
+                ].map(row => (
+                  <div key={row.key} className="flex items-center gap-2">
+                    <span className={`text-base ${row.ok ? "text-green-500" : "text-red-400"}`}>
+                      {row.ok ? "✓" : "✗"}
+                    </span>
+                    <code className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${row.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{row.key}</code>
+                    <span className="text-indigo-500">{row.desc}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="pt-2 text-indigo-600 font-medium">
+                לאחר עדכון — בצע <strong>Redeploy</strong> ב-Vercel.
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Debug panel */}
+      {status.debug && (
+        <div className="border-t border-indigo-200">
+          <button
+            onClick={() => setShowDebug(v => !v)}
+            className="w-full flex items-center gap-2 px-4 py-2 text-xs text-indigo-500 hover:bg-indigo-100 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {showDebug ? "הסתר אבחון" : "הצג אבחון — מה הנשרת רואה?"}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={`mr-auto transition-transform ${showDebug ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          {showDebug && (
+            <div className="px-4 pb-3 bg-indigo-50 space-y-1">
+              {Object.entries(status.debug).map(([k, v]) => (
+                <div key={k} className="flex gap-2 text-[11px] font-mono">
+                  <span className="text-indigo-400 shrink-0">{k}:</span>
+                  <span className={String(v).startsWith("✓") ? "text-green-700" : String(v).startsWith("✗") ? "text-red-600" : "text-gray-700"}>
+                    {String(v)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
