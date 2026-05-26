@@ -398,6 +398,16 @@ export default function MenuElegantClient({
   const t = getT(lang);
   const categories = restaurant.menus.flatMap(m => m.categories);
 
+  // Collect up to 3 images for landing collage background
+  const landingImages: string[] = [];
+  for (const cat of categories) {
+    if (cat.image) landingImages.push(cat.image);
+    else if (cat.items[0]?.image) landingImages.push(cat.items[0].image);
+    if (landingImages.length >= 3) break;
+  }
+  if (landingImages.length === 1) { landingImages.push(landingImages[0], landingImages[0]); }
+  else if (landingImages.length === 2) { landingImages.push(landingImages[0]); }
+
   // Suppress unused import warning for buildPaletteStyle — kept for parity
   void buildPaletteStyle;
 
@@ -648,72 +658,229 @@ export default function MenuElegantClient({
       {/* ── LANDING SCREEN ── */}
       {elegantView === "landing" && (
         <section style={{
-          minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "space-between",
-          backgroundImage: "linear-gradient(160deg, #1a1000 0%, #0D0D0D 40%, #0a0a12 100%)",
-          backgroundSize: "cover", backgroundPosition: "center",
-          position: "relative",
+          minHeight: "100vh", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          position: "relative", overflow: "hidden",
+          background: "#0a0908",
         }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "96px 24px 32px" }}>
-            {/* Logo ring */}
-            <div style={{ width: 72, height: 72, border: "1px solid rgba(197,168,128,0.4)", borderRadius: "50%",
-              display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-              {restaurant.logo
-                ? <img src={restaurant.logo} alt={restaurant.name} style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
-                : <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 28, color: "#C5A880" }}>{restaurant.name[0]}</span>
-              }
-            </div>
 
-            <h1 style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: "clamp(32px,8vw,64px)", letterSpacing: 6, marginBottom: 8, color: "#fff" }}>
+          {/* Photo collage background */}
+          {landingImages.length > 0 ? (
+            <div style={{
+              position: "absolute", inset: 0,
+              display: "grid",
+              gridTemplateColumns: `repeat(${landingImages.length}, 1fr)`,
+              gap: 3,
+            }}>
+              {landingImages.map((src, i) => (
+                <div key={i} style={{
+                  backgroundImage: `url('${src}')`,
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  filter: "brightness(0.38) saturate(0.75)",
+                }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "radial-gradient(ellipse at 50% 30%, #1a130a 0%, #0a0908 100%)",
+            }} />
+          )}
+
+          {/* Gradient overlays for drama */}
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.6) 80%, rgba(0,0,0,0.92) 100%)",
+            pointerEvents: "none",
+          }} />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 25%, rgba(0,0,0,0.55) 100%)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Main content */}
+          <div style={{
+            position: "relative", zIndex: 2,
+            display: "flex", flexDirection: "column", alignItems: "center",
+            textAlign: "center", padding: "0 28px",
+            flex: 1, justifyContent: "center",
+          }}>
+
+            {/* Logo */}
+            {restaurant.logo && (
+              <img src={restaurant.logo} alt={restaurant.name}
+                style={{
+                  height: 68, objectFit: "contain", marginBottom: 22,
+                  filter: "drop-shadow(0 4px 18px rgba(0,0,0,0.7))",
+                }} />
+            )}
+
+            {/* Restaurant name */}
+            <h1 style={{
+              fontFamily: "var(--font-cinzel, 'Cinzel', serif)",
+              fontSize: "clamp(38px, 10vw, 72px)",
+              fontWeight: 900,
+              fontStyle: "italic",
+              letterSpacing: "0.04em",
+              color: "#C5A880",
+              lineHeight: 1.05,
+              margin: 0,
+              textShadow: "0 2px 32px rgba(0,0,0,0.85), 0 0 64px rgba(197,168,128,0.22)",
+            }}>
               {restaurant.name}
             </h1>
-            <p style={{ color: "#C5A880", fontWeight: 300, letterSpacing: "0.2em", fontSize: 11, textTransform: "uppercase", marginBottom: 32 }}>
-              Restaurant
-            </p>
 
-            <div style={{ width: 48, height: 1, background: "rgba(197,168,128,0.5)", marginBottom: 32 }} />
+            {/* Gold ornament divider */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 12,
+              marginTop: 18, marginBottom: 18,
+              color: "rgba(197,168,128,0.55)",
+            }}>
+              <span style={{ display: "block", width: 52, height: 1, background: "rgba(197,168,128,0.4)" }} />
+              <span style={{ fontSize: 13, letterSpacing: 3 }}>◆</span>
+              <span style={{ display: "block", width: 52, height: 1, background: "rgba(197,168,128,0.4)" }} />
+            </div>
 
-            {/* Welcome text (set in admin) or address fallback */}
+            {/* Welcome text or address */}
             {(restaurant.welcomeText || restaurant.address) && (
-              <p style={{ maxWidth: 360, color: "#d4d4d4", fontSize: 15, fontWeight: 300, lineHeight: 1.8, marginBottom: 40, whiteSpace: "pre-line" }}>
+              <p style={{
+                maxWidth: 400, color: "rgba(255,255,255,0.72)",
+                fontSize: 15, fontWeight: 300, lineHeight: 1.75,
+                marginBottom: 36, whiteSpace: "pre-line",
+                fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                textShadow: "0 1px 8px rgba(0,0,0,0.7)",
+              }}>
                 {restaurant.welcomeText || restaurant.address}
               </p>
             )}
 
             {/* CTA button */}
-            <button onClick={() => elegantNavigateTo("categories")} style={{
-              background: "#C5A880", color: "#0D0D0D", fontWeight: 500,
-              fontSize: 15, letterSpacing: "0.05em",
-              padding: "16px 40px", borderRadius: 50, border: "none",
-              cursor: "pointer", width: "100%", maxWidth: 320,
-              boxShadow: "0 8px 32px rgba(197,168,128,0.15)",
-              transition: "transform 200ms, background 200ms",
-            }}>
-              📋 {lang === "he" ? "לתפריט" : lang === "en" ? "View Menu" : lang === "ru" ? "Меню" : "Menu"}
+            <button
+              onClick={() => elegantNavigateTo("categories")}
+              style={{
+                background: "linear-gradient(135deg, #C5A880 0%, #dfc090 50%, #C5A880 100%)",
+                color: "#0D0D0D",
+                fontWeight: 700,
+                fontSize: 17,
+                letterSpacing: "0.04em",
+                padding: "17px 48px",
+                borderRadius: 50,
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 8px 32px rgba(197,168,128,0.38), 0 2px 8px rgba(0,0,0,0.5)",
+                transition: "transform 150ms, box-shadow 150ms",
+                display: "flex", alignItems: "center", gap: 10,
+                fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.04)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 12px 40px rgba(197,168,128,0.48), 0 2px 8px rgba(0,0,0,0.5)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(197,168,128,0.38), 0 2px 8px rgba(0,0,0,0.5)";
+              }}
+            >
+              <span style={{ fontSize: 20 }}>🍴</span>
+              <span>{lang === "he" ? "לתפריט האינטראקטיבי" : lang === "en" ? "View Interactive Menu" : lang === "ru" ? "К меню" : "Voir le menu"}</span>
             </button>
           </div>
 
-          {/* Bottom info strip */}
-          <div style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)",
-            borderTop: "1px solid rgba(255,255,255,0.05)", padding: "20px 24px",
-            display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "center",
+          {/* Bottom circular action buttons */}
+          <div style={{
+            position: "relative", zIndex: 2,
+            display: "flex", justifyContent: "center", alignItems: "center",
+            gap: 28, paddingBottom: "max(36px, env(safe-area-inset-bottom, 36px))",
+            paddingTop: 16,
           }}>
-            {restaurant.address && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", borderLeft: "1px solid rgba(255,255,255,0.08)", gap: 4 }}>
-                <span style={{ color: "#C5A880", fontSize: 16 }}>📍</span>
-                <span style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>{restaurant.address}</span>
-              </div>
-            )}
+
+            {/* WhatsApp */}
             {restaurant.phone && (
-              <a href={`tel:${restaurant.phone}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, textDecoration: "none" }}>
-                <span style={{ color: "#C5A880", fontSize: 16 }}>📞</span>
-                <span style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>{restaurant.phone}</span>
-                <span style={{ color: "#a3a3a3", fontSize: 11 }}>{t.call}</span>
+              <a
+                href={`https://wa.me/${restaurant.phone.replace(/\D/g, "")}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{
+                  width: 58, height: 58, borderRadius: "50%",
+                  background: "rgba(255,255,255,0.11)",
+                  backdropFilter: "blur(10px)",
+                  border: "1.5px solid rgba(255,255,255,0.22)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.45)",
+                  transition: "transform 150ms",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"; }}
+                aria-label="WhatsApp"
+              >
+                <svg width="27" height="27" viewBox="0 0 24 24" fill="#25D366">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                  <path d="M12.004 2C6.477 2 2 6.484 2 12.017c0 1.99.52 3.86 1.428 5.484L2 22l4.619-1.401A9.956 9.956 0 0 0 12.004 22C17.523 22 22 17.516 22 11.983 22 6.478 17.523 2 12.004 2zm0 18.044a8.04 8.04 0 0 1-4.217-1.195l-.302-.18-3.13.95.922-3.046-.197-.312A8.029 8.029 0 0 1 3.972 12c0-4.42 3.602-8.016 8.032-8.016 4.428 0 8.03 3.596 8.03 8.016 0 4.423-3.602 8.044-8.03 8.044z"/>
+                </svg>
               </a>
             )}
-            {restaurant.website && (
-              <a href={restaurant.website} target="_blank" rel="noopener noreferrer" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, textDecoration: "none" }}>
-                <span style={{ color: "#C5A880", fontSize: 16 }}>🌐</span>
-                <span style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>{t.website}</span>
+
+            {/* Registration / gift — center, gold, larger */}
+            {!alreadyRegistered && (
+              <button
+                onClick={() => {
+                  setRegStep("form");
+                  setRegOtp(""); setRegError(""); setRegCoupon("");
+                  setRegForm({ name: "", phone: "", email: "" });
+                  setRegModalOpen(true);
+                }}
+                style={{
+                  width: 66, height: 66, borderRadius: "50%",
+                  background: "linear-gradient(135deg, #C5A880, #dfc090)",
+                  border: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "0 6px 28px rgba(197,168,128,0.5), 0 2px 8px rgba(0,0,0,0.5)",
+                  transition: "transform 150ms",
+                  position: "relative",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+                aria-label="הצטרף לקלאב"
+              >
+                <span style={{
+                  position: "absolute", top: 5, right: 5,
+                  width: 11, height: 11, borderRadius: "50%",
+                  background: "#e53e3e", border: "2px solid #0a0908",
+                }} />
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 12 20 22 4 22 4 12"/>
+                  <rect x="2" y="7" width="20" height="5"/>
+                  <line x1="12" y1="22" x2="12" y2="7"/>
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                </svg>
+              </button>
+            )}
+
+            {/* Phone */}
+            {restaurant.phone && (
+              <a
+                href={`tel:${restaurant.phone}`}
+                style={{
+                  width: 58, height: 58, borderRadius: "50%",
+                  background: "rgba(255,255,255,0.11)",
+                  backdropFilter: "blur(10px)",
+                  border: "1.5px solid rgba(255,255,255,0.22)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.45)",
+                  transition: "transform 150ms",
+                  color: "#C5A880", fontSize: 22,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"; }}
+                aria-label="התקשר"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C5A880" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
               </a>
             )}
           </div>
