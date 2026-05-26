@@ -343,12 +343,22 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
 
   async function save() {
     setSaving(true);
-    await fetch(`/api/admin/items/${itemId}/modifiers`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(groups),
-    });
-    setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000);
+    try {
+      const res = await fetch(`/api/admin/items/${itemId}/modifiers`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(groups),
+      });
+      if (res.ok) {
+        // Sync local state with DB response so IDs are always accurate
+        const saved: ModGroup[] = await res.json();
+        setGroups(saved);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <div style={{ fontSize: 13, color: "#6c757d", padding: "8px 0" }}>טוען...</div>;

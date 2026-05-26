@@ -25,11 +25,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   type GroupIn = { id?: string; name: string; required?: boolean; maxSelect?: number; order?: number; options: OptionIn[] };
   const groups: GroupIn[] = await req.json();
 
-  // Delete groups not in the new list
+  // Delete groups not in the new list (or all groups if list is empty)
   const keepGroupIds = groups.filter(g => g.id).map(g => g.id as string);
-  await prisma.itemModifierGroup.deleteMany({
-    where: { itemId: id, id: { notIn: keepGroupIds } }, // ← was: { id, id: ... } (double id, wrong field)
-  });
+  if (keepGroupIds.length === 0) {
+    // Delete all groups for this item
+    await prisma.itemModifierGroup.deleteMany({ where: { itemId: id } });
+  } else {
+    await prisma.itemModifierGroup.deleteMany({
+      where: { itemId: id, id: { notIn: keepGroupIds } },
+    });
+  }
 
   for (const [gi, group] of groups.entries()) {
     const groupData = {
