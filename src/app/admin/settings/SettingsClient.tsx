@@ -479,6 +479,107 @@ function TemplateCard({
   );
 }
 
+/* ─── Auto-backup status widget ─────────────────────────── */
+type CronStatus = {
+  isActive: boolean;
+  schedule: "daily" | "weekly" | "off" | null;
+  hasCronSecret: boolean;
+  hasGmail: boolean;
+  nextRun: string | null;
+  missing: string[];
+};
+
+function AutoBackupStatus() {
+  const [status, setStatus] = useState<CronStatus | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/backup/cron-status")
+      .then(r => r.json())
+      .then(d => setStatus(d))
+      .catch(() => {});
+  }, []);
+
+  if (!status) {
+    return (
+      <div className="border border-dashed border-gray-200 rounded-xl p-4 animate-pulse bg-gray-50">
+        <div className="h-4 bg-gray-200 rounded w-32" />
+      </div>
+    );
+  }
+
+  const SCHEDULE_LABEL: Record<string, string> = { daily: "יומי (02:00 UTC)", weekly: "שבועי — ראשון (02:00 UTC)" };
+
+  if (status.isActive) {
+    const nextLabel = status.nextRun
+      ? new Date(status.nextRun).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" })
+      : null;
+    return (
+      <div className="rounded-xl border border-green-200 bg-green-50 overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="text-xl shrink-0">✅</span>
+          <div className="flex-1">
+            <div className="text-sm font-bold text-green-800">גיבוי אוטומטי פעיל</div>
+            <div className="text-xs text-green-700 mt-0.5 flex items-center gap-3 flex-wrap">
+              <span>
+                <span className="font-medium">תזמון:</span>{" "}
+                {SCHEDULE_LABEL[status.schedule ?? ""] ?? status.schedule}
+              </span>
+              {nextLabel && (
+                <span>
+                  <span className="font-medium">גיבוי הבא:</span> {nextLabel}
+                </span>
+              )}
+              <span>
+                <span className="font-medium">שליחה:</span> מייל לכל SUPER_ADMIN
+              </span>
+            </div>
+          </div>
+          <span className="shrink-0 w-2 h-2 rounded-full bg-green-500 shadow-sm shadow-green-300 animate-pulse" />
+        </div>
+        <div className="border-t border-green-200 px-4 py-2 bg-green-100/60 text-xs text-green-700">
+          לשינוי התזמון, עדכן את <code className="bg-green-200 px-1 rounded">BACKUP_SCHEDULE</code> ב-Vercel ו-Redeploy.
+        </div>
+      </div>
+    );
+  }
+
+  // Not active — show what's missing
+  return (
+    <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
+      <div className="flex items-start gap-3">
+        <span className="text-xl shrink-0 mt-0.5">⏰</span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm font-semibold text-indigo-800">גיבוי אוטומטי</div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-600">לא פעיל</span>
+          </div>
+          <div className="text-xs text-indigo-700 space-y-1">
+            <div>הגדר את הפרמטרים הבאים ב-Vercel → Environment Variables:</div>
+            <div className="pt-1 space-y-1">
+              {[
+                { key: "CRON_SECRET",     ok: status.hasCronSecret, desc: "מחרוזת סודית כלשהי" },
+                { key: "BACKUP_SCHEDULE", ok: !!status.schedule && status.schedule !== "off", desc: '"daily" | "weekly"' },
+                { key: "GMAIL_USER / GMAIL_APP_PASSWORD", ok: status.hasGmail, desc: "כבר מוגדר ✓" },
+              ].map(row => (
+                <div key={row.key} className="flex items-center gap-2">
+                  <span className={row.ok ? "text-green-500" : "text-amber-500"}>
+                    {row.ok ? "✓" : "○"}
+                  </span>
+                  <code className="bg-indigo-100 px-1 rounded text-[11px]">{row.key}</code>
+                  <span className="text-indigo-500">{row.desc}</span>
+                </div>
+              ))}
+            </div>
+            <div className="pt-1 text-indigo-600 font-medium">
+              לאחר עדכון המשתנים — בצע Redeploy ב-Vercel.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Backup section ─────────────────────────────────────── */
 type HistoryEntry = {
   id: string;
@@ -662,24 +763,8 @@ function BackupSection() {
           </div>
         </div>
 
-        {/* Auto-backup info box */}
-        <div className="border border-dashed border-indigo-200 rounded-xl p-4 bg-indigo-50/50">
-          <div className="flex items-start gap-3">
-            <span className="text-xl shrink-0 mt-0.5">⏰</span>
-            <div>
-              <div className="text-sm font-semibold text-indigo-800 mb-1">גיבוי אוטומטי</div>
-              <div className="text-xs text-indigo-700 space-y-1">
-                <div>הגדר את משתני הסביבה הבאים ב-Vercel כדי לאפשר גיבוי אוטומטי:</div>
-                <div className="pt-1 space-y-0.5">
-                  <div>• <code className="bg-indigo-100 px-1 rounded">CRON_SECRET</code> — מחרוזת סודית (random string)</div>
-                  <div>• <code className="bg-indigo-100 px-1 rounded">BACKUP_SCHEDULE</code> — <code className="bg-indigo-100 px-1 rounded">&quot;daily&quot;</code> | <code className="bg-indigo-100 px-1 rounded">&quot;weekly&quot;</code> | <code className="bg-indigo-100 px-1 rounded">&quot;off&quot;</code></div>
-                  <div>• <code className="bg-indigo-100 px-1 rounded">GMAIL_USER</code> / <code className="bg-indigo-100 px-1 rounded">GMAIL_APP_PASSWORD</code> — כבר מוגדר</div>
-                </div>
-                <div className="pt-1 text-indigo-600">לאחר ההגדרה, הגיבוי יישלח אוטומטית למייל של כל SUPER_ADMIN.</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Auto-backup status — dynamic */}
+        <AutoBackupStatus />
       </div>
     </div>
   );
