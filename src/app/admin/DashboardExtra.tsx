@@ -399,37 +399,30 @@ export default function DashboardExtra({
         </div>
       </div>
 
-      {/* ── Restaurant filter ── */}
+      {/* ── Restaurant filter (dropdown) ── */}
       {showFilter && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
           <span style={{ fontSize: 13, color: COLORS.textMuted, flexShrink: 0 }}>מסעדה:</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <button
-              onClick={() => setSelectedId("")}
-              style={{
-                padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "1px solid transparent", transition: "all .15s",
-                background: selectedId === "" ? GRADIENTS.blue : COLORS.cardBg,
-                color: selectedId === "" ? "#fff" : COLORS.textSecondary,
-                borderColor: selectedId === "" ? "transparent" : COLORS.cardBorder,
-              }}
-            >
-              כולם
-            </button>
+          <select
+            value={selectedId}
+            onChange={e => setSelectedId(e.target.value)}
+            style={{
+              background: COLORS.cardBg,
+              border: `1px solid ${COLORS.cardBorder}`,
+              color: COLORS.textSecondary,
+              borderRadius: 8,
+              padding: "6px 12px",
+              fontSize: 13,
+              outline: "none",
+              cursor: "pointer",
+              minWidth: 180,
+            }}
+          >
+            <option value="">כולם</option>
             {restaurants.map(r => (
-              <button
-                key={r.id}
-                onClick={() => setSelectedId(r.id)}
-                style={{
-                  padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "1px solid transparent", transition: "all .15s", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  background: selectedId === r.id ? GRADIENTS.blue : COLORS.cardBg,
-                  color: selectedId === r.id ? "#fff" : COLORS.textSecondary,
-                  borderColor: selectedId === r.id ? "transparent" : COLORS.cardBorder,
-                }}
-              >
-                {r.name}
-              </button>
+              <option key={r.id} value={r.id}>{r.name}</option>
             ))}
-          </div>
+          </select>
         </div>
       )}
 
