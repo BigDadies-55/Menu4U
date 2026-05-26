@@ -12,7 +12,7 @@ const ITEM_SELECT = {
 } as const;
 
 const CATEGORY_SELECT = {
-  id: true, name: true, image: true, isActive: true, sortOrder: true,
+  id: true, name: true, image: true, isActive: true, autoReady: true, sortOrder: true,
   items: { select: ITEM_SELECT, orderBy: { sortOrder: "asc" as const } },
 } as const;
 
@@ -33,6 +33,11 @@ export default async function MenusPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role === "WAITER") redirect("/admin/orders");
   if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
+
+  // Ensure autoReady column exists before querying
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
+  } catch { /* ignore — column already exists */ }
 
   let restaurants;
   if (session.user.role === "SUPER_ADMIN") {
