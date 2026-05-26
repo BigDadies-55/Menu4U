@@ -1110,21 +1110,11 @@ export default function MenuElegantClient({
                   width: "100%", background: "#1a1612", borderRadius: "18px 18px 0 0",
                   padding: "20px 20px 28px", boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
                 }} onClick={e => e.stopPropagation()}>
-                  {/* Item name header */}
-                  <div style={{
-                    marginBottom: 14, padding: "10px 14px", borderRadius: 10,
-                    background: "rgba(197,168,128,0.1)", border: "1px solid rgba(197,168,128,0.2)",
-                  }}>
-                    <div style={{ fontSize: 11, color: "rgba(197,168,128,0.7)", marginBottom: 3, textTransform: "uppercase", letterSpacing: ".05em" }}>הערה עבור</div>
-                    <div style={{ color: "#C5A880", fontWeight: 700, fontSize: 15 }}>{editingItem?.name}</div>
-                    {editingItem && (
-                      <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, marginTop: 2 }}>
-                        ×{editingItem.quantity} · ₪{editingItem.price * editingItem.quantity}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: 13 }}>✏️ הוסף הערה</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700 }}>
+                      <span style={{ color: "rgba(255,255,255,0.6)" }}>הוסף הערה ל</span>
+                      <span style={{ color: "#C5A880" }}>{editingItem?.name}</span>
+                    </span>
                     <button onClick={() => setEditNoteCartId(null)}
                       style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer" }}>✕</button>
                   </div>
