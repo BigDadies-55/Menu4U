@@ -257,6 +257,8 @@ export default function MenuElegantClient({
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const [editNoteCartId, setEditNoteCartId] = useState<string | null>(null);
+  const [editNoteValue, setEditNoteValue] = useState("");
 
   // Modifier modal state
   const [modifierItem, setModifierItem] = useState<Item | null>(null);
@@ -1009,6 +1011,7 @@ export default function MenuElegantClient({
             background: "#161616",
             borderRight: "1px solid rgba(255,255,255,0.08)",
             display: "flex", flexDirection: "column", zIndex: 51,
+            overflow: "hidden",  // needed so inner overlay is clipped to the panel
           }}>
             {/* Header */}
             <div style={{
@@ -1047,10 +1050,29 @@ export default function MenuElegantClient({
                     background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{c.name}</div>
                         <div style={{ color: "#C5A880", fontSize: 12, marginTop: 1 }}>₪{c.price} ליחידה</div>
+                        {c.notes && (
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3, fontStyle: "italic",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            💬 {c.notes}
+                          </div>
+                        )}
                       </div>
+                      {/* Note edit icon */}
+                      <button
+                        onClick={() => { setEditNoteCartId(c.cartId); setEditNoteValue(c.notes ?? ""); }}
+                        title="הוסף הערה"
+                        style={{
+                          width: 28, height: 28, borderRadius: "50%", border: "none",
+                          background: c.notes ? "rgba(197,168,128,0.2)" : "rgba(255,255,255,0.06)",
+                          color: c.notes ? "#C5A880" : "rgba(255,255,255,0.3)",
+                          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0, fontSize: 13, transition: "all .15s",
+                        }}>
+                        ✏️
+                      </button>
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                         <button onClick={() => updateQty(c.cartId, -1)} style={{
                           width: 26, height: 26, borderRadius: "50%",
@@ -1070,21 +1092,57 @@ export default function MenuElegantClient({
                         ₪{c.price * c.quantity}
                       </div>
                     </div>
-                    <input
-                      type="text"
-                      placeholder={t.notePlaceholder}
-                      value={c.notes ?? ""}
-                      onChange={e => updateNotes(c.cartId, e.target.value)}
-                      style={{
-                        marginTop: 5, width: "100%", padding: "4px 9px", fontSize: 11,
-                        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 6, color: "#fff", outline: "none", boxSizing: "border-box",
-                      }}
-                    />
                   </div>
                 ))
               )}
             </div>
+
+            {/* ── Note edit mini-modal ── */}
+            {editNoteCartId && (
+              <div style={{
+                position: "absolute", inset: 0, zIndex: 10,
+                background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+                display: "flex", alignItems: "flex-end",
+              }} onClick={() => setEditNoteCartId(null)}>
+                <div style={{
+                  width: "100%", background: "#1a1612", borderRadius: "18px 18px 0 0",
+                  padding: "20px 20px 28px", boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
+                }} onClick={e => e.stopPropagation()}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ color: "#C5A880", fontWeight: 700, fontSize: 15 }}>✏️ {t.notePlaceholder || "הערה לפריט"}</span>
+                    <button onClick={() => setEditNoteCartId(null)}
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer" }}>✕</button>
+                  </div>
+                  <textarea
+                    autoFocus
+                    rows={3}
+                    value={editNoteValue}
+                    onChange={e => setEditNoteValue(e.target.value)}
+                    placeholder={t.notePlaceholder || "ללא בצל, בצד, אלרגיה..."}
+                    style={{
+                      width: "100%", background: "rgba(255,255,255,0.07)",
+                      border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10,
+                      color: "#fff", fontSize: 14, padding: "10px 12px", outline: "none",
+                      resize: "none", fontFamily: "inherit", boxSizing: "border-box",
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    {editNoteValue && (
+                      <button onClick={() => { updateNotes(editNoteCartId, ""); setEditNoteCartId(null); }}
+                        style={{ padding: "10px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)",
+                          background: "none", color: "rgba(255,255,255,0.45)", fontSize: 13, cursor: "pointer" }}>
+                        🗑 נקה
+                      </button>
+                    )}
+                    <button onClick={() => { updateNotes(editNoteCartId, editNoteValue.trim()); setEditNoteCartId(null); }}
+                      style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none",
+                        background: "#C5A880", color: "#0D0D0D", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                      אישור
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Footer */}
             <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
