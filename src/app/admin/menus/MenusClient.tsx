@@ -254,6 +254,18 @@ async function parseXlsxToImportFile(file: File): Promise<ImportFile> {
   return { version: 1, menus };
 }
 
+// Shared dark input style
+const darkInput: React.CSSProperties = {
+  background: "#2d3239",
+  border: "1px solid #3a3f47",
+  color: "#e9ecef",
+  borderRadius: 8,
+  padding: "8px 12px",
+  width: "100%",
+  outline: "none",
+  fontSize: 14,
+};
+
 function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restaurantId: string }) {
   const [groups, setGroups] = useState<ModGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -339,32 +351,32 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000);
   }
 
-  if (loading) return <div className="text-sm text-gray-400 py-2">טוען...</div>;
+  if (loading) return <div style={{ fontSize: 13, color: "#6c757d", padding: "8px 0" }}>טוען...</div>;
 
   return (
     <div className="space-y-3">
       {groups.map((grp, gi) => (
-        <div key={gi} className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+        <div key={gi} style={{ border: "1px solid #2d3239", borderRadius: 12, padding: 12, background: "#1a1d23" }} className="space-y-2">
           <div className="flex items-center gap-2">
             <input
               value={grp.name}
               onChange={e => updateGroup(gi, { name: e.target.value })}
               placeholder="שם קבוצה (לדוגמא: עשייה)"
-              className="flex-1 text-sm px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+              style={{ ...darkInput, flex: 1, fontSize: 13, padding: "6px 10px" }}
             />
-            <button type="button" onClick={() => removeGroup(gi)} className="text-red-400 hover:text-red-600 text-sm px-2">✕</button>
+            <button type="button" onClick={() => removeGroup(gi)} style={{ color: "#ff6b6b", fontSize: 13, padding: "0 8px" }}>✕</button>
           </div>
-          <div className="flex gap-3 text-xs items-center flex-wrap">
-            <label className="flex items-center gap-1 text-gray-600 cursor-pointer">
+          <div className="flex gap-3 items-center flex-wrap" style={{ fontSize: 12 }}>
+            <label className="flex items-center gap-1 cursor-pointer" style={{ color: "#adb5bd" }}>
               <input type="checkbox" checked={grp.required} onChange={e => updateGroup(gi, { required: e.target.checked })} className="rounded"/>
               חובה
             </label>
-            <label className="flex items-center gap-1.5 text-gray-600">
+            <label className="flex items-center gap-1.5" style={{ color: "#adb5bd" }}>
               בחירה מקסימלית:
               <input
                 type="number" min={1} max={10} value={grp.maxSelect}
                 onChange={e => updateGroup(gi, { maxSelect: parseInt(e.target.value) || 1 })}
-                className="w-12 text-center px-1 py-0.5 border border-gray-200 rounded text-xs bg-white"
+                style={{ width: 48, textAlign: "center", padding: "2px 4px", background: "#2d3239", border: "1px solid #3a3f47", color: "#e9ecef", borderRadius: 6, fontSize: 12 }}
               />
             </label>
           </div>
@@ -375,42 +387,42 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
                   value={opt.label}
                   onChange={e => updateOption(gi, oi, { label: e.target.value })}
                   placeholder="אפשרות (מדיום, גדול...)"
-                  className="flex-1 text-sm px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                  style={{ ...darkInput, flex: 1, fontSize: 13, padding: "5px 8px" }}
                 />
                 <input
                   type="number" min={0} step={0.5} value={opt.priceAdd}
                   onChange={e => updateOption(gi, oi, { priceAdd: parseFloat(e.target.value) || 0 })}
                   placeholder="₪0"
-                  className="w-16 text-center text-sm px-1 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                  style={{ width: 64, textAlign: "center", fontSize: 13, padding: "5px 4px", background: "#2d3239", border: "1px solid #3a3f47", color: "#e9ecef", borderRadius: 8 }}
                   title="תוספת מחיר"
                 />
-                <button type="button" onClick={() => removeOption(gi, oi)} className="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                <button type="button" onClick={() => removeOption(gi, oi)} style={{ color: "#ff6b6b", fontSize: 12 }}>✕</button>
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => addOption(gi)} className="text-xs text-amber-700 hover:text-amber-900 font-medium">+ הוסף אפשרות</button>
+          <button type="button" onClick={() => addOption(gi)} style={{ color: "#fcc419", fontSize: 12, fontWeight: 500 }}>+ הוסף אפשרות</button>
         </div>
       ))}
       {/* Template picker */}
       {showTemplates && (
-        <div className="border border-amber-200 rounded-xl bg-amber-50 p-3 space-y-1.5">
+        <div style={{ border: "1px solid rgba(252,196,25,0.3)", background: "rgba(252,196,25,0.08)", borderRadius: 12, padding: 12 }} className="space-y-1.5">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-amber-800">בחר קבוצה להעתיק</span>
-            <button type="button" onClick={() => setShowTemplates(false)} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#fcc419" }}>בחר קבוצה להעתיק</span>
+            <button type="button" onClick={() => setShowTemplates(false)} style={{ color: "#6c757d", fontSize: 12 }}>✕</button>
           </div>
-          {templatesLoading && <div className="text-xs text-gray-400 py-1">טוען...</div>}
+          {templatesLoading && <div style={{ fontSize: 12, color: "#6c757d", padding: "4px 0" }}>טוען...</div>}
           {!templatesLoading && templates.length === 0 && (
-            <div className="text-xs text-gray-500 py-1">אין קבוצות מוגדרות בפריטים אחרים</div>
+            <div style={{ fontSize: 12, color: "#6c757d", padding: "4px 0" }}>אין קבוצות מוגדרות בפריטים אחרים</div>
           )}
           {!templatesLoading && templates.map(t => (
             <button
               key={t.id}
               type="button"
               onClick={() => copyTemplate(t)}
-              className="w-full text-right px-3 py-1.5 rounded-lg bg-white border border-amber-100 hover:border-amber-300 hover:bg-amber-50 transition-colors flex items-center justify-between gap-2"
+              style={{ width: "100%", textAlign: "right", padding: "6px 12px", borderRadius: 8, background: "#212529", border: "1px solid #2d3239", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
             >
-              <span className="text-sm font-medium text-gray-800">{t.name}</span>
-              <span className="text-xs text-gray-400 shrink-0">
+              <span style={{ fontSize: 13, fontWeight: 500, color: "#e9ecef" }}>{t.name}</span>
+              <span style={{ fontSize: 11, color: "#6c757d", flexShrink: 0 }}>
                 {t.options.map(o => o.label).join(" / ")}
                 {" · "}מתוך: {t.item.name}
               </span>
@@ -420,14 +432,14 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
       )}
 
       <div className="flex gap-2 flex-wrap">
-        <button type="button" onClick={addGroup} className="text-sm text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-xl px-3 py-1.5">
+        <button type="button" onClick={addGroup} style={{ border: "1px solid rgba(252,196,25,0.4)", background: "rgba(252,196,25,0.08)", color: "#fcc419", borderRadius: 12, padding: "6px 12px", fontSize: 13 }}>
           + קבוצת אפשרויות
         </button>
-        <button type="button" onClick={openTemplates} className="text-sm text-blue-700 hover:text-blue-900 font-medium border border-blue-200 bg-blue-50 rounded-xl px-3 py-1.5">
+        <button type="button" onClick={openTemplates} style={{ border: "1px solid rgba(51,154,240,0.4)", background: "rgba(51,154,240,0.08)", color: "#339af0", borderRadius: 12, padding: "6px 12px", fontSize: 13 }}>
           📋 העתק מתבנית
         </button>
         {groups.length > 0 && (
-          <button type="button" onClick={save} disabled={saving} className="text-sm font-semibold text-white rounded-xl px-4 py-1.5 disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+          <button type="button" onClick={save} disabled={saving} className="disabled:opacity-50" style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)", borderRadius: 12, padding: "6px 16px", fontSize: 13, fontWeight: 600 }}>
             {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור תגיות"}
           </button>
         )}
@@ -984,9 +996,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const isSingleMenu = (selectedRestaurant?.menus.length ?? 0) <= 1;
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8" style={{ background: "#1a1d23", minHeight: "100vh", color: "#e9ecef" }}>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">ניהול תפריטים</h1>
+        <h1 className="text-2xl font-bold" style={{ color: "#e9ecef" }}>ניהול תפריטים</h1>
         {selectedRestaurant && (
           <div className="flex items-center gap-2 flex-wrap">
 
@@ -995,16 +1007,21 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <button
                 onClick={() => { setExportDropdown(v => !v); setSampleDropdown(false); }}
                 disabled={importing}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-400 text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 disabled:opacity-50"
+                style={{ background: "#2d3239", border: "1px solid #fcc419", color: "#fcc419", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
               >
                 📤 ייצא ▾
               </button>
               {exportDropdown && (
-                <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden min-w-[140px]">
-                  <button onClick={handleExportJson} className="w-full text-right px-4 py-2.5 text-sm hover:bg-amber-50 text-gray-700 flex items-center gap-2">
+                <div className="absolute left-0 top-full mt-1 z-30 overflow-hidden min-w-[140px]" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+                  <button onClick={handleExportJson} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: "#e9ecef" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#2d3239")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <span className="text-base">📄</span> JSON
                   </button>
-                  <button onClick={handleExportXlsx} className="w-full text-right px-4 py-2.5 text-sm hover:bg-green-50 text-gray-700 flex items-center gap-2 border-t border-gray-100">
+                  <button onClick={handleExportXlsx} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: "#e9ecef", borderTop: "1px solid #2d3239" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#2d3239")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <span className="text-base">📊</span> Excel (.xlsx)
                   </button>
                 </div>
@@ -1015,7 +1032,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             <button
               onClick={handleImportClick}
               disabled={importing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-green-400 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 disabled:opacity-50"
+              style={{ background: "#2d3239", border: "1px solid #51cf66", color: "#51cf66", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
             >
               📥 ייבא תפריט
             </button>
@@ -1025,16 +1043,21 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <button
                 onClick={() => { setSampleDropdown(v => !v); setExportDropdown(false); }}
                 disabled={importing}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 disabled:opacity-50"
+                style={{ background: "#2d3239", border: "1px solid #3a3f47", color: "#adb5bd", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
               >
                 📋 קובץ דוגמא ▾
               </button>
               {sampleDropdown && (
-                <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden min-w-[140px]">
-                  <button onClick={handleSampleJson} className="w-full text-right px-4 py-2.5 text-sm hover:bg-amber-50 text-gray-700 flex items-center gap-2">
+                <div className="absolute left-0 top-full mt-1 z-30 overflow-hidden min-w-[140px]" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+                  <button onClick={handleSampleJson} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: "#e9ecef" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#2d3239")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <span className="text-base">📄</span> JSON
                   </button>
-                  <button onClick={handleSampleXlsx} className="w-full text-right px-4 py-2.5 text-sm hover:bg-green-50 text-gray-700 flex items-center gap-2 border-t border-gray-100">
+                  <button onClick={handleSampleXlsx} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: "#e9ecef", borderTop: "1px solid #2d3239" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#2d3239")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <span className="text-base">📊</span> Excel (.xlsx)
                   </button>
                 </div>
@@ -1060,42 +1083,49 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       />
 
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">אין מסעדות זמינות</div>
+        <div className="p-12 text-center" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, color: "#6c757d" }}>אין מסעדות זמינות</div>
       ) : (
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Sidebar */}
           <div className="w-full md:w-64 md:shrink-0 space-y-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-4 border-b border-gray-100 font-semibold text-sm text-gray-700">מסעדות</div>
+            <div style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ borderBottom: "1px solid #2d3239", color: "#adb5bd", padding: "12px 16px", fontWeight: 600, fontSize: 14 }}>מסעדות</div>
               {restaurants.map(rest => (
                 <button key={rest.id} onClick={() => { setSelectedRestaurant(rest); setSelectedMenu(rest.menus[0] ?? null); }}
-                  className={`w-full text-right px-4 py-3 text-sm transition-colors ${selectedRestaurant?.id === rest.id ? "bg-amber-50 text-amber-700 font-medium" : "text-gray-600 hover:bg-gray-50"}`}>
+                  className="w-full text-right px-4 py-3 text-sm transition-colors"
+                  style={selectedRestaurant?.id === rest.id
+                    ? { background: "rgba(252,196,25,0.12)", color: "#fcc419", fontWeight: 600 }
+                    : { color: "#adb5bd" }}
+                  onMouseEnter={e => { if (selectedRestaurant?.id !== rest.id) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+                  onMouseLeave={e => { if (selectedRestaurant?.id !== rest.id) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
                   {rest.name}
                 </button>
               ))}
             </div>
 
             {selectedRestaurant && !isSingleMenu && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                  <span className="font-semibold text-sm text-gray-700">תפריטים</span>
+              <div style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ borderBottom: "1px solid #2d3239", padding: "12px 16px" }} className="flex items-center justify-between">
+                  <span style={{ fontWeight: 600, fontSize: 14, color: "#adb5bd" }}>תפריטים</span>
                   {canEdit && (
-                    <button onClick={() => setShowMenuForm(true)} className="text-xs text-amber-600 hover:text-amber-700 font-medium">+ חדש</button>
+                    <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 12, color: "#fcc419", fontWeight: 500 }}>+ חדש</button>
                   )}
                 </div>
                 {selectedRestaurant.menus.map(menu => (
-                  <div key={menu.id} className={`flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors ${selectedMenu?.id === menu.id ? "bg-amber-50" : "hover:bg-gray-50"}`}>
-                    <button onClick={() => setSelectedMenu(menu)} className={`flex-1 text-right text-sm ${selectedMenu?.id === menu.id ? "text-amber-700 font-medium" : "text-gray-600"}`}>
+                  <div key={menu.id} className="flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors"
+                    style={selectedMenu?.id === menu.id ? { background: "rgba(252,196,25,0.12)" } : {}}>
+                    <button onClick={() => setSelectedMenu(menu)} className="flex-1 text-right text-sm"
+                      style={selectedMenu?.id === menu.id ? { color: "#fcc419" } : { color: "#adb5bd" }}>
                       <span className="flex items-center gap-1.5">
-                        {menu.isPrimary && <span title="תפריט ראשי" className="text-amber-500 text-xs">★</span>}
-                        {menu.scheduleDays?.length > 0 && <span title="עם תזמון" className="text-blue-400 text-xs">⏰</span>}
+                        {menu.isPrimary && <span title="תפריט ראשי" style={{ color: "#fcc419", fontSize: 12 }}>★</span>}
+                        {menu.scheduleDays?.length > 0 && <span title="עם תזמון" style={{ color: "#339af0", fontSize: 12 }}>⏰</span>}
                         {menu.name}
                       </span>
                     </button>
                     {canEdit && (
                       <div className="flex items-center gap-0.5">
-                        <button onClick={() => openSchedule(menu)} className="text-gray-300 hover:text-amber-500 text-xs px-1" title="הגדרות תזמון">🕐</button>
-                        <button onClick={() => deleteMenu(menu.id)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
+                        <button onClick={() => openSchedule(menu)} style={{ color: "#6c757d", fontSize: 12, padding: "0 4px" }} title="הגדרות תזמון">🕐</button>
+                        <button onClick={() => deleteMenu(menu.id)} style={{ color: "#6c757d", fontSize: 12, padding: "0 4px" }}>✕</button>
                       </div>
                     )}
                   </div>
@@ -1103,7 +1133,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 {selectedRestaurant.menus.length === 0 && (
                   <div className="p-6 text-center">
                     <div className="text-2xl mb-2">📋</div>
-                    <p className="text-xs text-gray-400 mb-3">אין תפריטים עדיין</p>
+                    <p style={{ fontSize: 12, color: "#6c757d", marginBottom: 12 }}>אין תפריטים עדיין</p>
                     {canEdit && <button onClick={() => setShowMenuForm(true)} className="text-xs text-white px-3 py-1.5 rounded-lg font-medium" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>+ צור תפריט ראשון</button>}
                   </div>
                 )}
@@ -1111,12 +1141,12 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             )}
             {/* #3 — single-menu: show settings icon inline */}
             {selectedRestaurant && isSingleMenu && selectedMenu && canEdit && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
                 <div className="p-3 flex items-center justify-between">
-                  <span className="text-xs text-gray-500 font-medium">{selectedMenu.name}</span>
+                  <span style={{ fontSize: 12, color: "#adb5bd", fontWeight: 500 }}>{selectedMenu.name}</span>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openSchedule(selectedMenu)} className="text-gray-400 hover:text-amber-500 text-xs px-1.5 py-1 rounded hover:bg-gray-50" title="הגדרות תפריט">⚙️</button>
-                    <button onClick={() => setShowMenuForm(true)} className="text-xs text-amber-600 hover:text-amber-700 font-medium px-1.5 py-1 rounded hover:bg-amber-50">+ תפריט נוסף</button>
+                    <button onClick={() => openSchedule(selectedMenu)} style={{ color: "#6c757d", fontSize: 12, padding: "4px 6px", borderRadius: 6 }} title="הגדרות תפריט">⚙️</button>
+                    <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 12, color: "#fcc419", fontWeight: 500, padding: "4px 6px", borderRadius: 6 }}>+ תפריט נוסף</button>
                   </div>
                 </div>
               </div>
@@ -1126,11 +1156,11 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
           {/* Main */}
           <div className="flex-1">
             {!selectedMenu ? (
-              <div className="bg-white rounded-xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">בחר תפריט או צור חדש</div>
+              <div className="p-12 text-center" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, color: "#6c757d" }}>בחר תפריט או צור חדש</div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-900">{selectedMenu.name}</h2>
+                  <h2 className="text-xl font-bold" style={{ color: "#e9ecef" }}>{selectedMenu.name}</h2>
                   {canEdit && (
                     <button onClick={() => setShowCategoryForm(true)}
                       className="text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -1141,10 +1171,10 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 </div>
 
                 {sortedCategories.length === 0 ? (
-                  <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+                  <div className="p-12 text-center" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12 }}>
                     <div className="text-4xl mb-3">🗂️</div>
-                    <div className="font-medium text-gray-700 mb-1">אין קטגוריות עדיין</div>
-                    <div className="text-sm text-gray-400 mb-4">הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
+                    <div className="font-medium mb-1" style={{ color: "#adb5bd" }}>אין קטגוריות עדיין</div>
+                    <div className="text-sm mb-4" style={{ color: "#6c757d" }}>הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
                     {canEdit && (
                       <button onClick={() => setShowCategoryForm(true)}
                         className="inline-flex items-center gap-1.5 text-white px-5 py-2.5 rounded-lg text-sm font-medium"
@@ -1157,34 +1187,38 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   sortedCategories.map((cat, idx) => {
                     const isExpanded = expandedCats.has(cat.id);
                     return (
-                    <div key={cat.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div key={cat.id} style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
                       {/* Category header — always visible, click to expand */}
                       <div
-                        className="p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                        className="p-4 flex items-center gap-3 cursor-pointer select-none transition-colors"
+                        style={{ borderBottom: isExpanded ? "1px solid #2d3239" : undefined }}
                         onClick={() => toggleCat(cat.id)}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                       >
                         {cat.image && <img src={cat.image} alt={cat.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />}
-                        <h3 className="font-semibold text-gray-900 flex-1">{cat.name}</h3>
+                        <h3 className="font-semibold flex-1" style={{ color: "#e9ecef" }}>{cat.name}</h3>
                         {/* Item count badge */}
-                        <span className="text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 shrink-0">
+                        <span className="shrink-0" style={{ background: "#2d3239", color: "#6c757d", borderRadius: 999, padding: "2px 8px", fontSize: 12 }}>
                           {cat.items.length} פריטים
                         </span>
                         {canEdit && (
                           <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                             <div className="flex flex-col gap-0.5">
                               <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
-                                className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none">▲</button>
+                                className="disabled:opacity-30 leading-none" style={{ fontSize: 12, color: "#6c757d" }}>▲</button>
                               <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1}
-                                className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none">▼</button>
+                                className="disabled:opacity-30 leading-none" style={{ fontSize: 12, color: "#6c757d" }}>▼</button>
                             </div>
                             <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                              className="text-sm text-amber-600 hover:text-amber-700 font-medium">+ פריט</button>
-                            <button onClick={() => deleteCategory(cat.id)} className="text-sm text-red-400 hover:text-red-600">מחק</button>
+                              className="text-sm font-medium" style={{ color: "#fcc419" }}>+ פריט</button>
+                            <button onClick={() => deleteCategory(cat.id)} className="text-sm" style={{ color: "#ff6b6b" }}>מחק</button>
                           </div>
                         )}
                         {/* Chevron */}
                         <svg
-                          className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          style={{ color: "#6c757d" }}
                           fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
                         >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1193,47 +1227,48 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
                       {/* Items — only when expanded */}
                       {isExpanded && (
-                        <div className="divide-y divide-gray-50 border-t border-gray-100">
+                        <div>
                           {cat.items.length === 0 ? (
                             <div className="p-6 text-center">
                               <div className="text-2xl mb-1">🍽️</div>
-                              <p className="text-sm text-gray-400 mb-2">אין פריטים בקטגוריה זו</p>
+                              <p className="text-sm mb-2" style={{ color: "#6c757d" }}>אין פריטים בקטגוריה זו</p>
                               {canEdit && (
                                 <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium border border-amber-200 bg-amber-50 rounded-lg px-3 py-1.5">
+                                  style={{ fontSize: 12, color: "#fcc419", border: "1px solid rgba(252,196,25,0.3)", background: "rgba(252,196,25,0.08)", borderRadius: 8, padding: "6px 12px", fontWeight: 500 }}>
                                   + הוסף פריט ראשון
                                 </button>
                               )}
                             </div>
                           ) : (
-                            cat.items.map(item => (
-                              <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap">
+                            cat.items.map((item, itemIdx) => (
+                              <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap"
+                                style={{ borderTop: itemIdx === 0 ? undefined : "1px solid #2d3239" }}>
                                 {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`font-medium ${!item.isActive ? "text-gray-400 line-through" : "text-gray-900"}`}>{item.name}</span>
-                                    {item.isVegetarian && <span title="צמחוני" className="text-green-500 text-xs">🌿</span>}
-                                    {item.isVegan && <span title="טבעוני" className="text-green-600 text-xs">🌱</span>}
-                                    {item.isGlutenFree && <span title="ללא גלוטן" className="text-yellow-500 text-xs font-bold">GF</span>}
+                                    <span className="font-medium" style={!item.isActive ? { color: "#6c757d", textDecoration: "line-through" } : { color: "#e9ecef" }}>{item.name}</span>
+                                    {item.isVegetarian && <span title="צמחוני" className="text-xs">🌿</span>}
+                                    {item.isVegan && <span title="טבעוני" className="text-xs">🌱</span>}
+                                    {item.isGlutenFree && <span title="ללא גלוטן" style={{ color: "#fcc419", fontWeight: 700, fontSize: 11 }}>GF</span>}
                                     {item.prepTime != null && (
-                                      <span className="bg-blue-50 text-blue-600 text-xs px-1.5 py-0.5 rounded-full font-medium">⏱ {item.prepTime}&apos;</span>
+                                      <span style={{ background: "rgba(51,154,240,0.15)", color: "#339af0", borderRadius: 999, padding: "2px 6px", fontSize: 11, fontWeight: 600 }}>⏱ {item.prepTime}&apos;</span>
                                     )}
                                     {item.tags?.map(tag => (
-                                      <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{tag}</span>
+                                      <span key={tag} style={{ background: "#2d3239", color: "#adb5bd", borderRadius: 999, padding: "2px 6px", fontSize: 11 }}>{tag}</span>
                                     ))}
                                   </div>
-                                  {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
+                                  {item.description && <p className="text-xs mt-0.5" style={{ color: "#6c757d" }}>{item.description}</p>}
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
-                                  <span className="font-semibold text-gray-900">{formatPrice(item.price)}</span>
+                                  <span style={{ color: "#51cf66", fontWeight: 700 }}>{formatPrice(item.price)}</span>
                                   {canEdit && (
                                     <>
-                                      <button onClick={() => openEditItem(cat, item)} className="text-xs text-blue-500 hover:text-blue-700">ערוך</button>
+                                      <button onClick={() => openEditItem(cat, item)} style={{ color: "#339af0", fontSize: 12 }}>ערוך</button>
                                       <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
-                                        className={`text-xs ${item.isActive ? "text-gray-400 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}>
+                                        style={{ color: item.isActive ? "#6c757d" : "#51cf66", fontSize: 12 }}>
                                         {item.isActive ? "השבת" : "הפעל"}
                                       </button>
-                                      <button onClick={() => deleteItem(cat.id, item.id)} className="text-xs text-red-400 hover:text-red-600">מחק</button>
+                                      <button onClick={() => deleteItem(cat.id, item.id)} style={{ color: "#ff6b6b", fontSize: 12 }}>מחק</button>
                                     </>
                                   )}
                                 </div>
@@ -1254,20 +1289,20 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
       {/* Menu Form Modal */}
       {showMenuForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">תפריט חדש</h2>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
+          <div className="w-full max-w-md p-6" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: "#e9ecef" }}>תפריט חדש</h2>
             <form onSubmit={createMenu} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">שם התפריט *</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#adb5bd" }}>שם התפריט *</label>
                 <input required value={menuForm.name} onChange={e => setMenuForm({ ...menuForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  style={darkInput} />
               </div>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "יוצר..." : "צור"}
                 </button>
-                <button type="button" onClick={() => setShowMenuForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
+                <button type="button" onClick={() => setShowMenuForm(false)} className="flex-1 py-2.5 rounded-lg font-medium" style={{ background: "#2d3239", color: "#adb5bd" }}>ביטול</button>
               </div>
             </form>
           </div>
@@ -1276,14 +1311,14 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
       {/* Category Form Modal */}
       {showCategoryForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">קטגוריה חדשה</h2>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
+          <div className="w-full max-w-md p-6" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: "#e9ecef" }}>קטגוריה חדשה</h2>
             <form onSubmit={createCategory} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">שם הקטגוריה *</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#adb5bd" }}>שם הקטגוריה *</label>
                 <input required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  style={darkInput} />
               </div>
               <ImageUpload
                 label="תמונת קטגוריה"
@@ -1291,30 +1326,30 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 onChange={url => setCategoryForm({ ...categoryForm, image: url })}
               />
               {/* Category translations */}
-              <details className="border border-gray-200 rounded-xl overflow-hidden">
-                <summary className="px-4 py-3 text-sm font-semibold text-gray-700 cursor-pointer select-none bg-gray-50 hover:bg-gray-100">
+              <details style={{ border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+                <summary className="px-4 py-3 text-sm font-semibold cursor-pointer select-none" style={{ background: "#1a1d23", color: "#adb5bd" }}>
                   🌐 תרגומים (EN · RU · FR)
                 </summary>
                 <div className="p-4 space-y-3">
                   {(["en", "ru", "fr"] as const).map(lang => (
                     <div key={lang} className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-gray-400 w-6 shrink-0">{lang.toUpperCase()}</span>
+                      <span className="text-xs font-bold w-6 shrink-0" style={{ color: "#6c757d" }}>{lang.toUpperCase()}</span>
                       <input
                         value={categoryForm.translations?.[lang]?.name ?? ""}
                         onChange={e => setCategoryForm({ ...categoryForm, translations: { ...categoryForm.translations, [lang]: { name: e.target.value } } })}
                         placeholder={lang === "en" ? "Category name..." : lang === "ru" ? "Название категории..." : "Nom de la catégorie..."}
                         dir="ltr"
-                        className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                        style={darkInput}
                       />
                     </div>
                   ))}
                 </div>
               </details>
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "יוצר..." : "צור"}
                 </button>
-                <button type="button" onClick={() => setShowCategoryForm(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
+                <button type="button" onClick={() => setShowCategoryForm(false)} className="flex-1 py-2.5 rounded-lg font-medium" style={{ background: "#2d3239", color: "#adb5bd" }}>ביטול</button>
               </div>
             </form>
           </div>
@@ -1323,25 +1358,25 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
       {/* Item Form Modal */}
       {showItemForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">{editItem ? `ערוך פריט — ${editItem.name}` : `פריט חדש — ${selectedCategory?.name}`}</h2>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
+          <div className="w-full max-w-md p-6 max-h-[90vh] overflow-y-auto" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: "#e9ecef" }}>{editItem ? `ערוך פריט — ${editItem.name}` : `פריט חדש — ${selectedCategory?.name}`}</h2>
             <form onSubmit={handleItemSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">שם הפריט *</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#adb5bd" }}>שם הפריט *</label>
                 <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  style={darkInput} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">תיאור</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#adb5bd" }}>תיאור</label>
                 <textarea value={itemForm.description} onChange={e => setItemForm({ ...itemForm, description: e.target.value })}
-                  rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  rows={2} style={{ ...darkInput, resize: "vertical" }} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">מחיר (₪) *</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#adb5bd" }}>מחיר (₪) *</label>
                 <input required type="number" min="0" step="0.5" value={itemForm.price}
                   onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" dir="ltr" />
+                  style={darkInput} dir="ltr" />
               </div>
               <ImageUpload
                 label="תמונת פריט"
@@ -1350,7 +1385,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               />
               <div className="flex gap-4 flex-wrap">
                 {[{ key: "isVegetarian", label: "צמחוני 🌿" }, { key: "isVegan", label: "טבעוני 🌱" }, { key: "isGlutenFree", label: "ללא גלוטן" }].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <label key={key} className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "#adb5bd" }}>
                     <input type="checkbox" checked={itemForm[key as keyof typeof itemForm] as boolean}
                       onChange={e => setItemForm({ ...itemForm, [key]: e.target.checked })} className="rounded" />
                     {label}
@@ -1358,24 +1393,24 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 ))}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">תגיות נוספות</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#adb5bd" }}>תגיות נוספות</label>
                 <div className="flex gap-2 mb-2">
                   <input
                     value={tagInput}
                     onChange={e => setTagInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
                     placeholder="הוסף תגית..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    style={{ ...darkInput, flex: 1 }}
                   />
                   <button type="button" onClick={addTag}
-                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium">הוסף</button>
+                    style={{ background: "#2d3239", color: "#adb5bd", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>הוסף</button>
                 </div>
                 {itemForm.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {itemForm.tags.map(tag => (
-                      <span key={tag} className="flex items-center gap-1 bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full">
+                      <span key={tag} className="flex items-center gap-1" style={{ background: "rgba(252,196,25,0.15)", color: "#fcc419", borderRadius: 999, padding: "3px 8px", fontSize: 11 }}>
                         {tag}
-                        <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-600 font-bold leading-none">×</button>
+                        <button type="button" onClick={() => removeTag(tag)} className="font-bold leading-none" style={{ color: "#ff6b6b" }}>×</button>
                       </span>
                     ))}
                   </div>
@@ -1383,19 +1418,16 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               </div>
               {/* Prep time */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">⏱ זמן הכנה ממוצע</label>
+                <label className="block text-sm font-medium mb-2" style={{ color: "#adb5bd" }}>⏱ זמן הכנה ממוצע</label>
                 <div className="flex items-center gap-2 flex-wrap">
                   {[5, 10, 15, 20, 30, 45].map(m => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => setItemForm({ ...itemForm, prepTime: itemForm.prepTime === String(m) ? "" : String(m) })}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                        itemForm.prepTime === String(m)
-                          ? "border-amber-400 text-white"
-                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                      style={itemForm.prepTime === String(m) ? { background: "#c9a84c" } : undefined}
+                      style={itemForm.prepTime === String(m)
+                        ? { background: "#2d1f00", border: "1px solid #fcc419", color: "#fcc419", borderRadius: 8, padding: "6px 12px", fontSize: 13, fontWeight: 600 }
+                        : { background: "#2d3239", border: "1px solid #3a3f47", color: "#adb5bd", borderRadius: 8, padding: "6px 12px", fontSize: 13 }}
                     >
                       {m}&apos;
                     </button>
@@ -1407,7 +1439,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     value={itemForm.prepTime}
                     onChange={e => setItemForm({ ...itemForm, prepTime: e.target.value })}
                     placeholder="דק'"
-                    className="w-20 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    style={{ ...darkInput, width: 80 }}
                     dir="ltr"
                   />
                 </div>
@@ -1415,33 +1447,33 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
               {editItem && selectedRestaurant && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">תגיות / אפשרויות</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#adb5bd" }}>תגיות / אפשרויות</label>
                   <ModifierGroupsEditor itemId={editItem.id} restaurantId={selectedRestaurant.id} />
                 </div>
               )}
 
               {/* ── Translations ── */}
-              <details className="border border-gray-200 rounded-xl overflow-hidden">
-                <summary className="px-4 py-3 text-sm font-semibold text-gray-700 cursor-pointer select-none bg-gray-50 hover:bg-gray-100 flex items-center gap-2">
+              <details style={{ border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+                <summary className="px-4 py-3 text-sm font-semibold cursor-pointer select-none flex items-center gap-2" style={{ background: "#1a1d23", color: "#adb5bd" }}>
                   🌐 תרגומים (EN · RU · FR)
                 </summary>
                 <div className="p-4 space-y-4">
                   {(["en", "ru", "fr"] as const).map(lang => (
-                    <div key={lang} className="border border-gray-100 rounded-lg p-3 space-y-2">
-                      <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">{lang === "en" ? "🇬🇧 English" : lang === "ru" ? "🇷🇺 Русский" : "🇫🇷 Français"}</div>
+                    <div key={lang} style={{ border: "1px solid #2d3239", borderRadius: 8, padding: 12 }} className="space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wide" style={{ color: "#6c757d" }}>{lang === "en" ? "🇬🇧 English" : lang === "ru" ? "🇷🇺 Русский" : "🇫🇷 Français"}</div>
                       <input
                         value={itemForm.translations?.[lang]?.name ?? ""}
                         onChange={e => setItemForm({ ...itemForm, translations: { ...itemForm.translations, [lang]: { ...itemForm.translations?.[lang], name: e.target.value } } })}
                         placeholder="Item name..."
                         dir="ltr"
-                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                        style={darkInput}
                       />
                       <textarea
                         value={itemForm.translations?.[lang]?.description ?? ""}
                         onChange={e => setItemForm({ ...itemForm, translations: { ...itemForm.translations, [lang]: { ...itemForm.translations?.[lang], description: e.target.value } } })}
                         placeholder="Description..."
                         dir="ltr" rows={2}
-                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                        style={{ ...darkInput, resize: "vertical" }}
                       />
                     </div>
                   ))}
@@ -1449,10 +1481,10 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               </details>
 
               <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "שומר..." : editItem ? "שמור שינויים" : "הוסף פריט"}
                 </button>
-                <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">ביטול</button>
+                <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }} className="flex-1 py-2.5 rounded-lg font-medium" style={{ background: "#2d3239", color: "#adb5bd" }}>ביטול</button>
               </div>
             </form>
           </div>
@@ -1461,9 +1493,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
       {/* Schedule / Primary Modal */}
       {scheduleMenu && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-5">הגדרות תפריט — {scheduleMenu.name}</h2>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
+          <div className="w-full max-w-md p-6" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }}>
+            <h2 className="text-xl font-bold mb-5" style={{ color: "#e9ecef" }}>הגדרות תפריט — {scheduleMenu.name}</h2>
             <form onSubmit={saveSchedule} className="space-y-5">
 
               {/* Primary toggle */}
@@ -1471,19 +1503,25 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 <div className="relative">
                   <input type="checkbox" className="sr-only" checked={scheduleForm.isPrimary}
                     onChange={e => setScheduleForm({ ...scheduleForm, isPrimary: e.target.checked })} />
-                  <div className={`w-11 h-6 rounded-full transition-colors ${scheduleForm.isPrimary ? "bg-amber-400" : "bg-gray-200"}`} />
-                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${scheduleForm.isPrimary ? "translate-x-5 right-0.5" : "right-5"}`} />
+                  <div style={{ width: 44, height: 24, borderRadius: 999, background: scheduleForm.isPrimary ? "#fcc419" : "#3a3f47", transition: "background 0.2s" }} />
+                  <div style={{
+                    position: "absolute", top: 2, width: 20, height: 20,
+                    background: "#fff", borderRadius: "50%",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                    transition: "right 0.2s",
+                    right: scheduleForm.isPrimary ? 2 : 22,
+                  }} />
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900">תפריט ראשי ★</div>
-                  <div className="text-xs text-gray-400">רק תפריט ראשי מוצג בדף הציבורי</div>
+                  <div className="font-medium" style={{ color: "#e9ecef" }}>תפריט ראשי ★</div>
+                  <div className="text-xs" style={{ color: "#6c757d" }}>רק תפריט ראשי מוצג בדף הציבורי</div>
                 </div>
               </label>
 
               {/* Days */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ימי הצגה <span className="text-gray-400 font-normal">(ריק = כל הימים)</span>
+                <label className="block text-sm font-medium mb-2" style={{ color: "#adb5bd" }}>
+                  ימי הצגה <span style={{ color: "#6c757d", fontWeight: 400 }}>(ריק = כל הימים)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {DAYS_HE.map((day, i) => {
@@ -1497,9 +1535,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                             ? scheduleForm.scheduleDays.filter(d => d !== val)
                             : [...scheduleForm.scheduleDays, val],
                         })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                          checked ? "border-amber-400 bg-amber-50 text-amber-700" : "border-gray-200 text-gray-500 hover:border-gray-300"
-                        }`}>
+                        style={checked
+                          ? { border: "1px solid #fcc419", background: "rgba(252,196,25,0.12)", color: "#fcc419", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600 }
+                          : { border: "1px solid #2d3239", color: "#adb5bd", borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>
                         {day}
                       </button>
                     );
@@ -1509,33 +1547,34 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
               {/* Time range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  שעות הצגה <span className="text-gray-400 font-normal">(ריק = כל שעות)</span>
+                <label className="block text-sm font-medium mb-2" style={{ color: "#adb5bd" }}>
+                  שעות הצגה <span style={{ color: "#6c757d", fontWeight: 400 }}>(ריק = כל שעות)</span>
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <label className="text-xs text-gray-500 mb-1 block">משעה</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#6c757d" }}>משעה</label>
                     <input type="time" value={scheduleForm.scheduleFrom}
                       onChange={e => setScheduleForm({ ...scheduleForm, scheduleFrom: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm" dir="ltr" />
+                      style={darkInput} dir="ltr" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs text-gray-500 mb-1 block">עד שעה</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#6c757d" }}>עד שעה</label>
                     <input type="time" value={scheduleForm.scheduleTo}
                       onChange={e => setScheduleForm({ ...scheduleForm, scheduleTo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm" dir="ltr" />
+                      style={darkInput} dir="ltr" />
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-1">
                 <button type="submit" disabled={loading}
-                  className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
-                  style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                  className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50"
+                  style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
                   {loading ? "שומר..." : "שמור"}
                 </button>
                 <button type="button" onClick={() => setScheduleMenu(null)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium">
+                  className="flex-1 py-2.5 rounded-lg font-medium"
+                  style={{ background: "#2d3239", color: "#adb5bd" }}>
                   ביטול
                 </button>
               </div>
@@ -1546,16 +1585,16 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
       {/* #8 — Destructive Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm(null)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }} onClick={() => setDeleteConfirm(null)}>
+          <div className="w-full max-w-sm p-6" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }} onClick={e => e.stopPropagation()}>
             <div className="text-4xl mb-3 text-center">🗑️</div>
-            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">אישור מחיקה</h3>
-            <p className="text-sm text-gray-500 text-center mb-1">
+            <h3 className="text-lg font-bold text-center mb-1" style={{ color: "#e9ecef" }}>אישור מחיקה</h3>
+            <p className="text-sm text-center mb-1" style={{ color: "#6c757d" }}>
               {deleteConfirm.type === "menu" && "כל הקטגוריות והפריטים של התפריט יימחקו."}
               {deleteConfirm.type === "category" && "כל הפריטים בקטגוריה יימחקו."}
               {deleteConfirm.type === "item" && ""}
             </p>
-            <p className="text-sm font-semibold text-gray-800 text-center mb-5">
+            <p className="text-sm font-semibold text-center mb-5" style={{ color: "#e9ecef" }}>
               &ldquo;{deleteConfirm.label}&rdquo;
             </p>
             <div className="flex gap-3">
@@ -1565,14 +1604,15 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   else if (deleteConfirm.type === "category") _doDeleteCategory(deleteConfirm.id);
                   else if (deleteConfirm.type === "item") _doDeleteItem(deleteConfirm.id, deleteConfirm.extra!);
                 }}
-                className="flex-1 py-2.5 rounded-lg font-semibold text-white text-sm"
-                style={{ background: "#ef4444" }}
+                className="flex-1 py-2.5 rounded-lg font-semibold text-sm"
+                style={{ background: "#ff6b6b", color: "#fff" }}
               >
                 מחק
               </button>
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-2.5 rounded-lg font-medium text-gray-700 text-sm bg-gray-100 hover:bg-gray-200"
+                className="flex-1 py-2.5 rounded-lg font-medium text-sm"
+                style={{ background: "#2d3239", color: "#adb5bd" }}
               >
                 ביטול
               </button>
@@ -1583,42 +1623,46 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
+          <div className="w-full max-w-lg p-6" style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 16 }}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-bold text-gray-900">ייבא תפריט</h2>
+              <h2 className="text-xl font-bold" style={{ color: "#e9ecef" }}>ייבא תפריט</h2>
               {!importing && (
-                <button onClick={closeImportModal} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+                <button onClick={closeImportModal} style={{ color: "#6c757d", fontSize: 18, lineHeight: 1 }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#e9ecef")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "#6c757d")}>✕</button>
               )}
             </div>
 
             {/* Error */}
             {importError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              <div style={{ background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", color: "#ff6b6b", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13 }}>
                 {importError}
               </div>
             )}
 
             {/* Done state */}
             {importDone !== null && !importing && (
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+              <div style={{ background: "rgba(81,207,102,0.1)", border: "1px solid rgba(81,207,102,0.3)", borderRadius: 12, padding: 16, textAlign: "center", marginBottom: 16 }}>
                 <div className="text-2xl mb-1">✓</div>
-                <div className="font-semibold text-green-800">יובאו בהצלחה {importDone} פריטים</div>
+                <div className="font-semibold" style={{ color: "#51cf66" }}>יובאו בהצלחה {importDone} פריטים</div>
               </div>
             )}
 
             {/* Progress */}
             {importProgress && importing && (
               <div className="mb-4 space-y-2">
-                <div className="text-sm text-gray-600 text-center">
+                <div className="text-sm text-center" style={{ color: "#adb5bd" }}>
                   מייבא פריטים... ({importProgress.current}/{importProgress.total})
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                <div style={{ background: "#2d3239", borderRadius: 999, height: 8, overflow: "hidden" }}>
                   <div
-                    className="h-3 rounded-full transition-all duration-300"
+                    className="transition-all duration-300"
                     style={{
+                      height: 8,
+                      borderRadius: 999,
                       width: importProgress.total > 0 ? `${(importProgress.current / importProgress.total) * 100}%` : "0%",
-                      background: "#c9a84c",
+                      background: "#fcc419",
                     }}
                   />
                 </div>
@@ -1628,12 +1672,15 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             {/* No data yet — file picker UI */}
             {!importData && importDone === null && !importing && (
               <div
-                className="mb-5 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-amber-300 hover:bg-amber-50/30 transition-colors"
+                className="mb-5 text-center cursor-pointer"
+                style={{ border: "2px dashed #3a3f47", borderRadius: 12, padding: 32 }}
                 onClick={() => fileInputRef.current?.click()}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#fcc419"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#3a3f47"; }}
               >
                 <div className="text-3xl mb-2">📂</div>
-                <div className="text-sm font-medium text-gray-700 mb-1">לחץ לבחירת קובץ JSON</div>
-                <div className="text-xs text-gray-400">קובץ ייצוא תואם בפורמט Menu4U</div>
+                <div className="text-sm font-medium mb-1" style={{ color: "#adb5bd" }}>לחץ לבחירת קובץ JSON</div>
+                <div className="text-xs" style={{ color: "#6c757d" }}>קובץ ייצוא תואם בפורמט Menu4U</div>
               </div>
             )}
 
@@ -1643,22 +1690,22 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 {(() => {
                   const { menuCount, categoryCount, itemCount } = getImportCounts(importData);
                   return (
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                      <div className="font-semibold text-amber-900 mb-2">
+                    <div style={{ background: "rgba(252,196,25,0.08)", border: "1px solid rgba(252,196,25,0.25)", borderRadius: 12, padding: 16 }}>
+                      <div className="font-semibold mb-2" style={{ color: "#fcc419" }}>
                         {importData.restaurantName ? `מקור: ${importData.restaurantName}` : "תצוגה מקדימה"}
                       </div>
                       <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="bg-white rounded-lg py-2 px-1 border border-amber-100">
-                          <div className="text-xl font-bold text-amber-700">{menuCount}</div>
-                          <div className="text-xs text-gray-500">תפריטים</div>
+                        <div style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 8, padding: "8px 4px" }}>
+                          <div className="text-xl font-bold" style={{ color: "#fcc419" }}>{menuCount}</div>
+                          <div className="text-xs" style={{ color: "#6c757d" }}>תפריטים</div>
                         </div>
-                        <div className="bg-white rounded-lg py-2 px-1 border border-amber-100">
-                          <div className="text-xl font-bold text-amber-700">{categoryCount}</div>
-                          <div className="text-xs text-gray-500">קטגוריות</div>
+                        <div style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 8, padding: "8px 4px" }}>
+                          <div className="text-xl font-bold" style={{ color: "#fcc419" }}>{categoryCount}</div>
+                          <div className="text-xs" style={{ color: "#6c757d" }}>קטגוריות</div>
                         </div>
-                        <div className="bg-white rounded-lg py-2 px-1 border border-amber-100">
-                          <div className="text-xl font-bold text-amber-700">{itemCount}</div>
-                          <div className="text-xs text-gray-500">פריטים</div>
+                        <div style={{ background: "#212529", border: "1px solid #2d3239", borderRadius: 8, padding: "8px 4px" }}>
+                          <div className="text-xl font-bold" style={{ color: "#fcc419" }}>{itemCount}</div>
+                          <div className="text-xs" style={{ color: "#6c757d" }}>פריטים</div>
                         </div>
                       </div>
                     </div>
@@ -1666,9 +1713,9 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 })()}
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {importData.menus.map((menu, mi) => (
-                    <div key={mi} className="text-sm p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                      <div className="font-medium text-gray-800">{menu.name}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                    <div key={mi} style={{ background: "#1a1d23", border: "1px solid #2d3239", borderRadius: 8, padding: "10px 14px", marginBottom: 6 }}>
+                      <div className="font-medium" style={{ color: "#e9ecef" }}>{menu.name}</div>
+                      <div className="text-xs mt-0.5" style={{ color: "#6c757d" }}>
                         {menu.categories.map(c => `${c.name} (${c.items.length})`).join(" · ")}
                       </div>
                     </div>
@@ -1682,8 +1729,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               {importDone !== null ? (
                 <button
                   onClick={closeImportModal}
-                  className="flex-1 text-white py-2.5 rounded-lg font-medium"
-                  style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}
+                  className="flex-1 py-2.5 rounded-lg font-medium"
+                  style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}
                 >
                   סגור
                 </button>
@@ -1692,14 +1739,15 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                   <button
                     onClick={handleImport}
                     disabled={importing}
-                    className="flex-1 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
-                    style={{ background: "#c9a84c", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}
+                    className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50"
+                    style={{ background: "#c9a84c", color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}
                   >
                     ייבא עכשיו
                   </button>
                   <button
                     onClick={closeImportModal}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium"
+                    className="flex-1 py-2.5 rounded-lg font-medium"
+                    style={{ background: "#2d3239", color: "#adb5bd" }}
                   >
                     ביטול
                   </button>
@@ -1707,7 +1755,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               ) : !importing ? (
                 <button
                   onClick={closeImportModal}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium"
+                  className="flex-1 py-2.5 rounded-lg font-medium"
+                  style={{ background: "#2d3239", color: "#adb5bd" }}
                 >
                   ביטול
                 </button>
