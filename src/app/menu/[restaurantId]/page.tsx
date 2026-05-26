@@ -45,7 +45,7 @@ export default async function PublicMenuPage(
     select: {
       id: true, name: true, logo: true, address: true,
       phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true, menuPalette: true, menuPaletteData: true, ordersEnabled: true,
-      language: true, welcomeText: true,
+      language: true, welcomeText: true, splashImage: true,
       subscriptionFrom: true, subscriptionTo: true,
       menus: {
         where: { isActive: true },

@@ -106,6 +106,7 @@ model Restaurant {
   copyright     String?
   language      String    @default("he")
   welcomeText   String?
+  splashImage   String?
   subscriptionFrom DateTime?
   subscriptionTo   DateTime?
   createdAt     DateTime @default(now())

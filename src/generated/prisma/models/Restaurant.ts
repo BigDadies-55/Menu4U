@@ -47,6 +47,7 @@ export type RestaurantMinAggregateOutputType = {
   copyright: string | null
   language: string | null
   welcomeText: string | null
+  splashImage: string | null
   subscriptionFrom: Date | null
   subscriptionTo: Date | null
   createdAt: Date | null
@@ -76,6 +77,7 @@ export type RestaurantMaxAggregateOutputType = {
   copyright: string | null
   language: string | null
   welcomeText: string | null
+  splashImage: string | null
   subscriptionFrom: Date | null
   subscriptionTo: Date | null
   createdAt: Date | null
@@ -105,6 +107,7 @@ export type RestaurantCountAggregateOutputType = {
   copyright: number
   language: number
   welcomeText: number
+  splashImage: number
   subscriptionFrom: number
   subscriptionTo: number
   createdAt: number
@@ -136,6 +139,7 @@ export type RestaurantMinAggregateInputType = {
   copyright?: true
   language?: true
   welcomeText?: true
+  splashImage?: true
   subscriptionFrom?: true
   subscriptionTo?: true
   createdAt?: true
@@ -165,6 +169,7 @@ export type RestaurantMaxAggregateInputType = {
   copyright?: true
   language?: true
   welcomeText?: true
+  splashImage?: true
   subscriptionFrom?: true
   subscriptionTo?: true
   createdAt?: true
@@ -194,6 +199,7 @@ export type RestaurantCountAggregateInputType = {
   copyright?: true
   language?: true
   welcomeText?: true
+  splashImage?: true
   subscriptionFrom?: true
   subscriptionTo?: true
   createdAt?: true
@@ -296,6 +302,7 @@ export type RestaurantGroupByOutputType = {
   copyright: string | null
   language: string
   welcomeText: string | null
+  splashImage: string | null
   subscriptionFrom: Date | null
   subscriptionTo: Date | null
   createdAt: Date
@@ -346,6 +353,7 @@ export type RestaurantWhereInput = {
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
   welcomeText?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  splashImage?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   subscriptionFrom?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
   subscriptionTo?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
@@ -381,6 +389,7 @@ export type RestaurantOrderByWithRelationInput = {
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
   welcomeText?: Prisma.SortOrderInput | Prisma.SortOrder
+  splashImage?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -419,6 +428,7 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
   welcomeText?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  splashImage?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   subscriptionFrom?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
   subscriptionTo?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
@@ -454,6 +464,7 @@ export type RestaurantOrderByWithAggregationInput = {
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
   welcomeText?: Prisma.SortOrderInput | Prisma.SortOrder
+  splashImage?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -489,6 +500,7 @@ export type RestaurantScalarWhereWithAggregatesInput = {
   copyright?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   language?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
   welcomeText?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
+  splashImage?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   subscriptionFrom?: Prisma.DateTimeNullableWithAggregatesFilter<"Restaurant"> | Date | string | null
   subscriptionTo?: Prisma.DateTimeNullableWithAggregatesFilter<"Restaurant"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Restaurant"> | Date | string
@@ -518,6 +530,7 @@ export type RestaurantCreateInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -553,6 +566,7 @@ export type RestaurantUncheckedCreateInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -588,6 +602,7 @@ export type RestaurantUpdateInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -623,6 +638,7 @@ export type RestaurantUncheckedUpdateInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -658,6 +674,7 @@ export type RestaurantCreateManyInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -687,6 +704,7 @@ export type RestaurantUpdateManyMutationInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -716,6 +734,7 @@ export type RestaurantUncheckedUpdateManyInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -745,6 +764,7 @@ export type RestaurantCountOrderByAggregateInput = {
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
   welcomeText?: Prisma.SortOrder
+  splashImage?: Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -774,6 +794,7 @@ export type RestaurantMaxOrderByAggregateInput = {
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
   welcomeText?: Prisma.SortOrder
+  splashImage?: Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -803,6 +824,7 @@ export type RestaurantMinOrderByAggregateInput = {
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
   welcomeText?: Prisma.SortOrder
+  splashImage?: Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -921,6 +943,7 @@ export type RestaurantCreateWithoutRestaurantUsersInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -955,6 +978,7 @@ export type RestaurantUncheckedCreateWithoutRestaurantUsersInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1005,6 +1029,7 @@ export type RestaurantUpdateWithoutRestaurantUsersInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1039,6 +1064,7 @@ export type RestaurantUncheckedUpdateWithoutRestaurantUsersInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1073,6 +1099,7 @@ export type RestaurantCreateWithoutMenusInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1107,6 +1134,7 @@ export type RestaurantUncheckedCreateWithoutMenusInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1157,6 +1185,7 @@ export type RestaurantUpdateWithoutMenusInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1191,6 +1220,7 @@ export type RestaurantUncheckedUpdateWithoutMenusInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1225,6 +1255,7 @@ export type RestaurantCreateWithoutOrdersInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1259,6 +1290,7 @@ export type RestaurantUncheckedCreateWithoutOrdersInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1309,6 +1341,7 @@ export type RestaurantUpdateWithoutOrdersInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1343,6 +1376,7 @@ export type RestaurantUncheckedUpdateWithoutOrdersInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1377,6 +1411,7 @@ export type RestaurantCreateWithoutMenuViewsInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1411,6 +1446,7 @@ export type RestaurantUncheckedCreateWithoutMenuViewsInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1461,6 +1497,7 @@ export type RestaurantUpdateWithoutMenuViewsInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1495,6 +1532,7 @@ export type RestaurantUncheckedUpdateWithoutMenuViewsInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1529,6 +1567,7 @@ export type RestaurantCreateWithoutTableSessionsInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1563,6 +1602,7 @@ export type RestaurantUncheckedCreateWithoutTableSessionsInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1613,6 +1653,7 @@ export type RestaurantUpdateWithoutTableSessionsInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1647,6 +1688,7 @@ export type RestaurantUncheckedUpdateWithoutTableSessionsInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1681,6 +1723,7 @@ export type RestaurantCreateWithoutCustomersInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1715,6 +1758,7 @@ export type RestaurantUncheckedCreateWithoutCustomersInput = {
   copyright?: string | null
   language?: string
   welcomeText?: string | null
+  splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
   createdAt?: Date | string
@@ -1765,6 +1809,7 @@ export type RestaurantUpdateWithoutCustomersInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1799,6 +1844,7 @@ export type RestaurantUncheckedUpdateWithoutCustomersInput = {
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1909,6 +1955,7 @@ export type RestaurantSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   copyright?: boolean
   language?: boolean
   welcomeText?: boolean
+  splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
   createdAt?: boolean
@@ -1945,6 +1992,7 @@ export type RestaurantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   copyright?: boolean
   language?: boolean
   welcomeText?: boolean
+  splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
   createdAt?: boolean
@@ -1974,6 +2022,7 @@ export type RestaurantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   copyright?: boolean
   language?: boolean
   welcomeText?: boolean
+  splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
   createdAt?: boolean
@@ -2003,13 +2052,14 @@ export type RestaurantSelectScalar = {
   copyright?: boolean
   language?: boolean
   welcomeText?: boolean
+  splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "customDomain" | "copyright" | "language" | "welcomeText" | "subscriptionFrom" | "subscriptionTo" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
+export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
 export type RestaurantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
   menus?: boolean | Prisma.Restaurant$menusArgs<ExtArgs>
@@ -2055,6 +2105,7 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     copyright: string | null
     language: string
     welcomeText: string | null
+    splashImage: string | null
     subscriptionFrom: Date | null
     subscriptionTo: Date | null
     createdAt: Date
@@ -2510,6 +2561,7 @@ export interface RestaurantFieldRefs {
   readonly copyright: Prisma.FieldRef<"Restaurant", 'String'>
   readonly language: Prisma.FieldRef<"Restaurant", 'String'>
   readonly welcomeText: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly splashImage: Prisma.FieldRef<"Restaurant", 'String'>
   readonly subscriptionFrom: Prisma.FieldRef<"Restaurant", 'DateTime'>
   readonly subscriptionTo: Prisma.FieldRef<"Restaurant", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Restaurant", 'DateTime'>

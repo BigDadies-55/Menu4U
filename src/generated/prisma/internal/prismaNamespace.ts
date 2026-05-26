@@ -2021,6 +2021,7 @@ export const RestaurantScalarFieldEnum = {
   copyright: 'copyright',
   language: 'language',
   welcomeText: 'welcomeText',
+  splashImage: 'splashImage',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
   createdAt: 'createdAt',

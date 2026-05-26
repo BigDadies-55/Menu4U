@@ -108,6 +108,7 @@ type Restaurant = {
   ordersEnabled?: boolean;
   language?: string | null;
   welcomeText?: string | null;
+  splashImage?: string | null;
   menus: { id: string; categories: Category[] }[];
 };
 
@@ -664,8 +665,19 @@ export default function MenuElegantClient({
           background: "#0a0908",
         }}>
 
-          {/* Photo collage background */}
-          {landingImages.length > 0 ? (
+          {/* Background: custom splashImage OR auto-collage from categories */}
+          {restaurant.splashImage ? (
+            /* ── Single custom image ── */
+            <div style={{ position: "absolute", inset: 0 }}>
+              <div style={{
+                position: "absolute", inset: 0,
+                backgroundImage: `url('${restaurant.splashImage}')`,
+                backgroundSize: "cover", backgroundPosition: "center",
+                opacity: 0.45,
+              }} />
+            </div>
+          ) : landingImages.length > 0 ? (
+            /* ── Auto 3-panel collage ── */
             <div style={{
               position: "absolute", inset: 0,
               display: "grid",
@@ -673,29 +685,34 @@ export default function MenuElegantClient({
               gap: 3,
             }}>
               {landingImages.map((src, i) => (
-                <div key={i} style={{
-                  backgroundImage: `url('${src}')`,
-                  backgroundSize: "cover", backgroundPosition: "center",
-                  filter: "brightness(0.38) saturate(0.75)",
-                }} />
+                <div key={i} style={{ position: "relative" }}>
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    backgroundImage: `url('${src}')`,
+                    backgroundSize: "cover", backgroundPosition: "center",
+                    opacity: 0.45,
+                  }} />
+                </div>
               ))}
             </div>
           ) : (
+            /* ── No images: dark radial fallback ── */
             <div style={{
               position: "absolute", inset: 0,
               background: "radial-gradient(ellipse at 50% 30%, #1a130a 0%, #0a0908 100%)",
             }} />
           )}
 
-          {/* Gradient overlays for drama */}
+          {/* Dark overlay — top heavy + bottom heavy, lighter in the middle */}
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.6) 80%, rgba(0,0,0,0.92) 100%)",
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.38) 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.88) 100%)",
             pointerEvents: "none",
           }} />
+          {/* Vignette */}
           <div style={{
             position: "absolute", inset: 0,
-            background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 25%, rgba(0,0,0,0.55) 100%)",
+            background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.5) 100%)",
             pointerEvents: "none",
           }} />
 

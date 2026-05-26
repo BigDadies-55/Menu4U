@@ -90,6 +90,7 @@ type Restaurant = {
   ordersEnabled?: boolean;
   language?: string | null;
   welcomeText?: string | null;
+  splashImage?: string | null;
   menus: { id: string; categories: Category[] }[];
 };
 
@@ -630,52 +631,60 @@ export default function MenuPublicClient({
             overflow: "hidden",
           }}
         >
-          {/* Photo collage background */}
-          {splashImages.length > 0 ? (
+          {/* Background: custom splashImage OR auto-collage from categories */}
+          {restaurant.splashImage ? (
+            /* ── Single custom image ── */
+            <div style={{ position: "absolute", inset: 0 }}>
+              <div style={{
+                position: "absolute", inset: 0,
+                backgroundImage: `url('${restaurant.splashImage}')`,
+                backgroundSize: "cover", backgroundPosition: "center",
+                opacity: 0.45,
+              }} />
+            </div>
+          ) : splashImages.length > 0 ? (
+            /* ── Auto 3-panel collage ── */
             <div
               style={{
-                position: "absolute",
-                inset: 0,
+                position: "absolute", inset: 0,
                 display: "grid",
                 gridTemplateColumns: `repeat(${splashImages.length}, 1fr)`,
                 gap: 3,
               }}
             >
               {splashImages.map((src, i) => (
-                <div
-                  key={i}
-                  style={{
+                <div key={i} style={{ position: "relative" }}>
+                  <div style={{
+                    position: "absolute", inset: 0,
                     backgroundImage: `url('${src}')`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    filter: "brightness(0.42) saturate(0.8)",
-                  }}
-                />
+                    backgroundSize: "cover", backgroundPosition: "center",
+                    opacity: 0.45,
+                  }} />
+                </div>
               ))}
             </div>
           ) : (
+            /* ── No images: dark radial fallback ── */
             <div
               style={{
-                position: "absolute",
-                inset: 0,
+                position: "absolute", inset: 0,
                 background: "radial-gradient(ellipse at 50% 30%, #1a160e 0%, #0a0908 100%)",
               }}
             />
           )}
 
-          {/* Gradient overlays */}
+          {/* Dark overlay — top/bottom heavy, lighter in the middle */}
           <div
             style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.65) 80%, rgba(0,0,0,0.9) 100%)",
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.38) 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.88) 100%)",
               pointerEvents: "none",
             }}
           />
+          {/* Vignette */}
           <div
             style={{
-              position: "absolute",
-              inset: 0,
+              position: "absolute", inset: 0,
               background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.5) 100%)",
               pointerEvents: "none",
             }}

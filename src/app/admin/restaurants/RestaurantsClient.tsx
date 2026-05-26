@@ -25,6 +25,7 @@ type Restaurant = {
   kdsView: string;
   language: string;
   welcomeText: string | null;
+  splashImage: string | null;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   createdAt: string;
@@ -58,6 +59,7 @@ const emptyForm = {
   kdsView: "STATION_DARK",
   language: "he",
   welcomeText: "",
+  splashImage: "",
 };
 
 /* ── Solid primary button style ── */
@@ -189,6 +191,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       kdsView: r.kdsView ?? "STATION_DARK",
       language: r.language ?? "he",
       welcomeText: r.welcomeText ?? "",
+      splashImage: r.splashImage ?? "",
     });
     setActiveTab("general");
     setShowForm(true);
@@ -230,6 +233,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       kdsView: form.kdsView,
       language: form.language,
       welcomeText: form.welcomeText || null,
+      splashImage: form.splashImage || null,
     };
 
     if (editTarget) {
@@ -490,6 +494,45 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                           <option value="ru">Русский (ru)</option>
                           <option value="fr">Français (fr)</option>
                         </select>
+                      </div>
+
+                      {/* Splash / Landing background image */}
+                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid #2d3239", background: "#1a1d23" }}>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#adb5bd", marginBottom: 4 }}>
+                          🖼 תמונת רקע לדף הנחיתה
+                        </label>
+                        <p className="text-xs mb-3" style={{ color: "#6c757d" }}>
+                          תמונה זו תוצג כרקע מלא-מסך בדף הפתיחה של התפריט הציבורי.
+                          אם לא תועלה, ייאספו תמונות מהקטגוריות אוטומטית.
+                        </p>
+                        <ImageUpload
+                          label=""
+                          value={form.splashImage}
+                          onChange={url => setForm(f => ({ ...f, splashImage: url }))}
+                        />
+                        {form.splashImage && (
+                          <div style={{ marginTop: 10, borderRadius: 10, overflow: "hidden", position: "relative", height: 120 }}>
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              backgroundImage: `url('${form.splashImage}')`,
+                              backgroundSize: "cover", backgroundPosition: "center",
+                              opacity: 0.4,
+                            }} />
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              background: "rgba(0,0,0,0.55)",
+                            }} />
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontFamily: "'Cinzel', serif", fontSize: 18, fontStyle: "italic",
+                              color: "#C5A880", fontWeight: 700, letterSpacing: 2,
+                              textShadow: "0 2px 12px rgba(0,0,0,0.8)",
+                            }}>
+                              {form.name || "שם המסעדה"}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Welcome text */}
