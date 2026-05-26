@@ -888,15 +888,25 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   }
 
   async function toggleCategoryAutoReady(catId: string, current: boolean) {
-    await fetch(`/api/admin/categories/${catId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ autoReady: !current }),
-    });
+    // Optimistic update first
     updateMenu(m => ({
       ...m,
       categories: m.categories.map(c => c.id === catId ? { ...c, autoReady: !current } : c),
     }));
+    try {
+      const res = await fetch(`/api/admin/categories/${catId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoReady: !current }),
+      });
+      if (!res.ok) throw new Error("save failed");
+    } catch {
+      // Revert on failure
+      updateMenu(m => ({
+        ...m,
+        categories: m.categories.map(c => c.id === catId ? { ...c, autoReady: current } : c),
+      }));
+    }
   }
 
   async function toggleItem(catId: string, itemId: string, isActive: boolean) {
