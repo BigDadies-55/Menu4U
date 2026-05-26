@@ -40,6 +40,12 @@ export default async function PublicMenuPage(
 ) {
   const { restaurantId } = await params;
 
+  // Ensure new columns exist (idempotent — safe to call every time)
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
+  } catch { /* ignore */ }
+
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId, isActive: true },
     select: {

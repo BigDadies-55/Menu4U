@@ -10,6 +10,12 @@ export default async function RestaurantsPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role !== "SUPER_ADMIN") redirect("/admin");
 
+  // Apply pending migrations so new columns exist before querying
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
+  } catch { /* ignore — columns may already exist */ }
+
   const rows = await prisma.restaurant.findMany({
     orderBy: { createdAt: "desc" },
     select: {

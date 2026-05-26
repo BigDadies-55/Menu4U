@@ -145,6 +145,11 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const [deleteInput,   setDeleteInput]   = useState("");
 
+  /* ── Run pending DB migrations silently on mount ── */
+  useEffect(() => {
+    fetch("/api/admin/run-migration", { method: "POST" }).catch(() => {});
+  }, []);
+
   /* ── Escape key closes any open overlay ── */
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
