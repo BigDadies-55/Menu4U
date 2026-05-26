@@ -216,6 +216,31 @@ type DragKind =
   | { from: "grid"; kind: "table"; cell: Cell }
   | { from: "grid"; kind: "bar"; group: Cell[]; draggedCell: Cell };
 
+/* ── Dark theme constants ── */
+const C = {
+  pageBg:   "#1a1d23",
+  cardBg:   "#212529",
+  gridBg:   "#181b20",
+  cellBg:   "#1e2130",
+  cellGap:  "#252930",
+  border:   "#2d3239",
+  inputBg:  "#2d3239",
+  inputBrd: "#3a3f47",
+  text:     "#e9ecef",
+  sub:      "#adb5bd",
+  muted:    "#6c757d",
+  amber:    "#fcc419",
+  amberDim: "#c9a84c",
+  red:      "#ff6b6b",
+  green:    "#51cf66",
+} as const;
+
+const DK_INPUT: React.CSSProperties = {
+  background: C.inputBg, border: `1px solid ${C.inputBrd}`, color: C.text,
+  borderRadius: 10, padding: "9px 13px", fontSize: 14, width: "100%",
+  outline: "none", fontFamily: "inherit",
+};
+
 /* ── Main ── */
 export default function LayoutClient({ restaurants }: { restaurants: Restaurant[] }) {
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
@@ -483,78 +508,89 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     ? (dragKind.current.kind === "table" ? dragKind.current.cell : null)
     : null;
 
+  /* ── Shared dark button helpers ── */
+  const amberBtn = (active: boolean): React.CSSProperties => active
+    ? { background: "linear-gradient(135deg,#8B6914,#C9A84C)", color: "#fff", border: `1px solid ${C.amber}`, borderRadius: 10, padding: "8px 0", fontWeight: 700, fontSize: 13, cursor: "pointer" }
+    : { background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBrd}`, borderRadius: 10, padding: "8px 0", fontWeight: 600, fontSize: 13, cursor: "pointer" };
+  const barBtn = (active: boolean): React.CSSProperties => active
+    ? { background: "linear-gradient(135deg,#78350f,#92400e)", color: "#fff", border: `1px solid ${C.amber}`, borderRadius: 10, padding: "8px 0", fontWeight: 700, fontSize: 13, cursor: "pointer" }
+    : { background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBrd}`, borderRadius: 10, padding: "8px 0", fontWeight: 600, fontSize: 13, cursor: "pointer" };
+
   return (
-    <div className="p-4 md:p-6" onMouseUp={()=>{isPainting.current=false;}} onDragEnd={commitDragEnd}>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">🗺 פריסת שולחנות</h1>
-        <p className="text-gray-500 mt-0.5 text-sm">גרור פריטים מהפלטה אל הגריד · לחץ על אובייקט קיים לעריכה</p>
+    <div style={{ padding: "24px 24px 32px", color: C.text }} onMouseUp={()=>{isPainting.current=false;}} onDragEnd={commitDragEnd}>
+      {/* ── Header ── */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>🗺 פריסת שולחנות</h1>
+        <p style={{ color: C.muted, marginTop: 4, fontSize: 13 }}>גרור פריטים מהפלטה אל הגריד · לחץ על אובייקט קיים לעריכה</p>
       </div>
 
       {/* ── Restaurant selector + action buttons ── */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 14 }}>
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e=>handleRestaurantChange(e.target.value)}
-            className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+            style={{ ...DK_INPUT, width: "auto", padding: "8px 12px", fontSize: 13 }}>
             {restaurants.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
-        <div className="mr-auto flex gap-2">
-          <button onClick={clearAll} className="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-red-50 hover:text-red-600">נקה הכל</button>
-          <button onClick={saveLayout} disabled={saving||!restaurantId} className="px-4 py-2 text-sm font-semibold rounded-xl text-white disabled:opacity-50" style={{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}}>
-            {saving?"שומר...":saved?"✓ נשמר!":"שמור פריסה"}
+        <div style={{ marginRight: "auto", display: "flex", gap: 8 }}>
+          <button onClick={clearAll}
+            style={{ padding: "8px 14px", fontSize: 13, borderRadius: 10, border: `1px solid ${C.inputBrd}`, background: C.inputBg, color: C.red, cursor: "pointer", fontWeight: 600 }}>
+            נקה הכל
+          </button>
+          <button onClick={saveLayout} disabled={saving||!restaurantId}
+            style={{ padding: "8px 18px", fontSize: 13, fontWeight: 700, borderRadius: 10, color: "#fff", border: "none", cursor: "pointer", opacity: saving||!restaurantId ? 0.5 : 1, background: saved ? C.green : "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+            {saving ? "שומר..." : saved ? "✓ נשמר!" : "שמור פריסה"}
           </button>
         </div>
       </div>
 
       {/* ── Palette ── */}
-      <div className="flex flex-wrap items-center gap-2 p-3 mb-4 rounded-2xl border border-amber-200 bg-amber-50/60">
-        <span className="text-xs font-bold text-amber-800 ml-1">גרור לגריד:</span>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "10px 14px", marginBottom: 16, borderRadius: 14, border: `1px solid ${C.border}`, background: C.cardBg }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em" }}>גרור לגריד:</span>
 
         {TABLE_SHAPES.map(({ shape, label }) => (
-          <div key={shape}
-            draggable
+          <div key={shape} draggable
             onDragStart={e => { e.dataTransfer.effectAllowed="copy"; dragKind.current={from:"palette",kind:"table",shape}; }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-amber-200 rounded-xl cursor-grab hover:border-amber-400 hover:shadow-sm select-none text-xs font-semibold text-amber-900 transition-all active:opacity-60"
-            title={`גרור לגריד להוספת שולחן ${label}`}
-          >
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", background: C.inputBg, border: `1px solid ${C.inputBrd}`, borderRadius: 10, cursor: "grab", userSelect: "none", fontSize: 12, fontWeight: 700, color: C.amber }}
+            title={`גרור לגריד להוספת שולחן ${label}`}>
             {label}
           </div>
         ))}
 
-        <div
-          draggable
+        <div draggable
           onDragStart={e => { e.dataTransfer.effectAllowed="copy"; dragKind.current={from:"palette",kind:"bar"}; }}
-          className="flex items-center gap-1.5 px-3 py-2 bg-white border border-orange-200 rounded-xl cursor-grab hover:border-orange-400 hover:shadow-sm select-none text-xs font-semibold text-orange-900 transition-all active:opacity-60"
-          title="גרור לגריד להוספת בר (4 תאים ברירת מחדל)"
-        >
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", background: C.inputBg, border: `1px solid ${C.inputBrd}`, borderRadius: 10, cursor: "grab", userSelect: "none", fontSize: 12, fontWeight: 700, color: "#c2956a" }}
+          title="גרור לגריד להוספת בר">
           🍺 בר
         </div>
 
-        <div className="w-px h-7 bg-amber-200 mx-1" />
+        <div style={{ width: 1, height: 28, background: C.border, margin: "0 4px" }} />
 
-        <button
-          onClick={() => setWallMode(w => !w)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${wallMode ? "text-white border-gray-600" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"}`}
-          style={wallMode ? { background: "#374151" } : undefined}
-          title="לחץ להפעלת מצב צביעת קיר — לחץ/גרור על התאים לצביעה"
-        >
-          🧱 קיר {wallMode ? "(פעיל — לחץ לצביעה)" : ""}
+        <button onClick={() => setWallMode(w => !w)}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
+            background: wallMode ? "#374151" : C.inputBg,
+            color: wallMode ? "#fff" : C.sub,
+            border: `1px solid ${wallMode ? "#4b5563" : C.inputBrd}` }}
+          title="לחץ להפעלת מצב צביעת קיר">
+          🧱 קיר {wallMode ? "(פעיל)" : ""}
         </button>
       </div>
 
-      <div className="flex gap-3 mb-3 text-xs text-gray-500">
+      {/* ── Stats ── */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 12, fontSize: 12, color: C.muted }}>
         <span>{tableCount} שולחנות · {totalSeatsAll} מושבים</span>
-        <span className="text-gray-300">|</span>
-        <span className="text-gray-400">{COLS}×{ROWS} · {cellPx}px/תא</span>
+        <span style={{ color: C.border }}>|</span>
+        <span style={{ color: C.muted }}>{COLS}×{ROWS} · {cellPx}px/תא</span>
       </div>
 
-      {loading ? <div className="flex items-center justify-center h-64 text-gray-400">טוען...</div> : (
-        <div ref={gridRef} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-auto p-2">
-          <div
-            className="grid select-none"
-            style={{ gridTemplateColumns:`repeat(${COLS}, ${cellPx}px)`, gap:1, width:"fit-content" }}
-            onMouseLeave={() => { isPainting.current=false; }}
-          >
+      {/* ── Grid ── */}
+      {loading ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 260, color: C.muted }}>טוען...</div>
+      ) : (
+        <div ref={gridRef} style={{ borderRadius: 16, border: `1px solid ${C.border}`, background: C.gridBg, overflow: "auto", padding: 6 }}>
+          <div className="select-none"
+            style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, ${cellPx}px)`, gap: 1, width: "fit-content", background: C.cellGap }}
+            onMouseLeave={() => { isPainting.current=false; }}>
             {(() => {
               const els = [];
               for (let r=0; r<ROWS; r++) {
@@ -580,10 +616,10 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         gridColumn: w>1 ? `span ${w}` : undefined,
                         gridRow:    h>1 ? `span ${h}` : undefined,
                         width: pxW, height: pxH, position:"relative",
-                        background: isTable||isWall||isBar ? "transparent" : "#f8f9fa",
-                        border: isWall||isBar ? "none" : "1px solid #e9ecef",
+                        background: isTable||isWall||isBar ? "transparent" : C.cellBg,
+                        border: isWall||isBar ? "none" : "none",
                         cursor: isDraggableCell ? "grab" : wallMode ? "crosshair" : "default",
-                        outline: isDropTarget ? "2px solid #3b82f6" : undefined,
+                        outline: isDropTarget ? `2px solid ${C.amber}` : undefined,
                         outlineOffset: "-1px",
                       }}
                       onDragStart={e => handleCellDragStart(e, r, c)}
@@ -643,84 +679,123 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       {editTable && (() => {
         const tableUrl = tableForm.tableNumber && restaurantId && origin
           ? `${origin}/menu/${restaurantId}?table=${encodeURIComponent(tableForm.tableNumber)}` : null;
+        const lbl = (txt: string) => (
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>{txt}</div>
+        );
         return (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={()=>setEditTable(null)}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 overflow-y-auto max-h-[90vh]" onClick={e=>e.stopPropagation()}>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">✏️ הגדרת שולחן</h3>
-              <div className="space-y-4">
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+            onClick={()=>setEditTable(null)}>
+            <div style={{ background: C.cardBg, borderRadius: 18, border: `1px solid ${C.border}`, boxShadow: "0 24px 60px rgba(0,0,0,0.5)", width: "100%", maxWidth: 360, padding: 24, overflowY: "auto", maxHeight: "90vh" }}
+              onClick={e=>e.stopPropagation()}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: C.text, marginBottom: 20 }}>✏️ הגדרת שולחן</div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Table number */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">מספר / שם שולחן</label>
-                  <input type="text" value={tableForm.tableNumber} onChange={e=>setTableForm(f=>({...f,tableNumber:e.target.value}))} placeholder="1, A3, בר..." autoFocus
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+                  {lbl("מספר / שם שולחן")}
+                  <input type="text" value={tableForm.tableNumber} onChange={e=>setTableForm(f=>({...f,tableNumber:e.target.value}))} placeholder="1, A3, בר..." autoFocus style={DK_INPUT}/>
                 </div>
+
+                {/* Shape */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">צורת שולחן</label>
-                  <div className="flex gap-2">
+                  {lbl("צורת שולחן")}
+                  <div style={{ display: "flex", gap: 6 }}>
                     {TABLE_SHAPES.map(({shape,label})=>(
-                      <button key={shape} type="button" onClick={()=>{
-                        const seats=parseInt(tableForm.seats)||4;
-                        const def=getDefaultTableSize(seats, shape);
-                        setTableForm(f=>({...f,shape,w:String(def.w),h:String(def.h)}));
-                      }}
-                        className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${tableForm.shape===shape?"border-amber-400 text-white":"border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-                        style={tableForm.shape===shape?{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}:undefined}>{label}</button>
+                      <button key={shape} type="button" style={{ flex: 1, ...amberBtn(tableForm.shape===shape) }}
+                        onClick={()=>{
+                          const seats=parseInt(tableForm.seats)||4;
+                          const def=getDefaultTableSize(seats, shape);
+                          setTableForm(f=>({...f,shape,w:String(def.w),h:String(def.h)}));
+                        }}>
+                        {label}
+                      </button>
                     ))}
                   </div>
                 </div>
+
+                {/* Seats */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">מספר כסאות</label>
-                  <div className="flex gap-2">
+                  {lbl("מספר כסאות")}
+                  <div style={{ display: "flex", gap: 6 }}>
                     {[2,4,6,8,10].map(n=>{
                       const def=getDefaultTableSize(n, tableForm.shape);
-                      return <button key={n} type="button" onClick={()=>setTableForm(f=>({...f,seats:String(n),w:String(def.w),h:String(def.h)}))}
-                        className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${tableForm.seats===String(n)?"border-amber-400 text-white":"border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-                        style={tableForm.seats===String(n)?{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}:undefined}>{n}</button>;
+                      return <button key={n} type="button" style={{ flex: 1, ...amberBtn(tableForm.seats===String(n)) }}
+                        onClick={()=>setTableForm(f=>({...f,seats:String(n),w:String(def.w),h:String(def.h)}))}>
+                        {n}
+                      </button>;
                     })}
                   </div>
                 </div>
+
+                {/* Size */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-sm font-medium text-gray-700">גודל על המפה (תאים)</label>
-                    <button type="button"
-                      onClick={()=>setTableForm(f=>({...f, w:f.h, h:f.w}))}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors"
-                      title="סובב שולחן — מחליף רוחב וגובה">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em" }}>גודל על המפה (תאים)</span>
+                    <button type="button" onClick={()=>setTableForm(f=>({...f, w:f.h, h:f.w}))}
+                      style={{ fontSize: 11, fontWeight: 700, color: C.amber, background: "rgba(252,196,25,0.1)", border: `1px solid rgba(252,196,25,0.3)`, borderRadius: 8, padding: "4px 10px", cursor: "pointer" }}>
                       ↺ סובב
                     </button>
                   </div>
-                  <div className="flex gap-4 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-500">רוחב</span>
-                      {[1,2,3,4].map(n=><button key={n} type="button" onClick={()=>setTableForm(f=>({...f,w:String(n)}))}
-                        className={`w-8 h-8 rounded-lg text-sm font-bold border transition-colors ${tableForm.w===String(n)?"text-white border-amber-400":"bg-white text-gray-600 border-gray-200"}`}
-                        style={tableForm.w===String(n)?{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}:undefined}>{n}</button>)}
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 12, color: C.muted }}>רוחב</span>
+                      {[1,2,3,4].map(n=>(
+                        <button key={n} type="button"
+                          style={{ width: 34, height: 34, borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", ...amberBtn(tableForm.w===String(n)) }}
+                          onClick={()=>setTableForm(f=>({...f,w:String(n)}))}>
+                          {n}
+                        </button>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-500">גובה</span>
-                      {[1,2,3].map(n=><button key={n} type="button" onClick={()=>setTableForm(f=>({...f,h:String(n)}))}
-                        className={`w-8 h-8 rounded-lg text-sm font-bold border transition-colors ${tableForm.h===String(n)?"text-white border-amber-400":"bg-white text-gray-600 border-gray-200"}`}
-                        style={tableForm.h===String(n)?{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}:undefined}>{n}</button>)}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 12, color: C.muted }}>גובה</span>
+                      {[1,2,3].map(n=>(
+                        <button key={n} type="button"
+                          style={{ width: 34, height: 34, borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", ...amberBtn(tableForm.h===String(n)) }}
+                          onClick={()=>setTableForm(f=>({...f,h:String(n)}))}>
+                          {n}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
+
+                {/* QR */}
                 {tableUrl && (
-                  <div className="border border-gray-100 rounded-xl p-4 bg-gray-50 space-y-3">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">QR לשולחן</p>
-                    <div className="flex justify-center"><div className="p-2 bg-white rounded-xl border border-gray-200 inline-block"><QRCodeSVG value={tableUrl} size={140}/></div></div>
-                    <div className="flex items-center gap-2">
-                      <input readOnly value={tableUrl} className="flex-1 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-2 py-1.5 truncate" onClick={e=>(e.target as HTMLInputElement).select()}/>
-                      <button type="button" onClick={()=>{navigator.clipboard.writeText(tableUrl);setCopied(true);setTimeout(()=>setCopied(false),2000);}}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{background:copied?"#22c55e":"linear-gradient(135deg,#8B6914,#C9A84C)"}}>
-                        {copied?"✓":"העתק"}
+                  <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, background: C.inputBg }}>
+                    {lbl("QR לשולחן")}
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                      <div style={{ padding: 10, background: "#fff", borderRadius: 12, display: "inline-block" }}>
+                        <QRCodeSVG value={tableUrl} size={148}/>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input readOnly value={tableUrl}
+                        style={{ flex: 1, fontSize: 11, color: C.muted, background: C.cardBg, border: `1px solid ${C.inputBrd}`, borderRadius: 8, padding: "6px 10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", outline: "none" }}
+                        onClick={e=>(e.target as HTMLInputElement).select()}/>
+                      <button type="button"
+                        style={{ flexShrink: 0, padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#fff", border: "none", cursor: "pointer", background: copied ? C.green : "linear-gradient(135deg,#8B6914,#C9A84C)" }}
+                        onClick={()=>{navigator.clipboard.writeText(tableUrl);setCopied(true);setTimeout(()=>setCopied(false),2000);}}>
+                        {copied ? "✓" : "העתק"}
                       </button>
                     </div>
                   </div>
                 )}
               </div>
-              <div className="flex gap-3 mt-5">
-                <button onClick={saveTableEdit} className="flex-1 py-2.5 rounded-xl text-white font-semibold text-sm" style={{background:"linear-gradient(135deg,#8B6914,#C9A84C)"}}>שמור</button>
-                <button onClick={deleteTable} className="px-4 py-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 text-sm font-semibold">🗑 מחק</button>
-                <button onClick={()=>setEditTable(null)} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm">ביטול</button>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+                <button onClick={saveTableEdit}
+                  style={{ flex: 1, padding: "10px 0", borderRadius: 10, color: "#fff", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+                  שמור
+                </button>
+                <button onClick={deleteTable}
+                  style={{ padding: "10px 16px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", color: C.red, background: "rgba(255,107,107,0.1)", border: `1px solid rgba(255,107,107,0.25)` }}>
+                  🗑 מחק
+                </button>
+                <button onClick={()=>setEditTable(null)}
+                  style={{ padding: "10px 14px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", color: C.sub, background: C.inputBg, border: `1px solid ${C.inputBrd}` }}>
+                  ביטול
+                </button>
               </div>
             </div>
           </div>
@@ -731,60 +806,80 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       {editBar && (() => {
         const group = findBarGroup(editBar.r, editBar.c, cellMap);
         const currentLength = group.length;
+        const lbl = (txt: string) => (
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>{txt}</div>
+        );
         return (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={()=>setEditBar(null)}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e=>e.stopPropagation()}>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">🍺 הגדרת בר</h3>
-              <p className="text-xs text-gray-400 mb-4">נוכחי: {currentLength} תאים · ההגדרות חלות על כולם</p>
-              <div className="space-y-4">
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+            onClick={()=>setEditBar(null)}>
+            <div style={{ background: C.cardBg, borderRadius: 18, border: `1px solid ${C.border}`, boxShadow: "0 24px 60px rgba(0,0,0,0.5)", width: "100%", maxWidth: 360, padding: 24 }}
+              onClick={e=>e.stopPropagation()}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: C.text, marginBottom: 4 }}>🍺 הגדרת בר</div>
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 18 }}>נוכחי: {currentLength} תאים · ההגדרות חלות על כולם</div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Bar name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">שם הבר</label>
-                  <input type="text" value={barForm.barLabel} onChange={e=>setBarForm(f=>({...f,barLabel:e.target.value}))} placeholder="בר, סושי בר..." autoFocus
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+                  {lbl("שם הבר")}
+                  <input type="text" value={barForm.barLabel} onChange={e=>setBarForm(f=>({...f,barLabel:e.target.value}))} placeholder="בר, סושי בר..." autoFocus style={DK_INPUT}/>
                 </div>
 
-                {/* Bar length */}
+                {/* Bar length counter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">אורך הבר (תאים)</label>
-                  <div className="flex items-center gap-3">
+                  {lbl("אורך הבר (תאים)")}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <button type="button"
-                      onClick={()=>setBarForm(f=>({...f,barLength:String(Math.max(1,parseInt(f.barLength||"1")-1))})) }
-                      className="w-9 h-9 rounded-xl text-lg font-bold border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors">−</button>
-                    <span className="text-2xl font-black text-amber-800 w-8 text-center">{barForm.barLength}</span>
+                      onClick={()=>setBarForm(f=>({...f,barLength:String(Math.max(1,parseInt(f.barLength||"1")-1))}))}
+                      style={{ width: 36, height: 36, borderRadius: 10, fontSize: 20, fontWeight: 900, border: `1px solid ${C.inputBrd}`, background: C.inputBg, color: C.sub, cursor: "pointer" }}>−</button>
+                    <span style={{ fontSize: 24, fontWeight: 900, color: C.amber, width: 32, textAlign: "center" }}>{barForm.barLength}</span>
                     <button type="button"
-                      onClick={()=>setBarForm(f=>({...f,barLength:String(Math.min(20,parseInt(f.barLength||"1")+1))})) }
-                      className="w-9 h-9 rounded-xl text-lg font-bold border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors">+</button>
-                    <span className="text-xs text-gray-400">תאים (1–20)</span>
+                      onClick={()=>setBarForm(f=>({...f,barLength:String(Math.min(20,parseInt(f.barLength||"1")+1))}))}
+                      style={{ width: 36, height: 36, borderRadius: 10, fontSize: 20, fontWeight: 900, border: `1px solid ${C.inputBrd}`, background: C.inputBg, color: C.sub, cursor: "pointer" }}>+</button>
+                    <span style={{ fontSize: 12, color: C.muted }}>תאים (1–20)</span>
                   </div>
                 </div>
 
+                {/* Seats */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">סה&quot;כ כסאות בר</label>
-                  <div className="flex gap-2 flex-wrap">
+                  {lbl("סה\"כ כסאות בר")}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {[2,4,6,8,10,12,16,20].map(n=>(
-                      <button key={n} type="button" onClick={()=>setBarForm(f=>({...f,barSeats:String(n)}))}
-                        className={`flex-1 min-w-[36px] py-2 rounded-xl text-sm font-semibold border transition-colors ${barForm.barSeats===String(n)?"border-amber-400 text-white":"border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-                        style={barForm.barSeats===String(n)?{background:"linear-gradient(135deg,#78350f,#92400e)"}:undefined}>{n}</button>
+                      <button key={n} type="button" style={{ flex: 1, minWidth: 36, ...barBtn(barForm.barSeats===String(n)) }}
+                        onClick={()=>setBarForm(f=>({...f,barSeats:String(n)}))}>
+                        {n}
+                      </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Direction */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">כיוון / סיבוב</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  {lbl("כיוון / סיבוב")}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                     {BAR_SIDES.map(({side,label})=>(
-                      <button key={side} type="button" onClick={()=>setBarForm(f=>({...f,barSide:side}))}
-                        className={`py-2.5 rounded-xl text-sm font-semibold border transition-colors ${barForm.barSide===side?"border-amber-400 text-white":"border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-                        style={barForm.barSide===side?{background:"linear-gradient(135deg,#78350f,#92400e)"}:undefined}>{label}</button>
+                      <button key={side} type="button" style={{ ...barBtn(barForm.barSide===side), padding: "10px 0" }}
+                        onClick={()=>setBarForm(f=>({...f,barSide:side}))}>
+                        {label}
+                      </button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">כיוון הכסאות ביחס לבר</p>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>כיוון הכסאות ביחס לבר</div>
                 </div>
               </div>
-              <div className="flex gap-3 mt-5">
-                <button onClick={saveBarEdit} className="flex-1 py-2.5 rounded-xl text-white font-semibold text-sm" style={{background:"linear-gradient(135deg,#78350f,#92400e)"}}>שמור</button>
-                <button onClick={deleteBar} className="px-4 py-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 text-sm font-semibold">🗑 מחק</button>
-                <button onClick={()=>setEditBar(null)} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm">ביטול</button>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+                <button onClick={saveBarEdit}
+                  style={{ flex: 1, padding: "10px 0", borderRadius: 10, color: "#fff", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#78350f,#92400e)" }}>
+                  שמור
+                </button>
+                <button onClick={deleteBar}
+                  style={{ padding: "10px 16px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", color: C.red, background: "rgba(255,107,107,0.1)", border: `1px solid rgba(255,107,107,0.25)` }}>
+                  🗑 מחק
+                </button>
+                <button onClick={()=>setEditBar(null)}
+                  style={{ padding: "10px 14px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", color: C.sub, background: C.inputBg, border: `1px solid ${C.inputBrd}` }}>
+                  ביטול
+                </button>
               </div>
             </div>
           </div>
