@@ -1112,7 +1112,7 @@ export default function MenuElegantClient({
                 }} onClick={e => e.stopPropagation()}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>
-                      <span style={{ color: "rgba(255,255,255,0.6)" }}>הוסף הערה ל</span>
+                      <span style={{ color: "rgba(255,255,255,0.6)" }}>הוסף הערה ל- </span>
                       <span style={{ color: "#C5A880" }}>{editingItem?.name}</span>
                     </span>
                     <button onClick={() => setEditNoteCartId(null)}
