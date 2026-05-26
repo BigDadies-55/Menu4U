@@ -157,6 +157,7 @@ model Category {
   description  String?
   image        String?
   isActive     Boolean  @default(true)
+  autoReady    Boolean  @default(false)
   sortOrder    Int      @default(0)
   translations Json?
   createdAt    DateTime @default(now())

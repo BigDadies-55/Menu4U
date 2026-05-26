@@ -2066,6 +2066,7 @@ export const CategoryScalarFieldEnum = {
   description: 'description',
   image: 'image',
   isActive: 'isActive',
+  autoReady: 'autoReady',
   sortOrder: 'sortOrder',
   translations: 'translations',
   createdAt: 'createdAt',

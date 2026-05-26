@@ -41,6 +41,7 @@ export type CategoryMinAggregateOutputType = {
   description: string | null
   image: string | null
   isActive: boolean | null
+  autoReady: boolean | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -53,6 +54,7 @@ export type CategoryMaxAggregateOutputType = {
   description: string | null
   image: string | null
   isActive: boolean | null
+  autoReady: boolean | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -65,6 +67,7 @@ export type CategoryCountAggregateOutputType = {
   description: number
   image: number
   isActive: number
+  autoReady: number
   sortOrder: number
   translations: number
   createdAt: number
@@ -88,6 +91,7 @@ export type CategoryMinAggregateInputType = {
   description?: true
   image?: true
   isActive?: true
+  autoReady?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -100,6 +104,7 @@ export type CategoryMaxAggregateInputType = {
   description?: true
   image?: true
   isActive?: true
+  autoReady?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -112,6 +117,7 @@ export type CategoryCountAggregateInputType = {
   description?: true
   image?: true
   isActive?: true
+  autoReady?: true
   sortOrder?: true
   translations?: true
   createdAt?: true
@@ -212,6 +218,7 @@ export type CategoryGroupByOutputType = {
   description: string | null
   image: string | null
   isActive: boolean
+  autoReady: boolean
   sortOrder: number
   translations: runtime.JsonValue | null
   createdAt: Date
@@ -248,6 +255,7 @@ export type CategoryWhereInput = {
   description?: Prisma.StringNullableFilter<"Category"> | string | null
   image?: Prisma.StringNullableFilter<"Category"> | string | null
   isActive?: Prisma.BoolFilter<"Category"> | boolean
+  autoReady?: Prisma.BoolFilter<"Category"> | boolean
   sortOrder?: Prisma.IntFilter<"Category"> | number
   translations?: Prisma.JsonNullableFilter<"Category">
   createdAt?: Prisma.DateTimeFilter<"Category"> | Date | string
@@ -263,6 +271,7 @@ export type CategoryOrderByWithRelationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  autoReady?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -281,6 +290,7 @@ export type CategoryWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"Category"> | string | null
   image?: Prisma.StringNullableFilter<"Category"> | string | null
   isActive?: Prisma.BoolFilter<"Category"> | boolean
+  autoReady?: Prisma.BoolFilter<"Category"> | boolean
   sortOrder?: Prisma.IntFilter<"Category"> | number
   translations?: Prisma.JsonNullableFilter<"Category">
   createdAt?: Prisma.DateTimeFilter<"Category"> | Date | string
@@ -296,6 +306,7 @@ export type CategoryOrderByWithAggregationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  autoReady?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -317,6 +328,7 @@ export type CategoryScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"Category"> | string | null
   image?: Prisma.StringNullableWithAggregatesFilter<"Category"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"Category"> | boolean
+  autoReady?: Prisma.BoolWithAggregatesFilter<"Category"> | boolean
   sortOrder?: Prisma.IntWithAggregatesFilter<"Category"> | number
   translations?: Prisma.JsonNullableWithAggregatesFilter<"Category">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Category"> | Date | string
@@ -329,6 +341,7 @@ export type CategoryCreateInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -344,6 +357,7 @@ export type CategoryUncheckedCreateInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -357,6 +371,7 @@ export type CategoryUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -372,6 +387,7 @@ export type CategoryUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -386,6 +402,7 @@ export type CategoryCreateManyInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -398,6 +415,7 @@ export type CategoryUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -411,6 +429,7 @@ export type CategoryUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -434,6 +453,7 @@ export type CategoryCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   image?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  autoReady?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   translations?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -451,6 +471,7 @@ export type CategoryMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   image?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  autoReady?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -463,6 +484,7 @@ export type CategoryMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   image?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  autoReady?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -539,6 +561,7 @@ export type CategoryCreateWithoutMenuInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -552,6 +575,7 @@ export type CategoryUncheckedCreateWithoutMenuInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -595,6 +619,7 @@ export type CategoryScalarWhereInput = {
   description?: Prisma.StringNullableFilter<"Category"> | string | null
   image?: Prisma.StringNullableFilter<"Category"> | string | null
   isActive?: Prisma.BoolFilter<"Category"> | boolean
+  autoReady?: Prisma.BoolFilter<"Category"> | boolean
   sortOrder?: Prisma.IntFilter<"Category"> | number
   translations?: Prisma.JsonNullableFilter<"Category">
   createdAt?: Prisma.DateTimeFilter<"Category"> | Date | string
@@ -607,6 +632,7 @@ export type CategoryCreateWithoutItemsInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -621,6 +647,7 @@ export type CategoryUncheckedCreateWithoutItemsInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -649,6 +676,7 @@ export type CategoryUpdateWithoutItemsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -663,6 +691,7 @@ export type CategoryUncheckedUpdateWithoutItemsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -675,6 +704,7 @@ export type CategoryCreateManyMenuInput = {
   description?: string | null
   image?: string | null
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -687,6 +717,7 @@ export type CategoryUpdateWithoutMenuInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -700,6 +731,7 @@ export type CategoryUncheckedUpdateWithoutMenuInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -713,6 +745,7 @@ export type CategoryUncheckedUpdateManyWithoutMenuInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -757,6 +790,7 @@ export type CategorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   description?: boolean
   image?: boolean
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
@@ -773,6 +807,7 @@ export type CategorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   description?: boolean
   image?: boolean
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
@@ -787,6 +822,7 @@ export type CategorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   description?: boolean
   image?: boolean
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
@@ -801,13 +837,14 @@ export type CategorySelectScalar = {
   description?: boolean
   image?: boolean
   isActive?: boolean
+  autoReady?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type CategoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "menuId" | "name" | "description" | "image" | "isActive" | "sortOrder" | "translations" | "createdAt" | "updatedAt", ExtArgs["result"]["category"]>
+export type CategoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "menuId" | "name" | "description" | "image" | "isActive" | "autoReady" | "sortOrder" | "translations" | "createdAt" | "updatedAt", ExtArgs["result"]["category"]>
 export type CategoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   menu?: boolean | Prisma.MenuDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Category$itemsArgs<ExtArgs>
@@ -833,6 +870,7 @@ export type $CategoryPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     description: string | null
     image: string | null
     isActive: boolean
+    autoReady: boolean
     sortOrder: number
     translations: runtime.JsonValue | null
     createdAt: Date
@@ -1268,6 +1306,7 @@ export interface CategoryFieldRefs {
   readonly description: Prisma.FieldRef<"Category", 'String'>
   readonly image: Prisma.FieldRef<"Category", 'String'>
   readonly isActive: Prisma.FieldRef<"Category", 'Boolean'>
+  readonly autoReady: Prisma.FieldRef<"Category", 'Boolean'>
   readonly sortOrder: Prisma.FieldRef<"Category", 'Int'>
   readonly translations: Prisma.FieldRef<"Category", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Category", 'DateTime'>

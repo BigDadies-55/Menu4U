@@ -92,9 +92,10 @@ export async function POST(req: Request) {
   const itemIds = items.map((i: CartItem) => i.itemId);
   const dbItems = await prisma.item.findMany({
     where: { id: { in: itemIds }, isActive: true },
-    select: { id: true, price: true },
+    select: { id: true, price: true, category: { select: { autoReady: true } } },
   });
-  const priceMap = Object.fromEntries(dbItems.map(i => [i.id, i.price]));
+  const priceMap     = Object.fromEntries(dbItems.map(i => [i.id, i.price]));
+  const autoReadySet = new Set(dbItems.filter(i => i.category.autoReady).map(i => i.id));
   const validItems = items.filter((i: CartItem) => priceMap[i.itemId]);
   if (validItems.length === 0) return NextResponse.json({ error: "No valid items" }, { status: 400 });
 
@@ -116,13 +117,15 @@ export async function POST(req: Request) {
       items: {
         create: validItems.map((i: CartItem) => {
           const course = i.course ?? 1;
+          const isAutoReady = autoReadySet.has(i.itemId);
           return {
             itemId: i.itemId,
             quantity: i.quantity,
             price: priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0),
             notes: i.notes ?? null,
             course,
-            heldUntilFired: course > 1, // courses 2+ are held until fired
+            ...(isAutoReady ? { itemStatus: "DONE" } : {}),
+            heldUntilFired: !isAutoReady && course > 1,
           };
         }),
       },

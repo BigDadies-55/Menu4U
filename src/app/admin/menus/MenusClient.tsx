@@ -16,7 +16,7 @@ type Item = {
 
 type Category = {
   id: string; name: string; image: string | null;
-  items: Item[]; isActive: boolean; sortOrder: number;
+  items: Item[]; isActive: boolean; autoReady: boolean; sortOrder: number;
   translations?: CatTranslationsMap | null;
 };
 
@@ -887,6 +887,18 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     setDeleteConfirm(null);
   }
 
+  async function toggleCategoryAutoReady(catId: string, current: boolean) {
+    await fetch(`/api/admin/categories/${catId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ autoReady: !current }),
+    });
+    updateMenu(m => ({
+      ...m,
+      categories: m.categories.map(c => c.id === catId ? { ...c, autoReady: !current } : c),
+    }));
+  }
+
   async function toggleItem(catId: string, itemId: string, isActive: boolean) {
     await fetch(`/api/admin/items/${itemId}`, {
       method: "PATCH",
@@ -1204,6 +1216,19 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                         </span>
                         {canEdit && (
                           <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                            {/* autoReady toggle — drinks/bar bypass kitchen */}
+                            <button
+                              onClick={() => toggleCategoryAutoReady(cat.id, cat.autoReady ?? false)}
+                              title={cat.autoReady ? "ביטול auto-ready — פריטים יישלחו למטבח" : "הפעל auto-ready — פריטים יסומנו כמוכנים מיידית (שתיה/בר)"}
+                              style={{
+                                fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20,
+                                border: `1px solid ${cat.autoReady ? "rgba(81,207,102,.4)" : "rgba(108,117,125,.3)"}`,
+                                background: cat.autoReady ? "rgba(81,207,102,.15)" : "rgba(108,117,125,.1)",
+                                color: cat.autoReady ? "#51cf66" : "#6c757d",
+                                cursor: "pointer",
+                              }}>
+                              {cat.autoReady ? "🍹 ללא מטבח" : "🍹"}
+                            </button>
                             <div className="flex flex-col gap-0.5">
                               <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
                                 className="disabled:opacity-30 leading-none" style={{ fontSize: 12, color: "#6c757d" }}>▲</button>

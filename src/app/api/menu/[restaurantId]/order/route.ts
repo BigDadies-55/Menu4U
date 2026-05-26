@@ -23,13 +23,14 @@ export async function POST(
     return NextResponse.json({ error: "No items" }, { status: 400 });
   }
 
-  // Validate items exist and are active
+  // Validate items exist and are active — also fetch category.autoReady for drink routing
   const itemIds = items.map((i: { itemId: string }) => i.itemId);
   const dbItems = await prisma.item.findMany({
     where: { id: { in: itemIds }, isActive: true },
-    select: { id: true, price: true },
+    select: { id: true, price: true, category: { select: { autoReady: true } } },
   });
-  const priceMap = Object.fromEntries(dbItems.map(i => [i.id, i.price]));
+  const priceMap    = Object.fromEntries(dbItems.map(i => [i.id, i.price]));
+  const autoReadySet = new Set(dbItems.filter(i => i.category.autoReady).map(i => i.id));
 
   type CartModifier = { groupName: string; label: string; priceAdd: number };
   type CartItem = { itemId: string; quantity: number; notes?: string; course?: number; modifiers?: CartModifier[] };
@@ -61,13 +62,16 @@ export async function POST(
       items: {
         create: validItems.map((i: CartItem) => {
           const course = i.course ?? 1;
+          const isAutoReady = autoReadySet.has(i.itemId);
           return {
             itemId: i.itemId,
             quantity: i.quantity,
             price: priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0),
             notes: i.notes ?? null,
             course,
-            heldUntilFired: course > 1, // courses 2+ are held until explicitly fired
+            // autoReady items (drinks/bar) skip kitchen — mark DONE immediately
+            ...(isAutoReady ? { itemStatus: "DONE" } : {}),
+            heldUntilFired: !isAutoReady && course > 1,
           };
         }),
       },
