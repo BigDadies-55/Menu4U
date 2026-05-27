@@ -40,6 +40,7 @@ export async function POST(
     },
     select: {
       id: true,
+      totalAmount: true,
       loyaltyMemberId: true,
       loyaltyMemberName: true,
     },
@@ -87,20 +88,22 @@ export async function POST(
       return NextResponse.json({ error: "coupon_expired" }, { status: 400 });
     }
     discountAmount = coupon.type === "DISCOUNT_PERCENT"
-      ? 0  // will be calculated client-side based on total
+      ? Math.round((order.totalAmount * coupon.value / 100) * 100) / 100
       : coupon.value;
   } else {
     return NextResponse.json({ error: "invalid_type" }, { status: 400 });
   }
 
-  // Atomic lock — use raw SQL to ensure only one winner
+  const discountedTotal = Math.max(0, order.totalAmount - discountAmount);
+
+  // Atomic lock — update loyalty fields AND reduce totalAmount in one statement
   const result = await prisma.$executeRawUnsafe(
     `UPDATE "Order"
      SET "loyaltyMemberId" = $1, "loyaltyMemberName" = $2,
          "loyaltyDiscountType" = $3, "loyaltyDiscountAmount" = $4,
-         "loyaltyCouponId" = $5
-     WHERE id = $6 AND ("loyaltyMemberId" IS NULL)`,
-    memberId, member.name, type, discountAmount, couponId ?? null, orderId
+         "loyaltyCouponId" = $5, "totalAmount" = $6
+     WHERE id = $7 AND ("loyaltyMemberId" IS NULL)`,
+    memberId, member.name, type, discountAmount, couponId ?? null, discountedTotal, orderId
   );
 
   if (result === 0) {

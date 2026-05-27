@@ -131,7 +131,7 @@ function BillModal({
 }: {
   tableNumber: string;
   orders: Order[];
-  onConfirm: () => void;
+  onConfirm: (tipAmount: number, payMethod: string) => void;
   onClose: () => void;
 }) {
   const [tipPct, setTipPct]     = useState<number>(0);
@@ -146,7 +146,10 @@ function BillModal({
   }, [onClose]);
 
   const validOrders = orders.filter(o => !["CANCELLED","PAID"].includes(o.status));
+  // totalAmount already has discount baked in after redemption
   const subtotal = validOrders.reduce((s, o) => s + o.totalAmount, 0);
+  const loyaltyDiscount = validOrders.reduce((s, o) => s + (o.loyaltyDiscountAmount ?? 0), 0);
+  const loyaltyMemberNames = [...new Set(validOrders.filter(o => o.loyaltyMemberName).map(o => o.loyaltyMemberName!))];
   const tipAmount = tipPct === -1
     ? (parseFloat(customTip) || 0)
     : Math.round(subtotal * tipPct) / 100;
@@ -154,7 +157,7 @@ function BillModal({
 
   async function handleConfirm() {
     setConfirming(true);
-    onConfirm();
+    onConfirm(tipAmount, payMethod);
   }
 
   const PAY_METHODS = [
@@ -216,8 +219,22 @@ function BillModal({
 
           {/* Summary */}
           <div style={{ background: D.inputBg, borderRadius: 12, padding: "14px 16px" }}>
+            {loyaltyDiscount > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: D.sub, marginBottom: 8 }}>
+                <span>סכום לפני הנחה</span>
+                <span style={{ fontWeight: 600, color: D.text }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
+              </div>
+            )}
+            {loyaltyDiscount > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, alignItems: "center" }}>
+                <span style={{ color: "#4ade80", display: "flex", alignItems: "center", gap: 4 }}>
+                  ⭐ הנחת מועדון{loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames.join(", ")})` : ""}
+                </span>
+                <span style={{ fontWeight: 700, color: "#4ade80" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: D.sub, marginBottom: 8 }}>
-              <span>סכום מקורי</span>
+              <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סכום"}</span>
               <span style={{ fontWeight: 600, color: D.text }}>₪{subtotal.toFixed(2)}</span>
             </div>
             {tipAmount > 0 && (
@@ -227,7 +244,7 @@ function BillModal({
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 900, borderTop: `1px solid ${D.inputBrd}`, paddingTop: 10 }}>
-              <span style={{ color: D.text }}>סה&quot;כ</span>
+              <span style={{ color: D.text }}>סה&quot;כ לתשלום</span>
               <span style={{ color: D.amber }}>₪{total.toFixed(2)}</span>
             </div>
           </div>
@@ -824,7 +841,7 @@ export default function OrdersClient({
     fetchOrders();
   }
 
-  function closeTable(tableNumber: string) {
+  function closeTable(tableNumber: string, tipAmount = 0, payMethod = "card") {
     const tableOrders = orders.filter(o => (o.tableNumber ?? "–") === tableNumber);
     const rid = tableOrders[0]?.restaurant?.id || restaurantId;
     setBillTableKey(null);
@@ -832,7 +849,7 @@ export default function OrdersClient({
     fetch("/api/admin/orders/close-table", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableNumber, restaurantId: rid }),
+      body: JSON.stringify({ tableNumber, restaurantId: rid, tipAmount, payMethod }),
     }).catch(() => {});
   }
 
@@ -903,7 +920,7 @@ export default function OrdersClient({
         <BillModal
           tableNumber={billTableKey}
           orders={billOrders}
-          onConfirm={() => closeTable(billTableKey)}
+          onConfirm={(tip, pay) => closeTable(billTableKey, tip, pay)}
           onClose={() => setBillTableKey(null)}
         />
       )}
