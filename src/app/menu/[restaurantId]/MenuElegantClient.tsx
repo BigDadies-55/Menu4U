@@ -156,91 +156,6 @@ function getItemBadges(item: Item, t: Translations): string[] {
   return [...badges, ...item.tags];
 }
 
-function GuestRegistrationModal({
-  onSave,
-  restaurantName,
-  tableNumber,
-  t,
-}: {
-  onSave: (identity: { name: string; phone: string }) => void;
-  restaurantName: string;
-  tableNumber: string;
-  t: Translations;
-}) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [error, setError] = useState("");
-
-  function handleSubmit() {
-    const trimName = name.trim();
-    const trimPhone = phone.trim().replace(/\s/g, "");
-    if (!trimName) { setError(t.nameRequired); return; }
-    if (!trimPhone || trimPhone.length < 9) { setError(t.phoneInvalid); return; }
-    onSave({ name: trimName, phone: trimPhone });
-  }
-
-  return (
-    <div style={{
-      position: "relative", zIndex: 71,
-      background: "#1c1c1c", borderRadius: 16,
-      padding: "28px 24px", width: "min(340px, 90vw)",
-      border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-      textAlign: "center",
-    }}>
-      <div style={{ fontSize: 36, marginBottom: 8 }}>👋</div>
-      <div style={{ color: "#C5A880", fontWeight: 700, fontSize: 20, marginBottom: 4 }}>{t.welcome}</div>
-      <div style={{ color: "#fff", opacity: 0.6, fontSize: 14, marginBottom: 20 }}>
-        {restaurantName} • {t.tableLabel} {tableNumber}
-      </div>
-      <div style={{ textAlign: t.dir === "rtl" ? "right" : "left", marginBottom: 14 }}>
-        <label style={{ display: "block", fontSize: 12, color: "#fff", opacity: 0.6, marginBottom: 4 }}>{t.fullName}</label>
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="ישראל ישראלי"
-          autoFocus
-          style={{
-            width: "100%", padding: "10px 12px", borderRadius: 9, fontSize: 15,
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
-            color: "#fff", outline: "none", boxSizing: "border-box",
-          }}
-        />
-      </div>
-      <div style={{ textAlign: t.dir === "rtl" ? "right" : "left", marginBottom: 20 }}>
-        <label style={{ display: "block", fontSize: 12, color: "#fff", opacity: 0.6, marginBottom: 4 }}>{t.phoneNumber}</label>
-        <input
-          type="tel"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          placeholder="050-0000000"
-          inputMode="numeric"
-          dir="ltr"
-          style={{
-            width: "100%", padding: "10px 12px", borderRadius: 9, fontSize: 15,
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
-            color: "#fff", outline: "none", boxSizing: "border-box",
-          }}
-          onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
-        />
-      </div>
-      {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 10 }}>{error}</div>}
-      <button
-        onClick={handleSubmit}
-        style={{
-          width: "100%", padding: "12px 0", borderRadius: 10,
-          background: "#C5A880", color: "#0D0D0D",
-          border: "none", fontWeight: 700, fontSize: 16, cursor: "pointer",
-        }}
-      >
-        {t.enter}
-      </button>
-      <div style={{ fontSize: 11, color: "#fff", opacity: 0.35, marginTop: 12 }}>
-        הפרטים משמשים לזיהוי הזמנתך בלבד
-      </div>
-    </div>
-  );
-}
 
 export default function MenuElegantClient({
   restaurant,
@@ -250,10 +165,10 @@ export default function MenuElegantClient({
   tableNumber?: string | null;
 }) {
   // Elegant theme view state
-  const [elegantView, setElegantView] = useState<"landing" | "categories" | "items">("landing");
-  const elegantHistory = useRef<("landing" | "categories" | "items")[]>(["landing"]);
+  const [elegantView, setElegantView] = useState<"landing" | "clubwelcome" | "categories" | "items">("landing");
+  const elegantHistory = useRef<("landing" | "clubwelcome" | "categories" | "items")[]>(["landing"]);
 
-  function elegantNavigateTo(v: "landing" | "categories" | "items") {
+  function elegantNavigateTo(v: "landing" | "clubwelcome" | "categories" | "items") {
     if (elegantHistory.current[elegantHistory.current.length - 1] !== v) {
       elegantHistory.current.push(v);
     }
@@ -264,7 +179,8 @@ export default function MenuElegantClient({
   function elegantGoBack() {
     if (elegantHistory.current.length > 1) {
       elegantHistory.current.pop();
-      setElegantView(elegantHistory.current[elegantHistory.current.length - 1]);
+      const prev = elegantHistory.current[elegantHistory.current.length - 1];
+      setElegantView(prev);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
@@ -297,22 +213,23 @@ export default function MenuElegantClient({
 
   // Guest identity (name + phone stored in localStorage)
   const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
-  const [showRegistration, setShowRegistration] = useState(false);
 
   // Thank-you screen (shown when an order transitions to PAID)
   const [showThankYou, setShowThankYou] = useState(false);
   const prevOrderStatusesRef = useRef<Map<string, string>>(new Map());
 
-  // Customer newsletter/updates registration
-  const [regModalOpen,      setRegModalOpen]      = useState(false);
-  const [regForm,           setRegForm]           = useState({ name: "", phone: "", email: "" });
-  const [regLoading,        setRegLoading]        = useState(false);
-  const [regStep,           setRegStep]           = useState<"form" | "otp" | "done">("form");
-  const [regPendingId,      setRegPendingId]      = useState("");
-  const [regOtp,            setRegOtp]            = useState("");
-  const [regCoupon,         setRegCoupon]         = useState("");
-  const [regError,          setRegError]          = useState("");
-  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  // Club welcome/onboarding screen
+  const [clubStep, setClubStep] = useState<"promo" | "register" | "login" | "otp" | "welcome_back">("promo");
+  const [clubForm, setClubForm] = useState({ name: "", phone: "", email: "", birthDate: "" });
+  const [clubLoginPhone, setClubLoginPhone] = useState("");
+  const [clubLoading, setClubLoading] = useState(false);
+  const [clubError, setClubError] = useState("");
+  const [clubOtp, setClubOtp] = useState("");
+  const [clubEmailVerified, setClubEmailVerified] = useState(false);
+  const [clubOtpSending, setClubOtpSending] = useState(false);
+  const [clubOtpSent, setClubOtpSent] = useState(false);
+  const [clubWelcomeBackName, setClubWelcomeBackName] = useState("");
+  const [clubWelcomeBonus, setClubWelcomeBonus] = useState(0);
 
   // Loyalty club state
   const [showLoyalty, setShowLoyalty] = useState(false);
@@ -329,24 +246,13 @@ export default function MenuElegantClient({
 
   // Fonts loaded via next/font/google module-level declarations above
 
-  // On mount: check if already registered; if not — auto-open modal on first ever visit
+  // On mount: auto-detect known loyalty member by stored phone
   useEffect(() => {
     try {
-      const regKey     = `menu4u_customer_registered_${restaurant.id}`;
-      const shownKey   = `menu4u_reg_shown_${restaurant.id}`;
-      const registered = localStorage.getItem(regKey) === "1";
-      if (registered) {
-        setAlreadyRegistered(true);
-        return;
-      }
-      if (!localStorage.getItem(shownKey)) {
-        localStorage.setItem(shownKey, "1");
-        setTimeout(() => {
-          setRegStep("form");
-          setRegOtp(""); setRegError(""); setRegCoupon("");
-          setRegForm({ name: "", phone: "", email: "" });
-          setRegModalOpen(true);
-        }, 1500);
+      const storedPhone = localStorage.getItem(`menu4u_loyalty_phone_${restaurant.id}`);
+      if (storedPhone) {
+        // Will be fetched when clubwelcome screen loads
+        setClubLoginPhone(storedPhone);
       }
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -427,19 +333,18 @@ export default function MenuElegantClient({
         const parsed: GuestIdentity = JSON.parse(stored);
         if (parsed.name && parsed.phone) {
           setGuestIdentity(parsed);
-          return;
         }
       }
     } catch { /* ignore */ }
-    setShowRegistration(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function saveGuestIdentity(identity: GuestIdentity) {
-    const key = `menu4u_guest_${restaurant.id}_${tableNumber}`;
-    localStorage.setItem(key, JSON.stringify(identity));
+    if (tableNumber) {
+      const key = `menu4u_guest_${restaurant.id}_${tableNumber}`;
+      try { localStorage.setItem(key, JSON.stringify(identity)); } catch { /* ignore */ }
+    }
     setGuestIdentity(identity);
-    setShowRegistration(false);
     fetch(`/api/menu/${restaurant.id}/register-guest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -743,48 +648,134 @@ export default function MenuElegantClient({
     }
   }
 
-  async function handleRegisterSubmit() {
-    const name  = regForm.name.trim();
-    const phone = regForm.phone.trim().replace(/\s/g, "");
-    const email = regForm.email.trim();
-    if (!name)  { setRegError(t.nameField); return; }
-    if (!phone || phone.length < 9) { setRegError(t.phoneField); return; }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setRegError(t.emailInvalid); return; }
-    setRegLoading(true); setRegError("");
+  async function handleClubAutoLogin(phone: string) {
+    setClubLoading(true);
     try {
-      const res = await fetch(`/api/menu/${restaurant.id}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, email }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setRegError(data.error ?? t.registrationError); return; }
-      setRegPendingId(data.pendingId);
-      setRegOtp("");
-      setRegStep("otp");
-    } finally {
-      setRegLoading(false);
-    }
+      const res = await fetch(`/api/loyalty/${restaurant.id}/member?phone=${encodeURIComponent(phone)}`);
+      if (res.ok) {
+        const member = await res.json();
+        if (member) {
+          setLoyaltyMember(member);
+          setGuestIdentity({ name: member.name, phone: member.phone });
+          saveGuestIdentity({ name: member.name, phone: member.phone });
+          setClubWelcomeBackName(member.name);
+          setClubWelcomeBonus(member.points);
+          setClubStep("welcome_back");
+          setTimeout(() => elegantNavigateTo("categories"), 2500);
+        }
+      }
+    } catch {}
+    setClubLoading(false);
   }
 
-  async function handleVerifyOtp() {
-    if (!regOtp.trim()) { setRegError(t.otpRequired); return; }
-    setRegLoading(true); setRegError("");
+  async function handleClubLogin() {
+    if (!clubLoginPhone || clubLoginPhone.length < 9) {
+      setClubError("נא להזין מספר טלפון תקין");
+      return;
+    }
+    setClubLoading(true);
+    setClubError("");
     try {
-      const res = await fetch(`/api/menu/${restaurant.id}/verify-otp`, {
+      const res = await fetch(`/api/loyalty/${restaurant.id}/member?phone=${encodeURIComponent(clubLoginPhone)}`);
+      if (res.ok) {
+        const member = await res.json();
+        if (member) {
+          setLoyaltyMember(member);
+          setGuestIdentity({ name: member.name, phone: member.phone });
+          saveGuestIdentity({ name: member.name, phone: member.phone });
+          try { localStorage.setItem(`menu4u_loyalty_phone_${restaurant.id}`, member.phone); } catch {}
+          setClubWelcomeBackName(member.name);
+          setClubWelcomeBonus(member.points);
+          setClubStep("welcome_back");
+          setTimeout(() => elegantNavigateTo("categories"), 2500);
+        } else {
+          setClubError("לא מצאנו חבר עם הטלפון הזה");
+        }
+      }
+    } catch {
+      setClubError("שגיאה בחיבור, נסה שוב");
+    }
+    setClubLoading(false);
+  }
+
+  async function handleClubRegister() {
+    if (!clubForm.name.trim() || !clubForm.phone || clubForm.phone.length < 9) {
+      setClubError("שם וטלפון הם שדות חובה");
+      return;
+    }
+    if (clubForm.email && !clubEmailVerified) {
+      setClubError("יש לאמת את כתובת האימייל");
+      return;
+    }
+    setClubLoading(true);
+    setClubError("");
+    try {
+      const res = await fetch(`/api/loyalty/${restaurant.id}/member`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pendingId: regPendingId, otp: regOtp.trim() }),
+        body: JSON.stringify({
+          name: clubForm.name.trim(),
+          phone: clubForm.phone.trim(),
+          email: clubForm.email || null,
+          birthDate: clubForm.birthDate || null,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) { setRegError(data.error ?? t.verifyError); return; }
-      try { localStorage.setItem(`menu4u_customer_registered_${restaurant.id}`, "1"); } catch { /* ignore */ }
-      setAlreadyRegistered(true);
-      setRegCoupon(data.couponCode ?? "");
-      setRegStep("done");
-    } finally {
-      setRegLoading(false);
+      if (res.ok || res.status === 409) {
+        const member = res.status === 409 ? data.member : data;
+        setLoyaltyMember(member);
+        setGuestIdentity({ name: member.name, phone: member.phone });
+        saveGuestIdentity({ name: member.name, phone: member.phone });
+        try { localStorage.setItem(`menu4u_loyalty_phone_${restaurant.id}`, member.phone); } catch {}
+        setClubWelcomeBonus(member.points);
+        setClubWelcomeBackName(member.name);
+        setClubStep("welcome_back");
+        setTimeout(() => elegantNavigateTo("categories"), 3000);
+      } else {
+        setClubError(data.error || "שגיאה בהרשמה");
+      }
+    } catch {
+      setClubError("שגיאה בחיבור");
     }
+    setClubLoading(false);
+  }
+
+  async function handleSendEmailOtp() {
+    if (!clubForm.email || !clubForm.email.includes("@")) return;
+    setClubOtpSending(true);
+    setClubError("");
+    try {
+      await fetch(`/api/loyalty/${restaurant.id}/verify-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", email: clubForm.email }),
+      });
+      setClubOtpSent(true);
+    } catch {}
+    setClubOtpSending(false);
+  }
+
+  async function handleVerifyEmailOtp() {
+    if (!clubOtp || clubOtp.length !== 6) return;
+    setClubLoading(true);
+    try {
+      const res = await fetch(`/api/loyalty/${restaurant.id}/verify-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", email: clubForm.email, code: clubOtp }),
+      });
+      const data = await res.json();
+      if (data.verified) {
+        setClubEmailVerified(true);
+        setClubOtpSent(false);
+        setClubOtp("");
+      } else {
+        setClubError("קוד שגוי, נסה שוב");
+      }
+    } catch {
+      setClubError("שגיאה באימות");
+    }
+    setClubLoading(false);
   }
 
   return (
@@ -797,8 +788,8 @@ export default function MenuElegantClient({
       }}
     >
 
-      {/* ── Sticky Header (hidden on landing view) ── */}
-      {elegantView !== "landing" && (
+      {/* ── Sticky Header (hidden on landing and clubwelcome views) ── */}
+      {elegantView !== "landing" && elegantView !== "clubwelcome" && (
         <header style={{
           position: "sticky", top: 0, zIndex: 40,
           background: "rgba(13,13,13,0.95)", backdropFilter: "blur(12px)",
@@ -886,6 +877,23 @@ export default function MenuElegantClient({
             pointerEvents: "none",
           }} />
 
+          {/* Returning member welcome chip */}
+          {loyaltyMember && (
+            <div style={{
+              position: "absolute", top: 20, zIndex: 3,
+              background: "rgba(197,168,128,0.15)",
+              border: "1px solid rgba(197,168,128,0.4)",
+              borderRadius: 20, padding: "8px 18px",
+              display: "flex", alignItems: "center", gap: 8,
+              backdropFilter: "blur(8px)",
+            }}>
+              <span style={{ fontSize: 16 }}>⭐</span>
+              <span style={{ color: "#C5A880", fontSize: 13, fontWeight: 600 }}>
+                ברוך הבא, {loyaltyMember.name}! {loyaltyMember.points} נקודות
+              </span>
+            </div>
+          )}
+
           {/* Main content */}
           <div style={{
             position: "relative", zIndex: 2,
@@ -944,7 +952,10 @@ export default function MenuElegantClient({
 
             {/* CTA button */}
             <button
-              onClick={() => elegantNavigateTo("categories")}
+              onClick={() => {
+                setClubStep("promo");
+                elegantNavigateTo("clubwelcome");
+              }}
               style={{
                 background: "linear-gradient(135deg, #C5A880 0%, #dfc090 50%, #C5A880 100%)",
                 color: "#0D0D0D",
@@ -1008,62 +1019,39 @@ export default function MenuElegantClient({
               </a>
             )}
 
-            {/* Registration / gift — center, gold, larger */}
-            {!alreadyRegistered && (
-              <button
-                onClick={() => {
-                  setRegStep("form");
-                  setRegOtp(""); setRegError(""); setRegCoupon("");
-                  setRegForm({ name: "", phone: "", email: "" });
-                  setRegModalOpen(true);
-                }}
-                style={{
-                  width: 66, height: 66, borderRadius: "50%",
-                  background: "linear-gradient(135deg, #C5A880, #dfc090)",
-                  border: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer",
-                  boxShadow: "0 6px 28px rgba(197,168,128,0.5), 0 2px 8px rgba(0,0,0,0.5)",
-                  transition: "transform 150ms",
-                  position: "relative",
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.12)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
-                aria-label="הצטרף לקלאב"
-              >
-                <span style={{
-                  position: "absolute", top: 5, right: 5,
-                  width: 11, height: 11, borderRadius: "50%",
-                  background: "#e53e3e", border: "2px solid #0a0908",
-                }} />
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 12 20 22 4 22 4 12"/>
-                  <rect x="2" y="7" width="20" height="5"/>
-                  <line x1="12" y1="22" x2="12" y2="7"/>
-                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-                </svg>
-              </button>
-            )}
-
             {/* Loyalty club button */}
             <button
-              onClick={handleLoyaltyOpen}
+              onClick={() => {
+                if (loyaltyMember) {
+                  setShowLoyalty(true);
+                } else {
+                  setClubStep("promo");
+                  elegantNavigateTo("clubwelcome");
+                }
+              }}
               style={{
-                width: 58, height: 58, borderRadius: "50%",
-                background: "rgba(255,255,255,0.11)",
+                width: loyaltyMember ? 66 : 58,
+                height: loyaltyMember ? 66 : 58,
+                borderRadius: "50%",
+                background: loyaltyMember
+                  ? "linear-gradient(135deg, #C5A880, #dfc090)"
+                  : "rgba(255,255,255,0.11)",
                 backdropFilter: "blur(10px)",
-                border: "1.5px solid rgba(197,168,128,0.4)",
+                border: loyaltyMember ? "none" : "1.5px solid rgba(197,168,128,0.4)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.45)",
+                boxShadow: loyaltyMember
+                  ? "0 6px 28px rgba(197,168,128,0.5), 0 2px 8px rgba(0,0,0,0.5)"
+                  : "0 4px 20px rgba(0,0,0,0.45)",
                 transition: "transform 150ms",
               }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.12)"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
-              aria-label="מועדון לקוחות"
+              aria-label={loyaltyMember ? "כרטיס החבר שלי" : "מועדון לקוחות"}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C5A880" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke={loyaltyMember ? "#0D0D0D" : "#C5A880"}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
             </button>
@@ -1095,6 +1083,39 @@ export default function MenuElegantClient({
           </div>
 
         </section>
+      )}
+
+      {/* ── CLUB WELCOME SCREEN ── */}
+      {elegantView === "clubwelcome" && (
+        <ClubWelcomeScreen
+          restaurantId={restaurant.id}
+          restaurantName={restaurant.name}
+          restaurantLogo={restaurant.logo}
+          clubStep={clubStep}
+          setClubStep={setClubStep}
+          clubForm={clubForm}
+          setClubForm={setClubForm}
+          clubLoginPhone={clubLoginPhone}
+          setClubLoginPhone={setClubLoginPhone}
+          clubLoading={clubLoading}
+          clubError={clubError}
+          setClubError={setClubError}
+          clubOtp={clubOtp}
+          setClubOtp={setClubOtp}
+          clubEmailVerified={clubEmailVerified}
+          clubOtpSending={clubOtpSending}
+          clubOtpSent={clubOtpSent}
+          clubWelcomeBackName={clubWelcomeBackName}
+          clubWelcomeBonus={clubWelcomeBonus}
+          loyaltyMember={loyaltyMember}
+          handleClubAutoLogin={handleClubAutoLogin}
+          handleClubLogin={handleClubLogin}
+          handleClubRegister={handleClubRegister}
+          handleSendEmailOtp={handleSendEmailOtp}
+          handleVerifyEmailOtp={handleVerifyEmailOtp}
+          onSkip={() => elegantNavigateTo("categories")}
+          onGoBack={() => elegantGoBack()}
+        />
       )}
 
       {/* ── CATEGORIES SCREEN ── */}
@@ -1476,7 +1497,7 @@ export default function MenuElegantClient({
       {/* ── Cart floating button (if ordersEnabled) ── */}
       {restaurant.ordersEnabled && cart.length > 0 && (
         <button onClick={() => setCartOpen(true)} style={{
-          position: "fixed", bottom: alreadyRegistered ? 24 : 100, right: 20, zIndex: 50,
+          position: "fixed", bottom: loyaltyMember ? 24 : 100, right: 20, zIndex: 50,
           background: "#C5A880", color: "#0D0D0D",
           border: "none", borderRadius: 50, padding: "12px 20px",
           fontWeight: 700, fontSize: 14, cursor: "pointer",
@@ -1516,26 +1537,20 @@ export default function MenuElegantClient({
         </button>
       )}
 
-      {/* ── Floating gift button (coupon registration) ── */}
-      {!alreadyRegistered && elegantView !== "landing" && (
-        <button onClick={() => { setRegModalOpen(true); setRegStep("form"); setRegOtp(""); setRegError(""); setRegCoupon(""); setRegForm({ name: "", phone: "", email: "" }); }}
+      {/* ── Floating club button (non-members on categories/items) ── */}
+      {!loyaltyMember && (elegantView === "categories" || elegantView === "items") && (
+        <button onClick={() => { setClubStep("promo"); elegantNavigateTo("clubwelcome"); }}
           style={{
             position: "fixed", bottom: 24, left: 16, zIndex: 60,
             display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
             padding: "12px 16px 10px", borderRadius: 18,
-            background: "#C5A880", color: "#0D0D0D",
+            background: "linear-gradient(135deg, #C5A880 0%, #dfc090 100%)", color: "#0D0D0D",
             border: "none", fontWeight: 700, fontSize: 11,
             cursor: "pointer", boxShadow: "0 6px 28px rgba(197,168,128,0.35)",
             maxWidth: 130, textAlign: "center", lineHeight: 1.35,
           }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 12 20 22 4 22 4 12"/>
-            <rect x="2" y="7" width="20" height="5"/>
-            <line x1="12" y1="22" x2="12" y2="7"/>
-            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-          </svg>
-          {t.floatingBtn}
+          <span style={{ fontSize: 20 }}>⭐</span>
+          הצטרף למועדון
         </button>
       )}
 
@@ -1792,14 +1807,6 @@ export default function MenuElegantClient({
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ── Guest Registration Modal ── */}
-      {showRegistration && tableNumber && restaurant.ordersEnabled && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)" }} />
-          <GuestRegistrationModal onSave={saveGuestIdentity} restaurantName={restaurant.name} tableNumber={tableNumber} t={t} />
         </div>
       )}
 
@@ -2365,161 +2372,525 @@ export default function MenuElegantClient({
         </div>
       )}
 
-      {/* ── Registration modal (3 steps) ── */}
-      {regModalOpen && (
-        <div
+    </div>
+  );
+}
+
+// ── Club Welcome Screen Component ──────────────────────────────────────────────
+function ClubWelcomeScreen({
+  restaurantId,
+  restaurantName,
+  restaurantLogo,
+  clubStep,
+  setClubStep,
+  clubForm,
+  setClubForm,
+  clubLoginPhone,
+  setClubLoginPhone,
+  clubLoading,
+  clubError,
+  setClubError,
+  clubOtp,
+  setClubOtp,
+  clubEmailVerified,
+  clubOtpSending,
+  clubOtpSent,
+  clubWelcomeBackName,
+  clubWelcomeBonus,
+  loyaltyMember,
+  handleClubAutoLogin,
+  handleClubLogin,
+  handleClubRegister,
+  handleSendEmailOtp,
+  handleVerifyEmailOtp,
+  onSkip,
+  onGoBack,
+}: {
+  restaurantId: string;
+  restaurantName: string;
+  restaurantLogo: string | null;
+  clubStep: "promo" | "register" | "login" | "otp" | "welcome_back";
+  setClubStep: (s: "promo" | "register" | "login" | "otp" | "welcome_back") => void;
+  clubForm: { name: string; phone: string; email: string; birthDate: string };
+  setClubForm: React.Dispatch<React.SetStateAction<{ name: string; phone: string; email: string; birthDate: string }>>;
+  clubLoginPhone: string;
+  setClubLoginPhone: (v: string) => void;
+  clubLoading: boolean;
+  clubError: string;
+  setClubError: (e: string) => void;
+  clubOtp: string;
+  setClubOtp: (v: string) => void;
+  clubEmailVerified: boolean;
+  clubOtpSending: boolean;
+  clubOtpSent: boolean;
+  clubWelcomeBackName: string;
+  clubWelcomeBonus: number;
+  loyaltyMember: LoyaltyMemberData | null;
+  handleClubAutoLogin: (phone: string) => Promise<void>;
+  handleClubLogin: () => Promise<void>;
+  handleClubRegister: () => Promise<void>;
+  handleSendEmailOtp: () => Promise<void>;
+  handleVerifyEmailOtp: () => Promise<void>;
+  onSkip: () => void;
+  onGoBack: () => void;
+}) {
+  // Auto-check localStorage for stored phone on mount
+  useEffect(() => {
+    const storedPhone = localStorage.getItem(`menu4u_loyalty_phone_${restaurantId}`);
+    if (storedPhone && clubStep === "promo") {
+      handleClubAutoLogin(storedPhone);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 10,
+    fontSize: 15,
+    background: "#1a1d23",
+    border: "1px solid #2d3239",
+    color: "#e9ecef",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+  };
+
+  return (
+    <section style={{
+      minHeight: "100vh",
+      background: "#0a0908",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "24px 24px max(40px, env(safe-area-inset-bottom, 40px))",
+      direction: "rtl",
+      position: "relative",
+    }}>
+
+      {/* Back button */}
+      {clubStep !== "welcome_back" && (
+        <button
+          onClick={clubStep === "promo" ? onGoBack : () => { setClubStep("promo"); setClubError(""); }}
           style={{
-            position: "fixed", inset: 0, zIndex: 70,
-            background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+            position: "absolute", top: 20, right: 20,
+            background: "none", border: "none",
+            color: "#C5A880", fontSize: 14, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 4,
+            fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
           }}
-          onClick={e => { if (e.target === e.currentTarget && regStep !== "done") setRegModalOpen(false); }}
         >
-          <div style={{
-            position: "relative", zIndex: 71,
-            background: "#1c1c1c", borderRadius: 18, padding: "28px 24px",
-            width: "min(360px, 92vw)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.6)", direction: "rtl",
-          }}>
-            {regStep !== "done" && (
-              <button
-                onClick={() => setRegModalOpen(false)}
-                style={{
-                  position: "absolute", top: 14, left: 14,
-                  background: "rgba(255,255,255,0.08)", border: "none",
-                  borderRadius: 8, width: 28, height: 28,
-                  cursor: "pointer", color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 16, fontWeight: 700,
-                }}
-              >×</button>
-            )}
+          › חזרה
+        </button>
+      )}
 
-            {/* STEP 1: form */}
-            {regStep === "form" && (
-              <>
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <div style={{ fontSize: 36, marginBottom: 6 }}>🎁</div>
-                  <div style={{ color: "#C5A880", fontWeight: 700, fontSize: 18, marginBottom: 6, lineHeight: 1.3 }}>{t.get5Percent}</div>
-                  <div style={{ color: "#fff", opacity: 0.6, fontSize: 13, marginBottom: 2 }}>{t.registerGetCoupon}</div>
-                  <div style={{ color: "#fff", opacity: 0.45, fontSize: 12 }}>{restaurant.name}</div>
-                </div>
+      {/* Small logo */}
+      {restaurantLogo && (
+        <img
+          src={restaurantLogo}
+          alt={restaurantName}
+          style={{ height: 44, objectFit: "contain", marginBottom: 16, opacity: 0.85 }}
+        />
+      )}
 
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "#fff", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.nameField}</label>
-                  <input type="text" value={regForm.name} onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="ישראל ישראלי" autoFocus
-                    onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
-                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
-                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
-                      color: "#fff", outline: "none", boxSizing: "border-box" }} />
-                </div>
+      <div style={{ width: "100%", maxWidth: 400 }}>
 
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "#fff", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.phoneField}</label>
-                  <input type="tel" value={regForm.phone} onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="050-0000000" dir="ltr"
-                    onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
-                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
-                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
-                      color: "#fff", outline: "none", boxSizing: "border-box", textAlign: "right" }} />
-                </div>
-
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "#fff", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.emailField}</label>
-                  <input type="email" value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
-                    placeholder="email@example.com" dir="ltr"
-                    onKeyDown={e => { if (e.key === "Enter") handleRegisterSubmit(); }}
-                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
-                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
-                      color: "#fff", outline: "none", boxSizing: "border-box", textAlign: "right" }} />
-                </div>
-
-                {regError && (
-                  <div style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>{regError}</div>
-                )}
-                <button onClick={handleRegisterSubmit} disabled={regLoading}
-                  style={{ width: "100%", padding: "11px 16px", borderRadius: 50,
-                    background: "#C5A880", color: "#0D0D0D",
-                    border: "none", fontWeight: 700, fontSize: 14,
-                    cursor: regLoading ? "not-allowed" : "pointer",
-                    opacity: regLoading ? 0.55 : 1, transition: "opacity 150ms" }}>
-                  {regLoading ? t.sending : t.registerBtn}
-                </button>
-              </>
-            )}
-
-            {/* STEP 2: OTP */}
-            {regStep === "otp" && (
-              <>
-                <div style={{ textAlign: "center", marginBottom: 24 }}>
-                  <div style={{ fontSize: 36, marginBottom: 8 }}>📧</div>
-                  <div style={{ color: "#C5A880", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{t.otpSentTitle}</div>
-                  <div style={{ color: "#fff", opacity: 0.65, fontSize: 13, lineHeight: 1.5 }}>
-                    {t.otpSentSub}<br />
-                    <span style={{ fontWeight: 600, opacity: 1, direction: "ltr", display: "inline-block" }}>{regForm.email}</span>
-                  </div>
-                  <div style={{ color: "#fff", opacity: 0.4, fontSize: 12, marginTop: 6 }}>{t.otpValidFor}</div>
-                </div>
-
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 11, color: "#fff", opacity: 0.55, marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.otpCode}</label>
-                  <input type="text" inputMode="numeric" value={regOtp} onChange={e => setRegOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="• • • • • •" autoFocus maxLength={6}
-                    onKeyDown={e => { if (e.key === "Enter") handleVerifyOtp(); }}
-                    style={{ width: "100%", padding: "14px 12px", borderRadius: 10, fontSize: 22,
-                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
-                      color: "#C5A880", outline: "none", boxSizing: "border-box",
-                      textAlign: "center", letterSpacing: 8, fontWeight: 700 }} />
-                </div>
-
-                {regError && (
-                  <div style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>{regError}</div>
-                )}
-                <button onClick={handleVerifyOtp} disabled={regLoading || regOtp.length < 6}
-                  style={{ width: "100%", padding: "11px 16px", borderRadius: 50,
-                    background: "#C5A880", color: "#0D0D0D",
-                    border: "none", fontWeight: 700, fontSize: 14,
-                    cursor: regLoading || regOtp.length < 6 ? "not-allowed" : "pointer",
-                    opacity: regLoading || regOtp.length < 6 ? 0.55 : 1, transition: "opacity 150ms" }}>
-                  {regLoading ? t.verifying : t.verifyBtn}
-                </button>
-                <button onClick={() => { setRegStep("form"); setRegError(""); }}
-                  style={{ width: "100%", marginTop: 10, padding: "8px", background: "none", border: "none",
-                    color: "#fff", opacity: 0.45, fontSize: 12, cursor: "pointer" }}>
-                  {t.backToForm}
-                </button>
-              </>
-            )}
-
-            {/* STEP 3: coupon */}
-            {regStep === "done" && (
-              <div style={{ textAlign: "center", padding: "12px 0" }}>
-                <div style={{ fontSize: 44, marginBottom: 12 }}>🎉</div>
-                <div style={{ color: "#C5A880", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>{t.couponTitle}</div>
-                <div style={{ color: "#fff", opacity: 0.65, fontSize: 14, marginBottom: 20 }}>{t.couponSub}</div>
-                <div style={{
-                  background: "rgba(197,168,128,0.12)", border: "2px dashed #C5A880",
-                  borderRadius: 14, padding: "18px 24px", marginBottom: 24,
-                }}>
-                  <div style={{ fontSize: 11, color: "#C5A880", fontWeight: 600, letterSpacing: "0.08em", marginBottom: 8, opacity: 0.7 }}>קוד קופון</div>
-                  <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 4, color: "#C5A880", fontFamily: "'Courier New', monospace" }}>
-                    {regCoupon}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#fff", opacity: 0.45, marginTop: 8 }}>{t.couponNote}</div>
-                </div>
-                <button onClick={() => setRegModalOpen(false)}
-                  style={{ padding: "11px 36px", borderRadius: 50,
-                    background: "#C5A880", color: "#0D0D0D",
-                    border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                  {t.closeThanks}
-                </button>
+        {/* ── PROMO STEP ── */}
+        {clubStep === "promo" && (
+          <div style={{ textAlign: "center" }}>
+            {clubLoading ? (
+              <div style={{ color: "rgba(197,168,128,0.6)", fontSize: 14, padding: "40px 0" }}>
+                מחפש את הכרטיס שלך...
               </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>⭐</div>
+                <h2 style={{
+                  fontFamily: "var(--font-cinzel, 'Cinzel', serif)",
+                  fontSize: "clamp(22px, 6vw, 32px)",
+                  fontWeight: 600,
+                  color: "#C5A880",
+                  letterSpacing: "0.04em",
+                  margin: "0 0 8px 0",
+                }}>
+                  מועדון {restaurantName}
+                </h2>
+
+                <p style={{ color: "#d4cdc7", fontSize: 15, marginBottom: 28, lineHeight: 1.6 }}>
+                  הצטרף עכשיו וקבל {clubWelcomeBonus > 0 ? `${clubWelcomeBonus} נקודות מתנה` : "נקודות בונוס"}
+                </p>
+
+                {/* Benefit bullets */}
+                <div style={{ textAlign: "right", marginBottom: 32, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {[
+                    "נקודות על כל הזמנה",
+                    "הטבות בלעדיות לחברים",
+                    "מבצעים ועדכונים ראשון",
+                  ].map((benefit, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ color: "#C5A880", fontSize: 18, flexShrink: 0 }}>✓</span>
+                      <span style={{ color: "#d4cdc7", fontSize: 14 }}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={() => { setClubStep("register"); setClubError(""); }}
+                  style={{
+                    width: "100%",
+                    padding: "16px 0",
+                    borderRadius: 50,
+                    background: "linear-gradient(135deg, #C5A880 0%, #dfc090 100%)",
+                    color: "#0D0D0D",
+                    border: "none",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: "pointer",
+                    marginBottom: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                  }}
+                >
+                  <span>⭐</span> הצטרף עכשיו
+                </button>
+
+                <button
+                  onClick={() => { setClubStep("login"); setClubError(""); }}
+                  style={{
+                    width: "100%",
+                    padding: "14px 0",
+                    borderRadius: 50,
+                    background: "transparent",
+                    color: "#C5A880",
+                    border: "1.5px solid #C5A880",
+                    fontWeight: 600,
+                    fontSize: 15,
+                    cursor: "pointer",
+                    marginBottom: 20,
+                    fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                  }}
+                >
+                  כבר רשום? כניסה לפי טלפון
+                </button>
+
+                <button
+                  onClick={onSkip}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "rgba(255,255,255,0.35)",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                  }}
+                >
+                  דלג לתפריט ›
+                </button>
+              </>
             )}
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* ── REGISTER STEP ── */}
+        {clubStep === "register" && (
+          <div>
+            <h2 style={{
+              fontFamily: "var(--font-cinzel, 'Cinzel', serif)",
+              fontSize: 22,
+              fontWeight: 600,
+              color: "#C5A880",
+              marginBottom: 24,
+              textAlign: "center",
+            }}>
+              הצטרפות למועדון
+            </h2>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 12, color: "#d4cdc7", marginBottom: 6, fontWeight: 600 }}>
+                שם מלא *
+              </label>
+              <input
+                type="text"
+                value={clubForm.name}
+                onChange={e => setClubForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="ישראל ישראלי"
+                autoFocus
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 12, color: "#d4cdc7", marginBottom: 6, fontWeight: 600 }}>
+                טלפון *
+              </label>
+              <input
+                type="tel"
+                value={clubForm.phone}
+                onChange={e => setClubForm(f => ({ ...f, phone: e.target.value }))}
+                placeholder="050-0000000"
+                dir="ltr"
+                style={{ ...inputStyle, textAlign: "right" }}
+              />
+            </div>
+
+            <div style={{ marginBottom: clubOtpSent || clubEmailVerified ? 8 : 14 }}>
+              <label style={{ display: "block", fontSize: 12, color: "#d4cdc7", marginBottom: 6, fontWeight: 600 }}>
+                אימייל (אופציונלי)
+                {clubEmailVerified && <span style={{ color: "#4ade80", marginRight: 6 }}>✓ מאומת</span>}
+              </label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="email"
+                  value={clubForm.email}
+                  onChange={e => { setClubForm(f => ({ ...f, email: e.target.value })); }}
+                  placeholder="email@example.com"
+                  dir="ltr"
+                  style={{ ...inputStyle, flex: 1, textAlign: "right" }}
+                  disabled={clubEmailVerified}
+                />
+                {clubForm.email && clubForm.email.includes("@") && !clubEmailVerified && !clubOtpSent && (
+                  <button
+                    onClick={handleSendEmailOtp}
+                    disabled={clubOtpSending}
+                    style={{
+                      flexShrink: 0,
+                      padding: "0 14px",
+                      borderRadius: 10,
+                      background: "transparent",
+                      color: "#C5A880",
+                      border: "1.5px solid #C5A880",
+                      fontWeight: 600,
+                      fontSize: 13,
+                      cursor: clubOtpSending ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                      fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                    }}
+                  >
+                    {clubOtpSending ? "שולח..." : "שלח קוד"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Inline OTP verification */}
+            {clubOtpSent && !clubEmailVerified && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 12, color: "#d4cdc7", marginBottom: 6, fontWeight: 600 }}>
+                  קוד אימות (נשלח לאימייל)
+                </label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={clubOtp}
+                    onChange={e => setClubOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="• • • • • •"
+                    maxLength={6}
+                    autoFocus
+                    style={{ ...inputStyle, flex: 1, textAlign: "center", letterSpacing: 6, fontWeight: 700, fontSize: 20, color: "#C5A880" }}
+                  />
+                  <button
+                    onClick={handleVerifyEmailOtp}
+                    disabled={clubOtp.length !== 6 || clubLoading}
+                    style={{
+                      flexShrink: 0,
+                      padding: "0 14px",
+                      borderRadius: 10,
+                      background: "#C5A880",
+                      color: "#0D0D0D",
+                      border: "none",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: clubOtp.length !== 6 || clubLoading ? "not-allowed" : "pointer",
+                      opacity: clubOtp.length !== 6 ? 0.5 : 1,
+                      fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                    }}
+                  >
+                    אמת
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", fontSize: 12, color: "#d4cdc7", marginBottom: 6, fontWeight: 600 }}>
+                תאריך לידה (אופציונלי)
+              </label>
+              <input
+                type="date"
+                value={clubForm.birthDate}
+                onChange={e => setClubForm(f => ({ ...f, birthDate: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+
+            {clubError && (
+              <div style={{
+                background: "rgba(239,68,68,0.15)", color: "#fca5a5",
+                borderRadius: 8, padding: "10px 14px",
+                fontSize: 13, marginBottom: 16, textAlign: "center",
+              }}>
+                {clubError}
+              </div>
+            )}
+
+            <button
+              onClick={handleClubRegister}
+              disabled={clubLoading || (!!clubForm.email && !clubEmailVerified && clubForm.email.includes("@"))}
+              style={{
+                width: "100%",
+                padding: "15px 0",
+                borderRadius: 50,
+                background: "linear-gradient(135deg, #C5A880 0%, #dfc090 100%)",
+                color: "#0D0D0D",
+                border: "none",
+                fontWeight: 700,
+                fontSize: 16,
+                cursor: clubLoading ? "not-allowed" : "pointer",
+                opacity: clubLoading ? 0.6 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+              }}
+            >
+              {clubLoading ? "מצרף..." : "⭐ הצטרף"}
+            </button>
+
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 12 }}>
+              הצטרפות חינם • ניתן לדלג בכל עת
+            </div>
+          </div>
+        )}
+
+        {/* ── LOGIN STEP ── */}
+        {clubStep === "login" && (
+          <div style={{ textAlign: "center" }}>
+            <h2 style={{
+              fontFamily: "var(--font-cinzel, 'Cinzel', serif)",
+              fontSize: 22,
+              fontWeight: 600,
+              color: "#C5A880",
+              marginBottom: 8,
+            }}>
+              כניסה לפי טלפון
+            </h2>
+            <p style={{ color: "#d4cdc7", fontSize: 14, marginBottom: 28 }}>
+              הזן את מספר הטלפון שנרשמת איתו
+            </p>
+
+            <input
+              type="tel"
+              value={clubLoginPhone}
+              onChange={e => setClubLoginPhone(e.target.value)}
+              placeholder="050-0000000"
+              dir="ltr"
+              autoFocus
+              onKeyDown={e => { if (e.key === "Enter") handleClubLogin(); }}
+              style={{ ...inputStyle, fontSize: 18, textAlign: "center", marginBottom: 20 }}
+            />
+
+            {clubError && (
+              <div style={{
+                background: "rgba(239,68,68,0.15)", color: "#fca5a5",
+                borderRadius: 8, padding: "10px 14px",
+                fontSize: 13, marginBottom: 16,
+              }}>
+                {clubError}
+              </div>
+            )}
+
+            <button
+              onClick={handleClubLogin}
+              disabled={clubLoading}
+              style={{
+                width: "100%",
+                padding: "15px 0",
+                borderRadius: 50,
+                background: "linear-gradient(135deg, #C5A880 0%, #dfc090 100%)",
+                color: "#0D0D0D",
+                border: "none",
+                fontWeight: 700,
+                fontSize: 16,
+                cursor: clubLoading ? "not-allowed" : "pointer",
+                opacity: clubLoading ? 0.6 : 1,
+                fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                marginBottom: 14,
+              }}
+            >
+              {clubLoading ? "מחפש..." : "אחפש את הכרטיס שלך"}
+            </button>
+
+            {clubError && clubError.includes("לא מצאנו") && (
+              <button
+                onClick={() => { setClubStep("register"); setClubError(""); }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#C5A880",
+                  fontSize: 14,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                  textDecoration: "underline",
+                }}
+              >
+                הצטרף עכשיו ›
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── WELCOME BACK STEP ── */}
+        {clubStep === "welcome_back" && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              fontSize: 64,
+              marginBottom: 16,
+              animation: "pulse 1.5s ease-in-out infinite",
+            }}>⭐</div>
+            <style>{`@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }`}</style>
+
+            <h2 style={{
+              fontFamily: "var(--font-cinzel, 'Cinzel', serif)",
+              fontSize: "clamp(20px, 5vw, 28px)",
+              fontWeight: 600,
+              color: "#C5A880",
+              marginBottom: 8,
+            }}>
+              יופי שחזרת, {clubWelcomeBackName}! 🎉
+            </h2>
+
+            {loyaltyMember && loyaltyMember.points > 0 && (
+              <p style={{ color: "#d4cdc7", fontSize: 16, marginBottom: 28 }}>
+                <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 36, color: "#C5A880", fontWeight: 900, display: "block", lineHeight: 1.2 }}>
+                  {loyaltyMember.points.toLocaleString()}
+                </span>
+                נקודות מחכות לך
+              </p>
+            )}
+
+            {(!loyaltyMember || loyaltyMember.points === 0) && clubWelcomeBonus > 0 && (
+              <p style={{ color: "#d4cdc7", fontSize: 16, marginBottom: 28 }}>
+                <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 36, color: "#C5A880", fontWeight: 900, display: "block", lineHeight: 1.2 }}>
+                  {clubWelcomeBonus}
+                </span>
+                נקודות מחכות לך
+              </p>
+            )}
+
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 24 }}>
+              עובר לתפריט...
+            </p>
+          </div>
+        )}
+
+      </div>
+    </section>
   );
 }
