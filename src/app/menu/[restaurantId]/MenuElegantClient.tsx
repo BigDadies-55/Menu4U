@@ -270,8 +270,9 @@ export default function MenuElegantClient({
   const [loyaltySettings, setLoyaltySettings] = useState({ shekelPerPoint: 0.1, minRedeemPoints: 100 });
   // Redemption state
   const [redeemLoading, setRedeemLoading] = useState(false);
-  const [redeemSuccess, setRedeemSuccess] = useState<{ discountAmount: number; type: string } | null>(null);
+  const [redeemSuccess, setRedeemSuccess] = useState<{ discountAmount: number; type: string; pointsUsed?: number } | null>(null);
   const [redeemError, setRedeemError] = useState("");
+  const [redeemPointsInput, setRedeemPointsInput] = useState<number | "">(""); // partial points selection
 
   // Language state
   const [lang, setLang] = useState<Lang>((restaurant.language as Lang) ?? "he");
@@ -525,7 +526,11 @@ export default function MenuElegantClient({
     setRedeemLoading(true);
     setRedeemError("");
     try {
-      const pointsToRedeem = type === "POINTS" ? loyaltyMember.points : undefined;
+      const pointsToRedeem = type === "POINTS"
+        ? (typeof redeemPointsInput === "number" && redeemPointsInput > 0
+            ? redeemPointsInput
+            : loyaltyMember.points)
+        : undefined;
       const res = await fetch(`/api/loyalty/${restaurant.id}/redeem`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -541,7 +546,8 @@ export default function MenuElegantClient({
           setRedeemError("שגיאה במימוש, נסה שנית");
         }
       } else {
-        setRedeemSuccess({ discountAmount: data.discountAmount, type });
+        setRedeemSuccess({ discountAmount: data.discountAmount, type, pointsUsed: pointsToRedeem });
+        setRedeemPointsInput("");
         // Refresh member data to reflect deducted points
         await fetchLoyaltyMember(loyaltyMember.phone);
         // Refresh orders so order card shows the lock
@@ -2658,26 +2664,51 @@ export default function MenuElegantClient({
                   {redeemSuccess && redeemedByMe && (
                     <div style={{
                       background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)",
-                      borderRadius: 12, padding: "14px 16px", textAlign: "center",
+                      borderRadius: 12, padding: "16px", textAlign: "center",
                     }}>
-                      <div style={{ fontSize: 22, marginBottom: 6 }}>✅</div>
-                      <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 15 }}>
+                      <div style={{ fontSize: 26, marginBottom: 8 }}>✅</div>
+                      <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
                         הנחה של ₪{redeemSuccess.discountAmount.toFixed(2)} נרשמה!
                       </div>
-                      <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 4 }}>
-                        הצוות שלנו יחיל את ההנחה בחשבון
+                      {redeemSuccess.pointsUsed && (
+                        <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 4 }}>
+                          השתמשת ב-{redeemSuccess.pointsUsed.toLocaleString()} נקודות
+                        </div>
+                      )}
+                      {loyaltyMember && (
+                        <div style={{
+                          display: "inline-flex", alignItems: "center", gap: 6, marginTop: 6,
+                          background: "rgba(197,168,128,0.12)", borderRadius: 20, padding: "4px 14px",
+                        }}>
+                          <span style={{ color: "#C5A880", fontSize: 13 }}>⭐ נשארו לך</span>
+                          <span style={{ color: "#C5A880", fontWeight: 800, fontSize: 15 }}>{loyaltyMember.points.toLocaleString()}</span>
+                          <span style={{ color: "rgba(197,168,128,0.6)", fontSize: 12 }}>נקודות</span>
+                        </div>
+                      )}
+                      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 8 }}>
+                        הצוות יחיל את ההנחה בחשבון
                       </div>
                     </div>
                   )}
 
-                  {/* Already redeemed by this member (no success modal yet) */}
+                  {/* Already redeemed by this member (no success modal yet — e.g. page refresh) */}
                   {!redeemSuccess && redeemedByMe && (
                     <div style={{
                       background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)",
-                      borderRadius: 12, padding: "12px 16px", textAlign: "center",
-                      color: "#4ade80", fontSize: 14,
+                      borderRadius: 12, padding: "14px 16px", textAlign: "center",
                     }}>
-                      ✅ ממשת הנחה של ₪{(activeOrder.loyaltyDiscountAmount ?? 0).toFixed(2)} בהזמנה זו
+                      <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
+                        ✅ ממשת הנחה של ₪{(activeOrder.loyaltyDiscountAmount ?? 0).toFixed(2)} בהזמנה זו
+                      </div>
+                      {loyaltyMember && (
+                        <div style={{
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          background: "rgba(197,168,128,0.1)", borderRadius: 20, padding: "4px 12px",
+                        }}>
+                          <span style={{ color: "#C5A880", fontSize: 12 }}>⭐ יתרה:</span>
+                          <span style={{ color: "#C5A880", fontWeight: 700, fontSize: 14 }}>{loyaltyMember.points.toLocaleString()} נקודות</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -2696,25 +2727,89 @@ export default function MenuElegantClient({
                   {!alreadyRedeemed && !redeemSuccess && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 
-                      {/* Points redemption */}
-                      {hasEnoughPoints && (
-                        <button
-                          onClick={() => handleRedeem("POINTS")}
-                          disabled={redeemLoading}
-                          style={{
-                            width: "100%", padding: "14px 16px", borderRadius: 12,
-                            background: "linear-gradient(135deg, #1a1200, #2a1f00)",
-                            border: "1px solid rgba(197,168,128,0.4)",
-                            color: "#C5A880", fontWeight: 700, fontSize: 15,
-                            cursor: redeemLoading ? "not-allowed" : "pointer",
-                            opacity: redeemLoading ? 0.6 : 1,
-                            textAlign: "center",
-                            fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
-                          }}
-                        >
-                          {redeemLoading ? "מממש..." : `⭐ מימוש ${loyaltyMember.points} נקודות — הנחה ₪${(loyaltyMember.points * loyaltySettings.shekelPerPoint).toFixed(2)}`}
-                        </button>
-                      )}
+                      {/* Points redemption — partial slider */}
+                      {hasEnoughPoints && (() => {
+                        const min = loyaltySettings.minRedeemPoints;
+                        const max = loyaltyMember.points;
+                        const current = typeof redeemPointsInput === "number" && redeemPointsInput >= min ? redeemPointsInput : max;
+                        const discount = (current * loyaltySettings.shekelPerPoint).toFixed(2);
+                        return (
+                          <div style={{
+                            background: "linear-gradient(135deg, #1a1200, #221800)",
+                            border: "1px solid rgba(197,168,128,0.35)",
+                            borderRadius: 14, padding: "16px",
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                              <span style={{ color: "#C5A880", fontWeight: 700, fontSize: 14 }}>⭐ מימוש נקודות</span>
+                              <span style={{ color: "rgba(197,168,128,0.6)", fontSize: 12 }}>
+                                יתרה: {loyaltyMember.points.toLocaleString()} נק&apos;
+                              </span>
+                            </div>
+
+                            {/* Slider */}
+                            <input
+                              type="range"
+                              min={min}
+                              max={max}
+                              step={min}
+                              value={current}
+                              onChange={e => setRedeemPointsInput(Number(e.target.value))}
+                              style={{ width: "100%", accentColor: "#C5A880", marginBottom: 10, cursor: "pointer" }}
+                            />
+
+                            {/* Points input + discount preview */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                              <div style={{ flex: 1, position: "relative" }}>
+                                <input
+                                  type="number"
+                                  min={min}
+                                  max={max}
+                                  step={min}
+                                  value={current}
+                                  onChange={e => {
+                                    const v = Number(e.target.value);
+                                    if (v >= min && v <= max) setRedeemPointsInput(v);
+                                  }}
+                                  style={{
+                                    width: "100%", padding: "8px 12px", borderRadius: 8,
+                                    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(197,168,128,0.3)",
+                                    color: "#C5A880", fontWeight: 700, fontSize: 15,
+                                    fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                                    textAlign: "center", boxSizing: "border-box",
+                                  }}
+                                />
+                              </div>
+                              <div style={{
+                                background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)",
+                                borderRadius: 8, padding: "8px 14px", whiteSpace: "nowrap",
+                              }}>
+                                <span style={{ color: "#4ade80", fontWeight: 700, fontSize: 15 }}>₪{discount}</span>
+                                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginRight: 4 }}>הנחה</span>
+                              </div>
+                            </div>
+
+                            {/* Range hint */}
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+                              <span style={{ color: "rgba(197,168,128,0.4)", fontSize: 11 }}>מינימום {min.toLocaleString()} נק&apos;</span>
+                              <span style={{ color: "rgba(197,168,128,0.4)", fontSize: 11 }}>מקסימום {max.toLocaleString()} נק&apos;</span>
+                            </div>
+
+                            <button
+                              onClick={() => handleRedeem("POINTS")}
+                              disabled={redeemLoading}
+                              style={{
+                                width: "100%", padding: "13px 16px", borderRadius: 10,
+                                background: redeemLoading ? "rgba(197,168,128,0.2)" : "linear-gradient(135deg, #C5A880, #a08050)",
+                                border: "none", color: redeemLoading ? "#C5A880" : "#1a1200",
+                                fontWeight: 800, fontSize: 15, cursor: redeemLoading ? "not-allowed" : "pointer",
+                                fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                              }}
+                            >
+                              {redeemLoading ? "מממש..." : `מממש ${current.toLocaleString()} נקודות ← הנחה ₪${discount}`}
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       {/* Coupon redemption */}
                       {availableCoupons.map(coupon => (
