@@ -14,6 +14,15 @@ export async function GET(
     return NextResponse.json({ error: "Missing table" }, { status: 400 });
   }
 
+  // Ensure loyalty columns exist on Order
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyMemberId" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyMemberName" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyDiscountType" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyDiscountAmount" DOUBLE PRECISION`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyCouponId" TEXT`),
+  ]);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orders = await (prisma.order.findMany as any)({
     where: {
@@ -32,6 +41,11 @@ export async function GET(
       notes: true,
       customerName: true,
       customerPhone: true,
+      loyaltyMemberId: true,
+      loyaltyMemberName: true,
+      loyaltyDiscountType: true,
+      loyaltyDiscountAmount: true,
+      loyaltyCouponId: true,
       items: {
         select: {
           id: true,

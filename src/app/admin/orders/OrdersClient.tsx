@@ -28,6 +28,9 @@ type Order = {
   notes: string | null;
   createdAt: string;
   orderSource: string;
+  loyaltyMemberId: string | null;
+  loyaltyMemberName: string | null;
+  loyaltyDiscountAmount: number | null;
   restaurant: { id: string; name: string };
   items: OrderItem[];
 };
@@ -413,7 +416,17 @@ function TableCard({
               🧑‍🍳 POS
             </span>
           )}
-          <span style={{ fontWeight: 900, fontSize: 18, color: D.text, flexShrink: 0 }}>₪{totalAmount.toFixed(0)}</span>
+          <div style={{ textAlign: "left", flexShrink: 0 }}>
+            <span style={{ fontWeight: 900, fontSize: 18, color: D.text }}>₪{totalAmount.toFixed(0)}</span>
+            {(() => {
+              const disc = orders.find(o => o.loyaltyDiscountAmount && o.loyaltyDiscountAmount > 0);
+              return disc ? (
+                <div style={{ fontSize: 10, color: "#C5A880", marginTop: 1 }}>
+                  ⭐ −₪{disc.loyaltyDiscountAmount!.toFixed(2)} ({disc.loyaltyMemberName})
+                </div>
+              ) : null;
+            })()}
+          </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 11, color: subTextColor, fontWeight: hasPending || isUrgent ? 600 : 400 }}>
           <span>⏱ {timeSince(oldestOrder.createdAt)} · {allItems.length} מנות</span>

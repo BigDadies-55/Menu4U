@@ -53,6 +53,11 @@ type TableOrder = {
   notes: string | null;
   customerName: string | null;
   customerPhone: string | null;
+  loyaltyMemberId: string | null;
+  loyaltyMemberName: string | null;
+  loyaltyDiscountType: string | null;
+  loyaltyDiscountAmount: number | null;
+  loyaltyCouponId: string | null;
   items: TableOrderItem[];
 };
 
@@ -128,6 +133,15 @@ type LoyaltyTransaction = {
   createdAt: string;
 };
 
+type LoyaltyCoupon = {
+  id: string;
+  type: string;
+  value: number;
+  description: string | null;
+  expiresAt: string | null;
+  usedAt: string | null;
+};
+
 type LoyaltyMemberData = {
   id: string;
   name: string;
@@ -137,6 +151,7 @@ type LoyaltyMemberData = {
   totalSpent: number;
   createdAt: string;
   transactions: LoyaltyTransaction[];
+  coupons: LoyaltyCoupon[];
 };
 
 type CartModifier = { groupName: string; label: string; priceAdd: number };
@@ -248,6 +263,11 @@ export default function MenuElegantClient({
   const [loyaltyFormError, setLoyaltyFormError] = useState("");
   const [loyaltyRegistering, setLoyaltyRegistering] = useState(false);
   const [loyaltyJustJoined, setLoyaltyJustJoined] = useState(false);
+  const [loyaltySettings, setLoyaltySettings] = useState({ shekelPerPoint: 0.1, minRedeemPoints: 100 });
+  // Redemption state
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemSuccess, setRedeemSuccess] = useState<{ discountAmount: number; type: string } | null>(null);
+  const [redeemError, setRedeemError] = useState("");
 
   // Language state
   const [lang, setLang] = useState<Lang>((restaurant.language as Lang) ?? "he");
@@ -381,7 +401,14 @@ export default function MenuElegantClient({
     setLoyaltyLoading(true);
     setLoyaltyNotFound(false);
     try {
-      const res = await fetch(`/api/loyalty/${restaurant.id}/member?phone=${encodeURIComponent(phone)}`);
+      const [res, settingsRes] = await Promise.all([
+        fetch(`/api/loyalty/${restaurant.id}/member?phone=${encodeURIComponent(phone)}`),
+        fetch(`/api/loyalty/${restaurant.id}/settings`),
+      ]);
+      if (settingsRes.ok) {
+        const s = await settingsRes.json();
+        setLoyaltySettings(s);
+      }
       if (res.ok) {
         const data = await res.json();
         if (data) {
@@ -459,6 +486,50 @@ export default function MenuElegantClient({
     } finally {
       setLoyaltyRegistering(false);
     }
+  }
+
+  async function handleRedeem(type: "POINTS" | "COUPON", couponId?: string) {
+    if (!loyaltyMember) return;
+    // Find the active (non-paid) order for this table
+    const activeOrder = myOrders.find(o => !["PAID", "CANCELLED", "DELIVERED"].includes(o.status));
+    if (!activeOrder) { setRedeemError("אין הזמנה פעילה לשולחן זה"); return; }
+    if (activeOrder.loyaltyMemberId) {
+      if (activeOrder.loyaltyMemberId === loyaltyMember.id) {
+        setRedeemError("כבר מימשת הטבה בהזמנה זו");
+      } else {
+        setRedeemError(`${activeOrder.loyaltyMemberName ?? "חבר אחר"} כבר מימש הטבה בהזמנה זו`);
+      }
+      return;
+    }
+    setRedeemLoading(true);
+    setRedeemError("");
+    try {
+      const pointsToRedeem = type === "POINTS" ? loyaltyMember.points : undefined;
+      const res = await fetch(`/api/loyalty/${restaurant.id}/redeem`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: activeOrder.id, memberId: loyaltyMember.id, type, pointsToRedeem, couponId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.error === "already_redeemed") {
+          setRedeemError(`${data.byName ?? "חבר אחר"} כבר מימש הטבה בהזמנה זו`);
+        } else if (data.error === "insufficient_points") {
+          setRedeemError(`נדרשים לפחות ${data.minRequired ?? loyaltySettings.minRedeemPoints} נקודות למימוש`);
+        } else {
+          setRedeemError("שגיאה במימוש, נסה שנית");
+        }
+      } else {
+        setRedeemSuccess({ discountAmount: data.discountAmount, type });
+        // Refresh member data to reflect deducted points
+        await fetchLoyaltyMember(loyaltyMember.phone);
+        // Refresh orders so order card shows the lock
+        fetchMyOrders(true);
+      }
+    } catch {
+      setRedeemError("שגיאת רשת, נסה שנית");
+    }
+    setRedeemLoading(false);
   }
 
   const t = getT(lang);
@@ -2020,6 +2091,18 @@ export default function MenuElegantClient({
                           )}
                         </div>
                       )}
+                      {/* Loyalty discount badge */}
+                      {order.loyaltyDiscountAmount != null && order.loyaltyDiscountAmount > 0 && (
+                        <div style={{
+                          padding: "6px 14px", fontSize: 12,
+                          color: "#C5A880", background: "rgba(197,168,128,0.08)",
+                          borderTop: "1px solid rgba(197,168,128,0.12)",
+                          display: "flex", justifyContent: "space-between",
+                        }}>
+                          <span>⭐ הנחת מועדון ({order.loyaltyMemberName})</span>
+                          <span>−₪{order.loyaltyDiscountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
                       {isPaid && (
                         <div style={{ padding: "8px 14px", fontSize: 12, color: "#4ade80", opacity: 0.7, textAlign: "center" }}>
                           {order.items.length} פריטים · ₪{order.totalAmount.toFixed(0)}
@@ -2300,7 +2383,7 @@ export default function MenuElegantClient({
                       <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>נקודות</span>
                     </div>
                     <div style={{ fontSize: 13, color: "rgba(197,168,128,0.6)", marginTop: 2 }}>
-                      שווי: ₪{(loyaltyMember.points * 0.1).toFixed(2)}
+                      שווי: ₪{(loyaltyMember.points * loyaltySettings.shekelPerPoint).toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -2328,6 +2411,127 @@ export default function MenuElegantClient({
                 )}
               </div>
             )}
+
+            {/* ── Redemption section ── */}
+            {!loyaltyLoading && loyaltyMember && tableNumber && (() => {
+              const activeOrder = myOrders.find(o => !["PAID", "CANCELLED", "DELIVERED"].includes(o.status));
+              if (!activeOrder) return null;
+
+              const alreadyRedeemed = !!activeOrder.loyaltyMemberId;
+              const redeemedByMe = activeOrder.loyaltyMemberId === loyaltyMember.id;
+              const redeemedByOther = alreadyRedeemed && !redeemedByMe;
+              const hasEnoughPoints = loyaltyMember.points >= loyaltySettings.minRedeemPoints;
+              const availableCoupons = (loyaltyMember.coupons ?? []).filter(c => !c.usedAt && (!c.expiresAt || new Date(c.expiresAt) > new Date()));
+
+              return (
+                <div style={{ marginTop: 20, borderTop: "1px solid rgba(197,168,128,0.2)", paddingTop: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 14 }}>
+                    מימוש הטבה בהזמנה #{activeOrder.orderNumber ?? ""}
+                  </div>
+
+                  {/* Success state */}
+                  {redeemSuccess && redeemedByMe && (
+                    <div style={{
+                      background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)",
+                      borderRadius: 12, padding: "14px 16px", textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: 22, marginBottom: 6 }}>✅</div>
+                      <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 15 }}>
+                        הנחה של ₪{redeemSuccess.discountAmount.toFixed(2)} נרשמה!
+                      </div>
+                      <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 4 }}>
+                        הצוות שלנו יחיל את ההנחה בחשבון
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Already redeemed by this member (no success modal yet) */}
+                  {!redeemSuccess && redeemedByMe && (
+                    <div style={{
+                      background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)",
+                      borderRadius: 12, padding: "12px 16px", textAlign: "center",
+                      color: "#4ade80", fontSize: 14,
+                    }}>
+                      ✅ ממשת הנחה של ₪{(activeOrder.loyaltyDiscountAmount ?? 0).toFixed(2)} בהזמנה זו
+                    </div>
+                  )}
+
+                  {/* Redeemed by someone else */}
+                  {redeemedByOther && (
+                    <div style={{
+                      background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)",
+                      borderRadius: 12, padding: "12px 16px", textAlign: "center",
+                      color: "#fbbf24", fontSize: 13,
+                    }}>
+                      ⚠️ {activeOrder.loyaltyMemberName ?? "חבר אחר"} כבר מימש הטבה בהזמנה זו
+                    </div>
+                  )}
+
+                  {/* Redemption options */}
+                  {!alreadyRedeemed && !redeemSuccess && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+                      {/* Points redemption */}
+                      {hasEnoughPoints && (
+                        <button
+                          onClick={() => handleRedeem("POINTS")}
+                          disabled={redeemLoading}
+                          style={{
+                            width: "100%", padding: "14px 16px", borderRadius: 12,
+                            background: "linear-gradient(135deg, #1a1200, #2a1f00)",
+                            border: "1px solid rgba(197,168,128,0.4)",
+                            color: "#C5A880", fontWeight: 700, fontSize: 15,
+                            cursor: redeemLoading ? "not-allowed" : "pointer",
+                            opacity: redeemLoading ? 0.6 : 1,
+                            textAlign: "center",
+                            fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                          }}
+                        >
+                          {redeemLoading ? "מממש..." : `⭐ מימוש ${loyaltyMember.points} נקודות — הנחה ₪${(loyaltyMember.points * loyaltySettings.shekelPerPoint).toFixed(2)}`}
+                        </button>
+                      )}
+
+                      {/* Coupon redemption */}
+                      {availableCoupons.map(coupon => (
+                        <button
+                          key={coupon.id}
+                          onClick={() => handleRedeem("COUPON", coupon.id)}
+                          disabled={redeemLoading}
+                          style={{
+                            width: "100%", padding: "14px 16px", borderRadius: 12,
+                            background: "rgba(255,255,255,0.05)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            color: "#e9ecef", fontWeight: 600, fontSize: 14,
+                            cursor: redeemLoading ? "not-allowed" : "pointer",
+                            opacity: redeemLoading ? 0.6 : 1,
+                            textAlign: "center",
+                            fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                          }}
+                        >
+                          🎟 {coupon.description ?? (coupon.type === "DISCOUNT_PERCENT" ? `הנחה ${coupon.value}%` : `הנחה ₪${coupon.value}`)}
+                        </button>
+                      ))}
+
+                      {!hasEnoughPoints && availableCoupons.length === 0 && (
+                        <div style={{ textAlign: "center", color: "rgba(255,255,255,0.35)", fontSize: 13, padding: "8px 0" }}>
+                          נדרשים {loyaltySettings.minRedeemPoints} נקודות למימוש (יש לך {loyaltyMember.points})
+                        </div>
+                      )}
+
+                      {redeemError && (
+                        <div style={{
+                          background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
+                          borderRadius: 10, padding: "10px 14px", color: "#fca5a5",
+                          fontSize: 13, textAlign: "center",
+                        }}>
+                          {redeemError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Registration form (not a member yet) */}
             {!loyaltyLoading && loyaltyNotFound && !loyaltyMember && (

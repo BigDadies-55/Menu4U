@@ -215,6 +215,12 @@ model Order {
   notes         String?
   coversCount   Int?                              // כמות סועדים בשולחן
   orderSource   String      @default("CUSTOMER") // CUSTOMER | WAITER | PHONE
+  // Loyalty redemption — locked to first member who redeems
+  loyaltyMemberId      String?
+  loyaltyMemberName    String?
+  loyaltyDiscountType  String?  // POINTS | COUPON
+  loyaltyDiscountAmount Float?
+  loyaltyCouponId      String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

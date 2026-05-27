@@ -270,6 +270,11 @@ export const OrderScalarFieldEnum = {
   notes: 'notes',
   coversCount: 'coversCount',
   orderSource: 'orderSource',
+  loyaltyMemberId: 'loyaltyMemberId',
+  loyaltyMemberName: 'loyaltyMemberName',
+  loyaltyDiscountType: 'loyaltyDiscountType',
+  loyaltyDiscountAmount: 'loyaltyDiscountAmount',
+  loyaltyCouponId: 'loyaltyCouponId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
