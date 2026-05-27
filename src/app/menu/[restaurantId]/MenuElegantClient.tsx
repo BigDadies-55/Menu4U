@@ -2502,20 +2502,19 @@ export default function MenuElegantClient({
         <div
           style={{
             position: "fixed", inset: 0, zIndex: 80,
-            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
+            background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "16px",
           }}
           onClick={e => { if (e.target === e.currentTarget) setShowLoyalty(false); }}
         >
           <div style={{
-            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
-            width: "min(480px, 100vw)",
+            width: "min(480px, 100%)",
             background: "#111",
-            borderRadius: "20px 20px 0 0",
-            paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))",
-            border: "1px solid rgba(197,168,128,0.2)",
-            borderBottom: "none",
-            boxShadow: "0 -20px 60px rgba(0,0,0,0.7)",
-            maxHeight: "85vh",
+            borderRadius: 20,
+            border: "1px solid rgba(197,168,128,0.25)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(197,168,128,0.1)",
+            maxHeight: "90vh",
             overflowY: "auto",
             overscrollBehavior: "contain",
             direction: "rtl",
@@ -2867,6 +2866,7 @@ export default function MenuElegantClient({
                 </div>
               </div>
             )}
+            <div style={{ paddingBottom: 24 }} />{/* bottom spacer */}
             </div>{/* end padding wrapper */}
           </div>
         </div>
