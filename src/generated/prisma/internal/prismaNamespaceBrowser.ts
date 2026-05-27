@@ -71,7 +71,11 @@ export const ModelName = {
   AuditLog: 'AuditLog',
   TableSession: 'TableSession',
   SiteConfig: 'SiteConfig',
-  Customer: 'Customer'
+  Customer: 'Customer',
+  LoyaltyMember: 'LoyaltyMember',
+  LoyaltyTransaction: 'LoyaltyTransaction',
+  LoyaltyCoupon: 'LoyaltyCoupon',
+  LoyaltySettings: 'LoyaltySettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -404,6 +408,65 @@ export const CustomerScalarFieldEnum = {
 } as const
 
 export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const LoyaltyMemberScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  phone: 'phone',
+  name: 'name',
+  email: 'email',
+  birthDate: 'birthDate',
+  memberNumber: 'memberNumber',
+  points: 'points',
+  totalSpent: 'totalSpent',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LoyaltyMemberScalarFieldEnum = (typeof LoyaltyMemberScalarFieldEnum)[keyof typeof LoyaltyMemberScalarFieldEnum]
+
+
+export const LoyaltyTransactionScalarFieldEnum = {
+  id: 'id',
+  memberId: 'memberId',
+  orderId: 'orderId',
+  type: 'type',
+  points: 'points',
+  note: 'note',
+  createdAt: 'createdAt'
+} as const
+
+export type LoyaltyTransactionScalarFieldEnum = (typeof LoyaltyTransactionScalarFieldEnum)[keyof typeof LoyaltyTransactionScalarFieldEnum]
+
+
+export const LoyaltyCouponScalarFieldEnum = {
+  id: 'id',
+  memberId: 'memberId',
+  restaurantId: 'restaurantId',
+  code: 'code',
+  type: 'type',
+  value: 'value',
+  description: 'description',
+  usedAt: 'usedAt',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type LoyaltyCouponScalarFieldEnum = (typeof LoyaltyCouponScalarFieldEnum)[keyof typeof LoyaltyCouponScalarFieldEnum]
+
+
+export const LoyaltySettingsScalarFieldEnum = {
+  restaurantId: 'restaurantId',
+  pointsPerShekel: 'pointsPerShekel',
+  shekelPerPoint: 'shekelPerPoint',
+  minRedeemPoints: 'minRedeemPoints',
+  welcomeBonus: 'welcomeBonus',
+  birthdayBonus: 'birthdayBonus',
+  isActive: 'isActive'
+} as const
+
+export type LoyaltySettingsScalarFieldEnum = (typeof LoyaltySettingsScalarFieldEnum)[keyof typeof LoyaltySettingsScalarFieldEnum]
 
 
 export const SortOrder = {

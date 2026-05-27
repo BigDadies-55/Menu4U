@@ -119,6 +119,8 @@ model Restaurant {
   tableSessions   TableSession[]
   customers       Customer[]
   orderCounter    OrderCounter?
+  loyaltyMembers  LoyaltyMember[]
+  loyaltySettings LoyaltySettings?
 }
 
 model RestaurantUser {
@@ -337,4 +339,64 @@ model Customer {
   updatedAt    DateTime @updatedAt
 
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+}
+
+model LoyaltyMember {
+  id           String   @id @default(cuid())
+  restaurantId String
+  phone        String
+  name         String
+  email        String?
+  birthDate    DateTime?
+  memberNumber String
+  points       Int      @default(0)
+  totalSpent   Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  transactions LoyaltyTransaction[]
+  coupons      LoyaltyCoupon[]
+
+  @@unique([restaurantId, phone])
+  @@unique([restaurantId, memberNumber])
+}
+
+model LoyaltyTransaction {
+  id        String   @id @default(cuid())
+  memberId  String
+  orderId   String?
+  type      String   // EARN | REDEEM | BONUS | MANUAL
+  points    Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  member    LoyaltyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model LoyaltyCoupon {
+  id           String    @id @default(cuid())
+  memberId     String
+  restaurantId String
+  code         String    @unique
+  type         String    // DISCOUNT_PERCENT | DISCOUNT_AMOUNT | FREE_ITEM
+  value        Float
+  description  String?
+  usedAt       DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  member       LoyaltyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model LoyaltySettings {
+  restaurantId    String @id
+  pointsPerShekel Float  @default(1)
+  shekelPerPoint  Float  @default(0.1)
+  minRedeemPoints Int    @default(100)
+  welcomeBonus    Int    @default(50)
+  birthdayBonus   Int    @default(100)
+  isActive        Boolean @default(true)
+
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }

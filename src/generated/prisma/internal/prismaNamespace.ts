@@ -404,7 +404,11 @@ export const ModelName = {
   AuditLog: 'AuditLog',
   TableSession: 'TableSession',
   SiteConfig: 'SiteConfig',
-  Customer: 'Customer'
+  Customer: 'Customer',
+  LoyaltyMember: 'LoyaltyMember',
+  LoyaltyTransaction: 'LoyaltyTransaction',
+  LoyaltyCoupon: 'LoyaltyCoupon',
+  LoyaltySettings: 'LoyaltySettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -420,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "loyaltySettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1978,6 +1982,302 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    LoyaltyMember: {
+      payload: Prisma.$LoyaltyMemberPayload<ExtArgs>
+      fields: Prisma.LoyaltyMemberFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LoyaltyMemberFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LoyaltyMemberFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>
+        }
+        findFirst: {
+          args: Prisma.LoyaltyMemberFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LoyaltyMemberFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>
+        }
+        findMany: {
+          args: Prisma.LoyaltyMemberFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>[]
+        }
+        create: {
+          args: Prisma.LoyaltyMemberCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>
+        }
+        createMany: {
+          args: Prisma.LoyaltyMemberCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LoyaltyMemberCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>[]
+        }
+        delete: {
+          args: Prisma.LoyaltyMemberDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>
+        }
+        update: {
+          args: Prisma.LoyaltyMemberUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>
+        }
+        deleteMany: {
+          args: Prisma.LoyaltyMemberDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LoyaltyMemberUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LoyaltyMemberUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>[]
+        }
+        upsert: {
+          args: Prisma.LoyaltyMemberUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyMemberPayload>
+        }
+        aggregate: {
+          args: Prisma.LoyaltyMemberAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLoyaltyMember>
+        }
+        groupBy: {
+          args: Prisma.LoyaltyMemberGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltyMemberGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LoyaltyMemberCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltyMemberCountAggregateOutputType> | number
+        }
+      }
+    }
+    LoyaltyTransaction: {
+      payload: Prisma.$LoyaltyTransactionPayload<ExtArgs>
+      fields: Prisma.LoyaltyTransactionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LoyaltyTransactionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LoyaltyTransactionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>
+        }
+        findFirst: {
+          args: Prisma.LoyaltyTransactionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LoyaltyTransactionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>
+        }
+        findMany: {
+          args: Prisma.LoyaltyTransactionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>[]
+        }
+        create: {
+          args: Prisma.LoyaltyTransactionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>
+        }
+        createMany: {
+          args: Prisma.LoyaltyTransactionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LoyaltyTransactionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>[]
+        }
+        delete: {
+          args: Prisma.LoyaltyTransactionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>
+        }
+        update: {
+          args: Prisma.LoyaltyTransactionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>
+        }
+        deleteMany: {
+          args: Prisma.LoyaltyTransactionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LoyaltyTransactionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LoyaltyTransactionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>[]
+        }
+        upsert: {
+          args: Prisma.LoyaltyTransactionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyTransactionPayload>
+        }
+        aggregate: {
+          args: Prisma.LoyaltyTransactionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLoyaltyTransaction>
+        }
+        groupBy: {
+          args: Prisma.LoyaltyTransactionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltyTransactionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LoyaltyTransactionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltyTransactionCountAggregateOutputType> | number
+        }
+      }
+    }
+    LoyaltyCoupon: {
+      payload: Prisma.$LoyaltyCouponPayload<ExtArgs>
+      fields: Prisma.LoyaltyCouponFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LoyaltyCouponFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LoyaltyCouponFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>
+        }
+        findFirst: {
+          args: Prisma.LoyaltyCouponFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LoyaltyCouponFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>
+        }
+        findMany: {
+          args: Prisma.LoyaltyCouponFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>[]
+        }
+        create: {
+          args: Prisma.LoyaltyCouponCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>
+        }
+        createMany: {
+          args: Prisma.LoyaltyCouponCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LoyaltyCouponCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>[]
+        }
+        delete: {
+          args: Prisma.LoyaltyCouponDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>
+        }
+        update: {
+          args: Prisma.LoyaltyCouponUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>
+        }
+        deleteMany: {
+          args: Prisma.LoyaltyCouponDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LoyaltyCouponUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LoyaltyCouponUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>[]
+        }
+        upsert: {
+          args: Prisma.LoyaltyCouponUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltyCouponPayload>
+        }
+        aggregate: {
+          args: Prisma.LoyaltyCouponAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLoyaltyCoupon>
+        }
+        groupBy: {
+          args: Prisma.LoyaltyCouponGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltyCouponGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LoyaltyCouponCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltyCouponCountAggregateOutputType> | number
+        }
+      }
+    }
+    LoyaltySettings: {
+      payload: Prisma.$LoyaltySettingsPayload<ExtArgs>
+      fields: Prisma.LoyaltySettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LoyaltySettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LoyaltySettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.LoyaltySettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LoyaltySettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>
+        }
+        findMany: {
+          args: Prisma.LoyaltySettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>[]
+        }
+        create: {
+          args: Prisma.LoyaltySettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>
+        }
+        createMany: {
+          args: Prisma.LoyaltySettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LoyaltySettingsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>[]
+        }
+        delete: {
+          args: Prisma.LoyaltySettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>
+        }
+        update: {
+          args: Prisma.LoyaltySettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.LoyaltySettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LoyaltySettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LoyaltySettingsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>[]
+        }
+        upsert: {
+          args: Prisma.LoyaltySettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoyaltySettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.LoyaltySettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLoyaltySettings>
+        }
+        groupBy: {
+          args: Prisma.LoyaltySettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltySettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LoyaltySettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoyaltySettingsCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2333,6 +2633,65 @@ export const CustomerScalarFieldEnum = {
 export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
 
 
+export const LoyaltyMemberScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  phone: 'phone',
+  name: 'name',
+  email: 'email',
+  birthDate: 'birthDate',
+  memberNumber: 'memberNumber',
+  points: 'points',
+  totalSpent: 'totalSpent',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LoyaltyMemberScalarFieldEnum = (typeof LoyaltyMemberScalarFieldEnum)[keyof typeof LoyaltyMemberScalarFieldEnum]
+
+
+export const LoyaltyTransactionScalarFieldEnum = {
+  id: 'id',
+  memberId: 'memberId',
+  orderId: 'orderId',
+  type: 'type',
+  points: 'points',
+  note: 'note',
+  createdAt: 'createdAt'
+} as const
+
+export type LoyaltyTransactionScalarFieldEnum = (typeof LoyaltyTransactionScalarFieldEnum)[keyof typeof LoyaltyTransactionScalarFieldEnum]
+
+
+export const LoyaltyCouponScalarFieldEnum = {
+  id: 'id',
+  memberId: 'memberId',
+  restaurantId: 'restaurantId',
+  code: 'code',
+  type: 'type',
+  value: 'value',
+  description: 'description',
+  usedAt: 'usedAt',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type LoyaltyCouponScalarFieldEnum = (typeof LoyaltyCouponScalarFieldEnum)[keyof typeof LoyaltyCouponScalarFieldEnum]
+
+
+export const LoyaltySettingsScalarFieldEnum = {
+  restaurantId: 'restaurantId',
+  pointsPerShekel: 'pointsPerShekel',
+  shekelPerPoint: 'shekelPerPoint',
+  minRedeemPoints: 'minRedeemPoints',
+  welcomeBonus: 'welcomeBonus',
+  birthdayBonus: 'birthdayBonus',
+  isActive: 'isActive'
+} as const
+
+export type LoyaltySettingsScalarFieldEnum = (typeof LoyaltySettingsScalarFieldEnum)[keyof typeof LoyaltySettingsScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2615,6 +2974,10 @@ export type GlobalOmitConfig = {
   tableSession?: Prisma.TableSessionOmit
   siteConfig?: Prisma.SiteConfigOmit
   customer?: Prisma.CustomerOmit
+  loyaltyMember?: Prisma.LoyaltyMemberOmit
+  loyaltyTransaction?: Prisma.LoyaltyTransactionOmit
+  loyaltyCoupon?: Prisma.LoyaltyCouponOmit
+  loyaltySettings?: Prisma.LoyaltySettingsOmit
 }
 
 /* Types for Logging */

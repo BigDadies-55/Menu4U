@@ -146,3 +146,23 @@ export type SiteConfig = Prisma.SiteConfigModel
  * 
  */
 export type Customer = Prisma.CustomerModel
+/**
+ * Model LoyaltyMember
+ * 
+ */
+export type LoyaltyMember = Prisma.LoyaltyMemberModel
+/**
+ * Model LoyaltyTransaction
+ * 
+ */
+export type LoyaltyTransaction = Prisma.LoyaltyTransactionModel
+/**
+ * Model LoyaltyCoupon
+ * 
+ */
+export type LoyaltyCoupon = Prisma.LoyaltyCouponModel
+/**
+ * Model LoyaltySettings
+ * 
+ */
+export type LoyaltySettings = Prisma.LoyaltySettingsModel

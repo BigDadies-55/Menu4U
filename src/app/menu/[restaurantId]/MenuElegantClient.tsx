@@ -113,6 +113,25 @@ type Restaurant = {
   menus: { id: string; categories: Category[] }[];
 };
 
+type LoyaltyTransaction = {
+  id: string;
+  type: string;
+  points: number;
+  note: string | null;
+  createdAt: string;
+};
+
+type LoyaltyMemberData = {
+  id: string;
+  name: string;
+  phone: string;
+  memberNumber: string;
+  points: number;
+  totalSpent: number;
+  createdAt: string;
+  transactions: LoyaltyTransaction[];
+};
+
 type CartModifier = { groupName: string; label: string; priceAdd: number };
 
 type CartItem = {
@@ -295,6 +314,16 @@ export default function MenuElegantClient({
   const [regError,          setRegError]          = useState("");
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
+  // Loyalty club state
+  const [showLoyalty, setShowLoyalty] = useState(false);
+  const [loyaltyMember, setLoyaltyMember] = useState<LoyaltyMemberData | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [loyaltyNotFound, setLoyaltyNotFound] = useState(false);
+  const [loyaltyForm, setLoyaltyForm] = useState({ name: "", phone: "", email: "", birthDate: "" });
+  const [loyaltyFormError, setLoyaltyFormError] = useState("");
+  const [loyaltyRegistering, setLoyaltyRegistering] = useState(false);
+  const [loyaltyJustJoined, setLoyaltyJustJoined] = useState(false);
+
   // Language state
   const [lang, setLang] = useState<Lang>((restaurant.language as Lang) ?? "he");
 
@@ -433,6 +462,90 @@ export default function MenuElegantClient({
   function switchLang(l: Lang) {
     setLang(l);
     try { localStorage.setItem(`menu4u_lang_${restaurant.id}`, l); } catch {}
+  }
+
+  async function fetchLoyaltyMember(phone: string) {
+    setLoyaltyLoading(true);
+    setLoyaltyNotFound(false);
+    try {
+      const res = await fetch(`/api/loyalty/${restaurant.id}/member?phone=${encodeURIComponent(phone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          setLoyaltyMember(data);
+          setLoyaltyNotFound(false);
+        } else {
+          setLoyaltyMember(null);
+          setLoyaltyNotFound(true);
+          // Pre-fill form
+          setLoyaltyForm(f => ({
+            ...f,
+            phone,
+            name: guestIdentity?.name ?? "",
+          }));
+        }
+      } else {
+        setLoyaltyMember(null);
+        setLoyaltyNotFound(true);
+        setLoyaltyForm(f => ({ ...f, phone, name: guestIdentity?.name ?? "" }));
+      }
+    } catch {
+      setLoyaltyMember(null);
+      setLoyaltyNotFound(true);
+    } finally {
+      setLoyaltyLoading(false);
+    }
+  }
+
+  async function handleLoyaltyOpen() {
+    setShowLoyalty(true);
+    setLoyaltyJustJoined(false);
+    setLoyaltyFormError("");
+    const phone = guestIdentity?.phone;
+    if (phone) {
+      await fetchLoyaltyMember(phone);
+    } else {
+      setLoyaltyMember(null);
+      setLoyaltyNotFound(true);
+      setLoyaltyForm({ name: "", phone: "", email: "", birthDate: "" });
+    }
+  }
+
+  async function handleLoyaltyRegister() {
+    const name = loyaltyForm.name.trim();
+    const phone = loyaltyForm.phone.trim().replace(/\s/g, "");
+    if (!name) { setLoyaltyFormError("נא להזין שם"); return; }
+    if (!phone || phone.length < 9) { setLoyaltyFormError("נא להזין מספר טלפון תקין"); return; }
+    setLoyaltyRegistering(true);
+    setLoyaltyFormError("");
+    try {
+      const res = await fetch(`/api/loyalty/${restaurant.id}/member`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          phone,
+          email: loyaltyForm.email || null,
+          birthDate: loyaltyForm.birthDate || null,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok || res.status === 201) {
+        setLoyaltyMember(data);
+        setLoyaltyNotFound(false);
+        setLoyaltyJustJoined(true);
+      } else if (res.status === 409) {
+        // Already member
+        setLoyaltyMember(data.member);
+        setLoyaltyNotFound(false);
+      } else {
+        setLoyaltyFormError(data.error ?? "שגיאה בהרשמה");
+      }
+    } catch {
+      setLoyaltyFormError("שגיאת חיבור");
+    } finally {
+      setLoyaltyRegistering(false);
+    }
   }
 
   const t = getT(lang);
@@ -932,6 +1045,28 @@ export default function MenuElegantClient({
                 </svg>
               </button>
             )}
+
+            {/* Loyalty club button */}
+            <button
+              onClick={handleLoyaltyOpen}
+              style={{
+                width: 58, height: 58, borderRadius: "50%",
+                background: "rgba(255,255,255,0.11)",
+                backdropFilter: "blur(10px)",
+                border: "1.5px solid rgba(197,168,128,0.4)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.45)",
+                transition: "transform 150ms",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.12)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+              aria-label="מועדון לקוחות"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C5A880" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
 
             {/* Phone */}
             {restaurant.phone && (
@@ -2000,6 +2135,233 @@ export default function MenuElegantClient({
           <div style={{ fontSize: 64 }}>🙏</div>
           <div style={{ fontFamily: "'Cinzel', serif", fontSize: 28, color: "#C5A880", fontWeight: 700 }}>תודה רבה</div>
           <div style={{ color: "#9e9e9e", fontSize: 16 }}>התשלום התקבל. נשמח לראותך שוב!</div>
+        </div>
+      )}
+
+      {/* ── Loyalty Club Panel ── */}
+      {showLoyalty && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 80,
+            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setShowLoyalty(false); }}
+        >
+          <div style={{
+            width: "min(480px, 100vw)",
+            background: "#111",
+            borderRadius: "20px 20px 0 0",
+            padding: "24px 24px max(24px, env(safe-area-inset-bottom, 24px))",
+            border: "1px solid rgba(197,168,128,0.2)",
+            borderBottom: "none",
+            boxShadow: "0 -20px 60px rgba(0,0,0,0.7)",
+            maxHeight: "85vh",
+            overflowY: "auto",
+            direction: "rtl",
+          }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 22 }}>⭐</span>
+                <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 18, color: "#C5A880", fontWeight: 600, letterSpacing: 2 }}>
+                  מועדון לקוחות
+                </span>
+              </div>
+              <button
+                onClick={() => setShowLoyalty(false)}
+                style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 8, width: 30, height: 30, cursor: "pointer", color: "#fff", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}
+              >✕</button>
+            </div>
+
+            {/* Loading state */}
+            {loyaltyLoading && (
+              <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
+                טוען...
+              </div>
+            )}
+
+            {/* Member card */}
+            {!loyaltyLoading && loyaltyMember && (
+              <div>
+                {loyaltyJustJoined && (
+                  <div style={{
+                    background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)",
+                    borderRadius: 10, padding: "10px 14px", marginBottom: 16,
+                    color: "#4ade80", fontSize: 14, textAlign: "center", fontWeight: 600,
+                  }}>
+                    🎉 ברוכים הבאים למועדון! קיבלתם נקודות בונוס הצטרפות
+                  </div>
+                )}
+
+                {/* Card */}
+                <div style={{
+                  background: "linear-gradient(135deg, #1a1200 0%, #2a1f00 50%, #1a1200 100%)",
+                  border: "1px solid rgba(197,168,128,0.4)",
+                  borderRadius: 16, padding: "20px 22px", marginBottom: 20,
+                  boxShadow: "0 4px 24px rgba(197,168,128,0.15)",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 12, color: "#C5A880", letterSpacing: 3, opacity: 0.7, marginBottom: 4 }}>
+                        חבר מועדון
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{loyaltyMember.name}</div>
+                    </div>
+                    <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(197,168,128,0.6)", fontWeight: 600 }}>
+                      #{loyaltyMember.memberNumber}
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: "1px solid rgba(197,168,128,0.2)", paddingTop: 14 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 2 }}>
+                      הנקודות שלי
+                    </div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <span style={{ fontFamily: "var(--font-cinzel, 'Cinzel', serif)", fontSize: 36, fontWeight: 900, color: "#C5A880" }}>
+                        {loyaltyMember.points.toLocaleString()}
+                      </span>
+                      <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>נקודות</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: "rgba(197,168,128,0.6)", marginTop: 2 }}>
+                      שווי: ₪{(loyaltyMember.points * 0.1).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent transactions */}
+                {loyaltyMember.transactions.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 12 }}>
+                      עסקאות אחרונות
+                    </div>
+                    {loyaltyMember.transactions.slice(0, 5).map(tx => (
+                      <div key={tx.id} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      }}>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+                          {tx.note ?? (tx.type === "EARN" ? "צבירה" : tx.type === "REDEEM" ? "מימוש" : tx.type === "BONUS" ? "בונוס" : "ידני")}
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: tx.points > 0 ? "#4ade80" : "#f87171" }}>
+                          {tx.points > 0 ? "+" : ""}{tx.points}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Registration form (not a member yet) */}
+            {!loyaltyLoading && loyaltyNotFound && !loyaltyMember && (
+              <div>
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                  <div style={{ fontSize: 34, marginBottom: 8 }}>⭐</div>
+                  <div style={{ color: "#C5A880", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
+                    הצטרפו למועדון הלקוחות
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5 }}>
+                    צברו נקודות על כל רכישה וקבלו הטבות בלעדיות
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    שם מלא
+                  </label>
+                  <input
+                    type="text"
+                    value={loyaltyForm.name}
+                    onChange={e => setLoyaltyForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="ישראל ישראלי"
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                      color: "#fff", outline: "none", boxSizing: "border-box" as const,
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    טלפון
+                  </label>
+                  <input
+                    type="tel"
+                    value={loyaltyForm.phone}
+                    onChange={e => setLoyaltyForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="050-0000000"
+                    dir="ltr"
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                      color: "#fff", outline: "none", boxSizing: "border-box" as const,
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    אימייל (אופציונלי)
+                  </label>
+                  <input
+                    type="email"
+                    value={loyaltyForm.email}
+                    onChange={e => setLoyaltyForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="email@example.com"
+                    dir="ltr"
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                      color: "#fff", outline: "none", boxSizing: "border-box" as const,
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    תאריך לידה (אופציונלי)
+                  </label>
+                  <input
+                    type="date"
+                    value={loyaltyForm.birthDate}
+                    onChange={e => setLoyaltyForm(f => ({ ...f, birthDate: e.target.value }))}
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                      color: "#fff", outline: "none", boxSizing: "border-box" as const,
+                    }}
+                  />
+                </div>
+
+                {loyaltyFormError && (
+                  <div style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
+                    {loyaltyFormError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleLoyaltyRegister}
+                  disabled={loyaltyRegistering}
+                  style={{
+                    width: "100%", padding: "12px 16px", borderRadius: 50,
+                    background: "#C5A880", color: "#0D0D0D",
+                    border: "none", fontWeight: 700, fontSize: 15,
+                    cursor: loyaltyRegistering ? "not-allowed" : "pointer",
+                    opacity: loyaltyRegistering ? 0.55 : 1,
+                    fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                  }}
+                >
+                  {loyaltyRegistering ? "מצרף..." : "⭐ הצטרף למועדון"}
+                </button>
+
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 10 }}>
+                  הצטרפות חינם • קבל נקודות בונוס מיד עם ההרשמה
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
