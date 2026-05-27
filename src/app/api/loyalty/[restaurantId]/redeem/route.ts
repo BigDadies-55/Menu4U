@@ -80,9 +80,32 @@ export async function POST(
     discountAmount = pointsToRedeem * shekelPerPoint;
   } else if (type === "COUPON") {
     if (!couponId) return NextResponse.json({ error: "missing_coupon" }, { status: 400 });
-    const coupon = await prisma.loyaltyCoupon.findFirst({
-      where: { id: couponId, memberId, restaurantId, usedAt: null },
-    });
+
+    // Resolve group for cross-branch coupon support
+    let groupId: string | null = null;
+    try {
+      type GRow = { groupId: string | null };
+      const rows = await prisma.$queryRawUnsafe<GRow[]>(
+        `SELECT "groupId" FROM "Restaurant" WHERE "id" = $1 LIMIT 1`,
+        restaurantId
+      );
+      groupId = rows[0]?.groupId ?? null;
+    } catch { /* ignore */ }
+
+    // Use raw SQL to include validForGroupId (column not yet in generated Prisma types)
+    type CouponRow = { id: string; memberId: string; restaurantId: string; type: string; value: number; description: string | null; usedAt: Date | null; expiresAt: Date | null };
+    const couponRows = groupId
+      ? await prisma.$queryRawUnsafe<CouponRow[]>(
+          `SELECT * FROM "LoyaltyCoupon" WHERE "id" = $1 AND "memberId" = $2 AND "usedAt" IS NULL
+           AND ("restaurantId" = $3 OR "validForGroupId" = $4) LIMIT 1`,
+          couponId, memberId, restaurantId, groupId
+        )
+      : await prisma.$queryRawUnsafe<CouponRow[]>(
+          `SELECT * FROM "LoyaltyCoupon" WHERE "id" = $1 AND "memberId" = $2 AND "usedAt" IS NULL
+           AND "restaurantId" = $3 LIMIT 1`,
+          couponId, memberId, restaurantId
+        );
+    const coupon = couponRows[0] ?? null;
     if (!coupon) return NextResponse.json({ error: "coupon_invalid" }, { status: 400 });
     if (coupon.expiresAt && coupon.expiresAt < new Date()) {
       return NextResponse.json({ error: "coupon_expired" }, { status: 400 });
@@ -134,10 +157,10 @@ export async function POST(
       },
     });
   } else if (type === "COUPON" && couponId) {
-    await prisma.loyaltyCoupon.update({
-      where: { id: couponId },
-      data: { usedAt: new Date() },
-    });
+    await prisma.$executeRawUnsafe(
+      `UPDATE "LoyaltyCoupon" SET "usedAt" = NOW(), "usedAtRestaurantId" = $1 WHERE "id" = $2`,
+      restaurantId, couponId
+    );
     await prisma.loyaltyTransaction.create({
       data: {
         memberId,

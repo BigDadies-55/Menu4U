@@ -72,8 +72,22 @@ export async function POST(req: Request) {
   }
 
   if (action === "issueCoupon") {
-    const { memberId, type, value, description, expiresAt } = body;
+    const { memberId, type, value, description, expiresAt, validForGroup } = body;
     const code = `C${Date.now().toString(36).toUpperCase()}`;
+
+    // Resolve group if coupon should be valid chain-wide
+    let validForGroupId: string | null = null;
+    if (validForGroup) {
+      try {
+        type GRow = { groupId: string | null };
+        const rows = await prisma.$queryRawUnsafe<GRow[]>(
+          `SELECT "groupId" FROM "Restaurant" WHERE "id" = $1 LIMIT 1`,
+          restaurantId
+        );
+        validForGroupId = rows[0]?.groupId ?? null;
+      } catch { /* ignore */ }
+    }
+
     const coupon = await prisma.loyaltyCoupon.create({
       data: {
         id: `lc-${Date.now()}`,
@@ -84,6 +98,7 @@ export async function POST(req: Request) {
         value,
         description,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
+        ...(validForGroupId ? { validForGroupId } : {}),
       },
     });
     return NextResponse.json(coupon);

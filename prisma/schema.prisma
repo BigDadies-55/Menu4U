@@ -83,6 +83,16 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model RestaurantGroup {
+  id          String       @id @default(cuid())
+  name        String
+  logo        String?
+  createdAt   DateTime     @default(now())
+
+  restaurants Restaurant[]
+  loyaltyMembers LoyaltyMember[]
+}
+
 model Restaurant {
   id            String   @id @default(cuid())
   name          String
@@ -118,9 +128,12 @@ model Restaurant {
   // Public visibility
   showPhonePublic   Boolean @default(true)
   showAddressPublic Boolean @default(true)
+  // Chain/group membership
+  groupId       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  group           RestaurantGroup?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
   restaurantUsers RestaurantUser[]
   menus           Menu[]
   orders          Order[]
@@ -359,6 +372,7 @@ model Customer {
 model LoyaltyMember {
   id           String   @id @default(cuid())
   restaurantId String
+  groupId      String?
   phone        String
   name         String
   email        String?
@@ -370,6 +384,7 @@ model LoyaltyMember {
   updatedAt    DateTime @updatedAt
 
   restaurant   Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  group        RestaurantGroup?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
   transactions LoyaltyTransaction[]
   coupons      LoyaltyCoupon[]
 
@@ -390,16 +405,18 @@ model LoyaltyTransaction {
 }
 
 model LoyaltyCoupon {
-  id           String    @id @default(cuid())
-  memberId     String
-  restaurantId String
-  code         String    @unique
-  type         String    // DISCOUNT_PERCENT | DISCOUNT_AMOUNT | FREE_ITEM
-  value        Float
-  description  String?
-  usedAt       DateTime?
-  expiresAt    DateTime?
-  createdAt    DateTime  @default(now())
+  id                String    @id @default(cuid())
+  memberId          String
+  restaurantId      String
+  validForGroupId   String?
+  usedAtRestaurantId String?
+  code              String    @unique
+  type              String    // DISCOUNT_PERCENT | DISCOUNT_AMOUNT | FREE_ITEM
+  value             Float
+  description       String?
+  usedAt            DateTime?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
 
   member       LoyaltyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
 }

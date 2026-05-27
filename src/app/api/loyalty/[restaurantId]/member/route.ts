@@ -57,6 +57,56 @@ async function ensureTables() {
       )
     `);
   } catch { /* tables already exist */ }
+
+  // Group support columns (best-effort)
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "groupId" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "LoyaltyCoupon" ADD COLUMN IF NOT EXISTS "validForGroupId" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "LoyaltyCoupon" ADD COLUMN IF NOT EXISTS "usedAtRestaurantId" TEXT`),
+  ]);
+}
+
+async function getRestaurantGroupId(restaurantId: string): Promise<string | null> {
+  try {
+    type Row = { groupId: string | null };
+    const rows = await prisma.$queryRawUnsafe<Row[]>(
+      `SELECT "groupId" FROM "Restaurant" WHERE "id" = $1 LIMIT 1`,
+      restaurantId
+    );
+    return rows[0]?.groupId ?? null;
+  } catch { return null; }
+}
+
+type MemberRow = {
+  id: string; restaurantId: string; groupId: string | null;
+  phone: string; name: string; email: string | null;
+  birthDate: Date | null; memberNumber: string;
+  points: number; totalSpent: number;
+  createdAt: Date; updatedAt: Date;
+};
+type TxRow = { id: string; memberId: string; orderId: string | null; type: string; points: number; note: string | null; createdAt: Date };
+type CouponRow = { id: string; memberId: string; restaurantId: string; validForGroupId: string | null; usedAtRestaurantId: string | null; code: string; type: string; value: number; description: string | null; usedAt: Date | null; expiresAt: Date | null; createdAt: Date };
+
+async function getMemberWithRelations(where: string, ...args: unknown[]) {
+  const members = await prisma.$queryRawUnsafe<MemberRow[]>(
+    `SELECT * FROM "LoyaltyMember" WHERE ${where} LIMIT 1`,
+    ...args
+  );
+  const member = members[0];
+  if (!member) return null;
+
+  const [transactions, coupons] = await Promise.all([
+    prisma.$queryRawUnsafe<TxRow[]>(
+      `SELECT * FROM "LoyaltyTransaction" WHERE "memberId" = $1 ORDER BY "createdAt" DESC LIMIT 20`,
+      member.id
+    ),
+    prisma.$queryRawUnsafe<CouponRow[]>(
+      `SELECT * FROM "LoyaltyCoupon" WHERE "memberId" = $1 AND "usedAt" IS NULL ORDER BY "createdAt" DESC`,
+      member.id
+    ),
+  ]);
+
+  return { ...member, transactions, coupons };
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ restaurantId: string }> }) {
@@ -67,13 +117,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ restaura
 
   await ensureTables();
 
-  const member = await prisma.loyaltyMember.findUnique({
-    where: { restaurantId_phone: { restaurantId, phone } },
-    include: {
-      transactions: { orderBy: { createdAt: "desc" }, take: 20 },
-      coupons: { where: { usedAt: null }, orderBy: { createdAt: "desc" } },
-    },
-  });
+  // Try restaurant-specific lookup first (backward compat)
+  let member = await getMemberWithRelations(`"restaurantId" = $1 AND "phone" = $2`, restaurantId, phone);
+
+  // If not found and restaurant belongs to a group, search across the group
+  if (!member) {
+    const groupId = await getRestaurantGroupId(restaurantId);
+    if (groupId) {
+      member = await getMemberWithRelations(`"groupId" = $1 AND "phone" = $2`, groupId, phone);
+    }
+  }
 
   return NextResponse.json(member);
 }
@@ -86,45 +139,56 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
   const { name, phone, email, birthDate } = body;
   if (!name || !phone) return NextResponse.json({ error: "name and phone required" }, { status: 400 });
 
-  // Check if already exists
-  const existing = await prisma.loyaltyMember.findUnique({
-    where: { restaurantId_phone: { restaurantId, phone } },
-  });
-  if (existing) return NextResponse.json({ error: "already_member", member: existing }, { status: 409 });
+  const groupId = await getRestaurantGroupId(restaurantId);
+
+  // Check if already exists (by restaurant or by group)
+  const existingRows = groupId
+    ? await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT * FROM "LoyaltyMember" WHERE ("restaurantId" = $1 OR "groupId" = $2) AND "phone" = $3 LIMIT 1`,
+        restaurantId, groupId, phone
+      )
+    : await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT * FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "phone" = $2 LIMIT 1`,
+        restaurantId, phone
+      );
+
+  if (existingRows.length > 0) {
+    return NextResponse.json({ error: "already_member", member: existingRows[0] }, { status: 409 });
+  }
 
   // Generate unique 6-digit member number
   let memberNumber = "";
   for (let i = 0; i < 10; i++) {
     const candidate = String(Math.floor(100000 + Math.random() * 900000));
-    const taken = await prisma.loyaltyMember.findUnique({
-      where: { restaurantId_memberNumber: { restaurantId, memberNumber: candidate } },
-    });
-    if (!taken) { memberNumber = candidate; break; }
+    const taken = await prisma.$queryRawUnsafe<MemberRow[]>(
+      `SELECT id FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "memberNumber" = $2 LIMIT 1`,
+      restaurantId, candidate
+    );
+    if (taken.length === 0) { memberNumber = candidate; break; }
   }
 
   // Get welcome bonus from settings
   const settings = await prisma.loyaltySettings.findUnique({ where: { restaurantId } });
   const welcomeBonus = settings?.welcomeBonus ?? 50;
 
-  const member = await prisma.loyaltyMember.create({
-    data: {
-      id: `lm-${Date.now()}`,
-      restaurantId,
-      phone,
-      name,
-      email: email || null,
-      birthDate: birthDate ? new Date(birthDate) : null,
-      memberNumber,
-      points: welcomeBonus,
-    },
-  });
+  const memberId = `lm-${Date.now()}`;
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "LoyaltyMember" ("id","restaurantId","groupId","phone","name","email","birthDate","memberNumber","points","totalSpent","createdAt","updatedAt")
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,NOW(),NOW())`,
+    memberId, restaurantId, groupId ?? null, phone, name,
+    email || null, birthDate ? new Date(birthDate) : null, memberNumber, welcomeBonus
+  );
+
+  const member = (await prisma.$queryRawUnsafe<MemberRow[]>(
+    `SELECT * FROM "LoyaltyMember" WHERE "id" = $1 LIMIT 1`, memberId
+  ))[0];
 
   // Record welcome transaction
   if (welcomeBonus > 0) {
     await prisma.loyaltyTransaction.create({
       data: {
         id: `lt-${Date.now()}`,
-        memberId: member.id,
+        memberId,
         type: "BONUS",
         points: welcomeBonus,
         note: "בונוס הצטרפות",
