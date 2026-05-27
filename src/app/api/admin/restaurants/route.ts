@@ -8,6 +8,16 @@ export async function GET() {
   if (!session?.user || session.user.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  // Ensure social + visibility columns exist
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "instagram" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "facebook" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "whatsapp" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tripadvisor" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "googleReview" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "showPhonePublic" BOOLEAN NOT NULL DEFAULT true`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "showAddressPublic" BOOLEAN NOT NULL DEFAULT true`),
+  ]);
   const restaurants = await prisma.restaurant.findMany({ orderBy: { name: "asc" } });
   return NextResponse.json(restaurants);
 }

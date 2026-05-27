@@ -13,10 +13,17 @@ export default async function RestaurantsPage() {
   if (session.user.role !== "SUPER_ADMIN") redirect("/admin");
 
   // Apply pending migrations so new columns exist before querying
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`);
-    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
-  } catch { /* ignore — columns may already exist */ }
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "instagram" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "facebook" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "whatsapp" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tripadvisor" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "googleReview" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "showPhonePublic" BOOLEAN NOT NULL DEFAULT true`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "showAddressPublic" BOOLEAN NOT NULL DEFAULT true`),
+  ]);
 
   const rows = await prisma.restaurant.findMany({
     orderBy: { createdAt: "desc" },
@@ -43,6 +50,13 @@ export default async function RestaurantsPage() {
       splashImage: true,
       subscriptionFrom: true,
       subscriptionTo: true,
+      instagram: true,
+      facebook: true,
+      whatsapp: true,
+      tripadvisor: true,
+      googleReview: true,
+      showPhonePublic: true,
+      showAddressPublic: true,
       createdAt: true,
       _count: { select: { menus: true, orders: true, restaurantUsers: true } },
     },

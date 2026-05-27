@@ -53,6 +53,8 @@ export default async function PublicMenuPage(
       phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true, menuPalette: true, menuPaletteData: true, ordersEnabled: true,
       language: true, welcomeText: true, splashImage: true,
       subscriptionFrom: true, subscriptionTo: true,
+      instagram: true, facebook: true, whatsapp: true, tripadvisor: true, googleReview: true,
+      showPhonePublic: true, showAddressPublic: true,
       menus: {
         where: { isActive: true },
         orderBy: { sortOrder: "asc" },

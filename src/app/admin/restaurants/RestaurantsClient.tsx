@@ -28,6 +28,13 @@ type Restaurant = {
   splashImage: string | null;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
+  instagram: string | null;
+  facebook: string | null;
+  whatsapp: string | null;
+  tripadvisor: string | null;
+  googleReview: string | null;
+  showPhonePublic: boolean;
+  showAddressPublic: boolean;
   createdAt: string;
   _count: { menus: number; orders: number; restaurantUsers: number };
 };
@@ -44,6 +51,7 @@ const TABS = [
   { id: "general",      label: "כללי",     icon: "🏠" },
   { id: "menu",         label: "תפריט",    icon: "📋" },
   { id: "orders",       label: "הזמנות",   icon: "🛒" },
+  { id: "social",       label: "סושיאל",   icon: "🌐" },
   { id: "subscription", label: "מנוי",     icon: "📅" },
 ] as const;
 type TabId = typeof TABS[number]["id"];
@@ -60,6 +68,13 @@ const emptyForm = {
   language: "he",
   welcomeText: "",
   splashImage: "",
+  instagram: "",
+  facebook: "",
+  whatsapp: "",
+  tripadvisor: "",
+  googleReview: "",
+  showPhonePublic: true,
+  showAddressPublic: true,
 };
 
 /* ── Solid primary button style ── */
@@ -197,6 +212,13 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       language: r.language ?? "he",
       welcomeText: r.welcomeText ?? "",
       splashImage: r.splashImage ?? "",
+      instagram: r.instagram ?? "",
+      facebook: r.facebook ?? "",
+      whatsapp: r.whatsapp ?? "",
+      tripadvisor: r.tripadvisor ?? "",
+      googleReview: r.googleReview ?? "",
+      showPhonePublic: r.showPhonePublic ?? true,
+      showAddressPublic: r.showAddressPublic ?? true,
     });
     setActiveTab("general");
     setShowForm(true);
@@ -239,6 +261,13 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       language: form.language,
       welcomeText: form.welcomeText || null,
       splashImage: form.splashImage || null,
+      instagram: form.instagram || null,
+      facebook: form.facebook || null,
+      whatsapp: form.whatsapp || null,
+      tripadvisor: form.tripadvisor || null,
+      googleReview: form.googleReview || null,
+      showPhonePublic: form.showPhonePublic,
+      showAddressPublic: form.showAddressPublic,
     };
 
     if (editTarget) {
@@ -601,6 +630,74 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         </div>
                       </div>
                     </>
+                  )}
+
+                  {/* ── Tab: סושיאל ── */}
+                  {activeTab === "social" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+                      {/* Social links */}
+                      <div style={{ background: "#1a1d23", border: "1px solid #2d3239", borderRadius: 12, padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#adb5bd", marginBottom: 14 }}>🔗 קישורים סושיאל</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          {([
+                            { key: "instagram",   icon: "📸", label: "Instagram", placeholder: "https://instagram.com/yourpage" },
+                            { key: "facebook",    icon: "👥", label: "Facebook",  placeholder: "https://facebook.com/yourpage" },
+                            { key: "whatsapp",    icon: "💬", label: "WhatsApp (מספר)",  placeholder: "0501234567" },
+                            { key: "tripadvisor", icon: "🦉", label: "TripAdvisor", placeholder: "https://tripadvisor.com/..." },
+                            { key: "googleReview",icon: "⭐", label: "Google Review", placeholder: "https://g.page/r/..." },
+                          ] as const).map(({ key, icon, label, placeholder }) => (
+                            <div key={key}>
+                              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500, color: "#adb5bd", marginBottom: 4 }}>
+                                <span>{icon}</span> {label}
+                              </label>
+                              <input
+                                type={key === "whatsapp" ? "tel" : "url"}
+                                value={form[key] as string}
+                                onChange={e => setForm({ ...form, [key]: e.target.value })}
+                                placeholder={placeholder}
+                                dir="ltr"
+                                style={DARK_INPUT}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Public visibility */}
+                      <div style={{ background: "#1a1d23", border: "1px solid #2d3239", borderRadius: 12, padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#adb5bd", marginBottom: 14 }}>👁 מה מוצג בדף הציבורי</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          {([
+                            { key: "showPhonePublic",   label: "מספר טלפון",  desc: "כפתורי WhatsApp וחיוג" },
+                            { key: "showAddressPublic", label: "כתובת",       desc: "כתובת המסעדה בדף הנחיתה" },
+                          ] as const).map(({ key, label, desc }) => (
+                            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: "#e9ecef" }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "#6c757d", marginTop: 2 }}>{desc}</div>
+                              </div>
+                              <button type="button"
+                                onClick={() => setForm(f => ({ ...f, [key]: !f[key] }))}
+                                style={{
+                                  position: "relative", display: "inline-flex", height: 24, width: 44,
+                                  alignItems: "center", borderRadius: 999, border: "none", cursor: "pointer",
+                                  background: form[key] ? "#fcc419" : "#3a3f47", transition: "background 150ms",
+                                  flexShrink: 0,
+                                }}>
+                                <span style={{
+                                  display: "inline-block", height: 16, width: 16, borderRadius: "50%", background: "#fff",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                                  transform: form[key] ? "translateX(24px)" : "translateX(4px)",
+                                  transition: "transform 150ms",
+                                }} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
                   )}
 
                   {/* ── Tab: מנוי ── */}

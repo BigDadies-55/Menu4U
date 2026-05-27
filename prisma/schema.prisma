@@ -109,6 +109,15 @@ model Restaurant {
   splashImage   String?
   subscriptionFrom DateTime?
   subscriptionTo   DateTime?
+  // Social links
+  instagram     String?
+  facebook      String?
+  whatsapp      String?
+  tripadvisor   String?
+  googleReview  String?
+  // Public visibility
+  showPhonePublic   Boolean @default(true)
+  showAddressPublic Boolean @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

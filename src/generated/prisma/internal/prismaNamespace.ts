@@ -2399,6 +2399,13 @@ export const RestaurantScalarFieldEnum = {
   splashImage: 'splashImage',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
+  instagram: 'instagram',
+  facebook: 'facebook',
+  whatsapp: 'whatsapp',
+  tripadvisor: 'tripadvisor',
+  googleReview: 'googleReview',
+  showPhonePublic: 'showPhonePublic',
+  showAddressPublic: 'showAddressPublic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

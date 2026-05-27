@@ -50,6 +50,13 @@ export type RestaurantMinAggregateOutputType = {
   splashImage: string | null
   subscriptionFrom: Date | null
   subscriptionTo: Date | null
+  instagram: string | null
+  facebook: string | null
+  whatsapp: string | null
+  tripadvisor: string | null
+  googleReview: string | null
+  showPhonePublic: boolean | null
+  showAddressPublic: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -80,6 +87,13 @@ export type RestaurantMaxAggregateOutputType = {
   splashImage: string | null
   subscriptionFrom: Date | null
   subscriptionTo: Date | null
+  instagram: string | null
+  facebook: string | null
+  whatsapp: string | null
+  tripadvisor: string | null
+  googleReview: string | null
+  showPhonePublic: boolean | null
+  showAddressPublic: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -110,6 +124,13 @@ export type RestaurantCountAggregateOutputType = {
   splashImage: number
   subscriptionFrom: number
   subscriptionTo: number
+  instagram: number
+  facebook: number
+  whatsapp: number
+  tripadvisor: number
+  googleReview: number
+  showPhonePublic: number
+  showAddressPublic: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -142,6 +163,13 @@ export type RestaurantMinAggregateInputType = {
   splashImage?: true
   subscriptionFrom?: true
   subscriptionTo?: true
+  instagram?: true
+  facebook?: true
+  whatsapp?: true
+  tripadvisor?: true
+  googleReview?: true
+  showPhonePublic?: true
+  showAddressPublic?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -172,6 +200,13 @@ export type RestaurantMaxAggregateInputType = {
   splashImage?: true
   subscriptionFrom?: true
   subscriptionTo?: true
+  instagram?: true
+  facebook?: true
+  whatsapp?: true
+  tripadvisor?: true
+  googleReview?: true
+  showPhonePublic?: true
+  showAddressPublic?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -202,6 +237,13 @@ export type RestaurantCountAggregateInputType = {
   splashImage?: true
   subscriptionFrom?: true
   subscriptionTo?: true
+  instagram?: true
+  facebook?: true
+  whatsapp?: true
+  tripadvisor?: true
+  googleReview?: true
+  showPhonePublic?: true
+  showAddressPublic?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -305,6 +347,13 @@ export type RestaurantGroupByOutputType = {
   splashImage: string | null
   subscriptionFrom: Date | null
   subscriptionTo: Date | null
+  instagram: string | null
+  facebook: string | null
+  whatsapp: string | null
+  tripadvisor: string | null
+  googleReview: string | null
+  showPhonePublic: boolean
+  showAddressPublic: boolean
   createdAt: Date
   updatedAt: Date
   _count: RestaurantCountAggregateOutputType | null
@@ -356,6 +405,13 @@ export type RestaurantWhereInput = {
   splashImage?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   subscriptionFrom?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
   subscriptionTo?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
+  instagram?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  facebook?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  whatsapp?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  tripadvisor?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  googleReview?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  showPhonePublic?: Prisma.BoolFilter<"Restaurant"> | boolean
+  showAddressPublic?: Prisma.BoolFilter<"Restaurant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
@@ -395,6 +451,13 @@ export type RestaurantOrderByWithRelationInput = {
   splashImage?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrderInput | Prisma.SortOrder
+  instagram?: Prisma.SortOrderInput | Prisma.SortOrder
+  facebook?: Prisma.SortOrderInput | Prisma.SortOrder
+  whatsapp?: Prisma.SortOrderInput | Prisma.SortOrder
+  tripadvisor?: Prisma.SortOrderInput | Prisma.SortOrder
+  googleReview?: Prisma.SortOrderInput | Prisma.SortOrder
+  showPhonePublic?: Prisma.SortOrder
+  showAddressPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   restaurantUsers?: Prisma.RestaurantUserOrderByRelationAggregateInput
@@ -437,6 +500,13 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   splashImage?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   subscriptionFrom?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
   subscriptionTo?: Prisma.DateTimeNullableFilter<"Restaurant"> | Date | string | null
+  instagram?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  facebook?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  whatsapp?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  tripadvisor?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  googleReview?: Prisma.StringNullableFilter<"Restaurant"> | string | null
+  showPhonePublic?: Prisma.BoolFilter<"Restaurant"> | boolean
+  showAddressPublic?: Prisma.BoolFilter<"Restaurant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
@@ -476,6 +546,13 @@ export type RestaurantOrderByWithAggregationInput = {
   splashImage?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrderInput | Prisma.SortOrder
+  instagram?: Prisma.SortOrderInput | Prisma.SortOrder
+  facebook?: Prisma.SortOrderInput | Prisma.SortOrder
+  whatsapp?: Prisma.SortOrderInput | Prisma.SortOrder
+  tripadvisor?: Prisma.SortOrderInput | Prisma.SortOrder
+  googleReview?: Prisma.SortOrderInput | Prisma.SortOrder
+  showPhonePublic?: Prisma.SortOrder
+  showAddressPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.RestaurantCountOrderByAggregateInput
@@ -512,6 +589,13 @@ export type RestaurantScalarWhereWithAggregatesInput = {
   splashImage?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   subscriptionFrom?: Prisma.DateTimeNullableWithAggregatesFilter<"Restaurant"> | Date | string | null
   subscriptionTo?: Prisma.DateTimeNullableWithAggregatesFilter<"Restaurant"> | Date | string | null
+  instagram?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
+  facebook?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
+  whatsapp?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
+  tripadvisor?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
+  googleReview?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
+  showPhonePublic?: Prisma.BoolWithAggregatesFilter<"Restaurant"> | boolean
+  showAddressPublic?: Prisma.BoolWithAggregatesFilter<"Restaurant"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Restaurant"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Restaurant"> | Date | string
 }
@@ -542,6 +626,13 @@ export type RestaurantCreateInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -581,6 +672,13 @@ export type RestaurantUncheckedCreateInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -620,6 +718,13 @@ export type RestaurantUpdateInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -659,6 +764,13 @@ export type RestaurantUncheckedUpdateInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -698,6 +810,13 @@ export type RestaurantCreateManyInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -728,6 +847,13 @@ export type RestaurantUpdateManyMutationInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -758,6 +884,13 @@ export type RestaurantUncheckedUpdateManyInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -788,6 +921,13 @@ export type RestaurantCountOrderByAggregateInput = {
   splashImage?: Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrder
+  instagram?: Prisma.SortOrder
+  facebook?: Prisma.SortOrder
+  whatsapp?: Prisma.SortOrder
+  tripadvisor?: Prisma.SortOrder
+  googleReview?: Prisma.SortOrder
+  showPhonePublic?: Prisma.SortOrder
+  showAddressPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -818,6 +958,13 @@ export type RestaurantMaxOrderByAggregateInput = {
   splashImage?: Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrder
+  instagram?: Prisma.SortOrder
+  facebook?: Prisma.SortOrder
+  whatsapp?: Prisma.SortOrder
+  tripadvisor?: Prisma.SortOrder
+  googleReview?: Prisma.SortOrder
+  showPhonePublic?: Prisma.SortOrder
+  showAddressPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -848,6 +995,13 @@ export type RestaurantMinOrderByAggregateInput = {
   splashImage?: Prisma.SortOrder
   subscriptionFrom?: Prisma.SortOrder
   subscriptionTo?: Prisma.SortOrder
+  instagram?: Prisma.SortOrder
+  facebook?: Prisma.SortOrder
+  whatsapp?: Prisma.SortOrder
+  tripadvisor?: Prisma.SortOrder
+  googleReview?: Prisma.SortOrder
+  showPhonePublic?: Prisma.SortOrder
+  showAddressPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -1009,6 +1163,13 @@ export type RestaurantCreateWithoutRestaurantUsersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   menus?: Prisma.MenuCreateNestedManyWithoutRestaurantInput
@@ -1047,6 +1208,13 @@ export type RestaurantUncheckedCreateWithoutRestaurantUsersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   menus?: Prisma.MenuUncheckedCreateNestedManyWithoutRestaurantInput
@@ -1101,6 +1269,13 @@ export type RestaurantUpdateWithoutRestaurantUsersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   menus?: Prisma.MenuUpdateManyWithoutRestaurantNestedInput
@@ -1139,6 +1314,13 @@ export type RestaurantUncheckedUpdateWithoutRestaurantUsersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   menus?: Prisma.MenuUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -1177,6 +1359,13 @@ export type RestaurantCreateWithoutMenusInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -1215,6 +1404,13 @@ export type RestaurantUncheckedCreateWithoutMenusInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -1269,6 +1465,13 @@ export type RestaurantUpdateWithoutMenusInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -1307,6 +1510,13 @@ export type RestaurantUncheckedUpdateWithoutMenusInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -1345,6 +1555,13 @@ export type RestaurantCreateWithoutOrdersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -1383,6 +1600,13 @@ export type RestaurantUncheckedCreateWithoutOrdersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -1437,6 +1661,13 @@ export type RestaurantUpdateWithoutOrdersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -1475,6 +1706,13 @@ export type RestaurantUncheckedUpdateWithoutOrdersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -1513,6 +1751,13 @@ export type RestaurantCreateWithoutOrderCounterInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -1551,6 +1796,13 @@ export type RestaurantUncheckedCreateWithoutOrderCounterInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -1605,6 +1857,13 @@ export type RestaurantUpdateWithoutOrderCounterInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -1643,6 +1902,13 @@ export type RestaurantUncheckedUpdateWithoutOrderCounterInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -1681,6 +1947,13 @@ export type RestaurantCreateWithoutMenuViewsInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -1719,6 +1992,13 @@ export type RestaurantUncheckedCreateWithoutMenuViewsInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -1773,6 +2053,13 @@ export type RestaurantUpdateWithoutMenuViewsInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -1811,6 +2098,13 @@ export type RestaurantUncheckedUpdateWithoutMenuViewsInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -1849,6 +2143,13 @@ export type RestaurantCreateWithoutTableSessionsInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -1887,6 +2188,13 @@ export type RestaurantUncheckedCreateWithoutTableSessionsInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -1941,6 +2249,13 @@ export type RestaurantUpdateWithoutTableSessionsInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -1979,6 +2294,13 @@ export type RestaurantUncheckedUpdateWithoutTableSessionsInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -2017,6 +2339,13 @@ export type RestaurantCreateWithoutCustomersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -2055,6 +2384,13 @@ export type RestaurantUncheckedCreateWithoutCustomersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -2109,6 +2445,13 @@ export type RestaurantUpdateWithoutCustomersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -2147,6 +2490,13 @@ export type RestaurantUncheckedUpdateWithoutCustomersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -2185,6 +2535,13 @@ export type RestaurantCreateWithoutLoyaltyMembersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -2223,6 +2580,13 @@ export type RestaurantUncheckedCreateWithoutLoyaltyMembersInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -2277,6 +2641,13 @@ export type RestaurantUpdateWithoutLoyaltyMembersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -2315,6 +2686,13 @@ export type RestaurantUncheckedUpdateWithoutLoyaltyMembersInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -2353,6 +2731,13 @@ export type RestaurantCreateWithoutLoyaltySettingsInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
@@ -2391,6 +2776,13 @@ export type RestaurantUncheckedCreateWithoutLoyaltySettingsInput = {
   splashImage?: string | null
   subscriptionFrom?: Date | string | null
   subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
@@ -2445,6 +2837,13 @@ export type RestaurantUpdateWithoutLoyaltySettingsInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
@@ -2483,6 +2882,13 @@ export type RestaurantUncheckedUpdateWithoutLoyaltySettingsInput = {
   splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
@@ -2606,6 +3012,13 @@ export type RestaurantSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
+  instagram?: boolean
+  facebook?: boolean
+  whatsapp?: boolean
+  tripadvisor?: boolean
+  googleReview?: boolean
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
@@ -2646,6 +3059,13 @@ export type RestaurantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
+  instagram?: boolean
+  facebook?: boolean
+  whatsapp?: boolean
+  tripadvisor?: boolean
+  googleReview?: boolean
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["restaurant"]>
@@ -2676,6 +3096,13 @@ export type RestaurantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
+  instagram?: boolean
+  facebook?: boolean
+  whatsapp?: boolean
+  tripadvisor?: boolean
+  googleReview?: boolean
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["restaurant"]>
@@ -2706,11 +3133,18 @@ export type RestaurantSelectScalar = {
   splashImage?: boolean
   subscriptionFrom?: boolean
   subscriptionTo?: boolean
+  instagram?: boolean
+  facebook?: boolean
+  whatsapp?: boolean
+  tripadvisor?: boolean
+  googleReview?: boolean
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
+export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "instagram" | "facebook" | "whatsapp" | "tripadvisor" | "googleReview" | "showPhonePublic" | "showAddressPublic" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
 export type RestaurantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
   menus?: boolean | Prisma.Restaurant$menusArgs<ExtArgs>
@@ -2765,6 +3199,13 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     splashImage: string | null
     subscriptionFrom: Date | null
     subscriptionTo: Date | null
+    instagram: string | null
+    facebook: string | null
+    whatsapp: string | null
+    tripadvisor: string | null
+    googleReview: string | null
+    showPhonePublic: boolean
+    showAddressPublic: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["restaurant"]>
@@ -3224,6 +3665,13 @@ export interface RestaurantFieldRefs {
   readonly splashImage: Prisma.FieldRef<"Restaurant", 'String'>
   readonly subscriptionFrom: Prisma.FieldRef<"Restaurant", 'DateTime'>
   readonly subscriptionTo: Prisma.FieldRef<"Restaurant", 'DateTime'>
+  readonly instagram: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly facebook: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly whatsapp: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly tripadvisor: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly googleReview: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly showPhonePublic: Prisma.FieldRef<"Restaurant", 'Boolean'>
+  readonly showAddressPublic: Prisma.FieldRef<"Restaurant", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Restaurant", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Restaurant", 'DateTime'>
 }
