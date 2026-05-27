@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu4U — הדיגיטל של המסעדה שלך מתחיל כאן</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700;1,900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --wine: #2D0A14;
+    --wine-light: #3D1020;
+    --cream: #F5EDD8;
+    --cream-dim: rgba(245,237,216,0.7);
+    --terracotta: #C4622D;
+    --gold: #D4A84B;
+    --gold-dim: rgba(212,168,75,0.4);
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--wine);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 60px;
+    height: 72px;
+    background: rgba(45,10,20,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(212,168,75,0.15);
+  }
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cream);
+    letter-spacing: 0.05em;
+  }
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--cream-dim);
+    text-decoration: none;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cream); }
+  .nav-btn {
+    padding: 10px 22px;
+    background: var(--terracotta);
+    border: none;
+    border-radius: 100px;
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .nav-btn:hover { opacity: 0.85; }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--wine);
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 120px 60px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+  /* Decorative texture */
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 100% 50%, rgba(196,98,45,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .eyebrow-diamond { color: var(--gold); font-size: 12px; }
+  .eyebrow-text {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+  }
+  .eyebrow-line {
+    flex: 1;
+    height: 1px;
+    background: var(--gold-dim);
+    max-width: 60px;
+  }
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(60px, 7vw, 96px);
+    font-weight: 700;
+    font-style: italic;
+    line-height: 1.0;
+    color: var(--cream);
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+  }
+  .hero-title .highlight {
+    color: var(--gold);
+    display: block;
+  }
+  .hero-rule {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .rule-line { flex: 1; height: 1px; background: var(--gold-dim); max-width: 80px; }
+  .rule-diamond { color: var(--gold); font-size: 10px; }
+  .hero-sub {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--cream-dim);
+    line-height: 1.75;
+    max-width: 440px;
+    margin-bottom: 44px;
+  }
+  .hero-cta-area { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .btn-terracotta {
+    padding: 16px 36px;
+    background: var(--terracotta);
+    border: none;
+    border-radius: 100px;
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-terracotta:hover { opacity: 0.88; transform: translateY(-1px); }
+  .hero-cta-note {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: rgba(245,237,216,0.45);
+    font-style: italic;
+  }
+
+  /* Photo collage */
+  .hero-visual {
+    position: relative;
+    height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .photo-card {
+    position: absolute;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .photo-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: multiply;
+    opacity: 0.15;
+    background: var(--wine);
+  }
+  .photo-1 {
+    width: 240px; height: 300px;
+    background: linear-gradient(135deg, #8B3A2A 0%, #C4622D 40%, #E8944E 70%, #D4722A 100%);
+    transform: rotate(-6deg) translateX(-60px) translateY(-20px);
+    z-index: 1;
+  }
+  .photo-2 {
+    width: 220px; height: 280px;
+    background: linear-gradient(145deg, #1B4A2A 0%, #2D7A3A 30%, #3DAA50 60%, #4CAF60 100%);
+    transform: rotate(3deg) translateX(40px) translateY(30px);
+    z-index: 2;
+  }
+  .photo-3 {
+    width: 200px; height: 260px;
+    background: linear-gradient(160deg, #6B2D1A 0%, #A04020 30%, #D4622A 55%, #F07840 80%, #E8A060 100%);
+    transform: rotate(-2deg) translateX(-10px) translateY(80px);
+    z-index: 3;
+  }
+  .photo-inner {
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 16px;
+    position: relative;
+  }
+  .photo-inner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.5) 100%);
+  }
+  .photo-caption {
+    position: relative;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: rgba(245,237,216,0.85);
+    z-index: 1;
+  }
+
+  /* ── GOLD STRIP ── */
+  .gold-strip {
+    background: var(--wine);
+    border-top: 1px solid var(--gold-dim);
+    border-bottom: 1px solid var(--gold-dim);
+    padding: 28px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+  .gold-strip-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--cream-dim);
+    letter-spacing: 0.08em;
+  }
+  .gold-strip-item .diamond { color: var(--gold); font-size: 8px; }
+
+  /* ── FEATURES — Editorial List ── */
+  .features {
+    background: var(--cream);
+    padding: 120px 60px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .features-header {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+  .features-eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    font-weight: 500;
+  }
+  .features-title {
+    font-family: var(--serif);
+    font-size: clamp(40px, 5vw, 58px);
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--wine);
+    margin-bottom: 60px;
+  }
+  .feature-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 0;
+    padding: 48px 0;
+    border-top: 1px solid var(--gold-dim);
+    align-items: start;
+  }
+  .feature-row:last-child { border-bottom: 1px solid var(--gold-dim); }
+  .feature-number {
+    font-family: var(--serif);
+    font-size: 64px;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--terracotta);
+    line-height: 1;
+    opacity: 0.8;
+  }
+  .feature-content {}
+  .feature-name {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--wine);
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .feature-desc {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 300;
+    color: rgba(45,10,20,0.65);
+    line-height: 1.75;
+    max-width: 580px;
+  }
+
+  /* ── STATS ── */
+  .stats {
+    background: var(--wine);
+    padding: 100px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stats::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,168,75,0.04) 0%, transparent 70%);
+  }
+  .stats-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .stats-eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .stats-eyebrow::before, .stats-eyebrow::after {
+    content: '';
+    height: 1px;
+    width: 60px;
+    background: var(--gold-dim);
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+  .stat-item {
+    padding: 0 40px;
+    border-left: 1px solid rgba(212,168,75,0.2);
+  }
+  .stat-item:last-child { border-left: none; }
+  .stat-num {
+    font-family: var(--serif);
+    font-size: clamp(52px, 7vw, 80px);
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .stat-label {
+    font-family: var(--sans);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* ── TESTIMONIAL ── */
+  .testimonial {
+    background: var(--cream);
+    padding: 100px 60px;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .testimonial-diamond { color: var(--gold); font-size: 20px; margin-bottom: 32px; display: block; }
+  .testimonial-quote {
+    font-family: var(--serif);
+    font-size: clamp(24px, 3vw, 34px);
+    font-style: italic;
+    font-weight: 600;
+    color: var(--wine);
+    line-height: 1.4;
+    margin-bottom: 36px;
+  }
+  .testimonial-author {
+    font-family: var(--sans);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    font-weight: 500;
+  }
+
+  /* ── PRICING ── */
+  .pricing {
+    background: var(--cream);
+    padding: 0 60px 120px;
+  }
+  .pricing-inner { max-width: 1000px; margin: 0 auto; }
+  .pricing-header {
+    text-align: center;
+    margin-bottom: 60px;
+    padding-top: 80px;
+    border-top: 1px solid var(--gold-dim);
+  }
+  .pricing-eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 16px;
+  }
+  .pricing-title {
+    font-family: var(--serif);
+    font-size: clamp(40px, 5vw, 56px);
+    font-weight: 700;
+    font-style: italic;
+    color: var(--wine);
+  }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .pricing-card {
+    border: 1px solid rgba(45,10,20,0.15);
+    border-radius: 4px;
+    padding: 40px 32px;
+    text-align: right;
+    background: #fff;
+    position: relative;
+  }
+  .pricing-card.popular {
+    background: var(--wine);
+    border-color: var(--wine);
+    color: var(--cream);
+  }
+  .popular-tag {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--terracotta);
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 18px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .p-plan {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .pricing-card.popular .p-plan { color: var(--gold); }
+  .p-price {
+    font-family: var(--serif);
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--wine);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .pricing-card.popular .p-price { color: var(--cream); }
+  .p-price sup { font-size: 22px; vertical-align: super; }
+  .p-period {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: rgba(45,10,20,0.5);
+    margin-bottom: 28px;
+  }
+  .pricing-card.popular .p-period { color: var(--cream-dim); }
+  .p-divider {
+    height: 1px;
+    background: var(--gold-dim);
+    margin-bottom: 24px;
+  }
+  .pricing-card.popular .p-divider { background: rgba(212,168,75,0.3); }
+  .p-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .p-features li {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 300;
+    color: rgba(45,10,20,0.75);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pricing-card.popular .p-features li { color: var(--cream-dim); }
+  .p-features li::before { content: '◆'; font-size: 7px; color: var(--gold); flex-shrink: 0; }
+  .p-cta {
+    width: 100%;
+    padding: 14px;
+    background: var(--terracotta);
+    border: none;
+    border-radius: 100px;
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .p-cta:hover { opacity: 0.85; }
+  .pricing-card.popular .p-cta {
+    background: var(--cream);
+    color: var(--wine);
+  }
+
+  /* ── CTA SECTION ── */
+  .cta-full {
+    background: var(--wine);
+    padding: 140px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-full::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+  .cta-full::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+  .cta-diamond {
+    color: var(--gold);
+    font-size: 14px;
+    display: block;
+    margin-bottom: 28px;
+    letter-spacing: 0.3em;
+  }
+  .cta-title {
+    font-family: var(--serif);
+    font-size: clamp(48px, 7vw, 80px);
+    font-style: italic;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .cta-sub {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--cream-dim);
+    margin-bottom: 48px;
+  }
+  .btn-cream {
+    display: inline-block;
+    padding: 18px 48px;
+    background: var(--cream);
+    border: none;
+    border-radius: 100px;
+    color: var(--wine);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .btn-cream:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #1A0509;
+    border-top: 1px solid rgba(212,168,75,0.15);
+    padding: 48px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  .footer-logo {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cream);
+    letter-spacing: 0.05em;
+  }
+  .footer-links { display: flex; gap: 28px; }
+  .footer-links a {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: rgba(245,237,216,0.35);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--cream-dim); }
+  .footer-copy {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: rgba(245,237,216,0.25);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    nav { padding: 0 24px; }
+    .nav-links { display: none; }
+    .hero { grid-template-columns: 1fr; padding: 100px 24px 60px; }
+    .hero-visual { display: none; }
+    .features { padding: 80px 24px; }
+    .feature-row { grid-template-columns: 70px 1fr; }
+    .feature-number { font-size: 48px; }
+    .stats { padding: 80px 24px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 48px; }
+    .stat-item { border-left: none; border-top: 1px solid rgba(212,168,75,0.2); padding: 32px 0 0; }
+    .testimonial { padding: 80px 24px; }
+    .pricing { padding: 0 24px 80px; }
+    .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+    .cta-full { padding: 100px 24px; }
+    footer { padding: 40px 24px; flex-direction: column; text-align: center; }
+    .gold-strip { padding: 20px 24px; gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Menu4U</div>
+  <ul class="nav-links">
+    <li><a href="#">בית</a></li>
+    <li><a href="#">פתרונות</a></li>
+    <li><a href="#">מחירים</a></li>
+    <li><a href="#">צור קשר</a></li>
+  </ul>
+  <a href="#" class="nav-btn">כניסה לניהול →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-diamond">◆</span>
+      <span class="eyebrow-text">פלטפורמת מסעדות פרמיום</span>
+      <span class="eyebrow-line"></span>
+    </div>
+    <h1 class="hero-title">
+      הדיגיטל של<br>
+      <span class="highlight">המסעדה שלך</span>
+      מתחיל כאן
+    </h1>
+    <div class="hero-rule">
+      <span class="rule-line"></span>
+      <span class="rule-diamond">◆</span>
+    </div>
+    <p class="hero-sub">פלטפורמת ניהול מסעדות מתקדמת עם AI — תפריט דיגיטלי, הזמנות בזמן אמת, מועדון לקוחות, ובינה מלאכותית שעובדת בשבילך.</p>
+    <div class="hero-cta-area">
+      <a href="#" class="btn-terracotta">התחל 30 יום חינם</a>
+      <span class="hero-cta-note">ללא כרטיס אשראי</span>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="photo-card photo-1">
+      <div class="photo-inner">
+        <span class="photo-caption">תפריט דיגיטלי</span>
+      </div>
+    </div>
+    <div class="photo-card photo-2">
+      <div class="photo-inner">
+        <span class="photo-caption">הזמנות חכמות</span>
+      </div>
+    </div>
+    <div class="photo-card photo-3">
+      <div class="photo-inner">
+        <span class="photo-caption">ניתוח AI</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GOLD STRIP -->
+<div class="gold-strip">
+  <div class="gold-strip-item"><span class="diamond">◆</span> 500+ מסעדות פעילות</div>
+  <div class="gold-strip-item"><span class="diamond">◆</span> 2M+ הזמנות עובדו</div>
+  <div class="gold-strip-item"><span class="diamond">◆</span> 98% שביעות רצון</div>
+  <div class="gold-strip-item"><span class="diamond">◆</span> 24/7 תמיכה טכנית</div>
+</div>
+
+<!-- FEATURES -->
+<section style="background:var(--cream);padding:0 60px">
+  <div class="features">
+    <div class="features-eyebrow">הפתרון השלם</div>
+    <h2 class="features-title">כל מה שמסעדה<br>מעולה זקוקה לו</h2>
+
+    <div class="feature-row">
+      <div class="feature-number">01</div>
+      <div class="feature-content">
+        <div class="feature-name">תפריט דיגיטלי</div>
+        <p class="feature-desc">QR קוד ייחודי לכל שולחן. לקוחות סורקים, גולשים בתפריט עשיר בתמונות ומזמינים ישירות — בלי להמתין למלצר, בלי טעויות.</p>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-number">02</div>
+      <div class="feature-content">
+        <div class="feature-name">הזמנות בזמן אמת</div>
+        <p class="feature-desc">הזמנות מגיעות למטבח תוך שניות. אפס טעויות תקשורת, מקסימום מהירות שירות, לקוחות מרוצים שחוזרים.</p>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-number">03</div>
+      <div class="feature-content">
+        <div class="feature-name">מסך מטבח KDS</div>
+        <p class="feature-desc">תצוגה ייחודית לצוות המטבח עם עדיפויות, טיימרים ומעקב בזמן אמת. הצוות יודע בדיוק מה לבשל ומתי.</p>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-number">04</div>
+      <div class="feature-content">
+        <div class="feature-name">מועדון לקוחות</div>
+        <p class="feature-desc">מערכת נקודות, מבצעים אישיים וקופונים שמחזירים לקוחות שוב ושוב. בנה מסד לקוחות נאמנים שמגדיל הכנסות.</p>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-number">05</div>
+      <div class="feature-content">
+        <div class="feature-name">ניתוח AI</div>
+        <p class="feature-desc">בינה מלאכותית שמנתחת את הנתונים שלך ומציגה המלצות על תמחור, מלאי ומבצעים — כדי להגדיל הכנסות.</p>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-number">06</div>
+      <div class="feature-content">
+        <div class="feature-name">ניהול קל</div>
+        <p class="feature-desc">ממשק מנהל אינטואיטיבי שמאפשר עדכון תפריט, מחירים ומלאי בכמה שניות — מכל מקום, בכל מכשיר.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-inner">
+    <div class="stats-eyebrow">המספרים מדברים</div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-num">500+</div>
+        <div class="stat-label">מסעדות</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2M+</div>
+        <div class="stat-label">הזמנות</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">98%</div>
+        <div class="stat-label">שביעות רצון</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">24/7</div>
+        <div class="stat-label">תמיכה</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial" style="padding-top:100px;padding-bottom:0">
+  <span class="testimonial-diamond">◆ ◆ ◆</span>
+  <p class="testimonial-quote">"Menu4U שינתה את האופן שבו אנחנו מנהלים את המסעדה. יותר הזמנות, פחות טעויות, לקוחות מרוצים יותר."</p>
+  <div class="testimonial-author">יוסי כהן — מנהל רשת פסטה פרמה, 12 סניפים</div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing">
+  <div class="pricing-inner">
+    <div class="pricing-header">
+      <div class="pricing-eyebrow">מחירים</div>
+      <h2 class="pricing-title">השקעה שמחזירה את עצמה</h2>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="p-plan">בסיסי</div>
+        <div class="p-price"><sup>₪</sup>299</div>
+        <div class="p-period">לחודש</div>
+        <div class="p-divider"></div>
+        <ul class="p-features">
+          <li>תפריט דיגיטלי</li>
+          <li>עד 50 שולחנות</li>
+          <li>הזמנות בזמן אמת</li>
+          <li>תמיכה בדוא"ל</li>
+        </ul>
+        <a href="#" class="p-cta">התחל חינם</a>
+      </div>
+      <div class="pricing-card popular">
+        <div class="popular-tag">הכי פופולרי</div>
+        <div class="p-plan">פרו</div>
+        <div class="p-price"><sup>₪</sup>599</div>
+        <div class="p-period">לחודש</div>
+        <div class="p-divider"></div>
+        <ul class="p-features">
+          <li>כל תכונות הבסיס</li>
+          <li>KDS מסך מטבח</li>
+          <li>מועדון לקוחות</li>
+          <li>ניתוח AI מלא</li>
+          <li>תמיכת עדיפות</li>
+        </ul>
+        <a href="#" class="p-cta">התחל חינם</a>
+      </div>
+      <div class="pricing-card">
+        <div class="p-plan">ארגוני</div>
+        <div class="p-price" style="font-size:38px;padding-top:8px">מותאם</div>
+        <div class="p-period">לרשת / ארגון</div>
+        <div class="p-divider"></div>
+        <ul class="p-features">
+          <li>כל תכונות הפרו</li>
+          <li>ניהול רשת סניפים</li>
+          <li>API מלא</li>
+          <li>מנהל חשבון ייעודי</li>
+          <li>SLA מותאם</li>
+        </ul>
+        <a href="#" class="p-cta">צור קשר</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-full">
+  <span class="cta-diamond">◆ ◆ ◆</span>
+  <h2 class="cta-title">מוכן לקחת את<br>המסעדה שלך קדימה?</h2>
+  <p class="cta-sub">הצטרף ל-500+ מסעדות שכבר עובדות עם Menu4U</p>
+  <a href="#" class="btn-cream">התחל 30 יום חינם</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Menu4U</div>
+  <div class="footer-links">
+    <a href="#">פרטיות</a>
+    <a href="#">תנאי שימוש</a>
+    <a href="#">צור קשר</a>
+  </div>
+  <div class="footer-copy">© 2024 Menu4U. כל הזכויות שמורות.</div>
+</footer>
+
+</body>
+</html>
