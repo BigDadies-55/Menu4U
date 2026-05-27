@@ -260,6 +260,7 @@ export default function MenuElegantClient({
   // Loyalty club state
   const [showLoyalty, setShowLoyalty] = useState(false);
   const [loyaltyMember, setLoyaltyMember] = useState<LoyaltyMemberData | null>(null);
+  const [memberTopItems, setMemberTopItems] = useState<Item[]>([]);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [loyaltyNotFound, setLoyaltyNotFound] = useState(false);
   const [loyaltyForm, setLoyaltyForm] = useState({ name: "", phone: "", email: "", birthDate: "" });
@@ -399,6 +400,21 @@ export default function MenuElegantClient({
     setLang(l);
     try { localStorage.setItem(`menu4u_lang_${restaurant.id}`, l); } catch {}
   }
+
+  // Fetch + resolve top items whenever loyalty member changes
+  useEffect(() => {
+    if (!loyaltyMember?.phone) { setMemberTopItems([]); return; }
+    const allItems = restaurant.menus.flatMap(m => m.categories.flatMap(c => c.items));
+    const itemMap = Object.fromEntries(allItems.map(i => [i.id, i]));
+    fetch(`/api/loyalty/${restaurant.id}/top-items?phone=${encodeURIComponent(loyaltyMember.phone)}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rows: TopItem[]) => {
+        const resolved = rows.map(r => itemMap[r.itemId]).filter(Boolean) as Item[];
+        setMemberTopItems(resolved);
+      })
+      .catch(() => setMemberTopItems([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loyaltyMember?.phone]);
 
   async function fetchLoyaltyMember(phone: string) {
     setLoyaltyLoading(true);
@@ -745,7 +761,7 @@ export default function MenuElegantClient({
           setClubWelcomeBackName(member.name);
           setClubWelcomeBonus(member.points);
           setClubStep("welcome_back");
-          setTimeout(() => elegantNavigateTo("categories"), 2500);
+          setTimeout(() => { elegantNavigateTo("categories"); setShowLoyalty(true); }, 2500);
         }
       }
     } catch {}
@@ -771,7 +787,7 @@ export default function MenuElegantClient({
           setClubWelcomeBackName(member.name);
           setClubWelcomeBonus(member.points);
           setClubStep("welcome_back");
-          setTimeout(() => elegantNavigateTo("categories"), 2500);
+          setTimeout(() => { elegantNavigateTo("categories"); setShowLoyalty(true); }, 2500);
         } else {
           setClubError("לא מצאנו חבר עם הטלפון הזה");
         }
@@ -814,7 +830,7 @@ export default function MenuElegantClient({
         setClubWelcomeBonus(member.points);
         setClubWelcomeBackName(member.name);
         setClubStep("welcome_back");
-        setTimeout(() => elegantNavigateTo("categories"), 3000);
+        setTimeout(() => { elegantNavigateTo("categories"); setShowLoyalty(true); }, 3000);
       } else {
         setClubError(data.error || "שגיאה בהרשמה");
       }
@@ -1123,7 +1139,7 @@ export default function MenuElegantClient({
 
                   {/* Loyalty */}
                   <button
-                    onClick={() => { if (loyaltyMember) { setShowLoyalty(true); } else { setClubStep("promo"); elegantNavigateTo("clubwelcome"); } }}
+                    onClick={() => { if (loyaltyMember) { elegantNavigateTo("categories"); setShowLoyalty(true); } else { setClubStep("promo"); elegantNavigateTo("clubwelcome"); } }}
                     style={{ ...btnStyle, background: loyaltyMember ? "linear-gradient(135deg, #C5A880, #dfc090)" : "rgba(255,255,255,0.11)", border: loyaltyMember ? "none" : "1.5px solid rgba(197,168,128,0.4)", boxShadow: loyaltyMember ? "0 6px 28px rgba(197,168,128,0.5), 0 2px 8px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.45)" }}
                     onMouseEnter={onEnter} onMouseLeave={onLeave}
                     aria-label={loyaltyMember ? "כרטיס החבר שלי" : "מועדון לקוחות"}
@@ -1320,6 +1336,64 @@ export default function MenuElegantClient({
             </div>
           )}
 
+          {/* "המנות שלי" card — shown only for loyalty members with order history */}
+          {loyaltyMember && memberTopItems.length > 0 && !catSearch && (
+            <div
+              onClick={() => {
+                const myItemsCat: Category = {
+                  id: "__my-items__",
+                  name: "המנות שלי",
+                  image: null,
+                  items: memberTopItems,
+                  translations: {},
+                };
+                openCategory(myItemsCat);
+              }}
+              onMouseEnter={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1.06)"); }}
+              onMouseLeave={e => { (e.currentTarget.querySelector(".cat-bg") as HTMLElement | null)?.style && ((e.currentTarget.querySelector(".cat-bg") as HTMLElement).style.transform = "scale(1)"); }}
+              style={{
+                position: "relative", height: 90, borderRadius: 18, overflow: "hidden",
+                cursor: "pointer", marginBottom: 4,
+                boxShadow: "0 4px 24px rgba(197,168,128,0.22), 0 0 0 1.5px rgba(197,168,128,0.35)",
+                transition: "box-shadow 200ms",
+              }}
+            >
+              <div className="cat-bg" style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(135deg, #1a1200 0%, #2d2000 60%, #1a1200 100%)",
+                transition: "transform 350ms ease",
+              }} />
+              {/* subtle shimmer */}
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(120deg, transparent 30%, rgba(197,168,128,0.07) 50%, transparent 70%)",
+              }} />
+              <div style={{
+                position: "absolute", inset: 0,
+                display: "flex", alignItems: "center",
+                padding: "0 24px", gap: 14,
+              }}>
+                <span style={{ fontSize: 26, flexShrink: 0 }}>❤️</span>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: "#C5A880", letterSpacing: "0.03em", marginBottom: 2 }}>
+                    המנות שלי
+                  </h3>
+                  <p style={{ color: "rgba(197,168,128,0.6)", fontSize: 12, fontWeight: 300 }}>
+                    {memberTopItems.slice(0, 3).map(i => getItemName(i, lang)).join(" · ")}
+                    {memberTopItems.length > 3 ? ` +${memberTopItems.length - 3}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                position: "absolute", top: "50%", transform: "translateY(-50%)",
+                ...(t.dir === "rtl" ? { left: 20 } : { right: 20 }),
+                color: "rgba(197,168,128,0.6)", fontSize: 18,
+              }}>
+                {t.dir === "rtl" ? "‹" : "›"}
+              </div>
+            </div>
+          )}
+
           {/* Filtered categories */}
           {(() => {
             const q = catSearch.trim().toLowerCase();
@@ -1459,7 +1533,10 @@ export default function MenuElegantClient({
       {elegantView === "items" && selectedCat && (
         <section style={{ padding: "24px 16px", maxWidth: 540, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
-            <h2 style={{ fontSize: 24, fontWeight: 300, letterSpacing: "0.03em" }}>{getCatName(selectedCat, lang)}</h2>
+            <h2 style={{ fontSize: 24, fontWeight: 300, letterSpacing: "0.03em", display: "flex", alignItems: "center", gap: 8 }}>
+              {selectedCat.id === "__my-items__" && <span style={{ fontSize: 20 }}>❤️</span>}
+              {getCatName(selectedCat, lang)}
+            </h2>
             <span style={{ fontSize: 11, background: "#1F1F1F", border: "1px solid rgba(197,168,128,0.2)",
               color: "#C5A880", padding: "5px 12px", borderRadius: 20, fontWeight: 500 }}>
               {selectedCat.items.filter(i => i.isActive !== false).length} {lang === "he" ? "מנות" : lang === "en" ? "dishes" : lang === "ru" ? "блюд" : "plats"}
