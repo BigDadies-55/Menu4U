@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-// Simple in-memory OTP store (resets on server restart, good enough for restaurant use)
-const otpStore = new Map<string, { code: string; expires: number; email: string }>();
+// In-memory OTP store (resets on server restart)
+const otpStore = new Map<string, { code: string; expires: number; email: string; sendCount: number }>();
 
 export async function POST(req: Request, { params }: { params: Promise<{ restaurantId: string }> }) {
   const { restaurantId } = await params;
@@ -12,12 +12,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "invalid email" }, { status: 400 });
     }
-    // Generate 6-digit code
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const key = `${restaurantId}:${email}`;
-    otpStore.set(key, { code: otp, expires: Date.now() + 10 * 60 * 1000, email });
 
-    // Send email via the existing email mechanism
+    const key = `${restaurantId}:${email}`;
+    const existing = otpStore.get(key);
+    const sendCount = existing?.sendCount ?? 0;
+
+    if (sendCount >= 4) {
+      return NextResponse.json({ error: "max_attempts" }, { status: 429 });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    otpStore.set(key, { code: otp, expires: Date.now() + 10 * 60 * 1000, email, sendCount: sendCount + 1 });
+
     try {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
@@ -38,13 +44,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
       });
     } catch (e) {
       console.error("Email send error:", e);
-      // In development, log the OTP
       if (process.env.NODE_ENV !== "production") {
         console.log(`[OTP DEV] ${email}: ${otp}`);
+        // In dev, still return ok so UI works without real email
+        return NextResponse.json({ ok: true, sendCount: sendCount + 1 });
       }
+      return NextResponse.json({ error: "email_failed" }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, sendCount: sendCount + 1 });
   }
 
   if (action === "verify") {

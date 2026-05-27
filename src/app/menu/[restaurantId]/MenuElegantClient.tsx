@@ -228,6 +228,7 @@ export default function MenuElegantClient({
   const [clubEmailVerified, setClubEmailVerified] = useState(false);
   const [clubOtpSending, setClubOtpSending] = useState(false);
   const [clubOtpSent, setClubOtpSent] = useState(false);
+  const [clubOtpSendCount, setClubOtpSendCount] = useState(0);
   const [clubWelcomeBackName, setClubWelcomeBackName] = useState("");
   const [clubWelcomeBonus, setClubWelcomeBonus] = useState(0);
 
@@ -742,16 +743,29 @@ export default function MenuElegantClient({
 
   async function handleSendEmailOtp() {
     if (!clubForm.email || !clubForm.email.includes("@")) return;
+    if (clubOtpSendCount >= 4) return;
     setClubOtpSending(true);
     setClubError("");
     try {
-      await fetch(`/api/loyalty/${restaurant.id}/verify-email`, {
+      const res = await fetch(`/api/loyalty/${restaurant.id}/verify-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "send", email: clubForm.email }),
       });
-      setClubOtpSent(true);
-    } catch {}
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.error === "max_attempts") {
+          setClubOtpSendCount(4);
+        } else {
+          setClubError("שגיאה בשליחת הקוד. נסה שנית.");
+        }
+      } else {
+        setClubOtpSendCount(data.sendCount ?? clubOtpSendCount + 1);
+        setClubOtpSent(true);
+      }
+    } catch {
+      setClubError("שגיאה בשליחת הקוד. בדוק חיבור לאינטרנט.");
+    }
     setClubOtpSending(false);
   }
 
@@ -1105,6 +1119,7 @@ export default function MenuElegantClient({
           clubEmailVerified={clubEmailVerified}
           clubOtpSending={clubOtpSending}
           clubOtpSent={clubOtpSent}
+          clubOtpSendCount={clubOtpSendCount}
           clubWelcomeBackName={clubWelcomeBackName}
           clubWelcomeBonus={clubWelcomeBonus}
           loyaltyMember={loyaltyMember}
@@ -2395,6 +2410,7 @@ function ClubWelcomeScreen({
   clubEmailVerified,
   clubOtpSending,
   clubOtpSent,
+  clubOtpSendCount,
   clubWelcomeBackName,
   clubWelcomeBonus,
   loyaltyMember,
@@ -2423,6 +2439,7 @@ function ClubWelcomeScreen({
   clubEmailVerified: boolean;
   clubOtpSending: boolean;
   clubOtpSent: boolean;
+  clubOtpSendCount: number;
   clubWelcomeBackName: string;
   clubWelcomeBonus: number;
   loyaltyMember: LoyaltyMemberData | null;
@@ -2442,6 +2459,19 @@ function ClubWelcomeScreen({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 60-second cooldown between OTP sends
+  const [resendCooldown, setResendCooldown] = useState(0);
+  useEffect(() => {
+    if (clubOtpSent && resendCooldown === 0) {
+      setResendCooldown(60);
+    }
+  }, [clubOtpSent]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
@@ -2653,7 +2683,7 @@ function ClubWelcomeScreen({
                   style={{ ...inputStyle, flex: 1, textAlign: "right" }}
                   disabled={clubEmailVerified}
                 />
-                {clubForm.email && clubForm.email.includes("@") && !clubEmailVerified && !clubOtpSent && (
+                {clubForm.email && clubForm.email.includes("@") && !clubEmailVerified && !clubOtpSent && clubOtpSendCount < 4 && (
                   <button
                     onClick={handleSendEmailOtp}
                     disabled={clubOtpSending}
@@ -2677,13 +2707,30 @@ function ClubWelcomeScreen({
               </div>
             </div>
 
+            {/* Max attempts reached — no OTP input shown */}
+            {clubOtpSendCount >= 4 && !clubEmailVerified && (
+              <div style={{
+                background: "rgba(239,68,68,0.12)", color: "#fca5a5",
+                borderRadius: 10, padding: "14px 16px",
+                fontSize: 13, marginBottom: 14, textAlign: "center", lineHeight: 1.6,
+              }}>
+                לא הצלחנו לשלוח את הקוד לאחר 4 ניסיונות.<br />
+                📞 פנה להנהלת המסעדה לתמיכה.
+              </div>
+            )}
+
             {/* Inline OTP verification */}
-            {clubOtpSent && !clubEmailVerified && (
+            {clubOtpSent && !clubEmailVerified && clubOtpSendCount < 4 && (
               <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 12, color: "#d4cdc7", marginBottom: 6, fontWeight: 600 }}>
-                  קוד אימות (נשלח לאימייל)
-                </label>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <label style={{ fontSize: 12, color: "#d4cdc7", fontWeight: 600 }}>
+                    קוד אימות (נשלח לאימייל)
+                  </label>
+                  <span style={{ fontSize: 11, color: "rgba(197,168,128,0.6)" }}>
+                    ניסיון {clubOtpSendCount} מתוך 4
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -2713,6 +2760,28 @@ function ClubWelcomeScreen({
                   >
                     אמת
                   </button>
+                </div>
+                {/* Resend button */}
+                <div style={{ textAlign: "center" }}>
+                  {resendCooldown > 0 ? (
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+                      שלח שוב בעוד {resendCooldown} שניות
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => { setResendCooldown(60); handleSendEmailOtp(); }}
+                      disabled={clubOtpSending}
+                      style={{
+                        background: "none", border: "none",
+                        color: "#C5A880", fontSize: 13,
+                        cursor: clubOtpSending ? "not-allowed" : "pointer",
+                        textDecoration: "underline",
+                        fontFamily: "var(--font-rubik, 'Rubik', sans-serif)",
+                      }}
+                    >
+                      {clubOtpSending ? "שולח..." : "שלח שוב"}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
