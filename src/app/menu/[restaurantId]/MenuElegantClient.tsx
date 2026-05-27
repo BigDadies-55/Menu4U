@@ -142,6 +142,8 @@ type LoyaltyCoupon = {
   usedAt: string | null;
 };
 
+type TopItem = { itemId: string; name: string; total: number };
+
 type LoyaltyMemberData = {
   id: string;
   name: string;
@@ -152,6 +154,7 @@ type LoyaltyMemberData = {
   createdAt: string;
   transactions: LoyaltyTransaction[];
   coupons: LoyaltyCoupon[];
+  topItems?: TopItem[];
 };
 
 type CartModifier = { groupName: string; label: string; priceAdd: number };
@@ -401,18 +404,20 @@ export default function MenuElegantClient({
     setLoyaltyLoading(true);
     setLoyaltyNotFound(false);
     try {
-      const [res, settingsRes] = await Promise.all([
+      const [res, settingsRes, topRes] = await Promise.all([
         fetch(`/api/loyalty/${restaurant.id}/member?phone=${encodeURIComponent(phone)}`),
         fetch(`/api/loyalty/${restaurant.id}/settings`),
+        fetch(`/api/loyalty/${restaurant.id}/top-items?phone=${encodeURIComponent(phone)}`),
       ]);
       if (settingsRes.ok) {
         const s = await settingsRes.json();
         setLoyaltySettings(s);
       }
+      const topItems: TopItem[] = topRes.ok ? await topRes.json() : [];
       if (res.ok) {
         const data = await res.json();
         if (data) {
-          setLoyaltyMember(data);
+          setLoyaltyMember({ ...data, topItems });
           setLoyaltyNotFound(false);
         } else {
           setLoyaltyMember(null);
@@ -2392,6 +2397,30 @@ export default function MenuElegantClient({
                     </div>
                   </div>
                 </div>
+
+                {/* Top items */}
+                {loyaltyMember.topItems && loyaltyMember.topItems.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>
+                      המנות שלי
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {loyaltyMember.topItems.map((item, i) => (
+                        <div key={item.itemId} style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          background: i === 0 ? "rgba(197,168,128,0.15)" : "rgba(255,255,255,0.05)",
+                          border: `1px solid ${i === 0 ? "rgba(197,168,128,0.4)" : "rgba(255,255,255,0.1)"}`,
+                          borderRadius: 20, padding: "5px 12px 5px 8px",
+                          fontSize: 13, color: i === 0 ? "#C5A880" : "rgba(255,255,255,0.65)",
+                        }}>
+                          <span style={{ fontSize: 11 }}>{i === 0 ? "❤️" : "🍽"}</span>
+                          <span>{item.name}</span>
+                          <span style={{ fontSize: 11, opacity: 0.55 }}>×{item.total}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Recent transactions */}
                 {loyaltyMember.transactions.length > 0 && (
