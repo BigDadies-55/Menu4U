@@ -608,9 +608,9 @@ export default function MenuElegantClient({
   }, [modalItem, elegantView, cartOpen, myOrdersOpen]);
 
   useEffect(() => {
-    document.body.style.overflow = (modalItem || cartOpen || myOrdersOpen) ? "hidden" : "";
+    document.body.style.overflow = (modalItem || cartOpen || myOrdersOpen || showLoyalty) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [modalItem, cartOpen, myOrdersOpen]);
+  }, [modalItem, cartOpen, myOrdersOpen, showLoyalty]);
 
   useEffect(() => {
     document.documentElement.dir = t.dir;
@@ -761,7 +761,7 @@ export default function MenuElegantClient({
           setClubWelcomeBackName(member.name);
           setClubWelcomeBonus(member.points);
           setClubStep("welcome_back");
-          setTimeout(() => { elegantNavigateTo("categories"); setShowLoyalty(true); }, 2500);
+          setTimeout(() => { elegantNavigateTo("categories"); }, 2500);
         }
       }
     } catch {}
@@ -787,7 +787,7 @@ export default function MenuElegantClient({
           setClubWelcomeBackName(member.name);
           setClubWelcomeBonus(member.points);
           setClubStep("welcome_back");
-          setTimeout(() => { elegantNavigateTo("categories"); setShowLoyalty(true); }, 2500);
+          setTimeout(() => { elegantNavigateTo("categories"); }, 2500);
         } else {
           setClubError("לא מצאנו חבר עם הטלפון הזה");
         }
@@ -830,7 +830,7 @@ export default function MenuElegantClient({
         setClubWelcomeBonus(member.points);
         setClubWelcomeBackName(member.name);
         setClubStep("welcome_back");
-        setTimeout(() => { elegantNavigateTo("categories"); setShowLoyalty(true); }, 3000);
+        setTimeout(() => { elegantNavigateTo("categories"); }, 3000);
       } else {
         setClubError(data.error || "שגיאה בהרשמה");
       }
@@ -1759,21 +1759,134 @@ export default function MenuElegantClient({
         </button>
       )}
 
-      {/* ── Floating club button (non-members on categories/items) ── */}
-      {!loyaltyMember && (elegantView === "categories" || elegantView === "items") && (
-        <button onClick={() => { setClubStep("promo"); elegantNavigateTo("clubwelcome"); }}
-          style={{
-            position: "fixed", bottom: 24, left: 16, zIndex: 60,
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-            padding: "12px 16px 10px", borderRadius: 18,
-            background: "linear-gradient(135deg, #C5A880 0%, #dfc090 100%)", color: "#0D0D0D",
-            border: "none", fontWeight: 700, fontSize: 11,
-            cursor: "pointer", boxShadow: "0 6px 28px rgba(197,168,128,0.35)",
-            maxWidth: 130, textAlign: "center", lineHeight: 1.35,
-          }}>
-          <span style={{ fontSize: 20 }}>⭐</span>
-          הצטרף למועדון
-        </button>
+      {/* ── Floating action icons (categories / items views) ── */}
+      {(elegantView === "categories" || elegantView === "items") && (
+        <div style={{
+          position: "fixed", bottom: 24, left: 16, zIndex: 60,
+          display: "flex", flexDirection: "row", alignItems: "center",
+          gap: 8, flexWrap: "wrap", maxWidth: 220,
+        }}>
+          {/* Loyalty star */}
+          <button
+            onClick={() => {
+              if (loyaltyMember) { setShowLoyalty(true); }
+              else { setClubStep("promo"); elegantNavigateTo("clubwelcome"); }
+            }}
+            aria-label={loyaltyMember ? "כרטיס המועדון שלי" : "הצטרף למועדון"}
+            style={{
+              width: 44, height: 44, borderRadius: "50%", border: "none",
+              background: loyaltyMember
+                ? "linear-gradient(135deg, #C5A880, #dfc090)"
+                : "rgba(197,168,128,0.18)",
+              backdropFilter: "blur(8px)",
+              boxShadow: loyaltyMember
+                ? "0 4px 18px rgba(197,168,128,0.45)"
+                : "0 2px 12px rgba(0,0,0,0.45)",
+              cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "transform 150ms",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke={loyaltyMember ? "#0D0D0D" : "#C5A880"}
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </button>
+
+          {/* WhatsApp */}
+          {restaurant.phone && restaurant.showPhonePublic !== false && (
+            <a href={`https://wa.me/${restaurant.phone.replace(/\D/g, "")}`}
+              target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "rgba(37,211,102,0.18)", backdropFilter: "blur(8px)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                textDecoration: "none", transition: "transform 150ms",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12.004 2C6.477 2 2 6.484 2 12.017c0 1.99.52 3.86 1.428 5.484L2 22l4.619-1.401A9.956 9.956 0 0 0 12.004 22C17.523 22 17.523 17.516 22 11.983 22 6.478 17.523 2 12.004 2zm0 18.044a8.04 8.04 0 0 1-4.217-1.195l-.302-.18-3.13.95.922-3.046-.197-.312A8.029 8.029 0 0 1 3.972 12c0-4.42 3.602-8.016 8.032-8.016 4.428 0 8.03 3.596 8.03 8.016 0 4.423-3.602 8.044-8.03 8.044z"/>
+              </svg>
+            </a>
+          )}
+
+          {/* Instagram */}
+          {restaurant.instagram && (
+            <a href={restaurant.instagram.startsWith("http") ? restaurant.instagram : `https://instagram.com/${restaurant.instagram}`}
+              target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                backdropFilter: "blur(8px)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                textDecoration: "none", transition: "transform 150ms",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}>
+              <svg width="30" height="30" viewBox="0 0 24 24">
+                <defs>
+                  <radialGradient id="igFab" cx="30%" cy="107%" r="150%">
+                    <stop offset="0%" stopColor="#fdf497"/>
+                    <stop offset="45%" stopColor="#fd5949"/>
+                    <stop offset="60%" stopColor="#d6249f"/>
+                    <stop offset="90%" stopColor="#285AEB"/>
+                  </radialGradient>
+                </defs>
+                <rect width="24" height="24" rx="6" fill="url(#igFab)"/>
+                <circle cx="12" cy="12" r="4.2" fill="none" stroke="white" strokeWidth="1.8"/>
+                <circle cx="17.2" cy="6.8" r="1.1" fill="white"/>
+              </svg>
+            </a>
+          )}
+
+          {/* Facebook */}
+          {restaurant.facebook && (
+            <a href={restaurant.facebook.startsWith("http") ? restaurant.facebook : `https://facebook.com/${restaurant.facebook}`}
+              target="_blank" rel="noopener noreferrer" aria-label="Facebook"
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                backdropFilter: "blur(8px)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                textDecoration: "none", transition: "transform 150ms",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}>
+              <svg width="30" height="30" viewBox="0 0 24 24">
+                <rect width="24" height="24" rx="6" fill="#1877F2"/>
+                <path fill="white" d="M16.5 8h-2c-.55 0-1 .45-1 1v1.5h3l-.4 2.5H13.5V19h-2.5v-6H9v-2.5h2V9c0-1.93 1.57-3.5 3.5-3.5h2V8z"/>
+              </svg>
+            </a>
+          )}
+
+          {/* Google Review */}
+          {restaurant.googleReview && (
+            <a href={restaurant.googleReview} target="_blank" rel="noopener noreferrer" aria-label="Google Review"
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                textDecoration: "none", transition: "transform 150ms",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}>
+              <svg width="22" height="22" viewBox="0 0 24 24">
+                <rect width="24" height="24" rx="6" fill="white"/>
+                <path fill="#4285F4" d="M21.35 11.1H12v2.8h5.35c-.23 1.24-.95 2.29-2.02 2.99v2.48h3.27c1.91-1.76 3.01-4.35 3.01-7.46 0-.68-.06-1.34-.26-1.81z"/>
+                <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.27-2.48c-.9.6-2.04.96-3.34.96-2.57 0-4.75-1.73-5.53-4.07H3.1v2.56C4.74 19.98 8.13 22 12 22z"/>
+                <path fill="#FBBC05" d="M6.47 13.98A5.85 5.85 0 0 1 6.16 12c0-.69.12-1.36.31-1.98V7.46H3.1A9.99 9.99 0 0 0 2 12c0 1.62.39 3.14 1.1 4.48l3.37-2.5z"/>
+                <path fill="#EA4335" d="M12 6.04c1.45 0 2.75.5 3.77 1.47l2.82-2.82C16.96 3.07 14.7 2 12 2 8.13 2 4.74 4.02 3.1 7.1l3.37 2.52C7.25 7.77 9.43 6.04 12 6.04z"/>
+              </svg>
+            </a>
+          )}
+        </div>
       )}
 
       {/* ── Item Modal (slides up) ── */}
@@ -2390,22 +2503,24 @@ export default function MenuElegantClient({
           style={{
             position: "fixed", inset: 0, zIndex: 80,
             background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
-            display: "flex", alignItems: "flex-end", justifyContent: "center",
           }}
           onClick={e => { if (e.target === e.currentTarget) setShowLoyalty(false); }}
         >
           <div style={{
+            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
             width: "min(480px, 100vw)",
             background: "#111",
             borderRadius: "20px 20px 0 0",
-            padding: "24px 24px max(24px, env(safe-area-inset-bottom, 24px))",
+            paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))",
             border: "1px solid rgba(197,168,128,0.2)",
             borderBottom: "none",
             boxShadow: "0 -20px 60px rgba(0,0,0,0.7)",
             maxHeight: "85vh",
             overflowY: "auto",
+            overscrollBehavior: "contain",
             direction: "rtl",
           }}>
+            <div style={{ padding: "24px 24px 0" }}>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2752,6 +2867,7 @@ export default function MenuElegantClient({
                 </div>
               </div>
             )}
+            </div>{/* end padding wrapper */}
           </div>
         </div>
       )}
