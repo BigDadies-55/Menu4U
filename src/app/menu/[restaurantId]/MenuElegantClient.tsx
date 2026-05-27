@@ -1073,10 +1073,22 @@ export default function MenuElegantClient({
                   {restaurant.instagram && (
                     <a href={restaurant.instagram.startsWith("http") ? restaurant.instagram : `https://instagram.com/${restaurant.instagram}`}
                       target="_blank" rel="noopener noreferrer" aria-label="Instagram"
-                      style={btnStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#igGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <defs><linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stopColor="#f09433"/><stop offset="50%" stopColor="#dc2743"/><stop offset="100%" stopColor="#bc1888"/></linearGradient></defs>
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                      style={{ width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0, transition: "transform 150ms" }}
+                      onMouseEnter={onEnter} onMouseLeave={onLeave}>
+                      <svg width="36" height="36" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                          <radialGradient id="igBg" cx="30%" cy="107%" r="150%">
+                            <stop offset="0%" stopColor="#fdf497"/>
+                            <stop offset="5%" stopColor="#fdf497"/>
+                            <stop offset="45%" stopColor="#fd5949"/>
+                            <stop offset="60%" stopColor="#d6249f"/>
+                            <stop offset="90%" stopColor="#285AEB"/>
+                          </radialGradient>
+                        </defs>
+                        <rect width="24" height="24" rx="6" fill="url(#igBg)"/>
+                        <rect x="2.5" y="2.5" width="19" height="19" rx="4.5" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
+                        <circle cx="12" cy="12" r="4.2" fill="none" stroke="white" strokeWidth="1.8"/>
+                        <circle cx="17.2" cy="6.8" r="1.1" fill="white"/>
                       </svg>
                     </a>
                   )}
@@ -1085,19 +1097,24 @@ export default function MenuElegantClient({
                   {restaurant.facebook && (
                     <a href={restaurant.facebook.startsWith("http") ? restaurant.facebook : `https://facebook.com/${restaurant.facebook}`}
                       target="_blank" rel="noopener noreferrer" aria-label="Facebook"
-                      style={btnStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+                      style={{ width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0, transition: "transform 150ms" }}
+                      onMouseEnter={onEnter} onMouseLeave={onLeave}>
+                      <svg width="36" height="36" viewBox="0 0 24 24">
+                        <rect width="24" height="24" rx="6" fill="#1877F2"/>
+                        <path fill="white" d="M16.5 8h-2c-.55 0-1 .45-1 1v1.5h3l-.4 2.5H13.5V19h-2.5v-6H9v-2.5h2V9c0-1.93 1.57-3.5 3.5-3.5h2V8z"/>
+                      </svg>
                     </a>
                   )}
 
-                  {/* WhatsApp business (separate from main phone) */}
+                  {/* WhatsApp business */}
                   {restaurant.whatsapp && (
                     <a href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, "")}`}
                       target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
-                      style={btnStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                        <path d="M12.004 2C6.477 2 2 6.484 2 12.017c0 1.99.52 3.86 1.428 5.484L2 22l4.619-1.401A9.956 9.956 0 0 0 12.004 22C17.523 22 22 17.516 22 11.983 22 6.478 17.523 2 12.004 2zm0 18.044a8.04 8.04 0 0 1-4.217-1.195l-.302-.18-3.13.95.922-3.046-.197-.312A8.029 8.029 0 0 1 3.972 12c0-4.42 3.602-8.016 8.032-8.016 4.428 0 8.03 3.596 8.03 8.016 0 4.423-3.602 8.044-8.03 8.044z"/>
+                      style={{ width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0, transition: "transform 150ms" }}
+                      onMouseEnter={onEnter} onMouseLeave={onLeave}>
+                      <svg width="36" height="36" viewBox="0 0 24 24">
+                        <rect width="24" height="24" rx="6" fill="#25D366"/>
+                        <path fill="white" d="M12 4.5A7.5 7.5 0 0 0 5.8 16.2L4.5 19.5l3.4-1.3A7.5 7.5 0 1 0 12 4.5zm4.3 9.7c-.18.5-1.05.97-1.45 1.02-.37.05-.84.07-1.35-.09-.31-.1-.71-.24-1.22-.47-2.14-.93-3.54-3.1-3.65-3.24-.1-.15-.85-1.13-.85-2.16 0-1.02.54-1.52.73-1.73.18-.2.4-.25.53-.25h.38c.12 0 .29.05.45.34.18.32.6 1.47.65 1.58.06.1.1.23.02.37-.07.14-.11.22-.22.34l-.33.38c-.11.11-.22.23-.1.45.13.22.57.94 1.22 1.52.84.75 1.55.98 1.77 1.09.22.1.35.08.47-.05.14-.15.58-.68.73-.91.15-.23.3-.19.5-.11.2.07 1.27.6 1.49.71.22.1.37.16.42.25.06.09.06.52-.12 1.02z"/>
                       </svg>
                     </a>
                   )}
@@ -1105,19 +1122,26 @@ export default function MenuElegantClient({
                   {/* TripAdvisor */}
                   {restaurant.tripadvisor && (
                     <a href={restaurant.tripadvisor} target="_blank" rel="noopener noreferrer" aria-label="TripAdvisor"
-                      style={{ ...btnStyle, fontSize: 22, lineHeight: 1 }}
-                      onMouseEnter={onEnter} onMouseLeave={onLeave}>🦉</a>
+                      style={{ width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0, transition: "transform 150ms" }}
+                      onMouseEnter={onEnter} onMouseLeave={onLeave}>
+                      <svg width="36" height="36" viewBox="0 0 24 24">
+                        <rect width="24" height="24" rx="6" fill="#00AF87"/>
+                        <path fill="white" d="M12 5.5c-2.35 0-4.46.84-6.1 2.22L4 7.5l1.92.19A6.47 6.47 0 0 0 12 18.5a6.47 6.47 0 0 0 6.08-10.81L20 7.5l-1.9.22A8.44 8.44 0 0 0 12 5.5zm-3 6.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zm6 0a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zm-3 3.5a3.5 3.5 0 0 1-3.5-3.5 3.5 3.5 0 0 1 3.5-3.5 3.5 3.5 0 0 1 3.5 3.5A3.5 3.5 0 0 1 12 15.5z"/>
+                      </svg>
+                    </a>
                   )}
 
                   {/* Google Review */}
                   {restaurant.googleReview && (
                     <a href={restaurant.googleReview} target="_blank" rel="noopener noreferrer" aria-label="Google Review"
-                      style={btnStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
-                      <svg width="22" height="22" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      style={{ width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0, transition: "transform 150ms" }}
+                      onMouseEnter={onEnter} onMouseLeave={onLeave}>
+                      <svg width="36" height="36" viewBox="0 0 24 24">
+                        <rect width="24" height="24" rx="6" fill="white"/>
+                        <path fill="#4285F4" d="M21.35 11.1H12v2.8h5.35c-.23 1.24-.95 2.29-2.02 2.99v2.48h3.27c1.91-1.76 3.01-4.35 3.01-7.46 0-.68-.06-1.34-.26-1.81z"/>
+                        <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.27-2.48c-.9.6-2.04.96-3.34.96-2.57 0-4.75-1.73-5.53-4.07H3.1v2.56C4.74 19.98 8.13 22 12 22z"/>
+                        <path fill="#FBBC05" d="M6.47 13.98A5.85 5.85 0 0 1 6.16 12c0-.69.12-1.36.31-1.98V7.46H3.1A9.99 9.99 0 0 0 2 12c0 1.62.39 3.14 1.1 4.48l3.37-2.5z"/>
+                        <path fill="#EA4335" d="M12 6.04c1.45 0 2.75.5 3.77 1.47l2.82-2.82C16.96 3.07 14.7 2 12 2 8.13 2 4.74 4.02 3.1 7.1l3.37 2.52C7.25 7.77 9.43 6.04 12 6.04z"/>
                       </svg>
                     </a>
                   )}
