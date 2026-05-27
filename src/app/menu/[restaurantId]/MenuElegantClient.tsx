@@ -711,8 +711,8 @@ export default function MenuElegantClient({
         body: JSON.stringify({
           tableNumber: tableNumber || "",
           items: cart.map(c => ({ itemId: c.itemId, quantity: c.quantity, notes: c.notes || null, modifiers: c.modifiers ?? [] })),
-          customerName: guestIdentity?.name || "",
-          customerPhone: guestIdentity?.phone || "",
+          customerName: guestIdentity?.name || loyaltyMember?.name || "",
+          customerPhone: guestIdentity?.phone || loyaltyMember?.phone || "",
           notes: "",
         }),
       });
@@ -1798,15 +1798,20 @@ export default function MenuElegantClient({
             </div>
 
             {/* Table + guest */}
-            {tableNumber && (
+            {(tableNumber || guestIdentity || loyaltyMember) && (
               <div style={{
                 padding: "8px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)",
                 fontSize: 13, color: "#fff", opacity: 0.8,
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
-                <span>{t.tableLabel}: <strong style={{ color: "#C5A880" }}>{tableNumber}</strong></span>
-                {guestIdentity && (
-                  <span style={{ fontSize: 12, color: "#C5A880" }}>👤 {guestIdentity.name}</span>
+                {tableNumber
+                  ? <span>{t.tableLabel}: <strong style={{ color: "#C5A880" }}>{tableNumber}</strong></span>
+                  : <span />
+                }
+                {(guestIdentity || loyaltyMember) && (
+                  <span style={{ fontSize: 13, color: "#C5A880", fontWeight: 600 }}>
+                    👤 {guestIdentity?.name || loyaltyMember?.name}
+                  </span>
                 )}
               </div>
             )}
