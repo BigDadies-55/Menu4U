@@ -9,13 +9,15 @@ export async function POST(
   const { restaurantId } = await params;
 
   // Inline migrations
-  await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`);
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "OrderCounter" (
-      "restaurantId" TEXT PRIMARY KEY,
-      "counter"      INTEGER NOT NULL DEFAULT 0
-    )
-  `);
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`),
+    prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "OrderCounter" ("restaurantId" TEXT PRIMARY KEY, "counter" INTEGER NOT NULL DEFAULT 0)`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyMemberId" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyMemberName" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyDiscountType" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyDiscountAmount" DOUBLE PRECISION`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyCouponId" TEXT`),
+  ]);
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId, isActive: true, ordersEnabled: true },
