@@ -139,6 +139,8 @@ export default function LoyaltyClient({
   const [smsMessage, setSmsMessage] = useState("");
   const [smsLoading, setSmsLoading] = useState(false);
   const [smsResult, setSmsResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [smsTarget, setSmsTarget] = useState<"all" | "selected">("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const SMS_MAX = 70;
 
   // Settings form
@@ -176,20 +178,28 @@ export default function LoyaltyClient({
 
   async function handleSmsBroadcast() {
     if (!smsMessage.trim() || smsMessage.length > SMS_MAX) return;
-    if (!confirm(`שלח SMS ל-${members.length} חברי מועדון?`)) return;
+    const targets = smsTarget === "selected"
+      ? members.filter(m => selectedIds.has(m.id))
+      : members;
+    if (targets.length === 0) return;
+    if (!confirm(`שלח SMS ל-${targets.length} חברים?`)) return;
     setSmsLoading(true);
     setSmsResult(null);
     try {
       const res = await fetch(`/api/admin/loyalty/sms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId: selectedRestaurantId, message: smsMessage.trim() }),
+        body: JSON.stringify({
+          restaurantId: selectedRestaurantId,
+          message: smsMessage.trim(),
+          memberIds: smsTarget === "selected" ? [...selectedIds] : null,
+        }),
       });
       const data = await res.json();
       setSmsResult({ sent: data.sent ?? 0, failed: data.failed ?? 0 });
-      if (data.sent > 0) setSmsMessage("");
+      if (data.sent > 0) { setSmsMessage(""); setSelectedIds(new Set()); }
     } catch {
-      setSmsResult({ sent: 0, failed: members.length });
+      setSmsResult({ sent: 0, failed: targets.length });
     } finally {
       setSmsLoading(false);
     }
@@ -362,9 +372,29 @@ export default function LoyaltyClient({
             {/* SMS Broadcast */}
             <div style={{ ...CARD, marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>📱 שליחת SMS לכל חברי המועדון</div>
-                <div style={{ fontSize: 12, color: "#6c757d" }}>{members.length} נמענים</div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>📱 שליחת SMS</div>
+                {/* Target toggle */}
+                <div style={{ display: "flex", background: "#1a1d23", borderRadius: 8, padding: 3, gap: 2 }}>
+                  {(["all", "selected"] as const).map(t => (
+                    <button key={t} type="button"
+                      onClick={() => setSmsTarget(t)}
+                      style={{
+                        padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        background: smsTarget === t ? "#c9a84c" : "transparent",
+                        color: smsTarget === t ? "#000" : "#6c757d",
+                      }}>
+                      {t === "all" ? `לכולם (${members.length})` : `לנבחרים (${selectedIds.size})`}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {smsTarget === "selected" && selectedIds.size === 0 && (
+                <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 10 }}>
+                  ⚠️ בחר חברים מהטבלה למטה
+                </div>
+              )}
+
               <div style={{ position: "relative" }}>
                 <textarea
                   value={smsMessage}
@@ -401,18 +431,16 @@ export default function LoyaltyClient({
                   {smsResult.failed > 0 && ` · ${smsResult.failed} נכשלו`}
                 </div>
               )}
-              <button
-                onClick={handleSmsBroadcast}
-                disabled={smsLoading || !smsMessage.trim() || members.length === 0}
-                style={{
-                  ...BTN_PRIMARY,
-                  marginTop: 12,
-                  opacity: (smsLoading || !smsMessage.trim() || members.length === 0) ? 0.5 : 1,
-                  cursor: (smsLoading || !smsMessage.trim() || members.length === 0) ? "not-allowed" : "pointer",
-                }}
-              >
-                {smsLoading ? "שולח..." : `📤 שלח SMS ל-${members.length} חברים`}
-              </button>
+              {(() => {
+                const count = smsTarget === "selected" ? selectedIds.size : members.length;
+                const disabled = smsLoading || !smsMessage.trim() || count === 0;
+                return (
+                  <button onClick={handleSmsBroadcast} disabled={disabled}
+                    style={{ ...BTN_PRIMARY, marginTop: 12, opacity: disabled ? 0.5 : 1, cursor: disabled ? "not-allowed" : "pointer" }}>
+                    {smsLoading ? "שולח..." : `📤 שלח ל-${count} חברים`}
+                  </button>
+                );
+              })()}
             </div>
 
             {/* Search */}
@@ -431,6 +459,18 @@ export default function LoyaltyClient({
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#1a1d23", borderBottom: "1px solid #2d3239" }}>
+                    <th style={{ padding: "12px 14px", width: 36 }}>
+                      <input type="checkbox"
+                        checked={filteredMembers.length > 0 && filteredMembers.every(m => selectedIds.has(m.id))}
+                        onChange={e => {
+                          const next = new Set(selectedIds);
+                          filteredMembers.forEach(m => e.target.checked ? next.add(m.id) : next.delete(m.id));
+                          setSelectedIds(next);
+                          if (next.size > 0) setSmsTarget("selected");
+                        }}
+                        style={{ cursor: "pointer", width: 15, height: 15 }}
+                      />
+                    </th>
                     {["שם", "טלפון", "מס' חבר", "נקודות", "הצטרף", "פעולות"].map(h => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: "#6c757d", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {h}
@@ -451,12 +491,27 @@ export default function LoyaltyClient({
                       key={m.id}
                       style={{
                         borderBottom: "1px solid #2d3239",
-                        background: selectedMember?.id === m.id ? "rgba(201,168,76,0.08)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+                        background: selectedIds.has(m.id)
+                          ? "rgba(201,168,76,0.06)"
+                          : selectedMember?.id === m.id ? "rgba(201,168,76,0.08)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                         cursor: "pointer",
                         transition: "background 150ms",
                       }}
                       onClick={() => setSelectedMember(m)}
                     >
+                      <td style={{ padding: "12px 14px" }} onClick={e => e.stopPropagation()}>
+                        <input type="checkbox"
+                          checked={selectedIds.has(m.id)}
+                          onChange={e => {
+                            const next = new Set(selectedIds);
+                            e.target.checked ? next.add(m.id) : next.delete(m.id);
+                            setSelectedIds(next);
+                            if (next.size > 0) setSmsTarget("selected");
+                            else setSmsTarget("all");
+                          }}
+                          style={{ cursor: "pointer", width: 15, height: 15 }}
+                        />
+                      </td>
                       <td style={{ padding: "12px 16px", color: "#e9ecef", fontSize: 14, fontWeight: 500 }}>
                         {m.name}
                         {m.email && <div style={{ fontSize: 11, color: "#6c757d" }}>{m.email}</div>}

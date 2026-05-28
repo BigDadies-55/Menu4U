@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { restaurantId, message } = await req.json();
+  const { restaurantId, message, memberIds } = await req.json();
   if (!restaurantId || !message?.trim()) {
     return NextResponse.json({ error: "restaurantId and message required" }, { status: 400 });
   }
@@ -23,12 +23,19 @@ export async function POST(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Fetch all active members for this restaurant
+  // Fetch members — specific list or all
   type MemberRow = { phone: string };
-  const members = await prisma.$queryRawUnsafe<MemberRow[]>(
-    `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
-    restaurantId
-  );
+  const isFiltered = Array.isArray(memberIds) && memberIds.length > 0;
+  const members: MemberRow[] = isFiltered
+    ? await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT "phone" FROM "LoyaltyMember"
+         WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
+        restaurantId, memberIds
+      )
+    : await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
+        restaurantId
+      );
 
   if (members.length === 0) {
     return NextResponse.json({ sent: 0, failed: 0, total: 0 });
