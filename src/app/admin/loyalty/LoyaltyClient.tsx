@@ -135,6 +135,12 @@ export default function LoyaltyClient({
   const [couponExpiry, setCouponExpiry] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
 
+  // SMS broadcast
+  const [smsMessage, setSmsMessage] = useState("");
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsResult, setSmsResult] = useState<{ sent: number; failed: number } | null>(null);
+  const SMS_MAX = 70;
+
   // Settings form
   const [settingsForm, setSettingsForm] = useState<Partial<LoyaltySettings>>({});
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -167,6 +173,27 @@ export default function LoyaltyClient({
   }, [selectedRestaurantId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  async function handleSmsBroadcast() {
+    if (!smsMessage.trim() || smsMessage.length > SMS_MAX) return;
+    if (!confirm(`שלח SMS ל-${members.length} חברי מועדון?`)) return;
+    setSmsLoading(true);
+    setSmsResult(null);
+    try {
+      const res = await fetch(`/api/admin/loyalty/sms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: selectedRestaurantId, message: smsMessage.trim() }),
+      });
+      const data = await res.json();
+      setSmsResult({ sent: data.sent ?? 0, failed: data.failed ?? 0 });
+      if (data.sent > 0) setSmsMessage("");
+    } catch {
+      setSmsResult({ sent: 0, failed: members.length });
+    } finally {
+      setSmsLoading(false);
+    }
+  }
 
   const filteredMembers = members.filter(m =>
     !search ||
@@ -330,6 +357,62 @@ export default function LoyaltyClient({
                   <div style={{ fontSize: 12, color: "#6c757d", marginTop: 2 }}>{stat.label}</div>
                 </div>
               ))}
+            </div>
+
+            {/* SMS Broadcast */}
+            <div style={{ ...CARD, marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>📱 שליחת SMS לכל חברי המועדון</div>
+                <div style={{ fontSize: 12, color: "#6c757d" }}>{members.length} נמענים</div>
+              </div>
+              <div style={{ position: "relative" }}>
+                <textarea
+                  value={smsMessage}
+                  onChange={e => setSmsMessage(e.target.value.slice(0, SMS_MAX))}
+                  placeholder="כתוב הודעה... (עד 70 תווים)"
+                  rows={3}
+                  style={{
+                    ...DARK_INPUT,
+                    width: "100%",
+                    resize: "none",
+                    boxSizing: "border-box",
+                    paddingBottom: 28,
+                    fontFamily: "inherit",
+                    lineHeight: 1.5,
+                    border: `1px solid ${smsMessage.length === SMS_MAX ? "#ef4444" : "#3a3f47"}`,
+                  }}
+                />
+                <div style={{
+                  position: "absolute", bottom: 8, left: 12,
+                  fontSize: 12, fontWeight: 600,
+                  color: smsMessage.length === SMS_MAX ? "#ef4444" : smsMessage.length > 55 ? "#f59e0b" : "#6c757d",
+                }}>
+                  {smsMessage.length} / {SMS_MAX}
+                </div>
+              </div>
+              {smsResult && (
+                <div style={{
+                  marginTop: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13,
+                  background: smsResult.sent > 0 ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.08)",
+                  border: `1px solid ${smsResult.sent > 0 ? "rgba(74,222,128,0.2)" : "rgba(239,68,68,0.2)"}`,
+                  color: smsResult.sent > 0 ? "#4ade80" : "#f87171",
+                }}>
+                  {smsResult.sent > 0 && `✓ נשלח ל-${smsResult.sent} חברים`}
+                  {smsResult.failed > 0 && ` · ${smsResult.failed} נכשלו`}
+                </div>
+              )}
+              <button
+                onClick={handleSmsBroadcast}
+                disabled={smsLoading || !smsMessage.trim() || members.length === 0}
+                style={{
+                  ...BTN_PRIMARY,
+                  marginTop: 12,
+                  opacity: (smsLoading || !smsMessage.trim() || members.length === 0) ? 0.5 : 1,
+                  cursor: (smsLoading || !smsMessage.trim() || members.length === 0) ? "not-allowed" : "pointer",
+                }}
+              >
+                {smsLoading ? "שולח..." : `📤 שלח SMS ל-${members.length} חברים`}
+              </button>
             </div>
 
             {/* Search */}
