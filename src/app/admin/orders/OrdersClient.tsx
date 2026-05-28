@@ -294,7 +294,6 @@ function TableCard({
   onOrderCancel,
   onConfirmOrder,
   onDeliverOrder,
-  onShowBill,
   onFireCourse,
 }: {
   tableNumber: string;
@@ -307,7 +306,6 @@ function TableCard({
   onOrderCancel: (orderId: string) => Promise<void>;
   onConfirmOrder: (orderId: string) => Promise<void>;
   onDeliverOrder: (orderId: string) => Promise<void>;
-  onShowBill: (tableNumber: string) => void;
   onFireCourse: (orderId: string, course: number) => Promise<void>;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
@@ -353,8 +351,6 @@ function TableCard({
       for (const o of nonCancelledOrders.filter(x => x.status === "READY")) {
         await onDeliverOrder(o.id);
       }
-    } else {
-      onShowBill(tableNumber);
     }
     setActioning(false);
   }
@@ -378,7 +374,7 @@ function TableCard({
     ? { label: actioning ? "..." : "✓ אשר הכל", color: "#16a34a", disabled: actioning }
     : hasReady
     ? { label: actioning ? "..." : "🛎 הגש לשולחן", color: "#0891b2", disabled: actioning }
-    : { label: "💳 הצג חשבון", color: "#c9a84c", disabled: false };
+    : { label: "💳 לתשלום בקופה", color: "#374151", disabled: true };
 
   // Collapsed row (for closed tables)
   if (isCollapsed) {
@@ -640,7 +636,6 @@ export default function OrdersClient({
   const [dateFrom, setDateFrom]         = useState("");
   const [dateTo, setDateTo]             = useState("");
   const [showDateFilter, setShowDateFilter] = useState(false);
-  const [billTableKey, setBillTableKey] = useState<string | null>(null);
   const [showPosModal, setShowPosModal] = useState(false);
   const [posTable, setPosTable]         = useState("");
   const [posCovers, setPosCovers]       = useState("");
@@ -844,7 +839,6 @@ export default function OrdersClient({
   function closeTable(tableNumber: string, tipAmount = 0, payMethod = "card") {
     const tableOrders = orders.filter(o => (o.tableNumber ?? "–") === tableNumber);
     const rid = tableOrders[0]?.restaurant?.id || restaurantId;
-    setBillTableKey(null);
     setOrders(prev => prev.filter(o => (o.tableNumber ?? "–") !== tableNumber));
     fetch("/api/admin/orders/close-table", {
       method: "POST",
@@ -903,10 +897,6 @@ export default function OrdersClient({
   }
   const hasRail = railConfirm.length > 0 || railServe.length > 0 || railBill.length > 0;
 
-  const billOrders = billTableKey
-    ? orders.filter(o => (o.tableNumber ?? "–") === billTableKey)
-    : [];
-
   return (
     <div
       style={isFullscreen ? {
@@ -915,16 +905,6 @@ export default function OrdersClient({
         padding: "12px 16px", color: D.text,
       } : { padding: "24px 28px", color: D.text }}
     >
-      {/* Bill Modal */}
-      {billTableKey && billOrders.length > 0 && (
-        <BillModal
-          tableNumber={billTableKey}
-          orders={billOrders}
-          onConfirm={(tip, pay) => closeTable(billTableKey, tip, pay)}
-          onClose={() => setBillTableKey(null)}
-        />
-      )}
-
       {/* Waiter POS Modal */}
       {showPosModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, direction: "rtl" }}>
@@ -1193,7 +1173,7 @@ export default function OrdersClient({
                   isClosed={false} highlighted={highlightTable === table} showAll={filter === "all"}
                   onItemCancel={cancelItem} onItemServe={serveItem} onOrderCancel={cancelOrder}
                   onConfirmOrder={confirmOrder} onDeliverOrder={deliverOrder}
-                  onShowBill={setBillTableKey} onFireCourse={fireCourse}
+                  onFireCourse={fireCourse}
                 />
               ))}
             </div>
@@ -1207,7 +1187,7 @@ export default function OrdersClient({
                   isClosed highlighted={highlightTable === table} showAll={filter === "all"}
                   onItemCancel={cancelItem} onItemServe={serveItem} onOrderCancel={cancelOrder}
                   onConfirmOrder={confirmOrder} onDeliverOrder={deliverOrder}
-                  onShowBill={setBillTableKey} onFireCourse={fireCourse}
+                  onFireCourse={fireCourse}
                 />
               ))}
             </div>
