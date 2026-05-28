@@ -112,7 +112,6 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/cashier",      label: "קאשייר",           I: Ic.Cashier,   displayHide: true },
       { href: "/admin/orders/stats", label: "סטטיסטיקות",      I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
-      { href: "/admin/customers",      label: "לקוחות",         I: Ic.Customers, displayHide: true },
       { href: "/admin/loyalty",        label: "מועדון לקוחות ⭐", I: Ic.Loyalty,   displayHide: true },
     ],
   },
