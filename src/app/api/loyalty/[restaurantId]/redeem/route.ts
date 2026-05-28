@@ -31,12 +31,12 @@ export async function POST(
   });
   if (!member) return NextResponse.json({ error: "member_not_found" }, { status: 404 });
 
-  // Validate order belongs to this restaurant and is still open
+  // Validate order belongs to this restaurant and is still open (DELIVERED allowed for cashier redemption)
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
       restaurantId,
-      status: { notIn: ["PAID", "CANCELLED", "DELIVERED"] },
+      status: { notIn: ["PAID", "CANCELLED"] },
     },
     select: {
       id: true,
