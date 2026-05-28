@@ -2657,7 +2657,7 @@ export default function MenuElegantClient({
                               type="range"
                               min={min}
                               max={max}
-                              step={min}
+                              step={1}
                               value={current}
                               onChange={e => setRedeemPointsInput(Number(e.target.value))}
                               style={{ width: "100%", accentColor: "#C5A880", marginBottom: 10, cursor: "pointer" }}
@@ -2665,16 +2665,23 @@ export default function MenuElegantClient({
 
                             {/* Points input + discount preview */}
                             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                              <div style={{ flex: 1, position: "relative" }}>
+                              <div style={{ flex: 1 }}>
                                 <input
                                   type="number"
                                   min={min}
                                   max={max}
-                                  step={min}
-                                  value={current}
+                                  value={typeof redeemPointsInput === "number" ? redeemPointsInput : max}
                                   onChange={e => {
+                                    const raw = e.target.value;
+                                    if (raw === "") { setRedeemPointsInput(""); return; }
+                                    const v = Number(raw);
+                                    if (!isNaN(v)) setRedeemPointsInput(Math.min(v, max));
+                                  }}
+                                  onBlur={e => {
                                     const v = Number(e.target.value);
-                                    if (v >= min && v <= max) setRedeemPointsInput(v);
+                                    if (isNaN(v) || v < min) setRedeemPointsInput(min);
+                                    else if (v > max) setRedeemPointsInput(max);
+                                    else setRedeemPointsInput(v);
                                   }}
                                   style={{
                                     width: "100%", padding: "8px 12px", borderRadius: 8,
