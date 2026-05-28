@@ -213,6 +213,8 @@ function BillModal({
     ? (parseFloat(customTip) || 0)
     : Math.round(subtotal * tipPct) / 100;
   const total = subtotal + tipAmount;
+  const VAT_RATE = 0.18;
+  const vatAmount = Math.round((total * VAT_RATE / (1 + VAT_RATE)) * 100) / 100;
 
   const restaurantName = orders[0]?.restaurant?.name ?? "";
   const now = new Date();
@@ -280,6 +282,7 @@ function BillModal({
           .indent { padding-right: 8px; color: #555; font-size: 11px; }
           .total-row { font-weight: bold; font-size: 14px; }
           .discount-row { font-weight: bold; }
+          .vat-row { font-size: 10px; color: #555; }
         </style>
       </head>
       <body>
@@ -294,6 +297,7 @@ function BillModal({
         ${tipRow}
         <div class="double"></div>
         <div class="row total-row"><span>סה"כ לתשלום</span><span>₪${total.toFixed(2)}</span></div>
+        <div class="row vat-row"><span>מתוכם מע"מ 18%</span><span>₪${vatAmount.toFixed(2)}</span></div>
         <div class="row"><span>אמצעי תשלום</span><span>${PAY_METHOD_LABEL[payMethod]}</span></div>
         <div class="divider"></div>
         <div class="center">תודה על ביקורכם! 🙏</div>
@@ -445,7 +449,13 @@ function BillModal({
                 <span style={{ color: "#c9a84c", direction: "ltr" }}>₪{total.toFixed(2)}</span>
               </div>
 
-              <div style={{ borderTop: "1px dashed #d1d5db", margin: "8px 0" }} />
+              {/* VAT included */}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#6b7280", marginTop: 4 }}>
+                <span>מתוכם מע&quot;מ 18%</span>
+                <span style={{ direction: "ltr" }}>₪{vatAmount.toFixed(2)}</span>
+              </div>
+
+              <div style={{ borderTop: "1px dashed #9ca3af", margin: "8px 0" }} />
 
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6b7280" }}>
                 <span>אמצעי תשלום</span>
@@ -532,6 +542,10 @@ function BillModal({
               }}>
                 <span>סה&quot;כ</span>
                 <span style={{ color: "#c9a84c", direction: "ltr" }}>₪{total.toFixed(2)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+                <span>מתוכם מע&quot;מ 18%</span>
+                <span style={{ direction: "ltr" }}>₪{vatAmount.toFixed(2)}</span>
               </div>
             </div>
 
