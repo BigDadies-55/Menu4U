@@ -274,6 +274,13 @@ export default function MenuElegantClient({
   const [redeemError, setRedeemError] = useState("");
   const [redeemPointsInput, setRedeemPointsInput] = useState<number | "">(""); // partial points selection
 
+  // Pending pre-order discount (chosen before placing the order)
+  const [pendingDiscount, setPendingDiscount] = useState<{
+    discountAmount: number; type: string;
+    pointsToRedeem?: number; couponId?: string;
+    memberId: string; memberName: string;
+  } | null>(null);
+
   // Language state
   const [lang, setLang] = useState<Lang>((restaurant.language as Lang) ?? "he");
 
@@ -747,11 +754,21 @@ export default function MenuElegantClient({
           customerName: guestIdentity?.name || loyaltyMember?.name || "",
           customerPhone: guestIdentity?.phone || loyaltyMember?.phone || "",
           notes: "",
+          // Pre-order loyalty discount (chosen before placing)
+          ...(pendingDiscount ? {
+            loyaltyMemberId: pendingDiscount.memberId,
+            loyaltyMemberName: pendingDiscount.memberName,
+            loyaltyDiscountType: pendingDiscount.type,
+            loyaltyDiscountAmount: pendingDiscount.discountAmount,
+            loyaltyCouponId: pendingDiscount.couponId ?? null,
+            loyaltyPointsToRedeem: pendingDiscount.pointsToRedeem ?? null,
+          } : {}),
         }),
       });
       if (!res.ok) throw new Error(t.orderError);
       setCart([]);
       setCartOpen(false);
+      setPendingDiscount(null);
       setOrderSuccess(true);
     } catch (err: unknown) {
       setOrderError(err instanceof Error ? err.message : t.orderError);
@@ -2007,12 +2024,43 @@ export default function MenuElegantClient({
 
             {/* Footer */}
             <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              {/* Pending loyalty discount line */}
+              {pendingDiscount && (
+                <div style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginBottom: 8, padding: "8px 12px",
+                  background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)",
+                  borderRadius: 8,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 14 }}>⭐</span>
+                    <span style={{ color: "#4ade80", fontSize: 13, fontWeight: 600 }}>
+                      הנחת מועדון ({pendingDiscount.memberName})
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#4ade80", fontWeight: 700, fontSize: 14 }}>
+                      −₪{pendingDiscount.discountAmount.toFixed(2)}
+                    </span>
+                    <button
+                      onClick={() => setPendingDiscount(null)}
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 16, padding: "0 2px" }}
+                      title="הסר הנחה"
+                    >×</button>
+                  </div>
+                </div>
+              )}
               <div style={{
                 display: "flex", justifyContent: "space-between", marginBottom: 14,
                 color: "#fff", fontSize: 16, fontWeight: 700,
               }}>
                 <span>סה&quot;כ</span>
-                <span style={{ color: "#C5A880" }}>₪{cartTotal}</span>
+                <span style={{ color: "#C5A880" }}>
+                  {pendingDiscount
+                    ? <><span style={{ textDecoration: "line-through", opacity: 0.4, fontSize: 13, marginLeft: 6 }}>₪{cartTotal}</span>₪{Math.max(0, cartTotal - pendingDiscount.discountAmount).toFixed(0)}</>
+                    : `₪${cartTotal}`
+                  }
+                </span>
               </div>
               {orderError && (
                 <div style={{ color: "#e53e3e", fontSize: 13, marginBottom: 8, textAlign: "center" }}>{orderError}</div>
@@ -2549,7 +2597,114 @@ export default function MenuElegantClient({
               </div>
             )}
 
-            {/* ── Redemption section ── */}
+            {/* ── Pre-order discount: cart has items but no active order yet ── */}
+            {!loyaltyLoading && loyaltyMember && cart.length > 0 && (() => {
+              const hasActiveOrder = myOrders.some(o => !["PAID", "CANCELLED", "DELIVERED"].includes(o.status));
+              if (hasActiveOrder) return null; // handled below in post-order section
+
+              const hasEnoughPoints = loyaltyMember.points >= loyaltySettings.minRedeemPoints;
+              const availableCoupons = (loyaltyMember.coupons ?? []).filter(c => !c.usedAt && (!c.expiresAt || new Date(c.expiresAt) > new Date()));
+              if (!hasEnoughPoints && availableCoupons.length === 0) return null;
+
+              const min = loyaltySettings.minRedeemPoints;
+              const max = loyaltyMember.points;
+              const current = typeof redeemPointsInput === "number" && redeemPointsInput >= min ? redeemPointsInput : max;
+
+              function applyToCart(type: "POINTS" | "COUPON", coupon?: typeof availableCoupons[0]) {
+                if (!loyaltyMember) return;
+                let discountAmount = 0;
+                if (type === "POINTS") {
+                  discountAmount = current * loyaltySettings.shekelPerPoint;
+                } else if (coupon) {
+                  discountAmount = coupon.type === "DISCOUNT_PERCENT"
+                    ? Math.round((cartTotal * coupon.value / 100) * 100) / 100
+                    : coupon.value;
+                }
+                setPendingDiscount({
+                  discountAmount,
+                  type,
+                  pointsToRedeem: type === "POINTS" ? current : undefined,
+                  couponId: coupon?.id,
+                  memberId: loyaltyMember.id,
+                  memberName: loyaltyMember.name,
+                });
+                setShowLoyalty(false);
+                setCartOpen(true);
+              }
+
+              return (
+                <div style={{ marginTop: 20, borderTop: "1px solid rgba(197,168,128,0.2)", paddingTop: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 14 }}>
+                    החל הנחה על הסל (₪{cartTotal})
+                  </div>
+
+                  {pendingDiscount ? (
+                    <div style={{
+                      background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.25)",
+                      borderRadius: 12, padding: "14px 16px", textAlign: "center",
+                    }}>
+                      <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
+                        ✅ הנחה של ₪{pendingDiscount.discountAmount.toFixed(2)} הוחלה על הסל
+                      </div>
+                      <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, marginBottom: 10 }}>
+                        תנוכה בעת שליחת ההזמנה
+                      </div>
+                      <button
+                        onClick={() => setPendingDiscount(null)}
+                        style={{ background: "none", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 12, padding: "5px 14px", cursor: "pointer" }}
+                      >
+                        ביטול הנחה
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {hasEnoughPoints && (
+                        <div style={{
+                          background: "linear-gradient(135deg, #1a1200, #221800)",
+                          border: "1px solid rgba(197,168,128,0.35)",
+                          borderRadius: 14, padding: "14px",
+                        }}>
+                          <div style={{ fontSize: 13, color: "#C5A880", fontWeight: 600, marginBottom: 10 }}>
+                            ⭐ מימוש נקודות
+                          </div>
+                          <input
+                            type="range" min={min} max={max} step={1} value={current}
+                            onChange={e => setRedeemPointsInput(Number(e.target.value))}
+                            style={{ width: "100%", accentColor: "#C5A880", marginBottom: 8, cursor: "pointer" }}
+                          />
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                            <input
+                              type="number" min={min} max={max}
+                              value={typeof redeemPointsInput === "number" ? redeemPointsInput : max}
+                              onChange={e => { const v = Number(e.target.value); if (!isNaN(v)) setRedeemPointsInput(Math.min(v, max)); }}
+                              onBlur={e => { const v = Number(e.target.value); setRedeemPointsInput(isNaN(v) || v < min ? min : Math.min(v, max)); }}
+                              style={{ width: 90, padding: "6px 10px", borderRadius: 7, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(197,168,128,0.3)", color: "#C5A880", fontWeight: 700, fontSize: 14, textAlign: "center" }}
+                            />
+                            <span style={{ color: "#4ade80", fontWeight: 700, fontSize: 15 }}>
+                              הנחה ₪{(current * loyaltySettings.shekelPerPoint).toFixed(2)}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => applyToCart("POINTS")}
+                            style={{ width: "100%", padding: "11px", borderRadius: 9, background: "linear-gradient(135deg, #C5A880, #a08050)", border: "none", color: "#1a1200", fontWeight: 800, fontSize: 14, cursor: "pointer" }}
+                          >
+                            החל על הסל ← הנחה ₪{(current * loyaltySettings.shekelPerPoint).toFixed(2)}
+                          </button>
+                        </div>
+                      )}
+                      {availableCoupons.map(coupon => (
+                        <button key={coupon.id} onClick={() => applyToCart("COUPON", coupon)}
+                          style={{ width: "100%", padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#e9ecef", fontWeight: 600, fontSize: 14, cursor: "pointer", textAlign: "center", fontFamily: "var(--font-rubik,'Rubik',sans-serif)" }}>
+                          🎟 {coupon.description ?? (coupon.type === "DISCOUNT_PERCENT" ? `הנחה ${coupon.value}%` : `הנחה ₪${coupon.value}`)} ← החל על הסל
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Redemption section (post-order — active order exists) ── */}
             {!loyaltyLoading && loyaltyMember && tableNumber && (() => {
               const activeOrder = myOrders.find(o => !["PAID", "CANCELLED", "DELIVERED"].includes(o.status));
               if (!activeOrder) return null;

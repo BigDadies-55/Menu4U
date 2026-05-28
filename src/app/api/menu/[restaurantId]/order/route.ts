@@ -28,7 +28,11 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { tableNumber, customerName, customerPhone, notes, items, orderSource } = body;
+  const {
+    tableNumber, customerName, customerPhone, notes, items, orderSource,
+    loyaltyMemberId, loyaltyMemberName, loyaltyDiscountType,
+    loyaltyDiscountAmount, loyaltyCouponId, loyaltyPointsToRedeem,
+  } = body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "No items" }, { status: 400 });
@@ -52,11 +56,14 @@ export async function POST(
     return NextResponse.json({ error: "No valid items" }, { status: 400 });
   }
 
-  const totalAmount = validItems.reduce(
+  const baseTotal = validItems.reduce(
     (sum: number, i: CartItem) =>
       sum + (priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0)) * i.quantity,
     0
   );
+  // Apply pre-order loyalty discount if provided
+  const discount = loyaltyMemberId && loyaltyDiscountAmount > 0 ? loyaltyDiscountAmount : 0;
+  const totalAmount = Math.max(0, baseTotal - discount);
 
   // Get next order number for this restaurant (atomic)
   const counterResult = await prisma.$queryRawUnsafe<{ counter: bigint }[]>(
@@ -80,8 +87,15 @@ export async function POST(
       totalAmount,
       orderNumber,
       orderSource: orderSource ?? "CUSTOMER",
-      // Waiter orders are auto-confirmed
       ...(orderSource === "WAITER" ? { status: "CONFIRMED" } : {}),
+      // Pre-order loyalty discount fields
+      ...(loyaltyMemberId ? {
+        loyaltyMemberId,
+        loyaltyMemberName: loyaltyMemberName ?? null,
+        loyaltyDiscountType: loyaltyDiscountType ?? null,
+        loyaltyDiscountAmount: discount > 0 ? discount : null,
+        loyaltyCouponId: loyaltyCouponId ?? null,
+      } : {}),
       items: {
         create: validItems.map((i: CartItem) => {
           const course = i.course ?? 1;
@@ -119,6 +133,43 @@ export async function POST(
         });
       }
     }
+  }
+
+  // Commit pre-order loyalty discount (best-effort — order already created)
+  if (loyaltyMemberId && discount > 0) {
+    try {
+      if (loyaltyDiscountType === "POINTS" && loyaltyPointsToRedeem > 0) {
+        await prisma.loyaltyMember.update({
+          where: { id: loyaltyMemberId },
+          data: { points: { decrement: loyaltyPointsToRedeem } },
+        });
+        await prisma.loyaltyTransaction.create({
+          data: {
+            id: `lt-${Date.now()}`,
+            memberId: loyaltyMemberId,
+            orderId: order.id,
+            type: "REDEEM",
+            points: -loyaltyPointsToRedeem,
+            note: `מימוש נקודות — הנחה ₪${discount.toFixed(2)}`,
+          },
+        });
+      } else if (loyaltyDiscountType === "COUPON" && loyaltyCouponId) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "LoyaltyCoupon" SET "usedAt" = NOW(), "usedAtRestaurantId" = $1 WHERE "id" = $2 AND "usedAt" IS NULL`,
+          restaurantId, loyaltyCouponId
+        );
+        await prisma.loyaltyTransaction.create({
+          data: {
+            id: `lt-${Date.now()}`,
+            memberId: loyaltyMemberId,
+            orderId: order.id,
+            type: "REDEEM",
+            points: 0,
+            note: `מימוש קופון — הנחה ₪${discount.toFixed(2)}`,
+          },
+        });
+      }
+    } catch { /* non-critical — order is already saved */ }
   }
 
   sseNotify(restaurantId);
