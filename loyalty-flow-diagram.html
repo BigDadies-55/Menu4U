@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<title>תרשים זרימה — מועדון לקוחות Menu4U</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d0d0d;
+    color: #e9ecef;
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    padding: 40px 24px 80px;
+    direction: rtl;
+  }
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #C5A880;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .subtitle {
+    text-align: center;
+    color: rgba(255,255,255,0.35);
+    font-size: 13px;
+    margin-bottom: 48px;
+  }
+
+  /* ── Layout ── */
+  .flow {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr 80px 1fr;
+    gap: 0;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* Column headers */
+  .col-header {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 12px 20px;
+    color: rgba(255,255,255,0.35);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 24px;
+  }
+  .col-header.customer  { color: #60a5fa; border-color: rgba(96,165,250,0.3); }
+  .col-header.api       { color: #a78bfa; border-color: rgba(167,139,250,0.3); }
+  .col-header.admin     { color: #34d399; border-color: rgba(52,211,153,0.3); }
+
+  /* Connector column header */
+  .col-arrow-header { border-bottom: 1px solid rgba(255,255,255,0.04); margin-bottom: 24px; padding-bottom: 20px; }
+
+  /* Step boxes */
+  .col { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+  .step {
+    width: 100%;
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    position: relative;
+    text-align: center;
+  }
+  .step .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    font-size: 11px; font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .step .step-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .step .step-sub {
+    font-size: 11px;
+    opacity: 0.6;
+    line-height: 1.4;
+  }
+  .step .step-code {
+    display: inline-block;
+    margin-top: 6px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    opacity: 0.7;
+    direction: ltr;
+  }
+
+  /* Color variants */
+  .step.customer {
+    background: rgba(96,165,250,0.08);
+    border: 1px solid rgba(96,165,250,0.25);
+    color: #e2f0ff;
+  }
+  .step.customer .step-num { background: rgba(96,165,250,0.2); color: #93c5fd; }
+
+  .step.api {
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(167,139,250,0.25);
+    color: #ede9ff;
+  }
+  .step.api .step-num { background: rgba(167,139,250,0.2); color: #c4b5fd; }
+
+  .step.admin {
+    background: rgba(52,211,153,0.07);
+    border: 1px solid rgba(52,211,153,0.22);
+    color: #d1fae5;
+  }
+  .step.admin .step-num { background: rgba(52,211,153,0.18); color: #6ee7b7; }
+
+  .step.success {
+    background: rgba(74,222,128,0.08);
+    border: 1px solid rgba(74,222,128,0.3);
+    color: #dcfce7;
+  }
+  .step.success .step-num { background: rgba(74,222,128,0.2); color: #86efac; }
+
+  .step.decision {
+    background: rgba(251,191,36,0.07);
+    border: 1px solid rgba(251,191,36,0.25);
+    color: #fef3c7;
+    clip-path: polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+    border-radius: 0;
+    border: none;
+    width: 120px;
+    height: 80px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 8px;
+  }
+
+  /* Vertical connectors */
+  .v-connector {
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+    margin: 6px auto;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .v-connector.blue   { background: linear-gradient(to bottom, rgba(96,165,250,0.35), rgba(96,165,250,0.1)); }
+  .v-connector.purple { background: linear-gradient(to bottom, rgba(167,139,250,0.35), rgba(167,139,250,0.1)); }
+  .v-connector.green  { background: linear-gradient(to bottom, rgba(52,211,153,0.35), rgba(52,211,153,0.1)); }
+  .v-connector::after {
+    content: '';
+    position: absolute;
+    bottom: -5px; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(255,255,255,0.2);
+  }
+  .v-connector.blue::after  { border-top-color: rgba(96,165,250,0.5); }
+  .v-connector.purple::after{ border-top-color: rgba(167,139,250,0.5); }
+  .v-connector.green::after { border-top-color: rgba(52,211,153,0.5); }
+
+  /* Horizontal connectors between columns */
+  .h-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 100%;
+    flex-shrink: 0;
+  }
+  .h-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+  }
+  .h-line {
+    width: 50px; height: 1.5px;
+    background: linear-gradient(to left, rgba(167,139,250,0.5), rgba(255,255,255,0.1));
+    position: relative;
+  }
+  .h-line::after {
+    content: '◀';
+    position: absolute;
+    left: -6px; top: -7px;
+    font-size: 8px;
+    color: rgba(167,139,250,0.6);
+  }
+  .h-line.right::after { content: '▶'; left: auto; right: -6px; }
+  .h-line.right {
+    background: linear-gradient(to right, rgba(96,165,250,0.1), rgba(96,165,250,0.5));
+  }
+
+  /* Section dividers */
+  .section-label {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.18);
+    padding: 20px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .section-label::before, .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+  }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 24px; justify-content: center;
+    margin-top: 48px; flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: rgba(255,255,255,0.5);
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 3px;
+  }
+
+  /* Single-column flow for simple steps */
+  .single-flow {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 300px 80px 300px 80px 300px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .row-spacer { height: 6px; }
+  .empty { visibility: hidden; }
+  .arrow-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .arrow-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+  }
+  .arrow-line {
+    width: 56px; height: 1.5px;
+    background: linear-gradient(to right, rgba(255,255,255,0.15), rgba(255,255,255,0.4));
+    position: relative;
+  }
+  .arrow-line::after {
+    content: '▶';
+    position: absolute;
+    right: -7px;
+    top: -7px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.4);
+  }
+  .arrow-line.blue-r { background: linear-gradient(to right, rgba(96,165,250,0.15), rgba(96,165,250,0.6)); }
+  .arrow-line.blue-r::after { color: rgba(96,165,250,0.7); }
+  .arrow-line.purple-r { background: linear-gradient(to right, rgba(167,139,250,0.15), rgba(167,139,250,0.6)); }
+  .arrow-line.purple-r::after { color: rgba(167,139,250,0.7); }
+  .arrow-line.green-r { background: linear-gradient(to right, rgba(52,211,153,0.15), rgba(52,211,153,0.6)); }
+  .arrow-line.green-r::after { color: rgba(52,211,153,0.7); }
+
+  .arrow-left {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .arrow-line-l {
+    width: 56px; height: 1.5px;
+    background: linear-gradient(to left, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+    position: relative;
+  }
+  .arrow-line-l::before {
+    content: '◀';
+    position: absolute;
+    left: -7px; top: -7px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.4);
+  }
+  .arrow-line-l.purple-l { background: linear-gradient(to left, rgba(167,139,250,0.6), rgba(167,139,250,0.1)); }
+  .arrow-line-l.purple-l::before { color: rgba(167,139,250,0.7); }
+  .arrow-line-l.green-l  { background: linear-gradient(to left, rgba(52,211,153,0.6), rgba(52,211,153,0.1)); }
+  .arrow-line-l.green-l::before  { color: rgba(52,211,153,0.7); }
+
+  .down-arrow {
+    text-align: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 16px;
+    padding: 2px 0;
+    line-height: 1;
+  }
+  .down-arrow.blue-d   { color: rgba(96,165,250,0.5); }
+  .down-arrow.purple-d { color: rgba(167,139,250,0.5); }
+  .down-arrow.green-d  { color: rgba(52,211,153,0.5); }
+
+  .condition-note {
+    font-size: 10px;
+    color: rgba(251,191,36,0.7);
+    background: rgba(251,191,36,0.07);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    text-align: center;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<h1>תרשים זרימה — מועדון לקוחות</h1>
+<p class="subtitle">תהליך מלא: כניסה → הזמנה → מימוש → תשלום ← Menu4U</p>
+
+<div class="single-flow">
+
+  <!-- Column headers -->
+  <div class="row">
+    <div class="col-header customer">👤 לקוח (תפריט ציבורי)</div>
+    <div></div>
+    <div class="col-header api">⚡ API / שרת</div>
+    <div></div>
+    <div class="col-header admin">🏠 מנהל (Back-Office)</div>
+  </div>
+
+  <!-- ─── PHASE 1: ENTRY ─── -->
+  <div class="row" style="margin-top:8px;">
+    <div class="step customer">
+      <div class="step-num">1</div>
+      <div class="step-title">סריקת QR</div>
+      <div class="step-sub">לקוח סורק QR בשולחן</div>
+      <div class="step-code">/menu/[id]?table=5</div>
+    </div>
+    <div class="arrow-cell"></div>
+    <div class="empty step api"></div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <div class="row">
+    <div class="down-arrow blue-d">↓</div>
+    <div></div><div></div><div></div><div></div>
+  </div>
+
+  <div class="row">
+    <div class="step customer">
+      <div class="step-num">2</div>
+      <div class="step-title">לחיצה על כוכב ⭐</div>
+      <div class="step-sub">בדף הנחיתה של המסעדה</div>
+      <div class="step-code">setShowLoyalty(true)</div>
+    </div>
+    <div class="arrow-cell">
+      <div class="arrow-right">
+        <div class="arrow-line blue-r"></div>
+        <div style="font-size:10px;color:rgba(96,165,250,0.6)">GET</div>
+      </div>
+    </div>
+    <div class="step api">
+      <div class="step-num">3</div>
+      <div class="step-title">בדיקת חברות</div>
+      <div class="step-sub">חיפוש לפי טלפון ב-DB</div>
+      <div class="step-code">GET /loyalty/member?phone=...</div>
+    </div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <div class="row">
+    <div class="down-arrow blue-d">↓</div>
+    <div></div>
+    <div class="down-arrow purple-d">↓</div>
+    <div></div><div></div>
+  </div>
+
+  <div class="row">
+    <div class="step customer">
+      <div class="step-num">4</div>
+      <div class="step-title">כרטיס מועדון נפתח</div>
+      <div class="step-sub">נקודות · קופונים · היסטוריה<br/>אם לא חבר → מסך הצטרפות</div>
+    </div>
+    <div class="arrow-cell">
+      <div style="font-size:10px;color:rgba(167,139,250,0.5);text-align:center">
+        <div class="arrow-line-l purple-l" style="margin:0 auto 3px"></div>
+        תשובה
+      </div>
+    </div>
+    <div class="step api">
+      <div class="step-num" style="background:rgba(74,222,128,0.15);color:#86efac">✓</div>
+      <div class="step-title">נמצא / נרשם</div>
+      <div class="step-sub">מחזיר: points, coupons,<br/>transactions, memberNumber</div>
+    </div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <!-- SECTION DIVIDER -->
+  <div class="row" style="margin:16px 0 8px;">
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+      <span style="font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.18);text-transform:uppercase">שלב ב׳ — הזמנה</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="step customer">
+      <div class="step-num">5</div>
+      <div class="step-title">בחירת מנות</div>
+      <div class="step-sub">מוסיף פריטים לסל</div>
+    </div>
+    <div class="arrow-cell">
+      <div class="arrow-right">
+        <div class="arrow-line blue-r"></div>
+        <div style="font-size:10px;color:rgba(96,165,250,0.6)">POST</div>
+      </div>
+    </div>
+    <div class="step api">
+      <div class="step-num">6</div>
+      <div class="step-title">יצירת הזמנה</div>
+      <div class="step-sub">שמירת Order במצב PENDING</div>
+      <div class="step-code">POST /menu/order</div>
+    </div>
+    <div class="arrow-cell">
+      <div class="arrow-right">
+        <div class="arrow-line green-r"></div>
+        <div style="font-size:10px;color:rgba(52,211,153,0.6)">SSE</div>
+      </div>
+    </div>
+    <div class="step admin">
+      <div class="step-num">7</div>
+      <div class="step-title">הזמנה מגיעה</div>
+      <div class="step-sub">מנהל רואה הזמנה חדשה<br/>בממשק הניהול</div>
+    </div>
+  </div>
+
+  <!-- SECTION DIVIDER -->
+  <div class="row" style="margin:16px 0 8px;">
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+      <span style="font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.18);text-transform:uppercase">שלב ג׳ — מימוש הטבה</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="step customer" style="border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.06);">
+      <div class="step-num" style="background:rgba(251,191,36,0.2);color:#fcd34d">8</div>
+      <div class="step-title">פתיחת כרטיס מועדון</div>
+      <div class="step-sub" style="color:rgba(252,211,77,0.8)">
+        תנאי הצגת מימוש:<br/>
+        ✓ חבר מועדון מחובר<br/>
+        ✓ יש מספר שולחן ב-URL<br/>
+        ✓ קיימת הזמנה פעילה
+      </div>
+    </div>
+    <div></div>
+    <div class="empty step api"></div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <div class="row">
+    <div class="down-arrow blue-d">↓</div>
+    <div></div><div></div><div></div><div></div>
+  </div>
+
+  <!-- Points path -->
+  <div class="row">
+    <div class="step customer">
+      <div class="step-num">9א</div>
+      <div class="step-title">מימוש נקודות</div>
+      <div class="step-sub">סליידר לבחירת כמות<br/>תצוגה חיה: X נק׳ → ₪Y</div>
+      <div class="step-code">redeemPointsInput</div>
+    </div>
+    <div class="arrow-cell">
+      <div class="arrow-right">
+        <div class="arrow-line blue-r"></div>
+        <div style="font-size:10px;color:rgba(96,165,250,0.6)">POST</div>
+      </div>
+    </div>
+    <div class="step api">
+      <div class="step-num">10</div>
+      <div class="step-title">אימות ונעילה אטומית</div>
+      <div class="step-sub">
+        1. בדיקת חבר קיים<br/>
+        2. בדיקת הזמנה פתוחה<br/>
+        3. בדיקת יתרת נקודות<br/>
+        4. UPDATE אטומי (SQL)<br/>
+        → מוריד ₪ מסכום ההזמנה
+      </div>
+      <div class="step-code">POST /loyalty/redeem</div>
+    </div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <div class="row">
+    <div class="down-arrow blue-d" style="grid-column:1">↓</div>
+    <div></div>
+    <div class="down-arrow purple-d">↓</div>
+    <div></div><div></div>
+  </div>
+
+  <!-- Coupon path -->
+  <div class="row">
+    <div class="step customer">
+      <div class="step-num">9ב</div>
+      <div class="step-title">מימוש קופון</div>
+      <div class="step-sub">לחיצה על כפתור קופון<br/>תקף גם ברשתות מסעדות</div>
+      <div class="step-code">type: "COUPON"</div>
+    </div>
+    <div></div>
+    <div class="step api">
+      <div class="step-num" style="background:rgba(74,222,128,0.15);color:#86efac">✓</div>
+      <div class="step-title">הנחה נרשמה</div>
+      <div class="step-sub">
+        Order.totalAmount עודכן<br/>
+        Order.loyaltyDiscountAmount<br/>
+        LoyaltyMember.points ↓
+      </div>
+    </div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <div class="row">
+    <div class="down-arrow blue-d">↓</div>
+    <div></div>
+    <div></div><div></div><div></div>
+  </div>
+
+  <div class="row">
+    <div class="step success">
+      <div class="step-num" style="background:rgba(74,222,128,0.2);color:#86efac">11</div>
+      <div class="step-title">✅ אישור ויזואלי</div>
+      <div class="step-sub">
+        "הנחה של ₪20 נרשמה!"<br/>
+        "השתמשת ב-200 נקודות"<br/>
+        ⭐ נשארו לך 150 נקודות
+      </div>
+    </div>
+    <div></div>
+    <div class="empty step api"></div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <!-- SECTION DIVIDER -->
+  <div class="row" style="margin:16px 0 8px;">
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+      <span style="font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.18);text-transform:uppercase">שלב ד׳ — תשלום וסגירת שולחן</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="empty step customer"></div>
+    <div></div>
+    <div class="empty step api"></div>
+    <div></div>
+    <div class="step admin">
+      <div class="step-num">12</div>
+      <div class="step-title">לחיצה "סגור שולחן"</div>
+      <div class="step-sub">פתיחת BillModal</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div></div><div></div><div></div><div></div>
+    <div class="down-arrow green-d">↓</div>
+  </div>
+
+  <div class="row">
+    <div class="empty step customer"></div>
+    <div></div>
+    <div class="empty step api"></div>
+    <div></div>
+    <div class="step admin">
+      <div class="step-num">13</div>
+      <div class="step-title">סיכום חשבון</div>
+      <div class="step-sub">
+        סכום מקורי: ₪X<br/>
+        ⭐ הנחת מועדון: −₪Y<br/>
+        אחרי הנחה: ₪Z<br/>
+        + שדה טיפ<br/>
+        + אמצעי תשלום
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div></div><div></div><div></div><div></div>
+    <div class="down-arrow green-d">↓</div>
+  </div>
+
+  <div class="row">
+    <div class="empty step customer"></div>
+    <div class="arrow-cell" style="grid-column:2/4;justify-content:flex-end;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <div class="arrow-line-l green-l" style="width:120px"></div>
+        <div style="font-size:10px;color:rgba(52,211,153,0.5)">POST</div>
+      </div>
+    </div>
+    <div class="step admin" style="grid-column:5">
+      <div class="step-num">14</div>
+      <div class="step-title">אישור תשלום</div>
+      <div class="step-sub">לחיצה "אשר תשלום"</div>
+      <div class="step-code">POST /orders/close-table</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div></div>
+    <div></div>
+    <div class="down-arrow purple-d">↓</div>
+    <div></div><div></div>
+  </div>
+
+  <div class="row">
+    <div class="empty step customer"></div>
+    <div></div>
+    <div class="step api">
+      <div class="step-num">15</div>
+      <div class="step-title">עיבוד תשלום</div>
+      <div class="step-sub">
+        1. סטטוס כל ההזמנות → PAID<br/>
+        2. רישום OrderStatusLog<br/>
+        3. יצירת TableSession<br/>
+        4. <strong>צבירת נקודות לחבר המועדון</strong><br/>
+        5. רישום EARN transaction
+      </div>
+      <div class="step-code">close-table/route.ts</div>
+    </div>
+    <div></div>
+    <div class="empty step admin"></div>
+  </div>
+
+  <div class="row">
+    <div class="down-arrow blue-d" style="grid-column:1;visibility:visible">↓</div>
+    <div></div>
+    <div class="down-arrow purple-d">↓</div>
+    <div></div><div></div>
+  </div>
+
+  <div class="row">
+    <div class="step success">
+      <div class="step-num" style="background:rgba(74,222,128,0.2);color:#86efac">16</div>
+      <div class="step-title">✅ נקודות נצברו</div>
+      <div class="step-sub">
+        כרטיס המועדון של הלקוח<br/>
+        יתעדכן בביקור הבא<br/>
+        ⭐ X נקודות חדשות
+      </div>
+    </div>
+    <div></div>
+    <div class="step success">
+      <div class="step-num" style="background:rgba(74,222,128,0.2);color:#86efac">✓</div>
+      <div class="step-title">✅ תהליך הושלם</div>
+      <div class="step-sub">
+        Audit log נרשם<br/>
+        שולחן נפתח לשימוש הבא
+      </div>
+    </div>
+    <div></div>
+    <div class="step admin" style="background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.3);">
+      <div class="step-num" style="background:rgba(52,211,153,0.2);color:#6ee7b7">✓</div>
+      <div class="step-title">שולחן נסגר</div>
+      <div class="step-sub">
+        מוצג בהיסטוריית הזמנות<br/>
+        טיפ + אמצעי תשלום תועדו
+      </div>
+    </div>
+  </div>
+
+</div><!-- end single-flow -->
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-dot" style="background:rgba(96,165,250,0.5)"></div>
+    פעולת לקוח (תפריט)
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:rgba(167,139,250,0.5)"></div>
+    API / שרת
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:rgba(52,211,153,0.5)"></div>
+    ממשק מנהל
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:rgba(74,222,128,0.5)"></div>
+    אירוע הצלחה
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:rgba(251,191,36,0.5)"></div>
+    תנאי / החלטה
+  </div>
+</div>
+
+<p style="text-align:center;margin-top:32px;font-size:11px;color:rgba(255,255,255,0.2)">
+  Menu4U · תרשים זרימה מלא · כל 16 הצעדים קיימים ומאומתים בקוד
+</p>
+
+</body>
+</html>
