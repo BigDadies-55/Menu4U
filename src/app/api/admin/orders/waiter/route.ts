@@ -90,14 +90,17 @@ export async function POST(req: Request) {
       orderSource:  "WAITER",
       items: {
         create: validItems.map(i => {
-          const course = i.course ?? 1;
+          const course      = i.course ?? 1;
+          const isAutoReady = autoReadySet.has(i.itemId);
           return {
             itemId:         i.itemId,
             quantity:       i.quantity,
             price:          priceMap[i.itemId],
             notes:          i.notes ?? null,
             course,
-            heldUntilFired: !autoReadySet.has(i.itemId) && course > 1,
+            // autoReady items (drinks/bar) skip kitchen — mark DONE immediately
+            ...(isAutoReady ? { itemStatus: "DONE" } : {}),
+            heldUntilFired: !isAutoReady && course > 1,
           };
         }),
       },
