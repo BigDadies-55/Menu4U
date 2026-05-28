@@ -24,6 +24,9 @@ type Order = {
   createdAt: string;
   restaurant: { id: string; name: string };
   items: OrderItem[];
+  loyaltyDiscountAmount: number | null;
+  loyaltyMemberName: string | null;
+  loyaltyDiscountType: string | null;
 };
 
 type Restaurant = { id: string; name: string };
@@ -202,7 +205,10 @@ function BillModal({
 
   const validOrders = orders.filter(o => !["CANCELLED", "PAID"].includes(o.status));
   const allItems = validOrders.flatMap(o => o.items);
+  // totalAmount already has the discount baked in
   const subtotal = validOrders.reduce((s, o) => s + o.totalAmount, 0);
+  const loyaltyDiscount = validOrders.reduce((s, o) => s + (o.loyaltyDiscountAmount ?? 0), 0);
+  const loyaltyMemberNames = [...new Set(validOrders.filter(o => o.loyaltyMemberName).map(o => o.loyaltyMemberName!))];
   const tipAmount = tipPct === -1
     ? (parseFloat(customTip) || 0)
     : Math.round(subtotal * tipPct) / 100;
@@ -250,6 +256,12 @@ function BillModal({
       ? `<div class="row"><span>טיפ ${tipPct === -1 ? "" : `${tipPct}%`}</span><span>₪${tipAmount.toFixed(2)}</span></div>`
       : "";
 
+    const discountRows = loyaltyDiscount > 0
+      ? `<div class="row"><span>סה"כ לפני הנחה</span><span>₪${(subtotal + loyaltyDiscount).toFixed(2)}</span></div>
+         <div class="row discount-row"><span>⭐ הנחת מועדון${loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames[0]})` : ""}</span><span>-₪${loyaltyDiscount.toFixed(2)}</span></div>
+         <div class="row"><span>לאחר הנחה</span><span>₪${subtotal.toFixed(2)}</span></div>`
+      : `<div class="row"><span>סה"כ</span><span>₪${subtotal.toFixed(2)}</span></div>`;
+
     const receiptHtml = `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -267,6 +279,7 @@ function BillModal({
           .row { display: flex; justify-content: space-between; margin: 2px 0; }
           .indent { padding-right: 8px; color: #555; font-size: 11px; }
           .total-row { font-weight: bold; font-size: 14px; }
+          .discount-row { font-weight: bold; }
         </style>
       </head>
       <body>
@@ -277,7 +290,7 @@ function BillModal({
         <div class="divider"></div>
         ${itemRows}
         <div class="divider"></div>
-        <div class="row"><span>סה"כ</span><span>₪${subtotal.toFixed(2)}</span></div>
+        ${discountRows}
         ${tipRow}
         <div class="double"></div>
         <div class="row total-row"><span>סה"כ לתשלום</span><span>₪${total.toFixed(2)}</span></div>
@@ -396,9 +409,21 @@ function BillModal({
 
               <div style={{ borderTop: "1px dashed #d1d5db", margin: "8px 0" }} />
 
-              {/* Subtotal */}
+              {/* Subtotal / discount lines */}
+              {loyaltyDiscount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280" }}>
+                  <span>סה&quot;כ לפני הנחה</span>
+                  <span style={{ direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#16a34a", fontWeight: 700 }}>
+                  <span>⭐ הנחת מועדון{loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames.join(", ")})` : ""}</span>
+                  <span style={{ direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span>סה&quot;כ</span>
+                <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סה\"כ"}</span>
                 <span style={{ direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
@@ -475,8 +500,22 @@ function BillModal({
             <div style={{
               background: "#f9fafb", borderRadius: 14, padding: "14px 16px", marginBottom: 20,
             }}>
+              {loyaltyDiscount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", marginBottom: 6 }}>
+                  <span>סכום לפני הנחה</span>
+                  <span style={{ fontWeight: 700, color: "#111827", direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6, alignItems: "center" }}>
+                  <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                    ⭐ הנחת מועדון{loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames.join(", ")})` : ""}
+                  </span>
+                  <span style={{ fontWeight: 700, color: "#16a34a", direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", marginBottom: 6 }}>
-                <span>סכום מקורי</span>
+                <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סכום"}</span>
                 <span style={{ fontWeight: 700, color: "#111827", direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
