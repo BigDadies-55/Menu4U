@@ -6,18 +6,8 @@ import { NextResponse } from "next/server";
 // URL: /api/admin/crm/cron?secret=CRON_SECRET
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const provided = searchParams.get("secret") ?? "";
-  const expected = process.env.CRON_SECRET ?? "";
-  if (provided !== expected) {
-    return NextResponse.json({
-      error: "Forbidden",
-      debug: {
-        envSet: !!process.env.CRON_SECRET,
-        providedLength: provided.length,
-        expectedLength: expected.length,
-        match: provided === expected,
-      }
-    }, { status: 403 });
+  if (searchParams.get("secret") !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   type CampaignRow = {
