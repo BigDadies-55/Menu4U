@@ -937,30 +937,8 @@ export default function MenuElegantClient({
             {restaurant.name}
           </span>
 
-          {/* Star — opens loyalty card or join flow */}
-          <button
-            onClick={() => {
-              if (loyaltyMember) setShowLoyalty(true);
-              else { setClubStep("promo"); elegantNavigateTo("clubwelcome"); }
-            }}
-            aria-label={loyaltyMember ? "כרטיס המועדון שלי" : "הצטרף למועדון"}
-            style={{
-              width: 40, height: 40, borderRadius: "50%", border: "none",
-              background: loyaltyMember
-                ? "linear-gradient(135deg, #C5A880, #dfc090)"
-                : "rgba(197,168,128,0.12)",
-              cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: loyaltyMember ? "0 2px 12px rgba(197,168,128,0.4)" : "none",
-              flexShrink: 0,
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke={loyaltyMember ? "#0D0D0D" : "#C5A880"}
-              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </button>
+          {/* Spacer to keep header balanced */}
+          <div style={{ width: 40 }} />
         </header>
       )}
 
@@ -2039,18 +2017,46 @@ export default function MenuElegantClient({
               {orderError && (
                 <div style={{ color: "#e53e3e", fontSize: 13, marginBottom: 8, textAlign: "center" }}>{orderError}</div>
               )}
-              <button
-                onClick={handleOrder}
-                disabled={orderLoading || cart.length === 0}
-                style={{
-                  width: "100%", padding: "12px 0", background: "#C5A880", color: "#0D0D0D",
-                  border: "none", borderRadius: 10, fontWeight: 700, fontSize: 16,
-                  cursor: cart.length === 0 || orderLoading ? "not-allowed" : "pointer",
-                  opacity: cart.length === 0 || orderLoading ? 0.5 : 1,
-                }}
-              >
-                {orderLoading ? t.sending : t.sendOrder}
-              </button>
+              <div style={{ display: "flex", gap: 10 }}>
+                {/* Loyalty star */}
+                <button
+                  onClick={() => {
+                    setCartOpen(false);
+                    if (loyaltyMember) setShowLoyalty(true);
+                    else { setClubStep("promo"); elegantNavigateTo("clubwelcome"); }
+                  }}
+                  aria-label={loyaltyMember ? "כרטיס המועדון שלי" : "הצטרף למועדון"}
+                  title={loyaltyMember ? "כרטיס המועדון שלי" : "הצטרף למועדון"}
+                  style={{
+                    width: 48, height: 48, flexShrink: 0, borderRadius: 10, border: "none",
+                    background: loyaltyMember
+                      ? "linear-gradient(135deg, #C5A880, #dfc090)"
+                      : "rgba(197,168,128,0.12)",
+                    cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: loyaltyMember ? "0 2px 12px rgba(197,168,128,0.35)" : "none",
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke={loyaltyMember ? "#0D0D0D" : "#C5A880"}
+                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+
+                <button
+                  onClick={handleOrder}
+                  disabled={orderLoading || cart.length === 0}
+                  style={{
+                    flex: 1, padding: "12px 0", background: "#C5A880", color: "#0D0D0D",
+                    border: "none", borderRadius: 10, fontWeight: 700, fontSize: 16,
+                    cursor: cart.length === 0 || orderLoading ? "not-allowed" : "pointer",
+                    opacity: cart.length === 0 || orderLoading ? 0.5 : 1,
+                  }}
+                >
+                  {orderLoading ? t.sending : t.sendOrder}
+                </button>
+              </div>
             </div>
           </div>
         </div>
