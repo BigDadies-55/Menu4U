@@ -8,6 +8,8 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const scope = searchParams.get("scope"); // "all" (super admin) or single restaurantId
+  const from  = searchParams.get("from");  // ISO date string (inclusive)
+  const to    = searchParams.get("to");    // ISO date string (inclusive, end of day)
 
   type RestaurantRow = { id: string; name: string };
   type StatsRow = {
@@ -42,15 +44,22 @@ export async function GET(req: Request) {
   const restaurantIds = restaurants.map(r => r.id);
   if (restaurantIds.length === 0) return NextResponse.json({ restaurants: [], totals: { sent: 0, failed: 0, sends: 0 } });
 
+  // Build date filter clause
+  const dateClauses: string[] = [`"restaurantId" = ANY($1::text[])`];
+  const dateParams: unknown[] = [restaurantIds];
+  let idx = 2;
+  if (from) { dateClauses.push(`"sentAt" >= $${idx++}`); dateParams.push(new Date(from)); }
+  if (to)   { dateClauses.push(`"sentAt" < $${idx++}`);  dateParams.push(new Date(new Date(to).getTime() + 86400000)); }
+
   const statsRows = await prisma.$queryRawUnsafe<StatsRow[]>(
     `SELECT "restaurantId",
             SUM("sentCount")   AS "totalSent",
             SUM("failedCount") AS "totalFailed",
             COUNT(*)           AS "sendCount"
      FROM "SmsLog"
-     WHERE "restaurantId" = ANY($1::text[])
+     WHERE ${dateClauses.join(" AND ")}
      GROUP BY "restaurantId"`,
-    restaurantIds
+    ...dateParams
   );
 
   const statsMap = new Map(statsRows.map(r => [r.restaurantId, r]));

@@ -221,6 +221,8 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
   /* ── stats ── */
   const [stats, setStats] = useState<StatsData | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [statsFrom, setStatsFrom] = useState("");
+  const [statsTo, setStatsTo] = useState("");
 
   /* ── fetch members ── */
   const fetchMembers = useCallback(async () => {
@@ -250,10 +252,13 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
   }, [rid]);
 
   /* ── fetch stats ── */
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (from?: string, to?: string) => {
     setStatsLoading(true);
     const scope = isSuperAdmin ? "all" : rid;
-    const res = await fetch(`/api/admin/crm/stats?scope=${scope}`);
+    const params = new URLSearchParams({ scope });
+    if (from) params.set("from", from);
+    if (to)   params.set("to", to);
+    const res = await fetch(`/api/admin/crm/stats?${params}`);
     if (res.ok) setStats(await res.json());
     setStatsLoading(false);
   }, [rid, isSuperAdmin]);
@@ -579,6 +584,37 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
       {/* ──────── TAB: STATS ──────── */}
       {tab === "stats" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Date filter */}
+          <Card style={{ padding: "14px 20px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
+              <div>
+                <Label>מתאריך</Label>
+                <Input type="date" value={statsFrom} onChange={e => setStatsFrom(e.target.value)} style={{ width: 150 }} />
+              </div>
+              <div>
+                <Label>עד תאריך</Label>
+                <Input type="date" value={statsTo} onChange={e => setStatsTo(e.target.value)} style={{ width: 150 }} />
+              </div>
+              <button
+                onClick={() => fetchStats(statsFrom || undefined, statsTo || undefined)}
+                style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: D.amber, color: "#000", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                סנן
+              </button>
+              {(statsFrom || statsTo) && (
+                <button
+                  onClick={() => { setStatsFrom(""); setStatsTo(""); fetchStats(); }}
+                  style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${D.border}`, background: "transparent", color: D.sub, fontSize: 13, cursor: "pointer" }}>
+                  נקה
+                </button>
+              )}
+              {(statsFrom || statsTo) && (
+                <span style={{ fontSize: 12, color: D.amber, alignSelf: "center" }}>
+                  {statsFrom && statsTo ? `${statsFrom} — ${statsTo}` : statsFrom ? `מ-${statsFrom}` : `עד ${statsTo}`}
+                </span>
+              )}
+            </div>
+          </Card>
+
           {statsLoading ? (
             <div style={{ padding: 60, textAlign: "center", color: D.sub }}>טוען...</div>
           ) : !stats ? null : (
