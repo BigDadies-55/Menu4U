@@ -123,15 +123,14 @@ export default function WaiterClient({ restaurants, waiterName }: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           restaurantId: rid,
-          tableNumber: tableNum.trim(),
-          coversCount: guests,
-          notes: orderNote.trim() || null,
+          tableNumber:  tableNum.trim(),
+          coversCount:  guests,
+          notes:        orderNote.trim() || null,
           items: order.map(o => ({
-            name:   o.name,
-            price:  o.price,
-            qty:    o.qty,
-            course: 1,
-            notes:  o.note || null,
+            itemId:   o.itemId,
+            quantity: o.qty,
+            notes:    o.note || null,
+            course:   1,
           })),
         }),
       });

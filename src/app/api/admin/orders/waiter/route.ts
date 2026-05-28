@@ -7,16 +7,16 @@ import { logAudit, getIp } from "@/lib/audit";
 /**
  * POST /api/admin/orders/waiter
  *
- * Creates a free-text waiter order (no item IDs needed).
+ * Creates a waiter order using real item IDs — exactly like a customer order.
  * Goes directly to CONFIRMED status, bypassing PENDING.
- * Each free-text item gets a placeholder itemId linked to a special
- * "waiter-item" sentinel, stored with the item name in notes.
+ * Prices are taken from the DB (not from client) for integrity.
  *
  * Body: {
  *   restaurantId: string
- *   tableNumber: string
- *   notes?: string
- *   items: Array<{ name: string; price: number; course: number; qty: number }>
+ *   tableNumber:  string
+ *   coversCount?: number
+ *   notes?:       string
+ *   items: Array<{ itemId: string; quantity: number; notes?: string; course?: number }>
  * }
  */
 export async function POST(req: Request) {
@@ -28,9 +28,8 @@ export async function POST(req: Request) {
 
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
   if (!tableNumber)  return NextResponse.json({ error: "tableNumber required" }, { status: 400 });
-  if (!items || !Array.isArray(items) || items.length === 0) {
+  if (!Array.isArray(items) || items.length === 0)
     return NextResponse.json({ error: "No items" }, { status: 400 });
-  }
 
   // Verify access
   if (session.user.role !== "SUPER_ADMIN") {
@@ -44,60 +43,78 @@ export async function POST(req: Request) {
   const restaurant = await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true } });
   if (!restaurant) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
 
-  // Find or create a sentinel "POS Item" item in the restaurant's first menu
-  // We use a special approach: find any active item to use as the itemId placeholder,
-  // but store the real name in the notes field
-  const anyItem = await prisma.item.findFirst({
-    where: { category: { menu: { restaurantId } }, isActive: true },
-    select: { id: true },
+  // Ensure order counter table + column exist (same as customer API)
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`),
+    prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "OrderCounter" ("restaurantId" TEXT PRIMARY KEY, "counter" INTEGER NOT NULL DEFAULT 0)`),
+  ]);
+
+  type ReqItem = { itemId: string; quantity: number; notes?: string; course?: number };
+
+  // Validate items exist and are active in this restaurant — fetch DB price
+  const itemIds = (items as ReqItem[]).map(i => i.itemId);
+  const dbItems = await prisma.item.findMany({
+    where: { id: { in: itemIds }, isActive: true, category: { menu: { restaurantId } } },
+    select: { id: true, price: true, name: true, category: { select: { autoReady: true } } },
   });
 
-  if (!anyItem) {
-    return NextResponse.json({ error: "No menu items found for this restaurant" }, { status: 400 });
-  }
+  if (dbItems.length === 0)
+    return NextResponse.json({ error: "No valid items found" }, { status: 400 });
 
-  type FreeItem = { name: string; price: number; course: number; qty: number };
+  const priceMap     = Object.fromEntries(dbItems.map(i => [i.id, i.price]));
+  const autoReadySet = new Set(dbItems.filter(i => i.category.autoReady).map(i => i.id));
 
-  const totalAmount = items.reduce((s: number, i: FreeItem) => s + i.price * i.qty, 0);
+  const validItems = (items as ReqItem[]).filter(i => priceMap[i.itemId] !== undefined);
+  const totalAmount = validItems.reduce((s, i) => s + priceMap[i.itemId] * i.quantity, 0);
 
-  // Create waiter order — directly CONFIRMED, course management applied
+  // Atomic order number
+  const counterResult = await prisma.$queryRawUnsafe<{ counter: bigint }[]>(
+    `INSERT INTO "OrderCounter" ("restaurantId", "counter")
+     VALUES ($1, 1)
+     ON CONFLICT ("restaurantId") DO UPDATE SET "counter" = "OrderCounter"."counter" + 1
+     RETURNING "counter"`,
+    restaurantId
+  );
+  const orderNumber = Number(counterResult[0]?.counter ?? 1);
+
+  // Create order with real item IDs — directly CONFIRMED
   const order = await prisma.order.create({
     data: {
       restaurantId,
       tableNumber,
-      notes: notes ?? null,
-      coversCount: coversCount ? Number(coversCount) : null,
+      notes:        notes ?? null,
+      coversCount:  coversCount ? Number(coversCount) : null,
       totalAmount,
-      status: "CONFIRMED",
-      orderSource: "WAITER",
+      orderNumber,
+      status:       "CONFIRMED",
+      orderSource:  "WAITER",
       items: {
-        create: (items as FreeItem[]).map(i => ({
-          itemId: anyItem.id, // placeholder item ID
-          quantity: i.qty,
-          price: i.price,
-          notes: i.name, // item name stored in notes since we're using placeholder
-          course: i.course ?? 1,
-          heldUntilFired: (i.course ?? 1) > 1,
-        })),
+        create: validItems.map(i => {
+          const course = i.course ?? 1;
+          return {
+            itemId:         i.itemId,
+            quantity:       i.quantity,
+            price:          priceMap[i.itemId],
+            notes:          i.notes ?? null,
+            course,
+            heldUntilFired: !autoReadySet.has(i.itemId) && course > 1,
+          };
+        }),
       },
     },
     include: {
-      items: {
-        include: {
-          item: { select: { name: true, prepTime: true } },
-        },
-      },
+      items: { include: { item: { select: { name: true, prepTime: true } } } },
     },
   });
 
   await logAudit({
-    userId: session.user.id,
-    userEmail: session.user.email,
-    action: "CREATE_WAITER_ORDER",
-    entity: "order",
-    entityId: order.id,
-    entityName: `שולחן ${tableNumber} · ₪${totalAmount.toFixed(0)} · ${items.length} פריטים`,
-    ip: getIp(req),
+    userId:     session.user.id,
+    userEmail:  session.user.email,
+    action:     "CREATE_WAITER_ORDER",
+    entity:     "order",
+    entityId:   order.id,
+    entityName: `שולחן ${tableNumber} · ₪${totalAmount.toFixed(0)} · ${validItems.length} פריטים`,
+    ip:         getIp(req),
   });
 
   sseNotify(restaurantId);
