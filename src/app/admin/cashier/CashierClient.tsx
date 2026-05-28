@@ -184,24 +184,94 @@ function TableCard({
 function BillModal({
   tableNumber,
   orders,
+  restaurantId,
   onConfirm,
   onClose,
+  onOrdersRefresh,
 }: {
   tableNumber: string;
   orders: Order[];
+  restaurantId: string;
   onConfirm: () => void;
   onClose: () => void;
+  onOrdersRefresh: () => Promise<void>;
 }) {
   const [tipPct, setTipPct] = useState<number>(0);
   const [customTip, setCustomTip] = useState("");
   const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
   const [paying, setPaying] = useState(false);
 
+  // Loyalty club flow
+  type ClubStep = "idle" | "phone" | "searching" | "found" | "not_found" | "redeeming" | "done";
+  type LoyaltyMember = { id: string; name: string; points: number };
+  type LoyaltySettings = { shekelPerPoint: number; minRedeemPoints: number };
+  const [clubStep, setClubStep] = useState<ClubStep>("idle");
+  const [clubPhone, setClubPhone] = useState("");
+  const [clubMember, setClubMember] = useState<LoyaltyMember | null>(null);
+  const [clubSettings, setClubSettings] = useState<LoyaltySettings>({ shekelPerPoint: 0.1, minRedeemPoints: 100 });
+  const [clubPoints, setClubPoints] = useState<number>(0);
+  const [clubError, setClubError] = useState<string | null>(null);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  async function searchMember() {
+    if (!clubPhone.trim()) return;
+    setClubStep("searching");
+    setClubError(null);
+    try {
+      const [mRes, sRes] = await Promise.all([
+        fetch(`/api/loyalty/${restaurantId}/member?phone=${encodeURIComponent(clubPhone.trim())}`),
+        fetch(`/api/loyalty/${restaurantId}/settings`),
+      ]);
+      const member = mRes.ok ? await mRes.json() : null;
+      const settings = sRes.ok ? await sRes.json() : null;
+      if (member?.id) {
+        setClubMember(member);
+        if (settings) setClubSettings({ shekelPerPoint: settings.shekelPerPoint ?? 0.1, minRedeemPoints: settings.minRedeemPoints ?? 100 });
+        setClubPoints(Math.min(member.points, settings?.minRedeemPoints ?? 100));
+        setClubStep("found");
+      } else {
+        setClubStep("not_found");
+      }
+    } catch {
+      setClubStep("not_found");
+    }
+  }
+
+  async function redeemPoints() {
+    if (!clubMember || clubPoints <= 0) return;
+    const targetOrder = validOrders[0];
+    if (!targetOrder) return;
+    setClubStep("redeeming");
+    setClubError(null);
+    try {
+      const res = await fetch(`/api/loyalty/${restaurantId}/redeem`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: targetOrder.id,
+          memberId: clubMember.id,
+          type: "POINTS",
+          pointsToRedeem: clubPoints,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setClubError(data.error === "already_redeemed" ? "הזמנה זו כבר מומשה" : data.error ?? "שגיאה");
+        setClubStep("found");
+        return;
+      }
+      await onOrdersRefresh();
+      setClubStep("done");
+    } catch {
+      setClubError("שגיאת תקשורת");
+      setClubStep("found");
+    }
+  }
 
   const validOrders = orders.filter(o => !["CANCELLED", "PAID"].includes(o.status));
   const allItems = validOrders.flatMap(o => o.items);
@@ -572,6 +642,119 @@ function BillModal({
               </div>
             </div>
 
+            {/* Loyalty club */}
+            {loyaltyDiscount === 0 && clubStep === "idle" && (
+              <div style={{ marginBottom: 20 }}>
+                <button
+                  type="button"
+                  onClick={() => setClubStep("phone")}
+                  style={{
+                    width: "100%", padding: "10px 0", borderRadius: 12,
+                    border: "2px solid #c9a84c", background: "#fdf8ec",
+                    color: "#8B6914", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                  }}
+                >
+                  ⭐ הנחת מועדון לקוחות
+                </button>
+              </div>
+            )}
+
+            {loyaltyDiscount === 0 && clubStep === "phone" && (
+              <div style={{ marginBottom: 20, background: "#fdf8ec", borderRadius: 12, padding: 14, border: "1px solid #fde68a" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#8B6914", marginBottom: 10 }}>⭐ חיפוש חבר מועדון</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="tel" value={clubPhone}
+                    onChange={e => setClubPhone(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && searchMember()}
+                    placeholder="מספר טלפון"
+                    style={{
+                      flex: 1, padding: "9px 12px", borderRadius: 8,
+                      border: "1px solid #fde68a", background: "#fff",
+                      fontSize: 14, outline: "none",
+                    }}
+                  />
+                  <button type="button" onClick={searchMember}
+                    style={{ padding: "9px 16px", borderRadius: 8, border: "none", background: "#c9a84c", color: "#fff", fontWeight: 700, cursor: "pointer" }}>
+                    חפש
+                  </button>
+                </div>
+                <button type="button" onClick={() => setClubStep("idle")}
+                  style={{ marginTop: 8, fontSize: 12, color: "#9ca3af", background: "none", border: "none", cursor: "pointer" }}>
+                  ביטול
+                </button>
+              </div>
+            )}
+
+            {loyaltyDiscount === 0 && clubStep === "searching" && (
+              <div style={{ marginBottom: 20, background: "#fdf8ec", borderRadius: 12, padding: 14, textAlign: "center", color: "#8B6914", fontSize: 13 }}>
+                מחפש...
+              </div>
+            )}
+
+            {loyaltyDiscount === 0 && clubStep === "not_found" && (
+              <div style={{ marginBottom: 20, background: "#fff7f7", borderRadius: 12, padding: 14, border: "1px solid #fca5a5" }}>
+                <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 8 }}>לא נמצא חבר מועדון עם מספר זה</div>
+                <button type="button" onClick={() => { setClubPhone(""); setClubStep("phone"); }}
+                  style={{ fontSize: 12, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>
+                  ← נסה שוב
+                </button>
+              </div>
+            )}
+
+            {loyaltyDiscount === 0 && (clubStep === "found" || clubStep === "redeeming") && clubMember && (
+              <div style={{ marginBottom: 20, background: "#fdf8ec", borderRadius: 12, padding: 14, border: "1px solid #fde68a" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{clubMember.name}</div>
+                    <div style={{ fontSize: 12, color: "#8B6914" }}>{clubMember.points} נקודות זמינות</div>
+                  </div>
+                  <button type="button" onClick={() => setClubStep("idle")}
+                    style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 16 }}>✕</button>
+                </div>
+                {clubMember.points >= clubSettings.minRedeemPoints ? (
+                  <>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
+                      מינימום מימוש: {clubSettings.minRedeemPoints} נקודות · שווי: ₪{(clubSettings.minRedeemPoints * clubSettings.shekelPerPoint).toFixed(2)}
+                    </div>
+                    <input type="range"
+                      min={clubSettings.minRedeemPoints}
+                      max={clubMember.points}
+                      step={1}
+                      value={clubPoints}
+                      onChange={e => setClubPoints(Number(e.target.value))}
+                      style={{ width: "100%", accentColor: "#c9a84c", marginBottom: 6 }}
+                    />
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 10 }}>
+                      <span style={{ color: "#374151" }}>{clubPoints} נקודות</span>
+                      <span style={{ fontWeight: 700, color: "#15803d" }}>הנחה: ₪{(clubPoints * clubSettings.shekelPerPoint).toFixed(2)}</span>
+                    </div>
+                    {clubError && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 8 }}>{clubError}</div>}
+                    <button type="button" onClick={redeemPoints}
+                      disabled={clubStep === "redeeming"}
+                      style={{
+                        width: "100%", padding: "10px 0", borderRadius: 8, border: "none",
+                        background: clubStep === "redeeming" ? "#d4b96a" : "#c9a84c",
+                        color: "#fff", fontWeight: 700, fontSize: 14, cursor: clubStep === "redeeming" ? "wait" : "pointer",
+                      }}>
+                      {clubStep === "redeeming" ? "מממש..." : `✓ ממש ${clubPoints} נקודות — הנחה ₪${(clubPoints * clubSettings.shekelPerPoint).toFixed(2)}`}
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13, color: "#9ca3af" }}>
+                    אין מספיק נקודות (מינימום: {clubSettings.minRedeemPoints})
+                  </div>
+                )}
+              </div>
+            )}
+
+            {clubStep === "done" && (
+              <div style={{ marginBottom: 20, background: "#f0fdf4", borderRadius: 12, padding: 14, border: "1px solid #86efac", textAlign: "center" }}>
+                <div style={{ fontSize: 16 }}>✅</div>
+                <div style={{ fontWeight: 700, color: "#15803d", fontSize: 13, marginTop: 4 }}>הנחת מועדון הוחלה בהצלחה</div>
+              </div>
+            )}
+
             {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button
@@ -796,8 +979,10 @@ export default function CashierClient({
         <BillModal
           tableNumber={selectedTable}
           orders={selectedOrders}
+          restaurantId={restaurantId || selectedOrders[0]?.restaurant?.id || ""}
           onConfirm={() => closeTable(selectedTable)}
           onClose={() => setSelectedTable(null)}
+          onOrdersRefresh={fetchOrders}
         />
       )}
 
