@@ -110,6 +110,17 @@ export async function POST(req: Request) {
     },
   });
 
+  // If all items are autoReady (DONE), advance order to READY immediately —
+  // mirrors the allDone check in the item-status route for customer orders.
+  const allItemsDone = order.items.every(i =>
+    (i as unknown as { itemStatus: string; heldUntilFired: boolean }).itemStatus === "DONE" ||
+    (i as unknown as { heldUntilFired: boolean }).heldUntilFired
+  );
+  if (allItemsDone) {
+    await prisma.order.update({ where: { id: order.id }, data: { status: "READY" } });
+    (order as unknown as { status: string }).status = "READY";
+  }
+
   await logAudit({
     userId:     session.user.id,
     userEmail:  session.user.email,

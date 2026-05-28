@@ -55,6 +55,24 @@ export async function PATCH(
     }),
   ]);
 
+  // When confirming: if all items are already DONE (e.g. all autoReady drinks),
+  // skip CONFIRMED and advance directly to READY — same as the kitchen item-status allDone check.
+  if (status === "CONFIRMED") {
+    type ItemRow = { itemStatus: string; heldUntilFired: boolean };
+    const orderItems = await prisma.$queryRawUnsafe<ItemRow[]>(
+      `SELECT "itemStatus", "heldUntilFired" FROM "OrderItem" WHERE "orderId" = $1`,
+      orderId
+    );
+    const allDone = orderItems.length > 0 && orderItems.every(i =>
+      i.heldUntilFired || i.itemStatus === "DONE" || i.itemStatus === "CANCELLED"
+    );
+    if (allDone) {
+      await prisma.order.update({ where: { id: orderId }, data: { status: "READY" } });
+      sseNotify(updated.restaurantId);
+      return NextResponse.json({ status: "READY" });
+    }
+  }
+
   // Refund loyalty redemption when cancelling an order that had a discount
   if (
     status === "CANCELLED" &&
