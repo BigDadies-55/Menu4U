@@ -373,61 +373,62 @@ function BillModal({
               fontFamily: "'Courier New', monospace",
               fontSize: 13,
               lineHeight: 1.6,
+              color: "#111827",
             }}>
               {/* Restaurant name */}
-              <div style={{ textAlign: "center", fontWeight: 900, fontSize: 16, marginBottom: 2 }}>
+              <div style={{ textAlign: "center", fontWeight: 900, fontSize: 16, marginBottom: 2, color: "#111827" }}>
                 {restaurantName}
               </div>
-              <div style={{ textAlign: "center", color: "#6b7280", marginBottom: 8 }}>חשבון</div>
-              <div style={{ borderTop: "1px dashed #d1d5db", margin: "6px 0" }} />
+              <div style={{ textAlign: "center", color: "#374151", marginBottom: 8 }}>חשבון</div>
+              <div style={{ borderTop: "1px dashed #9ca3af", margin: "6px 0" }} />
               {/* Table + date */}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#374151" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#111827" }}>
                 <span>שולחן: {tableNumber}</span>
                 <span style={{ direction: "ltr" }}>{dateStr}</span>
               </div>
-              <div style={{ borderTop: "1px dashed #d1d5db", margin: "6px 0" }} />
+              <div style={{ borderTop: "1px dashed #9ca3af", margin: "6px 0" }} />
 
               {/* Items */}
               {allItems.map((item, idx) => (
                 <div key={idx}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: "#111827" }}>
                     <span style={{ flex: 1 }}>{item.quantity}× {item.item.name}</span>
                     <span style={{ flexShrink: 0, direction: "ltr" }}>₪{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                   {item.modifiers && item.modifiers.map((m, mi) => (
-                    <div key={mi} style={{ paddingRight: 12, fontSize: 11, color: "#6b7280" }}>
+                    <div key={mi} style={{ paddingRight: 12, fontSize: 11, color: "#374151" }}>
                       {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                     </div>
                   ))}
                   {item.notes && (
-                    <div style={{ paddingRight: 12, fontSize: 11, color: "#9ca3af", fontStyle: "italic" }}>
+                    <div style={{ paddingRight: 12, fontSize: 11, color: "#4b5563", fontStyle: "italic" }}>
                       💬 {item.notes}
                     </div>
                   )}
                 </div>
               ))}
 
-              <div style={{ borderTop: "1px dashed #d1d5db", margin: "8px 0" }} />
+              <div style={{ borderTop: "1px dashed #9ca3af", margin: "8px 0" }} />
 
               {/* Subtotal / discount lines */}
               {loyaltyDiscount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#374151" }}>
                   <span>סה&quot;כ לפני הנחה</span>
                   <span style={{ direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
                 </div>
               )}
               {loyaltyDiscount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#16a34a", fontWeight: 700 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#15803d", fontWeight: 700 }}>
                   <span>⭐ הנחת מועדון{loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames.join(", ")})` : ""}</span>
                   <span style={{ direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#111827" }}>
                 <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סה\"כ"}</span>
                 <span style={{ direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#111827" }}>
                   <span>טיפ {tipPct === -1 ? "" : `${tipPct}%`}</span>
                   <span style={{ direction: "ltr" }}>₪{tipAmount.toFixed(2)}</span>
                 </div>
