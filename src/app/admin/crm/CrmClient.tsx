@@ -15,6 +15,16 @@ type SmsLog = {
   message: string; sentCount: number; failedCount: number; sentAt: string;
 };
 
+type RestaurantStats = {
+  restaurantId: string; name: string;
+  totalSent: number; totalFailed: number; sendCount: number;
+};
+
+type StatsData = {
+  restaurants: RestaurantStats[];
+  totals: { sent: number; failed: number; sends: number };
+};
+
 type Member = { id: string; name: string; phone: string; points: number };
 
 const CAMPAIGN_TYPES = [
@@ -184,7 +194,7 @@ function ScheduleFields({ type, config, onChange }: {
 /* ══════════════════════════════════════════════════════════════ */
 export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: Restaurant[]; isSuperAdmin: boolean }) {
   const [rid, setRid] = useState(restaurants[0]?.id ?? "");
-  const [tab, setTab] = useState<"send" | "campaigns" | "history">("send");
+  const [tab, setTab] = useState<"send" | "campaigns" | "history" | "stats">("send");
 
   /* ── members list (for send tab) ── */
   const [members, setMembers] = useState<Member[]>([]);
@@ -207,6 +217,10 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
   /* ── history ── */
   const [history, setHistory] = useState<SmsLog[]>([]);
   const [histLoading, setHistLoading] = useState(false);
+
+  /* ── stats ── */
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   /* ── fetch members ── */
   const fetchMembers = useCallback(async () => {
@@ -235,9 +249,19 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
     setHistLoading(false);
   }, [rid]);
 
+  /* ── fetch stats ── */
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    const scope = isSuperAdmin ? "all" : rid;
+    const res = await fetch(`/api/admin/crm/stats?scope=${scope}`);
+    if (res.ok) setStats(await res.json());
+    setStatsLoading(false);
+  }, [rid, isSuperAdmin]);
+
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
   useEffect(() => { if (tab === "campaigns") fetchCampaigns(); }, [tab, fetchCampaigns]);
   useEffect(() => { if (tab === "history") fetchHistory(); }, [tab, fetchHistory]);
+  useEffect(() => { if (tab === "stats") fetchStats(); }, [tab, fetchStats]);
 
   /* ── immediate send ── */
   async function handleSend() {
@@ -332,8 +356,9 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
       <div style={{ display: "flex", gap: 4, marginBottom: 24, background: D.card, borderRadius: 10, padding: 4, border: `1px solid ${D.border}` }}>
         {([
           { k: "send", label: "📤 שליחה מיידית" },
-          { k: "campaigns", label: "⏰ קמפיינים מתוזמנים" },
-          { k: "history", label: "📊 היסטוריה" },
+          { k: "campaigns", label: "⏰ קמפיינים" },
+          { k: "history", label: "📋 היסטוריה" },
+          { k: "stats", label: "📈 סטטיסטיקות" },
         ] as const).map(t => (
           <button key={t.k} onClick={() => setTab(t.k)} style={{
             flex: 1, padding: "9px 0", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600,
@@ -547,6 +572,87 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                 );
               })}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ──────── TAB: STATS ──────── */}
+      {tab === "stats" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {statsLoading ? (
+            <div style={{ padding: 60, textAlign: "center", color: D.sub }}>טוען...</div>
+          ) : !stats ? null : (
+            <>
+              {/* Summary row */}
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {[
+                  { label: "סה\"כ SMS שנשלחו", value: stats.totals.sent.toLocaleString(), color: D.green, icon: "📤" },
+                  { label: "נכשלו", value: stats.totals.failed.toLocaleString(), color: stats.totals.failed > 0 ? D.red : D.sub, icon: "❌" },
+                  { label: "אירועי שליחה", value: stats.totals.sends.toLocaleString(), color: D.amber, icon: "📋" },
+                ].map(s => (
+                  <Card key={s.label} style={{ flex: 1, minWidth: 140, padding: "18px 20px", margin: 0 }}>
+                    <div style={{ fontSize: 11, color: D.sub, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>
+                      {s.icon} {s.label}
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Per-restaurant table */}
+              <Card style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ padding: "14px 18px", borderBottom: `1px solid ${D.border}`, fontWeight: 700, fontSize: 14 }}>
+                  {isSuperAdmin ? "פירוט לפי מסעדה" : "פירוט שליחות"}
+                </div>
+                {stats.restaurants.length === 0 ? (
+                  <div style={{ padding: 40, textAlign: "center", color: D.sub, fontSize: 13 }}>אין נתונים עדיין</div>
+                ) : (
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ background: D.bg }}>
+                        {(isSuperAdmin ? ["מסעדה", "SMS שנשלחו", "נכשלו", "אירועי שליחה"] : ["SMS שנשלחו", "נכשלו", "אירועי שליחה"]).map(h => (
+                          <th key={h} style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: D.sub, textTransform: "uppercase", letterSpacing: ".05em" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.restaurants
+                        .sort((a, b) => b.totalSent - a.totalSent)
+                        .map((r, i) => (
+                          <tr key={r.restaurantId} style={{
+                            borderBottom: `1px solid ${D.border}`,
+                            background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+                          }}>
+                            {isSuperAdmin && (
+                              <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 600, color: D.text }}>{r.name}</td>
+                            )}
+                            <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 15, color: r.totalSent > 0 ? D.green : D.muted }}>
+                              {r.totalSent.toLocaleString()}
+                            </td>
+                            <td style={{ padding: "12px 16px", fontWeight: r.totalFailed > 0 ? 700 : 400, color: r.totalFailed > 0 ? D.red : D.muted }}>
+                              {r.totalFailed > 0 ? r.totalFailed.toLocaleString() : "—"}
+                            </td>
+                            <td style={{ padding: "12px 16px", color: D.sub, fontSize: 13 }}>
+                              {r.sendCount.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      {/* Totals footer */}
+                      {isSuperAdmin && stats.restaurants.length > 1 && (
+                        <tr style={{ background: "rgba(201,168,76,0.06)", borderTop: `2px solid ${D.border}` }}>
+                          <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 13, color: D.amber }}>סה&quot;כ</td>
+                          <td style={{ padding: "12px 16px", fontWeight: 800, fontSize: 15, color: D.green }}>{stats.totals.sent.toLocaleString()}</td>
+                          <td style={{ padding: "12px 16px", fontWeight: stats.totals.failed > 0 ? 800 : 400, color: stats.totals.failed > 0 ? D.red : D.muted }}>
+                            {stats.totals.failed > 0 ? stats.totals.failed.toLocaleString() : "—"}
+                          </td>
+                          <td style={{ padding: "12px 16px", fontWeight: 700, color: D.sub }}>{stats.totals.sends.toLocaleString()}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </Card>
+            </>
           )}
         </div>
       )}
