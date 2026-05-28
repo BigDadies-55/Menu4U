@@ -89,6 +89,20 @@ function SmsTextarea({ value, onChange }: { value: string; onChange: (v: string)
   );
 }
 
+/* ── Hour select: cron fires every hour on the hour, so minute precision is irrelevant ── */
+function HourSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const currentHour = typeof value === "string" && value.includes(":")
+    ? value.split(":")[0]
+    : String(parseInt(value as string) || 10);
+  return (
+    <Select value={currentHour} onChange={e => onChange(`${e.target.value}:00`)} style={{ width: 100 }}>
+      {Array.from({ length: 24 }, (_, i) => (
+        <option key={i} value={String(i)}>{String(i).padStart(2, "0")}:00</option>
+      ))}
+    </Select>
+  );
+}
+
 /* ── Schedule config fields per type ── */
 function ScheduleFields({ type, config, onChange }: {
   type: string;
@@ -105,7 +119,7 @@ function ScheduleFields({ type, config, onChange }: {
       </div>
       <div style={{ width: 110 }}>
         <Label>שעה</Label>
-        <Input type="time" value={(config.time as string) ?? "10:00"} onChange={e => set("time", e.target.value)} />
+        <HourSelect value={(config.time as string) ?? "10:00"} onChange={v => set("time", v)} />
       </div>
     </div>
   );
@@ -120,7 +134,7 @@ function ScheduleFields({ type, config, onChange }: {
       </div>
       <div style={{ width: 110 }}>
         <Label>שעה</Label>
-        <Input type="time" value={(config.time as string) ?? "10:00"} onChange={e => set("time", e.target.value)} />
+        <HourSelect value={(config.time as string) ?? "10:00"} onChange={v => set("time", v)} />
       </div>
     </div>
   );
@@ -134,7 +148,7 @@ function ScheduleFields({ type, config, onChange }: {
       </div>
       <div style={{ width: 110 }}>
         <Label>שעה</Label>
-        <Input type="time" value={(config.time as string) ?? "10:00"} onChange={e => set("time", e.target.value)} />
+        <HourSelect value={(config.time as string) ?? "10:00"} onChange={v => set("time", v)} />
       </div>
     </div>
   );
@@ -142,7 +156,7 @@ function ScheduleFields({ type, config, onChange }: {
   if (type === "BIRTHDAY") return (
     <div style={{ width: 110 }}>
       <Label>שעת שליחה</Label>
-      <Input type="time" value={(config.time as string) ?? "09:00"} onChange={e => set("time", e.target.value)} />
+      <HourSelect value={(config.time as string) ?? "09:00"} onChange={v => set("time", v)} />
     </div>
   );
 
@@ -155,7 +169,7 @@ function ScheduleFields({ type, config, onChange }: {
       </div>
       <div style={{ width: 110 }}>
         <Label>שעה</Label>
-        <Input type="time" value={(config.time as string) ?? "10:00"} onChange={e => set("time", e.target.value)} />
+        <HourSelect value={(config.time as string) ?? "10:00"} onChange={v => set("time", v)} />
       </div>
     </div>
   );
@@ -169,7 +183,7 @@ function ScheduleFields({ type, config, onChange }: {
       </div>
       <div style={{ width: 110 }}>
         <Label>שעה</Label>
-        <Input type="time" value={(config.time as string) ?? "10:00"} onChange={e => set("time", e.target.value)} />
+        <HourSelect value={(config.time as string) ?? "10:00"} onChange={v => set("time", v)} />
       </div>
     </div>
   );
@@ -183,7 +197,7 @@ function ScheduleFields({ type, config, onChange }: {
       </div>
       <div style={{ width: 110 }}>
         <Label>שעה</Label>
-        <Input type="time" value={(config.time as string) ?? "10:00"} onChange={e => set("time", e.target.value)} />
+        <HourSelect value={(config.time as string) ?? "10:00"} onChange={v => set("time", v)} />
       </div>
     </div>
   );

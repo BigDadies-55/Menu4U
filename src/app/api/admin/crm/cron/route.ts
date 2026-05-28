@@ -63,11 +63,23 @@ function checkShouldRun(
 ): boolean {
   const hour = now.getHours();
   const minute = now.getMinutes();
-  const configHour = (config.hour as number) ?? 10;
-  const configMinute = (config.minute as number) ?? 0;
 
-  // Only run in the correct hour window (cron runs every hour, check if within 5 min of target)
-  const withinHour = hour === configHour && minute < 60;
+  // Parse time from "HH:MM" string (saved by UI) or fallback to separate hour/minute fields
+  let configHour = 10;
+  let configMinute = 0;
+  if (typeof config.time === "string" && config.time.includes(":")) {
+    const [h, m] = config.time.split(":").map(Number);
+    configHour = isNaN(h) ? 10 : h;
+    configMinute = isNaN(m) ? 0 : m;
+  } else {
+    configHour = (config.hour as number) ?? 10;
+    configMinute = (config.minute as number) ?? 0;
+  }
+
+  // cron runs every hour at :00 via GitHub Actions — match by hour, allow 10 min drift
+  // configMinute is stored but only hour granularity is enforced (cron is hourly)
+  void configMinute;
+  const withinHour = hour === configHour && minute < 10;
 
   // Prevent double-run: skip if already ran within the last 50 minutes
   if (lastRunAt) {
@@ -77,8 +89,14 @@ function checkShouldRun(
 
   switch (type) {
     case "SCHEDULED": {
-      const runAt = config.runAt ? new Date(config.runAt as string) : null;
-      if (!runAt) return false;
+      // UI saves date + time separately; combine into a timestamp
+      let runAt: Date | null = null;
+      if (config.runAt) {
+        runAt = new Date(config.runAt as string);
+      } else if (config.date && config.time) {
+        runAt = new Date(`${config.date as string}T${config.time as string}:00`);
+      }
+      if (!runAt || isNaN(runAt.getTime())) return false;
       return Math.abs(now.getTime() - runAt.getTime()) < 3600000; // within 1h
     }
     case "WEEKLY":
