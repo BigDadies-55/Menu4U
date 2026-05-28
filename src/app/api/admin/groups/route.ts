@@ -13,6 +13,7 @@ async function ensureTables() {
         CONSTRAINT "RestaurantGroup_pkey" PRIMARY KEY ("id")
       )
     `),
+    prisma.$executeRawUnsafe(`ALTER TABLE "RestaurantGroup" ADD COLUMN IF NOT EXISTS "description" TEXT`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "groupId" TEXT`),
     prisma.$executeRawUnsafe(`ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "groupId" TEXT`),
     prisma.$executeRawUnsafe(`ALTER TABLE "LoyaltyCoupon" ADD COLUMN IF NOT EXISTS "validForGroupId" TEXT`),

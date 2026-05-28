@@ -12,11 +12,19 @@ export async function PATCH(
   }
 
   const { groupId } = await params;
-  const { name, logo } = await req.json();
+  const { name, logo, description } = await req.json();
 
   await prisma.$executeRawUnsafe(
-    `UPDATE "RestaurantGroup" SET "name" = COALESCE($1, "name"), "logo" = COALESCE($2, "logo") WHERE "id" = $3`,
-    name ?? null, logo ?? null, groupId
+    `ALTER TABLE "RestaurantGroup" ADD COLUMN IF NOT EXISTS "description" TEXT`
+  );
+
+  await prisma.$executeRawUnsafe(
+    `UPDATE "RestaurantGroup"
+     SET "name" = COALESCE($1, "name"),
+         "logo" = COALESCE($2, "logo"),
+         "description" = $3
+     WHERE "id" = $4`,
+    name ?? null, logo ?? null, description ?? null, groupId
   );
 
   return NextResponse.json({ ok: true });

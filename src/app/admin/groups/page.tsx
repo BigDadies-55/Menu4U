@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 type Restaurant = { id: string; name: string; logo: string | null; groupId: string | null };
-type Group = { id: string; name: string; logo: string | null; createdAt: string; restaurants: Restaurant[] };
+type Group = { id: string; name: string; description: string | null; logo: string | null; createdAt: string; restaurants: Restaurant[] };
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -12,6 +12,10 @@ export default function GroupsPage() {
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -58,6 +62,25 @@ export default function GroupsPage() {
     await fetch(`/api/admin/groups/${groupId}/restaurants?restaurantId=${restaurantId}`, {
       method: "DELETE",
     });
+    load();
+  }
+
+  function startEdit(g: Group) {
+    setEditingGroup(g.id);
+    setEditName(g.name);
+    setEditDescription(g.description ?? "");
+  }
+
+  async function saveEdit(groupId: string) {
+    if (!editName.trim()) return;
+    setSaving(true);
+    await fetch(`/api/admin/groups/${groupId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || null }),
+    });
+    setSaving(false);
+    setEditingGroup(null);
     load();
   }
 
@@ -134,12 +157,25 @@ export default function GroupsPage() {
                     <span style={{ fontSize: 20 }}>🏢</span>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 16 }}>{g.name}</div>
+                      {g.description && (
+                        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 1 }}>{g.description}</div>
+                      )}
                       <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
                         {groupRestaurants.length} סניפים
                       </div>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button
+                      onClick={e => { e.stopPropagation(); startEdit(g); setExpandedGroup(g.id); }}
+                      style={{
+                        padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(197,168,128,0.3)",
+                        background: "rgba(197,168,128,0.08)", color: "#C5A880",
+                        fontSize: 12, cursor: "pointer",
+                      }}
+                    >
+                      ✏️ ערוך
+                    </button>
                     <button
                       onClick={e => { e.stopPropagation(); deleteGroup(g.id); }}
                       style={{
@@ -148,7 +184,7 @@ export default function GroupsPage() {
                         fontSize: 12, cursor: "pointer",
                       }}
                     >
-                      מחק רשת
+                      מחק
                     </button>
                     <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 18 }}>{isOpen ? "▲" : "▼"}</span>
                   </div>
@@ -157,6 +193,66 @@ export default function GroupsPage() {
                 {/* Expanded content */}
                 {isOpen && (
                   <div style={{ padding: "0 20px 20px" }}>
+
+                    {/* Edit name + description */}
+                    {editingGroup === g.id && (
+                      <div style={{
+                        background: "rgba(197,168,128,0.06)", border: "1px solid rgba(197,168,128,0.2)",
+                        borderRadius: 10, padding: 16, marginBottom: 20,
+                      }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
+                          עריכת פרטי הרשת
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          <input
+                            value={editName}
+                            onChange={e => setEditName(e.target.value)}
+                            placeholder="שם הרשת"
+                            style={{
+                              padding: "9px 14px", borderRadius: 8,
+                              background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                              color: "inherit", fontSize: 14,
+                            }}
+                          />
+                          <textarea
+                            value={editDescription}
+                            onChange={e => setEditDescription(e.target.value)}
+                            placeholder="תיאור הרשת (אופציונלי)"
+                            rows={2}
+                            style={{
+                              padding: "9px 14px", borderRadius: 8,
+                              background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                              color: "inherit", fontSize: 13, resize: "vertical",
+                            }}
+                          />
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              onClick={() => saveEdit(g.id)}
+                              disabled={saving || !editName.trim()}
+                              style={{
+                                padding: "8px 20px", borderRadius: 8, border: "none",
+                                background: saving ? "rgba(197,168,128,0.3)" : "#C5A880",
+                                color: "#0D0D0D", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                              }}
+                            >
+                              {saving ? "שומר..." : "שמור"}
+                            </button>
+                            <button
+                              onClick={() => setEditingGroup(null)}
+                              style={{
+                                padding: "8px 16px", borderRadius: 8,
+                                border: "1px solid rgba(255,255,255,0.15)",
+                                background: "transparent", color: "rgba(255,255,255,0.5)",
+                                fontSize: 13, cursor: "pointer",
+                              }}
+                            >
+                              ביטול
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Current restaurants */}
                     <div style={{ marginBottom: 16 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
