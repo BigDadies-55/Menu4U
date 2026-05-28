@@ -618,6 +618,12 @@ export default function MenuElegantClient({
     return () => { document.body.style.overflow = ""; };
   }, [modalItem, cartOpen, myOrdersOpen, showLoyalty]);
 
+  // Auto-fetch active orders whenever the loyalty card opens (so redemption section can appear)
+  useEffect(() => {
+    if (showLoyalty && tableNumber) fetchMyOrders(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showLoyalty]);
+
   useEffect(() => {
     document.documentElement.dir = t.dir;
     document.documentElement.lang = lang;
@@ -1742,36 +1748,6 @@ export default function MenuElegantClient({
             })}
           </div>
         </section>
-      )}
-
-      {/* ── Loyalty star — floating bottom-left (categories / items only) ── */}
-      {(elegantView === "categories" || elegantView === "items") && (
-        <button
-          onClick={() => {
-            if (loyaltyMember) setShowLoyalty(true);
-            else { setClubStep("promo"); elegantNavigateTo("clubwelcome"); }
-          }}
-          aria-label={loyaltyMember ? "כרטיס המועדון שלי" : "הצטרף למועדון"}
-          style={{
-            position: "fixed", bottom: 24, left: 16, zIndex: 50,
-            width: 48, height: 48, borderRadius: "50%", border: "none",
-            background: loyaltyMember
-              ? "linear-gradient(135deg, #C5A880, #dfc090)"
-              : "rgba(197,168,128,0.15)",
-            backdropFilter: "blur(10px)",
-            boxShadow: loyaltyMember
-              ? "0 4px 18px rgba(197,168,128,0.45)"
-              : "0 2px 12px rgba(0,0,0,0.5)",
-            cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke={loyaltyMember ? "#0D0D0D" : "#C5A880"}
-            strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-        </button>
       )}
 
       {/* ── Cart floating button (if ordersEnabled) ── */}
