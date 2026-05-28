@@ -135,14 +135,6 @@ export default function LoyaltyClient({
   const [couponExpiry, setCouponExpiry] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
 
-  // SMS broadcast
-  const [smsMessage, setSmsMessage] = useState("");
-  const [smsLoading, setSmsLoading] = useState(false);
-  const [smsResult, setSmsResult] = useState<{ sent: number; failed: number } | null>(null);
-  const [smsTarget, setSmsTarget] = useState<"all" | "selected">("all");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const SMS_MAX = 70;
-
   // Settings form
   const [settingsForm, setSettingsForm] = useState<Partial<LoyaltySettings>>({});
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -175,35 +167,6 @@ export default function LoyaltyClient({
   }, [selectedRestaurantId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  async function handleSmsBroadcast() {
-    if (!smsMessage.trim() || smsMessage.length > SMS_MAX) return;
-    const targets = smsTarget === "selected"
-      ? members.filter(m => selectedIds.has(m.id))
-      : members;
-    if (targets.length === 0) return;
-    if (!confirm(`שלח SMS ל-${targets.length} חברים?`)) return;
-    setSmsLoading(true);
-    setSmsResult(null);
-    try {
-      const res = await fetch(`/api/admin/loyalty/sms`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantId: selectedRestaurantId,
-          message: smsMessage.trim(),
-          memberIds: smsTarget === "selected" ? [...selectedIds] : null,
-        }),
-      });
-      const data = await res.json();
-      setSmsResult({ sent: data.sent ?? 0, failed: data.failed ?? 0 });
-      if (data.sent > 0) { setSmsMessage(""); setSelectedIds(new Set()); }
-    } catch {
-      setSmsResult({ sent: 0, failed: targets.length });
-    } finally {
-      setSmsLoading(false);
-    }
-  }
 
   const filteredMembers = members.filter(m =>
     !search ||
@@ -369,80 +332,6 @@ export default function LoyaltyClient({
               ))}
             </div>
 
-            {/* SMS Broadcast */}
-            <div style={{ ...CARD, marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>📱 שליחת SMS</div>
-                {/* Target toggle */}
-                <div style={{ display: "flex", background: "#1a1d23", borderRadius: 8, padding: 3, gap: 2 }}>
-                  {(["all", "selected"] as const).map(t => (
-                    <button key={t} type="button"
-                      onClick={() => setSmsTarget(t)}
-                      style={{
-                        padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        background: smsTarget === t ? "#c9a84c" : "transparent",
-                        color: smsTarget === t ? "#000" : "#6c757d",
-                      }}>
-                      {t === "all" ? `לכולם (${members.length})` : `לנבחרים (${selectedIds.size})`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {smsTarget === "selected" && selectedIds.size === 0 && (
-                <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 10 }}>
-                  ⚠️ בחר חברים מהטבלה למטה
-                </div>
-              )}
-
-              <div style={{ position: "relative" }}>
-                <textarea
-                  value={smsMessage}
-                  onChange={e => setSmsMessage(e.target.value.slice(0, SMS_MAX))}
-                  placeholder="כתוב הודעה... (עד 70 תווים)"
-                  rows={3}
-                  style={{
-                    ...DARK_INPUT,
-                    width: "100%",
-                    resize: "none",
-                    boxSizing: "border-box",
-                    paddingBottom: 28,
-                    fontFamily: "inherit",
-                    lineHeight: 1.5,
-                    border: `1px solid ${smsMessage.length === SMS_MAX ? "#ef4444" : "#3a3f47"}`,
-                  }}
-                />
-                <div style={{
-                  position: "absolute", bottom: 8, left: 12,
-                  fontSize: 12, fontWeight: 600,
-                  color: smsMessage.length === SMS_MAX ? "#ef4444" : smsMessage.length > 55 ? "#f59e0b" : "#6c757d",
-                }}>
-                  {smsMessage.length} / {SMS_MAX}
-                </div>
-              </div>
-              {smsResult && (
-                <div style={{
-                  marginTop: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13,
-                  background: smsResult.sent > 0 ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.08)",
-                  border: `1px solid ${smsResult.sent > 0 ? "rgba(74,222,128,0.2)" : "rgba(239,68,68,0.2)"}`,
-                  color: smsResult.sent > 0 ? "#4ade80" : "#f87171",
-                }}>
-                  {smsResult.sent > 0 && `✓ נשלח ל-${smsResult.sent} חברים`}
-                  {smsResult.failed > 0 && ` · ${smsResult.failed} נכשלו`}
-                </div>
-              )}
-              {(() => {
-                const count = smsTarget === "selected" ? selectedIds.size : members.length;
-                const disabled = smsLoading || !smsMessage.trim() || count === 0;
-                return (
-                  <button onClick={handleSmsBroadcast} disabled={disabled}
-                    style={{ ...BTN_PRIMARY, marginTop: 12, opacity: disabled ? 0.5 : 1, cursor: disabled ? "not-allowed" : "pointer" }}>
-                    {smsLoading ? "שולח..." : `📤 שלח ל-${count} חברים`}
-                  </button>
-                );
-              })()}
-            </div>
-
             {/* Search */}
             <div style={{ marginBottom: 16 }}>
               <input
@@ -459,18 +348,6 @@ export default function LoyaltyClient({
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#1a1d23", borderBottom: "1px solid #2d3239" }}>
-                    <th style={{ padding: "12px 14px", width: 36 }}>
-                      <input type="checkbox"
-                        checked={filteredMembers.length > 0 && filteredMembers.every(m => selectedIds.has(m.id))}
-                        onChange={e => {
-                          const next = new Set(selectedIds);
-                          filteredMembers.forEach(m => e.target.checked ? next.add(m.id) : next.delete(m.id));
-                          setSelectedIds(next);
-                          if (next.size > 0) setSmsTarget("selected");
-                        }}
-                        style={{ cursor: "pointer", width: 15, height: 15 }}
-                      />
-                    </th>
                     {["שם", "טלפון", "מס' חבר", "נקודות", "הצטרף", "פעולות"].map(h => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: "#6c757d", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {h}
@@ -481,7 +358,7 @@ export default function LoyaltyClient({
                 <tbody>
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={6} style={{ padding: "32px 16px", textAlign: "center", color: "#6c757d", fontSize: 14 }}>
+                      <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "#6c757d", fontSize: 14 }}>
                         {search ? "לא נמצאו חברים התואמים לחיפוש" : "אין חברי מועדון עדיין"}
                       </td>
                     </tr>
@@ -491,27 +368,12 @@ export default function LoyaltyClient({
                       key={m.id}
                       style={{
                         borderBottom: "1px solid #2d3239",
-                        background: selectedIds.has(m.id)
-                          ? "rgba(201,168,76,0.06)"
-                          : selectedMember?.id === m.id ? "rgba(201,168,76,0.08)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+                        background: selectedMember?.id === m.id ? "rgba(201,168,76,0.08)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                         cursor: "pointer",
                         transition: "background 150ms",
                       }}
                       onClick={() => setSelectedMember(m)}
                     >
-                      <td style={{ padding: "12px 14px" }} onClick={e => e.stopPropagation()}>
-                        <input type="checkbox"
-                          checked={selectedIds.has(m.id)}
-                          onChange={e => {
-                            const next = new Set(selectedIds);
-                            e.target.checked ? next.add(m.id) : next.delete(m.id);
-                            setSelectedIds(next);
-                            if (next.size > 0) setSmsTarget("selected");
-                            else setSmsTarget("all");
-                          }}
-                          style={{ cursor: "pointer", width: 15, height: 15 }}
-                        />
-                      </td>
                       <td style={{ padding: "12px 16px", color: "#e9ecef", fontSize: 14, fontWeight: 500 }}>
                         {m.name}
                         {m.email && <div style={{ fontSize: 11, color: "#6c757d" }}>{m.email}</div>}
