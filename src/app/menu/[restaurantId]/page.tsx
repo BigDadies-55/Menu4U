@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import MenuPublicClient from "./MenuPublicClient";
+import MenuElegantClient from "./MenuElegantClient";
 import MenuExpired from "./MenuExpired";
 
 export async function generateMetadata(
@@ -39,12 +40,21 @@ export default async function PublicMenuPage(
 ) {
   const { restaurantId } = await params;
 
+  // Ensure new columns exist (idempotent — safe to call every time)
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
+  } catch { /* ignore */ }
+
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId, isActive: true },
     select: {
       id: true, name: true, logo: true, address: true,
       phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true, menuPalette: true, menuPaletteData: true, ordersEnabled: true,
+      language: true, welcomeText: true, splashImage: true,
       subscriptionFrom: true, subscriptionTo: true,
+      instagram: true, facebook: true, whatsapp: true, tripadvisor: true, googleReview: true,
+      showPhonePublic: true, showAddressPublic: true,
       menus: {
         where: { isActive: true },
         orderBy: { sortOrder: "asc" },
@@ -94,20 +104,23 @@ export default async function PublicMenuPage(
   const previewAc = sp.previewAc;
   const previewBg = sp.previewBg;
 
-  const effectiveTheme = previewTheme || restaurant.menuTheme;
+  const effectiveTheme = previewTheme || (restaurant.menuTheme ?? "elegant");
   const effectivePalette = previewPalette || restaurant.menuPalette || '0';
   const effectivePaletteData = (previewPalette === 'custom' && previewAc && previewBg)
     ? JSON.stringify({ ac: previewAc, bg: previewBg })
     : restaurant.menuPaletteData;
 
-  return <MenuPublicClient
-    restaurant={{
-      ...restaurant,
-      menus: visibleMenus,
-      menuTheme: effectiveTheme,
-      menuPalette: effectivePalette,
-      menuPaletteData: effectivePaletteData ?? null,
-    }}
-    tableNumber={sp.table || null}
-  />;
+  const restaurantData = {
+    ...restaurant,
+    menus: visibleMenus,
+    menuTheme: effectiveTheme,
+    menuPalette: effectivePalette,
+    menuPaletteData: effectivePaletteData ?? null,
+  };
+
+  if (effectiveTheme === "elegant") {
+    return <MenuElegantClient restaurant={restaurantData} tableNumber={sp.table || null} />;
+  }
+
+  return <MenuPublicClient restaurant={restaurantData} tableNumber={sp.table || null} />;
 }

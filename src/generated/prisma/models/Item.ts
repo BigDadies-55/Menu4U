@@ -28,11 +28,13 @@ export type AggregateItem = {
 
 export type ItemAvgAggregateOutputType = {
   price: number | null
+  prepTime: number | null
   sortOrder: number | null
 }
 
 export type ItemSumAggregateOutputType = {
   price: number | null
+  prepTime: number | null
   sortOrder: number | null
 }
 
@@ -47,6 +49,7 @@ export type ItemMinAggregateOutputType = {
   isVegetarian: boolean | null
   isVegan: boolean | null
   isGlutenFree: boolean | null
+  prepTime: number | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -63,6 +66,7 @@ export type ItemMaxAggregateOutputType = {
   isVegetarian: boolean | null
   isVegan: boolean | null
   isGlutenFree: boolean | null
+  prepTime: number | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -80,7 +84,9 @@ export type ItemCountAggregateOutputType = {
   isVegan: number
   isGlutenFree: number
   tags: number
+  prepTime: number
   sortOrder: number
+  translations: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -89,11 +95,13 @@ export type ItemCountAggregateOutputType = {
 
 export type ItemAvgAggregateInputType = {
   price?: true
+  prepTime?: true
   sortOrder?: true
 }
 
 export type ItemSumAggregateInputType = {
   price?: true
+  prepTime?: true
   sortOrder?: true
 }
 
@@ -108,6 +116,7 @@ export type ItemMinAggregateInputType = {
   isVegetarian?: true
   isVegan?: true
   isGlutenFree?: true
+  prepTime?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -124,6 +133,7 @@ export type ItemMaxAggregateInputType = {
   isVegetarian?: true
   isVegan?: true
   isGlutenFree?: true
+  prepTime?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -141,7 +151,9 @@ export type ItemCountAggregateInputType = {
   isVegan?: true
   isGlutenFree?: true
   tags?: true
+  prepTime?: true
   sortOrder?: true
+  translations?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -245,7 +257,9 @@ export type ItemGroupByOutputType = {
   isVegan: boolean
   isGlutenFree: boolean
   tags: string[]
+  prepTime: number | null
   sortOrder: number
+  translations: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
   _count: ItemCountAggregateOutputType | null
@@ -285,11 +299,14 @@ export type ItemWhereInput = {
   isVegan?: Prisma.BoolFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolFilter<"Item"> | boolean
   tags?: Prisma.StringNullableListFilter<"Item">
+  prepTime?: Prisma.IntNullableFilter<"Item"> | number | null
   sortOrder?: Prisma.IntFilter<"Item"> | number
+  translations?: Prisma.JsonNullableFilter<"Item">
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   category?: Prisma.XOR<Prisma.CategoryScalarRelationFilter, Prisma.CategoryWhereInput>
   orderItems?: Prisma.OrderItemListRelationFilter
+  modifierGroups?: Prisma.ItemModifierGroupListRelationFilter
 }
 
 export type ItemOrderByWithRelationInput = {
@@ -304,11 +321,14 @@ export type ItemOrderByWithRelationInput = {
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
   tags?: Prisma.SortOrder
+  prepTime?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
+  translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   category?: Prisma.CategoryOrderByWithRelationInput
   orderItems?: Prisma.OrderItemOrderByRelationAggregateInput
+  modifierGroups?: Prisma.ItemModifierGroupOrderByRelationAggregateInput
 }
 
 export type ItemWhereUniqueInput = Prisma.AtLeast<{
@@ -326,11 +346,14 @@ export type ItemWhereUniqueInput = Prisma.AtLeast<{
   isVegan?: Prisma.BoolFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolFilter<"Item"> | boolean
   tags?: Prisma.StringNullableListFilter<"Item">
+  prepTime?: Prisma.IntNullableFilter<"Item"> | number | null
   sortOrder?: Prisma.IntFilter<"Item"> | number
+  translations?: Prisma.JsonNullableFilter<"Item">
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   category?: Prisma.XOR<Prisma.CategoryScalarRelationFilter, Prisma.CategoryWhereInput>
   orderItems?: Prisma.OrderItemListRelationFilter
+  modifierGroups?: Prisma.ItemModifierGroupListRelationFilter
 }, "id">
 
 export type ItemOrderByWithAggregationInput = {
@@ -345,7 +368,9 @@ export type ItemOrderByWithAggregationInput = {
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
   tags?: Prisma.SortOrder
+  prepTime?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
+  translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ItemCountOrderByAggregateInput
@@ -370,7 +395,9 @@ export type ItemScalarWhereWithAggregatesInput = {
   isVegan?: Prisma.BoolWithAggregatesFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolWithAggregatesFilter<"Item"> | boolean
   tags?: Prisma.StringNullableListFilter<"Item">
+  prepTime?: Prisma.IntNullableWithAggregatesFilter<"Item"> | number | null
   sortOrder?: Prisma.IntWithAggregatesFilter<"Item"> | number
+  translations?: Prisma.JsonNullableWithAggregatesFilter<"Item">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
 }
@@ -386,11 +413,14 @@ export type ItemCreateInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   category: Prisma.CategoryCreateNestedOneWithoutItemsInput
   orderItems?: Prisma.OrderItemCreateNestedManyWithoutItemInput
+  modifierGroups?: Prisma.ItemModifierGroupCreateNestedManyWithoutItemInput
 }
 
 export type ItemUncheckedCreateInput = {
@@ -405,10 +435,13 @@ export type ItemUncheckedCreateInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutItemInput
+  modifierGroups?: Prisma.ItemModifierGroupUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type ItemUpdateInput = {
@@ -422,11 +455,14 @@ export type ItemUpdateInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.CategoryUpdateOneRequiredWithoutItemsNestedInput
   orderItems?: Prisma.OrderItemUpdateManyWithoutItemNestedInput
+  modifierGroups?: Prisma.ItemModifierGroupUpdateManyWithoutItemNestedInput
 }
 
 export type ItemUncheckedUpdateInput = {
@@ -441,10 +477,13 @@ export type ItemUncheckedUpdateInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutItemNestedInput
+  modifierGroups?: Prisma.ItemModifierGroupUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type ItemCreateManyInput = {
@@ -459,7 +498,9 @@ export type ItemCreateManyInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -475,7 +516,9 @@ export type ItemUpdateManyMutationInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -492,7 +535,9 @@ export type ItemUncheckedUpdateManyInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -519,13 +564,16 @@ export type ItemCountOrderByAggregateInput = {
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
   tags?: Prisma.SortOrder
+  prepTime?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
+  translations?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type ItemAvgOrderByAggregateInput = {
   price?: Prisma.SortOrder
+  prepTime?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
 }
 
@@ -540,6 +588,7 @@ export type ItemMaxOrderByAggregateInput = {
   isVegetarian?: Prisma.SortOrder
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
+  prepTime?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -556,6 +605,7 @@ export type ItemMinOrderByAggregateInput = {
   isVegetarian?: Prisma.SortOrder
   isVegan?: Prisma.SortOrder
   isGlutenFree?: Prisma.SortOrder
+  prepTime?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -563,6 +613,7 @@ export type ItemMinOrderByAggregateInput = {
 
 export type ItemSumOrderByAggregateInput = {
   price?: Prisma.SortOrder
+  prepTime?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
 }
 
@@ -644,6 +695,20 @@ export type ItemUpdateOneRequiredWithoutOrderItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ItemUpdateToOneWithWhereWithoutOrderItemsInput, Prisma.ItemUpdateWithoutOrderItemsInput>, Prisma.ItemUncheckedUpdateWithoutOrderItemsInput>
 }
 
+export type ItemCreateNestedOneWithoutModifierGroupsInput = {
+  create?: Prisma.XOR<Prisma.ItemCreateWithoutModifierGroupsInput, Prisma.ItemUncheckedCreateWithoutModifierGroupsInput>
+  connectOrCreate?: Prisma.ItemCreateOrConnectWithoutModifierGroupsInput
+  connect?: Prisma.ItemWhereUniqueInput
+}
+
+export type ItemUpdateOneRequiredWithoutModifierGroupsNestedInput = {
+  create?: Prisma.XOR<Prisma.ItemCreateWithoutModifierGroupsInput, Prisma.ItemUncheckedCreateWithoutModifierGroupsInput>
+  connectOrCreate?: Prisma.ItemCreateOrConnectWithoutModifierGroupsInput
+  upsert?: Prisma.ItemUpsertWithoutModifierGroupsInput
+  connect?: Prisma.ItemWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ItemUpdateToOneWithWhereWithoutModifierGroupsInput, Prisma.ItemUpdateWithoutModifierGroupsInput>, Prisma.ItemUncheckedUpdateWithoutModifierGroupsInput>
+}
+
 export type ItemCreateWithoutCategoryInput = {
   id?: string
   name: string
@@ -655,10 +720,13 @@ export type ItemCreateWithoutCategoryInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemCreateNestedManyWithoutItemInput
+  modifierGroups?: Prisma.ItemModifierGroupCreateNestedManyWithoutItemInput
 }
 
 export type ItemUncheckedCreateWithoutCategoryInput = {
@@ -672,10 +740,13 @@ export type ItemUncheckedCreateWithoutCategoryInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutItemInput
+  modifierGroups?: Prisma.ItemModifierGroupUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type ItemCreateOrConnectWithoutCategoryInput = {
@@ -719,7 +790,9 @@ export type ItemScalarWhereInput = {
   isVegan?: Prisma.BoolFilter<"Item"> | boolean
   isGlutenFree?: Prisma.BoolFilter<"Item"> | boolean
   tags?: Prisma.StringNullableListFilter<"Item">
+  prepTime?: Prisma.IntNullableFilter<"Item"> | number | null
   sortOrder?: Prisma.IntFilter<"Item"> | number
+  translations?: Prisma.JsonNullableFilter<"Item">
   createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
 }
@@ -735,10 +808,13 @@ export type ItemCreateWithoutOrderItemsInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   category: Prisma.CategoryCreateNestedOneWithoutItemsInput
+  modifierGroups?: Prisma.ItemModifierGroupCreateNestedManyWithoutItemInput
 }
 
 export type ItemUncheckedCreateWithoutOrderItemsInput = {
@@ -753,9 +829,12 @@ export type ItemUncheckedCreateWithoutOrderItemsInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  modifierGroups?: Prisma.ItemModifierGroupUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type ItemCreateOrConnectWithoutOrderItemsInput = {
@@ -785,10 +864,13 @@ export type ItemUpdateWithoutOrderItemsInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.CategoryUpdateOneRequiredWithoutItemsNestedInput
+  modifierGroups?: Prisma.ItemModifierGroupUpdateManyWithoutItemNestedInput
 }
 
 export type ItemUncheckedUpdateWithoutOrderItemsInput = {
@@ -803,9 +885,108 @@ export type ItemUncheckedUpdateWithoutOrderItemsInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  modifierGroups?: Prisma.ItemModifierGroupUncheckedUpdateManyWithoutItemNestedInput
+}
+
+export type ItemCreateWithoutModifierGroupsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  price: number
+  image?: string | null
+  isActive?: boolean
+  isVegetarian?: boolean
+  isVegan?: boolean
+  isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
+  sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  category: Prisma.CategoryCreateNestedOneWithoutItemsInput
+  orderItems?: Prisma.OrderItemCreateNestedManyWithoutItemInput
+}
+
+export type ItemUncheckedCreateWithoutModifierGroupsInput = {
+  id?: string
+  categoryId: string
+  name: string
+  description?: string | null
+  price: number
+  image?: string | null
+  isActive?: boolean
+  isVegetarian?: boolean
+  isVegan?: boolean
+  isGlutenFree?: boolean
+  tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
+  sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutItemInput
+}
+
+export type ItemCreateOrConnectWithoutModifierGroupsInput = {
+  where: Prisma.ItemWhereUniqueInput
+  create: Prisma.XOR<Prisma.ItemCreateWithoutModifierGroupsInput, Prisma.ItemUncheckedCreateWithoutModifierGroupsInput>
+}
+
+export type ItemUpsertWithoutModifierGroupsInput = {
+  update: Prisma.XOR<Prisma.ItemUpdateWithoutModifierGroupsInput, Prisma.ItemUncheckedUpdateWithoutModifierGroupsInput>
+  create: Prisma.XOR<Prisma.ItemCreateWithoutModifierGroupsInput, Prisma.ItemUncheckedCreateWithoutModifierGroupsInput>
+  where?: Prisma.ItemWhereInput
+}
+
+export type ItemUpdateToOneWithWhereWithoutModifierGroupsInput = {
+  where?: Prisma.ItemWhereInput
+  data: Prisma.XOR<Prisma.ItemUpdateWithoutModifierGroupsInput, Prisma.ItemUncheckedUpdateWithoutModifierGroupsInput>
+}
+
+export type ItemUpdateWithoutModifierGroupsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.FloatFieldUpdateOperationsInput | number
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  category?: Prisma.CategoryUpdateOneRequiredWithoutItemsNestedInput
+  orderItems?: Prisma.OrderItemUpdateManyWithoutItemNestedInput
+}
+
+export type ItemUncheckedUpdateWithoutModifierGroupsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.FloatFieldUpdateOperationsInput | number
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isVegetarian?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type ItemCreateManyCategoryInput = {
@@ -819,7 +1000,9 @@ export type ItemCreateManyCategoryInput = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: Prisma.ItemCreatetagsInput | string[]
+  prepTime?: number | null
   sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -835,10 +1018,13 @@ export type ItemUpdateWithoutCategoryInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUpdateManyWithoutItemNestedInput
+  modifierGroups?: Prisma.ItemModifierGroupUpdateManyWithoutItemNestedInput
 }
 
 export type ItemUncheckedUpdateWithoutCategoryInput = {
@@ -852,10 +1038,13 @@ export type ItemUncheckedUpdateWithoutCategoryInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutItemNestedInput
+  modifierGroups?: Prisma.ItemModifierGroupUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type ItemUncheckedUpdateManyWithoutCategoryInput = {
@@ -869,7 +1058,9 @@ export type ItemUncheckedUpdateManyWithoutCategoryInput = {
   isVegan?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGlutenFree?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tags?: Prisma.ItemUpdatetagsInput | string[]
+  prepTime?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -881,10 +1072,12 @@ export type ItemUncheckedUpdateManyWithoutCategoryInput = {
 
 export type ItemCountOutputType = {
   orderItems: number
+  modifierGroups: number
 }
 
 export type ItemCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   orderItems?: boolean | ItemCountOutputTypeCountOrderItemsArgs
+  modifierGroups?: boolean | ItemCountOutputTypeCountModifierGroupsArgs
 }
 
 /**
@@ -904,6 +1097,13 @@ export type ItemCountOutputTypeCountOrderItemsArgs<ExtArgs extends runtime.Types
   where?: Prisma.OrderItemWhereInput
 }
 
+/**
+ * ItemCountOutputType without action
+ */
+export type ItemCountOutputTypeCountModifierGroupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ItemModifierGroupWhereInput
+}
+
 
 export type ItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -917,11 +1117,14 @@ export type ItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: boolean
+  prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
   orderItems?: boolean | Prisma.Item$orderItemsArgs<ExtArgs>
+  modifierGroups?: boolean | Prisma.Item$modifierGroupsArgs<ExtArgs>
   _count?: boolean | Prisma.ItemCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item"]>
 
@@ -937,7 +1140,9 @@ export type ItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: boolean
+  prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
@@ -955,7 +1160,9 @@ export type ItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: boolean
+  prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
@@ -973,15 +1180,18 @@ export type ItemSelectScalar = {
   isVegan?: boolean
   isGlutenFree?: boolean
   tags?: boolean
+  prepTime?: boolean
   sortOrder?: boolean
+  translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "name" | "description" | "price" | "image" | "isActive" | "isVegetarian" | "isVegan" | "isGlutenFree" | "tags" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["item"]>
+export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "name" | "description" | "price" | "image" | "isActive" | "isVegetarian" | "isVegan" | "isGlutenFree" | "tags" | "prepTime" | "sortOrder" | "translations" | "createdAt" | "updatedAt", ExtArgs["result"]["item"]>
 export type ItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
   orderItems?: boolean | Prisma.Item$orderItemsArgs<ExtArgs>
+  modifierGroups?: boolean | Prisma.Item$modifierGroupsArgs<ExtArgs>
   _count?: boolean | Prisma.ItemCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ItemIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -996,6 +1206,7 @@ export type $ItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     category: Prisma.$CategoryPayload<ExtArgs>
     orderItems: Prisma.$OrderItemPayload<ExtArgs>[]
+    modifierGroups: Prisma.$ItemModifierGroupPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1009,7 +1220,9 @@ export type $ItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     isVegan: boolean
     isGlutenFree: boolean
     tags: string[]
+    prepTime: number | null
     sortOrder: number
+    translations: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["item"]>
@@ -1408,6 +1621,7 @@ export interface Prisma__ItemClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   category<T extends Prisma.CategoryDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CategoryDefaultArgs<ExtArgs>>): Prisma.Prisma__CategoryClient<runtime.Types.Result.GetResult<Prisma.$CategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   orderItems<T extends Prisma.Item$orderItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Item$orderItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  modifierGroups<T extends Prisma.Item$modifierGroupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Item$modifierGroupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ItemModifierGroupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1448,7 +1662,9 @@ export interface ItemFieldRefs {
   readonly isVegan: Prisma.FieldRef<"Item", 'Boolean'>
   readonly isGlutenFree: Prisma.FieldRef<"Item", 'Boolean'>
   readonly tags: Prisma.FieldRef<"Item", 'String[]'>
+  readonly prepTime: Prisma.FieldRef<"Item", 'Int'>
   readonly sortOrder: Prisma.FieldRef<"Item", 'Int'>
+  readonly translations: Prisma.FieldRef<"Item", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Item", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Item", 'DateTime'>
 }
@@ -1873,6 +2089,30 @@ export type Item$orderItemsArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.OrderItemScalarFieldEnum | Prisma.OrderItemScalarFieldEnum[]
+}
+
+/**
+ * Item.modifierGroups
+ */
+export type Item$modifierGroupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ItemModifierGroup
+   */
+  select?: Prisma.ItemModifierGroupSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ItemModifierGroup
+   */
+  omit?: Prisma.ItemModifierGroupOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ItemModifierGroupInclude<ExtArgs> | null
+  where?: Prisma.ItemModifierGroupWhereInput
+  orderBy?: Prisma.ItemModifierGroupOrderByWithRelationInput | Prisma.ItemModifierGroupOrderByWithRelationInput[]
+  cursor?: Prisma.ItemModifierGroupWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ItemModifierGroupScalarFieldEnum | Prisma.ItemModifierGroupScalarFieldEnum[]
 }
 
 /**

@@ -106,6 +106,128 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       UPDATE "User" SET "emailVerified" = "createdAt" WHERE "emailVerified" IS NULL;
     `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuPalette" TEXT NOT NULL DEFAULT '0';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "menuPaletteData" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "ordersEnabled" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tableLayoutJson" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "kdsView" TEXT NOT NULL DEFAULT 'STATION_DARK';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "customDomain" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "copyright" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "SiteConfig" (
+        "id"           TEXT NOT NULL DEFAULT 'default',
+        "siteName"     TEXT NOT NULL DEFAULT 'Menu4U',
+        "logo"         TEXT,
+        "domain"       TEXT,
+        "copyright"    TEXT,
+        "adminPalette" TEXT NOT NULL DEFAULT 'dark',
+        "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "SiteConfig_pkey" PRIMARY KEY ("id")
+      );
+    `);
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "SiteConfig" ("id", "updatedAt") VALUES ('default', NOW()) ON CONFLICT DO NOTHING;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminBg" TEXT NOT NULL DEFAULT '#f7f5f2';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminBgImage" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarBg" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarAccent" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarTextColor" TEXT NOT NULL DEFAULT '#9ca3af';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminContentTextColor" TEXT NOT NULL DEFAULT '#111827';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminTopBarBg" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminTopBarTextColor" TEXT NOT NULL DEFAULT '#374151';
+    `);
+    await prisma.$executeRawUnsafe(`
+  CREATE TABLE IF NOT EXISTS "Customer" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "name"         TEXT NOT NULL,
+    "phone"        TEXT,
+    "email"        TEXT,
+    "notes"        TEXT,
+    "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Customer_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "Customer_restaurantId_fkey" FOREIGN KEY ("restaurantId")
+      REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  );
+`);
+    await prisma.$executeRawUnsafe(`
+  CREATE INDEX IF NOT EXISTS "Customer_restaurantId_idx" ON "Customer"("restaurantId");
+`);
+    // Customer OTP + verification columns
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "otpHash"    TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "otpExpiry"  TIMESTAMP(3);
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "isVerified" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "couponCode" TEXT;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "language" TEXT NOT NULL DEFAULT 'he';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "translations" JSONB;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "translations" JSONB;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ALTER COLUMN "menuTheme" SET DEFAULT 'elegant';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "welcomeText" TEXT;
+    `);
+    // Course management + POS source + timing fields
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderSource" TEXT NOT NULL DEFAULT 'CUSTOMER';
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "course" INTEGER NOT NULL DEFAULT 1;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "heldUntilFired" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "firedAt" TIMESTAMP(3);
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "doneAt" TIMESTAMP(3);
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

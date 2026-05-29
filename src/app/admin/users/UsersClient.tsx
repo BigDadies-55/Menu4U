@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
+import { ROLE_LABELS } from "@/lib/permissions";
 import { formatDate } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/client";
 
@@ -28,6 +28,41 @@ interface Props {
 }
 
 const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "VIEWER"];
+
+// ── Dark palette ──────────────────────────────────────────────────────────────
+const C = {
+  pageBg: "#1a1d23", cardBg: "#212529", border: "#2d3239",
+  inputBg: "#2d3239", inputBorder: "#3a3f47",
+  text: "#e9ecef", sub: "#adb5bd", muted: "#6c757d",
+  amber: "#fcc419", green: "#51cf66", red: "#ff6b6b",
+  blue: "#339af0", purple: "#be4bdb", orange: "#ff922b",
+} as const;
+
+const DARK_ROLE_STYLE: Record<string, React.CSSProperties> = {
+  SUPER_ADMIN: { background: "rgba(255,107,107,0.15)", color: "#ff6b6b" },
+  ADMIN:       { background: "rgba(51,154,240,0.15)",  color: "#339af0" },
+  OWNER:       { background: "rgba(252,196,25,0.15)",  color: "#fcc419" },
+  EDITOR:      { background: "rgba(190,75,219,0.15)",  color: "#be4bdb" },
+  VIEWER:      { background: "rgba(108,117,125,0.15)", color: "#6c757d" },
+};
+
+const AVATAR_GRADIENT: Record<string, string> = {
+  SUPER_ADMIN: "linear-gradient(135deg,#c92a2a,#ff6b6b)",
+  ADMIN:       "linear-gradient(135deg,#1971c2,#339af0)",
+  OWNER:       "linear-gradient(135deg,#2f9e44,#51cf66)",
+  EDITOR:      "linear-gradient(135deg,#6741d9,#9775fa)",
+  VIEWER:      "linear-gradient(135deg,#495057,#868e96)",
+};
+
+const DARK_INPUT: React.CSSProperties = {
+  background: C.inputBg, border: `1px solid ${C.inputBorder}`,
+  color: C.text, borderRadius: 10, padding: "10px 14px",
+  fontSize: 14, width: "100%", outline: "none",
+};
+
+const DARK_SELECT: React.CSSProperties = {
+  ...DARK_INPUT, cursor: "pointer",
+};
 
 export default function UsersClient({ users: initial, restaurants, currentUserRole }: Props) {
   const [users, setUsers] = useState(initial);
@@ -208,143 +243,166 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     ? restaurants.filter(r => !managingUser.restaurantUsers.some(ru => ru.restaurantId === r.id))
     : [];
 
+  /* ── small helpers ── */
+  const Label = ({ children }: { children: React.ReactNode }) => (
+    <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>
+      {children}
+    </div>
+  );
+
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8" style={{ background: C.pageBg, minHeight: "100vh", color: C.text }}>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">ניהול משתמשים</h1>
-          <p className="text-gray-400 mt-1 text-sm">{users.length} משתמשים רשומים</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text }}>ניהול משתמשים</h1>
+          <p style={{ color: C.muted, marginTop: 3, fontSize: 13 }}>{users.length} משתמשים רשומים</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white shadow-md transition-all hover:shadow-lg active:scale-95"
-          style={{ background: "linear-gradient(135deg, #8B6914, #C9A84C)" }}
+          style={{ background: C.amber, color: "#000", border: "none", padding: "10px 20px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
         >
           + הוסף משתמש
         </button>
       </div>
 
       {/* Search */}
-      <div className="mb-5">
+      <div style={{ marginBottom: 20 }}>
         <input
           type="search"
-          placeholder="חיפוש לפי שם או אימייל..."
+          placeholder="🔍  חיפוש לפי שם או אימייל..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white shadow-sm"
+          style={{ ...DARK_INPUT, borderRadius: 10 }}
         />
       </div>
 
       {/* Table container */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Desktop Table - hidden on mobile */}
+      <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
+
+        {/* Desktop table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">משתמש</th>
-                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">הרשאה</th>
-                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">מסעדות משויכות</th>
-                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">אימות</th>
-                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">נרשם</th>
-                <th className="px-6 py-2 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">פעולות</th>
+              <tr style={{ background: "#1a1d23" }}>
+                {["משתמש","הרשאה","מסעדות משויכות","אימות","נרשם","פעולות"].map(h => (
+                  <th key={h} style={{ padding: "11px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".5px", borderBottom: `1px solid ${C.border}` }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center text-gray-400 text-sm">לא נמצאו משתמשים</td>
+                  <td colSpan={6} style={{ padding: "60px 24px", textAlign: "center", color: C.muted, fontSize: 14 }}>לא נמצאו משתמשים</td>
                 </tr>
               ) : (
                 filtered.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-2">
+                  <tr key={user.id}
+                    style={{ borderBottom: `1px solid ${C.border}` }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#2a2e35")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {/* User */}
+                    <td style={{ padding: "12px 16px" }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 bg-gray-100 shrink-0">
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: AVATAR_GRADIENT[user.role] ?? AVATAR_GRADIENT.VIEWER, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
                           {(user.name ?? user.email)[0].toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-700 text-sm">{user.name ?? "—"}</div>
-                          <div className="text-xs text-gray-400" dir="ltr">{user.email}</div>
+                          <div style={{ fontWeight: 600, color: C.text, fontSize: 13 }}>{user.name ?? "—"}</div>
+                          <div style={{ fontSize: 11, color: C.muted }} dir="ltr">{user.email}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-2">
+                    {/* Role */}
+                    <td style={{ padding: "12px 16px" }}>
                       <select
                         value={user.role}
                         onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
                         disabled={!availableRoles.includes(user.role) && currentUserRole !== "SUPER_ADMIN"}
-                        className={`text-xs px-2.5 py-1 rounded-full font-semibold border-0 cursor-pointer ${ROLE_COLORS[user.role]}`}
+                        style={{
+                          ...DARK_ROLE_STYLE[user.role],
+                          border: "none", borderRadius: 999, padding: "4px 12px",
+                          fontSize: 11, fontWeight: 700, cursor: "pointer", outline: "none",
+                        }}
                       >
                         {availableRoles.map((r) => (
-                          <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                          <option key={r} value={r} style={{ background: C.cardBg, color: C.text }}>{ROLE_LABELS[r]}</option>
                         ))}
                       </select>
                     </td>
-                    <td className="px-6 py-2">
+                    {/* Restaurants */}
+                    <td style={{ padding: "12px 16px" }}>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {user.restaurantUsers.length === 0 ? (
-                          <span className="text-gray-300 text-xs">ללא שיוך</span>
+                          <span style={{ color: C.muted, fontSize: 12 }}>ללא שיוך</span>
                         ) : (
                           user.restaurantUsers.map((ru) => (
-                            <span key={ru.restaurantId} className="text-gray-600 text-xs">
+                            <span key={ru.restaurantId} style={{ background: C.inputBg, color: C.sub, borderRadius: 5, padding: "2px 7px", fontSize: 11 }}>
                               {ru.restaurant.name}
                             </span>
                           ))
                         )}
                         <button
                           onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
-                          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          ✎
-                        </button>
+                          style={{ color: C.muted, fontSize: 13, background: "none", border: "none", cursor: "pointer" }}
+                          onMouseEnter={e => (e.currentTarget.style.color = C.amber)}
+                          onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
+                        >✎</button>
                       </div>
                     </td>
-                    <td className="px-6 py-2">
+                    {/* Verification */}
+                    <td style={{ padding: "12px 16px" }}>
                       {user.emailVerified ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-medium">
+                        <span style={{ background: "rgba(81,207,102,0.15)", color: C.green, borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
                           ✓ מאומת
                         </span>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs bg-orange-50 text-orange-600 border border-orange-200 px-2.5 py-1 rounded-full font-medium">
+                          <span style={{ background: "rgba(255,146,43,0.15)", color: C.orange, borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
                             ממתין
                           </span>
                           <button
                             onClick={() => handleResendVerification(user.id)}
                             disabled={resendingId === user.id || resentId === user.id}
-                            className={`text-xs font-medium transition-colors disabled:opacity-40 ${resentId === user.id ? "text-green-600" : "text-gray-400 hover:text-gray-600"}`}
-                            title="שלח קוד אימות מחדש"
+                            style={{ fontSize: 11, fontWeight: 600, background: "none", border: "none", cursor: "pointer", color: resentId === user.id ? C.green : C.muted, opacity: (resendingId === user.id || resentId === user.id) ? 0.4 : 1 }}
                           >
                             {resendingId === user.id ? "שולח..." : resentId === user.id ? "✓ נשלח" : "↩ שלח"}
                           </button>
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-2 text-xs text-gray-400">{formatDate(user.createdAt)}</td>
-                    <td className="px-6 py-2">
-                      <div className="flex items-center gap-3">
+                    {/* Date */}
+                    <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{formatDate(user.createdAt)}</td>
+                    {/* Actions */}
+                    <td style={{ padding: "12px 16px" }}>
+                      <div className="flex items-center gap-2">
                         {currentUserRole === "SUPER_ADMIN" && (
                           <button
                             onClick={() => openEdit(user)}
-                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            ✎ ערוך
-                          </button>
+                            style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid ${C.inputBorder}`, background: C.inputBg, color: C.sub, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}
+                            title="ערוך"
+                            onMouseEnter={e => (e.currentTarget.style.color = C.amber)}
+                            onMouseLeave={e => (e.currentTarget.style.color = C.sub)}
+                          >✎</button>
                         )}
                         <button
                           onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
-                          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          🔑 סיסמה
-                        </button>
+                          style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid ${C.inputBorder}`, background: C.inputBg, color: C.sub, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="איפוס סיסמה"
+                          onMouseEnter={e => (e.currentTarget.style.color = C.blue)}
+                          onMouseLeave={e => (e.currentTarget.style.color = C.sub)}
+                        >🔑</button>
                         <button
                           onClick={() => handleDelete(user.id)}
-                          className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
-                        >
-                          מחק
-                        </button>
+                          style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid ${C.inputBorder}`, background: C.inputBg, color: C.muted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="מחק"
+                          onMouseEnter={e => (e.currentTarget.style.color = C.red)}
+                          onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
+                        >🗑️</button>
                       </div>
                     </td>
                   </tr>
@@ -354,48 +412,44 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           </table>
         </div>
 
-        {/* Mobile cards - visible only on small screens */}
-        <div className="md:hidden divide-y divide-gray-100">
+        {/* Mobile cards */}
+        <div className="md:hidden">
           {filtered.length === 0 ? (
-            <p className="px-4 py-16 text-center text-gray-400 text-sm">לא נמצאו משתמשים</p>
+            <p style={{ padding: "60px 16px", textAlign: "center", color: C.muted, fontSize: 14 }}>לא נמצאו משתמשים</p>
           ) : (
             filtered.map((user) => (
-              <div key={user.id} className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
+              <div key={user.id} style={{ padding: 16, borderBottom: `1px solid ${C.border}` }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 bg-gray-100 shrink-0">
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: AVATAR_GRADIENT[user.role] ?? AVATAR_GRADIENT.VIEWER, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff" }}>
                       {(user.name ?? user.email)[0].toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-medium text-gray-700 text-sm">{user.name ?? "—"}</div>
-                      <div className="text-xs text-gray-400" dir="ltr">{user.email}</div>
+                      <div style={{ fontWeight: 600, color: C.text, fontSize: 13 }}>{user.name ?? "—"}</div>
+                      <div style={{ fontSize: 11, color: C.muted }} dir="ltr">{user.email}</div>
                     </div>
                   </div>
                   <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
-                    className={`text-xs px-2 py-1 rounded-full font-semibold border-0 cursor-pointer ${ROLE_COLORS[user.role]}`}>
-                    {availableRoles.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                    style={{ ...DARK_ROLE_STYLE[user.role], border: "none", borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", outline: "none" }}>
+                    {availableRoles.map((r) => <option key={r} value={r} style={{ background: C.cardBg, color: C.text }}>{ROLE_LABELS[r]}</option>)}
                   </select>
                 </div>
                 {user.restaurantUsers.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5" style={{ marginBottom: 10 }}>
                     {user.restaurantUsers.map((ru) => (
-                      <span key={ru.restaurantId} className="text-xs text-gray-500">
+                      <span key={ru.restaurantId} style={{ background: C.inputBg, color: C.sub, borderRadius: 5, padding: "2px 7px", fontSize: 11 }}>
                         {ru.restaurant.name}
                       </span>
                     ))}
                   </div>
                 )}
-                <div className="flex items-center gap-3 pt-1">
+                <div className="flex items-center gap-3">
                   {currentUserRole === "SUPER_ADMIN" && (
-                    <button onClick={() => openEdit(user)}
-                      className="text-xs text-gray-400 hover:text-gray-600 transition-colors">✎ ערוך</button>
+                    <button onClick={() => openEdit(user)} style={{ color: C.muted, fontSize: 12, background: "none", border: "none", cursor: "pointer" }}>✎ ערוך</button>
                   )}
-                  <button onClick={() => { setManagingUser(user); setAddRestaurantId(""); }}
-                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors">✎ מסעדות</button>
-                  <button onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
-                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors">🔑 סיסמה</button>
-                  <button onClick={() => handleDelete(user.id)}
-                    className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors">מחק</button>
+                  <button onClick={() => { setManagingUser(user); setAddRestaurantId(""); }} style={{ color: C.muted, fontSize: 12, background: "none", border: "none", cursor: "pointer" }}>✎ מסעדות</button>
+                  <button onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }} style={{ color: C.muted, fontSize: 12, background: "none", border: "none", cursor: "pointer" }}>🔑 סיסמה</button>
+                  <button onClick={() => handleDelete(user.id)} style={{ color: C.red, fontSize: 12, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>מחק</button>
                 </div>
               </div>
             ))
@@ -403,68 +457,29 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
       </div>
 
-      {/* Create User Modal */}
+      {/* ── Create User Modal ─────────────────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">משתמש חדש</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">שם מלא</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">אימייל *</label>
-                <input
-                  required
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  dir="ltr"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">סיסמה *</label>
-                <input
-                  required
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">הרשאה</label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-                >
-                  {availableRoles.map((r) => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                  ))}
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 460, padding: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 24 }}>משתמש חדש</h2>
+            <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div><Label>שם מלא</Label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={DARK_INPUT} /></div>
+              <div><Label>אימייל *</Label>
+                <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
+              <div><Label>סיסמה *</Label>
+                <input required type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} style={DARK_INPUT} /></div>
+              <div><Label>הרשאה</Label>
+                <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })} style={DARK_SELECT}>
+                  {availableRoles.map((r) => <option key={r} value={r} style={{ background: C.cardBg }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
-              {error && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 text-white py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #8B6914, #C9A84C)" }}
-                >
+              {error && <p style={{ color: C.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{error}</p>}
+              <div className="flex gap-3" style={{ marginTop: 4 }}>
+                <button type="submit" disabled={loading} style={{ flex: 1, background: C.amber, color: "#000", border: "none", padding: "11px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
                   {loading ? "יוצר..." : "צור משתמש"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm transition-colors"
-                >
+                <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: "11px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   ביטול
                 </button>
               </div>
@@ -473,161 +488,103 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
       )}
 
-      {/* Manage Restaurants Modal */}
+      {/* ── Manage Restaurants Modal ─────────────────────────────────────── */}
       {managingUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 460, padding: 28 }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">מסעדות משויכות</h2>
-                <p className="text-sm text-gray-400 mt-0.5">{managingUser.name ?? managingUser.email}</p>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text }}>מסעדות משויכות</h2>
+                <p style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>{managingUser.name ?? managingUser.email}</p>
               </div>
-              <button onClick={() => setManagingUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+              <button onClick={() => setManagingUser(null)} style={{ color: C.muted, background: "none", border: "none", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
             </div>
 
-            {/* Current restaurants */}
-            <div className="mb-5 space-y-2 min-h-[60px]">
+            <div style={{ marginBottom: 20, minHeight: 60, display: "flex", flexDirection: "column", gap: 8 }}>
               {managingUser.restaurantUsers.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">אין מסעדות משויכות</p>
+                <p style={{ fontSize: 13, color: C.muted, textAlign: "center", padding: "16px 0" }}>אין מסעדות משויכות</p>
               ) : (
                 managingUser.restaurantUsers.map((ru) => (
-                  <div key={ru.restaurantId} className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border border-amber-100 rounded-xl">
-                    <span className="text-sm font-medium text-gray-800">{ru.restaurant.name}</span>
+                  <div key={ru.restaurantId} className="flex items-center justify-between" style={{ background: "rgba(252,196,25,0.08)", border: "1px solid rgba(252,196,25,0.2)", borderRadius: 10, padding: "10px 14px" }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{ru.restaurant.name}</span>
                     <button
                       onClick={() => handleRemoveRestaurant(ru.restaurantId)}
                       disabled={restLoading}
-                      className="text-red-400 hover:text-red-600 text-sm font-bold transition-colors disabled:opacity-40"
-                    >
-                      הסר
-                    </button>
+                      style={{ color: C.red, fontSize: 12, fontWeight: 700, background: "none", border: "none", cursor: "pointer", opacity: restLoading ? 0.4 : 1 }}
+                    >הסר</button>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Add restaurant */}
             {unassignedRestaurants.length > 0 && (
-              <div className="border-t border-gray-100 pt-5">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">הוסף מסעדה</p>
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20, marginBottom: 16 }}>
+                <Label>הוסף מסעדה</Label>
                 <div className="flex gap-2">
-                  <select
-                    value={addRestaurantId}
-                    onChange={(e) => setAddRestaurantId(e.target.value)}
-                    className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-                  >
-                    <option value="">בחר מסעדה...</option>
-                    {unassignedRestaurants.map((r) => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
+                  <select value={addRestaurantId} onChange={(e) => setAddRestaurantId(e.target.value)} style={{ ...DARK_SELECT, flex: 1 }}>
+                    <option value="" style={{ background: C.cardBg }}>בחר מסעדה...</option>
+                    {unassignedRestaurants.map((r) => <option key={r.id} value={r.id} style={{ background: C.cardBg }}>{r.name}</option>)}
                   </select>
-                  <button
-                    onClick={handleAddRestaurant}
-                    disabled={!addRestaurantId || restLoading}
-                    className="px-4 py-2.5 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
-                    style={{ background: "linear-gradient(135deg, #8B6914, #C9A84C)" }}
-                  >
+                  <button onClick={handleAddRestaurant} disabled={!addRestaurantId || restLoading}
+                    style={{ background: C.amber, color: "#000", border: "none", padding: "0 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!addRestaurantId || restLoading) ? 0.4 : 1 }}>
                     הוסף
                   </button>
                 </div>
               </div>
             )}
 
-            <button
-              onClick={() => setManagingUser(null)}
-              className="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm transition-colors"
-            >
+            <button onClick={() => setManagingUser(null)} style={{ width: "100%", background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
               סגור
             </button>
           </div>
         </div>
       )}
 
-      {/* OTP Fallback Modal — shown when email sending failed */}
+      {/* ── OTP Fallback Modal ────────────────────────────────────────────── */}
       {pendingOtp && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 text-center">
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">⚠️</div>
-            <h2 className="text-lg font-bold text-gray-900 mb-2">המייל לא נשלח</h2>
-            <p className="text-sm text-gray-500 mb-1">
-              לא הצלחנו לשלוח מייל אימות ל-
-            </p>
-            <p className="text-sm font-medium text-gray-700 mb-4" dir="ltr">{pendingOtp.email}</p>
-            <p className="text-sm text-gray-500 mb-3">
-              שתף את קוד האימות הבא עם המשתמש ידנית:
-            </p>
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl py-4 px-6 mb-4">
-              <div className="text-3xl font-black tracking-[10px] text-amber-700 font-mono">
-                {pendingOtp.code}
-              </div>
-              <div className="text-xs text-amber-500 mt-1">תקף ל-15 דקות</div>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 380, padding: 28, textAlign: "center" }}>
+            <div style={{ width: 52, height: 52, background: "rgba(255,146,43,0.15)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24 }}>⚠️</div>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, marginBottom: 8 }}>המייל לא נשלח</h2>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 4 }}>לא הצלחנו לשלוח מייל אימות ל-</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: C.sub, marginBottom: 16 }} dir="ltr">{pendingOtp.email}</p>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>שתף את קוד האימות הבא עם המשתמש ידנית:</p>
+            <div style={{ background: "rgba(252,196,25,0.1)", border: "2px solid rgba(252,196,25,0.4)", borderRadius: 12, padding: "16px 24px", marginBottom: 16 }}>
+              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 10, color: C.amber, fontFamily: "monospace" }}>{pendingOtp.code}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>תקף ל-15 דקות</div>
             </div>
-            <p className="text-xs text-gray-400 mb-5">
-              לאחר הפצת הקוד, ודא שמשתני הסביבה <span className="font-mono bg-gray-100 px-1 rounded">GMAIL_USER</span> ו-<span className="font-mono bg-gray-100 px-1 rounded">GMAIL_APP_PASSWORD</span> מוגדרים ב-Vercel.
+            <p style={{ fontSize: 12, color: C.muted, marginBottom: 20 }}>
+              ודא שמשתני הסביבה <code style={{ background: C.inputBg, padding: "1px 5px", borderRadius: 4, fontSize: 11 }}>GMAIL_USER</code> ו-<code style={{ background: C.inputBg, padding: "1px 5px", borderRadius: 4, fontSize: 11 }}>GMAIL_APP_PASSWORD</code> מוגדרים ב-Vercel.
             </p>
-            <button
-              onClick={() => setPendingOtp(null)}
-              className="w-full py-2.5 rounded-xl font-semibold text-sm text-white"
-              style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}
-            >
+            <button onClick={() => setPendingOtp(null)} style={{ width: "100%", background: C.amber, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               הבנתי
             </button>
           </div>
         </div>
       )}
 
-      {/* Edit User Modal (SUPER_ADMIN only) */}
+      {/* ── Edit User Modal ───────────────────────────────────────────────── */}
       {editTarget && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">עריכת משתמש</h2>
-            <p className="text-sm text-gray-400 mb-6" dir="ltr">{editTarget.email}</p>
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">שם מלא</label>
-                <input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">אימייל *</label>
-                <input
-                  required
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  dir="ltr"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">הרשאה</label>
-                <select
-                  value={editForm.role}
-                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
-                >
-                  {ALL_ROLES.map((r) => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                  ))}
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 460, padding: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4 }}>עריכת משתמש</h2>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }} dir="ltr">{editTarget.email}</p>
+            <form onSubmit={handleEdit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div><Label>שם מלא</Label>
+                <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} style={DARK_INPUT} /></div>
+              <div><Label>אימייל *</Label>
+                <input required type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
+              <div><Label>הרשאה</Label>
+                <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })} style={DARK_SELECT}>
+                  {ALL_ROLES.map((r) => <option key={r} value={r} style={{ background: C.cardBg }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
-              {editError && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{editError}</p>}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="flex-1 text-white py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
-                >
+              {editError && <p style={{ color: C.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{editError}</p>}
+              <div className="flex gap-3" style={{ marginTop: 4 }}>
+                <button type="submit" disabled={editLoading} style={{ flex: 1, background: C.blue, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: editLoading ? 0.6 : 1 }}>
                   {editLoading ? "שומר..." : "שמור שינויים"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setEditTarget(null)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm transition-colors"
-                >
+                <button type="button" onClick={() => setEditTarget(null)} style={{ flex: 1, background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   ביטול
                 </button>
               </div>
@@ -636,34 +593,21 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
       )}
 
-      {/* Password Reset Modal */}
+      {/* ── Password Reset Modal ──────────────────────────────────────────── */}
       {resetTarget && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">איפוס סיסמה</h2>
-            <p className="text-sm text-gray-400 mb-6">{resetTarget.name ?? resetTarget.email}</p>
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">סיסמה חדשה *</label>
-                <input
-                  required
-                  type="password"
-                  minLength={6}
-                  value={resetPassword}
-                  onChange={(e) => setResetPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  placeholder="מינימום 6 תווים"
-                />
-              </div>
-              {resetError && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{resetError}</p>}
-              <div className="flex gap-3 pt-1">
-                <button type="submit" disabled={resetLoading}
-                  className="flex-1 text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg,#8B6914,#C9A84C)" }}>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 380, padding: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4 }}>איפוס סיסמה</h2>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>{resetTarget.name ?? resetTarget.email}</p>
+            <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div><Label>סיסמה חדשה *</Label>
+                <input required type="password" minLength={6} value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} style={DARK_INPUT} placeholder="מינימום 6 תווים" /></div>
+              {resetError && <p style={{ color: C.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{resetError}</p>}
+              <div className="flex gap-3" style={{ marginTop: 4 }}>
+                <button type="submit" disabled={resetLoading} style={{ flex: 1, background: C.amber, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: resetLoading ? 0.6 : 1 }}>
                   {resetLoading ? "מאפס..." : "אפס סיסמה"}
                 </button>
-                <button type="button" onClick={() => setResetTarget(null)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm">
+                <button type="button" onClick={() => setResetTarget(null)} style={{ flex: 1, background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   ביטול
                 </button>
               </div>

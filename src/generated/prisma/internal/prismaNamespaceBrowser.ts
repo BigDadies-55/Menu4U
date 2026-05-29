@@ -61,9 +61,21 @@ export const ModelName = {
   Category: 'Category',
   Item: 'Item',
   Order: 'Order',
+  OrderCounter: 'OrderCounter',
+  OrderStatusLog: 'OrderStatusLog',
   OrderItem: 'OrderItem',
+  ItemModifierGroup: 'ItemModifierGroup',
+  ItemModifier: 'ItemModifier',
+  OrderItemModifier: 'OrderItemModifier',
   MenuView: 'MenuView',
-  AuditLog: 'AuditLog'
+  AuditLog: 'AuditLog',
+  TableSession: 'TableSession',
+  SiteConfig: 'SiteConfig',
+  Customer: 'Customer',
+  LoyaltyMember: 'LoyaltyMember',
+  LoyaltyTransaction: 'LoyaltyTransaction',
+  LoyaltyCoupon: 'LoyaltyCoupon',
+  LoyaltySettings: 'LoyaltySettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -154,8 +166,23 @@ export const RestaurantScalarFieldEnum = {
   menuTheme: 'menuTheme',
   menuPalette: 'menuPalette',
   menuPaletteData: 'menuPaletteData',
+  ordersEnabled: 'ordersEnabled',
+  tableLayoutJson: 'tableLayoutJson',
+  kdsView: 'kdsView',
+  customDomain: 'customDomain',
+  copyright: 'copyright',
+  language: 'language',
+  welcomeText: 'welcomeText',
+  splashImage: 'splashImage',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
+  instagram: 'instagram',
+  facebook: 'facebook',
+  whatsapp: 'whatsapp',
+  tripadvisor: 'tripadvisor',
+  googleReview: 'googleReview',
+  showPhonePublic: 'showPhonePublic',
+  showAddressPublic: 'showAddressPublic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -199,7 +226,9 @@ export const CategoryScalarFieldEnum = {
   description: 'description',
   image: 'image',
   isActive: 'isActive',
+  autoReady: 'autoReady',
   sortOrder: 'sortOrder',
+  translations: 'translations',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -219,7 +248,9 @@ export const ItemScalarFieldEnum = {
   isVegan: 'isVegan',
   isGlutenFree: 'isGlutenFree',
   tags: 'tags',
+  prepTime: 'prepTime',
   sortOrder: 'sortOrder',
+  translations: 'translations',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -234,13 +265,41 @@ export const OrderScalarFieldEnum = {
   customerName: 'customerName',
   customerPhone: 'customerPhone',
   status: 'status',
+  orderNumber: 'orderNumber',
   totalAmount: 'totalAmount',
   notes: 'notes',
+  coversCount: 'coversCount',
+  orderSource: 'orderSource',
+  loyaltyMemberId: 'loyaltyMemberId',
+  loyaltyMemberName: 'loyaltyMemberName',
+  loyaltyDiscountType: 'loyaltyDiscountType',
+  loyaltyDiscountAmount: 'loyaltyDiscountAmount',
+  loyaltyCouponId: 'loyaltyCouponId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const OrderCounterScalarFieldEnum = {
+  restaurantId: 'restaurantId',
+  counter: 'counter'
+} as const
+
+export type OrderCounterScalarFieldEnum = (typeof OrderCounterScalarFieldEnum)[keyof typeof OrderCounterScalarFieldEnum]
+
+
+export const OrderStatusLogScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  fromStatus: 'fromStatus',
+  toStatus: 'toStatus',
+  changedAt: 'changedAt',
+  changedBy: 'changedBy'
+} as const
+
+export type OrderStatusLogScalarFieldEnum = (typeof OrderStatusLogScalarFieldEnum)[keyof typeof OrderStatusLogScalarFieldEnum]
 
 
 export const OrderItemScalarFieldEnum = {
@@ -249,10 +308,50 @@ export const OrderItemScalarFieldEnum = {
   itemId: 'itemId',
   quantity: 'quantity',
   price: 'price',
-  notes: 'notes'
+  notes: 'notes',
+  itemStatus: 'itemStatus',
+  course: 'course',
+  heldUntilFired: 'heldUntilFired',
+  firedAt: 'firedAt',
+  doneAt: 'doneAt',
+  servedAt: 'servedAt'
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const ItemModifierGroupScalarFieldEnum = {
+  id: 'id',
+  itemId: 'itemId',
+  name: 'name',
+  required: 'required',
+  maxSelect: 'maxSelect',
+  order: 'order'
+} as const
+
+export type ItemModifierGroupScalarFieldEnum = (typeof ItemModifierGroupScalarFieldEnum)[keyof typeof ItemModifierGroupScalarFieldEnum]
+
+
+export const ItemModifierScalarFieldEnum = {
+  id: 'id',
+  groupId: 'groupId',
+  label: 'label',
+  priceAdd: 'priceAdd',
+  order: 'order'
+} as const
+
+export type ItemModifierScalarFieldEnum = (typeof ItemModifierScalarFieldEnum)[keyof typeof ItemModifierScalarFieldEnum]
+
+
+export const OrderItemModifierScalarFieldEnum = {
+  id: 'id',
+  orderItemId: 'orderItemId',
+  groupName: 'groupName',
+  label: 'label',
+  priceAdd: 'priceAdd'
+} as const
+
+export type OrderItemModifierScalarFieldEnum = (typeof OrderItemModifierScalarFieldEnum)[keyof typeof OrderItemModifierScalarFieldEnum]
 
 
 export const MenuViewScalarFieldEnum = {
@@ -281,6 +380,105 @@ export const AuditLogScalarFieldEnum = {
 } as const
 
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const TableSessionScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  tableNumber: 'tableNumber',
+  openedAt: 'openedAt',
+  closedAt: 'closedAt',
+  totalAmount: 'totalAmount',
+  orderCount: 'orderCount'
+} as const
+
+export type TableSessionScalarFieldEnum = (typeof TableSessionScalarFieldEnum)[keyof typeof TableSessionScalarFieldEnum]
+
+
+export const SiteConfigScalarFieldEnum = {
+  id: 'id',
+  siteName: 'siteName',
+  logo: 'logo',
+  domain: 'domain',
+  copyright: 'copyright',
+  adminPalette: 'adminPalette',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SiteConfigScalarFieldEnum = (typeof SiteConfigScalarFieldEnum)[keyof typeof SiteConfigScalarFieldEnum]
+
+
+export const CustomerScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  name: 'name',
+  phone: 'phone',
+  email: 'email',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const LoyaltyMemberScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  phone: 'phone',
+  name: 'name',
+  email: 'email',
+  birthDate: 'birthDate',
+  memberNumber: 'memberNumber',
+  points: 'points',
+  totalSpent: 'totalSpent',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LoyaltyMemberScalarFieldEnum = (typeof LoyaltyMemberScalarFieldEnum)[keyof typeof LoyaltyMemberScalarFieldEnum]
+
+
+export const LoyaltyTransactionScalarFieldEnum = {
+  id: 'id',
+  memberId: 'memberId',
+  orderId: 'orderId',
+  type: 'type',
+  points: 'points',
+  note: 'note',
+  createdAt: 'createdAt'
+} as const
+
+export type LoyaltyTransactionScalarFieldEnum = (typeof LoyaltyTransactionScalarFieldEnum)[keyof typeof LoyaltyTransactionScalarFieldEnum]
+
+
+export const LoyaltyCouponScalarFieldEnum = {
+  id: 'id',
+  memberId: 'memberId',
+  restaurantId: 'restaurantId',
+  code: 'code',
+  type: 'type',
+  value: 'value',
+  description: 'description',
+  usedAt: 'usedAt',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type LoyaltyCouponScalarFieldEnum = (typeof LoyaltyCouponScalarFieldEnum)[keyof typeof LoyaltyCouponScalarFieldEnum]
+
+
+export const LoyaltySettingsScalarFieldEnum = {
+  restaurantId: 'restaurantId',
+  pointsPerShekel: 'pointsPerShekel',
+  shekelPerPoint: 'shekelPerPoint',
+  minRedeemPoints: 'minRedeemPoints',
+  welcomeBonus: 'welcomeBonus',
+  birthdayBonus: 'birthdayBonus',
+  isActive: 'isActive'
+} as const
+
+export type LoyaltySettingsScalarFieldEnum = (typeof LoyaltySettingsScalarFieldEnum)[keyof typeof LoyaltySettingsScalarFieldEnum]
 
 
 export const SortOrder = {

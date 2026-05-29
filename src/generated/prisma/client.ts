@@ -92,10 +92,35 @@ export type Item = Prisma.ItemModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model OrderCounter
+ * 
+ */
+export type OrderCounter = Prisma.OrderCounterModel
+/**
+ * Model OrderStatusLog
+ * 
+ */
+export type OrderStatusLog = Prisma.OrderStatusLogModel
+/**
  * Model OrderItem
  * 
  */
 export type OrderItem = Prisma.OrderItemModel
+/**
+ * Model ItemModifierGroup
+ * 
+ */
+export type ItemModifierGroup = Prisma.ItemModifierGroupModel
+/**
+ * Model ItemModifier
+ * 
+ */
+export type ItemModifier = Prisma.ItemModifierModel
+/**
+ * Model OrderItemModifier
+ * 
+ */
+export type OrderItemModifier = Prisma.OrderItemModifierModel
 /**
  * Model MenuView
  * 
@@ -106,3 +131,38 @@ export type MenuView = Prisma.MenuViewModel
  * 
  */
 export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model TableSession
+ * 
+ */
+export type TableSession = Prisma.TableSessionModel
+/**
+ * Model SiteConfig
+ * 
+ */
+export type SiteConfig = Prisma.SiteConfigModel
+/**
+ * Model Customer
+ * 
+ */
+export type Customer = Prisma.CustomerModel
+/**
+ * Model LoyaltyMember
+ * 
+ */
+export type LoyaltyMember = Prisma.LoyaltyMemberModel
+/**
+ * Model LoyaltyTransaction
+ * 
+ */
+export type LoyaltyTransaction = Prisma.LoyaltyTransactionModel
+/**
+ * Model LoyaltyCoupon
+ * 
+ */
+export type LoyaltyCoupon = Prisma.LoyaltyCouponModel
+/**
+ * Model LoyaltySettings
+ * 
+ */
+export type LoyaltySettings = Prisma.LoyaltySettingsModel

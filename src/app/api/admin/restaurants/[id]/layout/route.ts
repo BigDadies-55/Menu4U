@@ -1,0 +1,37 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
+
+  const r = await prisma.restaurant.findUnique({
+    where: { id: id },
+    select: { tableLayoutJson: true },
+  });
+  if (!r) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ tableLayoutJson: r.tableLayoutJson });
+}
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
+
+  const { tableLayoutJson } = await req.json();
+
+  await prisma.restaurant.update({
+    where: { id: id },
+    data: { tableLayoutJson },
+  });
+
+  return NextResponse.json({ ok: true });
+}

@@ -5,10 +5,23 @@ import OrdersClient from "./OrdersClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "📋 הזמנות | Menu4U" };
+
 export default async function OrdersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
+
+  // Ensure orderNumber column + counter table exist before querying
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "OrderCounter" (
+        "restaurantId" TEXT PRIMARY KEY,
+        "counter"      INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+  } catch { /* ignore */ }
 
   const role = session.user.role;
   const userId = session.user.id;
@@ -35,11 +48,11 @@ export default async function OrdersPage() {
     prisma.order.findMany({
       where: {
         ...(isSuperAdmin ? {} : { restaurantId: { in: restaurantIds } }),
-        status: { notIn: ["DELIVERED", "CANCELLED"] },
+        status: { notIn: ["DELIVERED", "CANCELLED", "PAID"] },
       },
       orderBy: { createdAt: "asc" },
       include: {
-        restaurant: { select: { name: true } },
+        restaurant: { select: { id: true, name: true } },
         items: { include: { item: { select: { name: true } } } },
       },
     }),
@@ -57,7 +70,7 @@ export default async function OrdersPage() {
 
   return (
     <OrdersClient
-      initialOrders={initialOrders as Parameters<typeof OrdersClient>[0]["initialOrders"]}
+      initialOrders={initialOrders as unknown as Parameters<typeof OrdersClient>[0]["initialOrders"]}
       restaurants={restaurants}
       isSuperAdmin={isSuperAdmin}
       defaultRestaurantId={defaultRestaurantId}

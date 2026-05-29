@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu4U — פלטפורמת ניהול מסעדות</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rubik:wght@300;400;500;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0A0907;
+  --bg2: #0f0c09;
+  --gold: #C5A880;
+  --gold-light: #dfc090;
+  --gold-pale: rgba(197,168,128,0.12);
+  --text: #e8ddd0;
+  --text-muted: rgba(232,221,208,0.55);
+  --card-bg: rgba(255,255,255,0.04);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Rubik', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  direction: rtl;
+  text-align: right;
+  overflow-x: hidden;
+}
+
+/* ── NAVBAR ── */
+nav {
+  position: fixed; top: 0; right: 0; left: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.1rem 5%;
+  background: rgba(10,9,7,0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(197,168,128,0.12);
+  transition: background 0.3s;
+}
+.nav-logo {
+  font-family: 'Cinzel', serif;
+  font-size: 1.55rem; font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+.nav-logo span { color: var(--text); }
+.nav-links { display: flex; gap: 2.2rem; list-style: none; align-items: center; }
+.nav-links a {
+  color: var(--text-muted); text-decoration: none;
+  font-size: 0.9rem; font-weight: 400; letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--gold); }
+.nav-cta {
+  padding: 0.52rem 1.3rem;
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  color: var(--gold) !important;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s !important;
+}
+.nav-cta:hover { background: var(--gold) !important; color: var(--bg) !important; }
+
+/* ── HERO ── */
+#hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=80');
+  background-size: cover; background-position: center;
+  opacity: 0.13;
+}
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, var(--bg) 80%);
+}
+.hero-particles { position: absolute; inset: 0; pointer-events: none; }
+.hero-particles span {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: var(--gold);
+  border-radius: 50%;
+  opacity: 0;
+  animation: float-dot 6s infinite ease-in-out;
+}
+@keyframes float-dot {
+  0%,100% { opacity:0; transform: translateY(0) scale(1); }
+  50% { opacity:0.7; transform: translateY(-30px) scale(1.5); }
+}
+.hero-content { position: relative; z-index: 1; max-width: 820px; padding: 2rem; }
+.hero-tag {
+  display: inline-block;
+  font-size: 0.75rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold); border: 1px solid rgba(197,168,128,0.35);
+  padding: 0.35rem 1rem; border-radius: 2px; margin-bottom: 2rem;
+}
+.hero-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+  font-weight: 700; line-height: 1.2;
+  color: #fff; margin-bottom: 1.5rem;
+}
+.hero-title .highlight {
+  display: inline-block;
+  position: relative; color: var(--gold-light);
+}
+.hero-title .highlight::after {
+  content: ''; position: absolute;
+  bottom: -4px; right: 0; left: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: shine 2.5s ease-in-out infinite;
+}
+@keyframes shine {
+  0%,100% { opacity:0.4; transform: scaleX(0.6); }
+  50% { opacity:1; transform: scaleX(1); }
+}
+.hero-sub {
+  font-size: 1.05rem; color: var(--text-muted); line-height: 1.8;
+  max-width: 600px; margin: 0 auto 2.5rem;
+}
+.hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn-gold {
+  padding: 0.85rem 2.2rem;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #0A0907; font-weight: 600; border: none; border-radius: 3px;
+  cursor: pointer; font-size: 0.95rem; font-family: 'Rubik', sans-serif;
+  text-decoration: none; transition: opacity 0.2s, transform 0.2s;
+}
+.btn-gold:hover { opacity: 0.88; transform: translateY(-2px); }
+.btn-outline {
+  padding: 0.85rem 2.2rem;
+  background: transparent;
+  color: var(--text); border: 1px solid rgba(232,221,208,0.3);
+  border-radius: 3px; font-size: 0.95rem; font-family: 'Rubik', sans-serif;
+  text-decoration: none; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── SECTION SHARED ── */
+section { padding: 7rem 5%; }
+.section-tag {
+  font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 1rem;
+}
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 600; margin-bottom: 1.2rem;
+}
+.section-sub { color: var(--text-muted); font-size: 1rem; max-width: 520px; line-height: 1.8; }
+.text-center { text-align: center; }
+.text-center .section-sub { margin: 0 auto; }
+
+/* ── FEATURES ── */
+#features { background: var(--bg2); }
+.features-grid {
+  margin-top: 3.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+@media(max-width:900px){ .features-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:560px){ .features-grid { grid-template-columns: 1fr; } }
+.feature-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(197,168,128,0.1);
+  border-radius: 6px;
+  padding: 2rem 1.8rem;
+  transition: border-color 0.3s, background 0.3s, transform 0.3s;
+  cursor: default;
+}
+.feature-card:hover {
+  border-color: var(--gold);
+  background: rgba(197,168,128,0.06);
+  transform: translateY(-4px);
+}
+.feature-icon { margin-bottom: 1.2rem; }
+.feature-icon svg { width: 38px; height: 38px; }
+.feature-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem; font-weight: 600;
+  color: var(--gold-light); margin-bottom: 0.7rem;
+}
+.feature-desc { color: var(--text-muted); font-size: 0.88rem; line-height: 1.7; }
+
+/* ── STATS ── */
+#stats {
+  padding: 4.5rem 5%;
+  background: linear-gradient(90deg, rgba(197,168,128,0.06) 0%, rgba(197,168,128,0.03) 100%);
+  border-top: 1px solid rgba(197,168,128,0.1);
+  border-bottom: 1px solid rgba(197,168,128,0.1);
+}
+.stats-strip { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 2rem; }
+.stat-item { text-align: center; }
+.stat-number {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  color: var(--gold-light);
+  line-height: 1;
+}
+.stat-label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; letter-spacing: 0.05em; }
+
+/* ── PRICING ── */
+#pricing { background: var(--bg); }
+.pricing-grid {
+  margin-top: 3.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+@media(max-width:860px){ .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; } }
+.pricing-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(197,168,128,0.12);
+  border-radius: 8px;
+  padding: 2.2rem;
+  position: relative;
+}
+.pricing-card.featured {
+  background: rgba(197,168,128,0.07);
+  border-color: var(--gold);
+  box-shadow: 0 0 40px rgba(197,168,128,0.18), 0 0 80px rgba(197,168,128,0.07);
+  transform: scale(1.03);
+}
+.pricing-badge {
+  position: absolute; top: -13px; right: 50%; transform: translateX(50%);
+  background: var(--gold); color: var(--bg);
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+  padding: 0.3rem 1rem; border-radius: 20px; text-transform: uppercase;
+}
+.pricing-name {
+  font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light);
+  margin-bottom: 0.5rem;
+}
+.pricing-price {
+  font-size: 2.5rem; font-weight: 700; color: #fff; margin: 1rem 0 0.3rem;
+  line-height: 1;
+}
+.pricing-price span { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+.pricing-desc { color: var(--text-muted); font-size: 0.83rem; margin-bottom: 1.8rem; }
+.pricing-features { list-style: none; margin-bottom: 2rem; }
+.pricing-features li {
+  color: var(--text-muted); font-size: 0.87rem; padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.pricing-features li::before { content: '✦'; color: var(--gold); font-size: 0.6rem; flex-shrink: 0; }
+.btn-pricing {
+  width: 100%; padding: 0.8rem;
+  border: 1px solid var(--gold); background: transparent;
+  color: var(--gold); border-radius: 3px;
+  font-family: 'Rubik', sans-serif; font-size: 0.9rem; font-weight: 500;
+  cursor: pointer; transition: background 0.2s, color 0.2s;
+}
+.btn-pricing:hover, .pricing-card.featured .btn-pricing {
+  background: var(--gold); color: var(--bg);
+}
+
+/* ── CTA ── */
+#cta {
+  padding: 6rem 5%;
+  background: linear-gradient(135deg, #1a1208, #0d0b07, #1a1208);
+  border-top: 1px solid rgba(197,168,128,0.15);
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+#cta::before {
+  content: ''; position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(197,168,128,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+#cta .section-title { color: var(--gold-light); }
+#cta .section-sub { color: var(--text-muted); margin: 0 auto 2.5rem; }
+
+/* ── FOOTER ── */
+footer {
+  padding: 2.5rem 5%;
+  background: #060504;
+  border-top: 1px solid rgba(197,168,128,0.08);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-logo { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.1rem; }
+.footer-links { display: flex; gap: 1.5rem; }
+.footer-links a { color: var(--text-muted); text-decoration: none; font-size: 0.83rem; transition: color 0.2s; }
+.footer-links a:hover { color: var(--gold); }
+.footer-copy { color: rgba(232,221,208,0.3); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">Menu<span>4U</span></a>
+  <ul class="nav-links">
+    <li><a href="#hero">בית</a></li>
+    <li><a href="#features">פתרונות</a></li>
+    <li><a href="#pricing">מחירים</a></li>
+    <li><a href="#cta">צור קשר</a></li>
+    <li><a href="#" class="nav-cta">כניסה לניהול</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-particles" id="particles"></div>
+  <div class="hero-content">
+    <div class="hero-tag">פלטפורמת המסעדות המובילה בישראל</div>
+    <h1 class="hero-title">
+      <span class="highlight">התפריט שלך.</span><br>
+      המסעדה שלך.<br>
+      עתיד הדיגיטל.
+    </h1>
+    <p class="hero-sub">פלטפורמת ניהול המסעדות המתקדמת בישראל — תפריט דיגיטלי, הזמנות בזמן אמת, מועדון לקוחות, ובינה מלאכותית שעובדת בשבילך.</p>
+    <div class="hero-btns">
+      <a href="#" class="btn-gold">התחל עכשיו — חינם 30 יום</a>
+      <a href="#features" class="btn-outline">גלה את הפתרונות</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="text-center">
+    <div class="section-tag">הפתרון המלא</div>
+    <h2 class="section-title">הכל במקום אחד</h2>
+    <p class="section-sub">כל כלי שמסעדה מודרנית צריכה — מתפריט דיגיטלי ועד בינה מלאכותית</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="14" height="14" rx="2" stroke="#C5A880" stroke-width="1.8"/>
+          <rect x="21" y="3" width="14" height="14" rx="2" stroke="#C5A880" stroke-width="1.8"/>
+          <rect x="3" y="21" width="14" height="14" rx="2" stroke="#C5A880" stroke-width="1.8"/>
+          <rect x="25" y="25" width="6" height="6" fill="#C5A880"/>
+          <rect x="21" y="21" width="4" height="4" fill="#C5A880" opacity=".5"/>
+        </svg>
+      </div>
+      <div class="feature-title">תפריט דיגיטלי</div>
+      <div class="feature-desc">QR code חכם, עיצוב יוקרתי, תמיכה ב-4 שפות, עדכון בזמן אמת</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 12h24M7 19h16M7 26h10" stroke="#C5A880" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="31" cy="26" r="5" stroke="#dfc090" stroke-width="1.8"/>
+          <path d="M29 26l1.5 1.5L33 24" stroke="#dfc090" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="feature-title">הזמנות בזמן אמת</div>
+      <div class="feature-desc">הזמנות מגיעות ישירות למטבח, מסך KDS לטבחים, ניהול קורסים</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="19" cy="13" r="7" stroke="#C5A880" stroke-width="1.8"/>
+          <path d="M5 34c0-7.732 6.268-14 14-14s14 6.268 14 14" stroke="#C5A880" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M25 17l2 2 4-4" stroke="#dfc090" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="feature-title">מועדון לקוחות</div>
+      <div class="feature-desc">נקודות, קופונים, מנות מועדפות, כרטיס חבר דיגיטלי</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 5v4M19 29v4M5 19h4M29 19h4" stroke="#C5A880" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="19" cy="19" r="8" stroke="#dfc090" stroke-width="1.8"/>
+          <path d="M15 19l3 3 5-5" stroke="#C5A880" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="feature-title">בינה מלאכותית</div>
+      <div class="feature-desc">תובנות על הזמנות, זיהוי מנות פופולריות, המלצות אוטומטיות</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="5" y="7" width="28" height="20" rx="3" stroke="#C5A880" stroke-width="1.8"/>
+          <path d="M13 31h12M19 27v4" stroke="#C5A880" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M11 16l4 4 6-6" stroke="#dfc090" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="feature-title">ניהול פשוט</div>
+      <div class="feature-desc">בקאופיס עוצמתי, הרשאות לצוות, דוחות וסטטיסטיקות</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 5C11.268 5 5 11.268 5 19s6.268 14 14 14 14-6.268 14-14" stroke="#C5A880" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M25 5h8v8" stroke="#dfc090" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M33 5L19 19" stroke="#dfc090" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="feature-title">שילוב קל</div>
+      <div class="feature-desc">הטמעה תוך יום, ללא ציוד נוסף, עובד על כל מכשיר</div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="stats-strip">
+    <div class="stat-item">
+      <div class="stat-number">500+</div>
+      <div class="stat-label">מסעדות פעילות</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">2M+</div>
+      <div class="stat-label">הזמנות בוצעו</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">98%</div>
+      <div class="stat-label">שביעות רצון</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">24/7</div>
+      <div class="stat-label">תמיכה מלאה</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="text-center">
+    <div class="section-tag">תוכניות מחיר</div>
+    <h2 class="section-title">השקעה שמחזירה את עצמה</h2>
+    <p class="section-sub">תוכנית לכל גודל מסעדה — ללא עמלות מכירה, ללא הפתעות</p>
+  </div>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="pricing-name">בסיסי</div>
+      <div class="pricing-price">₪299 <span>/ חודש</span></div>
+      <div class="pricing-desc">מושלם להתחלה</div>
+      <ul class="pricing-features">
+        <li>תפריט דיגיטלי מלא</li>
+        <li>עד 50 מנות</li>
+        <li>QR codes ללא הגבלה</li>
+        <li>תמיכה בסיסית</li>
+      </ul>
+      <button class="btn-pricing">בחר תוכנית</button>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-badge">המומלץ</div>
+      <div class="pricing-name">פרו</div>
+      <div class="pricing-price">₪599 <span>/ חודש</span></div>
+      <div class="pricing-desc">לרוב המסעדות</div>
+      <ul class="pricing-features">
+        <li>הכל בבסיסי</li>
+        <li>הזמנות בזמן אמת</li>
+        <li>מועדון לקוחות</li>
+        <li>KDS מטבח</li>
+        <li>אנליטיקס מתקדם</li>
+      </ul>
+      <button class="btn-pricing">בחר תוכנית</button>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-name">ארגוני</div>
+      <div class="pricing-price">בהתאמה <span></span></div>
+      <div class="pricing-desc">לרשתות וסניפים</div>
+      <ul class="pricing-features">
+        <li>הכל בפרו</li>
+        <li>ריבוי סניפים</li>
+        <li>API מלא</li>
+        <li>ליווי אישי</li>
+      </ul>
+      <button class="btn-pricing">צור קשר</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="section-tag">מוכן להתחיל?</div>
+  <h2 class="section-title">הצטרף ל-500+ מסעדות</h2>
+  <p class="section-sub">ניסיון חינמי של 30 יום — ללא כרטיס אשראי, ללא התחייבות</p>
+  <a href="#" class="btn-gold">התחל עכשיו בחינם — 30 יום ניסיון</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Menu4U</div>
+  <div class="footer-links">
+    <a href="#">פרטיות</a>
+    <a href="#">תנאי שימוש</a>
+    <a href="#">צור קשר</a>
+  </div>
+  <div class="footer-copy">Menu4U © 2025</div>
+</footer>
+
+<script>
+// Generate golden particles
+const container = document.getElementById('particles');
+for (let i = 0; i < 28; i++) {
+  const s = document.createElement('span');
+  s.style.cssText = `
+    left: ${Math.random() * 100}%;
+    top: ${Math.random() * 100}%;
+    animation-delay: ${Math.random() * 6}s;
+    animation-duration: ${5 + Math.random() * 5}s;
+    width: ${1 + Math.random() * 2.5}px;
+    height: ${1 + Math.random() * 2.5}px;
+    opacity: ${0.2 + Math.random() * 0.5};
+  `;
+  container.appendChild(s);
+}
+</script>
+</body>
+</html>

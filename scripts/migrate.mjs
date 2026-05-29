@@ -60,6 +60,49 @@ const sqls = [
   );`,
   `CREATE INDEX IF NOT EXISTS "OrderStatusLog_orderId_idx" ON "OrderStatusLog"("orderId");`,
   `CREATE INDEX IF NOT EXISTS "OrderStatusLog_changedAt_idx" ON "OrderStatusLog"("changedAt" DESC);`,
+  `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "itemStatus" TEXT NOT NULL DEFAULT 'PENDING';`,
+  `CREATE TABLE IF NOT EXISTS "TableSession" (
+    "id" TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "tableNumber" TEXT NOT NULL,
+    "openedAt" TIMESTAMP(3) NOT NULL,
+    "closedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "totalAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "orderCount" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "TableSession_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "TableSession_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE
+  );`,
+  `CREATE INDEX IF NOT EXISTS "TableSession_restaurantId_idx" ON "TableSession"("restaurantId");`,
+  `CREATE INDEX IF NOT EXISTS "TableSession_closedAt_idx" ON "TableSession"("closedAt" DESC);`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'PAID' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'OrderStatus')) THEN
+      ALTER TYPE "OrderStatus" ADD VALUE 'PAID';
+    END IF;
+  END $$;`,
+  `CREATE TABLE IF NOT EXISTS "ItemModifierGroup" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "itemId" TEXT NOT NULL REFERENCES "Item"("id") ON DELETE CASCADE,
+  "name" TEXT NOT NULL,
+  "required" BOOLEAN NOT NULL DEFAULT false,
+  "maxSelect" INTEGER NOT NULL DEFAULT 1,
+  "order" INTEGER NOT NULL DEFAULT 0
+)`,
+  `CREATE TABLE IF NOT EXISTS "ItemModifier" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "groupId" TEXT NOT NULL REFERENCES "ItemModifierGroup"("id") ON DELETE CASCADE,
+  "label" TEXT NOT NULL,
+  "priceAdd" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "order" INTEGER NOT NULL DEFAULT 0
+)`,
+  `CREATE TABLE IF NOT EXISTS "OrderItemModifier" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "orderItemId" TEXT NOT NULL REFERENCES "OrderItem"("id") ON DELETE CASCADE,
+  "groupName" TEXT NOT NULL,
+  "label" TEXT NOT NULL,
+  "priceAdd" DOUBLE PRECISION NOT NULL DEFAULT 0
+)`,
+  `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedAt" TIMESTAMP(3);`,
+  `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "coversCount" INTEGER;`,
 ];
 
 async function run() {

@@ -5,12 +5,14 @@ import LayoutClient from "./LayoutClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "🗺 סידור שולחנות | Menu4U" };
+
 export default async function LayoutBuilderPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
   const role = session.user.role;
-  if (role === "VIEWER" || role === "WAITER") redirect("/admin/orders");
+  if (["VIEWER", "WAITER", "EDITOR", "DISPLAY"].includes(role)) redirect("/admin/menus");
 
   const isSuperAdmin = role === "SUPER_ADMIN";
 

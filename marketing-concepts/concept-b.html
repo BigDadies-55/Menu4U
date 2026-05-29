@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu4U — ניהול מסעדה חכם בעידן ה-AI</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #05071A;
+  --bg2: #080b20;
+  --blue: #4F8EF7;
+  --purple: #9B5CF6;
+  --glass: rgba(255,255,255,0.05);
+  --glass-border: rgba(255,255,255,0.10);
+  --text: #E8EEFF;
+  --text-muted: rgba(232,238,255,0.5);
+  --grad: linear-gradient(135deg, #4F8EF7, #9B5CF6);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  direction: rtl;
+  overflow-x: hidden;
+}
+
+/* NAVBAR */
+nav {
+  position: fixed; top: 0; width: 100%; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 4rem;
+  background: rgba(5,7,26,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+}
+.logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem; font-weight: 700;
+  background: var(--grad);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.nav-links { display: flex; gap: 2rem; align-items: center; list-style: none; }
+.nav-links a {
+  color: var(--text-muted); text-decoration: none;
+  font-size: 0.88rem; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+.btn-nav {
+  background: var(--grad);
+  color: #fff !important;
+  padding: 0.45rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  transition: opacity 0.2s !important;
+}
+.btn-nav:hover { opacity: 0.85; }
+
+/* HERO */
+#hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 8rem 4rem 4rem;
+  overflow: hidden;
+}
+/* animated mesh bg */
+.mesh-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 40%, rgba(79,142,247,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 80% 60%, rgba(155,92,246,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 20%, rgba(79,142,247,0.08) 0%, transparent 50%);
+  animation: mesh-shift 10s ease-in-out infinite alternate;
+}
+@keyframes mesh-shift {
+  0%   { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 1;   transform: scale(1.06) translateX(-2%); }
+}
+.mesh-grid {
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(79,142,247,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,142,247,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.hero-inner {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4rem; align-items: center; width: 100%;
+}
+.hero-text {}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(79,142,247,0.12);
+  border: 1px solid rgba(79,142,247,0.3);
+  border-radius: 20px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--blue);
+  margin-bottom: 1.6rem;
+  letter-spacing: 0.5px;
+}
+.hero-tag::before { content: '◉'; font-size: 0.6rem; color: #4F8EF7; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.hero-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.18;
+  margin-bottom: 1.4rem;
+  letter-spacing: -0.5px;
+}
+.hero-title .grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 1rem; line-height: 1.8;
+  color: var(--text-muted);
+  margin-bottom: 2.4rem; max-width: 480px;
+}
+.hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn-glow {
+  display: inline-block;
+  padding: 0.9rem 2.2rem;
+  background: var(--grad);
+  color: #fff; font-weight: 600; font-size: 0.95rem;
+  border-radius: 10px; text-decoration: none;
+  box-shadow: 0 4px 30px rgba(79,142,247,0.35), 0 0 0 0 rgba(79,142,247,0.4);
+  animation: glow-pulse 3s ease-in-out infinite;
+  transition: transform 0.2s;
+}
+.btn-glow:hover { transform: translateY(-2px); }
+@keyframes glow-pulse {
+  0%,100% { box-shadow: 0 4px 30px rgba(79,142,247,0.35); }
+  50%      { box-shadow: 0 4px 50px rgba(79,142,247,0.6), 0 0 0 6px rgba(79,142,247,0.08); }
+}
+.btn-ghost {
+  display: inline-block;
+  padding: 0.9rem 2.2rem;
+  border: 1px solid var(--glass-border);
+  color: var(--text); font-weight: 500; font-size: 0.95rem;
+  border-radius: 10px; text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-ghost:hover { border-color: var(--blue); background: rgba(79,142,247,0.06); }
+
+/* phone mockup */
+.phone-mockup {
+  display: flex; justify-content: center; align-items: center;
+}
+.phone-frame {
+  width: 260px; height: 520px;
+  border: 2px solid rgba(79,142,247,0.4);
+  border-radius: 36px;
+  background: rgba(15,20,60,0.7);
+  backdrop-filter: blur(20px);
+  position: relative; overflow: hidden;
+  box-shadow: 0 0 60px rgba(79,142,247,0.15), 0 0 120px rgba(155,92,246,0.1);
+}
+.phone-frame::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, rgba(79,142,247,0.18) 0%, rgba(155,92,246,0.15) 50%, rgba(5,7,26,0.3) 100%);
+}
+.phone-notch {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 80px; height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px; z-index: 2;
+}
+.phone-content {
+  position: absolute; inset: 30px 14px 14px;
+  z-index: 2;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.phone-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+.phone-bar.accent { background: linear-gradient(90deg, #4F8EF7, #9B5CF6); width: 60%; }
+.phone-card-mock {
+  flex: 1; border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex; flex-direction: column;
+  padding: 10px;
+  gap: 6px;
+}
+.mock-row { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); }
+.mock-row.w60 { width: 60%; }
+.mock-row.w40 { width: 40%; }
+.mock-row.w80 { width: 80%; }
+.mock-img { height: 70px; border-radius: 8px; background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(155,92,246,0.2)); margin-bottom: 2px; }
+
+/* FEATURES */
+#features { padding: 6rem 4rem; background: var(--bg2); }
+.section-header { margin-bottom: 3.2rem; text-align: center; }
+.section-tag {
+  display: inline-block;
+  background: var(--grad);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+.section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 700; margin-bottom: 0.8rem;
+}
+.section-sub { color: var(--text-muted); font-size: 0.97rem; line-height: 1.75; max-width: 520px; margin: 0 auto; }
+
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1.4rem;
+}
+.feature-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1.8rem;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.3s, transform 0.25s, background 0.3s;
+}
+.feature-card:hover {
+  border-color: rgba(79,142,247,0.4);
+  background: rgba(79,142,247,0.06);
+  transform: translateY(-4px);
+}
+.icon-wrap {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  background: var(--grad);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.2rem;
+  font-size: 1.3rem;
+}
+.feature-card h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem; font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+.feature-card p { color: var(--text-muted); font-size: 0.87rem; line-height: 1.7; }
+
+/* STATS */
+#stats { padding: 5rem 4rem; background: var(--bg); }
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1.4rem;
+}
+.stat-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.3s;
+}
+.stat-card:hover { border-color: rgba(79,142,247,0.4); }
+.stat-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.8rem; font-weight: 700;
+  background: var(--grad);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 0.4rem;
+}
+.stat-label { color: var(--text-muted); font-size: 0.88rem; }
+
+/* PRICING */
+#pricing { padding: 6rem 4rem; background: var(--bg2); }
+.price-toggle {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1rem; margin: 2rem 0 3rem;
+}
+.toggle-label { color: var(--text-muted); font-size: 0.9rem; }
+.toggle-track {
+  width: 44px; height: 24px;
+  background: var(--grad);
+  border-radius: 12px;
+  position: relative; cursor: pointer;
+}
+.toggle-thumb {
+  position: absolute; top: 3px; right: 3px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+}
+.badge-save {
+  background: rgba(79,142,247,0.15);
+  border: 1px solid rgba(79,142,247,0.3);
+  color: var(--blue); font-size: 0.72rem; font-weight: 600;
+  padding: 0.2rem 0.6rem; border-radius: 10px;
+}
+
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1.6rem; align-items: start;
+}
+.price-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 2.2rem 2rem;
+  transition: transform 0.25s;
+}
+.price-card:hover { transform: translateY(-4px); }
+.price-card.popular {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--bg2), var(--bg2)) padding-box,
+    var(--grad) border-box;
+  position: relative;
+}
+.popular-badge {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--grad);
+  color: #fff; font-size: 0.72rem; font-weight: 700;
+  padding: 0.25rem 1rem; border-radius: 12px;
+  white-space: nowrap;
+}
+.price-card h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.2rem; font-weight: 600;
+  margin-bottom: 1rem; color: var(--text);
+}
+.price-amount {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.4rem; font-weight: 700;
+  margin-bottom: 0.3rem;
+  background: var(--grad);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.price-amount span { font-size: 1rem; font-weight: 400; color: var(--text-muted); -webkit-text-fill-color: var(--text-muted); }
+.price-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.6rem; line-height: 1.6; }
+.price-features { list-style: none; margin-bottom: 2rem; }
+.price-features li {
+  color: var(--text-muted); font-size: 0.87rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex; gap: 0.6rem; align-items: flex-start;
+}
+.price-features li::before { content: '✓'; color: var(--blue); font-size: 0.85rem; flex-shrink: 0; }
+.btn-grad {
+  display: block; text-align: center;
+  padding: 0.8rem;
+  background: var(--grad);
+  color: #fff; font-weight: 600; font-size: 0.9rem;
+  border-radius: 10px; text-decoration: none;
+  transition: opacity 0.2s;
+}
+.btn-grad:hover { opacity: 0.85; }
+.btn-outline-blue {
+  display: block; text-align: center;
+  padding: 0.8rem;
+  border: 1px solid rgba(79,142,247,0.4);
+  color: var(--blue); font-weight: 600; font-size: 0.9rem;
+  border-radius: 10px; text-decoration: none;
+  transition: background 0.2s;
+}
+.btn-outline-blue:hover { background: rgba(79,142,247,0.08); }
+
+/* CTA */
+#cta {
+  padding: 7rem 4rem;
+  background: linear-gradient(135deg, #080b22 0%, #12083a 50%, #080b22 100%);
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+#cta::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(79,142,247,0.12), transparent 70%);
+}
+#cta .section-title { position: relative; z-index: 1; font-size: clamp(1.8rem, 3vw, 2.6rem); }
+#cta p { color: var(--text-muted); margin: 1rem 0 2.4rem; position: relative; z-index: 1; }
+#cta .btn-glow { position: relative; z-index: 1; font-size: 1rem; padding: 1rem 2.8rem; }
+
+/* FOOTER */
+footer {
+  background: #030411;
+  border-top: 1px solid var(--glass-border);
+  padding: 2.5rem 4rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-links { display: flex; gap: 2rem; }
+.footer-links a { color: var(--text-muted); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+.footer-links a:hover { color: var(--blue); }
+.footer-copy { color: var(--text-muted); font-size: 0.8rem; }
+
+/* RESPONSIVE */
+@media (max-width: 960px) {
+  nav { padding: 1rem 1.5rem; }
+  .nav-links { gap: 1.2rem; }
+  #hero { padding: 6rem 1.5rem 3rem; }
+  .hero-inner { grid-template-columns: 1fr; }
+  .phone-mockup { display: none; }
+  #features, #pricing, #stats { padding: 4rem 1.5rem; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
+  footer { padding: 2rem 1.5rem; flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 580px) {
+  .nav-links { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .hero-btns { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="logo">Menu4U</div>
+  <ul class="nav-links">
+    <li><a href="#hero">בית</a></li>
+    <li><a href="#features">פתרונות</a></li>
+    <li><a href="#pricing">מחירים</a></li>
+    <li><a href="#cta">צור קשר</a></li>
+    <li><a href="#" class="btn-nav">כניסה לניהול</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="mesh-bg"></div>
+  <div class="mesh-grid"></div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-tag">מופעל על ידי AI ◦ זמין עכשיו</div>
+      <h1 class="hero-title">
+        ניהול מסעדה<br>
+        חכם בעידן<br>
+        <span class="grad-text">ה-AI</span>
+      </h1>
+      <p class="hero-sub">פלטפורמת ניהול המסעדות המתקדמת בישראל — תפריט דיגיטלי, הזמנות בזמן אמת, מועדון לקוחות, ובינה מלאכותית שעובדת בשבילך.</p>
+      <div class="hero-btns">
+        <a href="#cta" class="btn-glow">התחל עכשיו בחינם — 30 יום ניסיון</a>
+        <a href="#features" class="btn-ghost">גלה את הפתרונות</a>
+      </div>
+    </div>
+    <div class="phone-mockup">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-content">
+          <div class="phone-bar accent"></div>
+          <div class="phone-bar" style="width:40%"></div>
+          <div class="phone-card-mock">
+            <div class="mock-img"></div>
+            <div class="mock-row w80"></div>
+            <div class="mock-row w60"></div>
+            <div class="mock-row w40"></div>
+          </div>
+          <div class="phone-card-mock" style="flex:0.6">
+            <div class="mock-row w80"></div>
+            <div class="mock-row w60"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-header">
+    <div class="section-tag">הפתרונות שלנו</div>
+    <h2 class="section-title">כל מה שמסעדה מודרנית צריכה</h2>
+    <p class="section-sub">כלים חכמים שמשדרגים את החוויה של הלקוח ומייעלים את העבודה שלך</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon-wrap">📱</div>
+      <h3>תפריט דיגיטלי</h3>
+      <p>QR code חכם, עיצוב יוקרתי, תמיכה ב-4 שפות, עדכון בזמן אמת</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon-wrap">⚡</div>
+      <h3>הזמנות בזמן אמת</h3>
+      <p>הזמנות מגיעות ישירות למטבח, מסך KDS לטבחים, ניהול קורסים</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon-wrap">🎁</div>
+      <h3>מועדון לקוחות</h3>
+      <p>נקודות, קופונים, מנות מועדפות, כרטיס חבר דיגיטלי</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon-wrap">🤖</div>
+      <h3>בינה מלאכותית</h3>
+      <p>תובנות על הזמנות, זיהוי מנות פופולריות, המלצות אוטומטיות</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon-wrap">📊</div>
+      <h3>ניהול פשוט</h3>
+      <p>בקאופיס עוצמתי, הרשאות לצוות, דוחות וסטטיסטיקות</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon-wrap">🔗</div>
+      <h3>שילוב קל</h3>
+      <p>הטמעה תוך יום, ללא ציוד נוסף, עובד על כל מכשיר</p>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="section-header">
+    <div class="section-tag">המספרים מדברים</div>
+    <h2 class="section-title">Menu4U בנתונים</h2>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num">500+</div>
+      <div class="stat-label">מסעדות פעילות</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">2M+</div>
+      <div class="stat-label">הזמנות בוצעו</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">98%</div>
+      <div class="stat-label">שביעות רצון</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">24/7</div>
+      <div class="stat-label">תמיכה טכנית</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-header">
+    <div class="section-tag">תמחור</div>
+    <h2 class="section-title">תוכנית לכל מסעדה</h2>
+    <p class="section-sub">ללא עמלות נסתרות — רק ערך אמיתי</p>
+  </div>
+  <div class="price-toggle">
+    <span class="toggle-label">חודשי</span>
+    <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    <span class="toggle-label">שנתי</span>
+    <span class="badge-save">חיסכון 20%</span>
+  </div>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h3>בסיסי</h3>
+      <div class="price-amount">₪299<span>/חודש</span></div>
+      <p class="price-desc">הפתרון המושלם להתחלה</p>
+      <ul class="price-features">
+        <li>תפריט דיגיטלי מלא</li>
+        <li>עד 50 מנות</li>
+        <li>QR codes מותאמים</li>
+        <li>תמיכה בסיסית</li>
+      </ul>
+      <a href="#" class="btn-outline-blue">בחר תוכנית</a>
+    </div>
+    <div class="price-card popular">
+      <div class="popular-badge">⭐ הכי פופולרי</div>
+      <h3>פרו</h3>
+      <div class="price-amount">₪599<span>/חודש</span></div>
+      <p class="price-desc">למסעדה שרוצה הכל</p>
+      <ul class="price-features">
+        <li>הכל בתוכנית הבסיסית</li>
+        <li>הזמנות בזמן אמת</li>
+        <li>מועדון לקוחות</li>
+        <li>מסך KDS למטבח</li>
+        <li>אנליטיקס מתקדם</li>
+      </ul>
+      <a href="#" class="btn-grad">בחר תוכנית</a>
+    </div>
+    <div class="price-card">
+      <h3>ארגוני</h3>
+      <div class="price-amount" style="font-size:1.6rem;background:none;-webkit-text-fill-color:var(--text)">מחיר מותאם</div>
+      <p class="price-desc">לרשתות ומספר סניפים</p>
+      <ul class="price-features">
+        <li>הכל בתוכנית הפרו</li>
+        <li>ריבוי סניפים</li>
+        <li>API ואינטגרציות</li>
+        <li>ליווי אישי מדי חודש</li>
+      </ul>
+      <a href="#cta" class="btn-outline-blue">דברו איתנו</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <h2 class="section-title">מוכנים להביא את המסעדה לעתיד?</h2>
+  <p>הצטרפו ל-500+ מסעדות שכבר עובדות עם Menu4U</p>
+  <a href="#" class="btn-glow">התחל עכשיו בחינם — 30 יום ניסיון</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">Menu4U</div>
+  <div class="footer-links">
+    <a href="#">פרטיות</a>
+    <a href="#">תנאי שימוש</a>
+    <a href="#">צור קשר</a>
+  </div>
+  <div class="footer-copy">Menu4U © 2025</div>
+</footer>
+
+</body>
+</html>

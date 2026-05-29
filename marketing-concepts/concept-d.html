@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu4U — תפריט חכם. מסעדה חזקה.</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #7850FF;
+    --purple-dim: rgba(120,80,255,0.4);
+    --purple-glow: rgba(120,80,255,0.15);
+    --white: #FFFFFF;
+    --white-dim: rgba(255,255,255,0.55);
+    --white-faint: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.08);
+    --card-bg: #0A0A0A;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    background: #000;
+    color: var(--white);
+    font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    font-feature-settings: "kern" 1, "liga" 1;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 48px;
+    height: 64px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(20px) saturate(1.8);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff 40%, rgba(120,80,255,0.9));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--white-dim);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: #fff; }
+  .nav-btn {
+    padding: 8px 18px;
+    background: var(--white-faint);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 24px 80px;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(120,80,255,0.35) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 60%, rgba(255,160,60,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid rgba(120,80,255,0.3);
+    border-radius: 100px;
+    background: rgba(120,80,255,0.08);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(200,180,255,0.9);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .hero-badge::before { content: '◆'; font-size: 8px; color: var(--purple); }
+
+  .hero-headline {
+    font-size: clamp(52px, 8vw, 88px);
+    font-weight: 200;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    text-align: center;
+    max-width: 800px;
+    margin-bottom: 24px;
+  }
+  .hero-headline .gradient-word {
+    font-weight: 300;
+    background: linear-gradient(135deg, #A78BFF 0%, #7850FF 50%, #C084FC 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--white-dim);
+    text-align: center;
+    max-width: 520px;
+    line-height: 1.65;
+    margin-bottom: 44px;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 72px;
+  }
+  .btn-primary {
+    padding: 14px 28px;
+    background: var(--purple);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-ghost {
+    padding: 14px 24px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--white-dim);
+    font-size: 15px;
+    font-weight: 400;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+
+  /* Product mockup */
+  .product-mockup {
+    width: 100%;
+    max-width: 860px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    background: #060606;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(120,80,255,0.15), 0 32px 80px rgba(0,0,0,0.8), 0 0 60px rgba(120,80,255,0.08);
+    position: relative;
+  }
+  .mockup-topbar {
+    height: 40px;
+    background: #0D0D0D;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #FF5F57; }
+  .dot-y { background: #FFBD2E; }
+  .dot-g { background: #28CA41; }
+  .mockup-url {
+    flex: 1;
+    height: 22px;
+    background: #1A1A1A;
+    border-radius: 4px;
+    margin: 0 16px;
+  }
+  .mockup-body {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    height: 340px;
+  }
+  .mockup-sidebar {
+    background: #080808;
+    border-left: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sidebar-item {
+    height: 32px;
+    border-radius: 6px;
+    background: var(--white-faint);
+  }
+  .sidebar-item.active { background: rgba(120,80,255,0.2); border: 1px solid rgba(120,80,255,0.3); }
+  .sidebar-label {
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    margin: 8px 8px 2px;
+  }
+  .mockup-main {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    align-content: start;
+  }
+  .mock-card {
+    background: #0F0F0F;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mock-card-title { height: 10px; background: rgba(255,255,255,0.2); border-radius: 3px; width: 60%; }
+  .mock-card-val { height: 22px; background: rgba(120,80,255,0.25); border-radius: 4px; width: 45%; }
+  .mock-card-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; width: 100%; overflow: hidden; }
+  .mock-card-bar-fill { height: 100%; background: var(--purple); border-radius: 3px; }
+  .mock-order-row {
+    height: 36px;
+    border-radius: 6px;
+    background: #0F0F0F;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 8px;
+  }
+  .order-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .order-text { height: 8px; flex: 1; background: rgba(255,255,255,0.12); border-radius: 2px; }
+  .order-badge { height: 18px; width: 40px; background: rgba(120,80,255,0.3); border-radius: 4px; flex-shrink: 0; }
+  .mockup-orders {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    grid-column: 1 / -1;
+  }
+  .shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(120,80,255,0.04) 50%, transparent 60%);
+    animation: shimmer 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* ── TRUSTED ── */
+  .trusted {
+    padding: 40px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .trusted-label { font-size: 12px; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .trusted-logos { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .trusted-logo {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── FEATURES ── */
+  .features {
+    padding: 120px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .section-title {
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 200;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 64px;
+    max-width: 500px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .feature-card {
+    background: #000;
+    padding: 36px;
+    transition: background 0.2s;
+    position: relative;
+  }
+  .feature-card:hover { background: #070707; }
+  .feature-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid transparent;
+    border-radius: 0;
+    transition: border-color 0.3s;
+    pointer-events: none;
+  }
+  .feature-card:hover::after { border-color: rgba(120,80,255,0.4); }
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--purple-glow);
+    border: 1px solid rgba(120,80,255,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(120,80,255,0.12);
+  }
+  .feature-title {
+    font-size: 17px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+  .feature-desc {
+    font-size: 14px;
+    color: var(--white-dim);
+    line-height: 1.65;
+  }
+
+  /* ── STATS ── */
+  .stats {
+    padding: 80px 48px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+  .stat-item {
+    padding: 40px 48px;
+    border-left: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-item:last-child { border-left: none; }
+  .stat-number {
+    font-size: clamp(48px, 6vw, 72px);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .stat-number span { color: var(--purple); }
+  .stat-label {
+    font-size: 13px;
+    color: var(--white-dim);
+    letter-spacing: 0.01em;
+  }
+
+  /* ── PRICING ── */
+  .pricing {
+    padding: 120px 48px;
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .pricing .section-title { margin: 0 auto 64px; }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .pricing-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 28px;
+    text-align: right;
+    position: relative;
+  }
+  .pricing-card.popular {
+    background: #0D0D0D;
+    box-shadow: 0 0 0 1px rgba(120,80,255,0.5), 0 0 40px rgba(120,80,255,0.1);
+    border-color: transparent;
+  }
+  .popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--purple);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 100px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .pricing-plan { font-size: 13px; color: var(--white-dim); margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .pricing-price { font-size: 48px; font-weight: 200; letter-spacing: -0.04em; margin-bottom: 4px; }
+  .pricing-price sup { font-size: 20px; font-weight: 400; vertical-align: super; }
+  .pricing-period { font-size: 13px; color: var(--white-dim); margin-bottom: 28px; }
+  .pricing-divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+  .pricing-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .pricing-features li { font-size: 14px; color: var(--white-dim); display: flex; align-items: center; gap: 10px; }
+  .pricing-features li::before { content: '✓'; color: var(--purple); font-size: 13px; flex-shrink: 0; }
+  .pricing-cta {
+    width: 100%;
+    padding: 12px;
+    background: var(--white-faint);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+  }
+  .pricing-cta:hover { background: rgba(255,255,255,0.12); }
+  .pricing-card.popular .pricing-cta {
+    background: var(--purple);
+    border-color: transparent;
+  }
+  .pricing-card.popular .pricing-cta:hover { opacity: 0.88; }
+
+  /* ── CTA ── */
+  .cta-section {
+    position: relative;
+    padding: 140px 48px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(120,80,255,0.22) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cta-section::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(180deg, transparent, rgba(120,80,255,0.5), transparent);
+  }
+  .cta-title {
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .cta-sub { font-size: 16px; color: var(--white-dim); margin-bottom: 40px; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .footer-logo { font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.4); }
+  .footer-copy { font-size: 13px; color: rgba(255,255,255,0.25); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: rgba(255,255,255,0.3); text-decoration: none; }
+  .footer-links a:hover { color: rgba(255,255,255,0.6); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    .features { padding: 80px 20px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat-item { padding: 32px 20px; }
+    .pricing { padding: 80px 20px; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .cta-section { padding: 100px 20px; }
+    footer { padding: 32px 20px; flex-direction: column; text-align: center; }
+    .mockup-body { grid-template-columns: 1fr; }
+    .mockup-sidebar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Menu4U</div>
+  <ul class="nav-links">
+    <li><a href="#">בית</a></li>
+    <li><a href="#">פתרונות</a></li>
+    <li><a href="#">מחירים</a></li>
+    <li><a href="#">צור קשר</a></li>
+  </ul>
+  <a href="#" class="nav-btn">כניסה לניהול →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">פלטפורמת SaaS למסעדות</div>
+  <h1 class="hero-headline">
+    תפריט חכם.<br><span class="gradient-word">מסעדה חזקה.</span>
+  </h1>
+  <p class="hero-sub">פלטפורמת ניהול מסעדות מתקדמת עם AI — תפריט דיגיטלי, הזמנות בזמן אמת, מועדון לקוחות, ובינה מלאכותית שעובדת בשבילך.</p>
+  <div class="hero-actions">
+    <a href="#" class="btn-primary">התחל 30 יום חינם</a>
+    <a href="#" class="btn-ghost">צפה בהדגמה</a>
+  </div>
+
+  <!-- Product Mockup -->
+  <div class="product-mockup">
+    <div class="shimmer"></div>
+    <div class="mockup-topbar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="mockup-url"></div>
+    </div>
+    <div class="mockup-body">
+      <div class="mockup-sidebar">
+        <div class="sidebar-label"></div>
+        <div class="sidebar-item active"></div>
+        <div class="sidebar-item"></div>
+        <div class="sidebar-item"></div>
+        <div class="sidebar-label" style="margin-top:12px"></div>
+        <div class="sidebar-item"></div>
+        <div class="sidebar-item"></div>
+        <div class="sidebar-item"></div>
+        <div class="sidebar-item"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:20px;overflow:hidden;">
+        <div class="mockup-main" style="padding:0">
+          <div class="mock-card">
+            <div class="mock-card-title"></div>
+            <div class="mock-card-val"></div>
+            <div class="mock-card-bar"><div class="mock-card-bar-fill" style="width:72%"></div></div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-title"></div>
+            <div class="mock-card-val" style="background:rgba(255,160,60,0.25)"></div>
+            <div class="mock-card-bar"><div class="mock-card-bar-fill" style="width:58%;background:#FF9A3C"></div></div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-title"></div>
+            <div class="mock-card-val" style="background:rgba(40,202,100,0.2)"></div>
+            <div class="mock-card-bar"><div class="mock-card-bar-fill" style="width:89%;background:#28CA64"></div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="mock-order-row">
+            <div class="order-dot" style="background:#28CA64"></div>
+            <div class="order-text"></div>
+            <div class="order-badge"></div>
+          </div>
+          <div class="mock-order-row">
+            <div class="order-dot" style="background:#FFBD2E"></div>
+            <div class="order-text" style="width:55%"></div>
+            <div class="order-badge" style="background:rgba(255,189,46,0.3)"></div>
+          </div>
+          <div class="mock-order-row">
+            <div class="order-dot" style="background:var(--purple)"></div>
+            <div class="order-text" style="width:70%"></div>
+            <div class="order-badge"></div>
+          </div>
+          <div class="mock-order-row">
+            <div class="order-dot" style="background:#FF5F57"></div>
+            <div class="order-text" style="width:40%"></div>
+            <div class="order-badge" style="background:rgba(255,95,87,0.3)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUSTED -->
+<div class="trusted">
+  <span class="trusted-label">מאמינים בנו</span>
+  <div class="trusted-logos">
+    <span class="trusted-logo">RESTO CHAIN</span>
+    <span class="trusted-logo">BURGER LAB</span>
+    <span class="trusted-logo">SUSHI PRIME</span>
+    <span class="trusted-logo">PIZZA CO.</span>
+    <span class="trusted-logo">THE BISTRO</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="section-label">יכולות המערכת</div>
+  <h2 class="section-title">כל מה שמסעדה מודרנית צריכה</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <div class="feature-title">תפריט דיגיטלי</div>
+      <p class="feature-desc">QR קוד ייחודי לכל שולחן. לקוחות סורקים, גולשים ומזמינים בלי להמתין למלצר.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">הזמנות בזמן אמת</div>
+      <p class="feature-desc">הזמנות מגיעות ישירות למטבח ב-0.3 שניות. אפס טעויות, מקסימום מהירות.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🖥</div>
+      <div class="feature-title">מסך מטבח KDS</div>
+      <p class="feature-desc">תצוגה ייעודית לצוות המטבח עם עדיפויות, טיימרים, ומעקב אחר כל הזמנה.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-title">מועדון לקוחות</div>
+      <p class="feature-desc">מערכת נקודות, קופונים ומבצעים שמחזירים לקוחות שוב ושוב.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-title">ניתוח AI</div>
+      <p class="feature-desc">המלצות חכמות על תמחור, מלאי ומבצעים מבוססות על נתוני המסעדה שלך.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚙️</div>
+      <div class="feature-title">ניהול קל</div>
+      <p class="feature-desc">ממשק מנהל אינטואיטיבי. עדכן תפריט, מחירים ומלאי בשניות מכל מקום.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat-item">
+    <div class="stat-number">500<span>+</span></div>
+    <div class="stat-label">מסעדות פעילות</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">2<span>M+</span></div>
+    <div class="stat-label">הזמנות עובדו</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">98<span>%</span></div>
+    <div class="stat-label">שביעות רצון</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">24<span>/7</span></div>
+    <div class="stat-label">תמיכה טכנית</div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<section class="pricing">
+  <div class="section-label" style="text-align:center">מחירים</div>
+  <h2 class="section-title" style="text-align:center">השקעה שמחזירה את עצמה</h2>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="pricing-plan">בסיסי</div>
+      <div class="pricing-price"><sup>₪</sup>299</div>
+      <div class="pricing-period">לחודש</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>תפריט דיגיטלי</li>
+        <li>עד 50 שולחנות</li>
+        <li>הזמנות בזמן אמת</li>
+        <li>תמיכה בדוא"ל</li>
+      </ul>
+      <a href="#" class="pricing-cta">התחל חינם</a>
+    </div>
+    <div class="pricing-card popular">
+      <div class="popular-badge">הכי פופולרי</div>
+      <div class="pricing-plan">פרו</div>
+      <div class="pricing-price"><sup>₪</sup>599</div>
+      <div class="pricing-period">לחודש</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>כל תכונות הבסיס</li>
+        <li>KDS מסך מטבח</li>
+        <li>מועדון לקוחות</li>
+        <li>ניתוח AI מלא</li>
+        <li>תמיכה עדיפות</li>
+      </ul>
+      <a href="#" class="pricing-cta">התחל חינם</a>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-plan">ארגוני</div>
+      <div class="pricing-price" style="font-size:36px;padding-top:8px">מותאם</div>
+      <div class="pricing-period">לרשת / ארגון</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>כל תכונות הפרו</li>
+        <li>ניהול רשת סניפים</li>
+        <li>API מלא</li>
+        <li>מנהל חשבון ייעודי</li>
+        <li>SLA מותאם</li>
+      </ul>
+      <a href="#" class="pricing-cta">צור קשר</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 class="cta-title">מוכן להפוך את המסעדה<br>לדיגיטלית?</h2>
+  <p class="cta-sub">הצטרף ל-500+ מסעדות שכבר עובדות עם Menu4U</p>
+  <a href="#" class="btn-primary" style="font-size:16px;padding:16px 36px">התחל 30 יום חינם</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Menu4U</div>
+  <div class="footer-links">
+    <a href="#">פרטיות</a>
+    <a href="#">תנאי שימוש</a>
+    <a href="#">צור קשר</a>
+  </div>
+  <div class="footer-copy">© 2024 Menu4U. כל הזכויות שמורות.</div>
+</footer>
+
+</body>
+</html>

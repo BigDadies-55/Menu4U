@@ -28,6 +28,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Ensure autoReady column exists (idempotent migration)
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
+  } catch { /* ignore — column already exists */ }
+
   const body = await req.json();
   const category = await prisma.category.update({ where: { id }, data: body });
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_CATEGORY", entity: "category", entityId: id, entityName: category.name, meta: { changed: Object.keys(body) }, ip: getIp(req) });
