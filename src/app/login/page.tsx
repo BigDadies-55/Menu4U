@@ -26,6 +26,15 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4"
       style={{ background: "linear-gradient(135deg, #0f172a 0%, #134e4a 100%)" }}
     >
+      {/* DEV environment banner */}
+      {process.env.NEXT_PUBLIC_APP_ENV === "development" && (
+        <div
+          className="fixed top-0 left-0 right-0 z-50 text-center text-xs font-bold py-1.5 tracking-widest uppercase"
+          style={{ background: "#f59e0b", color: "#000" }}
+        >
+          ⚠️ סביבת פיתוח — DEV
+        </div>
+      )}
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
