@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
 import { NextResponse } from "next/server";
 
 async function ensureTables() {
@@ -115,6 +116,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ restaura
   const phone = searchParams.get("phone");
   if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
 
+  // Rate limit: 20 lookups per IP per 5 min (prevents phone enumeration)
+  const ip = getIpKey(req);
+  const allowed = await checkRateLimit(`member-get:${ip}:${restaurantId}`, 20, 5 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
+
   await ensureTables();
 
   // Try restaurant-specific lookup first (backward compat)
@@ -128,11 +134,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ restaura
     }
   }
 
-  return NextResponse.json(member);
+  if (!member) return NextResponse.json(null);
+
+  // Redact sensitive fields from public response
+  const { email: _email, birthDate: _bd, ...safeFields } = member;
+  void _email; void _bd;
+  return NextResponse.json(safeFields);
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ restaurantId: string }> }) {
   const { restaurantId } = await params;
+
+  // Rate limit: 5 registrations per IP per 10 min
+  const ip = getIpKey(req);
+  const allowed = await checkRateLimit(`member-post:${ip}`, 5, 10 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
+
   await ensureTables();
 
   const body = await req.json();
@@ -171,7 +188,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
   const settings = await prisma.loyaltySettings.findUnique({ where: { restaurantId } });
   const welcomeBonus = settings?.welcomeBonus ?? 50;
 
-  const memberId = `lm-${Date.now()}`;
+  const memberId = `lm-${crypto.randomUUID()}`;
   await prisma.$executeRawUnsafe(
     `INSERT INTO "LoyaltyMember" ("id","restaurantId","groupId","phone","name","email","birthDate","memberNumber","points","totalSpent","createdAt","updatedAt")
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,NOW(),NOW())`,
@@ -187,7 +204,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
   if (welcomeBonus > 0) {
     await prisma.loyaltyTransaction.create({
       data: {
-        id: `lt-${Date.now()}`,
+        id: `lt-${crypto.randomUUID()}`,
         memberId,
         type: "BONUS",
         points: welcomeBonus,

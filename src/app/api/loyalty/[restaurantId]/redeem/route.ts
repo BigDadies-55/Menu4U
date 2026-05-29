@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
 import { NextResponse } from "next/server";
 
 // Ensure loyalty-related columns on Order exist
@@ -19,9 +20,14 @@ export async function POST(
   const { restaurantId } = await params;
   await ensureColumns();
 
-  const { orderId, memberId, type, pointsToRedeem, couponId } = await req.json();
+  // Rate limit: 10 redeem attempts per IP per 5 min
+  const ip = getIpKey(req);
+  const allowed = await checkRateLimit(`redeem:${ip}`, 10, 5 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
 
-  if (!orderId || !memberId || !type) {
+  const { orderId, memberId, type, pointsToRedeem, couponId, phone } = await req.json();
+
+  if (!orderId || !memberId || !type || !phone) {
     return NextResponse.json({ error: "missing_params" }, { status: 400 });
   }
 
@@ -30,6 +36,12 @@ export async function POST(
     where: { id: memberId, restaurantId },
   });
   if (!member) return NextResponse.json({ error: "member_not_found" }, { status: 404 });
+
+  // Verify the caller knows the phone tied to this member (identity proof)
+  const normalizedPhone = String(phone).trim().replace(/\s/g, "");
+  if (member.phone !== normalizedPhone) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
 
   // Validate order belongs to this restaurant and is still open (DELIVERED allowed for cashier redemption)
   const order = await prisma.order.findFirst({

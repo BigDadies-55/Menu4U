@@ -541,7 +541,7 @@ export default function MenuElegantClient({
       const res = await fetch(`/api/loyalty/${restaurant.id}/redeem`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: activeOrder.id, memberId: loyaltyMember.id, type, pointsToRedeem, couponId }),
+        body: JSON.stringify({ orderId: activeOrder.id, memberId: loyaltyMember.id, type, pointsToRedeem, couponId, phone: loyaltyMember.phone }),
       });
       const data = await res.json();
       if (!res.ok) {

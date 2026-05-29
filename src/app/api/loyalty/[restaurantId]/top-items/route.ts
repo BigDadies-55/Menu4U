@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -10,6 +11,11 @@ export async function GET(
   const phone = searchParams.get("phone");
 
   if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
+
+  // Rate limit: 30 per IP per 5 min (called on page load + loyalty member change)
+  const ip = getIpKey(req);
+  const allowed = await checkRateLimit(`top-items:${ip}:${restaurantId}`, 30, 5 * 60 * 1000);
+  if (!allowed) return NextResponse.json([], { status: 429 });
 
   type TopItemRow = { itemId: string; name: string; total: bigint };
 
