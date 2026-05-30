@@ -790,6 +790,7 @@ function ClearOrdersSection() {
 type PolicyState = {
   maxAgeDays: number;
   minLength: number;
+  historyCount: number;
   requireUppercase: boolean;
   requireNumbers: boolean;
   requireSymbols: boolean;
@@ -856,6 +857,12 @@ function PasswordPolicyTab() {
           <input type="number" min={6} max={32} value={policy.minLength}
             onChange={e => setPolicy({ ...policy, minLength: Number(e.target.value) })} style={inp} />
           <span style={{ color: C2.muted, fontSize: 13 }}>תווים</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <span style={{ fontSize: 13, color: C2.muted, width: 120 }}>היסטוריית סיסמאות</span>
+          <input type="number" min={0} max={10} value={policy.historyCount}
+            onChange={e => setPolicy({ ...policy, historyCount: Number(e.target.value) })} style={inp} />
+          <span style={{ color: C2.muted, fontSize: 13 }}>סיסמאות אחרונות {policy.historyCount > 0 ? `(לא ניתן לחזור על ${policy.historyCount} הסיסמאות האחרונות)` : "(ללא הגבלה)"}</span>
         </div>
         {([
           { key: "requireUppercase", label: "אות גדולה (A-Z)" },

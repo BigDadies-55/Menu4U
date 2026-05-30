@@ -6,6 +6,7 @@ import { isSuperAdmin } from "@/lib/permissions";
 const DEFAULT_POLICY = {
   maxAgeDays: 0,
   minLength: 8,
+  historyCount: 3,
   requireUppercase: false,
   requireNumbers: false,
   requireSymbols: false,
