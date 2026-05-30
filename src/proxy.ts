@@ -12,6 +12,13 @@ export default auth((req: NextAuthRequest) => {
   const session = req.auth;
   const isLoggedIn = !!session;
 
+  // ── /change-password route (outside admin, no sidebar) ───────────────
+  if (pathname === "/change-password") {
+    if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.url));
+    if (!session?.user?.mustChangePassword) return NextResponse.redirect(new URL("/admin", req.url));
+    return NextResponse.next();
+  }
+
   // Redirect unauthenticated users away from /admin
   if (pathname.startsWith("/admin") && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url));
@@ -43,9 +50,8 @@ export default auth((req: NextAuthRequest) => {
 
   // ── Force password change ─────────────────────────────────────────────
   const mustChange = session?.user?.mustChangePassword;
-  const isChangePage = pathname === "/admin/change-password";
-  if (mustChange && !isChangePage) {
-    return NextResponse.redirect(new URL("/admin/change-password", req.url));
+  if (mustChange) {
+    return NextResponse.redirect(new URL("/change-password", req.url));
   }
 
   // Update last-activity timestamp on every admin request
@@ -59,5 +65,5 @@ export default auth((req: NextAuthRequest) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/login"],
+  matcher: ["/admin/:path*", "/login", "/change-password"],
 };
