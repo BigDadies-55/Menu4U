@@ -103,6 +103,20 @@ const sqls = [
 )`,
   `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedAt" TIMESTAMP(3);`,
   `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "coversCount" INTEGER;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "passwordChangedAt" TIMESTAMP(3);`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastActivityAt" TIMESTAMP(3);`,
+  `CREATE TABLE IF NOT EXISTS "PasswordPolicy" (
+    "id" TEXT NOT NULL DEFAULT 'default',
+    "maxAgeDays" INTEGER NOT NULL DEFAULT 0,
+    "minLength" INTEGER NOT NULL DEFAULT 8,
+    "requireUppercase" BOOLEAN NOT NULL DEFAULT false,
+    "requireNumbers" BOOLEAN NOT NULL DEFAULT false,
+    "requireSymbols" BOOLEAN NOT NULL DEFAULT false,
+    "idleTimeoutMinutes" INTEGER NOT NULL DEFAULT 0,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PasswordPolicy_pkey" PRIMARY KEY ("id")
+  );`,
 ];
 
 async function run() {
