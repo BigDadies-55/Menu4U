@@ -19,6 +19,7 @@ type UserWithRestaurants = {
   emailVerified: Date | null;
   mustChangePassword: boolean;
   createdAt: Date;
+  lastLoginAt: Date | null;
   restaurantUsers: RestaurantUser[];
 };
 
@@ -299,7 +300,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#1a1d23" }}>
-                {["משתמש","הרשאה","מסעדות משויכות","אימות","נרשם","פעולות"].map(h => (
+                {["משתמש","הרשאה","מסעדות משויכות","אימות","נרשם","כניסה אחרונה","פעולות"].map(h => (
                   <th key={h} style={{ padding: "11px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".5px", borderBottom: `1px solid ${C.border}` }}>
                     {h}
                   </th>
@@ -309,7 +310,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: "60px 24px", textAlign: "center", color: C.muted, fontSize: 14 }}>לא נמצאו משתמשים</td>
+                  <td colSpan={7} style={{ padding: "60px 24px", textAlign: "center", color: C.muted, fontSize: 14 }}>לא נמצאו משתמשים</td>
                 </tr>
               ) : (
                 filtered.map((user) => (
@@ -383,6 +384,10 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     </td>
                     {/* Date */}
                     <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{formatDate(user.createdAt)}</td>
+                    {/* Last login */}
+                    <td style={{ padding: "12px 16px", fontSize: 12, color: user.lastLoginAt ? C.sub : C.muted }}>
+                      {user.lastLoginAt ? formatDate(user.lastLoginAt) : <span style={{ color: C.muted }}>—</span>}
+                    </td>
                     {/* Actions */}
                     <td style={{ padding: "12px 16px" }}>
                       <div className="flex items-center gap-2">

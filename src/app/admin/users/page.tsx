@@ -21,6 +21,7 @@ export default async function UsersPage() {
       emailVerified: true,
       mustChangePassword: true,
       createdAt: true,
+      lastLoginAt: true,
       restaurantUsers: { include: { restaurant: { select: { id: true, name: true } } } },
     },
   });
