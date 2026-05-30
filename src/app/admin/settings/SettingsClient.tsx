@@ -860,12 +860,12 @@ function PasswordPolicyTab() {
           <div style={{ fontSize: 14, fontWeight: 700, color: C2.text, marginBottom: 4 }}>🔒 ניתוק אוטומטי</div>
           <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>ניתוק לאחר חוסר פעילות</div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <input type="number" min={0} max={480} value={policy.idleTimeoutMinutes}
-              onChange={e => setPolicy({ ...policy, idleTimeoutMinutes: Number(e.target.value) })} style={numInp} />
-            <span style={{ color: C2.muted, fontSize: 13 }}>דקות</span>
+            <input type="number" min={0} max={24} step={1} value={Math.round(policy.idleTimeoutMinutes / 60)}
+              onChange={e => setPolicy({ ...policy, idleTimeoutMinutes: Number(e.target.value) * 60 })} style={numInp} />
+            <span style={{ color: C2.muted, fontSize: 13 }}>שעות</span>
           </div>
           {policy.idleTimeoutMinutes > 0
-            ? <div style={badge("")}>ניתוק אחרי {policy.idleTimeoutMinutes} דקות</div>
+            ? <div style={badge("")}>ניתוק אחרי {Math.round(policy.idleTimeoutMinutes / 60)} שעות</div>
             : <div style={{ fontSize: 11, color: C2.muted, marginTop: 8 }}>0 = ללא ניתוק</div>}
         </div>
       </div>
