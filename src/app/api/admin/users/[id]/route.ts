@@ -17,6 +17,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const body = await req.json();
 
+  // Non-SUPER_ADMIN cannot modify other admins
+  if (session.user.role !== "SUPER_ADMIN" && id !== session.user.id) {
+    const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (target && (target.role === "SUPER_ADMIN" || target.role === "ADMIN")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   if (body.role === "SUPER_ADMIN") {
     if (session.user.role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "Cannot assign Super Admin role" }, { status: 403 });

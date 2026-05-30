@@ -100,7 +100,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(
-    { ...user, emailVerified: null, restaurantUsers: [], emailSent, tempPassword: emailSent ? undefined : tempPassword },
+    { ...user, emailVerified: null, restaurantUsers: [], emailSent },
     { status: 201 }
   );
 }

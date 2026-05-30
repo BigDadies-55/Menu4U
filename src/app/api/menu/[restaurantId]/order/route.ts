@@ -29,7 +29,7 @@ export async function POST(
 
   const body = await req.json();
   const {
-    tableNumber, customerName, customerPhone, notes, items, orderSource,
+    tableNumber, customerName, customerPhone, notes, items,
     loyaltyMemberId, loyaltyMemberName, loyaltyDiscountType,
     loyaltyDiscountAmount, loyaltyCouponId, loyaltyPointsToRedeem,
   } = body;
@@ -86,8 +86,7 @@ export async function POST(
       notes: notes ?? null,
       totalAmount,
       orderNumber,
-      orderSource: orderSource ?? "CUSTOMER",
-      ...(orderSource === "WAITER" ? { status: "CONFIRMED" } : {}),
+      orderSource: "CUSTOMER",
       // Pre-order loyalty discount fields
       ...(loyaltyMemberId ? {
         loyaltyMemberId,

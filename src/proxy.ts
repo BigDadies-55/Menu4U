@@ -6,6 +6,7 @@ import type { NextAuthRequest } from "next-auth";
 const { auth } = NextAuth(authConfig);
 
 const ACTIVITY_COOKIE = "last-activity";
+const IS_PROD = process.env.NODE_ENV === "production";
 
 export default auth((req: NextAuthRequest) => {
   const { pathname } = req.nextUrl;
@@ -16,6 +17,13 @@ export default auth((req: NextAuthRequest) => {
   if (pathname === "/change-password") {
     if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.url));
     if (!session?.user?.mustChangePassword) return NextResponse.redirect(new URL("/admin", req.url));
+    return NextResponse.next();
+  }
+
+  // ── /api/admin/* — auth + mustChangePassword enforcement ─────────────
+  if (pathname.startsWith("/api/admin/")) {
+    if (!isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (session?.user?.mustChangePassword) return NextResponse.json({ error: "Password change required" }, { status: 403 });
     return NextResponse.next();
   }
 
@@ -33,8 +41,8 @@ export default auth((req: NextAuthRequest) => {
     return NextResponse.next();
   }
 
-  // ── Idle session timeout ──────────────────────────────────────────────
-  const idleMinutes = parseInt(req.cookies.get("idle-timeout")?.value ?? "0", 10);
+  // ── Idle session timeout (value from JWT, not client cookie) ─────────
+  const idleMinutes = (session?.user as { idleTimeoutMinutes?: number })?.idleTimeoutMinutes ?? 0;
   if (idleMinutes > 0) {
     const lastActivity = req.cookies.get(ACTIVITY_COOKIE)?.value;
     if (lastActivity) {
@@ -42,15 +50,13 @@ export default auth((req: NextAuthRequest) => {
       if (elapsedMinutes > idleMinutes) {
         const res = NextResponse.redirect(new URL("/login?reason=timeout", req.url));
         res.cookies.delete(ACTIVITY_COOKIE);
-        res.cookies.delete("idle-timeout");
         return res;
       }
     }
   }
 
   // ── Force password change ─────────────────────────────────────────────
-  const mustChange = session?.user?.mustChangePassword;
-  if (mustChange) {
+  if (session?.user?.mustChangePassword) {
     return NextResponse.redirect(new URL("/change-password", req.url));
   }
 
@@ -59,11 +65,12 @@ export default auth((req: NextAuthRequest) => {
   res.cookies.set(ACTIVITY_COOKIE, String(Date.now()), {
     httpOnly: true,
     sameSite: "lax",
+    secure: IS_PROD,
     path: "/",
   });
   return res;
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/login", "/change-password"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/login", "/change-password"],
 };

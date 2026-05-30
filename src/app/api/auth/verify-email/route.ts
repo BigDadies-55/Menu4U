@@ -4,12 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { hashOtp } from "@/lib/otp";
 import { logAudit, getIp } from "@/lib/audit";
 import { sendWelcomeEmail } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 5 attempts per 10 minutes per user
+  const allowed = await checkRateLimit(`otp-verify:${session.user.id}`, 5, 10 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "יותר מדי ניסיונות. נסה שוב בעוד מספר דקות." }, { status: 429 });
 
   const { otp } = await req.json();
   if (!otp || typeof otp !== "string") {
