@@ -385,9 +385,11 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  PasswordPolicy: 'PasswordPolicy',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
+  RestaurantGroup: 'RestaurantGroup',
   Restaurant: 'Restaurant',
   RestaurantUser: 'RestaurantUser',
   Menu: 'Menu',
@@ -424,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "loyaltySettings"
+    modelProps: "user" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "loyaltySettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -499,6 +501,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    PasswordPolicy: {
+      payload: Prisma.$PasswordPolicyPayload<ExtArgs>
+      fields: Prisma.PasswordPolicyFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PasswordPolicyFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PasswordPolicyFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>
+        }
+        findFirst: {
+          args: Prisma.PasswordPolicyFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PasswordPolicyFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>
+        }
+        findMany: {
+          args: Prisma.PasswordPolicyFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>[]
+        }
+        create: {
+          args: Prisma.PasswordPolicyCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>
+        }
+        createMany: {
+          args: Prisma.PasswordPolicyCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PasswordPolicyCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>[]
+        }
+        delete: {
+          args: Prisma.PasswordPolicyDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>
+        }
+        update: {
+          args: Prisma.PasswordPolicyUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>
+        }
+        deleteMany: {
+          args: Prisma.PasswordPolicyDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PasswordPolicyUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PasswordPolicyUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>[]
+        }
+        upsert: {
+          args: Prisma.PasswordPolicyUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordPolicyPayload>
+        }
+        aggregate: {
+          args: Prisma.PasswordPolicyAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePasswordPolicy>
+        }
+        groupBy: {
+          args: Prisma.PasswordPolicyGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PasswordPolicyGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PasswordPolicyCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PasswordPolicyCountAggregateOutputType> | number
         }
       }
     }
@@ -721,6 +797,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.VerificationTokenCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.VerificationTokenCountAggregateOutputType> | number
+        }
+      }
+    }
+    RestaurantGroup: {
+      payload: Prisma.$RestaurantGroupPayload<ExtArgs>
+      fields: Prisma.RestaurantGroupFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RestaurantGroupFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RestaurantGroupFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>
+        }
+        findFirst: {
+          args: Prisma.RestaurantGroupFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RestaurantGroupFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>
+        }
+        findMany: {
+          args: Prisma.RestaurantGroupFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>[]
+        }
+        create: {
+          args: Prisma.RestaurantGroupCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>
+        }
+        createMany: {
+          args: Prisma.RestaurantGroupCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RestaurantGroupCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>[]
+        }
+        delete: {
+          args: Prisma.RestaurantGroupDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>
+        }
+        update: {
+          args: Prisma.RestaurantGroupUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>
+        }
+        deleteMany: {
+          args: Prisma.RestaurantGroupDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RestaurantGroupUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RestaurantGroupUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>[]
+        }
+        upsert: {
+          args: Prisma.RestaurantGroupUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RestaurantGroupPayload>
+        }
+        aggregate: {
+          args: Prisma.RestaurantGroupAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRestaurantGroup>
+        }
+        groupBy: {
+          args: Prisma.RestaurantGroupGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RestaurantGroupGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RestaurantGroupCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RestaurantGroupCountAggregateOutputType> | number
         }
       }
     }
@@ -2327,6 +2477,9 @@ export const UserScalarFieldEnum = {
   role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  mustChangePassword: 'mustChangePassword',
+  passwordChangedAt: 'passwordChangedAt',
+  lastActivityAt: 'lastActivityAt',
   termsAccepted: 'termsAccepted',
   termsAcceptedAt: 'termsAcceptedAt',
   termsAcceptedIp: 'termsAcceptedIp',
@@ -2334,6 +2487,20 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const PasswordPolicyScalarFieldEnum = {
+  id: 'id',
+  maxAgeDays: 'maxAgeDays',
+  minLength: 'minLength',
+  requireUppercase: 'requireUppercase',
+  requireNumbers: 'requireNumbers',
+  requireSymbols: 'requireSymbols',
+  idleTimeoutMinutes: 'idleTimeoutMinutes',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PasswordPolicyScalarFieldEnum = (typeof PasswordPolicyScalarFieldEnum)[keyof typeof PasswordPolicyScalarFieldEnum]
 
 
 export const AccountScalarFieldEnum = {
@@ -2373,6 +2540,16 @@ export const VerificationTokenScalarFieldEnum = {
 export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
 
 
+export const RestaurantGroupScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  logo: 'logo',
+  createdAt: 'createdAt'
+} as const
+
+export type RestaurantGroupScalarFieldEnum = (typeof RestaurantGroupScalarFieldEnum)[keyof typeof RestaurantGroupScalarFieldEnum]
+
+
 export const RestaurantScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -2406,6 +2583,7 @@ export const RestaurantScalarFieldEnum = {
   googleReview: 'googleReview',
   showPhonePublic: 'showPhonePublic',
   showAddressPublic: 'showAddressPublic',
+  groupId: 'groupId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2648,6 +2826,7 @@ export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typ
 export const LoyaltyMemberScalarFieldEnum = {
   id: 'id',
   restaurantId: 'restaurantId',
+  groupId: 'groupId',
   phone: 'phone',
   name: 'name',
   email: 'email',
@@ -2679,6 +2858,8 @@ export const LoyaltyCouponScalarFieldEnum = {
   id: 'id',
   memberId: 'memberId',
   restaurantId: 'restaurantId',
+  validForGroupId: 'validForGroupId',
+  usedAtRestaurantId: 'usedAtRestaurantId',
   code: 'code',
   type: 'type',
   value: 'value',
@@ -2966,9 +3147,11 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  passwordPolicy?: Prisma.PasswordPolicyOmit
   account?: Prisma.AccountOmit
   session?: Prisma.SessionOmit
   verificationToken?: Prisma.VerificationTokenOmit
+  restaurantGroup?: Prisma.RestaurantGroupOmit
   restaurant?: Prisma.RestaurantOmit
   restaurantUser?: Prisma.RestaurantUserOmit
   menu?: Prisma.MenuOmit

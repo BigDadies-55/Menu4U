@@ -17,6 +17,7 @@ type UserWithRestaurants = {
   email: string;
   role: Role;
   emailVerified: Date | null;
+  mustChangePassword: boolean;
   createdAt: Date;
   restaurantUsers: RestaurantUser[];
 };
@@ -67,7 +68,8 @@ const DARK_SELECT: React.CSSProperties = {
 export default function UsersClient({ users: initial, restaurants, currentUserRole }: Props) {
   const [users, setUsers] = useState(initial);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "VIEWER" as Role });
+  const [form, setForm] = useState({ name: "", email: "", role: "VIEWER" as Role });
+  const [pendingTempPassword, setPendingTempPassword] = useState<{ email: string; password: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -83,7 +85,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [resentId, setResentId] = useState<string | null>(null);
-  const [pendingOtp, setPendingOtp] = useState<{ email: string; code: string } | null>(null);
+  const [forcingId, setForcingId] = useState<string | null>(null);
 
   const [editTarget, setEditTarget] = useState<UserWithRestaurants | null>(null);
   const [editForm, setEditForm] = useState({ name: "", email: "", role: "VIEWER" as Role });
@@ -124,13 +126,24 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       return;
     }
     const created = await res.json();
-    setUsers([{ ...created, emailVerified: null, restaurantUsers: [] }, ...users]);
+    setUsers([{ ...created, emailVerified: null, restaurantUsers: [], mustChangePassword: true }, ...users]);
     setShowForm(false);
-    setForm({ name: "", email: "", password: "", role: "VIEWER" });
+    setForm({ name: "", email: "", role: "VIEWER" });
     setLoading(false);
-    if (!created.emailSent && created.otpCode) {
-      setPendingOtp({ email: created.email, code: created.otpCode });
+    if (!created.emailSent && created.tempPassword) {
+      setPendingTempPassword({ email: created.email, password: created.tempPassword });
     }
+  }
+
+  async function handleForcePasswordChange(userId: string, currentValue: boolean) {
+    setForcingId(userId);
+    await fetch(`/api/admin/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mustChangePassword: !currentValue }),
+    });
+    setUsers(users.map((u) => u.id === userId ? { ...u, mustChangePassword: !currentValue } : u));
+    setForcingId(null);
   }
 
   async function handleRoleChange(userId: string, role: Role) {
@@ -356,24 +369,17 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     </td>
                     {/* Verification */}
                     <td style={{ padding: "12px 16px" }}>
-                      {user.emailVerified ? (
-                        <span style={{ background: "rgba(81,207,102,0.15)", color: C.green, borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
-                          ✓ מאומת
-                        </span>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span style={{ background: "rgba(255,146,43,0.15)", color: C.orange, borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
-                            ממתין
+                      <div className="flex flex-col gap-1.5">
+                        {user.mustChangePassword ? (
+                          <span style={{ background: "rgba(239,68,68,0.12)", color: "#fca5a5", borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
+                            🔐 חייב לשנות סיסמה
                           </span>
-                          <button
-                            onClick={() => handleResendVerification(user.id)}
-                            disabled={resendingId === user.id || resentId === user.id}
-                            style={{ fontSize: 11, fontWeight: 600, background: "none", border: "none", cursor: "pointer", color: resentId === user.id ? C.green : C.muted, opacity: (resendingId === user.id || resentId === user.id) ? 0.4 : 1 }}
-                          >
-                            {resendingId === user.id ? "שולח..." : resentId === user.id ? "✓ נשלח" : "↩ שלח"}
-                          </button>
-                        </div>
-                      )}
+                        ) : (
+                          <span style={{ background: "rgba(81,207,102,0.15)", color: C.green, borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+                            ✓ פעיל
+                          </span>
+                        )}
+                      </div>
                     </td>
                     {/* Date */}
                     <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{formatDate(user.createdAt)}</td>
@@ -390,12 +396,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           >✎</button>
                         )}
                         <button
-                          onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); }}
-                          style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid ${C.inputBorder}`, background: C.inputBg, color: C.sub, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}
-                          title="איפוס סיסמה"
-                          onMouseEnter={e => (e.currentTarget.style.color = C.blue)}
-                          onMouseLeave={e => (e.currentTarget.style.color = C.sub)}
-                        >🔑</button>
+                          onClick={() => handleForcePasswordChange(user.id, user.mustChangePassword)}
+                          disabled={forcingId === user.id}
+                          style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid ${user.mustChangePassword ? "rgba(252,196,25,0.3)" : C.inputBorder}`, background: user.mustChangePassword ? "rgba(252,196,25,0.1)" : C.inputBg, color: user.mustChangePassword ? C.amber : C.sub, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", opacity: forcingId === user.id ? 0.5 : 1 }}
+                          title={user.mustChangePassword ? "בטל כפיית שינוי סיסמה" : "כפה שינוי סיסמה בכניסה הבאה"}
+                        >🔐</button>
                         <button
                           onClick={() => handleDelete(user.id)}
                           style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid ${C.inputBorder}`, background: C.inputBg, color: C.muted, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -467,8 +472,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={DARK_INPUT} /></div>
               <div><Label>אימייל *</Label>
                 <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
-              <div><Label>סיסמה *</Label>
-                <input required type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} style={DARK_INPUT} /></div>
+              <div style={{ background: "rgba(201,164,82,0.07)", border: "1px solid rgba(201,164,82,0.18)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#dfc07e" }}>
+                🔐 סיסמה זמנית תיווצר אוטומטית ותישלח לאימייל של המשתמש
+              </div>
               <div><Label>הרשאה</Label>
                 <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })} style={DARK_SELECT}>
                   {availableRoles.map((r) => <option key={r} value={r} style={{ background: C.cardBg }}>{ROLE_LABELS[r]}</option>)}
@@ -477,9 +483,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               {error && <p style={{ color: C.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{error}</p>}
               <div className="flex gap-3" style={{ marginTop: 4 }}>
                 <button type="submit" disabled={loading} style={{ flex: 1, background: C.amber, color: "#000", border: "none", padding: "11px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
-                  {loading ? "יוצר..." : "צור משתמש"}
+                  {loading ? "יוצר..." : "צור משתמש ושלח אימייל"}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: "11px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); }} style={{ flex: 1, background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: "11px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   ביטול
                 </button>
               </div>
@@ -540,23 +546,23 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
       )}
 
-      {/* ── OTP Fallback Modal ────────────────────────────────────────────── */}
-      {pendingOtp && (
+      {/* ── Temp Password Fallback Modal ──────────────────────────────────── */}
+      {pendingTempPassword && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 380, padding: 28, textAlign: "center" }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 400, padding: 28, textAlign: "center" }}>
             <div style={{ width: 52, height: 52, background: "rgba(255,146,43,0.15)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24 }}>⚠️</div>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, marginBottom: 8 }}>המייל לא נשלח</h2>
-            <p style={{ fontSize: 13, color: C.muted, marginBottom: 4 }}>לא הצלחנו לשלוח מייל אימות ל-</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: C.sub, marginBottom: 16 }} dir="ltr">{pendingOtp.email}</p>
-            <p style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>שתף את קוד האימות הבא עם המשתמש ידנית:</p>
-            <div style={{ background: "rgba(252,196,25,0.1)", border: "2px solid rgba(252,196,25,0.4)", borderRadius: 12, padding: "16px 24px", marginBottom: 16 }}>
-              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 10, color: C.amber, fontFamily: "monospace" }}>{pendingOtp.code}</div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>תקף ל-15 דקות</div>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, marginBottom: 8 }}>האימייל לא נשלח</h2>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>שתף את הסיסמה הזמנית הבאה עם המשתמש ידנית:</p>
+            <div style={{ background: "rgba(201,164,82,0.08)", border: "1px solid rgba(201,164,82,0.3)", borderRadius: 12, padding: "16px 24px", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>אימייל</div>
+              <div style={{ fontSize: 13, color: C.sub, marginBottom: 14 }} dir="ltr">{pendingTempPassword.email}</div>
+              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>סיסמה זמנית</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: C.amber, fontFamily: "monospace", letterSpacing: 3 }} dir="ltr">{pendingTempPassword.password}</div>
             </div>
-            <p style={{ fontSize: 12, color: C.muted, marginBottom: 20 }}>
-              ודא שמשתני הסביבה <code style={{ background: C.inputBg, padding: "1px 5px", borderRadius: 4, fontSize: 11 }}>GMAIL_USER</code> ו-<code style={{ background: C.inputBg, padding: "1px 5px", borderRadius: 4, fontSize: 11 }}>GMAIL_APP_PASSWORD</code> מוגדרים ב-Vercel.
+            <p style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>
+              המשתמש יתבקש לשנות סיסמה בכניסה הראשונה.
             </p>
-            <button onClick={() => setPendingOtp(null)} style={{ width: "100%", background: C.amber, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            <button onClick={() => setPendingTempPassword(null)} style={{ width: "100%", background: C.amber, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               הבנתי
             </button>
           </div>

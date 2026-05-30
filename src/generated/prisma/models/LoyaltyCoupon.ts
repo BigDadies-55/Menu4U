@@ -38,6 +38,8 @@ export type LoyaltyCouponMinAggregateOutputType = {
   id: string | null
   memberId: string | null
   restaurantId: string | null
+  validForGroupId: string | null
+  usedAtRestaurantId: string | null
   code: string | null
   type: string | null
   value: number | null
@@ -51,6 +53,8 @@ export type LoyaltyCouponMaxAggregateOutputType = {
   id: string | null
   memberId: string | null
   restaurantId: string | null
+  validForGroupId: string | null
+  usedAtRestaurantId: string | null
   code: string | null
   type: string | null
   value: number | null
@@ -64,6 +68,8 @@ export type LoyaltyCouponCountAggregateOutputType = {
   id: number
   memberId: number
   restaurantId: number
+  validForGroupId: number
+  usedAtRestaurantId: number
   code: number
   type: number
   value: number
@@ -87,6 +93,8 @@ export type LoyaltyCouponMinAggregateInputType = {
   id?: true
   memberId?: true
   restaurantId?: true
+  validForGroupId?: true
+  usedAtRestaurantId?: true
   code?: true
   type?: true
   value?: true
@@ -100,6 +108,8 @@ export type LoyaltyCouponMaxAggregateInputType = {
   id?: true
   memberId?: true
   restaurantId?: true
+  validForGroupId?: true
+  usedAtRestaurantId?: true
   code?: true
   type?: true
   value?: true
@@ -113,6 +123,8 @@ export type LoyaltyCouponCountAggregateInputType = {
   id?: true
   memberId?: true
   restaurantId?: true
+  validForGroupId?: true
+  usedAtRestaurantId?: true
   code?: true
   type?: true
   value?: true
@@ -213,6 +225,8 @@ export type LoyaltyCouponGroupByOutputType = {
   id: string
   memberId: string
   restaurantId: string
+  validForGroupId: string | null
+  usedAtRestaurantId: string | null
   code: string
   type: string
   value: number
@@ -249,6 +263,8 @@ export type LoyaltyCouponWhereInput = {
   id?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   memberId?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   restaurantId?: Prisma.StringFilter<"LoyaltyCoupon"> | string
+  validForGroupId?: Prisma.StringNullableFilter<"LoyaltyCoupon"> | string | null
+  usedAtRestaurantId?: Prisma.StringNullableFilter<"LoyaltyCoupon"> | string | null
   code?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   type?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   value?: Prisma.FloatFilter<"LoyaltyCoupon"> | number
@@ -263,6 +279,8 @@ export type LoyaltyCouponOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   memberId?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  validForGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
+  usedAtRestaurantId?: Prisma.SortOrderInput | Prisma.SortOrder
   code?: Prisma.SortOrder
   type?: Prisma.SortOrder
   value?: Prisma.SortOrder
@@ -281,6 +299,8 @@ export type LoyaltyCouponWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.LoyaltyCouponWhereInput | Prisma.LoyaltyCouponWhereInput[]
   memberId?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   restaurantId?: Prisma.StringFilter<"LoyaltyCoupon"> | string
+  validForGroupId?: Prisma.StringNullableFilter<"LoyaltyCoupon"> | string | null
+  usedAtRestaurantId?: Prisma.StringNullableFilter<"LoyaltyCoupon"> | string | null
   type?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   value?: Prisma.FloatFilter<"LoyaltyCoupon"> | number
   description?: Prisma.StringNullableFilter<"LoyaltyCoupon"> | string | null
@@ -294,6 +314,8 @@ export type LoyaltyCouponOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   memberId?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  validForGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
+  usedAtRestaurantId?: Prisma.SortOrderInput | Prisma.SortOrder
   code?: Prisma.SortOrder
   type?: Prisma.SortOrder
   value?: Prisma.SortOrder
@@ -315,6 +337,8 @@ export type LoyaltyCouponScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"LoyaltyCoupon"> | string
   memberId?: Prisma.StringWithAggregatesFilter<"LoyaltyCoupon"> | string
   restaurantId?: Prisma.StringWithAggregatesFilter<"LoyaltyCoupon"> | string
+  validForGroupId?: Prisma.StringNullableWithAggregatesFilter<"LoyaltyCoupon"> | string | null
+  usedAtRestaurantId?: Prisma.StringNullableWithAggregatesFilter<"LoyaltyCoupon"> | string | null
   code?: Prisma.StringWithAggregatesFilter<"LoyaltyCoupon"> | string
   type?: Prisma.StringWithAggregatesFilter<"LoyaltyCoupon"> | string
   value?: Prisma.FloatWithAggregatesFilter<"LoyaltyCoupon"> | number
@@ -327,6 +351,8 @@ export type LoyaltyCouponScalarWhereWithAggregatesInput = {
 export type LoyaltyCouponCreateInput = {
   id?: string
   restaurantId: string
+  validForGroupId?: string | null
+  usedAtRestaurantId?: string | null
   code: string
   type: string
   value: number
@@ -341,6 +367,8 @@ export type LoyaltyCouponUncheckedCreateInput = {
   id?: string
   memberId: string
   restaurantId: string
+  validForGroupId?: string | null
+  usedAtRestaurantId?: string | null
   code: string
   type: string
   value: number
@@ -353,6 +381,8 @@ export type LoyaltyCouponUncheckedCreateInput = {
 export type LoyaltyCouponUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  validForGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usedAtRestaurantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   value?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -367,6 +397,8 @@ export type LoyaltyCouponUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   memberId?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  validForGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usedAtRestaurantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   value?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -380,6 +412,8 @@ export type LoyaltyCouponCreateManyInput = {
   id?: string
   memberId: string
   restaurantId: string
+  validForGroupId?: string | null
+  usedAtRestaurantId?: string | null
   code: string
   type: string
   value: number
@@ -392,6 +426,8 @@ export type LoyaltyCouponCreateManyInput = {
 export type LoyaltyCouponUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  validForGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usedAtRestaurantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   value?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -405,6 +441,8 @@ export type LoyaltyCouponUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   memberId?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  validForGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usedAtRestaurantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   value?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -428,6 +466,8 @@ export type LoyaltyCouponCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   memberId?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  validForGroupId?: Prisma.SortOrder
+  usedAtRestaurantId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   type?: Prisma.SortOrder
   value?: Prisma.SortOrder
@@ -445,6 +485,8 @@ export type LoyaltyCouponMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   memberId?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  validForGroupId?: Prisma.SortOrder
+  usedAtRestaurantId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   type?: Prisma.SortOrder
   value?: Prisma.SortOrder
@@ -458,6 +500,8 @@ export type LoyaltyCouponMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   memberId?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  validForGroupId?: Prisma.SortOrder
+  usedAtRestaurantId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   type?: Prisma.SortOrder
   value?: Prisma.SortOrder
@@ -516,6 +560,8 @@ export type LoyaltyCouponUncheckedUpdateManyWithoutMemberNestedInput = {
 export type LoyaltyCouponCreateWithoutMemberInput = {
   id?: string
   restaurantId: string
+  validForGroupId?: string | null
+  usedAtRestaurantId?: string | null
   code: string
   type: string
   value: number
@@ -528,6 +574,8 @@ export type LoyaltyCouponCreateWithoutMemberInput = {
 export type LoyaltyCouponUncheckedCreateWithoutMemberInput = {
   id?: string
   restaurantId: string
+  validForGroupId?: string | null
+  usedAtRestaurantId?: string | null
   code: string
   type: string
   value: number
@@ -570,6 +618,8 @@ export type LoyaltyCouponScalarWhereInput = {
   id?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   memberId?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   restaurantId?: Prisma.StringFilter<"LoyaltyCoupon"> | string
+  validForGroupId?: Prisma.StringNullableFilter<"LoyaltyCoupon"> | string | null
+  usedAtRestaurantId?: Prisma.StringNullableFilter<"LoyaltyCoupon"> | string | null
   code?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   type?: Prisma.StringFilter<"LoyaltyCoupon"> | string
   value?: Prisma.FloatFilter<"LoyaltyCoupon"> | number
@@ -582,6 +632,8 @@ export type LoyaltyCouponScalarWhereInput = {
 export type LoyaltyCouponCreateManyMemberInput = {
   id?: string
   restaurantId: string
+  validForGroupId?: string | null
+  usedAtRestaurantId?: string | null
   code: string
   type: string
   value: number
@@ -594,6 +646,8 @@ export type LoyaltyCouponCreateManyMemberInput = {
 export type LoyaltyCouponUpdateWithoutMemberInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  validForGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usedAtRestaurantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   value?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -606,6 +660,8 @@ export type LoyaltyCouponUpdateWithoutMemberInput = {
 export type LoyaltyCouponUncheckedUpdateWithoutMemberInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  validForGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usedAtRestaurantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   value?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -618,6 +674,8 @@ export type LoyaltyCouponUncheckedUpdateWithoutMemberInput = {
 export type LoyaltyCouponUncheckedUpdateManyWithoutMemberInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  validForGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usedAtRestaurantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   value?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -633,6 +691,8 @@ export type LoyaltyCouponSelect<ExtArgs extends runtime.Types.Extensions.Interna
   id?: boolean
   memberId?: boolean
   restaurantId?: boolean
+  validForGroupId?: boolean
+  usedAtRestaurantId?: boolean
   code?: boolean
   type?: boolean
   value?: boolean
@@ -647,6 +707,8 @@ export type LoyaltyCouponSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   memberId?: boolean
   restaurantId?: boolean
+  validForGroupId?: boolean
+  usedAtRestaurantId?: boolean
   code?: boolean
   type?: boolean
   value?: boolean
@@ -661,6 +723,8 @@ export type LoyaltyCouponSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   memberId?: boolean
   restaurantId?: boolean
+  validForGroupId?: boolean
+  usedAtRestaurantId?: boolean
   code?: boolean
   type?: boolean
   value?: boolean
@@ -675,6 +739,8 @@ export type LoyaltyCouponSelectScalar = {
   id?: boolean
   memberId?: boolean
   restaurantId?: boolean
+  validForGroupId?: boolean
+  usedAtRestaurantId?: boolean
   code?: boolean
   type?: boolean
   value?: boolean
@@ -684,7 +750,7 @@ export type LoyaltyCouponSelectScalar = {
   createdAt?: boolean
 }
 
-export type LoyaltyCouponOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "memberId" | "restaurantId" | "code" | "type" | "value" | "description" | "usedAt" | "expiresAt" | "createdAt", ExtArgs["result"]["loyaltyCoupon"]>
+export type LoyaltyCouponOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "memberId" | "restaurantId" | "validForGroupId" | "usedAtRestaurantId" | "code" | "type" | "value" | "description" | "usedAt" | "expiresAt" | "createdAt", ExtArgs["result"]["loyaltyCoupon"]>
 export type LoyaltyCouponInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   member?: boolean | Prisma.LoyaltyMemberDefaultArgs<ExtArgs>
 }
@@ -704,6 +770,8 @@ export type $LoyaltyCouponPayload<ExtArgs extends runtime.Types.Extensions.Inter
     id: string
     memberId: string
     restaurantId: string
+    validForGroupId: string | null
+    usedAtRestaurantId: string | null
     code: string
     type: string
     value: number
@@ -1138,6 +1206,8 @@ export interface LoyaltyCouponFieldRefs {
   readonly id: Prisma.FieldRef<"LoyaltyCoupon", 'String'>
   readonly memberId: Prisma.FieldRef<"LoyaltyCoupon", 'String'>
   readonly restaurantId: Prisma.FieldRef<"LoyaltyCoupon", 'String'>
+  readonly validForGroupId: Prisma.FieldRef<"LoyaltyCoupon", 'String'>
+  readonly usedAtRestaurantId: Prisma.FieldRef<"LoyaltyCoupon", 'String'>
   readonly code: Prisma.FieldRef<"LoyaltyCoupon", 'String'>
   readonly type: Prisma.FieldRef<"LoyaltyCoupon", 'String'>
   readonly value: Prisma.FieldRef<"LoyaltyCoupon", 'Float'>
