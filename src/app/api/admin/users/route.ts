@@ -65,6 +65,7 @@ export async function POST(req: Request) {
         role: (role as Role) ?? "VIEWER",
         mustChangePassword: true,
         passwordChangedAt: null,
+        emailVerified: new Date(),
       },
       select: { id: true, name: true, email: true, role: true, createdAt: true, mustChangePassword: true },
     });
