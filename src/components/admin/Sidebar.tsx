@@ -113,6 +113,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/waiter",       label: "הזמנת מלצר 🍽️",   I: Ic.Orders,    displayHide: true },
       { href: "/admin/orders/stats", label: "סטטיסטיקות",      I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
+      { href: "/admin/layout-builder-v2", label: "פריסת שולחנות חדש", I: Ic.Layout, ownerOnly: true, waiterHide: true, displayHide: true },
       { href: "/admin/loyalty",        label: "מועדון לקוחות ⭐", I: Ic.Loyalty,   displayHide: true },
       { href: "/admin/crm",            label: "קשרי לקוחות 📱",   I: Ic.Customers, displayHide: true },
     ],
