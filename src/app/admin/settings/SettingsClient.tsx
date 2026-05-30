@@ -828,76 +828,110 @@ function PasswordPolicyTab() {
 
   if (!policy) return <div style={{ padding: 40, color: C2.muted, textAlign: "center" }}>טוען...</div>;
 
+  const card: React.CSSProperties = { background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 14, padding: 24 };
+  const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: C2.muted, letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8, display: "block" };
+  const numInp: React.CSSProperties = { ...inp, width: 80, textAlign: "center" };
+  const badge = (text: string): React.CSSProperties => ({ fontSize: 11, color: "#fbbf24", background: "rgba(251,191,36,0.1)", padding: "3px 10px", borderRadius: 999, marginTop: 8, display: "inline-block" });
+
   return (
-    <div style={{ padding: "32px 0", maxWidth: 640 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: C2.text, marginBottom: 6 }}>מדיניות סיסמאות</h2>
-      <p style={{ fontSize: 13, color: C2.muted, marginBottom: 32 }}>הגדרות אבטחה לכלל המשתמשים במערכת</p>
+    <div style={{ padding: "32px 0", maxWidth: 860, direction: "rtl" }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: C2.text, marginBottom: 4 }}>מדיניות סיסמאות</h2>
+      <p style={{ fontSize: 13, color: C2.muted, marginBottom: 28 }}>הגדרות אבטחה לכלל המשתמשים במערכת</p>
 
-      {/* Expiry */}
-      <div style={{ background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 14, padding: 24, marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, color: C2.text, marginBottom: 4 }}>תפוגת סיסמה</div>
-        <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>0 = ללא הגבלת זמן</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <input type="number" min={0} max={365} value={policy.maxAgeDays}
-            onChange={e => setPolicy({ ...policy, maxAgeDays: Number(e.target.value) })} style={inp} />
-          <span style={{ color: C2.muted, fontSize: 13 }}>ימים</span>
-          {policy.maxAgeDays > 0 && (
-            <span style={{ fontSize: 12, color: "#fbbf24", background: "rgba(251,191,36,0.1)", padding: "3px 10px", borderRadius: 999 }}>
-              משתמשים יתבקשו לשנות כל {policy.maxAgeDays} ימים
-            </span>
-          )}
+      {/* Row 1: Expiry + Idle side by side */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+
+        {/* Expiry */}
+        <div style={card}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C2.text, marginBottom: 4 }}>⏳ תפוגת סיסמה</div>
+          <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>כמה ימים עד שתידרש החלפה</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input type="number" min={0} max={365} value={policy.maxAgeDays}
+              onChange={e => setPolicy({ ...policy, maxAgeDays: Number(e.target.value) })} style={numInp} />
+            <span style={{ color: C2.muted, fontSize: 13 }}>ימים</span>
+          </div>
+          {policy.maxAgeDays > 0
+            ? <div style={badge("")}>החלפה כל {policy.maxAgeDays} ימים</div>
+            : <div style={{ fontSize: 11, color: C2.muted, marginTop: 8 }}>0 = ללא הגבלה</div>}
+        </div>
+
+        {/* Idle timeout */}
+        <div style={card}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C2.text, marginBottom: 4 }}>🔒 ניתוק אוטומטי</div>
+          <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>ניתוק לאחר חוסר פעילות</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input type="number" min={0} max={480} value={policy.idleTimeoutMinutes}
+              onChange={e => setPolicy({ ...policy, idleTimeoutMinutes: Number(e.target.value) })} style={numInp} />
+            <span style={{ color: C2.muted, fontSize: 13 }}>דקות</span>
+          </div>
+          {policy.idleTimeoutMinutes > 0
+            ? <div style={badge("")}>ניתוק אחרי {policy.idleTimeoutMinutes} דקות</div>
+            : <div style={{ fontSize: 11, color: C2.muted, marginTop: 8 }}>0 = ללא ניתוק</div>}
         </div>
       </div>
 
-      {/* Complexity */}
-      <div style={{ background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 14, padding: 24, marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, color: C2.text, marginBottom: 16 }}>מורכבות סיסמה</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <span style={{ fontSize: 13, color: C2.muted, width: 120 }}>אורך מינימלי</span>
-          <input type="number" min={6} max={32} value={policy.minLength}
-            onChange={e => setPolicy({ ...policy, minLength: Number(e.target.value) })} style={inp} />
-          <span style={{ color: C2.muted, fontSize: 13 }}>תווים</span>
+      {/* Row 2: Min length + History side by side */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+
+        {/* Min length */}
+        <div style={card}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C2.text, marginBottom: 4 }}>📏 אורך מינימלי</div>
+          <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>מינימום תווים לסיסמה</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input type="number" min={6} max={32} value={policy.minLength}
+              onChange={e => setPolicy({ ...policy, minLength: Number(e.target.value) })} style={numInp} />
+            <span style={{ color: C2.muted, fontSize: 13 }}>תווים</span>
+          </div>
+          <div style={{ fontSize: 11, color: C2.muted, marginTop: 8 }}>מינימום מומלץ: 8</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <span style={{ fontSize: 13, color: C2.muted, width: 120 }}>היסטוריית סיסמאות</span>
-          <input type="number" min={0} max={10} value={policy.historyCount}
-            onChange={e => setPolicy({ ...policy, historyCount: Number(e.target.value) })} style={inp} />
-          <span style={{ color: C2.muted, fontSize: 13 }}>סיסמאות אחרונות {policy.historyCount > 0 ? `(לא ניתן לחזור על ${policy.historyCount} הסיסמאות האחרונות)` : "(ללא הגבלה)"}</span>
+
+        {/* History */}
+        <div style={card}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C2.text, marginBottom: 4 }}>🔁 היסטוריית סיסמאות</div>
+          <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>מניעת שימוש חוזר בסיסמאות ישנות</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input type="number" min={0} max={10} value={policy.historyCount}
+              onChange={e => setPolicy({ ...policy, historyCount: Number(e.target.value) })} style={numInp} />
+            <span style={{ color: C2.muted, fontSize: 13 }}>סיסמאות</span>
+          </div>
+          {policy.historyCount > 0
+            ? <div style={badge("")}>לא ניתן לחזור על {policy.historyCount} הסיסמאות האחרונות</div>
+            : <div style={{ fontSize: 11, color: C2.muted, marginTop: 8 }}>0 = ללא הגבלה</div>}
         </div>
-        {([
-          { key: "requireUppercase", label: "אות גדולה (A-Z)" },
-          { key: "requireNumbers",   label: "ספרה (0-9)" },
-          { key: "requireSymbols",   label: "תו מיוחד (!@#...)" },
-        ] as { key: keyof PolicyState; label: string }[]).map(({ key, label }) => (
-          <label key={key} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, cursor: "pointer" }}>
-            <input type="checkbox" checked={policy[key] as boolean}
-              onChange={e => setPolicy({ ...policy, [key]: e.target.checked })}
-              style={{ width: 16, height: 16, accentColor: C2.amber }} />
-            <span style={{ fontSize: 13, color: C2.text }}>{label}</span>
-          </label>
-        ))}
       </div>
 
-      {/* Idle timeout */}
-      <div style={{ background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 14, padding: 24, marginBottom: 28 }}>
-        <div style={{ fontWeight: 700, color: C2.text, marginBottom: 4 }}>Idle Session Timeout</div>
-        <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>ניתוק אוטומטי לאחר חוסר פעילות. 0 = ללא ניתוק</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <input type="number" min={0} max={480} value={policy.idleTimeoutMinutes}
-            onChange={e => setPolicy({ ...policy, idleTimeoutMinutes: Number(e.target.value) })} style={inp} />
-          <span style={{ color: C2.muted, fontSize: 13 }}>דקות</span>
-          {policy.idleTimeoutMinutes > 0 && (
-            <span style={{ fontSize: 12, color: "#fbbf24", background: "rgba(251,191,36,0.1)", padding: "3px 10px", borderRadius: 999 }}>
-              ניתוק לאחר {policy.idleTimeoutMinutes} דקות
-            </span>
-          )}
+      {/* Row 3: Complexity checkboxes */}
+      <div style={{ ...card, marginBottom: 28 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C2.text, marginBottom: 4 }}>🔐 דרישות מורכבות</div>
+        <div style={{ fontSize: 12, color: C2.muted, marginBottom: 20 }}>תווים שחייבים להופיע בסיסמה</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {([
+            { key: "requireUppercase", label: "אות גדולה", sub: "A–Z" },
+            { key: "requireNumbers",   label: "ספרה",       sub: "0–9" },
+            { key: "requireSymbols",   label: "תו מיוחד",   sub: "!@#$..." },
+          ] as { key: keyof PolicyState; label: string; sub: string }[]).map(({ key, label: lbl, sub }) => {
+            const active = policy[key] as boolean;
+            return (
+              <label key={key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 12px", borderRadius: 12, border: `1px solid ${active ? C2.amber : C2.border}`, background: active ? "rgba(252,196,25,0.06)" : "transparent", cursor: "pointer", transition: "all 0.15s" }}>
+                <input type="checkbox" checked={active}
+                  onChange={e => setPolicy({ ...policy, [key]: e.target.checked })}
+                  style={{ display: "none" }} />
+                <span style={{ fontSize: 22 }}>{key === "requireUppercase" ? "Aa" : key === "requireNumbers" ? "12" : "#!"}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: active ? C2.amber : C2.text }}>{lbl}</span>
+                <span style={{ fontSize: 11, color: C2.muted }}>{sub}</span>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${active ? C2.amber : C2.inputBorder}`, background: active ? C2.amber : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {active && <span style={{ color: "#000", fontSize: 12, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+                </div>
+              </label>
+            );
+          })}
         </div>
       </div>
 
       {err && <div style={{ color: "#ff6b6b", fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
       <button onClick={handleSave} disabled={saving}
-        style={{ background: saving ? "#495057" : C2.amber, color: "#000", border: "none", padding: "11px 28px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer" }}>
+        style={{ background: saving ? "#495057" : C2.amber, color: "#000", border: "none", padding: "12px 32px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", minWidth: 160 }}>
         {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור מדיניות"}
       </button>
     </div>
