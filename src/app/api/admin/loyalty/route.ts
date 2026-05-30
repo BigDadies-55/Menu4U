@@ -55,6 +55,13 @@ export async function POST(req: Request) {
 
   if (action === "adjustPoints") {
     const { memberId, points, note } = body;
+    // Verify caller has access to the member's restaurant
+    const memberRecord = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
+    if (!memberRecord) return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (session.user.role !== "SUPER_ADMIN") {
+      const access = await prisma.restaurantUser.findFirst({ where: { userId: session.user.id, restaurantId: memberRecord.restaurantId } });
+      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const member = await prisma.loyaltyMember.update({
       where: { id: memberId },
       data: { points: { increment: points } },
@@ -73,6 +80,13 @@ export async function POST(req: Request) {
 
   if (action === "issueCoupon") {
     const { memberId, type, value, description, expiresAt, validForGroup } = body;
+    // Verify caller has access to the coupon's restaurant
+    const memberRecord2 = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
+    if (!memberRecord2) return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (session.user.role !== "SUPER_ADMIN") {
+      const access = await prisma.restaurantUser.findFirst({ where: { userId: session.user.id, restaurantId: memberRecord2.restaurantId } });
+      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const code = `C${Date.now().toString(36).toUpperCase()}`;
 
     // Resolve group if coupon should be valid chain-wide

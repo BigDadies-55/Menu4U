@@ -61,8 +61,30 @@ export async function POST(
       sum + (priceMap[i.itemId] + (i.modifiers?.reduce((s, m) => s + m.priceAdd, 0) ?? 0)) * i.quantity,
     0
   );
-  // Apply pre-order loyalty discount if provided
-  const discount = loyaltyMemberId && loyaltyDiscountAmount > 0 ? loyaltyDiscountAmount : 0;
+  // Calculate discount server-side — never trust client-supplied loyaltyDiscountAmount
+  let discount = 0;
+  if (loyaltyMemberId) {
+    const [member, settings] = await Promise.all([
+      prisma.loyaltyMember.findUnique({ where: { id: loyaltyMemberId, restaurantId }, select: { points: true } }).catch(() => null),
+      prisma.loyaltySettings.findUnique({ where: { restaurantId }, select: { shekelPerPoint: true, minRedeemPoints: true } }).catch(() => null),
+    ]);
+    if (member && settings && loyaltyCouponId) {
+      // Coupon-based: verify coupon belongs to this member and is unused
+      const coupon = await prisma.loyaltyCoupon.findFirst({
+        where: { id: loyaltyCouponId, memberId: loyaltyMemberId, usedAt: null },
+        select: { type: true, value: true },
+      }).catch(() => null);
+      if (coupon) {
+        discount = coupon.type === "PERCENT" ? baseTotal * (coupon.value / 100) : coupon.value;
+      }
+    } else if (member && settings && loyaltyPointsToRedeem > 0) {
+      // Points-based: cap by actual balance and min redeem threshold
+      const redeemable = Math.min(loyaltyPointsToRedeem, member.points);
+      if (redeemable >= (settings.minRedeemPoints ?? 0)) {
+        discount = redeemable * (settings.shekelPerPoint ?? 0);
+      }
+    }
+  }
   const totalAmount = Math.max(0, baseTotal - discount);
 
   // Get next order number for this restaurant (atomic)

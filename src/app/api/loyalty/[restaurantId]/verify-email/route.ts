@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
 import { NextResponse } from "next/server";
 import { sendOtpEmail } from "@/lib/email";
+import crypto from "crypto";
+
+function hashOtp(otp: string): string {
+  return crypto.createHash("sha256").update(otp).digest("hex");
+}
 
 async function ensureOtpTable() {
   await prisma.$executeRawUnsafe(`
@@ -53,7 +58,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
        VALUES ($1, $2, $3, 1)
        ON CONFLICT ("key") DO UPDATE
          SET "code" = $2, "expires" = $3, "sendCount" = "_OtpStore"."sendCount" + 1`,
-      key, otp, expires
+      key, hashOtp(otp), expires
     );
 
     try {
@@ -85,7 +90,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
     if (!stored || stored.expires < new Date()) {
       return NextResponse.json({ error: "expired" }, { status: 400 });
     }
-    if (stored.code !== String(code)) {
+    if (stored.code !== hashOtp(String(code))) {
       return NextResponse.json({ error: "invalid" }, { status: 400 });
     }
 

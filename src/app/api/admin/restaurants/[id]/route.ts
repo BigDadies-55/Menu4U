@@ -10,7 +10,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
   const { id } = await params;
   const body = await req.json();
-  const restaurant = await prisma.restaurant.update({ where: { id }, data: body });
+  const {
+    name, email, phone, phone2, orderPhone, address, locationUrl,
+    isActive, ordersEnabled, menuTheme, menuPalette, menuPaletteData,
+    kdsView, tableLayoutJson, groupId,
+    subscriptionFrom, subscriptionTo,
+  } = body;
+  const data = Object.fromEntries(
+    Object.entries({ name, email, phone, phone2, orderPhone, address, locationUrl,
+      isActive, ordersEnabled, menuTheme, menuPalette, menuPaletteData,
+      kdsView, tableLayoutJson, groupId, subscriptionFrom, subscriptionTo })
+    .filter(([, v]) => v !== undefined)
+  );
+  const restaurant = await prisma.restaurant.update({ where: { id }, data });
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_RESTAURANT", entity: "restaurant", entityId: id, entityName: restaurant.name, meta: { changed: Object.keys(body) }, ip: getIp(req) });
   return NextResponse.json(restaurant);
 }
