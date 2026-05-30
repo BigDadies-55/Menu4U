@@ -350,6 +350,14 @@ export default function Sidebar({
             <span className="font-extrabold text-white text-[15px] tracking-tight group-hover:opacity-80 transition-opacity">
               {siteName}<span style={{ color: pal.accentText }}>.</span>
             </span>
+            {process.env.NEXT_PUBLIC_APP_ENV === "development" && (
+              <span
+                className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-md"
+                style={{ background: "#f59e0b", color: "#000", lineHeight: 1 }}
+              >
+                DEV
+              </span>
+            )}
           </Link>
         </div>
 

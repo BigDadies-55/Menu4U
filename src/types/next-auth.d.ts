@@ -9,11 +9,13 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       role: Role;
+      mustChangePassword?: boolean;
     };
   }
 
   interface User {
     role: Role;
+    mustChangePassword?: boolean;
   }
 }
 
@@ -21,5 +23,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: Role;
+    mustChangePassword?: boolean;
   }
 }

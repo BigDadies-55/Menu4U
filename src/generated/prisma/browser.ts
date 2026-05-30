@@ -23,6 +23,11 @@ export * from './enums';
  */
 export type User = Prisma.UserModel
 /**
+ * Model PasswordPolicy
+ * 
+ */
+export type PasswordPolicy = Prisma.PasswordPolicyModel
+/**
  * Model Account
  * 
  */
@@ -37,6 +42,11 @@ export type Session = Prisma.SessionModel
  * 
  */
 export type VerificationToken = Prisma.VerificationTokenModel
+/**
+ * Model RestaurantGroup
+ * 
+ */
+export type RestaurantGroup = Prisma.RestaurantGroupModel
 /**
  * Model Restaurant
  * 

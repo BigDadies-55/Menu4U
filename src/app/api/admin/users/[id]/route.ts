@@ -29,7 +29,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const updateData: Record<string, unknown> = {};
   if (body.role) updateData.role = body.role as Role;
-  if (body.password) updateData.password = await bcrypt.hash(body.password, 12);
+  if (body.password) {
+    updateData.password = await bcrypt.hash(body.password, 12);
+    updateData.mustChangePassword = true;
+    updateData.passwordChangedAt = null;
+  }
+  if (body.mustChangePassword !== undefined) updateData.mustChangePassword = body.mustChangePassword;
   if (body.name !== undefined) updateData.name = body.name || null;
   if (body.email) {
     if (session.user.role !== "SUPER_ADMIN") {

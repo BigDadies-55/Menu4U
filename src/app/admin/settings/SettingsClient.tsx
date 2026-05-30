@@ -41,7 +41,7 @@ type Config = {
   adminTopBarBg: string | null; adminTopBarTextColor: string;
 };
 
-type TopTab = "settings" | "advanced";
+type TopTab = "settings" | "security" | "advanced";
 type AdvTab = "backup" | "restore" | "clear";
 
 /* ─── BackupJSON type ────────────────────────────────────── */
@@ -786,6 +786,117 @@ function ClearOrdersSection() {
   );
 }
 
+/* ─── Password Policy Tab ────────────────────────────────── */
+type PolicyState = {
+  maxAgeDays: number;
+  minLength: number;
+  requireUppercase: boolean;
+  requireNumbers: boolean;
+  requireSymbols: boolean;
+  idleTimeoutMinutes: number;
+};
+
+function PasswordPolicyTab() {
+  const [policy, setPolicy] = useState<PolicyState | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/settings/password-policy")
+      .then(r => r.json())
+      .then(d => setPolicy(d))
+      .catch(() => setErr("שגיאה בטעינת המדיניות"));
+  }, []);
+
+  async function handleSave() {
+    if (!policy) return;
+    setSaving(true); setErr(""); setSaved(false);
+    const res = await fetch("/api/admin/settings/password-policy", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(policy),
+    });
+    setSaving(false);
+    if (res.ok) { setSaved(true); setTimeout(() => setSaved(false), 3000); }
+    else setErr("שגיאה בשמירה");
+  }
+
+  const C2 = { cardBg: "#212529", border: "#2d3239", inputBg: "#2d3239", inputBorder: "#3a3f47", text: "#e9ecef", muted: "#6c757d", amber: "#fcc419" };
+  const inp: React.CSSProperties = { background: C2.inputBg, border: `1px solid ${C2.inputBorder}`, color: C2.text, borderRadius: 8, padding: "8px 12px", fontSize: 14, width: 100, outline: "none" };
+
+  if (!policy) return <div style={{ padding: 40, color: C2.muted, textAlign: "center" }}>טוען...</div>;
+
+  return (
+    <div style={{ padding: "32px 0", maxWidth: 640 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: C2.text, marginBottom: 6 }}>מדיניות סיסמאות</h2>
+      <p style={{ fontSize: 13, color: C2.muted, marginBottom: 32 }}>הגדרות אבטחה לכלל המשתמשים במערכת</p>
+
+      {/* Expiry */}
+      <div style={{ background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 14, padding: 24, marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, color: C2.text, marginBottom: 4 }}>תפוגת סיסמה</div>
+        <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>0 = ללא הגבלת זמן</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <input type="number" min={0} max={365} value={policy.maxAgeDays}
+            onChange={e => setPolicy({ ...policy, maxAgeDays: Number(e.target.value) })} style={inp} />
+          <span style={{ color: C2.muted, fontSize: 13 }}>ימים</span>
+          {policy.maxAgeDays > 0 && (
+            <span style={{ fontSize: 12, color: "#fbbf24", background: "rgba(251,191,36,0.1)", padding: "3px 10px", borderRadius: 999 }}>
+              משתמשים יתבקשו לשנות כל {policy.maxAgeDays} ימים
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Complexity */}
+      <div style={{ background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 14, padding: 24, marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, color: C2.text, marginBottom: 16 }}>מורכבות סיסמה</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <span style={{ fontSize: 13, color: C2.muted, width: 120 }}>אורך מינימלי</span>
+          <input type="number" min={6} max={32} value={policy.minLength}
+            onChange={e => setPolicy({ ...policy, minLength: Number(e.target.value) })} style={inp} />
+          <span style={{ color: C2.muted, fontSize: 13 }}>תווים</span>
+        </div>
+        {([
+          { key: "requireUppercase", label: "אות גדולה (A-Z)" },
+          { key: "requireNumbers",   label: "ספרה (0-9)" },
+          { key: "requireSymbols",   label: "תו מיוחד (!@#...)" },
+        ] as { key: keyof PolicyState; label: string }[]).map(({ key, label }) => (
+          <label key={key} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, cursor: "pointer" }}>
+            <input type="checkbox" checked={policy[key] as boolean}
+              onChange={e => setPolicy({ ...policy, [key]: e.target.checked })}
+              style={{ width: 16, height: 16, accentColor: C2.amber }} />
+            <span style={{ fontSize: 13, color: C2.text }}>{label}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* Idle timeout */}
+      <div style={{ background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 14, padding: 24, marginBottom: 28 }}>
+        <div style={{ fontWeight: 700, color: C2.text, marginBottom: 4 }}>Idle Session Timeout</div>
+        <div style={{ fontSize: 12, color: C2.muted, marginBottom: 16 }}>ניתוק אוטומטי לאחר חוסר פעילות. 0 = ללא ניתוק</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <input type="number" min={0} max={480} value={policy.idleTimeoutMinutes}
+            onChange={e => setPolicy({ ...policy, idleTimeoutMinutes: Number(e.target.value) })} style={inp} />
+          <span style={{ color: C2.muted, fontSize: 13 }}>דקות</span>
+          {policy.idleTimeoutMinutes > 0 && (
+            <span style={{ fontSize: 12, color: "#fbbf24", background: "rgba(251,191,36,0.1)", padding: "3px 10px", borderRadius: 999 }}>
+              ניתוק לאחר {policy.idleTimeoutMinutes} דקות
+            </span>
+          )}
+        </div>
+      </div>
+
+      {err && <div style={{ color: "#ff6b6b", fontSize: 13, marginBottom: 12 }}>{err}</div>}
+
+      <button onClick={handleSave} disabled={saving}
+        style={{ background: saving ? "#495057" : C2.amber, color: "#000", border: "none", padding: "11px 28px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer" }}>
+        {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור מדיניות"}
+      </button>
+    </div>
+  );
+}
+
 /* ─── Main ───────────────────────────────────────────────── */
 export default function SettingsClient({ config: initial }: { config: Config }) {
   const [form,          setForm]          = useState<Config>({ ...initial });
@@ -827,6 +938,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   /* ─ tab helpers ─ */
   const TOP_TABS: { id: TopTab; label: string }[] = [
     { id: "settings", label: "⚙️ הגדרות" },
+    { id: "security", label: "🔐 אבטחה" },
     { id: "advanced", label: "🔧 מתקדם" },
   ];
   const ADV_TABS: { id: AdvTab; label: string }[] = [
@@ -1012,6 +1124,9 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
             </div>
           </>
         )}
+
+        {/* ════ TAB: אבטחה ════ */}
+        {topTab === "security" && <PasswordPolicyTab />}
 
         {/* ════ TAB: מתקדם ════ */}
         {topTab === "advanced" && (

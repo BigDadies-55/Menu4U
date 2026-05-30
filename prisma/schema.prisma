@@ -38,6 +38,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  mustChangePassword Boolean   @default(false)
+  passwordChangedAt  DateTime?
+  lastActivityAt     DateTime?
+
   termsAccepted          Boolean   @default(false)
   termsAcceptedAt        DateTime?
   termsAcceptedIp        String?
@@ -46,6 +50,17 @@ model User {
   accounts        Account[]
   sessions        Session[]
   restaurantUsers RestaurantUser[]
+}
+
+model PasswordPolicy {
+  id                  String   @id @default("default")
+  maxAgeDays          Int      @default(0)
+  minLength           Int      @default(8)
+  requireUppercase    Boolean  @default(false)
+  requireNumbers      Boolean  @default(false)
+  requireSymbols      Boolean  @default(false)
+  idleTimeoutMinutes  Int      @default(0)
+  updatedAt           DateTime @updatedAt
 }
 
 model Account {

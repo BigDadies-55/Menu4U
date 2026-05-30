@@ -18,6 +18,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.role = (user as { role: string }).role;
         token.id = user.id;
+        token.mustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword ?? false;
       }
       return token;
     },
@@ -26,6 +27,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         session.user.role = token.role as any;
+        session.user.mustChangePassword = token.mustChangePassword as boolean ?? false;
       }
       return session;
     },

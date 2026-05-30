@@ -39,6 +39,7 @@ export type LoyaltyMemberSumAggregateOutputType = {
 export type LoyaltyMemberMinAggregateOutputType = {
   id: string | null
   restaurantId: string | null
+  groupId: string | null
   phone: string | null
   name: string | null
   email: string | null
@@ -53,6 +54,7 @@ export type LoyaltyMemberMinAggregateOutputType = {
 export type LoyaltyMemberMaxAggregateOutputType = {
   id: string | null
   restaurantId: string | null
+  groupId: string | null
   phone: string | null
   name: string | null
   email: string | null
@@ -67,6 +69,7 @@ export type LoyaltyMemberMaxAggregateOutputType = {
 export type LoyaltyMemberCountAggregateOutputType = {
   id: number
   restaurantId: number
+  groupId: number
   phone: number
   name: number
   email: number
@@ -93,6 +96,7 @@ export type LoyaltyMemberSumAggregateInputType = {
 export type LoyaltyMemberMinAggregateInputType = {
   id?: true
   restaurantId?: true
+  groupId?: true
   phone?: true
   name?: true
   email?: true
@@ -107,6 +111,7 @@ export type LoyaltyMemberMinAggregateInputType = {
 export type LoyaltyMemberMaxAggregateInputType = {
   id?: true
   restaurantId?: true
+  groupId?: true
   phone?: true
   name?: true
   email?: true
@@ -121,6 +126,7 @@ export type LoyaltyMemberMaxAggregateInputType = {
 export type LoyaltyMemberCountAggregateInputType = {
   id?: true
   restaurantId?: true
+  groupId?: true
   phone?: true
   name?: true
   email?: true
@@ -222,6 +228,7 @@ export type LoyaltyMemberGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 export type LoyaltyMemberGroupByOutputType = {
   id: string
   restaurantId: string
+  groupId: string | null
   phone: string
   name: string
   email: string | null
@@ -259,6 +266,7 @@ export type LoyaltyMemberWhereInput = {
   NOT?: Prisma.LoyaltyMemberWhereInput | Prisma.LoyaltyMemberWhereInput[]
   id?: Prisma.StringFilter<"LoyaltyMember"> | string
   restaurantId?: Prisma.StringFilter<"LoyaltyMember"> | string
+  groupId?: Prisma.StringNullableFilter<"LoyaltyMember"> | string | null
   phone?: Prisma.StringFilter<"LoyaltyMember"> | string
   name?: Prisma.StringFilter<"LoyaltyMember"> | string
   email?: Prisma.StringNullableFilter<"LoyaltyMember"> | string | null
@@ -269,6 +277,7 @@ export type LoyaltyMemberWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
+  group?: Prisma.XOR<Prisma.RestaurantGroupNullableScalarRelationFilter, Prisma.RestaurantGroupWhereInput> | null
   transactions?: Prisma.LoyaltyTransactionListRelationFilter
   coupons?: Prisma.LoyaltyCouponListRelationFilter
 }
@@ -276,6 +285,7 @@ export type LoyaltyMemberWhereInput = {
 export type LoyaltyMemberOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  groupId?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -286,6 +296,7 @@ export type LoyaltyMemberOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   restaurant?: Prisma.RestaurantOrderByWithRelationInput
+  group?: Prisma.RestaurantGroupOrderByWithRelationInput
   transactions?: Prisma.LoyaltyTransactionOrderByRelationAggregateInput
   coupons?: Prisma.LoyaltyCouponOrderByRelationAggregateInput
 }
@@ -298,6 +309,7 @@ export type LoyaltyMemberWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.LoyaltyMemberWhereInput[]
   NOT?: Prisma.LoyaltyMemberWhereInput | Prisma.LoyaltyMemberWhereInput[]
   restaurantId?: Prisma.StringFilter<"LoyaltyMember"> | string
+  groupId?: Prisma.StringNullableFilter<"LoyaltyMember"> | string | null
   phone?: Prisma.StringFilter<"LoyaltyMember"> | string
   name?: Prisma.StringFilter<"LoyaltyMember"> | string
   email?: Prisma.StringNullableFilter<"LoyaltyMember"> | string | null
@@ -308,6 +320,7 @@ export type LoyaltyMemberWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
+  group?: Prisma.XOR<Prisma.RestaurantGroupNullableScalarRelationFilter, Prisma.RestaurantGroupWhereInput> | null
   transactions?: Prisma.LoyaltyTransactionListRelationFilter
   coupons?: Prisma.LoyaltyCouponListRelationFilter
 }, "id" | "restaurantId_phone" | "restaurantId_memberNumber">
@@ -315,6 +328,7 @@ export type LoyaltyMemberWhereUniqueInput = Prisma.AtLeast<{
 export type LoyaltyMemberOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  groupId?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -337,6 +351,7 @@ export type LoyaltyMemberScalarWhereWithAggregatesInput = {
   NOT?: Prisma.LoyaltyMemberScalarWhereWithAggregatesInput | Prisma.LoyaltyMemberScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"LoyaltyMember"> | string
   restaurantId?: Prisma.StringWithAggregatesFilter<"LoyaltyMember"> | string
+  groupId?: Prisma.StringNullableWithAggregatesFilter<"LoyaltyMember"> | string | null
   phone?: Prisma.StringWithAggregatesFilter<"LoyaltyMember"> | string
   name?: Prisma.StringWithAggregatesFilter<"LoyaltyMember"> | string
   email?: Prisma.StringNullableWithAggregatesFilter<"LoyaltyMember"> | string | null
@@ -360,6 +375,7 @@ export type LoyaltyMemberCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutLoyaltyMembersInput
+  group?: Prisma.RestaurantGroupCreateNestedOneWithoutLoyaltyMembersInput
   transactions?: Prisma.LoyaltyTransactionCreateNestedManyWithoutMemberInput
   coupons?: Prisma.LoyaltyCouponCreateNestedManyWithoutMemberInput
 }
@@ -367,6 +383,7 @@ export type LoyaltyMemberCreateInput = {
 export type LoyaltyMemberUncheckedCreateInput = {
   id?: string
   restaurantId: string
+  groupId?: string | null
   phone: string
   name: string
   email?: string | null
@@ -392,6 +409,7 @@ export type LoyaltyMemberUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutLoyaltyMembersNestedInput
+  group?: Prisma.RestaurantGroupUpdateOneWithoutLoyaltyMembersNestedInput
   transactions?: Prisma.LoyaltyTransactionUpdateManyWithoutMemberNestedInput
   coupons?: Prisma.LoyaltyCouponUpdateManyWithoutMemberNestedInput
 }
@@ -399,6 +417,7 @@ export type LoyaltyMemberUpdateInput = {
 export type LoyaltyMemberUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -415,6 +434,7 @@ export type LoyaltyMemberUncheckedUpdateInput = {
 export type LoyaltyMemberCreateManyInput = {
   id?: string
   restaurantId: string
+  groupId?: string | null
   phone: string
   name: string
   email?: string | null
@@ -442,6 +462,7 @@ export type LoyaltyMemberUpdateManyMutationInput = {
 export type LoyaltyMemberUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -476,6 +497,7 @@ export type LoyaltyMemberRestaurantIdMemberNumberCompoundUniqueInput = {
 export type LoyaltyMemberCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  groupId?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -495,6 +517,7 @@ export type LoyaltyMemberAvgOrderByAggregateInput = {
 export type LoyaltyMemberMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  groupId?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -509,6 +532,7 @@ export type LoyaltyMemberMaxOrderByAggregateInput = {
 export type LoyaltyMemberMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   restaurantId?: Prisma.SortOrder
+  groupId?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -528,6 +552,48 @@ export type LoyaltyMemberSumOrderByAggregateInput = {
 export type LoyaltyMemberScalarRelationFilter = {
   is?: Prisma.LoyaltyMemberWhereInput
   isNot?: Prisma.LoyaltyMemberWhereInput
+}
+
+export type LoyaltyMemberCreateNestedManyWithoutGroupInput = {
+  create?: Prisma.XOR<Prisma.LoyaltyMemberCreateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput> | Prisma.LoyaltyMemberCreateWithoutGroupInput[] | Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput[]
+  connectOrCreate?: Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput | Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput[]
+  createMany?: Prisma.LoyaltyMemberCreateManyGroupInputEnvelope
+  connect?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+}
+
+export type LoyaltyMemberUncheckedCreateNestedManyWithoutGroupInput = {
+  create?: Prisma.XOR<Prisma.LoyaltyMemberCreateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput> | Prisma.LoyaltyMemberCreateWithoutGroupInput[] | Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput[]
+  connectOrCreate?: Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput | Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput[]
+  createMany?: Prisma.LoyaltyMemberCreateManyGroupInputEnvelope
+  connect?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+}
+
+export type LoyaltyMemberUpdateManyWithoutGroupNestedInput = {
+  create?: Prisma.XOR<Prisma.LoyaltyMemberCreateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput> | Prisma.LoyaltyMemberCreateWithoutGroupInput[] | Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput[]
+  connectOrCreate?: Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput | Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput[]
+  upsert?: Prisma.LoyaltyMemberUpsertWithWhereUniqueWithoutGroupInput | Prisma.LoyaltyMemberUpsertWithWhereUniqueWithoutGroupInput[]
+  createMany?: Prisma.LoyaltyMemberCreateManyGroupInputEnvelope
+  set?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  disconnect?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  delete?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  connect?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  update?: Prisma.LoyaltyMemberUpdateWithWhereUniqueWithoutGroupInput | Prisma.LoyaltyMemberUpdateWithWhereUniqueWithoutGroupInput[]
+  updateMany?: Prisma.LoyaltyMemberUpdateManyWithWhereWithoutGroupInput | Prisma.LoyaltyMemberUpdateManyWithWhereWithoutGroupInput[]
+  deleteMany?: Prisma.LoyaltyMemberScalarWhereInput | Prisma.LoyaltyMemberScalarWhereInput[]
+}
+
+export type LoyaltyMemberUncheckedUpdateManyWithoutGroupNestedInput = {
+  create?: Prisma.XOR<Prisma.LoyaltyMemberCreateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput> | Prisma.LoyaltyMemberCreateWithoutGroupInput[] | Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput[]
+  connectOrCreate?: Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput | Prisma.LoyaltyMemberCreateOrConnectWithoutGroupInput[]
+  upsert?: Prisma.LoyaltyMemberUpsertWithWhereUniqueWithoutGroupInput | Prisma.LoyaltyMemberUpsertWithWhereUniqueWithoutGroupInput[]
+  createMany?: Prisma.LoyaltyMemberCreateManyGroupInputEnvelope
+  set?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  disconnect?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  delete?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  connect?: Prisma.LoyaltyMemberWhereUniqueInput | Prisma.LoyaltyMemberWhereUniqueInput[]
+  update?: Prisma.LoyaltyMemberUpdateWithWhereUniqueWithoutGroupInput | Prisma.LoyaltyMemberUpdateWithWhereUniqueWithoutGroupInput[]
+  updateMany?: Prisma.LoyaltyMemberUpdateManyWithWhereWithoutGroupInput | Prisma.LoyaltyMemberUpdateManyWithWhereWithoutGroupInput[]
+  deleteMany?: Prisma.LoyaltyMemberScalarWhereInput | Prisma.LoyaltyMemberScalarWhereInput[]
 }
 
 export type LoyaltyMemberCreateNestedManyWithoutRestaurantInput = {
@@ -600,6 +666,82 @@ export type LoyaltyMemberUpdateOneRequiredWithoutCouponsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.LoyaltyMemberUpdateToOneWithWhereWithoutCouponsInput, Prisma.LoyaltyMemberUpdateWithoutCouponsInput>, Prisma.LoyaltyMemberUncheckedUpdateWithoutCouponsInput>
 }
 
+export type LoyaltyMemberCreateWithoutGroupInput = {
+  id?: string
+  phone: string
+  name: string
+  email?: string | null
+  birthDate?: Date | string | null
+  memberNumber: string
+  points?: number
+  totalSpent?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  restaurant: Prisma.RestaurantCreateNestedOneWithoutLoyaltyMembersInput
+  transactions?: Prisma.LoyaltyTransactionCreateNestedManyWithoutMemberInput
+  coupons?: Prisma.LoyaltyCouponCreateNestedManyWithoutMemberInput
+}
+
+export type LoyaltyMemberUncheckedCreateWithoutGroupInput = {
+  id?: string
+  restaurantId: string
+  phone: string
+  name: string
+  email?: string | null
+  birthDate?: Date | string | null
+  memberNumber: string
+  points?: number
+  totalSpent?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  transactions?: Prisma.LoyaltyTransactionUncheckedCreateNestedManyWithoutMemberInput
+  coupons?: Prisma.LoyaltyCouponUncheckedCreateNestedManyWithoutMemberInput
+}
+
+export type LoyaltyMemberCreateOrConnectWithoutGroupInput = {
+  where: Prisma.LoyaltyMemberWhereUniqueInput
+  create: Prisma.XOR<Prisma.LoyaltyMemberCreateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput>
+}
+
+export type LoyaltyMemberCreateManyGroupInputEnvelope = {
+  data: Prisma.LoyaltyMemberCreateManyGroupInput | Prisma.LoyaltyMemberCreateManyGroupInput[]
+  skipDuplicates?: boolean
+}
+
+export type LoyaltyMemberUpsertWithWhereUniqueWithoutGroupInput = {
+  where: Prisma.LoyaltyMemberWhereUniqueInput
+  update: Prisma.XOR<Prisma.LoyaltyMemberUpdateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedUpdateWithoutGroupInput>
+  create: Prisma.XOR<Prisma.LoyaltyMemberCreateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedCreateWithoutGroupInput>
+}
+
+export type LoyaltyMemberUpdateWithWhereUniqueWithoutGroupInput = {
+  where: Prisma.LoyaltyMemberWhereUniqueInput
+  data: Prisma.XOR<Prisma.LoyaltyMemberUpdateWithoutGroupInput, Prisma.LoyaltyMemberUncheckedUpdateWithoutGroupInput>
+}
+
+export type LoyaltyMemberUpdateManyWithWhereWithoutGroupInput = {
+  where: Prisma.LoyaltyMemberScalarWhereInput
+  data: Prisma.XOR<Prisma.LoyaltyMemberUpdateManyMutationInput, Prisma.LoyaltyMemberUncheckedUpdateManyWithoutGroupInput>
+}
+
+export type LoyaltyMemberScalarWhereInput = {
+  AND?: Prisma.LoyaltyMemberScalarWhereInput | Prisma.LoyaltyMemberScalarWhereInput[]
+  OR?: Prisma.LoyaltyMemberScalarWhereInput[]
+  NOT?: Prisma.LoyaltyMemberScalarWhereInput | Prisma.LoyaltyMemberScalarWhereInput[]
+  id?: Prisma.StringFilter<"LoyaltyMember"> | string
+  restaurantId?: Prisma.StringFilter<"LoyaltyMember"> | string
+  groupId?: Prisma.StringNullableFilter<"LoyaltyMember"> | string | null
+  phone?: Prisma.StringFilter<"LoyaltyMember"> | string
+  name?: Prisma.StringFilter<"LoyaltyMember"> | string
+  email?: Prisma.StringNullableFilter<"LoyaltyMember"> | string | null
+  birthDate?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
+  memberNumber?: Prisma.StringFilter<"LoyaltyMember"> | string
+  points?: Prisma.IntFilter<"LoyaltyMember"> | number
+  totalSpent?: Prisma.FloatFilter<"LoyaltyMember"> | number
+  createdAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
+}
+
 export type LoyaltyMemberCreateWithoutRestaurantInput = {
   id?: string
   phone: string
@@ -611,12 +753,14 @@ export type LoyaltyMemberCreateWithoutRestaurantInput = {
   totalSpent?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  group?: Prisma.RestaurantGroupCreateNestedOneWithoutLoyaltyMembersInput
   transactions?: Prisma.LoyaltyTransactionCreateNestedManyWithoutMemberInput
   coupons?: Prisma.LoyaltyCouponCreateNestedManyWithoutMemberInput
 }
 
 export type LoyaltyMemberUncheckedCreateWithoutRestaurantInput = {
   id?: string
+  groupId?: string | null
   phone: string
   name: string
   email?: string | null
@@ -656,23 +800,6 @@ export type LoyaltyMemberUpdateManyWithWhereWithoutRestaurantInput = {
   data: Prisma.XOR<Prisma.LoyaltyMemberUpdateManyMutationInput, Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantInput>
 }
 
-export type LoyaltyMemberScalarWhereInput = {
-  AND?: Prisma.LoyaltyMemberScalarWhereInput | Prisma.LoyaltyMemberScalarWhereInput[]
-  OR?: Prisma.LoyaltyMemberScalarWhereInput[]
-  NOT?: Prisma.LoyaltyMemberScalarWhereInput | Prisma.LoyaltyMemberScalarWhereInput[]
-  id?: Prisma.StringFilter<"LoyaltyMember"> | string
-  restaurantId?: Prisma.StringFilter<"LoyaltyMember"> | string
-  phone?: Prisma.StringFilter<"LoyaltyMember"> | string
-  name?: Prisma.StringFilter<"LoyaltyMember"> | string
-  email?: Prisma.StringNullableFilter<"LoyaltyMember"> | string | null
-  birthDate?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
-  memberNumber?: Prisma.StringFilter<"LoyaltyMember"> | string
-  points?: Prisma.IntFilter<"LoyaltyMember"> | number
-  totalSpent?: Prisma.FloatFilter<"LoyaltyMember"> | number
-  createdAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
-}
-
 export type LoyaltyMemberCreateWithoutTransactionsInput = {
   id?: string
   phone: string
@@ -685,12 +812,14 @@ export type LoyaltyMemberCreateWithoutTransactionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutLoyaltyMembersInput
+  group?: Prisma.RestaurantGroupCreateNestedOneWithoutLoyaltyMembersInput
   coupons?: Prisma.LoyaltyCouponCreateNestedManyWithoutMemberInput
 }
 
 export type LoyaltyMemberUncheckedCreateWithoutTransactionsInput = {
   id?: string
   restaurantId: string
+  groupId?: string | null
   phone: string
   name: string
   email?: string | null
@@ -731,12 +860,14 @@ export type LoyaltyMemberUpdateWithoutTransactionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutLoyaltyMembersNestedInput
+  group?: Prisma.RestaurantGroupUpdateOneWithoutLoyaltyMembersNestedInput
   coupons?: Prisma.LoyaltyCouponUpdateManyWithoutMemberNestedInput
 }
 
 export type LoyaltyMemberUncheckedUpdateWithoutTransactionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -761,12 +892,14 @@ export type LoyaltyMemberCreateWithoutCouponsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutLoyaltyMembersInput
+  group?: Prisma.RestaurantGroupCreateNestedOneWithoutLoyaltyMembersInput
   transactions?: Prisma.LoyaltyTransactionCreateNestedManyWithoutMemberInput
 }
 
 export type LoyaltyMemberUncheckedCreateWithoutCouponsInput = {
   id?: string
   restaurantId: string
+  groupId?: string | null
   phone: string
   name: string
   email?: string | null
@@ -807,12 +940,14 @@ export type LoyaltyMemberUpdateWithoutCouponsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutLoyaltyMembersNestedInput
+  group?: Prisma.RestaurantGroupUpdateOneWithoutLoyaltyMembersNestedInput
   transactions?: Prisma.LoyaltyTransactionUpdateManyWithoutMemberNestedInput
 }
 
 export type LoyaltyMemberUncheckedUpdateWithoutCouponsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -825,8 +960,69 @@ export type LoyaltyMemberUncheckedUpdateWithoutCouponsInput = {
   transactions?: Prisma.LoyaltyTransactionUncheckedUpdateManyWithoutMemberNestedInput
 }
 
+export type LoyaltyMemberCreateManyGroupInput = {
+  id?: string
+  restaurantId: string
+  phone: string
+  name: string
+  email?: string | null
+  birthDate?: Date | string | null
+  memberNumber: string
+  points?: number
+  totalSpent?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type LoyaltyMemberUpdateWithoutGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  birthDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutLoyaltyMembersNestedInput
+  transactions?: Prisma.LoyaltyTransactionUpdateManyWithoutMemberNestedInput
+  coupons?: Prisma.LoyaltyCouponUpdateManyWithoutMemberNestedInput
+}
+
+export type LoyaltyMemberUncheckedUpdateWithoutGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  birthDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  transactions?: Prisma.LoyaltyTransactionUncheckedUpdateManyWithoutMemberNestedInput
+  coupons?: Prisma.LoyaltyCouponUncheckedUpdateManyWithoutMemberNestedInput
+}
+
+export type LoyaltyMemberUncheckedUpdateManyWithoutGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  restaurantId?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  birthDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type LoyaltyMemberCreateManyRestaurantInput = {
   id?: string
+  groupId?: string | null
   phone: string
   name: string
   email?: string | null
@@ -849,12 +1045,14 @@ export type LoyaltyMemberUpdateWithoutRestaurantInput = {
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  group?: Prisma.RestaurantGroupUpdateOneWithoutLoyaltyMembersNestedInput
   transactions?: Prisma.LoyaltyTransactionUpdateManyWithoutMemberNestedInput
   coupons?: Prisma.LoyaltyCouponUpdateManyWithoutMemberNestedInput
 }
 
 export type LoyaltyMemberUncheckedUpdateWithoutRestaurantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -870,6 +1068,7 @@ export type LoyaltyMemberUncheckedUpdateWithoutRestaurantInput = {
 
 export type LoyaltyMemberUncheckedUpdateManyWithoutRestaurantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -924,6 +1123,7 @@ export type LoyaltyMemberCountOutputTypeCountCouponsArgs<ExtArgs extends runtime
 export type LoyaltyMemberSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   restaurantId?: boolean
+  groupId?: boolean
   phone?: boolean
   name?: boolean
   email?: boolean
@@ -934,6 +1134,7 @@ export type LoyaltyMemberSelect<ExtArgs extends runtime.Types.Extensions.Interna
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
+  group?: boolean | Prisma.LoyaltyMember$groupArgs<ExtArgs>
   transactions?: boolean | Prisma.LoyaltyMember$transactionsArgs<ExtArgs>
   coupons?: boolean | Prisma.LoyaltyMember$couponsArgs<ExtArgs>
   _count?: boolean | Prisma.LoyaltyMemberCountOutputTypeDefaultArgs<ExtArgs>
@@ -942,6 +1143,7 @@ export type LoyaltyMemberSelect<ExtArgs extends runtime.Types.Extensions.Interna
 export type LoyaltyMemberSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   restaurantId?: boolean
+  groupId?: boolean
   phone?: boolean
   name?: boolean
   email?: boolean
@@ -952,11 +1154,13 @@ export type LoyaltyMemberSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
+  group?: boolean | Prisma.LoyaltyMember$groupArgs<ExtArgs>
 }, ExtArgs["result"]["loyaltyMember"]>
 
 export type LoyaltyMemberSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   restaurantId?: boolean
+  groupId?: boolean
   phone?: boolean
   name?: boolean
   email?: boolean
@@ -967,11 +1171,13 @@ export type LoyaltyMemberSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
+  group?: boolean | Prisma.LoyaltyMember$groupArgs<ExtArgs>
 }, ExtArgs["result"]["loyaltyMember"]>
 
 export type LoyaltyMemberSelectScalar = {
   id?: boolean
   restaurantId?: boolean
+  groupId?: boolean
   phone?: boolean
   name?: boolean
   email?: boolean
@@ -983,30 +1189,35 @@ export type LoyaltyMemberSelectScalar = {
   updatedAt?: boolean
 }
 
-export type LoyaltyMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "phone" | "name" | "email" | "birthDate" | "memberNumber" | "points" | "totalSpent" | "createdAt" | "updatedAt", ExtArgs["result"]["loyaltyMember"]>
+export type LoyaltyMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "groupId" | "phone" | "name" | "email" | "birthDate" | "memberNumber" | "points" | "totalSpent" | "createdAt" | "updatedAt", ExtArgs["result"]["loyaltyMember"]>
 export type LoyaltyMemberInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
+  group?: boolean | Prisma.LoyaltyMember$groupArgs<ExtArgs>
   transactions?: boolean | Prisma.LoyaltyMember$transactionsArgs<ExtArgs>
   coupons?: boolean | Prisma.LoyaltyMember$couponsArgs<ExtArgs>
   _count?: boolean | Prisma.LoyaltyMemberCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type LoyaltyMemberIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
+  group?: boolean | Prisma.LoyaltyMember$groupArgs<ExtArgs>
 }
 export type LoyaltyMemberIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
+  group?: boolean | Prisma.LoyaltyMember$groupArgs<ExtArgs>
 }
 
 export type $LoyaltyMemberPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "LoyaltyMember"
   objects: {
     restaurant: Prisma.$RestaurantPayload<ExtArgs>
+    group: Prisma.$RestaurantGroupPayload<ExtArgs> | null
     transactions: Prisma.$LoyaltyTransactionPayload<ExtArgs>[]
     coupons: Prisma.$LoyaltyCouponPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     restaurantId: string
+    groupId: string | null
     phone: string
     name: string
     email: string | null
@@ -1411,6 +1622,7 @@ readonly fields: LoyaltyMemberFieldRefs;
 export interface Prisma__LoyaltyMemberClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   restaurant<T extends Prisma.RestaurantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RestaurantDefaultArgs<ExtArgs>>): Prisma.Prisma__RestaurantClient<runtime.Types.Result.GetResult<Prisma.$RestaurantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  group<T extends Prisma.LoyaltyMember$groupArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.LoyaltyMember$groupArgs<ExtArgs>>): Prisma.Prisma__RestaurantGroupClient<runtime.Types.Result.GetResult<Prisma.$RestaurantGroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   transactions<T extends Prisma.LoyaltyMember$transactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.LoyaltyMember$transactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LoyaltyTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   coupons<T extends Prisma.LoyaltyMember$couponsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.LoyaltyMember$couponsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LoyaltyCouponPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1444,6 +1656,7 @@ export interface Prisma__LoyaltyMemberClient<T, Null = never, ExtArgs extends ru
 export interface LoyaltyMemberFieldRefs {
   readonly id: Prisma.FieldRef<"LoyaltyMember", 'String'>
   readonly restaurantId: Prisma.FieldRef<"LoyaltyMember", 'String'>
+  readonly groupId: Prisma.FieldRef<"LoyaltyMember", 'String'>
   readonly phone: Prisma.FieldRef<"LoyaltyMember", 'String'>
   readonly name: Prisma.FieldRef<"LoyaltyMember", 'String'>
   readonly email: Prisma.FieldRef<"LoyaltyMember", 'String'>
@@ -1851,6 +2064,25 @@ export type LoyaltyMemberDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many LoyaltyMembers to delete.
    */
   limit?: number
+}
+
+/**
+ * LoyaltyMember.group
+ */
+export type LoyaltyMember$groupArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RestaurantGroup
+   */
+  select?: Prisma.RestaurantGroupSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RestaurantGroup
+   */
+  omit?: Prisma.RestaurantGroupOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RestaurantGroupInclude<ExtArgs> | null
+  where?: Prisma.RestaurantGroupWhereInput
 }
 
 /**

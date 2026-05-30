@@ -38,12 +38,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        await prisma.user.update({ where: { id: user.id }, data: { lastActivityAt: new Date() } });
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
           role: user.role,
+          mustChangePassword: user.mustChangePassword,
         };
       },
     }),
@@ -53,6 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = (user as { role: Role }).role;
         token.id = user.id;
+        token.mustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword ?? false;
       }
       return token;
     },
@@ -60,6 +64,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
+        (session.user as { mustChangePassword?: boolean }).mustChangePassword = token.mustChangePassword as boolean;
       }
       return session;
     },

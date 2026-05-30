@@ -52,9 +52,11 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  PasswordPolicy: 'PasswordPolicy',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
+  RestaurantGroup: 'RestaurantGroup',
   Restaurant: 'Restaurant',
   RestaurantUser: 'RestaurantUser',
   Menu: 'Menu',
@@ -104,6 +106,9 @@ export const UserScalarFieldEnum = {
   role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  mustChangePassword: 'mustChangePassword',
+  passwordChangedAt: 'passwordChangedAt',
+  lastActivityAt: 'lastActivityAt',
   termsAccepted: 'termsAccepted',
   termsAcceptedAt: 'termsAcceptedAt',
   termsAcceptedIp: 'termsAcceptedIp',
@@ -111,6 +116,20 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const PasswordPolicyScalarFieldEnum = {
+  id: 'id',
+  maxAgeDays: 'maxAgeDays',
+  minLength: 'minLength',
+  requireUppercase: 'requireUppercase',
+  requireNumbers: 'requireNumbers',
+  requireSymbols: 'requireSymbols',
+  idleTimeoutMinutes: 'idleTimeoutMinutes',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PasswordPolicyScalarFieldEnum = (typeof PasswordPolicyScalarFieldEnum)[keyof typeof PasswordPolicyScalarFieldEnum]
 
 
 export const AccountScalarFieldEnum = {
@@ -150,6 +169,16 @@ export const VerificationTokenScalarFieldEnum = {
 export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
 
 
+export const RestaurantGroupScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  logo: 'logo',
+  createdAt: 'createdAt'
+} as const
+
+export type RestaurantGroupScalarFieldEnum = (typeof RestaurantGroupScalarFieldEnum)[keyof typeof RestaurantGroupScalarFieldEnum]
+
+
 export const RestaurantScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -183,6 +212,7 @@ export const RestaurantScalarFieldEnum = {
   googleReview: 'googleReview',
   showPhonePublic: 'showPhonePublic',
   showAddressPublic: 'showAddressPublic',
+  groupId: 'groupId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -425,6 +455,7 @@ export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typ
 export const LoyaltyMemberScalarFieldEnum = {
   id: 'id',
   restaurantId: 'restaurantId',
+  groupId: 'groupId',
   phone: 'phone',
   name: 'name',
   email: 'email',
@@ -456,6 +487,8 @@ export const LoyaltyCouponScalarFieldEnum = {
   id: 'id',
   memberId: 'memberId',
   restaurantId: 'restaurantId',
+  validForGroupId: 'validForGroupId',
+  usedAtRestaurantId: 'usedAtRestaurantId',
   code: 'code',
   type: 'type',
   value: 'value',

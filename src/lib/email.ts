@@ -132,6 +132,85 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
   });
 }
 
+export async function sendTempPasswordEmail(email: string, tempPassword: string, name?: string | null) {
+  const displayName = name ?? email;
+  const adminUrl = process.env.NEXTAUTH_URL ?? "https://tech4bites.com";
+
+  await createTransport().sendMail({
+    from: `"Tech4Bites" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: `גישה למערכת Tech4Bites – פרטי כניסה`,
+    html: `
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d0b0e;font-family:Arial,sans-serif;direction:rtl;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0b0e;padding:40px 0;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#110f12;border:1px solid rgba(201,164,82,0.18);border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#0a0804,#1c1205,#3d2b00);padding:36px 32px;text-align:center;border-bottom:1px solid rgba(201,164,82,0.15);">
+            <div style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:white;letter-spacing:5px;">TECH4<span style="color:#C9A452;">BITES</span></div>
+            <div style="font-size:11px;color:rgba(201,164,82,0.55);margin-top:6px;letter-spacing:2px;">פורטל ניהול מסעדות</div>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 36px 24px;">
+            <p style="font-size:16px;color:#d8cfc0;margin:0 0 8px;">שלום ${displayName},</p>
+            <p style="font-size:14px;color:#6b6070;line-height:1.7;margin:0 0 28px;">
+              נוצר עבורך חשבון חדש במערכת הניהול של Tech4Bites.<br>
+              להלן פרטי הכניסה הזמניים שלך — <strong style="color:#dfc07e;">נדרש לשנות סיסמה בכניסה הראשונה.</strong>
+            </p>
+            <!-- Credentials box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(201,164,82,0.07);border:1px solid rgba(201,164,82,0.22);border-radius:14px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:24px 28px;">
+                  <div style="margin-bottom:16px;">
+                    <div style="font-size:10px;font-weight:700;color:#6b6070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;">אימייל</div>
+                    <div style="font-size:15px;color:white;font-family:'Courier New',monospace;" dir="ltr">${email}</div>
+                  </div>
+                  <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:16px;">
+                    <div style="font-size:10px;font-weight:700;color:#6b6070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;">סיסמה זמנית</div>
+                    <div style="font-size:22px;font-weight:900;color:#C9A452;font-family:'Courier New',monospace;letter-spacing:3px;" dir="ltr">${tempPassword}</div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+            <!-- Warning -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(239,68,68,0.08);border-right:3px solid #ef4444;border-radius:8px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:14px 18px;">
+                  <div style="font-size:13px;color:#fca5a5;font-weight:600;">⚠ אל תשתף את הסיסמה הזמנית</div>
+                  <div style="font-size:12px;color:#6b6070;margin-top:4px;line-height:1.6;">עם כניסתך הראשונה תתבקש לבחור סיסמה אישית חדשה. הסיסמה הזמנית תפוג לאחר השימוש הראשון.</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- CTA -->
+        <tr>
+          <td style="padding:0 36px 36px;text-align:center;">
+            <a href="${adminUrl}/login" style="display:inline-block;padding:14px 44px;background:linear-gradient(135deg,#6b470d,#C9A452);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;letter-spacing:0.5px;">
+              כניסה למערכת ←
+            </a>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:rgba(0,0,0,0.3);padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+            <p style="font-size:11px;color:#4a4050;margin:0;">© 2026 Tech4Bites · כל הזכויות שמורות</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+}
+
 export async function sendOtpEmail(email: string, otp: string, name?: string | null) {
   const displayName = name ?? email;
 
