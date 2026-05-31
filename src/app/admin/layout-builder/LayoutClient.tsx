@@ -707,8 +707,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [snapOn, setSnapOn]       = useState(false);
   const [showBg, setShowBg]       = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(210);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const sidebarResizing = useRef(false);
@@ -1582,21 +1581,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
         {/* Sidebar */}
         <div
-          onMouseLeave={() => { if (!sidebarPinned && showSidebar) setShowSidebar(false); }}
-          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.30)", backdropFilter: "blur(10px)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative", zIndex: sidebarPinned ? "auto" as never : 10 }}>
+          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.30)", backdropFilter: "blur(10px)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative" }}>
 
-          {/* Header row: collapse + pin */}
+          {/* Header row: collapse toggle */}
           <div style={{ display: "flex", alignItems: "center", borderBottom: "1px solid rgba(212,160,23,0.12)", flexShrink: 0 }}>
             <button onClick={() => setShowSidebar(s => !s)} title={showSidebar ? "כווץ סרגל" : "פתח סרגל"}
               style={{ flex: 1, padding: "7px 0", background: "none", border: "none", color: C.gold, fontSize: 13, cursor: "pointer", lineHeight: 1 }}>
               {showSidebar ? "◁" : "▷"}
             </button>
-            {showSidebar && (
-              <button onClick={() => setSidebarPinned(s => !s)} title={sidebarPinned ? "בטל נעיצה" : "נעץ סרגל"}
-                style={{ padding: "7px 8px", background: "none", border: "none", color: sidebarPinned ? C.gold : "rgba(212,160,23,0.35)", fontSize: 13, cursor: "pointer", lineHeight: 1, flexShrink: 0 }}>
-                📌
-              </button>
-            )}
           </div>
 
           {/* Resize handle */}
