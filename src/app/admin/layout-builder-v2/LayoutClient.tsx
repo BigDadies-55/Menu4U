@@ -114,7 +114,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh }: {
     ctx.fillStyle = "#0d0404";
     ctx.fillRect(0, 0, MW, MH);
     for (const t of room.tables) {
-      const cfg = STATUS_CFG[t.status];
+      const cfg = STATUS_CFG[t.status] ?? STATUS_CFG.free;
       ctx.fillStyle = cfg.color + "80";
       ctx.strokeStyle = cfg.color;
       ctx.lineWidth = 0.5;
@@ -183,7 +183,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
   onSeatedClick: (e: React.MouseEvent) => void;
 }) {
   const { w, h, shape, status, num, name, seatedCount, seats, rot, customColor } = table;
-  const cfg  = STATUS_CFG[status];
+  const cfg  = STATUS_CFG[status] ?? STATUS_CFG.free;
   const bg   = customColor ? `radial-gradient(circle at 40% 35%,${customColor}cc,${customColor}44)` : cfg.bg;
   const brd  = customColor || cfg.border;
   const br   = SHAPE_BR[shape];
