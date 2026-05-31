@@ -132,6 +132,74 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
   });
 }
 
+export async function sendInviteEmail(email: string, inviteLink: string, name?: string | null) {
+  const displayName = name ?? email;
+  const adminUrl = process.env.NEXTAUTH_URL ?? "https://tech4bites.com";
+
+  await createTransport().sendMail({
+    from: `"Tech4Bites" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: `הוזמנת להצטרף למערכת Tech4Bites`,
+    html: `
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d0b0e;font-family:Arial,sans-serif;direction:rtl;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0b0e;padding:40px 0;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#110f12;border:1px solid rgba(201,164,82,0.18);border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#0a0804,#1c1205,#3d2b00);padding:36px 32px;text-align:center;border-bottom:1px solid rgba(201,164,82,0.15);">
+            <div style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:white;letter-spacing:5px;">TECH4<span style="color:#C9A452;">BITES</span></div>
+            <div style="font-size:11px;color:rgba(201,164,82,0.55);margin-top:6px;letter-spacing:2px;">פורטל ניהול מסעדות</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 36px 24px;">
+            <p style="font-size:16px;color:#d8cfc0;margin:0 0 8px;">שלום ${displayName},</p>
+            <p style="font-size:14px;color:#6b6070;line-height:1.7;margin:0 0 28px;">
+              הוזמנת להצטרף למערכת הניהול של Tech4Bites.<br>
+              לחץ על הכפתור למטה כדי לבחור סיסמה ולהתחיל להשתמש במערכת.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(201,164,82,0.07);border:1px solid rgba(201,164,82,0.22);border-radius:14px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:20px 28px;">
+                  <div style="font-size:11px;font-weight:700;color:#6b6070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">הזמנה עבור</div>
+                  <div style="font-size:15px;color:white;font-family:'Courier New',monospace;" dir="ltr">${email}</div>
+                </td>
+              </tr>
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(239,68,68,0.07);border-right:3px solid rgba(239,68,68,0.5);border-radius:8px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:12px 16px;">
+                  <div style="font-size:12px;color:#fca5a5;">⏱ הקישור תקף ל-72 שעות בלבד</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 36px 36px;text-align:center;">
+            <a href="${inviteLink}" style="display:inline-block;padding:14px 44px;background:linear-gradient(135deg,#6b470d,#C9A452);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;letter-spacing:0.5px;">
+              הגדר סיסמה והצטרף ←
+            </a>
+            <p style="font-size:11px;color:#4a4050;margin-top:16px;">אם הכפתור לא עובד, העתק את הקישור:</p>
+            <p style="font-size:10px;color:#6b6070;word-break:break-all;" dir="ltr">${inviteLink}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:rgba(0,0,0,0.3);padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+            <p style="font-size:11px;color:#4a4050;margin:0;">© 2026 Tech4Bites · כל הזכויות שמורות</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+}
+
 export async function sendTempPasswordEmail(email: string, tempPassword: string, name?: string | null) {
   const displayName = name ?? email;
   const adminUrl = process.env.NEXTAUTH_URL ?? "https://tech4bites.com";

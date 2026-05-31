@@ -38,7 +38,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        await prisma.user.update({ where: { id: user.id }, data: { lastActivityAt: new Date() } });
+        await prisma.user.update({ where: { id: user.id }, data: { lastActivityAt: new Date(), lastLoginAt: new Date() } });
+
+        const policy = await prisma.passwordPolicy.findUnique({ where: { id: "default" } });
 
         return {
           id: user.id,
@@ -47,6 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           image: user.image,
           role: user.role,
           mustChangePassword: user.mustChangePassword,
+          idleTimeoutMinutes: policy?.idleTimeoutMinutes ?? 0,
         };
       },
     }),
@@ -57,6 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = (user as { role: Role }).role;
         token.id = user.id;
         token.mustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword ?? false;
+        token.idleTimeoutMinutes = (user as { idleTimeoutMinutes?: number }).idleTimeoutMinutes ?? 0;
       }
       return token;
     },
@@ -65,6 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
         (session.user as { mustChangePassword?: boolean }).mustChangePassword = token.mustChangePassword as boolean;
+        (session.user as { idleTimeoutMinutes?: number }).idleTimeoutMinutes = token.idleTimeoutMinutes as number ?? 0;
       }
       return session;
     },

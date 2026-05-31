@@ -106,6 +106,7 @@ const sqls = [
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "passwordChangedAt" TIMESTAMP(3);`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastActivityAt" TIMESTAMP(3);`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastLoginAt" TIMESTAMP(3);`,
   `CREATE TABLE IF NOT EXISTS "PasswordPolicy" (
     "id" TEXT NOT NULL DEFAULT 'default',
     "maxAgeDays" INTEGER NOT NULL DEFAULT 0,

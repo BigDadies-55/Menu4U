@@ -1,28 +1,12 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { isAdmin } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 import { logAudit, getIp } from "@/lib/audit";
-import { sendTempPasswordEmail } from "@/lib/email";
-
-function generateTempPassword(): string {
-  const upper = "ABCDEFGHJKMNPQRSTUVWXYZ";
-  const lower = "abcdefghjkmnpqrstuvwxyz";
-  const digits = "23456789";
-  const symbols = "!@#$%&*";
-  const all = upper + lower + digits + symbols;
-  // Guarantee at least one of each required type
-  const required = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    symbols[Math.floor(Math.random() * symbols.length)],
-  ];
-  const rest = Array.from({ length: 8 }, () => all[Math.floor(Math.random() * all.length)]);
-  return [...required, ...rest].sort(() => Math.random() - 0.5).join("");
-}
+import { sendInviteEmail } from "@/lib/email";
+import { hashOtp } from "@/lib/otp";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -31,7 +15,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, email, role } = body;
+  const { name, email, role, restaurantIds = [] } = body;
 
   if (!email) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -52,20 +36,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
   }
 
-  const tempPassword = generateTempPassword();
-  const hashed = await bcrypt.hash(tempPassword, 12);
-
   let user;
   try {
     user = await prisma.user.create({
       data: {
         name: name || null,
         email,
-        password: hashed,
+        password: null,         // set by the user when they accept the invite
         role: (role as Role) ?? "VIEWER",
-        mustChangePassword: true,
-        passwordChangedAt: null,
-        emailVerified: new Date(),
+        mustChangePassword: false,
+        emailVerified: null,    // set only after invite is accepted
+        ...(restaurantIds.length > 0 ? {
+          restaurantUsers: {
+            create: (restaurantIds as string[]).map((rid) => ({ restaurantId: rid })),
+          },
+        } : {}),
       },
       select: { id: true, name: true, email: true, role: true, createdAt: true, mustChangePassword: true },
     });
@@ -75,6 +60,17 @@ export async function POST(req: Request) {
     }
     throw err;
   }
+
+  // Generate invite token — 72 h expiry
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = hashOtp(rawToken);
+  const expires = new Date(Date.now() + 72 * 60 * 60 * 1000);
+  await prisma.verificationToken.create({
+    data: { identifier: email, token: hashedToken, expires },
+  });
+
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const inviteLink = `${baseUrl}/accept-invite?token=${rawToken}`;
 
   await logAudit({
     userId: session.user.id,
@@ -87,20 +83,26 @@ export async function POST(req: Request) {
     ip: getIp(req),
   });
 
-  // Send temp password email
-  const hasEmail = !!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD;
+  const hasEmailService = !!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD;
   let emailSent = false;
-  if (hasEmail) {
+  if (hasEmailService) {
     try {
-      await sendTempPasswordEmail(email, tempPassword, name);
+      await sendInviteEmail(email, inviteLink, name);
       emailSent = true;
     } catch (err) {
-      console.error("[email] Failed to send temp password email:", err);
+      console.error("[email] Failed to send invite email:", err);
     }
   }
 
   return NextResponse.json(
-    { ...user, emailVerified: null, restaurantUsers: [], emailSent },
+    {
+      ...user,
+      emailVerified: null,
+      restaurantUsers: [],
+      emailSent,
+      // expose invite link only when email was not sent (so admin can share it manually)
+      inviteLink: emailSent ? undefined : inviteLink,
+    },
     { status: 201 }
   );
 }

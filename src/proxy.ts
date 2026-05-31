@@ -27,6 +27,7 @@ export default auth((req: NextAuthRequest) => {
     return NextResponse.next();
   }
 
+
   // Redirect unauthenticated users away from /admin
   if (pathname.startsWith("/admin") && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url));

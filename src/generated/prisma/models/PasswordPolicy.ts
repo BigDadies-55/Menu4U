@@ -29,12 +29,14 @@ export type AggregatePasswordPolicy = {
 export type PasswordPolicyAvgAggregateOutputType = {
   maxAgeDays: number | null
   minLength: number | null
+  historyCount: number | null
   idleTimeoutMinutes: number | null
 }
 
 export type PasswordPolicySumAggregateOutputType = {
   maxAgeDays: number | null
   minLength: number | null
+  historyCount: number | null
   idleTimeoutMinutes: number | null
 }
 
@@ -42,6 +44,7 @@ export type PasswordPolicyMinAggregateOutputType = {
   id: string | null
   maxAgeDays: number | null
   minLength: number | null
+  historyCount: number | null
   requireUppercase: boolean | null
   requireNumbers: boolean | null
   requireSymbols: boolean | null
@@ -53,6 +56,7 @@ export type PasswordPolicyMaxAggregateOutputType = {
   id: string | null
   maxAgeDays: number | null
   minLength: number | null
+  historyCount: number | null
   requireUppercase: boolean | null
   requireNumbers: boolean | null
   requireSymbols: boolean | null
@@ -64,6 +68,7 @@ export type PasswordPolicyCountAggregateOutputType = {
   id: number
   maxAgeDays: number
   minLength: number
+  historyCount: number
   requireUppercase: number
   requireNumbers: number
   requireSymbols: number
@@ -76,12 +81,14 @@ export type PasswordPolicyCountAggregateOutputType = {
 export type PasswordPolicyAvgAggregateInputType = {
   maxAgeDays?: true
   minLength?: true
+  historyCount?: true
   idleTimeoutMinutes?: true
 }
 
 export type PasswordPolicySumAggregateInputType = {
   maxAgeDays?: true
   minLength?: true
+  historyCount?: true
   idleTimeoutMinutes?: true
 }
 
@@ -89,6 +96,7 @@ export type PasswordPolicyMinAggregateInputType = {
   id?: true
   maxAgeDays?: true
   minLength?: true
+  historyCount?: true
   requireUppercase?: true
   requireNumbers?: true
   requireSymbols?: true
@@ -100,6 +108,7 @@ export type PasswordPolicyMaxAggregateInputType = {
   id?: true
   maxAgeDays?: true
   minLength?: true
+  historyCount?: true
   requireUppercase?: true
   requireNumbers?: true
   requireSymbols?: true
@@ -111,6 +120,7 @@ export type PasswordPolicyCountAggregateInputType = {
   id?: true
   maxAgeDays?: true
   minLength?: true
+  historyCount?: true
   requireUppercase?: true
   requireNumbers?: true
   requireSymbols?: true
@@ -209,6 +219,7 @@ export type PasswordPolicyGroupByOutputType = {
   id: string
   maxAgeDays: number
   minLength: number
+  historyCount: number
   requireUppercase: boolean
   requireNumbers: boolean
   requireSymbols: boolean
@@ -243,6 +254,7 @@ export type PasswordPolicyWhereInput = {
   id?: Prisma.StringFilter<"PasswordPolicy"> | string
   maxAgeDays?: Prisma.IntFilter<"PasswordPolicy"> | number
   minLength?: Prisma.IntFilter<"PasswordPolicy"> | number
+  historyCount?: Prisma.IntFilter<"PasswordPolicy"> | number
   requireUppercase?: Prisma.BoolFilter<"PasswordPolicy"> | boolean
   requireNumbers?: Prisma.BoolFilter<"PasswordPolicy"> | boolean
   requireSymbols?: Prisma.BoolFilter<"PasswordPolicy"> | boolean
@@ -254,6 +266,7 @@ export type PasswordPolicyOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   maxAgeDays?: Prisma.SortOrder
   minLength?: Prisma.SortOrder
+  historyCount?: Prisma.SortOrder
   requireUppercase?: Prisma.SortOrder
   requireNumbers?: Prisma.SortOrder
   requireSymbols?: Prisma.SortOrder
@@ -268,6 +281,7 @@ export type PasswordPolicyWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.PasswordPolicyWhereInput | Prisma.PasswordPolicyWhereInput[]
   maxAgeDays?: Prisma.IntFilter<"PasswordPolicy"> | number
   minLength?: Prisma.IntFilter<"PasswordPolicy"> | number
+  historyCount?: Prisma.IntFilter<"PasswordPolicy"> | number
   requireUppercase?: Prisma.BoolFilter<"PasswordPolicy"> | boolean
   requireNumbers?: Prisma.BoolFilter<"PasswordPolicy"> | boolean
   requireSymbols?: Prisma.BoolFilter<"PasswordPolicy"> | boolean
@@ -279,6 +293,7 @@ export type PasswordPolicyOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   maxAgeDays?: Prisma.SortOrder
   minLength?: Prisma.SortOrder
+  historyCount?: Prisma.SortOrder
   requireUppercase?: Prisma.SortOrder
   requireNumbers?: Prisma.SortOrder
   requireSymbols?: Prisma.SortOrder
@@ -298,6 +313,7 @@ export type PasswordPolicyScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"PasswordPolicy"> | string
   maxAgeDays?: Prisma.IntWithAggregatesFilter<"PasswordPolicy"> | number
   minLength?: Prisma.IntWithAggregatesFilter<"PasswordPolicy"> | number
+  historyCount?: Prisma.IntWithAggregatesFilter<"PasswordPolicy"> | number
   requireUppercase?: Prisma.BoolWithAggregatesFilter<"PasswordPolicy"> | boolean
   requireNumbers?: Prisma.BoolWithAggregatesFilter<"PasswordPolicy"> | boolean
   requireSymbols?: Prisma.BoolWithAggregatesFilter<"PasswordPolicy"> | boolean
@@ -309,6 +325,7 @@ export type PasswordPolicyCreateInput = {
   id?: string
   maxAgeDays?: number
   minLength?: number
+  historyCount?: number
   requireUppercase?: boolean
   requireNumbers?: boolean
   requireSymbols?: boolean
@@ -320,6 +337,7 @@ export type PasswordPolicyUncheckedCreateInput = {
   id?: string
   maxAgeDays?: number
   minLength?: number
+  historyCount?: number
   requireUppercase?: boolean
   requireNumbers?: boolean
   requireSymbols?: boolean
@@ -331,6 +349,7 @@ export type PasswordPolicyUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   maxAgeDays?: Prisma.IntFieldUpdateOperationsInput | number
   minLength?: Prisma.IntFieldUpdateOperationsInput | number
+  historyCount?: Prisma.IntFieldUpdateOperationsInput | number
   requireUppercase?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireNumbers?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireSymbols?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -342,6 +361,7 @@ export type PasswordPolicyUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   maxAgeDays?: Prisma.IntFieldUpdateOperationsInput | number
   minLength?: Prisma.IntFieldUpdateOperationsInput | number
+  historyCount?: Prisma.IntFieldUpdateOperationsInput | number
   requireUppercase?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireNumbers?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireSymbols?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -353,6 +373,7 @@ export type PasswordPolicyCreateManyInput = {
   id?: string
   maxAgeDays?: number
   minLength?: number
+  historyCount?: number
   requireUppercase?: boolean
   requireNumbers?: boolean
   requireSymbols?: boolean
@@ -364,6 +385,7 @@ export type PasswordPolicyUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   maxAgeDays?: Prisma.IntFieldUpdateOperationsInput | number
   minLength?: Prisma.IntFieldUpdateOperationsInput | number
+  historyCount?: Prisma.IntFieldUpdateOperationsInput | number
   requireUppercase?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireNumbers?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireSymbols?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -375,6 +397,7 @@ export type PasswordPolicyUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   maxAgeDays?: Prisma.IntFieldUpdateOperationsInput | number
   minLength?: Prisma.IntFieldUpdateOperationsInput | number
+  historyCount?: Prisma.IntFieldUpdateOperationsInput | number
   requireUppercase?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireNumbers?: Prisma.BoolFieldUpdateOperationsInput | boolean
   requireSymbols?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -386,6 +409,7 @@ export type PasswordPolicyCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   maxAgeDays?: Prisma.SortOrder
   minLength?: Prisma.SortOrder
+  historyCount?: Prisma.SortOrder
   requireUppercase?: Prisma.SortOrder
   requireNumbers?: Prisma.SortOrder
   requireSymbols?: Prisma.SortOrder
@@ -396,6 +420,7 @@ export type PasswordPolicyCountOrderByAggregateInput = {
 export type PasswordPolicyAvgOrderByAggregateInput = {
   maxAgeDays?: Prisma.SortOrder
   minLength?: Prisma.SortOrder
+  historyCount?: Prisma.SortOrder
   idleTimeoutMinutes?: Prisma.SortOrder
 }
 
@@ -403,6 +428,7 @@ export type PasswordPolicyMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   maxAgeDays?: Prisma.SortOrder
   minLength?: Prisma.SortOrder
+  historyCount?: Prisma.SortOrder
   requireUppercase?: Prisma.SortOrder
   requireNumbers?: Prisma.SortOrder
   requireSymbols?: Prisma.SortOrder
@@ -414,6 +440,7 @@ export type PasswordPolicyMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   maxAgeDays?: Prisma.SortOrder
   minLength?: Prisma.SortOrder
+  historyCount?: Prisma.SortOrder
   requireUppercase?: Prisma.SortOrder
   requireNumbers?: Prisma.SortOrder
   requireSymbols?: Prisma.SortOrder
@@ -424,6 +451,7 @@ export type PasswordPolicyMinOrderByAggregateInput = {
 export type PasswordPolicySumOrderByAggregateInput = {
   maxAgeDays?: Prisma.SortOrder
   minLength?: Prisma.SortOrder
+  historyCount?: Prisma.SortOrder
   idleTimeoutMinutes?: Prisma.SortOrder
 }
 
@@ -441,6 +469,7 @@ export type PasswordPolicySelect<ExtArgs extends runtime.Types.Extensions.Intern
   id?: boolean
   maxAgeDays?: boolean
   minLength?: boolean
+  historyCount?: boolean
   requireUppercase?: boolean
   requireNumbers?: boolean
   requireSymbols?: boolean
@@ -452,6 +481,7 @@ export type PasswordPolicySelectCreateManyAndReturn<ExtArgs extends runtime.Type
   id?: boolean
   maxAgeDays?: boolean
   minLength?: boolean
+  historyCount?: boolean
   requireUppercase?: boolean
   requireNumbers?: boolean
   requireSymbols?: boolean
@@ -463,6 +493,7 @@ export type PasswordPolicySelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   id?: boolean
   maxAgeDays?: boolean
   minLength?: boolean
+  historyCount?: boolean
   requireUppercase?: boolean
   requireNumbers?: boolean
   requireSymbols?: boolean
@@ -474,6 +505,7 @@ export type PasswordPolicySelectScalar = {
   id?: boolean
   maxAgeDays?: boolean
   minLength?: boolean
+  historyCount?: boolean
   requireUppercase?: boolean
   requireNumbers?: boolean
   requireSymbols?: boolean
@@ -481,7 +513,7 @@ export type PasswordPolicySelectScalar = {
   updatedAt?: boolean
 }
 
-export type PasswordPolicyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "maxAgeDays" | "minLength" | "requireUppercase" | "requireNumbers" | "requireSymbols" | "idleTimeoutMinutes" | "updatedAt", ExtArgs["result"]["passwordPolicy"]>
+export type PasswordPolicyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "maxAgeDays" | "minLength" | "historyCount" | "requireUppercase" | "requireNumbers" | "requireSymbols" | "idleTimeoutMinutes" | "updatedAt", ExtArgs["result"]["passwordPolicy"]>
 
 export type $PasswordPolicyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PasswordPolicy"
@@ -490,6 +522,7 @@ export type $PasswordPolicyPayload<ExtArgs extends runtime.Types.Extensions.Inte
     id: string
     maxAgeDays: number
     minLength: number
+    historyCount: number
     requireUppercase: boolean
     requireNumbers: boolean
     requireSymbols: boolean
@@ -921,6 +954,7 @@ export interface PasswordPolicyFieldRefs {
   readonly id: Prisma.FieldRef<"PasswordPolicy", 'String'>
   readonly maxAgeDays: Prisma.FieldRef<"PasswordPolicy", 'Int'>
   readonly minLength: Prisma.FieldRef<"PasswordPolicy", 'Int'>
+  readonly historyCount: Prisma.FieldRef<"PasswordPolicy", 'Int'>
   readonly requireUppercase: Prisma.FieldRef<"PasswordPolicy", 'Boolean'>
   readonly requireNumbers: Prisma.FieldRef<"PasswordPolicy", 'Boolean'>
   readonly requireSymbols: Prisma.FieldRef<"PasswordPolicy", 'Boolean'>

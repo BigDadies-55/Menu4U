@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  PasswordHistory: 'PasswordHistory',
   PasswordPolicy: 'PasswordPolicy',
   Account: 'Account',
   Session: 'Session',
@@ -109,6 +110,7 @@ export const UserScalarFieldEnum = {
   mustChangePassword: 'mustChangePassword',
   passwordChangedAt: 'passwordChangedAt',
   lastActivityAt: 'lastActivityAt',
+  lastLoginAt: 'lastLoginAt',
   termsAccepted: 'termsAccepted',
   termsAcceptedAt: 'termsAcceptedAt',
   termsAcceptedIp: 'termsAcceptedIp',
@@ -118,10 +120,21 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const PasswordHistoryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  password: 'password',
+  createdAt: 'createdAt'
+} as const
+
+export type PasswordHistoryScalarFieldEnum = (typeof PasswordHistoryScalarFieldEnum)[keyof typeof PasswordHistoryScalarFieldEnum]
+
+
 export const PasswordPolicyScalarFieldEnum = {
   id: 'id',
   maxAgeDays: 'maxAgeDays',
   minLength: 'minLength',
+  historyCount: 'historyCount',
   requireUppercase: 'requireUppercase',
   requireNumbers: 'requireNumbers',
   requireSymbols: 'requireSymbols',

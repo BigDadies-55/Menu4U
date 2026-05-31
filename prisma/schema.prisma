@@ -41,6 +41,7 @@ model User {
   mustChangePassword Boolean   @default(false)
   passwordChangedAt  DateTime?
   lastActivityAt     DateTime?
+  lastLoginAt        DateTime?
 
   termsAccepted          Boolean   @default(false)
   termsAcceptedAt        DateTime?

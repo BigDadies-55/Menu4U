@@ -19,6 +19,7 @@ export const authConfig: NextAuthConfig = {
         token.role = (user as { role: string }).role;
         token.id = user.id;
         token.mustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword ?? false;
+        token.idleTimeoutMinutes = (user as { idleTimeoutMinutes?: number }).idleTimeoutMinutes ?? 0;
       }
       return token;
     },
@@ -28,6 +29,8 @@ export const authConfig: NextAuthConfig = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         session.user.role = token.role as any;
         session.user.mustChangePassword = token.mustChangePassword as boolean ?? false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session.user as any).idleTimeoutMinutes = token.idleTimeoutMinutes as number ?? 0;
       }
       return session;
     },
