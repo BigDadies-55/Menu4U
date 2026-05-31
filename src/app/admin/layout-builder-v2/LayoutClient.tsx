@@ -1452,8 +1452,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <span style={{ fontSize: 13, fontWeight: 800, color: C.gold, whiteSpace: "nowrap", marginRight: 2 }}>פריסת שולחנות</span>
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); loadLayout(e.target.value); }}
-            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", marginLeft: 4 }}>
-            {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            style={{ background: "#1a0a06", border: "1px solid rgba(212,160,23,0.3)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", marginLeft: 4 }}>
+            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a0a06", color: C.text }}>{r.name}</option>)}
           </select>
         )}
 
@@ -1519,8 +1519,12 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           </div>
         ))}
         <button onClick={() => setShowNewRoom(true)} style={{ padding: "6px 10px", fontSize: 11, color: C.muted, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>＋ חדר</button>
-        <div style={{ marginLeft: "auto", paddingBottom: 5, display: "flex", gap: 10, fontSize: 10, color: C.muted }}>
-          <span>לחיצה כפולה = עריכה</span><span>קליק ימני = תפריט</span><span>Del = מחיקה</span><span>G = רשת</span>
+        <div style={{ marginLeft: "auto", paddingBottom: 5, display: "flex", gap: 14, fontSize: 13, fontWeight: 700, color: C.text }}>
+          <span>{activeRoom?.tables.length ?? 0} שולחנות</span>
+          <span style={{ color: C.muted }}>·</span>
+          <span>{activeRoom?.tables.reduce((a, t) => a + t.seats, 0) ?? 0} מקומות</span>
+          <span style={{ color: C.muted }}>·</span>
+          <span>{activeRoom?.tables.reduce((a, t) => a + t.seatedCount, 0) ?? 0} יושבים</span>
         </div>
       </div>
 
@@ -1654,10 +1658,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               </div>
 
 
-              {/* Stats chip */}
-              <div style={{ position: "absolute", top: 10, left: 10, fontSize: 11, color: C.muted, background: "rgba(10,4,2,0.88)", padding: "4px 10px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.07)" }}>
-                {activeRoom?.tables.length ?? 0} שולחנות · {activeRoom?.tables.reduce((a, t) => a + t.seats, 0) ?? 0} מקומות · {activeRoom?.tables.reduce((a, t) => a + t.seatedCount, 0) ?? 0} יושבים
-              </div>
             </>
           )}
         </div>
