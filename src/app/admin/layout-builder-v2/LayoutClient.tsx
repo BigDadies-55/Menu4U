@@ -1454,67 +1454,68 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       {/* ── Topbar ── */}
       <div style={{ padding: "4px 10px", borderBottom: "1px solid rgba(212,160,23,0.2)", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(10px)" }}>
 
-        {/* Title + restaurant */}
-        <span style={{ fontSize: 13, fontWeight: 800, color: C.gold, whiteSpace: "nowrap", marginRight: 2 }}>פריסת שולחנות</span>
-        {restaurants.length > 1 && (
-          <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); loadLayout(e.target.value); }}
-            style={{ background: "#1a0a06", border: "1px solid rgba(212,160,23,0.3)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", marginLeft: 4 }}>
-            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a0a06", color: C.text }}>{r.name}</option>)}
-          </select>
-        )}
+        {/* Save */}
+        <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 16px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? "#4caf50" : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" as const, letterSpacing: ".02em" }}>
+          {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור"}
+        </button>
+
+        {/* Fullscreen */}
+        <TopBtn active={isFullscreen} onClick={() => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }} title={isFullscreen ? "יציאה ממסך מלא" : "מסך מלא"} wide>
+          {isFullscreen ? "⛶ יציאה" : "⛶ מסך מלא"}
+        </TopBtn>
+
+        {/* Clear */}
+        <TopBtn onClick={clearAll} title="נקה הכל" danger wide>✕ נקה</TopBtn>
 
         {/* Sep */}
-        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 4px" }} />
 
-        {/* Zoom controls */}
-        <TopBtn onClick={() => zoomBy(-0.1)} title="הקטן">−</TopBtn>
-        <span style={{ fontSize: 11, color: C.gold, minWidth: 34, textAlign: "center", fontWeight: 700 }}>{Math.round(zoom * 100)}%</span>
+        {/* Autosave with dot indicator */}
+        <button onClick={() => setAutoSave(s => !s)} title="שמירה אוטומטית כל 30 שניות"
+          style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 8px", borderRadius: 8, background: autoSave ? "rgba(212,160,23,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${autoSave ? "rgba(212,160,23,0.35)" : "rgba(255,255,255,0.1)"}`, color: autoSave ? C.gold : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: autoSave ? "#4caf50" : "#555", display: "inline-block", flexShrink: 0 }} />
+          אוטו
+        </button>
+
+        {/* Sep */}
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 4px" }} />
+
+        {/* Select / Undo / Redo */}
+        <TopBtn onClick={selectAll} title="בחר הכל (Ctrl+A)">⊞</TopBtn>
+        <TopBtn onClick={undo} title="בטל (Ctrl+Z)" active={canUndo}>↩</TopBtn>
+        <TopBtn onClick={redo} title="חזור (Ctrl+Y)" active={canRedo}>↪</TopBtn>
+
+        {/* Sep */}
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 4px" }} />
+
+        {/* Zoom */}
         <TopBtn onClick={() => zoomBy(0.1)} title="הגדל">+</TopBtn>
-        <TopBtn onClick={fitView} title="התאם לשולחנות" wide>⤢ התאם</TopBtn>
-        <TopBtn onClick={() => { setZoom(1); setPanX(0); setPanY(0); }} title="100% — קנבס מלא" wide>⌖ 100%</TopBtn>
+        <span style={{ fontSize: 11, color: C.gold, minWidth: 34, textAlign: "center", fontWeight: 700 }}>{Math.round(zoom * 100)}%</span>
+        <TopBtn onClick={() => zoomBy(-0.1)} title="הקטן">−</TopBtn>
 
         {/* Sep */}
-        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 4px" }} />
 
-        {/* Tools dropdown button */}
+        {/* Tools dropdown */}
         <button ref={toolsBtnRef}
-          onClick={() => {
-            if (toolsMenu) { setToolsMenu(null); return; }
-            const r = toolsBtnRef.current!.getBoundingClientRect();
-            setToolsMenu({ x: r.left, y: r.bottom + 2 });
-          }}
+          onClick={() => { if (toolsMenu) { setToolsMenu(null); return; } const r = toolsBtnRef.current!.getBoundingClientRect(); setToolsMenu({ x: r.left, y: r.bottom + 2 }); }}
           style={{ padding: "4px 10px", borderRadius: 8, background: snapOn || showBg || showStats || !!toolsMenu ? "rgba(212,160,23,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${snapOn || showBg || showStats || !!toolsMenu ? "#d4a017" : "rgba(255,255,255,0.13)"}`, color: snapOn || showBg || showStats || !!toolsMenu ? "#ffd700" : "#e9ecef", fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
           ⚙ כלים ▾
         </button>
 
         {/* Sep */}
-        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 4px" }} />
 
-        {/* Undo / Redo / Select-all */}
-        <TopBtn onClick={undo} title="בטל (Ctrl+Z)" active={canUndo}>↩</TopBtn>
-        <TopBtn onClick={redo} title="חזור (Ctrl+Y)" active={canRedo}>↪</TopBtn>
-        <TopBtn onClick={selectAll} title="בחר הכל (Ctrl+A)">⊞</TopBtn>
+        {/* Restaurant selector */}
+        {restaurants.length > 1 && (
+          <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); loadLayout(e.target.value); }}
+            style={{ background: "#1a0a06", border: "1px solid rgba(212,160,23,0.3)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none" }}>
+            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a0a06", color: C.text }}>{r.name}</option>)}
+          </select>
+        )}
 
-        {/* Sep */}
-        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
-
-        {/* Danger + Save */}
-        <TopBtn onClick={clearAll} title="נקה הכל" danger wide>✕ נקה</TopBtn>
-
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
-          <TopBtn active={autoSave} onClick={() => setAutoSave(s => !s)} title="שמירה אוטומטית כל 30 שניות" wide>
-            {autoSave ? "⏱ אוטו" : "⏱ אוטו"}
-          </TopBtn>
-          <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? "#4caf50" : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap", letterSpacing: ".02em" }}>
-            {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור"}
-          </button>
-          <TopBtn active={isFullscreen} onClick={() => {
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
-            else document.exitFullscreen?.();
-          }} title={isFullscreen ? "יציאה ממסך מלא (F11)" : "מסך מלא (F11)"} wide>
-            {isFullscreen ? "⛶ יציאה" : "⛶ מסך מלא"}
-          </TopBtn>
-        </div>
+        {/* Title — pushed to right */}
+        <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 800, color: C.gold, whiteSpace: "nowrap" }}>פריסת שולחנות</span>
       </div>
 
       {/* ── Room tabs ── */}
