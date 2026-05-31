@@ -699,6 +699,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
   const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const toolsBtnRef = useRef<HTMLDivElement>(null);
+  const [toolsMenuPos, setToolsMenuPos] = useState<{ top: number; left: number } | null>(null);
 
   /* inline seated-count edit */
   const [inlineSeated, setInlineSeated] = useState<{ id: string; val: string } | null>(null);
@@ -1406,10 +1408,16 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
         {/* Tools dropdown */}
-        <div style={{ position: "relative" }}>
-          <TopBtn active={showToolsMenu || snapOn || showBg || showStats} onClick={() => setShowToolsMenu(s => !s)} wide title="כלים">⚙ כלים ▾</TopBtn>
-          {showToolsMenu && (
-            <div onMouseLeave={() => setShowToolsMenu(false)} style={{ position: "absolute", top: "100%", right: 0, zIndex: 4000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.4)", borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 150, marginTop: 4 }}>
+        <div ref={toolsBtnRef} style={{ position: "relative" }}>
+          <TopBtn active={showToolsMenu || snapOn || showBg || showStats} onClick={() => {
+            if (!showToolsMenu && toolsBtnRef.current) {
+              const r = toolsBtnRef.current.getBoundingClientRect();
+              setToolsMenuPos({ top: r.bottom + 4, left: r.left });
+            }
+            setShowToolsMenu(s => !s);
+          }} wide title="כלים">⚙ כלים ▾</TopBtn>
+          {showToolsMenu && toolsMenuPos && (
+            <div onMouseLeave={() => setShowToolsMenu(false)} style={{ position: "fixed", top: toolsMenuPos.top, left: toolsMenuPos.left, zIndex: 9999, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.4)", borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 150 }}>
               {[
                 { icon: "⊞", label: "רשת (G)", active: snapOn,    action: () => { setSnapOn(s => !s); } },
                 { icon: "⚡", label: "סדר אוטו",  active: false,    action: () => { autoArrange(); setShowToolsMenu(false); } },
@@ -1432,9 +1440,9 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
         {/* Undo / Redo / Select-all */}
-        <TopBtn onClick={undo} title="בטל (Ctrl+Z)" active={canUndo} wide>↩ בטל</TopBtn>
-        <TopBtn onClick={redo} title="חזור (Ctrl+Y)" active={canRedo} wide>↪ חזור</TopBtn>
-        <TopBtn onClick={selectAll} title="בחר הכל (Ctrl+A)" wide>⊞ בחר</TopBtn>
+        <TopBtn onClick={undo} title="בטל (Ctrl+Z)" active={canUndo}>↩</TopBtn>
+        <TopBtn onClick={redo} title="חזור (Ctrl+Y)" active={canRedo}>↪</TopBtn>
+        <TopBtn onClick={selectAll} title="בחר הכל (Ctrl+A)">⊞</TopBtn>
 
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
@@ -1599,8 +1607,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                 </div>
               </div>
 
-              {/* Minimap */}
-              <Minimap room={activeRoom} panX={panX} panY={panY} zoom={zoom} vw={vSize.w} vh={vSize.h} cw={vSize.w} ch={vSize.h} />
 
               {/* Stats chip */}
               <div style={{ position: "absolute", top: 10, left: 10, fontSize: 11, color: C.muted, background: "rgba(10,4,2,0.88)", padding: "4px 10px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.07)" }}>
