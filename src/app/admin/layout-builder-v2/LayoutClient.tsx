@@ -231,9 +231,10 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
       <div style={{ position: "absolute", inset: 0, borderRadius: br, background: bg, border: `2px solid ${brd}`, boxShadow: selected ? "0 0 0 2px #d4a017, 0 6px 24px rgba(0,0,0,0.5)" : "0 3px 14px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
 
-        {/* Number */}
-        <div style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1, zIndex: 1 }}>
-          {num || "?"}
+        {/* Number + seats */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 3, zIndex: 1 }}>
+          <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num || "?"}</span>
+          <span style={{ fontSize: Math.max(8, fSz * 0.52), fontWeight: 400, color: "rgba(255,255,255,0.45)", lineHeight: 1 }}>({seats})</span>
         </div>
 
         {/* Name */}
@@ -656,6 +657,28 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   useEffect(() => { panYR.current = panY; }, [panY]);
   useEffect(() => { zoomR.current = zoom; }, [zoom]);
   useEffect(() => { vSizeRef.current = vSize; }, [vSize]);
+
+  /* auto-save */
+  const [autoSave, setAutoSave] = useState(true);
+  const layoutRef        = useRef<LayoutV2>(emptyLayout());
+  const restaurantIdRef  = useRef("");
+  useEffect(() => { layoutRef.current = layout; }, [layout]);
+  useEffect(() => { restaurantIdRef.current = restaurantId; }, [restaurantId]);
+  useEffect(() => {
+    if (!autoSave) return;
+    const id = setInterval(async () => {
+      const rid = restaurantIdRef.current;
+      if (!rid) return;
+      try {
+        await fetch(`/api/admin/restaurants/${rid}/layout`, {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tableLayoutJson: JSON.stringify(layoutRef.current) }),
+        });
+        showToast("שמירה אוטו ✓");
+      } catch {}
+    }, 30000);
+    return () => clearInterval(id);
+  }, [autoSave]); // eslint-disable-line
 
   /* selection / edit */
   const [selId, setSelId]         = useState<string | null>(null);
@@ -1222,6 +1245,9 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <TopBtn onClick={clearAll} title="נקה הכל" danger wide>✕ נקה</TopBtn>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+          <TopBtn active={autoSave} onClick={() => setAutoSave(s => !s)} title="שמירה אוטומטית כל 30 שניות" wide>
+            {autoSave ? "⏱ אוטו" : "⏱ אוטו"}
+          </TopBtn>
           <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? "#4caf50" : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap", letterSpacing: ".02em" }}>
             {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור"}
           </button>
