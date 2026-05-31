@@ -39,14 +39,14 @@ const SHAPE_BR: Record<TableShape, string> = {
 type PaletteItem = { icon: string; label: string; shape: TableShape; w: number; h: number; seats: number };
 
 const PALETTE: PaletteItem[] = [
-  { icon: "●", label: "עגול 6",    shape: "round",   w: 130, h: 130, seats: 6  },
-  { icon: "●", label: "עגול 8",    shape: "round",   w: 160, h: 160, seats: 8  },
-  { icon: "▬", label: "מלבן 8",    shape: "rect",    w: 210, h: 115, seats: 8  },
-  { icon: "▬", label: "מלבן 10",   shape: "rect",    w: 250, h: 115, seats: 10 },
-  { icon: "■", label: "ריבוע 4",   shape: "square",  w: 140, h: 140, seats: 4  },
-  { icon: "◉", label: "אובאלי 10", shape: "oval",    w: 190, h: 130, seats: 10 },
-  { icon: "━", label: "ארוך 12",   shape: "long",    w: 310, h: 100, seats: 12 },
-  { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 390, h: 105, seats: 16 },
+  { icon: "●", label: "עגול 6",    shape: "round",   w: 80,  h: 80,  seats: 6  },
+  { icon: "●", label: "עגול 8",    shape: "round",   w: 100, h: 100, seats: 8  },
+  { icon: "▬", label: "מלבן 8",    shape: "rect",    w: 130, h: 70,  seats: 8  },
+  { icon: "▬", label: "מלבן 10",   shape: "rect",    w: 155, h: 70,  seats: 10 },
+  { icon: "■", label: "ריבוע 4",   shape: "square",  w: 90,  h: 90,  seats: 4  },
+  { icon: "◉", label: "אובאלי 10", shape: "oval",    w: 120, h: 80,  seats: 10 },
+  { icon: "━", label: "ארוך 12",   shape: "long",    w: 190, h: 62,  seats: 12 },
+  { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 240, h: 65,  seats: 16 },
 ];
 
 const BGS = [
@@ -282,8 +282,9 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 }
 
 /* ══════════════════════ Edit Popup ══ */
-function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFront, onSendBack }: {
+function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDelete, onDup, onBringFront, onSendBack }: {
   table: FreeTable; pos: { x: number; y: number };
+  restaurantId: string; origin: string;
   onClose: () => void;
   onUpdate: (u: Partial<FreeTable>) => void;
   onDelete: () => void;
@@ -300,9 +301,11 @@ function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFron
   });
   const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
   const [off, setOff] = useState({ x: 0, y: 0 });
+  const [copied, setCopied] = useState(false);
 
   const px = Math.max(8, Math.min(pos.x + off.x, window.innerWidth - 316));
-  const py = Math.max(8, Math.min(pos.y + off.y, window.innerHeight - 540));
+  const py = Math.max(8, Math.min(pos.y + off.y, window.innerHeight - 100));
+  const contentMaxH = window.innerHeight - py - 52;
 
   function apply() {
     onUpdate({
@@ -318,14 +321,16 @@ function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFron
     });
   }
 
-  const inp: React.CSSProperties = { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(212,160,23,0.2)", color: "#e9ecef", borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+
+  const tableUrl = origin && table.num > 0 ? `${origin}/menu/${restaurantId}?table=${encodeURIComponent(String(table.num))}` : null;
 
   return (
-    <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.45)", borderRadius: 14, width: 306, boxShadow: "0 20px 60px rgba(0,0,0,0.75)", color: "#fff" }}>
+    <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: "linear-gradient(160deg,#180a05 0%,#251008 60%,#1a0d06 100%)", border: "1px solid rgba(212,160,23,0.5)", borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: "#e9ecef" }}>
 
       {/* Draggable header */}
       <div
-        style={{ padding: "11px 14px 9px", cursor: "move", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between", userSelect: "none", borderRadius: "14px 14px 0 0" }}
+        style={{ padding: "11px 14px 9px", cursor: "move", borderBottom: "1px solid rgba(212,160,23,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", userSelect: "none", borderRadius: "14px 14px 0 0", background: "rgba(0,0,0,0.2)" }}
         onMouseDown={e => {
           dragRef.current = { sx: e.clientX, sy: e.clientY, ox: off.x, oy: off.y };
           const mm = (me: MouseEvent) => { if (!dragRef.current) return; setOff({ x: dragRef.current.ox + me.clientX - dragRef.current.sx, y: dragRef.current.oy + me.clientY - dragRef.current.sy }); };
@@ -335,10 +340,11 @@ function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFron
         }}
       >
         <span style={{ fontSize: 13, fontWeight: 700, color: "#d4a017" }}>✏️ שולחן {table.num}</span>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "0 2px" }}>×</button>
+        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#888", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "2px 7px", borderRadius: 6 }}>×</button>
       </div>
 
-      <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Scrollable content */}
+      <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", maxHeight: contentMaxH }}>
 
         {/* Status pills */}
         <div style={{ display: "flex", gap: 4 }}>
@@ -352,11 +358,11 @@ function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFron
         {/* Num + Name */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "#777", marginBottom: 4 }}>מספר</div>
+            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>מספר</div>
             <input type="number" value={form.num} onChange={e => setForm(f => ({ ...f, num: e.target.value }))} style={{ ...inp, padding: "7px 8px" }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#777", marginBottom: 4 }}>שם שולחן</div>
+            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>שם שולחן</div>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inp} placeholder="שם אופציונלי..." />
           </div>
         </div>
@@ -364,23 +370,23 @@ function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFron
         {/* Group + Color */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#777", marginBottom: 4 }}>קבוצה</div>
+            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>קבוצה</div>
             <input type="text" value={form.group} onChange={e => setForm(f => ({ ...f, group: e.target.value }))} style={inp} placeholder="VIP, חיצוני..." />
           </div>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "#777", marginBottom: 4 }}>צבע מותאם</div>
-            <input type="color" value={form.customColor} onChange={e => setForm(f => ({ ...f, customColor: e.target.value }))} style={{ width: "100%", height: 34, borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer", background: "none", padding: 2 }} />
+            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>צבע מותאם</div>
+            <input type="color" value={form.customColor} onChange={e => setForm(f => ({ ...f, customColor: e.target.value }))} style={{ width: "100%", height: 34, borderRadius: 8, border: "1px solid rgba(212,160,23,0.25)", cursor: "pointer", background: "none", padding: 2 }} />
           </div>
         </div>
 
         {/* Seats + SeatedCount */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#777", marginBottom: 4 }}>מקומות</div>
+            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>מקומות</div>
             <input type="number" min={1} max={80} value={form.seats} onChange={e => setForm(f => ({ ...f, seats: e.target.value }))} style={inp} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#777", marginBottom: 4 }}>יושבים כרגע 🪑</div>
+            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>יושבים כרגע 🪑</div>
             <input type="number" min={0} max={form.seats} value={form.seatedCount} onChange={e => setForm(f => ({ ...f, seatedCount: e.target.value }))} style={inp} />
           </div>
         </div>
@@ -389,14 +395,14 @@ function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFron
         <div style={{ display: "flex", gap: 8 }}>
           {[["רוחב", "w"], ["גובה", "h"], ["סיבוב°", "rot"]].map(([lbl, key]) => (
             <div key={key} style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: "#777", marginBottom: 4 }}>{lbl}</div>
+              <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>{lbl}</div>
               <input type="number" value={form[key as keyof typeof form] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} style={{ ...inp, padding: "7px 6px" }} />
             </div>
           ))}
         </div>
 
         {/* Apply */}
-        <button onClick={apply} style={{ width: "100%", padding: "9px 0", borderRadius: 10, background: "linear-gradient(135deg,#7a5a0e,#d4a017)", color: "#fff", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer" }}>
+        <button onClick={apply} style={{ width: "100%", padding: "10px 0", borderRadius: 10, background: "linear-gradient(135deg,#7a5a0e,#d4a017)", color: "#fff", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", letterSpacing: ".02em", boxShadow: "0 2px 12px rgba(212,160,23,0.3)" }}>
           ✓ עדכן שולחן
         </button>
 
@@ -408,11 +414,40 @@ function EditPopup({ table, pos, onClose, onUpdate, onDelete, onDup, onBringFron
             { icon: "⬇", label: "אחורה", action: onSendBack },
             { icon: "🗑", label: "מחק",   action: onDelete, danger: true },
           ].map(btn => (
-            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? "rgba(244,67,54,0.13)" : "rgba(255,255,255,0.06)", color: btn.danger ? "#f44336" : "#999", border: `1px solid ${btn.danger ? "rgba(244,67,54,0.3)" : "rgba(255,255,255,0.1)"}` }}>
-              {btn.icon}
+            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? "rgba(244,67,54,0.13)" : "rgba(255,255,255,0.06)", color: btn.danger ? "#f44336" : "#adb5bd", border: `1px solid ${btn.danger ? "rgba(244,67,54,0.3)" : "rgba(255,255,255,0.1)"}`, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
+              <span style={{ fontSize: 14 }}>{btn.icon}</span>
+              <span style={{ fontSize: 9 }}>{btn.label}</span>
             </button>
           ))}
         </div>
+
+        {/* QR section */}
+        {tableUrl && (
+          <>
+            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "2px 0" }} />
+            <div style={{ fontSize: 11, color: "#6c757d", fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={{ padding: 8, background: "#fff", borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
+                <QRCodeSVG value={tableUrl} size={92} />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input readOnly value={tableUrl}
+                style={{ flex: 1, fontSize: 9, color: "#6c757d", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 8px", outline: "none", fontFamily: "monospace", minWidth: 0 }}
+                onClick={e => (e.target as HTMLInputElement).select()} />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(tableUrl).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }).catch(() => {});
+                }}
+                style={{ padding: "6px 10px", borderRadius: 7, background: copied ? "rgba(76,175,80,0.2)" : "rgba(212,160,23,0.15)", color: copied ? "#4caf50" : "#d4a017", border: `1px solid ${copied ? "rgba(76,175,80,0.4)" : "rgba(212,160,23,0.35)"}`, cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s" }}>
+                {copied ? "✓ הועתק" : "העתק"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1160,6 +1195,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <EditPopup
           table={editTable}
           pos={editPos}
+          restaurantId={restaurantId}
+          origin={origin}
           onClose={() => setEditId(null)}
           onUpdate={u => updTable(editTable.id, u)}
           onDelete={() => delTable(editTable.id)}
@@ -1168,23 +1205,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           onSendBack={() => sendBack(editTable.id)}
         />
       )}
-
-      {/* QR code in edit popup when origin known */}
-      {editTable && origin && editTable.num > 0 && (() => {
-        const tableUrl = `${origin}/menu/${restaurantId}?table=${encodeURIComponent(String(editTable.num))}`;
-        const px2 = Math.max(8, Math.min(editPos.x, window.innerWidth - 316));
-        const py2 = Math.min(editPos.y + 420, window.innerHeight - 200);
-        return (
-          <div style={{ position: "fixed", left: px2, top: py2, zIndex: 2000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 12, padding: "12px 14px", boxShadow: "0 8px 24px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: 306 }}>
-            <div style={{ fontSize: 11, color: C.muted, fontWeight: 700 }}>QR לשולחן {editTable.num}</div>
-            <div style={{ padding: 8, background: "#fff", borderRadius: 10 }}>
-              <QRCodeSVG value={tableUrl} size={100} />
-            </div>
-            <input readOnly value={tableUrl} style={{ width: "100%", fontSize: 9, color: C.muted, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "5px 8px", outline: "none", fontFamily: "monospace" }}
-              onClick={e => (e.target as HTMLInputElement).select()} />
-          </div>
-        );
-      })()}
 
       {/* ── Bg modal ── */}
       {showBg && activeRoom && (
