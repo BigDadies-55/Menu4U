@@ -701,6 +701,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [canUndo, setCanUndo]           = useState(false);
   const [canRedo, setCanRedo]           = useState(false);
   const [ctxMenu, setCtxMenu]     = useState<{ x: number; y: number; id: string; kind: "table" | "deco" } | null>(null);
+  const [toolsMenu, setToolsMenu] = useState<{ x: number; y: number } | null>(null);
 
   /* ui toggles */
   const [snapOn, setSnapOn]       = useState(false);
@@ -736,6 +737,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const paletteDragDeco = useRef<DecoPaletteItem | null>(null);
   const imgFileRef      = useRef<HTMLInputElement>(null);
   const imgTargetDecoId = useRef<string | null>(null);
+  const importFileRef   = useRef<HTMLInputElement>(null);
+  const toolsBtnRef     = useRef<HTMLButtonElement>(null);
   const vSizeRef       = useRef({ w: 900, h: 560 });
 
   /* deco interaction refs */
@@ -946,6 +949,35 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       updDeco(id, { imgSrc: src });
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  function exportLayout() {
+    const json = JSON.stringify(layoutRef.current, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `layout-${restaurantId || "export"}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast("Layout יוצא ✓");
+  }
+
+  function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string) as LayoutV2;
+        if (parsed.version !== 2 || !Array.isArray(parsed.rooms)) throw new Error();
+        pushHistory();
+        setLayout(parsed);
+        showToast("Layout יובא ✓");
+      } catch {
+        showToast("קובץ לא תקין ✗");
+      }
+    };
+    reader.readAsText(file);
     e.target.value = "";
   }
 
@@ -1411,6 +1443,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   return (
     <div style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", background: bgCfg.body, color: C.text, overflow: "hidden", fontFamily: "inherit" }}>
       <input ref={imgFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onImgFileChange} />
+      <input ref={importFileRef} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={onImportFile} />
 
       {/* ── Topbar ── */}
       <div style={{ padding: "4px 10px", borderBottom: "1px solid rgba(212,160,23,0.2)", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(10px)" }}>
@@ -1437,25 +1470,16 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
-        {/* Tools dropdown — native select */}
-        <select
-          value=""
-          onChange={e => {
-            const v = e.target.value;
-            if (v === "grid")    setSnapOn(s => !s);
-            if (v === "arrange") autoArrange();
-            if (v === "bg")      setShowBg(s => !s);
-            if (v === "stats")   setShowStats(s => !s);
-            e.target.value = "";
+        {/* Tools dropdown button */}
+        <button ref={toolsBtnRef}
+          onClick={() => {
+            if (toolsMenu) { setToolsMenu(null); return; }
+            const r = toolsBtnRef.current!.getBoundingClientRect();
+            setToolsMenu({ x: r.left, y: r.bottom + 2 });
           }}
-          style={{ background: snapOn || showBg || showStats ? "rgba(212,160,23,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${snapOn || showBg || showStats ? "#d4a017" : "rgba(255,255,255,0.13)"}`, color: snapOn || showBg || showStats ? "#ffd700" : "#e9ecef", borderRadius: 8, padding: "4px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit" }}
-        >
-          <option value="" disabled>⚙ כלים</option>
-          <option value="grid">{snapOn ? "✓ " : ""}רשת (G)</option>
-          <option value="arrange">⚡ סדר אוטו</option>
-          <option value="bg">{showBg ? "✓ " : ""}רקע קנבס</option>
-          <option value="stats">{showStats ? "✓ " : ""}נתונים</option>
-        </select>
+          style={{ padding: "4px 10px", borderRadius: 8, background: snapOn || showBg || showStats || !!toolsMenu ? "rgba(212,160,23,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${snapOn || showBg || showStats || !!toolsMenu ? "#d4a017" : "rgba(255,255,255,0.13)"}`, color: snapOn || showBg || showStats || !!toolsMenu ? "#ffd700" : "#e9ecef", fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
+          ⚙ כלים ▾
+        </button>
 
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
@@ -1679,6 +1703,35 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           </div>
         );
       })()}
+
+      {/* ── Tools dropdown ── */}
+      {toolsMenu && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 3998 }} onClick={() => setToolsMenu(null)} />
+          <div style={{ position: "fixed", top: toolsMenu.y, left: toolsMenu.x, zIndex: 3999, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.4)", borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 170 }}>
+            {([
+              { icon: "⊞", label: "רשת (G)",   active: snapOn,    action: () => setSnapOn(s => !s) },
+              { icon: "⚡", label: "סדר אוטו",  active: false,     action: () => { autoArrange(); setToolsMenu(null); } },
+              { icon: "▣", label: "רקע קנבס",  active: showBg,    action: () => setShowBg(s => !s) },
+              { icon: "≡", label: "נתונים",    active: showStats, action: () => setShowStats(s => !s) },
+              null,
+              { icon: "⬇", label: "ייצא Layout", active: false, action: () => { exportLayout(); setToolsMenu(null); } },
+              { icon: "⬆", label: "ייבא Layout", active: false, action: () => { importFileRef.current?.click(); setToolsMenu(null); } },
+            ] as (null | { icon: string; label: string; active: boolean; action: () => void })[]).map((item, i) => {
+              if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
+              return (
+                <button key={i} onClick={item.action}
+                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.active ? "#ffd700" : "#e9ecef", background: item.active ? "rgba(212,160,23,0.12)" : "none", border: "none", cursor: "pointer", textAlign: "right" as const, fontFamily: "inherit" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.15)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = item.active ? "rgba(212,160,23,0.12)" : "none")}>
+                  <span style={{ minWidth: 16, color: "#d4a017" }}>{item.icon}</span>{item.label}
+                  {item.active && <span style={{ marginLeft: "auto", fontSize: 10, color: "#ffd700" }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* ── Edit popup ── */}
       {editTable && (
