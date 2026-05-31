@@ -160,7 +160,7 @@ function TopBtn({ children, onClick, title, active, danger, wide }: {
     <button
       onClick={onClick}
       title={title}
-      style={{ minWidth: wide ? 40 : 28, height: 28, borderRadius: 7, padding: wide ? "0 8px" : 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none", background: active ? "rgba(212,160,23,0.22)" : "transparent", color: danger ? "#f44336" : active ? "#d4a017" : "#adb5bd", fontSize: 14, fontWeight: 700, outline: active ? "1px solid rgba(212,160,23,0.45)" : "none", transition: "all 0.12s" }}
+      style={{ minWidth: wide ? 40 : 28, height: 28, borderRadius: 7, padding: wide ? "0 8px" : 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none", background: active ? "rgba(212,160,23,0.22)" : "transparent", color: danger ? "#f44336" : active ? "#ffd700" : "#d4a017", fontSize: 14, fontWeight: 700, outline: active ? "1px solid rgba(212,160,23,0.45)" : "none", transition: "all 0.12s" }}
       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = danger ? "rgba(244,67,54,0.15)" : "rgba(212,160,23,0.14)"; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = active ? "rgba(212,160,23,0.22)" : "transparent"; }}
     >{children}</button>
@@ -953,44 +953,47 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     <div style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", background: bgCfg.body, color: C.text, overflow: "hidden", fontFamily: "inherit" }}>
 
       {/* ── Topbar ── */}
-      <div style={{ padding: "5px 10px", borderBottom: "1px solid rgba(212,160,23,0.2)", display: "flex", alignItems: "center", gap: 5, flexShrink: 0, background: "rgba(10,4,2,0.96)", backdropFilter: "blur(10px)", flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, fontWeight: 800, color: C.gold, marginRight: 4, whiteSpace: "nowrap" }}>🗺 פריסת שולחנות</span>
+      <div style={{ padding: "4px 10px", borderBottom: "1px solid rgba(212,160,23,0.2)", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(10px)" }}>
 
+        {/* Title + restaurant */}
+        <span style={{ fontSize: 13, fontWeight: 800, color: C.gold, whiteSpace: "nowrap", marginRight: 2 }}>פריסת שולחנות</span>
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); loadLayout(e.target.value); }}
-            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: C.text, borderRadius: 8, padding: "4px 8px", fontSize: 12, outline: "none" }}>
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", marginLeft: 4 }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
 
-        <div style={{ width: 1, height: 18, background: C.border, margin: "0 2px" }} />
+        {/* Sep */}
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
-        {/* Snap */}
-        <TopBtn active={snapOn} onClick={() => setSnapOn(s => !s)} title="Snap לגריד (G)">⊞</TopBtn>
+        {/* Zoom controls */}
+        <TopBtn onClick={() => zoomBy(-0.1)} title="הקטן">−</TopBtn>
+        <span style={{ fontSize: 11, color: C.gold, minWidth: 34, textAlign: "center", fontWeight: 700 }}>{Math.round(zoom * 100)}%</span>
+        <TopBtn onClick={() => zoomBy(0.1)} title="הגדל">+</TopBtn>
+        <TopBtn onClick={fitView} title="התאם לשולחנות" wide>⤢ התאם</TopBtn>
+        <TopBtn onClick={() => { setZoom(1); setPanX(0); setPanY(0); }} title="100% — קנבס מלא" wide>⌖ 100%</TopBtn>
 
-        <div style={{ width: 1, height: 18, background: C.border, margin: "0 2px" }} />
+        {/* Sep */}
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
-        {/* Zoom */}
-        <TopBtn onClick={() => zoomBy(-0.1)} title="הקטן (Ctrl-)">－</TopBtn>
-        <span style={{ fontSize: 11, color: C.muted, minWidth: 36, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
-        <TopBtn onClick={() => zoomBy(0.1)} title="הגדל (Ctrl+)">＋</TopBtn>
-        <TopBtn onClick={() => { setZoom(1); setPanX(0); setPanY(0); }} title="100%">⌖</TopBtn>
-        <TopBtn onClick={fitView} title="התאם למסך">⤢</TopBtn>
+        {/* Tools */}
+        <TopBtn active={snapOn} onClick={() => setSnapOn(s => !s)} title="רשת (G)" wide>⊞ רשת</TopBtn>
+        <TopBtn onClick={autoArrange} title="סידור אוטומטי" wide>⚡ סדר</TopBtn>
+        <TopBtn active={showBg} onClick={() => setShowBg(s => !s)} title="רקע קנבס" wide>▣ רקע</TopBtn>
+        <TopBtn active={showStats} onClick={() => setShowStats(s => !s)} title="סטטיסטיקות" wide>≡ נתונים</TopBtn>
 
-        <div style={{ width: 1, height: 18, background: C.border, margin: "0 2px" }} />
+        {/* Sep */}
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
-        {/* Actions */}
-        <TopBtn onClick={autoArrange} title="סידור אוטומטי">⚡</TopBtn>
-        <TopBtn active={showBg} onClick={() => setShowBg(s => !s)} title="רקע קנבס">🖼</TopBtn>
-        <TopBtn active={showStats} onClick={() => setShowStats(s => !s)} title="סטטיסטיקות">📊</TopBtn>
-        <TopBtn onClick={() => window.print()} title="הדפס">🖨</TopBtn>
-        <TopBtn onClick={clearAll} title="נקה הכל" danger>🗑</TopBtn>
+        {/* Danger + Save */}
+        <TopBtn onClick={clearAll} title="נקה הכל" danger wide>✕ נקה</TopBtn>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
-          <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 14px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? "#4caf50" : "#fff", fontWeight: 700, fontSize: 12, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" }}>
-            {saving ? "שומר..." : saved ? "✓ נשמר" : "💾 שמור"}
+          <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? "#4caf50" : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap", letterSpacing: ".02em" }}>
+            {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור"}
           </button>
-          <TopBtn active={showSidebar} onClick={() => setShowSidebar(s => !s)} title="סרגל צד">◧</TopBtn>
+          <TopBtn active={showSidebar} onClick={() => setShowSidebar(s => !s)} title="סרגל כלים">◧</TopBtn>
         </div>
       </div>
 
@@ -1007,8 +1010,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           </div>
         ))}
         <button onClick={() => setShowNewRoom(true)} style={{ padding: "6px 10px", fontSize: 11, color: C.muted, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>＋ חדר</button>
-        <div style={{ marginLeft: "auto", paddingBottom: 5, display: "flex", gap: 8, fontSize: 10, color: C.muted }}>
-          <span>G=סנאפ</span><span>Ctrl+D=שכפול</span><span>Del=מחיקה</span><span>⚡=סידור</span><span>↻=סיבוב</span>
+        <div style={{ marginLeft: "auto", paddingBottom: 5, display: "flex", gap: 10, fontSize: 10, color: C.muted }}>
+          <span>לחיצה כפולה = עריכה</span><span>קליק ימני = תפריט</span><span>Del = מחיקה</span><span>G = רשת</span>
         </div>
       </div>
 
@@ -1121,8 +1124,12 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       </div>
 
       {/* ── Context menu ── */}
-      {ctxMenu && (
-        <div style={{ position: "fixed", left: ctxMenu.x, top: ctxMenu.y, zIndex: 3000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.35)", borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 168 }}
+      {ctxMenu && (() => {
+        const menuW = 178, menuH = 380;
+        const cx = ctxMenu.x + menuW > window.innerWidth - 8 ? ctxMenu.x - menuW : ctxMenu.x;
+        const cy = ctxMenu.y + menuH > window.innerHeight - 8 ? Math.max(8, ctxMenu.y - menuH) : ctxMenu.y;
+        return (
+        <div style={{ position: "fixed", left: cx, top: cy, zIndex: 3000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.35)", borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: menuW }}
           onMouseLeave={() => setCtxMenu(null)}>
           {([
             { icon: "✏️", label: "ערוך",    action: () => { openEdit(ctxMenu.id); setCtxMenu(null); } },
@@ -1145,7 +1152,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
             );
           })}
         </div>
-      )}
+        );
+      })()}
 
       {/* ── Edit popup ── */}
       {editTable && (
