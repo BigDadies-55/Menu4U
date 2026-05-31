@@ -23,9 +23,7 @@ type LayoutV2  = { version: 2; rooms: Room[] };
 type Restaurant = { id: string; name: string };
 
 /* ══════════════════════════ Constants ══ */
-const CANVAS_W = 3000;
-const CANVAS_H = 2000;
-const GRID     = 20;
+const GRID = 20;
 
 const STATUS_CFG: Record<TableStatus, { label: string; bg: string; border: string; color: string }> = {
   free:     { label: "פנוי",  bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: "#2e7d2e", color: "#4caf50" },
@@ -98,12 +96,12 @@ function SeatIndicators({ w, h, seats, seatedCount }: { w: number; h: number; se
 }
 
 /* ══════════════════════════ Minimap ══ */
-function Minimap({ room, panX, panY, zoom, vw, vh }: {
-  room: Room | undefined; panX: number; panY: number; zoom: number; vw: number; vh: number;
+function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
+  room: Room | undefined; panX: number; panY: number; zoom: number; vw: number; vh: number; cw: number; ch: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const MW = 140, MH = 86;
-  const sx = MW / CANVAS_W, sy = MH / CANVAS_H;
+  const sx = MW / cw, sy = MH / ch;
 
   useEffect(() => {
     const c = canvasRef.current;
@@ -597,8 +595,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         setVSize({ w, h });
         if (!fitDone.current && w > 100 && h > 100) {
           fitDone.current = true;
-          const z = Math.min(w / CANVAS_W, h / CANVAS_H) * 0.92;
-          setZoom(z); setPanX((w - CANVAS_W * z) / 2); setPanY((h - CANVAS_H * z) / 2);
+          setZoom(1); setPanX(0); setPanY(0);
         }
       }
     });
@@ -674,8 +671,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     if (tables.length > 0) {
       zoomToContent(layout, vSize.w, vSize.h);
     } else {
-      const z = Math.min(vSize.w / CANVAS_W, vSize.h / CANVAS_H) * 0.92;
-      setZoom(z); setPanX((vSize.w - CANVAS_W * z) / 2); setPanY((vSize.h - CANVAS_H * z) / 2);
+      setZoom(1); setPanX(0); setPanY(0);
     }
   }
 
@@ -978,7 +974,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <TopBtn onClick={() => zoomBy(-0.1)} title="הקטן (Ctrl-)">－</TopBtn>
         <span style={{ fontSize: 11, color: C.muted, minWidth: 36, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
         <TopBtn onClick={() => zoomBy(0.1)} title="הגדל (Ctrl+)">＋</TopBtn>
-        <TopBtn onClick={() => { setZoom(1); setPanX((vSize.w - CANVAS_W) / 2); setPanY((vSize.h - CANVAS_H) / 2); }} title="100%">⌖</TopBtn>
+        <TopBtn onClick={() => { setZoom(1); setPanX(0); setPanY(0); }} title="100%">⌖</TopBtn>
         <TopBtn onClick={fitView} title="התאם למסך">⤢</TopBtn>
 
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 2px" }} />
@@ -1074,7 +1070,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
             <>
               {/* Transform wrapper */}
               <div style={{ position: "absolute", top: 0, left: 0, transformOrigin: "0 0", transform: `translate(${panX}px,${panY}px) scale(${zoom})`, willChange: "transform" }}>
-                <div style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
+                <div style={{ width: vSize.w, height: vSize.h, position: "relative" }}>
                   {/* Background layer (separate so bgImg opacity doesn't affect tables) */}
                   <div data-canvas="bg" style={{ position: "absolute", inset: 0, zIndex: 0, cursor: "grab", ...(activeRoom?.bgImg ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 } : { background: bgCfg.cw, backgroundSize: "40px 40px" }) }} />
 
@@ -1113,7 +1109,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               </div>
 
               {/* Minimap */}
-              <Minimap room={activeRoom} panX={panX} panY={panY} zoom={zoom} vw={vSize.w} vh={vSize.h} />
+              <Minimap room={activeRoom} panX={panX} panY={panY} zoom={zoom} vw={vSize.w} vh={vSize.h} cw={vSize.w} ch={vSize.h} />
 
               {/* Stats chip */}
               <div style={{ position: "absolute", top: 10, left: 10, fontSize: 11, color: C.muted, background: "rgba(10,4,2,0.88)", padding: "4px 10px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.07)" }}>
