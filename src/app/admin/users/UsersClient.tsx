@@ -70,7 +70,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [users, setUsers] = useState(initial);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", role: "VIEWER" as Role });
-  const [pendingTempPassword, setPendingTempPassword] = useState<{ email: string; password: string } | null>(null);
+  const [formRestaurantIds, setFormRestaurantIds] = useState<string[]>([]);
+  const [pendingInviteLink, setPendingInviteLink] = useState<{ email: string; link: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -114,7 +115,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     const res = await fetch("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, restaurantIds: formRestaurantIds }),
     });
     if (!res.ok) {
       try {
@@ -127,12 +128,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       return;
     }
     const created = await res.json();
-    setUsers([{ ...created, emailVerified: null, restaurantUsers: [], mustChangePassword: true }, ...users]);
+    setUsers([{ ...created, emailVerified: null, restaurantUsers: [], mustChangePassword: false }, ...users]);
     setShowForm(false);
     setForm({ name: "", email: "", role: "VIEWER" });
+    setFormRestaurantIds([]);
     setLoading(false);
-    if (!created.emailSent && created.tempPassword) {
-      setPendingTempPassword({ email: created.email, password: created.tempPassword });
+    if (!created.emailSent && created.inviteLink) {
+      setPendingInviteLink({ email: created.email, link: created.inviteLink });
     }
   }
 
@@ -371,7 +373,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     {/* Verification */}
                     <td style={{ padding: "12px 16px" }}>
                       <div className="flex flex-col gap-1.5">
-                        {user.mustChangePassword ? (
+                        {!user.emailVerified ? (
+                          <span style={{ background: "rgba(252,196,25,0.12)", color: C.amber, borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
+                            📨 ממתין להזמנה
+                          </span>
+                        ) : user.mustChangePassword ? (
                           <span style={{ background: "rgba(239,68,68,0.12)", color: "#fca5a5", borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
                             🔐 חייב לשנות סיסמה
                           </span>
@@ -470,27 +476,56 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       {/* ── Create User Modal ─────────────────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 460, padding: 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 24 }}>משתמש חדש</h2>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 480, padding: 28, maxHeight: "90vh", overflowY: "auto" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 24 }}>הוסף משתמש חדש</h2>
             <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div><Label>שם מלא</Label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={DARK_INPUT} /></div>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={DARK_INPUT} autoFocus /></div>
+
               <div><Label>אימייל *</Label>
                 <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
-              <div style={{ background: "rgba(201,164,82,0.07)", border: "1px solid rgba(201,164,82,0.18)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#dfc07e" }}>
-                🔐 סיסמה זמנית תיווצר אוטומטית ותישלח לאימייל של המשתמש
+
+              <div style={{ background: "rgba(51,154,240,0.07)", border: "1px solid rgba(51,154,240,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#74c0fc" }}>
+                📧 קישור הזמנה יישלח לאימייל — המשתמש יגדיר סיסמה בעצמו
               </div>
+
               <div><Label>הרשאה</Label>
                 <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })} style={DARK_SELECT}>
                   {availableRoles.map((r) => <option key={r} value={r} style={{ background: C.cardBg }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
+
+              {restaurants.length > 0 && (
+                <div>
+                  <Label>מסעדות משויכות</Label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 180, overflowY: "auto", padding: "2px 0" }}>
+                    {restaurants.map((r) => {
+                      const checked = formRestaurantIds.includes(r.id);
+                      return (
+                        <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, cursor: "pointer", background: checked ? "rgba(252,196,25,0.08)" : C.inputBg, border: `1px solid ${checked ? "rgba(252,196,25,0.3)" : C.inputBorder}`, transition: "all 0.12s" }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setFormRestaurantIds(prev => checked ? prev.filter(id => id !== r.id) : [...prev, r.id])}
+                            style={{ accentColor: C.amber, width: 15, height: 15, cursor: "pointer" }}
+                          />
+                          <span style={{ fontSize: 13, color: checked ? C.amber : C.text, fontWeight: checked ? 600 : 400 }}>{r.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {formRestaurantIds.length > 0 && (
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>{formRestaurantIds.length} מסעדות נבחרו</div>
+                  )}
+                </div>
+              )}
+
               {error && <p style={{ color: C.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{error}</p>}
               <div className="flex gap-3" style={{ marginTop: 4 }}>
                 <button type="submit" disabled={loading} style={{ flex: 1, background: C.amber, color: "#000", border: "none", padding: "11px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
-                  {loading ? "יוצר..." : "צור משתמש ושלח אימייל"}
+                  {loading ? "יוצר..." : "✉️ צור משתמש ושלח הזמנה"}
                 </button>
-                <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); }} style={{ flex: 1, background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: "11px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]); }} style={{ flex: 1, background: C.inputBg, color: C.sub, border: `1px solid ${C.inputBorder}`, padding: "11px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   ביטול
                 </button>
               </div>
@@ -551,23 +586,34 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
       )}
 
-      {/* ── Temp Password Fallback Modal ──────────────────────────────────── */}
-      {pendingTempPassword && (
+      {/* ── Invite Link Fallback Modal (shown when email failed) ─────────── */}
+      {pendingInviteLink && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 400, padding: 28, textAlign: "center" }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, width: "100%", maxWidth: 440, padding: 28, textAlign: "center" }}>
             <div style={{ width: 52, height: 52, background: "rgba(255,146,43,0.15)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24 }}>⚠️</div>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, marginBottom: 8 }}>האימייל לא נשלח</h2>
-            <p style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>שתף את הסיסמה הזמנית הבאה עם המשתמש ידנית:</p>
-            <div style={{ background: "rgba(201,164,82,0.08)", border: "1px solid rgba(201,164,82,0.3)", borderRadius: 12, padding: "16px 24px", marginBottom: 8 }}>
-              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>אימייל</div>
-              <div style={{ fontSize: 13, color: C.sub, marginBottom: 14 }} dir="ltr">{pendingTempPassword.email}</div>
-              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>סיסמה זמנית</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: C.amber, fontFamily: "monospace", letterSpacing: 3 }} dir="ltr">{pendingTempPassword.password}</div>
-            </div>
-            <p style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>
-              המשתמש יתבקש לשנות סיסמה בכניסה הראשונה.
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>
+              שלח למשתמש את קישור ההזמנה הבא ידנית:
             </p>
-            <button onClick={() => setPendingTempPassword(null)} style={{ width: "100%", background: C.amber, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            <div style={{ background: "rgba(201,164,82,0.08)", border: "1px solid rgba(201,164,82,0.3)", borderRadius: 12, padding: "14px 16px", marginBottom: 8, textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>אימייל</div>
+              <div style={{ fontSize: 13, color: C.sub, marginBottom: 14 }} dir="ltr">{pendingInviteLink.email}</div>
+              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>קישור הזמנה</div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ flex: 1, fontSize: 11, color: C.amber, fontFamily: "monospace", wordBreak: "break-all", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "8px 10px" }} dir="ltr">
+                  {pendingInviteLink.link}
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(pendingInviteLink.link)}
+                  style={{ flexShrink: 0, background: "rgba(201,164,82,0.15)", border: "1px solid rgba(201,164,82,0.3)", color: C.amber, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                  title="העתק קישור"
+                >📋 העתק</button>
+              </div>
+            </div>
+            <p style={{ fontSize: 11, color: C.muted, marginBottom: 20, textAlign: "right" }}>
+              ⏱ הקישור תקף ל-72 שעות. לאחר מכן יש לשלוח הזמנה חדשה.
+            </p>
+            <button onClick={() => setPendingInviteLink(null)} style={{ width: "100%", background: C.amber, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               הבנתי
             </button>
           </div>
