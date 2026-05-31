@@ -41,14 +41,14 @@ const SHAPE_BR: Record<TableShape, string> = {
 type PaletteItem = { icon: string; label: string; shape: TableShape; w: number; h: number; seats: number };
 
 const PALETTE: PaletteItem[] = [
-  { icon: "⭕", label: "עגול 6",    shape: "round",   w: 130, h: 130, seats: 6  },
-  { icon: "🔵", label: "עגול 8",    shape: "round",   w: 160, h: 160, seats: 8  },
-  { icon: "▬",  label: "מלבן 8",    shape: "rect",    w: 210, h: 115, seats: 8  },
-  { icon: "⬛", label: "מלבן 10",   shape: "rect",    w: 250, h: 115, seats: 10 },
-  { icon: "🔲", label: "ריבוע 4",   shape: "square",  w: 140, h: 140, seats: 4  },
-  { icon: "🥚", label: "אובאלי 10", shape: "oval",    w: 190, h: 130, seats: 10 },
-  { icon: "📏", label: "ארוך 12",   shape: "long",    w: 310, h: 100, seats: 12 },
-  { icon: "🎉", label: "בנקט 16",   shape: "banquet", w: 390, h: 105, seats: 16 },
+  { icon: "●", label: "עגול 6",    shape: "round",   w: 130, h: 130, seats: 6  },
+  { icon: "●", label: "עגול 8",    shape: "round",   w: 160, h: 160, seats: 8  },
+  { icon: "▬", label: "מלבן 8",    shape: "rect",    w: 210, h: 115, seats: 8  },
+  { icon: "▬", label: "מלבן 10",   shape: "rect",    w: 250, h: 115, seats: 10 },
+  { icon: "■", label: "ריבוע 4",   shape: "square",  w: 140, h: 140, seats: 4  },
+  { icon: "◉", label: "אובאלי 10", shape: "oval",    w: 190, h: 130, seats: 10 },
+  { icon: "━", label: "ארוך 12",   shape: "long",    w: 310, h: 100, seats: 12 },
+  { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 390, h: 105, seats: 16 },
 ];
 
 const BGS = [
@@ -172,7 +172,7 @@ function TopBtn({ children, onClick, title, active, danger, wide }: {
 /* ══════════════════════ Table Item ══ */
 type InlineSeated = { val: string; onChange: (v: string) => void; onCommit: () => void };
 
-function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotateMD, onResizeMD, onSeatedClick }: {
+function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotateMD, onResizeMD, onSeatedClick, onRotateStep }: {
   table: FreeTable; selected: boolean;
   inlineSeated: InlineSeated | null;
   onMD: (e: React.MouseEvent) => void;
@@ -181,6 +181,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
   onRotateMD: (e: React.MouseEvent) => void;
   onResizeMD: (e: React.MouseEvent) => void;
   onSeatedClick: (e: React.MouseEvent) => void;
+  onRotateStep: (deg: number) => void;
 }) {
   const { w, h, shape, status, num, name, seatedCount, seats, rot, customColor } = table;
   const cfg  = STATUS_CFG[status] ?? STATUS_CFG.free;
@@ -196,13 +197,16 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
       onContextMenu={onCtx}
       style={{ position: "absolute", left: table.x, top: table.y, width: w, height: h, transform: `rotate(${rot}deg)`, transformOrigin: "center", cursor: "grab", userSelect: "none", zIndex: selected ? table.zIdx + 100 : table.zIdx }}
     >
-      {/* ↻ Rotate handle */}
+      {/* Rotation controls */}
       {selected && (
-        <div
-          onMouseDown={e => { e.stopPropagation(); onRotateMD(e); }}
-          title="גרור לסיבוב"
-          style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)", width: 22, height: 22, borderRadius: "50%", background: "rgba(212,160,23,0.92)", border: "2px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "grab", zIndex: 50, boxShadow: "0 2px 8px rgba(0,0,0,0.55)" }}
-        >↻</div>
+        <div style={{ position: "absolute", top: -38, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, zIndex: 50, alignItems: "center" }}>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(-15); }} onMouseDown={e => e.stopPropagation()} title="סובב שמאלה -15°"
+            style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.75)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer", userSelect: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.5)" }}>↺</div>
+          <div onMouseDown={e => { e.stopPropagation(); onRotateMD(e); }} title="גרור לסיבוב חופשי"
+            style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.92)", border: "2px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "grab", userSelect: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.55)" }}>↻</div>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(15); }} onMouseDown={e => e.stopPropagation()} title="סובב ימינה +15°"
+            style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.75)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer", userSelect: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.5)" }}>↻</div>
+        </div>
       )}
 
       {/* Selection glow ring */}
@@ -548,7 +552,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; id: string } | null>(null);
 
   /* ui toggles */
-  const [snapOn, setSnapOn]       = useState(true);
+  const [snapOn, setSnapOn]       = useState(false);
   const [showBg, setShowBg]       = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -760,6 +764,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   function sendBack(id: string) {
     const minZ = Math.min(...(activeRoom?.tables.map(t => t.zIdx) ?? [1]));
     updTable(id, { zIdx: Math.max(1, minZ - 1) });
+  }
+
+  function rotateTableStep(id: string, deg: number) {
+    const t = activeRoom?.tables.find(t => t.id === id);
+    if (t) updTable(id, { rot: ((t.rot || 0) + deg + 360) % 360 });
   }
 
   /* ── Mouse handlers ── */
@@ -1029,7 +1038,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.1)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
               >
-                <span style={{ fontSize: 15 }}>{pi.icon}</span>
+                <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
                 <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
               </div>
             ))}
@@ -1092,6 +1101,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         onCtx={e => handleTableCtx(e, table.id)}
                         onRotateMD={e => handleRotateMD(e, table)}
                         onResizeMD={e => handleResizeMD(e, table)}
+                        onRotateStep={deg => rotateTableStep(table.id, deg)}
                         onSeatedClick={e => {
                           e.stopPropagation();
                           setSelId(table.id);
@@ -1119,8 +1129,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <div style={{ position: "fixed", left: ctxMenu.x, top: ctxMenu.y, zIndex: 3000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.35)", borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 168 }}
           onMouseLeave={() => setCtxMenu(null)}>
           {([
-            { icon: "✏️", label: "ערוך",   action: () => { openEdit(ctxMenu.id); setCtxMenu(null); } },
-            { icon: "⎘",  label: "שכפל",   action: () => dupTable(ctxMenu.id) },
+            { icon: "✏️", label: "ערוך",    action: () => { openEdit(ctxMenu.id); setCtxMenu(null); } },
+            { icon: "⎘",  label: "שכפל",    action: () => dupTable(ctxMenu.id) },
+            null,
+            { icon: "↺",  label: "סובב -15°", action: () => { rotateTableStep(ctxMenu.id, -15); setCtxMenu(null); } },
+            { icon: "↻",  label: "סובב +15°", action: () => { rotateTableStep(ctxMenu.id, 15); setCtxMenu(null); } },
             null,
             ...Object.entries(STATUS_CFG).map(([s, cfg]) => ({ icon: "●", label: cfg.label, color: cfg.color, action: () => { updTable(ctxMenu.id, { status: s as TableStatus }); setCtxMenu(null); } })),
             null,
