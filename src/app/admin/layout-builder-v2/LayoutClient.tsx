@@ -14,9 +14,16 @@ type FreeTable = {
   status: TableStatus; rot: number; customColor: string; zIdx: number;
 };
 
+type Decoration = {
+  id: string; kind: "line" | "label";
+  x: number; y: number; w: number; h: number;
+  rot: number; text: string; color: string; zIdx: number;
+};
+
 type Room = {
   id: string; name: string; tables: FreeTable[];
   bg: number; bgImg?: string; bgOpacity?: number;
+  decos?: Decoration[];
 };
 
 type LayoutV2  = { version: 2; rooms: Room[] };
@@ -45,8 +52,13 @@ const PALETTE: PaletteItem[] = [
   { icon: "▬", label: "מלבן 10",   shape: "rect",    w: 155, h: 70,  seats: 10 },
   { icon: "■", label: "ריבוע 4",   shape: "square",  w: 90,  h: 90,  seats: 4  },
   { icon: "◉", label: "אובאלי 10", shape: "oval",    w: 120, h: 80,  seats: 10 },
-  { icon: "━", label: "ארוך 12",   shape: "long",    w: 190, h: 62,  seats: 12 },
   { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 240, h: 65,  seats: 16 },
+];
+
+type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label"; w: number; h: number };
+const DECO_PALETTE: DecoPaletteItem[] = [
+  { icon: "━", label: "קו",    kind: "line",  w: 200, h: 5   },
+  { icon: "▭", label: "תווית", kind: "label", w: 160, h: 80  },
 ];
 
 const BGS = [
@@ -276,6 +288,75 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
           onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
           style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: "#d4a017", border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }}
         />
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════ Decoration Item ══ */
+function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, onRotateStep, onTextCommit }: {
+  deco: Decoration; selected: boolean;
+  onMD: (e: React.MouseEvent) => void;
+  onCtx: (e: React.MouseEvent) => void;
+  onResizeMD: (e: React.MouseEvent) => void;
+  onRotateMD: (e: React.MouseEvent) => void;
+  onRotateStep: (deg: number) => void;
+  onTextCommit: (text: string) => void;
+}) {
+  const [textEditing, setTextEditing] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const isLine = deco.kind === "line";
+  const c = deco.color || "#d4a017";
+
+  return (
+    <div
+      onMouseDown={onMD}
+      onDoubleClick={e => { if (!isLine) { e.stopPropagation(); setTextEditing(true); } }}
+      onContextMenu={onCtx}
+      style={{ position: "absolute", left: deco.x, top: deco.y, width: deco.w, height: Math.max(isLine ? 4 : 40, deco.h), transform: `rotate(${deco.rot}deg)`, transformOrigin: "center", cursor: "grab", userSelect: "none", zIndex: selected ? deco.zIdx + 100 : deco.zIdx }}
+    >
+      {/* Rotation handles */}
+      {selected && (
+        <div style={{ position: "absolute", top: -38, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, zIndex: 50, alignItems: "center" }}>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(-15); }} onMouseDown={e => e.stopPropagation()} title="סובב -15°"
+            style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.75)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>↺</div>
+          <div onMouseDown={e => { e.stopPropagation(); onRotateMD(e); }} title="גרור לסיבוב"
+            style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.92)", border: "2px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "grab" }}>↻</div>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(15); }} onMouseDown={e => e.stopPropagation()} title="סובב +15°"
+            style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.75)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>↻</div>
+        </div>
+      )}
+
+      {/* Selection ring */}
+      {selected && <div style={{ position: "absolute", inset: -5, borderRadius: isLine ? 4 : 10, border: "2px dashed #d4a017", boxShadow: "0 0 10px rgba(212,160,23,0.35)", pointerEvents: "none" }} />}
+
+      {/* Body */}
+      {isLine ? (
+        <div style={{ position: "absolute", inset: 0, background: c, borderRadius: 3, boxShadow: `0 1px 6px ${c}60` }} />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1.5px solid ${c}80`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          {textEditing ? (
+            <textarea
+              ref={taRef}
+              autoFocus
+              defaultValue={deco.text}
+              onBlur={e => { onTextCommit(e.target.value); setTextEditing(false); }}
+              onKeyDown={e => { if (e.key === "Escape") { onTextCommit(taRef.current?.value ?? deco.text); setTextEditing(false); } e.stopPropagation(); }}
+              onMouseDown={e => e.stopPropagation()}
+              style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: c, fontSize: 14, fontWeight: 600, textAlign: "center", padding: "8px", fontFamily: "inherit", cursor: "text" }}
+            />
+          ) : (
+            <div style={{ color: c, fontSize: 14, fontWeight: 600, textAlign: "center", padding: "6px 10px", wordBreak: "break-word", pointerEvents: "none", width: "100%" }}>
+              {deco.text || <span style={{ opacity: 0.35, fontSize: 11 }}>לחץ פעמיים לכתיבה</span>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SE resize handle */}
+      {selected && (
+        <div onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
+          style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: "#d4a017", border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }} />
       )}
     </div>
   );
@@ -577,10 +658,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   useEffect(() => { vSizeRef.current = vSize; }, [vSize]);
 
   /* selection / edit */
-  const [selId, setSelId]     = useState<string | null>(null);
-  const [editId, setEditId]   = useState<string | null>(null);
-  const [editPos, setEditPos] = useState({ x: 120, y: 80 });
-  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; id: string } | null>(null);
+  const [selId, setSelId]         = useState<string | null>(null);
+  const [editId, setEditId]       = useState<string | null>(null);
+  const [editPos, setEditPos]     = useState({ x: 120, y: 80 });
+  const [selDecoId, setSelDecoId] = useState<string | null>(null);
+  const [ctxMenu, setCtxMenu]     = useState<{ x: number; y: number; id: string; kind: "table" | "deco" } | null>(null);
 
   /* ui toggles */
   const [snapOn, setSnapOn]       = useState(false);
@@ -612,8 +694,17 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const panIsOnBg   = useRef(false);
   const panStart    = useRef({ mx: 0, my: 0, px: 0, py: 0 });
   const spaceDown   = useRef(false);
-  const paletteDrag = useRef<PaletteItem | null>(null);
-  const vSizeRef    = useRef({ w: 900, h: 560 });
+  const paletteDrag    = useRef<PaletteItem | null>(null);
+  const paletteDragDeco = useRef<DecoPaletteItem | null>(null);
+  const vSizeRef       = useRef({ w: 900, h: 560 });
+
+  /* deco interaction refs */
+  const draggingDecoId  = useRef<string | null>(null);
+  const dragDecoStart   = useRef({ mx: 0, my: 0, dx: 0, dy: 0 });
+  const rotatingDecoId  = useRef<string | null>(null);
+  const rotateCtrDeco   = useRef({ cx: 0, cy: 0 });
+  const rsDecoId        = useRef<string | null>(null);
+  const rsDecoStart     = useRef({ dw: 0, dh: 0 });
 
   useEffect(() => { setOrigin(window.location.origin); }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -697,6 +788,43 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   function updTable(id: string, u: Partial<FreeTable>) {
     updRoom(r => ({ ...r, tables: r.tables.map(t => t.id === id ? { ...t, ...u } : t) }));
+  }
+
+  function updDeco(id: string, u: Partial<Decoration>) {
+    updRoom(r => ({ ...r, decos: (r.decos ?? []).map(d => d.id === id ? { ...d, ...u } : d) }));
+  }
+
+  function delDeco(id: string) {
+    updRoom(r => ({ ...r, decos: (r.decos ?? []).filter(d => d.id !== id) }));
+    if (selDecoId === id) setSelDecoId(null);
+    setCtxMenu(null);
+  }
+
+  function dupDeco(id: string) {
+    const d = activeRoom?.decos?.find(d => d.id === id);
+    if (!d) return;
+    const nd: Decoration = { ...d, id: uid(), x: snapV(d.x + 24, snapOn), y: snapV(d.y + 24, snapOn) };
+    updRoom(r => ({ ...r, decos: [...(r.decos ?? []), nd] }));
+    setSelDecoId(nd.id); setCtxMenu(null);
+    showToast("אלמנט שוכפל ⎘");
+  }
+
+  function spawnDeco(cx: number, cy: number, item: DecoPaletteItem) {
+    const d: Decoration = {
+      id: uid(), kind: item.kind,
+      x: snapV(Math.max(0, cx - item.w / 2), snapOn),
+      y: snapV(Math.max(0, cy - item.h / 2), snapOn),
+      w: item.w, h: item.h,
+      rot: 0, text: "", color: "#d4a017", zIdx: 1,
+    };
+    updRoom(r => ({ ...r, decos: [...(r.decos ?? []), d] }));
+    setSelDecoId(d.id); setSelId(null);
+    showToast("אלמנט נוסף");
+  }
+
+  function rotateDecoStep(id: string, deg: number) {
+    const d = activeRoom?.decos?.find(d => d.id === id);
+    if (d) updDeco(id, { rot: ((d.rot || 0) + deg + 360) % 360 });
   }
 
   function fitView() {
@@ -857,18 +985,50 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         x: snapV(dragStart.current.tx + dx, snapOn),
         y: snapV(dragStart.current.ty + dy, snapOn),
       });
+      return;
+    }
+
+    if (rotatingDecoId.current) {
+      const { cx, cy } = rotateCtrDeco.current;
+      const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
+      updDeco(rotatingDecoId.current, { rot: snapOn ? Math.round(angle / 15) * 15 : Math.round(angle) });
+      return;
+    }
+
+    if (rsDecoId.current) {
+      const p = screenToCanvas(e.clientX, e.clientY);
+      const d = activeRoom?.decos?.find(d => d.id === rsDecoId.current);
+      if (!d) return;
+      updDeco(rsDecoId.current, {
+        w: snapV(Math.max(20, p.x - d.x + rsDecoStart.current.dw), snapOn),
+        h: snapV(Math.max(4,  p.y - d.y + rsDecoStart.current.dh), snapOn),
+      });
+      return;
+    }
+
+    if (draggingDecoId.current) {
+      didDrag.current = true;
+      const dx = (e.clientX - dragDecoStart.current.mx) / zoomR.current;
+      const dy = (e.clientY - dragDecoStart.current.my) / zoomR.current;
+      updDeco(draggingDecoId.current, {
+        x: snapV(dragDecoStart.current.dx + dx, snapOn),
+        y: snapV(dragDecoStart.current.dy + dy, snapOn),
+      });
     }
   }
 
   function handleCanvasMU(e: React.MouseEvent) {
     if (isPanning.current && panIsOnBg.current) {
       const dist = Math.hypot(e.clientX - panStart.current.mx, e.clientY - panStart.current.my);
-      if (dist < 5) { setSelId(null); setCtxMenu(null); setEditId(null); }
+      if (dist < 5) { setSelId(null); setSelDecoId(null); setCtxMenu(null); setEditId(null); }
     }
     isPanning.current = false; panIsOnBg.current = false;
     draggingId.current = null;
     rotatingId.current = null;
     rsId.current = null;
+    draggingDecoId.current = null;
+    rotatingDecoId.current = null;
+    rsDecoId.current = null;
   }
 
   function handleTableMD(e: React.MouseEvent, table: FreeTable) {
@@ -887,7 +1047,39 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   function handleTableCtx(e: React.MouseEvent, id: string) {
     e.preventDefault(); e.stopPropagation();
-    setCtxMenu({ x: e.clientX, y: e.clientY, id }); setSelId(id);
+    setCtxMenu({ x: e.clientX, y: e.clientY, id, kind: "table" }); setSelId(id);
+  }
+
+  function handleDecoMD(e: React.MouseEvent, deco: Decoration) {
+    if (e.button !== 0 || spaceDown.current) return;
+    e.stopPropagation();
+    didDrag.current = false;
+    draggingDecoId.current = deco.id;
+    dragDecoStart.current = { mx: e.clientX, my: e.clientY, dx: deco.x, dy: deco.y };
+    setSelDecoId(deco.id); setSelId(null); setCtxMenu(null);
+  }
+
+  function handleDecoCtx(e: React.MouseEvent, id: string) {
+    e.preventDefault(); e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY, id, kind: "deco" }); setSelDecoId(id);
+  }
+
+  function handleDecoResizeMD(e: React.MouseEvent, deco: Decoration) {
+    e.stopPropagation(); e.preventDefault();
+    rsDecoId.current = deco.id;
+    const p = screenToCanvas(e.clientX, e.clientY);
+    rsDecoStart.current = { dw: deco.w - (p.x - deco.x), dh: deco.h - (p.y - deco.y) };
+  }
+
+  function handleDecoRotateMD(e: React.MouseEvent, deco: Decoration) {
+    e.stopPropagation(); e.preventDefault();
+    rotatingDecoId.current = deco.id;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    rotateCtrDeco.current = {
+      cx: (deco.x + deco.w / 2) * zoom + panX + rect.left,
+      cy: (deco.y + deco.h / 2) * zoom + panY + rect.top,
+    };
   }
 
   function handleRotateMD(e: React.MouseEvent, table: FreeTable) {
@@ -912,11 +1104,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   function handleDragOver(e: React.DragEvent) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
-    const pi = paletteDrag.current;
-    if (!pi) return;
-    paletteDrag.current = null;
     const p = screenToCanvas(e.clientX, e.clientY);
-    spawnTable(p.x, p.y, pi);
+    if (paletteDrag.current) {
+      const pi = paletteDrag.current; paletteDrag.current = null;
+      spawnTable(p.x, p.y, pi);
+    } else if (paletteDragDeco.current) {
+      const pi = paletteDragDeco.current; paletteDragDeco.current = null;
+      spawnDeco(p.x, p.y, pi);
+    }
   }
 
   /* keyboard */
@@ -926,10 +1121,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         spaceDown.current = true;
         if (containerRef.current) containerRef.current.style.cursor = "grab";
       }
-      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); }
+      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); setSelDecoId(null); }
       if (e.key === "g" || e.key === "G") setSnapOn(s => !s);
       const tag = (document.activeElement as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (selDecoId) {
+        if (e.key === "Delete" || e.key === "Backspace") { delDeco(selDecoId); return; }
+        if ((e.key === "d" || e.key === "D") && (e.ctrlKey || e.metaKey)) { e.preventDefault(); dupDeco(selDecoId); return; }
+      }
       if (!selId) return;
       if (e.key === "Delete" || e.key === "Backspace") { delTable(selId); return; }
       if ((e.key === "d" || e.key === "D") && (e.ctrlKey || e.metaKey)) { e.preventDefault(); dupTable(selId); return; }
@@ -947,7 +1146,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     window.addEventListener("keydown", dn);
     window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
-  }, [selId, activeRoom]); // eslint-disable-line
+  }, [selId, selDecoId, activeRoom]); // eslint-disable-line
 
   /* rooms */
   function addRoom() {
@@ -1075,6 +1274,29 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               </div>
             ))}
 
+            {/* Deco section */}
+            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "4px 0" }} />
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2, paddingLeft: 4 }}>עיצוב</div>
+            {DECO_PALETTE.map(pi => (
+              <div
+                key={pi.label}
+                draggable
+                onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDragDeco.current = pi; }}
+                onDragEnd={() => { paletteDragDeco.current = null; }}
+                onDoubleClick={() => {
+                  const cx = (vSize.w / 2 - panX) / zoom;
+                  const cy = (vSize.h / 2 - panY) / zoom;
+                  spawnDeco(cx, cy, pi);
+                }}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 8px", borderRadius: 8, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.2)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}
+              >
+                <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
+                <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
+              </div>
+            ))}
+
             {/* Keyboard hints */}
             <div style={{ marginTop: "auto", paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 9, color: C.muted, lineHeight: 1.8, paddingLeft: 4 }}>
               <div>↻  סובב (גרור)</div>
@@ -1109,6 +1331,24 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                 <div style={{ width: vSize.w, height: vSize.h, position: "relative" }}>
                   {/* Background layer (separate so bgImg opacity doesn't affect tables) */}
                   <div data-canvas="bg" style={{ position: "absolute", inset: 0, zIndex: 0, cursor: "grab", ...(activeRoom?.bgImg ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 } : { background: bgCfg.cw, backgroundSize: "40px 40px" }) }} />
+
+                  {/* Decorations */}
+                  {(activeRoom?.decos ?? [])
+                    .slice()
+                    .sort((a, b) => a.zIdx - b.zIdx)
+                    .map(deco => (
+                      <DecorationItem
+                        key={deco.id}
+                        deco={deco}
+                        selected={selDecoId === deco.id}
+                        onMD={e => handleDecoMD(e, deco)}
+                        onCtx={e => handleDecoCtx(e, deco.id)}
+                        onResizeMD={e => handleDecoResizeMD(e, deco)}
+                        onRotateMD={e => handleDecoRotateMD(e, deco)}
+                        onRotateStep={deg => rotateDecoStep(deco.id, deg)}
+                        onTextCommit={text => updDeco(deco.id, { text })}
+                      />
+                    ))}
 
                   {/* Tables */}
                   {activeRoom?.tables
@@ -1158,33 +1398,42 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
       {/* ── Context menu ── */}
       {ctxMenu && (() => {
-        const menuW = 178, menuH = 380;
+        const isDeco = ctxMenu.kind === "deco";
+        const menuH = isDeco ? 110 : 380;
+        const menuW = 178;
         const cx = ctxMenu.x + menuW > window.innerWidth - 8 ? ctxMenu.x - menuW : ctxMenu.x;
         const cy = ctxMenu.y + menuH > window.innerHeight - 8 ? Math.max(8, ctxMenu.y - menuH) : ctxMenu.y;
+        const items = isDeco
+          ? [
+              { icon: "⎘", label: "שכפל", action: () => dupDeco(ctxMenu.id) },
+              null,
+              { icon: "🗑", label: "מחק", color: "#f44336", action: () => delDeco(ctxMenu.id) },
+            ]
+          : [
+              { icon: "✏️", label: "ערוך",      action: () => { openEdit(ctxMenu.id); setCtxMenu(null); } },
+              { icon: "⎘",  label: "שכפל",      action: () => dupTable(ctxMenu.id) },
+              null,
+              { icon: "↺",  label: "סובב -15°", action: () => { rotateTableStep(ctxMenu.id, -15); setCtxMenu(null); } },
+              { icon: "↻",  label: "סובב +15°", action: () => { rotateTableStep(ctxMenu.id, 15);  setCtxMenu(null); } },
+              null,
+              ...Object.entries(STATUS_CFG).map(([s, cfg]) => ({ icon: "●", label: cfg.label, color: cfg.color, action: () => { updTable(ctxMenu.id, { status: s as TableStatus }); setCtxMenu(null); } })),
+              null,
+              { icon: "🗑", label: "מחק", color: "#f44336", action: () => delTable(ctxMenu.id) },
+            ];
         return (
-        <div style={{ position: "fixed", left: cx, top: cy, zIndex: 3000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.35)", borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: menuW }}
-          onMouseLeave={() => setCtxMenu(null)}>
-          {([
-            { icon: "✏️", label: "ערוך",    action: () => { openEdit(ctxMenu.id); setCtxMenu(null); } },
-            { icon: "⎘",  label: "שכפל",    action: () => dupTable(ctxMenu.id) },
-            null,
-            { icon: "↺",  label: "סובב -15°", action: () => { rotateTableStep(ctxMenu.id, -15); setCtxMenu(null); } },
-            { icon: "↻",  label: "סובב +15°", action: () => { rotateTableStep(ctxMenu.id, 15); setCtxMenu(null); } },
-            null,
-            ...Object.entries(STATUS_CFG).map(([s, cfg]) => ({ icon: "●", label: cfg.label, color: cfg.color, action: () => { updTable(ctxMenu.id, { status: s as TableStatus }); setCtxMenu(null); } })),
-            null,
-            { icon: "🗑", label: "מחק", color: "#f44336", action: () => delTable(ctxMenu.id) },
-          ] as (null | { icon: string; label: string; color?: string; action: () => void })[]).map((item, i) => {
-            if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
-            return (
-              <button key={i} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.color ?? C.text, background: "none", border: "none", cursor: "pointer", textAlign: "right" as const }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.1)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-                <span style={{ minWidth: 16 }}>{item.icon}</span>{item.label}
-              </button>
-            );
-          })}
-        </div>
+          <div style={{ position: "fixed", left: cx, top: cy, zIndex: 3000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.35)", borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: menuW }}
+            onMouseLeave={() => setCtxMenu(null)}>
+            {(items as (null | { icon: string; label: string; color?: string; action: () => void })[]).map((item, i) => {
+              if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
+              return (
+                <button key={i} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.color ?? C.text, background: "none", border: "none", cursor: "pointer", textAlign: "right" as const }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.1)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <span style={{ minWidth: 16 }}>{item.icon}</span>{item.label}
+                </button>
+              );
+            })}
+          </div>
         );
       })()}
 
