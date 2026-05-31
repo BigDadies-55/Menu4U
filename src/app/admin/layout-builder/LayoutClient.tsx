@@ -708,7 +708,12 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [showBg, setShowBg]       = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(210);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const sidebarResizing = useRef(false);
+  const sidebarResizeStartX = useRef(0);
+  const sidebarResizeStartW = useRef(0);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
 
@@ -1554,12 +1559,47 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       <div style={{ flex: 1, display: "flex", overflow: "hidden", direction: "ltr" }}>
 
         {/* Sidebar */}
-        <div style={{ width: showSidebar ? 210 : 36, flexShrink: 0, background: "rgba(10,4,2,0.95)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "hidden", transition: "width 0.18s ease", direction: "rtl" }}>
-          {/* Collapse toggle */}
-          <button onClick={() => setShowSidebar(s => !s)} title={showSidebar ? "כווץ סרגל" : "פתח סרגל"}
-            style={{ width: "100%", padding: "7px 0", background: "none", border: "none", borderBottom: "1px solid rgba(212,160,23,0.12)", color: C.gold, fontSize: 13, cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>
-            {showSidebar ? "◁" : "▷"}
-          </button>
+        <div
+          onMouseLeave={() => { if (!sidebarPinned && showSidebar) setShowSidebar(false); }}
+          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.95)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative", zIndex: sidebarPinned ? "auto" as never : 10 }}>
+
+          {/* Header row: collapse + pin */}
+          <div style={{ display: "flex", alignItems: "center", borderBottom: "1px solid rgba(212,160,23,0.12)", flexShrink: 0 }}>
+            <button onClick={() => setShowSidebar(s => !s)} title={showSidebar ? "כווץ סרגל" : "פתח סרגל"}
+              style={{ flex: 1, padding: "7px 0", background: "none", border: "none", color: C.gold, fontSize: 13, cursor: "pointer", lineHeight: 1 }}>
+              {showSidebar ? "◁" : "▷"}
+            </button>
+            {showSidebar && (
+              <button onClick={() => setSidebarPinned(s => !s)} title={sidebarPinned ? "בטל נעיצה" : "נעץ סרגל"}
+                style={{ padding: "7px 8px", background: "none", border: "none", color: sidebarPinned ? C.gold : "rgba(212,160,23,0.35)", fontSize: 13, cursor: "pointer", lineHeight: 1, flexShrink: 0 }}>
+                📌
+              </button>
+            )}
+          </div>
+
+          {/* Resize handle */}
+          {showSidebar && (
+            <div
+              title="גרור לשינוי רוחב"
+              onMouseDown={e => {
+                sidebarResizing.current = true;
+                sidebarResizeStartX.current = e.clientX;
+                sidebarResizeStartW.current = sidebarWidth;
+                const mm = (me: MouseEvent) => {
+                  if (!sidebarResizing.current) return;
+                  const newW = Math.max(140, Math.min(400, sidebarResizeStartW.current + me.clientX - sidebarResizeStartX.current));
+                  setSidebarWidth(newW);
+                };
+                const mu = () => { sidebarResizing.current = false; document.removeEventListener("mousemove", mm); document.removeEventListener("mouseup", mu); };
+                document.addEventListener("mousemove", mm);
+                document.addEventListener("mouseup", mu);
+                e.preventDefault();
+              }}
+              style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "ew-resize", zIndex: 20, background: "transparent" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.25)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+            />
+          )}
 
           {showSidebar ? (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "10px 8px", gap: 5, overflow: "hidden" }}>
