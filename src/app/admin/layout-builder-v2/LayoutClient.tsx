@@ -303,9 +303,10 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
   const [off, setOff] = useState({ x: 0, y: 0 });
   const [copied, setCopied] = useState(false);
 
+  const tableUrl = origin && table.num > 0 ? `${origin}/menu/${restaurantId}?table=${encodeURIComponent(String(table.num))}` : null;
+  const estimatedH = tableUrl ? 650 : 470;
   const px = Math.max(8, Math.min(pos.x + off.x, window.innerWidth - 316));
-  const py = Math.max(8, Math.min(pos.y + off.y, window.innerHeight - 100));
-  const contentMaxH = window.innerHeight - py - 52;
+  const py = Math.max(8, Math.min(pos.y + off.y, window.innerHeight - estimatedH));
 
   function apply() {
     onUpdate({
@@ -322,8 +323,6 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
   }
 
   const inp: React.CSSProperties = { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(212,160,23,0.2)", color: "#e9ecef", borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
-
-  const tableUrl = origin && table.num > 0 ? `${origin}/menu/${restaurantId}?table=${encodeURIComponent(String(table.num))}` : null;
 
   return (
     <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: "linear-gradient(160deg,#180a05 0%,#251008 60%,#1a0d06 100%)", border: "1px solid rgba(212,160,23,0.5)", borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: "#e9ecef" }}>
@@ -343,8 +342,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#888", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "2px 7px", borderRadius: 6 }}>×</button>
       </div>
 
-      {/* Scrollable content */}
-      <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", maxHeight: contentMaxH }}>
+      <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
 
         {/* Status pills */}
         <div style={{ display: "flex", gap: 4 }}>
