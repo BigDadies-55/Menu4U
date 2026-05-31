@@ -41,14 +41,14 @@ const SHAPE_BR: Record<TableShape, string> = {
 type PaletteItem = { icon: string; label: string; shape: TableShape; w: number; h: number; seats: number };
 
 const PALETTE: PaletteItem[] = [
-  { icon: "⭕", label: "עגול 6",    shape: "round",   w: 80,  h: 80,  seats: 6  },
-  { icon: "🔵", label: "עגול 8",    shape: "round",   w: 100, h: 100, seats: 8  },
-  { icon: "▬",  label: "מלבן 8",    shape: "rect",    w: 140, h: 80,  seats: 8  },
-  { icon: "⬛", label: "מלבן 10",   shape: "rect",    w: 180, h: 80,  seats: 10 },
-  { icon: "🔲", label: "ריבוע 4",   shape: "square",  w: 90,  h: 90,  seats: 4  },
-  { icon: "🥚", label: "אובאלי 10", shape: "oval",    w: 130, h: 85,  seats: 10 },
-  { icon: "📏", label: "ארוך 12",   shape: "long",    w: 220, h: 70,  seats: 12 },
-  { icon: "🎉", label: "בנקט 16",   shape: "banquet", w: 280, h: 75,  seats: 16 },
+  { icon: "⭕", label: "עגול 6",    shape: "round",   w: 130, h: 130, seats: 6  },
+  { icon: "🔵", label: "עגול 8",    shape: "round",   w: 160, h: 160, seats: 8  },
+  { icon: "▬",  label: "מלבן 8",    shape: "rect",    w: 210, h: 115, seats: 8  },
+  { icon: "⬛", label: "מלבן 10",   shape: "rect",    w: 250, h: 115, seats: 10 },
+  { icon: "🔲", label: "ריבוע 4",   shape: "square",  w: 140, h: 140, seats: 4  },
+  { icon: "🥚", label: "אובאלי 10", shape: "oval",    w: 190, h: 130, seats: 10 },
+  { icon: "📏", label: "ארוך 12",   shape: "long",    w: 310, h: 100, seats: 12 },
+  { icon: "🎉", label: "בנקט 16",   shape: "banquet", w: 390, h: 105, seats: 16 },
 ];
 
 const BGS = [
@@ -539,6 +539,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   useEffect(() => { panXR.current = panX; }, [panX]);
   useEffect(() => { panYR.current = panY; }, [panY]);
   useEffect(() => { zoomR.current = zoom; }, [zoom]);
+  useEffect(() => { vSizeRef.current = vSize; }, [vSize]);
 
   /* selection / edit */
   const [selId, setSelId]     = useState<string | null>(null);
@@ -573,9 +574,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const rsStart     = useRef({ dw: 0, dh: 0 });
 
   const isPanning   = useRef(false);
+  const panIsOnBg   = useRef(false);
   const panStart    = useRef({ mx: 0, my: 0, px: 0, py: 0 });
   const spaceDown   = useRef(false);
   const paletteDrag = useRef<PaletteItem | null>(null);
+  const vSizeRef    = useRef({ w: 900, h: 560 });
 
   useEffect(() => { setOrigin(window.location.origin); }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -606,6 +609,23 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   }
 
   /* ── Load / Save ── */
+  function zoomToContent(targetLayout: LayoutV2, vw?: number, vh?: number) {
+    const w = vw ?? vSizeRef.current.w;
+    const h = vh ?? vSizeRef.current.h;
+    const tables = targetLayout.rooms.flatMap(r => r.tables);
+    if (tables.length === 0 || w < 100 || h < 100) return;
+    const minX = Math.min(...tables.map(t => t.x));
+    const minY = Math.min(...tables.map(t => t.y));
+    const maxX = Math.max(...tables.map(t => t.x + t.w));
+    const maxY = Math.max(...tables.map(t => t.y + t.h));
+    const pad = 100;
+    const z = Math.min(w / (maxX - minX + pad * 2), h / (maxY - minY + pad * 2));
+    const cz = Math.max(0.25, Math.min(3, z));
+    setZoom(cz);
+    setPanX(w / 2 - ((minX + maxX) / 2) * cz);
+    setPanY(h / 2 - ((minY + maxY) / 2) * cz);
+  }
+
   async function loadLayout(rid: string) {
     setLoading(true);
     try {
@@ -614,7 +634,9 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         const data = await res.json();
         if (data.tableLayoutJson) {
           const p = JSON.parse(data.tableLayoutJson);
-          setLayout(p.version === 2 ? p : emptyLayout());
+          const newLayout = p.version === 2 ? p : emptyLayout();
+          setLayout(newLayout);
+          requestAnimationFrame(() => zoomToContent(newLayout));
         } else setLayout(emptyLayout());
       }
     } catch { setLayout(emptyLayout()); }
@@ -644,8 +666,13 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   }
 
   function fitView() {
-    const z = Math.min(vSize.w / CANVAS_W, vSize.h / CANVAS_H) * 0.92;
-    setZoom(z); setPanX((vSize.w - CANVAS_W * z) / 2); setPanY((vSize.h - CANVAS_H * z) / 2);
+    const tables = layout.rooms.flatMap(r => r.tables);
+    if (tables.length > 0) {
+      zoomToContent(layout, vSize.w, vSize.h);
+    } else {
+      const z = Math.min(vSize.w / CANVAS_W, vSize.h / CANVAS_H) * 0.92;
+      setZoom(z); setPanX((vSize.w - CANVAS_W * z) / 2); setPanY((vSize.h - CANVAS_H * z) / 2);
+    }
   }
 
   function autoArrange() {
@@ -654,8 +681,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     updRoom(r => ({
       ...r, tables: r.tables.map((t, i) => ({
         ...t,
-        x: 80 + (i % cols) * 180,
-        y: 140 + Math.floor(i / cols) * 155,
+        x: 100 + (i % cols) * (t.w + 60),
+        y: 120 + Math.floor(i / cols) * (t.h + 60),
       })),
     }));
     showToast("שולחנות סודרו אוטומטית ⚡");
@@ -748,12 +775,13 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   function handleCanvasMD(e: React.MouseEvent) {
     if (e.button === 1 || (e.button === 0 && spaceDown.current)) {
-      e.preventDefault(); isPanning.current = true;
+      e.preventDefault(); isPanning.current = true; panIsOnBg.current = false;
       panStart.current = { mx: e.clientX, my: e.clientY, px: panX, py: panY };
       return;
     }
     if (e.button === 0 && (e.target as HTMLElement).dataset.canvas === "bg") {
-      setSelId(null); setCtxMenu(null); setEditId(null);
+      isPanning.current = true; panIsOnBg.current = true;
+      panStart.current = { mx: e.clientX, my: e.clientY, px: panX, py: panY };
     }
   }
 
@@ -794,8 +822,12 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     }
   }
 
-  function handleCanvasMU() {
-    isPanning.current = false;
+  function handleCanvasMU(e: React.MouseEvent) {
+    if (isPanning.current && panIsOnBg.current) {
+      const dist = Math.hypot(e.clientX - panStart.current.mx, e.clientY - panStart.current.my);
+      if (dist < 5) { setSelId(null); setCtxMenu(null); setEditId(null); }
+    }
+    isPanning.current = false; panIsOnBg.current = false;
     draggingId.current = null;
     rotatingId.current = null;
     rsId.current = null;
@@ -1035,7 +1067,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               <div style={{ position: "absolute", top: 0, left: 0, transformOrigin: "0 0", transform: `translate(${panX}px,${panY}px) scale(${zoom})`, willChange: "transform" }}>
                 <div style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
                   {/* Background layer (separate so bgImg opacity doesn't affect tables) */}
-                  <div data-canvas="bg" style={{ position: "absolute", inset: 0, zIndex: 0, ...(activeRoom?.bgImg ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 } : { background: bgCfg.cw, backgroundSize: "40px 40px" }) }} />
+                  <div data-canvas="bg" style={{ position: "absolute", inset: 0, zIndex: 0, cursor: "grab", ...(activeRoom?.bgImg ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 } : { background: bgCfg.cw, backgroundSize: "40px 40px" }) }} />
 
                   {/* Tables */}
                   {activeRoom?.tables
