@@ -698,6 +698,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [showSidebar, setShowSidebar] = useState(true);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
 
   /* inline seated-count edit */
   const [inlineSeated, setInlineSeated] = useState<{ id: string; val: string } | null>(null);
@@ -1404,11 +1405,28 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
-        {/* Tools */}
-        <TopBtn active={snapOn} onClick={() => setSnapOn(s => !s)} title="רשת (G)" wide>⊞ רשת</TopBtn>
-        <TopBtn onClick={autoArrange} title="סידור אוטומטי" wide>⚡ סדר</TopBtn>
-        <TopBtn active={showBg} onClick={() => setShowBg(s => !s)} title="רקע קנבס" wide>▣ רקע</TopBtn>
-        <TopBtn active={showStats} onClick={() => setShowStats(s => !s)} title="סטטיסטיקות" wide>≡ נתונים</TopBtn>
+        {/* Tools dropdown */}
+        <div style={{ position: "relative" }}>
+          <TopBtn active={showToolsMenu || snapOn || showBg || showStats} onClick={() => setShowToolsMenu(s => !s)} wide title="כלים">⚙ כלים ▾</TopBtn>
+          {showToolsMenu && (
+            <div onMouseLeave={() => setShowToolsMenu(false)} style={{ position: "absolute", top: "100%", right: 0, zIndex: 4000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.4)", borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 150, marginTop: 4 }}>
+              {[
+                { icon: "⊞", label: "רשת (G)", active: snapOn,    action: () => { setSnapOn(s => !s); } },
+                { icon: "⚡", label: "סדר אוטו",  active: false,    action: () => { autoArrange(); setShowToolsMenu(false); } },
+                { icon: "▣", label: "רקע קנבס", active: showBg,    action: () => { setShowBg(s => !s); } },
+                { icon: "≡", label: "נתונים",   active: showStats, action: () => { setShowStats(s => !s); } },
+              ].map(item => (
+                <button key={item.label} onClick={item.action}
+                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.active ? "#ffd700" : "#e9ecef", background: item.active ? "rgba(212,160,23,0.12)" : "none", border: "none", cursor: "pointer", textAlign: "right" as const }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.12)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = item.active ? "rgba(212,160,23,0.12)" : "none")}>
+                  <span style={{ minWidth: 16, color: "#d4a017" }}>{item.icon}</span>{item.label}
+                  {item.active && <span style={{ marginLeft: "auto", fontSize: 10, color: "#ffd700" }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
@@ -1458,7 +1476,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
         {/* Sidebar */}
         {showSidebar && (
-          <div style={{ width: 126, flexShrink: 0, background: "rgba(10,4,2,0.92)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", padding: "10px 6px", gap: 5, overflowY: "auto" }}>
+          <div style={{ width: 126, flexShrink: 0, background: "rgba(10,4,2,0.92)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", padding: "10px 6px", gap: 5, overflow: "hidden" }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2, paddingLeft: 4 }}>גרור לקנבס</div>
             {PALETTE.map(pi => (
               <div
@@ -1503,15 +1521,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               </div>
             ))}
 
-            {/* Keyboard hints */}
-            <div style={{ marginTop: "auto", paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 9, color: C.muted, lineHeight: 1.8, paddingLeft: 4 }}>
-              <div>↻  סובב (גרור)</div>
-              <div>⌃D שכפל</div>
-              <div>Del מחק</div>
-              <div>G  סנאפ</div>
-              <div>⚡ סידור</div>
-              <div>↕  חצים</div>
-            </div>
           </div>
         )}
 
