@@ -440,7 +440,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Status pills */}
         <div style={{ display: "flex", gap: 4 }}>
           {(Object.entries(STATUS_CFG) as [TableStatus, typeof STATUS_CFG[TableStatus]][]).map(([s, cfg]) => (
-            <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} style={{ flex: 1, padding: "5px 0", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", background: form.status === s ? cfg.color + "30" : "transparent", color: form.status === s ? cfg.color : "#555", border: `1px solid ${form.status === s ? cfg.color : "#333"}` }}>
+            <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} style={{ flex: 1, padding: "5px 0", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", background: form.status === s ? cfg.color + "30" : "rgba(255,255,255,0.04)", color: form.status === s ? cfg.color : "rgba(212,160,23,0.45)", border: `1px solid ${form.status === s ? cfg.color : "rgba(212,160,23,0.18)"}` }}>
               {cfg.label}
             </button>
           ))}
@@ -449,11 +449,11 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Num + Name */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>מספר</div>
+            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>מספר</div>
             <input type="number" value={form.num} onChange={e => setForm(f => ({ ...f, num: e.target.value }))} style={{ ...inp, padding: "7px 8px" }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>שם שולחן</div>
+            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>שם שולחן</div>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inp} placeholder="שם אופציונלי..." />
           </div>
         </div>
@@ -461,11 +461,11 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Group + Color */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>קבוצה</div>
+            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>קבוצה</div>
             <input type="text" value={form.group} onChange={e => setForm(f => ({ ...f, group: e.target.value }))} style={inp} placeholder="VIP, חיצוני..." />
           </div>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>צבע מותאם</div>
+            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>צבע מותאם</div>
             <input type="color" value={form.customColor} onChange={e => setForm(f => ({ ...f, customColor: e.target.value }))} style={{ width: "100%", height: 34, borderRadius: 8, border: "1px solid rgba(212,160,23,0.25)", cursor: "pointer", background: "none", padding: 2 }} />
           </div>
         </div>
@@ -473,11 +473,11 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Seats + SeatedCount */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>מקומות</div>
+            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>מקומות</div>
             <input type="number" min={1} max={80} value={form.seats} onChange={e => setForm(f => ({ ...f, seats: e.target.value }))} style={inp} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>יושבים כרגע 🪑</div>
+            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>יושבים כרגע 🪑</div>
             <input type="number" min={0} max={form.seats} value={form.seatedCount} onChange={e => setForm(f => ({ ...f, seatedCount: e.target.value }))} style={inp} />
           </div>
         </div>
@@ -486,7 +486,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         <div style={{ display: "flex", gap: 8 }}>
           {[["רוחב", "w"], ["גובה", "h"], ["סיבוב°", "rot"]].map(([lbl, key]) => (
             <div key={key} style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: "#6c757d", marginBottom: 4 }}>{lbl}</div>
+              <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>{lbl}</div>
               <input type="number" value={form[key as keyof typeof form] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} style={{ ...inp, padding: "7px 6px" }} />
             </div>
           ))}
@@ -516,7 +516,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {tableUrl && (
           <>
             <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "2px 0" }} />
-            <div style={{ fontSize: 11, color: "#6c757d", fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
+            <div style={{ fontSize: 11, color: "rgba(212,160,23,0.6)", fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{ padding: 8, background: "#fff", borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
                 <QRCodeSVG value={tableUrl} size={92} />
@@ -524,7 +524,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <input readOnly value={tableUrl}
-                style={{ flex: 1, fontSize: 9, color: "#6c757d", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 8px", outline: "none", fontFamily: "monospace", minWidth: 0 }}
+                style={{ flex: 1, fontSize: 9, color: "rgba(212,160,23,0.55)", background: "rgba(212,160,23,0.05)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 6, padding: "6px 8px", outline: "none", fontFamily: "monospace", minWidth: 0 }}
                 onClick={e => (e.target as HTMLInputElement).select()} />
               <button
                 onClick={() => {
@@ -874,7 +874,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           const p = JSON.parse(data.tableLayoutJson);
           const newLayout = p.version === 2 ? p : emptyLayout();
           setLayout(newLayout);
-          requestAnimationFrame(() => zoomToContent(newLayout));
+          requestAnimationFrame(() => { setZoom(1); setPanX(0); setPanY(0); });
         } else setLayout(emptyLayout());
       }
     } catch { setLayout(emptyLayout()); }
@@ -1543,71 +1543,37 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
         {/* Sidebar */}
-        <div style={{ width: showSidebar ? 126 : 34, flexShrink: 0, background: "rgba(10,4,2,0.92)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "hidden", transition: "width 0.18s ease" }}>
-          {/* Collapse toggle */}
-          <button onClick={() => setShowSidebar(s => !s)}
-            title={showSidebar ? "כווץ סרגל" : "פתח סרגל"}
-            style={{ width: "100%", padding: "7px 0", background: "none", border: "none", borderBottom: "1px solid rgba(212,160,23,0.12)", color: C.gold, fontSize: 14, cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>
-            {showSidebar ? "◁" : "▷"}
-          </button>
-
-          {showSidebar ? (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "8px 6px", gap: 5, overflow: "hidden" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2, paddingLeft: 4 }}>גרור לקנבס</div>
-              {PALETTE.map(pi => (
-                <div key={pi.label} draggable
-                  onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDrag.current = pi; }}
-                  onDragEnd={() => { paletteDrag.current = null; }}
-                  onDoubleClick={() => { spawnTable((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom, pi); }}
-                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", transition: "all 0.12s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.1)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}>
-                  <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
-                  <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
-                </div>
-              ))}
-              <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "3px 0" }} />
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 1, paddingLeft: 4 }}>עיצוב</div>
-              {DECO_PALETTE.map(pi => (
-                <div key={pi.label} draggable
-                  onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDragDeco.current = pi; }}
-                  onDragEnd={() => { paletteDragDeco.current = null; }}
-                  onDoubleClick={() => { spawnDeco((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom, pi); }}
-                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.2)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
-                  <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
-                  <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* Collapsed: icons only */
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 0", gap: 6, overflow: "hidden" }}>
-              {[...PALETTE, ...DECO_PALETTE].map(pi => (
-                <div key={pi.label} draggable
-                  title={pi.label}
-                  onDragStart={e => {
-                    e.dataTransfer.effectAllowed = "copy";
-                    e.dataTransfer.setData("text/plain", pi.label);
-                    if ("shape" in pi) paletteDrag.current = pi as PaletteItem;
-                    else paletteDragDeco.current = pi as DecoPaletteItem;
-                  }}
-                  onDragEnd={() => { paletteDrag.current = null; paletteDragDeco.current = null; }}
-                  onDoubleClick={() => {
-                    const cx = (vSize.w / 2 - panX) / zoom, cy = (vSize.h / 2 - panY) / zoom;
-                    if ("shape" in pi) spawnTable(cx, cy, pi as PaletteItem);
-                    else spawnDeco(cx, cy, pi as DecoPaletteItem);
-                  }}
-                  style={{ width: 26, height: 26, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s", flexShrink: 0 }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.18)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
-                  <span style={{ fontSize: 13, color: "#d4a017" }}>{pi.icon}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {showSidebar && (
+          <div style={{ width: 126, flexShrink: 0, background: "rgba(10,4,2,0.92)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", padding: "10px 6px", gap: 5, overflow: "hidden" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2, paddingLeft: 4 }}>גרור לקנבס</div>
+            {PALETTE.map(pi => (
+              <div key={pi.label} draggable
+                onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDrag.current = pi; }}
+                onDragEnd={() => { paletteDrag.current = null; }}
+                onDoubleClick={() => { spawnTable((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom, pi); }}
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", transition: "all 0.12s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.1)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}>
+                <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
+                <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
+              </div>
+            ))}
+            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "3px 0" }} />
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 1, paddingLeft: 4 }}>עיצוב</div>
+            {DECO_PALETTE.map(pi => (
+              <div key={pi.label} draggable
+                onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDragDeco.current = pi; }}
+                onDragEnd={() => { paletteDragDeco.current = null; }}
+                onDoubleClick={() => { spawnDeco((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom, pi); }}
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.2)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
+                <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
+                <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Canvas */}
         <div
