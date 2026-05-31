@@ -708,6 +708,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [showBg, setShowBg]       = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
 
@@ -761,6 +762,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const multiDragDecoOrigs   = useRef<Array<{ id: string; x: number; y: number }>>([]);
 
   useEffect(() => { setOrigin(window.location.origin); }, []);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (restaurants[0]?.id) loadLayout(restaurants[0].id); }, []);
 
@@ -1502,7 +1508,12 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? "#4caf50" : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap", letterSpacing: ".02em" }}>
             {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור"}
           </button>
-          <TopBtn active={showSidebar} onClick={() => setShowSidebar(s => !s)} title="סרגל כלים">◧</TopBtn>
+          <TopBtn active={isFullscreen} onClick={() => {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+            else document.exitFullscreen?.();
+          }} title={isFullscreen ? "יציאה ממסך מלא (F11)" : "מסך מלא (F11)"} wide>
+            {isFullscreen ? "⛶ יציאה" : "⛶ מסך מלא"}
+          </TopBtn>
         </div>
       </div>
 
@@ -1532,54 +1543,71 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
         {/* Sidebar */}
-        {showSidebar && (
-          <div style={{ width: 126, flexShrink: 0, background: "rgba(10,4,2,0.92)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", padding: "10px 6px", gap: 5, overflow: "hidden" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2, paddingLeft: 4 }}>גרור לקנבס</div>
-            {PALETTE.map(pi => (
-              <div
-                key={pi.label}
-                draggable
-                onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDrag.current = pi; }}
-                onDragEnd={() => { paletteDrag.current = null; }}
-                onDoubleClick={() => {
-                  const cx = (vSize.w / 2 - panX) / zoom;
-                  const cy = (vSize.h / 2 - panY) / zoom;
-                  spawnTable(cx, cy, pi);
-                }}
-                style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", transition: "all 0.12s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.1)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
-              >
-                <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
-                <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
-              </div>
-            ))}
+        <div style={{ width: showSidebar ? 126 : 34, flexShrink: 0, background: "rgba(10,4,2,0.92)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "hidden", transition: "width 0.18s ease" }}>
+          {/* Collapse toggle */}
+          <button onClick={() => setShowSidebar(s => !s)}
+            title={showSidebar ? "כווץ סרגל" : "פתח סרגל"}
+            style={{ width: "100%", padding: "7px 0", background: "none", border: "none", borderBottom: "1px solid rgba(212,160,23,0.12)", color: C.gold, fontSize: 14, cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>
+            {showSidebar ? "◁" : "▷"}
+          </button>
 
-            {/* Deco section */}
-            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "3px 0" }} />
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 1, paddingLeft: 4 }}>עיצוב</div>
-            {DECO_PALETTE.map(pi => (
-              <div
-                key={pi.label}
-                draggable
-                onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDragDeco.current = pi; }}
-                onDragEnd={() => { paletteDragDeco.current = null; }}
-                onDoubleClick={() => {
-                  const cx = (vSize.w / 2 - panX) / zoom;
-                  const cy = (vSize.h / 2 - panY) / zoom;
-                  spawnDeco(cx, cy, pi);
-                }}
-                style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.2)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}
-              >
-                <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
-                <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
-              </div>
-            ))}
-
-          </div>
-        )}
+          {showSidebar ? (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "8px 6px", gap: 5, overflow: "hidden" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2, paddingLeft: 4 }}>גרור לקנבס</div>
+              {PALETTE.map(pi => (
+                <div key={pi.label} draggable
+                  onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDrag.current = pi; }}
+                  onDragEnd={() => { paletteDrag.current = null; }}
+                  onDoubleClick={() => { spawnTable((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom, pi); }}
+                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", transition: "all 0.12s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.1)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}>
+                  <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
+                  <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
+                </div>
+              ))}
+              <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "3px 0" }} />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 1, paddingLeft: 4 }}>עיצוב</div>
+              {DECO_PALETTE.map(pi => (
+                <div key={pi.label} draggable
+                  onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); paletteDragDeco.current = pi; }}
+                  onDragEnd={() => { paletteDragDeco.current = null; }}
+                  onDoubleClick={() => { spawnDeco((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom, pi); }}
+                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.2)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
+                  <span style={{ fontSize: 15, color: "#d4a017" }}>{pi.icon}</span>
+                  <span style={{ fontSize: 10, color: C.sub, lineHeight: 1.3 }}>{pi.label}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Collapsed: icons only */
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 0", gap: 6, overflow: "hidden" }}>
+              {[...PALETTE, ...DECO_PALETTE].map(pi => (
+                <div key={pi.label} draggable
+                  title={pi.label}
+                  onDragStart={e => {
+                    e.dataTransfer.effectAllowed = "copy";
+                    e.dataTransfer.setData("text/plain", pi.label);
+                    if ("shape" in pi) paletteDrag.current = pi as PaletteItem;
+                    else paletteDragDeco.current = pi as DecoPaletteItem;
+                  }}
+                  onDragEnd={() => { paletteDrag.current = null; paletteDragDeco.current = null; }}
+                  onDoubleClick={() => {
+                    const cx = (vSize.w / 2 - panX) / zoom, cy = (vSize.h / 2 - panY) / zoom;
+                    if ("shape" in pi) spawnTable(cx, cy, pi as PaletteItem);
+                    else spawnDeco(cx, cy, pi as DecoPaletteItem);
+                  }}
+                  style={{ width: 26, height: 26, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s", flexShrink: 0 }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.18)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
+                  <span style={{ fontSize: 13, color: "#d4a017" }}>{pi.icon}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Canvas */}
         <div
