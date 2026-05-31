@@ -3,10 +3,11 @@ import { sendSmsBulk } from "@/lib/sms";
 import { NextResponse } from "next/server";
 
 // Called by cron-job.org every hour
-// URL: /api/admin/crm/cron?secret=CRON_SECRET
+// Authorization: Bearer <CRON_SECRET>
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  if (searchParams.get("secret") !== process.env.CRON_SECRET) {
+  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const env = process.env.CRON_SECRET;
+  if (!env || !bearer || bearer !== env) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

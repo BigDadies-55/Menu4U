@@ -5,7 +5,7 @@ export const ROLE_HIERARCHY: Record<Role, number> = {
   ADMIN: 3,
   OWNER: 2,
   EDITOR: 1, // can edit menu content only — NOT financial/settings/users
-  VIEWER: 1,
+  VIEWER: 0,
   WAITER: 0,
   DISPLAY: 0,
 };

@@ -26,6 +26,13 @@ export async function PUT(
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { restaurantId } = await params;
 
+  if (session.user.role !== "SUPER_ADMIN") {
+    const access = await prisma.restaurantUser.findFirst({
+      where: { userId: session.user.id, restaurantId },
+    });
+    if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { tableLayoutJson } = await req.json();
 
   await prisma.restaurant.update({

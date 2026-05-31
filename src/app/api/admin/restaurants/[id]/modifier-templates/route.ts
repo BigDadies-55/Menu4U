@@ -18,7 +18,7 @@ export async function GET(
   const userId = session.user.id;
   if (role !== "SUPER_ADMIN") {
     const membership = await prisma.restaurantUser.findFirst({
-      where: { userId, id },
+      where: { userId, restaurantId: id },
     });
     if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -28,7 +28,7 @@ export async function GET(
     where: {
       item: {
         category: {
-          menu: { id },
+          menu: { restaurantId: id },
         },
       },
     },

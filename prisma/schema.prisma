@@ -41,21 +41,32 @@ model User {
   mustChangePassword Boolean   @default(false)
   passwordChangedAt  DateTime?
   lastActivityAt     DateTime?
+  lastLoginAt        DateTime?
 
   termsAccepted          Boolean   @default(false)
   termsAcceptedAt        DateTime?
   termsAcceptedIp        String?
   termsAcceptedUserAgent String?
 
-  accounts        Account[]
-  sessions        Session[]
-  restaurantUsers RestaurantUser[]
+  accounts         Account[]
+  sessions         Session[]
+  restaurantUsers  RestaurantUser[]
+  passwordHistory  PasswordHistory[]
+}
+
+model PasswordHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  password  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PasswordPolicy {
   id                  String   @id @default("default")
   maxAgeDays          Int      @default(0)
   minLength           Int      @default(8)
+  historyCount        Int      @default(3)
   requireUppercase    Boolean  @default(false)
   requireNumbers      Boolean  @default(false)
   requireSymbols      Boolean  @default(false)

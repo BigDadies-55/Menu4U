@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 async function runSetup() {
   const existing = await prisma.user.findUnique({
@@ -8,10 +9,11 @@ async function runSetup() {
   });
 
   if (existing) {
-    return { message: "Admin already exists", email: "admin@menu4u.com" };
+    return { message: "Admin already exists" };
   }
 
-  const password = await bcrypt.hash("admin123", 12);
+  const tempPassword = crypto.randomBytes(16).toString("hex");
+  const password = await bcrypt.hash(tempPassword, 12);
 
   await prisma.user.create({
     data: {
@@ -19,6 +21,8 @@ async function runSetup() {
       name: "Super Admin",
       password,
       role: "SUPER_ADMIN",
+      mustChangePassword: true,
+      emailVerified: new Date(),
     },
   });
 
@@ -36,28 +40,34 @@ async function runSetup() {
     // restaurant might already exist
   }
 
-  return { success: true, email: "admin@menu4u.com", password: "admin123" };
+  // Return password only via this one-time call — store it immediately
+  return { success: true, email: "admin@menu4u.com", tempPassword };
+}
+
+function checkSecret(secret: string | null): boolean {
+  const env = process.env.SETUP_SECRET;
+  if (!env || !secret) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(secret), Buffer.from(env));
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const secret = searchParams.get("secret");
-
-  if (secret !== process.env.SETUP_SECRET) {
+  if (!checkSecret(searchParams.get("secret"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   const result = await runSetup();
   return NextResponse.json(result);
 }
 
 export async function POST(req: Request) {
   const { secret } = await req.json();
-
-  if (secret !== process.env.SETUP_SECRET) {
+  if (!checkSecret(secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   const result = await runSetup();
   return NextResponse.json(result);
 }

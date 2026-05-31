@@ -40,6 +40,13 @@ export async function PATCH(
   });
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  if (session.user.role !== "SUPER_ADMIN") {
+    const access = await prisma.restaurantUser.findFirst({
+      where: { userId: session.user.id, restaurantId: order.restaurantId },
+    });
+    if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const orderItem = order.items.find(i => i.id === itemId);
   if (!orderItem) return NextResponse.json({ error: "Item not found" }, { status: 404 });
 

@@ -31,7 +31,62 @@ export async function changePasswordAction(newPassword: string, confirmPassword:
     return { error: "לא מחובר" };
   }
 
+  const historyCount = policy?.historyCount ?? 3;
+
+  // Check against password history
+  if (historyCount > 0) {
+    const history = await prisma.$queryRaw<{ password: string }[]>`
+      SELECT password FROM "PasswordHistory"
+      WHERE "userId" = ${session.user.id}
+      ORDER BY "createdAt" DESC
+      LIMIT ${historyCount}
+    `.catch(() => []);
+
+    // Also check current password
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { password: true },
+    });
+    const allHashes = [
+      ...(currentUser?.password ? [{ password: currentUser.password }] : []),
+      ...history,
+    ];
+
+    for (const { password: hash } of allHashes) {
+      if (await bcrypt.compare(newPassword, hash)) {
+        return { error: `לא ניתן לחזור על אחת מ-${historyCount} הסיסמאות האחרונות` };
+      }
+    }
+  }
+
   const hashed = await bcrypt.hash(newPassword, 12);
+
+  // Save current password to history before replacing
+  const currentUser2 = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { password: true },
+  });
+  if (currentUser2?.password) {
+    await prisma.$executeRaw`
+      INSERT INTO "PasswordHistory" ("id", "userId", "password", "createdAt")
+      VALUES (gen_random_uuid()::text, ${session.user.id}, ${currentUser2.password}, NOW())
+    `.catch(() => null);
+
+    // Prune old entries beyond historyCount
+    if (historyCount > 0) {
+      await prisma.$executeRaw`
+        DELETE FROM "PasswordHistory"
+        WHERE "userId" = ${session.user.id}
+        AND "id" NOT IN (
+          SELECT "id" FROM "PasswordHistory"
+          WHERE "userId" = ${session.user.id}
+          ORDER BY "createdAt" DESC
+          LIMIT ${historyCount}
+        )
+      `.catch(() => null);
+    }
+  }
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: {

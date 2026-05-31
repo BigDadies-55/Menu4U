@@ -124,14 +124,8 @@ export async function GET(req: Request) {
         ],
       },
       orderBy: { createdAt: "asc" },
-      take: 50000, // cap for very large datasets
-    }).catch(() =>
-      // Fallback if JSON path query fails
-      prisma.auditLog.findMany({
-        orderBy: { createdAt: "asc" },
-        take: 10000,
-      })
-    ),
+      take: 50000,
+    }).catch(() => [] as Awaited<ReturnType<typeof prisma.auditLog.findMany>>),
 
     prisma.menuView.findMany({ where: { restaurantId: { in: allowedIds } } }).catch(() => []),
   ]);

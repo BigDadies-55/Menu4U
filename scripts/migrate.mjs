@@ -106,6 +106,7 @@ const sqls = [
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "passwordChangedAt" TIMESTAMP(3);`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastActivityAt" TIMESTAMP(3);`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastLoginAt" TIMESTAMP(3);`,
   `CREATE TABLE IF NOT EXISTS "PasswordPolicy" (
     "id" TEXT NOT NULL DEFAULT 'default',
     "maxAgeDays" INTEGER NOT NULL DEFAULT 0,
@@ -117,6 +118,17 @@ const sqls = [
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "PasswordPolicy_pkey" PRIMARY KEY ("id")
   );`,
+  `ALTER TABLE "PasswordPolicy" ADD COLUMN IF NOT EXISTS "historyCount" INTEGER NOT NULL DEFAULT 3;`,
+  `CREATE TABLE IF NOT EXISTS "PasswordHistory" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PasswordHistory_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "PasswordHistory_userId_fkey" FOREIGN KEY ("userId")
+      REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  );`,
+  `CREATE INDEX IF NOT EXISTS "PasswordHistory_userId_idx" ON "PasswordHistory"("userId");`,
 ];
 
 async function run() {
