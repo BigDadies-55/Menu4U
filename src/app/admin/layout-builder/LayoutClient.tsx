@@ -1561,7 +1561,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Sidebar */}
         <div
           onMouseLeave={() => { if (!sidebarPinned && showSidebar) setShowSidebar(false); }}
-          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.95)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative", zIndex: sidebarPinned ? "auto" as never : 10 }}>
+          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.30)", backdropFilter: "blur(10px)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative", zIndex: sidebarPinned ? "auto" as never : 10 }}>
 
           {/* Header row: collapse + pin */}
           <div style={{ display: "flex", alignItems: "center", borderBottom: "1px solid rgba(212,160,23,0.12)", flexShrink: 0 }}>
