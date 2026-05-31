@@ -1,11 +1,11 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import LayoutClient from "./LayoutClient";
+import LayoutClientWrapper from "./LayoutClientWrapper";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "🗺 סידור שולחנות | Menu4U" };
+export const metadata = { title: "🗺 פריסת שולחנות חדש | Menu4U" };
 
 export default async function LayoutBuilderPage() {
   const session = await auth();
@@ -39,5 +39,5 @@ export default async function LayoutBuilderPage() {
     );
   }
 
-  return <LayoutClient restaurants={restaurants} />;
+  return <LayoutClientWrapper restaurants={restaurants} />;
 }
