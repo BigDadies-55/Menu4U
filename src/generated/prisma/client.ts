@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model PasswordHistory
+ * 
+ */
+export type PasswordHistory = Prisma.PasswordHistoryModel
+/**
  * Model PasswordPolicy
  * 
  */

@@ -385,6 +385,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  PasswordHistory: 'PasswordHistory',
   PasswordPolicy: 'PasswordPolicy',
   Account: 'Account',
   Session: 'Session',
@@ -426,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "loyaltySettings"
+    modelProps: "user" | "passwordHistory" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "loyaltySettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -501,6 +502,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    PasswordHistory: {
+      payload: Prisma.$PasswordHistoryPayload<ExtArgs>
+      fields: Prisma.PasswordHistoryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PasswordHistoryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PasswordHistoryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>
+        }
+        findFirst: {
+          args: Prisma.PasswordHistoryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PasswordHistoryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>
+        }
+        findMany: {
+          args: Prisma.PasswordHistoryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>[]
+        }
+        create: {
+          args: Prisma.PasswordHistoryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>
+        }
+        createMany: {
+          args: Prisma.PasswordHistoryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PasswordHistoryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>[]
+        }
+        delete: {
+          args: Prisma.PasswordHistoryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>
+        }
+        update: {
+          args: Prisma.PasswordHistoryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>
+        }
+        deleteMany: {
+          args: Prisma.PasswordHistoryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PasswordHistoryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PasswordHistoryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>[]
+        }
+        upsert: {
+          args: Prisma.PasswordHistoryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PasswordHistoryPayload>
+        }
+        aggregate: {
+          args: Prisma.PasswordHistoryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePasswordHistory>
+        }
+        groupBy: {
+          args: Prisma.PasswordHistoryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PasswordHistoryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PasswordHistoryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PasswordHistoryCountAggregateOutputType> | number
         }
       }
     }
@@ -2480,6 +2555,7 @@ export const UserScalarFieldEnum = {
   mustChangePassword: 'mustChangePassword',
   passwordChangedAt: 'passwordChangedAt',
   lastActivityAt: 'lastActivityAt',
+  lastLoginAt: 'lastLoginAt',
   termsAccepted: 'termsAccepted',
   termsAcceptedAt: 'termsAcceptedAt',
   termsAcceptedIp: 'termsAcceptedIp',
@@ -2489,10 +2565,21 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const PasswordHistoryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  password: 'password',
+  createdAt: 'createdAt'
+} as const
+
+export type PasswordHistoryScalarFieldEnum = (typeof PasswordHistoryScalarFieldEnum)[keyof typeof PasswordHistoryScalarFieldEnum]
+
+
 export const PasswordPolicyScalarFieldEnum = {
   id: 'id',
   maxAgeDays: 'maxAgeDays',
   minLength: 'minLength',
+  historyCount: 'historyCount',
   requireUppercase: 'requireUppercase',
   requireNumbers: 'requireNumbers',
   requireSymbols: 'requireSymbols',
@@ -3147,6 +3234,7 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  passwordHistory?: Prisma.PasswordHistoryOmit
   passwordPolicy?: Prisma.PasswordPolicyOmit
   account?: Prisma.AccountOmit
   session?: Prisma.SessionOmit
