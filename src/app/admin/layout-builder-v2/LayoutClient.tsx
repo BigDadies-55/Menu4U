@@ -234,9 +234,9 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
 
         {/* Number + seats */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 3, zIndex: 1 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4, zIndex: 1 }}>
           <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num || "?"}</span>
-          <span style={{ fontSize: Math.max(8, fSz * 0.52), fontWeight: 400, color: "rgba(255,255,255,0.45)", lineHeight: 1 }}>({seats})</span>
+          <span style={{ fontSize: Math.max(9, fSz * 0.65), fontWeight: 700, color: "rgba(255,255,255,0.75)", lineHeight: 1 }}>({seats})</span>
         </div>
 
         {/* Name */}
@@ -709,10 +709,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [showSidebar, setShowSidebar] = useState(true);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
-  const [showToolsMenu, setShowToolsMenu] = useState(false);
-  const toolsBtnRef  = useRef<HTMLDivElement>(null);
-  const toolsDropRef = useRef<HTMLDivElement>(null);
-  const [toolsMenuPos, setToolsMenuPos] = useState<{ top: number; left: number } | null>(null);
 
   /* inline seated-count edit */
   const [inlineSeated, setInlineSeated] = useState<{ id: string; val: string } | null>(null);
@@ -1379,19 +1375,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
   }, [selId, selDecoId, activeRoom]); // eslint-disable-line
 
-  /* close tools menu on outside click */
-  useEffect(() => {
-    if (!showToolsMenu) return;
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Node;
-      const inBtn  = toolsBtnRef.current?.contains(t) ?? false;
-      const inDrop = toolsDropRef.current?.contains(t) ?? false;
-      if (!inBtn && !inDrop) setShowToolsMenu(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showToolsMenu]);
-
   /* rooms */
   function addRoom() {
     if (!newRoomName.trim()) return;
@@ -1454,34 +1437,25 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
 
-        {/* Tools dropdown */}
-        <div ref={toolsBtnRef} style={{ position: "relative" }}>
-          <TopBtn active={showToolsMenu || snapOn || showBg || showStats} onClick={() => {
-            if (!showToolsMenu && toolsBtnRef.current) {
-              const r = toolsBtnRef.current.getBoundingClientRect();
-              setToolsMenuPos({ top: r.bottom + 4, left: r.left });
-            }
-            setShowToolsMenu(s => !s);
-          }} wide title="כלים">⚙ כלים ▾</TopBtn>
-          {showToolsMenu && toolsMenuPos && (
-            <div ref={toolsDropRef} style={{ position: "fixed", top: toolsMenuPos.top, left: toolsMenuPos.left, zIndex: 9999, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.4)", borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 160 }}>
-              {[
-                { icon: "⊞", label: "רשת (G)", active: snapOn,    action: () => { setSnapOn(s => !s); } },
-                { icon: "⚡", label: "סדר אוטו",  active: false,    action: () => { autoArrange(); setShowToolsMenu(false); } },
-                { icon: "▣", label: "רקע קנבס", active: showBg,    action: () => { setShowBg(s => !s); } },
-                { icon: "≡", label: "נתונים",   active: showStats, action: () => { setShowStats(s => !s); } },
-              ].map(item => (
-                <button key={item.label} onClick={() => { item.action(); }}
-                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.active ? "#ffd700" : "#e9ecef", background: item.active ? "rgba(212,160,23,0.12)" : "none", border: "none", cursor: "pointer", textAlign: "right" as const }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.18)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = item.active ? "rgba(212,160,23,0.12)" : "none")}>
-                  <span style={{ minWidth: 16, color: "#d4a017" }}>{item.icon}</span>{item.label}
-                  {item.active && <span style={{ marginLeft: "auto", fontSize: 10, color: "#ffd700" }}>✓</span>}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Tools dropdown — native select */}
+        <select
+          value=""
+          onChange={e => {
+            const v = e.target.value;
+            if (v === "grid")    setSnapOn(s => !s);
+            if (v === "arrange") autoArrange();
+            if (v === "bg")      setShowBg(s => !s);
+            if (v === "stats")   setShowStats(s => !s);
+            e.target.value = "";
+          }}
+          style={{ background: snapOn || showBg || showStats ? "rgba(212,160,23,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${snapOn || showBg || showStats ? "#d4a017" : "rgba(255,255,255,0.13)"}`, color: snapOn || showBg || showStats ? "#ffd700" : "#e9ecef", borderRadius: 8, padding: "4px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit" }}
+        >
+          <option value="" disabled>⚙ כלים</option>
+          <option value="grid">{snapOn ? "✓ " : ""}רשת (G)</option>
+          <option value="arrange">⚡ סדר אוטו</option>
+          <option value="bg">{showBg ? "✓ " : ""}רקע קנבס</option>
+          <option value="stats">{showStats ? "✓ " : ""}נתונים</option>
+        </select>
 
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
