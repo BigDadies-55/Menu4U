@@ -681,10 +681,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   }, [autoSave]); // eslint-disable-line
 
   /* selection / edit */
-  const [selId, setSelId]         = useState<string | null>(null);
-  const [editId, setEditId]       = useState<string | null>(null);
-  const [editPos, setEditPos]     = useState({ x: 120, y: 80 });
-  const [selDecoId, setSelDecoId] = useState<string | null>(null);
+  const [selId, setSelId]               = useState<string | null>(null);
+  const [editId, setEditId]             = useState<string | null>(null);
+  const [editPos, setEditPos]           = useState({ x: 120, y: 80 });
+  const [selDecoId, setSelDecoId]       = useState<string | null>(null);
+  const [multiSelIds, setMultiSelIds]   = useState<Set<string>>(new Set());
+  const [multiSelDecoIds, setMultiSelDecoIds] = useState<Set<string>>(new Set());
+  const [canUndo, setCanUndo]           = useState(false);
+  const [canRedo, setCanRedo]           = useState(false);
   const [ctxMenu, setCtxMenu]     = useState<{ x: number; y: number; id: string; kind: "table" | "deco" } | null>(null);
 
   /* ui toggles */
@@ -729,6 +733,17 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const rsDecoId        = useRef<string | null>(null);
   const rsDecoStart     = useRef({ dw: 0, dh: 0 });
 
+  /* undo / redo */
+  const undoStack = useRef<LayoutV2[]>([]);
+  const redoStack = useRef<LayoutV2[]>([]);
+
+  /* multi-drag */
+  const isMultiDrag          = useRef(false);
+  const dragOriginMx         = useRef(0);
+  const dragOriginMy         = useRef(0);
+  const multiDragTableOrigs  = useRef<Array<{ id: string; x: number; y: number }>>([]);
+  const multiDragDecoOrigs   = useRef<Array<{ id: string; x: number; y: number }>>([]);
+
   useEffect(() => { setOrigin(window.location.origin); }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (restaurants[0]?.id) loadLayout(restaurants[0].id); }, []);
@@ -756,6 +771,57 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     toastTimer.current = setTimeout(() => setToast(null), 2600);
   }
 
+  /* ── Undo / Redo ── */
+  function pushHistory() {
+    const snap = JSON.parse(JSON.stringify(layoutRef.current)) as LayoutV2;
+    undoStack.current = [...undoStack.current, snap].slice(-60);
+    redoStack.current = [];
+    setCanUndo(true); setCanRedo(false);
+  }
+  function undo() {
+    if (!undoStack.current.length) return;
+    redoStack.current = [...redoStack.current, JSON.parse(JSON.stringify(layoutRef.current))];
+    const prev = undoStack.current.pop()!;
+    undoStack.current = [...undoStack.current];
+    setLayout(prev);
+    setCanUndo(undoStack.current.length > 0); setCanRedo(true);
+    setSelId(null); setMultiSelIds(new Set()); setSelDecoId(null); setMultiSelDecoIds(new Set());
+  }
+  function redo() {
+    if (!redoStack.current.length) return;
+    undoStack.current = [...undoStack.current, JSON.parse(JSON.stringify(layoutRef.current))];
+    const next = redoStack.current.pop()!;
+    redoStack.current = [...redoStack.current];
+    setLayout(next);
+    setCanUndo(true); setCanRedo(redoStack.current.length > 0);
+    setSelId(null); setMultiSelIds(new Set()); setSelDecoId(null); setMultiSelDecoIds(new Set());
+  }
+
+  /* ── Multi-select helpers ── */
+  function allSelTableIds(): Set<string> {
+    const s = new Set(multiSelIds);
+    if (selId) s.add(selId);
+    return s;
+  }
+  function allSelDecoIds(): Set<string> {
+    const s = new Set(multiSelDecoIds);
+    if (selDecoId) s.add(selDecoId);
+    return s;
+  }
+  function clearMultiSel() {
+    setMultiSelIds(new Set()); setMultiSelDecoIds(new Set());
+  }
+  function selectAll() {
+    const tIds = new Set(activeRoom?.tables.map(t => t.id) ?? []);
+    const dIds = new Set(activeRoom?.decos?.map(d => d.id) ?? []);
+    setMultiSelIds(tIds);
+    setMultiSelDecoIds(dIds);
+    const firstT = activeRoom?.tables[0];
+    const firstD = activeRoom?.decos?.[0];
+    if (firstT) setSelId(firstT.id); else if (firstD) { setSelId(null); setSelDecoId(firstD.id); }
+    showToast(`${tIds.size + dIds.size} אובייקטים נבחרו`);
+  }
+
   /* ── Load / Save ── */
   function zoomToContent(targetLayout: LayoutV2, vw?: number, vh?: number) {
     const w = vw ?? vSizeRef.current.w;
@@ -776,6 +842,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   async function loadLayout(rid: string) {
     setLoading(true);
+    undoStack.current = []; redoStack.current = [];
+    setCanUndo(false); setCanRedo(false);
     try {
       const res = await fetch(`/api/admin/restaurants/${rid}/layout`);
       if (res.ok) {
@@ -818,21 +886,25 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   }
 
   function delDeco(id: string) {
+    pushHistory();
     updRoom(r => ({ ...r, decos: (r.decos ?? []).filter(d => d.id !== id) }));
     if (selDecoId === id) setSelDecoId(null);
+    setMultiSelDecoIds(s => { const n = new Set(s); n.delete(id); return n; });
     setCtxMenu(null);
   }
 
   function dupDeco(id: string) {
+    pushHistory();
     const d = activeRoom?.decos?.find(d => d.id === id);
     if (!d) return;
     const nd: Decoration = { ...d, id: uid(), x: snapV(d.x + 24, snapOn), y: snapV(d.y + 24, snapOn) };
     updRoom(r => ({ ...r, decos: [...(r.decos ?? []), nd] }));
-    setSelDecoId(nd.id); setCtxMenu(null);
+    setSelDecoId(nd.id); clearMultiSel(); setCtxMenu(null);
     showToast("אלמנט שוכפל ⎘");
   }
 
   function spawnDeco(cx: number, cy: number, item: DecoPaletteItem) {
+    pushHistory();
     const d: Decoration = {
       id: uid(), kind: item.kind,
       x: snapV(Math.max(0, cx - item.w / 2), snapOn),
@@ -841,7 +913,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       rot: 0, text: "", color: "#d4a017", zIdx: 1,
     };
     updRoom(r => ({ ...r, decos: [...(r.decos ?? []), d] }));
-    setSelDecoId(d.id); setSelId(null);
+    setSelDecoId(d.id); setSelId(null); clearMultiSel();
     showToast("אלמנט נוסף");
   }
 
@@ -861,6 +933,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   function autoArrange() {
     if (!activeRoom || activeRoom.tables.length === 0) return;
+    pushHistory();
     const cols = Math.ceil(Math.sqrt(activeRoom.tables.length));
     updRoom(r => ({
       ...r, tables: r.tables.map((t, i) => ({
@@ -874,12 +947,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   function clearAll() {
     if (!confirm("למחוק את כל השולחנות?")) return;
-    updRoom(r => ({ ...r, tables: [] }));
-    setSelId(null); setEditId(null);
+    pushHistory();
+    updRoom(r => ({ ...r, tables: [], decos: [] }));
+    setSelId(null); setEditId(null); clearMultiSel();
     showToast("הקנבס נוקה 🗑");
   }
 
   function resetEvening() {
+    pushHistory();
     updRoom(r => ({ ...r, tables: r.tables.map(t => ({ ...t, seatedCount: 0, status: "free" as TableStatus })) }));
     showToast("הערב אופס 🔄");
   }
@@ -893,6 +968,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   /* ── Spawn table ── */
   function spawnTable(cx: number, cy: number, pi: PaletteItem) {
+    pushHistory();
     const num = Math.max(0, ...(activeRoom?.tables.map(t => t.num) ?? [0])) + 1;
     const t: FreeTable = {
       id: uid(), num, name: "", group: "",
@@ -903,7 +979,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       status: "free", rot: 0, customColor: "", zIdx: 1,
     };
     updRoom(r => ({ ...r, tables: [...r.tables, t] }));
-    setSelId(t.id);
+    setSelId(t.id); clearMultiSel();
     showToast(`שולחן ${t.num} נוסף`);
   }
 
@@ -920,19 +996,36 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   /* ── Table ops ── */
   function delTable(id: string) {
+    pushHistory();
     updRoom(r => ({ ...r, tables: r.tables.filter(t => t.id !== id) }));
     if (selId === id) setSelId(null);
+    setMultiSelIds(s => { const n = new Set(s); n.delete(id); return n; });
     setEditId(null); setCtxMenu(null);
     showToast("שולחן נמחק");
   }
 
+  function delSelected() {
+    const tIds = allSelTableIds();
+    const dIds = allSelDecoIds();
+    if (tIds.size + dIds.size === 0) return;
+    pushHistory();
+    updRoom(r => ({
+      ...r,
+      tables: r.tables.filter(t => !tIds.has(t.id)),
+      decos: (r.decos ?? []).filter(d => !dIds.has(d.id)),
+    }));
+    setSelId(null); setSelDecoId(null); clearMultiSel(); setEditId(null); setCtxMenu(null);
+    showToast(`${tIds.size + dIds.size} אובייקטים נמחקו`);
+  }
+
   function dupTable(id: string) {
+    pushHistory();
     const t = activeRoom?.tables.find(t => t.id === id);
     if (!t) return;
     const num = Math.max(0, ...(activeRoom?.tables.map(t => t.num) ?? [0])) + 1;
     const nt: FreeTable = { ...t, id: uid(), x: snapV(t.x + 24, snapOn), y: snapV(t.y + 24, snapOn), num };
     updRoom(r => ({ ...r, tables: [...r.tables, nt] }));
-    setSelId(nt.id); setCtxMenu(null); setEditId(null);
+    setSelId(nt.id); clearMultiSel(); setCtxMenu(null); setEditId(null);
     showToast("שולחן שוכפל ⎘");
   }
 
@@ -1000,15 +1093,27 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       return;
     }
 
-    if (draggingId.current) {
+    if (draggingId.current || draggingDecoId.current) {
+      if (!didDrag.current && !isMultiDrag.current) pushHistory();
       didDrag.current = true;
-      const dx = (e.clientX - dragStart.current.mx) / zoomR.current;
-      const dy = (e.clientY - dragStart.current.my) / zoomR.current;
-      updTable(draggingId.current, {
-        x: snapV(dragStart.current.tx + dx, snapOn),
-        y: snapV(dragStart.current.ty + dy, snapOn),
-      });
-      return;
+      if (isMultiDrag.current) {
+        const dx = (e.clientX - dragOriginMx.current) / zoomR.current;
+        const dy = (e.clientY - dragOriginMy.current) / zoomR.current;
+        for (const o of multiDragTableOrigs.current)
+          updTable(o.id, { x: snapV(o.x + dx, snapOn), y: snapV(o.y + dy, snapOn) });
+        for (const o of multiDragDecoOrigs.current)
+          updDeco(o.id,  { x: snapV(o.x + dx, snapOn), y: snapV(o.y + dy, snapOn) });
+        return;
+      }
+      if (draggingId.current) {
+        const dx = (e.clientX - dragStart.current.mx) / zoomR.current;
+        const dy = (e.clientY - dragStart.current.my) / zoomR.current;
+        updTable(draggingId.current, {
+          x: snapV(dragStart.current.tx + dx, snapOn),
+          y: snapV(dragStart.current.ty + dy, snapOn),
+        });
+        return;
+      }
     }
 
     if (rotatingDecoId.current) {
@@ -1029,7 +1134,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       return;
     }
 
-    if (draggingDecoId.current) {
+    if (!isMultiDrag.current && draggingDecoId.current) {
+      if (!didDrag.current) pushHistory();
       didDrag.current = true;
       const dx = (e.clientX - dragDecoStart.current.mx) / zoomR.current;
       const dy = (e.clientY - dragDecoStart.current.my) / zoomR.current;
@@ -1043,8 +1149,9 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   function handleCanvasMU(e: React.MouseEvent) {
     if (isPanning.current && panIsOnBg.current) {
       const dist = Math.hypot(e.clientX - panStart.current.mx, e.clientY - panStart.current.my);
-      if (dist < 5) { setSelId(null); setSelDecoId(null); setCtxMenu(null); setEditId(null); }
+      if (dist < 5) { setSelId(null); setSelDecoId(null); setCtxMenu(null); setEditId(null); clearMultiSel(); }
     }
+    isMultiDrag.current = false;
     isPanning.current = false; panIsOnBg.current = false;
     draggingId.current = null;
     rotatingId.current = null;
@@ -1058,8 +1165,38 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     if (e.button !== 0 || spaceDown.current) return;
     e.stopPropagation();
     didDrag.current = false;
-    draggingId.current = table.id;
-    dragStart.current = { mx: e.clientX, my: e.clientY, tx: table.x, ty: table.y };
+
+    if (e.shiftKey) {
+      const inSel = selId === table.id || multiSelIds.has(table.id);
+      if (inSel) {
+        if (selId === table.id) setSelId(null);
+        setMultiSelIds(s => { const n = new Set(s); n.delete(table.id); return n; });
+      } else {
+        setMultiSelIds(s => new Set([...s, table.id]));
+        if (!selId) setSelId(table.id);
+      }
+      return;
+    }
+
+    const allT = allSelTableIds();
+    const allD = allSelDecoIds();
+    if (allT.size + allD.size > 1 && (allT.has(table.id) || allD.size > 0)) {
+      // multi-drag: record origins for all selected
+      pushHistory();
+      isMultiDrag.current = true;
+      dragOriginMx.current = e.clientX;
+      dragOriginMy.current = e.clientY;
+      multiDragTableOrigs.current = (activeRoom?.tables ?? []).filter(t => allT.has(t.id)).map(t => ({ id: t.id, x: t.x, y: t.y }));
+      multiDragDecoOrigs.current  = (activeRoom?.decos ?? []).filter(d => allD.has(d.id)).map(d => ({ id: d.id, x: d.x, y: d.y }));
+      draggingId.current = table.id;
+    } else {
+      isMultiDrag.current = false;
+      draggingId.current = table.id;
+      dragStart.current = { mx: e.clientX, my: e.clientY, tx: table.x, ty: table.y };
+      dragOriginMx.current = e.clientX;
+      dragOriginMy.current = e.clientY;
+      setMultiSelIds(new Set()); setMultiSelDecoIds(new Set());
+    }
     setSelId(table.id); setCtxMenu(null);
   }
 
@@ -1077,8 +1214,37 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     if (e.button !== 0 || spaceDown.current) return;
     e.stopPropagation();
     didDrag.current = false;
-    draggingDecoId.current = deco.id;
-    dragDecoStart.current = { mx: e.clientX, my: e.clientY, dx: deco.x, dy: deco.y };
+
+    if (e.shiftKey) {
+      const inSel = selDecoId === deco.id || multiSelDecoIds.has(deco.id);
+      if (inSel) {
+        if (selDecoId === deco.id) setSelDecoId(null);
+        setMultiSelDecoIds(s => { const n = new Set(s); n.delete(deco.id); return n; });
+      } else {
+        setMultiSelDecoIds(s => new Set([...s, deco.id]));
+        if (!selDecoId) setSelDecoId(deco.id);
+      }
+      return;
+    }
+
+    const allT = allSelTableIds();
+    const allD = allSelDecoIds();
+    if (allT.size + allD.size > 1 && (allD.has(deco.id) || allT.size > 0)) {
+      pushHistory();
+      isMultiDrag.current = true;
+      dragOriginMx.current = e.clientX;
+      dragOriginMy.current = e.clientY;
+      multiDragTableOrigs.current = (activeRoom?.tables ?? []).filter(t => allT.has(t.id)).map(t => ({ id: t.id, x: t.x, y: t.y }));
+      multiDragDecoOrigs.current  = (activeRoom?.decos ?? []).filter(d => allD.has(d.id)).map(d => ({ id: d.id, x: d.x, y: d.y }));
+      draggingDecoId.current = deco.id;
+    } else {
+      isMultiDrag.current = false;
+      draggingDecoId.current = deco.id;
+      dragDecoStart.current = { mx: e.clientX, my: e.clientY, dx: deco.x, dy: deco.y };
+      dragOriginMx.current = e.clientX;
+      dragOriginMy.current = e.clientY;
+      setMultiSelIds(new Set()); setMultiSelDecoIds(new Set());
+    }
     setSelDecoId(deco.id); setSelId(null); setCtxMenu(null);
   }
 
@@ -1144,24 +1310,30 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         spaceDown.current = true;
         if (containerRef.current) containerRef.current.style.cursor = "grab";
       }
-      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); setSelDecoId(null); }
+      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); setSelDecoId(null); clearMultiSel(); }
       if (e.key === "g" || e.key === "G") setSnapOn(s => !s);
       const tag = (document.activeElement as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (selDecoId) {
-        if (e.key === "Delete" || e.key === "Backspace") { delDeco(selDecoId); return; }
-        if ((e.key === "d" || e.key === "D") && (e.ctrlKey || e.metaKey)) { e.preventDefault(); dupDeco(selDecoId); return; }
+      if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if (((e.key === "y" || e.key === "Y") && (e.ctrlKey || e.metaKey)) || ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && e.shiftKey)) { e.preventDefault(); redo(); return; }
+      if ((e.key === "a" || e.key === "A") && (e.ctrlKey || e.metaKey)) { e.preventDefault(); selectAll(); return; }
+      const allT = allSelTableIds(), allD = allSelDecoIds();
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (allT.size + allD.size > 1) { delSelected(); return; }
+        if (selDecoId) { delDeco(selDecoId); return; }
+        if (selId) { delTable(selId); return; }
       }
-      if (!selId) return;
-      if (e.key === "Delete" || e.key === "Backspace") { delTable(selId); return; }
-      if ((e.key === "d" || e.key === "D") && (e.ctrlKey || e.metaKey)) { e.preventDefault(); dupTable(selId); return; }
+      if ((e.key === "d" || e.key === "D") && (e.ctrlKey || e.metaKey)) {
+        if (selDecoId && !selId) { e.preventDefault(); dupDeco(selDecoId); return; }
+        if (selId) { e.preventDefault(); dupTable(selId); return; }
+      }
       const step = e.shiftKey ? 10 : GRID;
       const mv: Partial<FreeTable> = {};
       if (e.key === "ArrowLeft")  { e.preventDefault(); const t = activeRoom?.tables.find(t => t.id === selId); if (t) mv.x = Math.max(0, t.x - step); }
       if (e.key === "ArrowRight") { e.preventDefault(); const t = activeRoom?.tables.find(t => t.id === selId); if (t) mv.x = t.x + step; }
       if (e.key === "ArrowUp")    { e.preventDefault(); const t = activeRoom?.tables.find(t => t.id === selId); if (t) mv.y = Math.max(0, t.y - step); }
       if (e.key === "ArrowDown")  { e.preventDefault(); const t = activeRoom?.tables.find(t => t.id === selId); if (t) mv.y = t.y + step; }
-      if (Object.keys(mv).length) updTable(selId, mv);
+      if (Object.keys(mv).length && selId) updTable(selId, mv);
     };
     const up = (e: KeyboardEvent) => {
       if (e.code === "Space") { spaceDown.current = false; if (containerRef.current) containerRef.current.style.cursor = "default"; }
@@ -1237,6 +1409,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         <TopBtn onClick={autoArrange} title="סידור אוטומטי" wide>⚡ סדר</TopBtn>
         <TopBtn active={showBg} onClick={() => setShowBg(s => !s)} title="רקע קנבס" wide>▣ רקע</TopBtn>
         <TopBtn active={showStats} onClick={() => setShowStats(s => !s)} title="סטטיסטיקות" wide>≡ נתונים</TopBtn>
+
+        {/* Sep */}
+        <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
+
+        {/* Undo / Redo / Select-all */}
+        <TopBtn onClick={undo} title="בטל (Ctrl+Z)" active={canUndo} wide>↩ בטל</TopBtn>
+        <TopBtn onClick={redo} title="חזור (Ctrl+Y)" active={canRedo} wide>↪ חזור</TopBtn>
+        <TopBtn onClick={selectAll} title="בחר הכל (Ctrl+A)" wide>⊞ בחר</TopBtn>
 
         {/* Sep */}
         <div style={{ width: 1, height: 18, background: C.border, margin: "0 6px" }} />
@@ -1366,7 +1546,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                       <DecorationItem
                         key={deco.id}
                         deco={deco}
-                        selected={selDecoId === deco.id}
+                        selected={selDecoId === deco.id || multiSelDecoIds.has(deco.id)}
                         onMD={e => handleDecoMD(e, deco)}
                         onCtx={e => handleDecoCtx(e, deco.id)}
                         onResizeMD={e => handleDecoResizeMD(e, deco)}
@@ -1384,7 +1564,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                       <TableItem
                         key={table.id}
                         table={table}
-                        selected={selId === table.id}
+                        selected={selId === table.id || multiSelIds.has(table.id)}
                         inlineSeated={inlineSeated?.id === table.id ? {
                           val: inlineSeated.val,
                           onChange: val => setInlineSeated(s => s ? { ...s, val } : null),
