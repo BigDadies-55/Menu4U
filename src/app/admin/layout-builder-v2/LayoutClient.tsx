@@ -170,13 +170,17 @@ function TopBtn({ children, onClick, title, active, danger, wide }: {
 }
 
 /* ══════════════════════ Table Item ══ */
-function TableItem({ table, selected, onMD, onDbl, onCtx, onRotateMD, onResizeMD }: {
+type InlineSeated = { val: string; onChange: (v: string) => void; onCommit: () => void };
+
+function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotateMD, onResizeMD, onSeatedClick }: {
   table: FreeTable; selected: boolean;
+  inlineSeated: InlineSeated | null;
   onMD: (e: React.MouseEvent) => void;
   onDbl: (e: React.MouseEvent) => void;
   onCtx: (e: React.MouseEvent) => void;
   onRotateMD: (e: React.MouseEvent) => void;
   onResizeMD: (e: React.MouseEvent) => void;
+  onSeatedClick: (e: React.MouseEvent) => void;
 }) {
   const { w, h, shape, status, num, name, seatedCount, seats, rot, customColor } = table;
   const cfg  = STATUS_CFG[status];
@@ -225,10 +229,43 @@ function TableItem({ table, selected, onMD, onDbl, onCtx, onRotateMD, onResizeMD
           </div>
         )}
 
-        {/* Seated count */}
-        <div style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.55)", zIndex: 1, marginTop: 2 }}>
-          {seatedCount}/{seats} 🪑
-        </div>
+        {/* Seated count — click to edit inline */}
+        {inlineSeated ? (
+          <input
+            autoFocus
+            type="number"
+            min={0}
+            max={seats}
+            value={inlineSeated.val}
+            onChange={e => inlineSeated.onChange(e.target.value)}
+            onBlur={inlineSeated.onCommit}
+            onKeyDown={e => {
+              if (e.key === "Enter") { inlineSeated.onCommit(); }
+              if (e.key === "Escape") { inlineSeated.onCommit(); }
+              e.stopPropagation();
+            }}
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: Math.min(w - 16, 60), fontSize: Math.max(11, fSz * 0.56),
+              background: "rgba(0,0,0,0.65)", border: "1.5px solid #d4a017",
+              color: "#ffd700", borderRadius: 6, textAlign: "center",
+              outline: "none", fontWeight: 700, zIndex: 10,
+              padding: "2px 4px", marginTop: 3, fontFamily: "inherit",
+            }}
+          />
+        ) : (
+          <div
+            onClick={onSeatedClick}
+            onMouseDown={e => e.stopPropagation()}
+            title="לחץ לעדכון יושבים"
+            style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.55)", zIndex: 1, marginTop: 2, cursor: "pointer", padding: "1px 5px", borderRadius: 4, transition: "background 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.25)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            {seatedCount}/{seats} 🪑
+          </div>
+        )}
       </div>
 
       {/* SE Resize handle */}
@@ -516,6 +553,9 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [showSidebar, setShowSidebar] = useState(true);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
+
+  /* inline seated-count edit */
+  const [inlineSeated, setInlineSeated] = useState<{ id: string; val: string } | null>(null);
 
   /* toast */
   const [toast, setToast] = useState<string | null>(null);
@@ -1006,11 +1046,25 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         key={table.id}
                         table={table}
                         selected={selId === table.id}
+                        inlineSeated={inlineSeated?.id === table.id ? {
+                          val: inlineSeated.val,
+                          onChange: val => setInlineSeated(s => s ? { ...s, val } : null),
+                          onCommit: () => {
+                            const n = parseInt(inlineSeated.val);
+                            if (!isNaN(n)) updTable(table.id, { seatedCount: Math.max(0, Math.min(n, table.seats)) });
+                            setInlineSeated(null);
+                          },
+                        } : null}
                         onMD={e => handleTableMD(e, table)}
                         onDbl={e => handleTableDbl(e, table.id)}
                         onCtx={e => handleTableCtx(e, table.id)}
                         onRotateMD={e => handleRotateMD(e, table)}
                         onResizeMD={e => handleResizeMD(e, table)}
+                        onSeatedClick={e => {
+                          e.stopPropagation();
+                          setSelId(table.id);
+                          setInlineSeated({ id: table.id, val: String(table.seatedCount) });
+                        }}
                       />
                     ))}
                 </div>
