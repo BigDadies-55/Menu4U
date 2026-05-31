@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import LayoutClient from "./LayoutClient";
+import LayoutClientWrapper from "./LayoutClientWrapper";
 
 export const dynamic = "force-dynamic";
 
@@ -39,5 +39,5 @@ export default async function LayoutBuilderPage() {
     );
   }
 
-  return <LayoutClient restaurants={restaurants} />;
+  return <LayoutClientWrapper restaurants={restaurants} />;
 }
