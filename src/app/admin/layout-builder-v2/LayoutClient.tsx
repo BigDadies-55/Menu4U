@@ -707,7 +707,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [snapOn, setSnapOn]       = useState(false);
   const [showBg, setShowBg]       = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
@@ -1551,7 +1551,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       </div>
 
       {/* ── Main: Sidebar + Canvas ── */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", direction: "ltr" }}>
 
         {/* Sidebar */}
         <div style={{ width: showSidebar ? 210 : 36, flexShrink: 0, background: "rgba(10,4,2,0.95)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "hidden", transition: "width 0.18s ease", direction: "rtl" }}>
