@@ -15,9 +15,10 @@ type FreeTable = {
 };
 
 type Decoration = {
-  id: string; kind: "line" | "label";
+  id: string; kind: "line" | "label" | "image";
   x: number; y: number; w: number; h: number;
   rot: number; text: string; color: string; zIdx: number;
+  imgSrc?: string;
 };
 
 type Room = {
@@ -55,10 +56,11 @@ const PALETTE: PaletteItem[] = [
   { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 240, h: 65,  seats: 16 },
 ];
 
-type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label"; w: number; h: number };
+type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label" | "image"; w: number; h: number };
 const DECO_PALETTE: DecoPaletteItem[] = [
   { icon: "━", label: "קו",    kind: "line",  w: 200, h: 5   },
   { icon: "▭", label: "תווית", kind: "label", w: 160, h: 80  },
+  { icon: "🖼", label: "תמונה", kind: "image", w: 160, h: 120 },
 ];
 
 const BGS = [
@@ -295,7 +297,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 }
 
 /* ══════════════════════ Decoration Item ══ */
-function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, onRotateStep, onTextCommit }: {
+function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, onRotateStep, onTextCommit, onPickImage }: {
   deco: Decoration; selected: boolean;
   onMD: (e: React.MouseEvent) => void;
   onCtx: (e: React.MouseEvent) => void;
@@ -303,16 +305,18 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
   onRotateMD: (e: React.MouseEvent) => void;
   onRotateStep: (deg: number) => void;
   onTextCommit: (text: string) => void;
+  onPickImage: () => void;
 }) {
   const [textEditing, setTextEditing] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const isLine = deco.kind === "line";
+  const isLine  = deco.kind === "line";
+  const isImage = deco.kind === "image";
   const c = deco.color || "#d4a017";
 
   return (
     <div
       onMouseDown={onMD}
-      onDoubleClick={e => { if (!isLine) { e.stopPropagation(); setTextEditing(true); } }}
+      onDoubleClick={e => { e.stopPropagation(); if (isImage) { onPickImage(); } else if (!isLine) { setTextEditing(true); } }}
       onContextMenu={onCtx}
       style={{ position: "absolute", left: deco.x, top: deco.y, width: deco.w, height: Math.max(isLine ? 4 : 40, deco.h), transform: `rotate(${deco.rot}deg)`, transformOrigin: "center", cursor: "grab", userSelect: "none", zIndex: selected ? deco.zIdx + 100 : deco.zIdx }}
     >
@@ -334,6 +338,13 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
       {/* Body */}
       {isLine ? (
         <div style={{ position: "absolute", inset: 0, background: c, borderRadius: 3, boxShadow: `0 1px 6px ${c}60` }} />
+      ) : isImage ? (
+        <div style={{ position: "absolute", inset: 0, borderRadius: 8, overflow: "hidden", border: selected ? `1.5px solid ${c}80` : "1.5px dashed rgba(212,160,23,0.35)", background: "rgba(0,0,0,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {deco.imgSrc
+            ? <img src={deco.imgSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }} />
+            : <span style={{ fontSize: 11, color: "rgba(212,160,23,0.5)", pointerEvents: "none" }}>לחץ פעמיים להעלאת תמונה</span>
+          }
+        </div>
       ) : (
         <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1.5px solid ${c}80`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
           {textEditing ? (
@@ -726,6 +737,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const spaceDown   = useRef(false);
   const paletteDrag    = useRef<PaletteItem | null>(null);
   const paletteDragDeco = useRef<DecoPaletteItem | null>(null);
+  const imgFileRef      = useRef<HTMLInputElement>(null);
+  const imgTargetDecoId = useRef<string | null>(null);
   const vSizeRef       = useRef({ w: 900, h: 560 });
 
   /* deco interaction refs */
@@ -918,6 +931,25 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     updRoom(r => ({ ...r, decos: [...(r.decos ?? []), d] }));
     setSelDecoId(d.id); setSelId(null); clearMultiSel();
     showToast("אלמנט נוסף");
+  }
+
+  function pickImageForDeco(id: string) {
+    imgTargetDecoId.current = id;
+    imgFileRef.current?.click();
+  }
+
+  function onImgFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const id = imgTargetDecoId.current;
+    if (!file || !id) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const src = ev.target?.result as string;
+      pushHistory();
+      updDeco(id, { imgSrc: src });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   }
 
   function rotateDecoStep(id: string, deg: number) {
@@ -1381,6 +1413,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   /* ══════════════════════════ Render ══ */
   return (
     <div style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", background: bgCfg.body, color: C.text, overflow: "hidden", fontFamily: "inherit" }}>
+      <input ref={imgFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onImgFileChange} />
 
       {/* ── Topbar ── */}
       <div style={{ padding: "4px 10px", borderBottom: "1px solid rgba(212,160,23,0.2)", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(10px)" }}>
@@ -1497,7 +1530,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   const cy = (vSize.h / 2 - panY) / zoom;
                   spawnTable(cx, cy, pi);
                 }}
-                style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 8px", borderRadius: 8, cursor: "grab", userSelect: "none", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", transition: "all 0.12s" }}
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", transition: "all 0.12s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.1)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
               >
@@ -1507,8 +1540,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
             ))}
 
             {/* Deco section */}
-            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "4px 0" }} />
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2, paddingLeft: 4 }}>עיצוב</div>
+            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "3px 0" }} />
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 1, paddingLeft: 4 }}>עיצוב</div>
             {DECO_PALETTE.map(pi => (
               <div
                 key={pi.label}
@@ -1520,7 +1553,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   const cy = (vSize.h / 2 - panY) / zoom;
                   spawnDeco(cx, cy, pi);
                 }}
-                style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 8px", borderRadius: 8, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s" }}
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", borderRadius: 7, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.2)", background: "rgba(212,160,23,0.05)", transition: "all 0.12s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.2)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}
               >
@@ -1570,6 +1603,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         onRotateMD={e => handleDecoRotateMD(e, deco)}
                         onRotateStep={deg => rotateDecoStep(deco.id, deg)}
                         onTextCommit={text => updDeco(deco.id, { text })}
+                        onPickImage={() => pickImageForDeco(deco.id)}
                       />
                     ))}
 
