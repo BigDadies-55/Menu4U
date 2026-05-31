@@ -963,6 +963,28 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     e.target.value = "";
   }
 
+  async function exportTablesToExcel() {
+    if (!restaurantId) { showToast("בחר מסעדה תחילה"); return; }
+    showToast("מייצר קובץ Excel…");
+    try {
+      const res = await fetch("/api/admin/export/tables-excel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, layout: layoutRef.current, origin }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = `tables-${restaurantId}.xlsx`;
+      a.click(); URL.revokeObjectURL(url);
+      showToast("Excel יוצא ✓");
+    } catch (err) {
+      console.error(err);
+      showToast("שגיאה בייצוא Excel");
+    }
+  }
+
   function exportLayout() {
     const json = JSON.stringify(layoutRef.current, null, 2);
     const blob = new Blob([json], { type: "application/json" });
@@ -1792,6 +1814,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               null,
               { icon: "⬇", label: "ייצא Layout", active: false, action: () => { exportLayout(); setToolsMenu(null); } },
               { icon: "⬆", label: "ייבא Layout", active: false, action: () => { importFileRef.current?.click(); setToolsMenu(null); } },
+              { icon: "📊", label: "ייצא שולחנות לאקסל", active: false, action: () => { exportTablesToExcel(); setToolsMenu(null); } },
             ] as (null | { icon: string; label: string; active: boolean; action: () => void })[]).map((item, i) => {
               if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
               return (
