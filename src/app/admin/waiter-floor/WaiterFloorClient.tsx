@@ -1,0 +1,720 @@
+"use client";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+
+// ── Types ──────────────────────────────────────────────────────────
+type TableShape = "round" | "rect" | "square" | "oval" | "long" | "banquet";
+type FreeTable  = { id: string; num: number; name: string; shape: TableShape; x: number; y: number; w: number; h: number; seats: number; rot: number };
+type Room       = { id: string; name: string; tables: FreeTable[] };
+type LayoutV2   = { version: 2; rooms: Room[] };
+type OrderItem  = { id: string; quantity: number; price: number; notes: string | null; itemStatus: string; course: number; heldUntilFired: boolean; firedAt: string | null; doneAt: string | null; item: { name: string } };
+type Order      = { id: string; tableNumber: string | null; status: string; orderNumber: number | null; totalAmount: number; notes: string | null; createdAt: string; coversCount: number | null; items: OrderItem[] };
+type CartItem   = { itemId: string; name: string; price: number; qty: number; note: string; course: number };
+type MenuItem   = { id: string; name: string; price: number; description: string | null };
+type MenuCat    = { id: string; name: string; items: MenuItem[] };
+type Restaurant = { id: string; name: string };
+
+// ── Design tokens ──────────────────────────────────────────────────
+const C = {
+  bg:       "#0a0402",
+  card:     "#160805",
+  panel:    "#1a0c06",
+  border:   "rgba(212,160,23,0.18)",
+  gold:     "#d4a017",
+  text:     "#f0e6d3",
+  sub:      "#c4a882",
+  muted:    "#7a6050",
+  green:    "#22c55e",
+  orange:   "#f97316",
+  red:      "#ef4444",
+  blue:     "#3b82f6",
+  inp:      "#2a1408",
+  inpBd:    "rgba(212,160,23,0.25)",
+};
+const INP: React.CSSProperties = { background: C.inp, border: `1px solid ${C.inpBd}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "7px 10px", width: "100%", outline: "none" };
+const BTN = (col: string, light = false): React.CSSProperties => ({
+  background: light ? `rgba(${col},0.15)` : col,
+  color: light ? col : "#fff",
+  border: light ? `1px solid rgba(${col},0.4)` : "none",
+  borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+});
+
+// ── Helpers ────────────────────────────────────────────────────────
+const COURSE = ["", "ראשון", "עיקרי", "קינוח"];
+const EMOJI  = ["", "🥗", "🍖", "🍮"];
+
+function tableStatus(num: string, orders: Order[]): "free" | "occupied" | "bill-requested" {
+  const tOrds = orders.filter(o => (o.tableNumber ?? "") === num);
+  if (!tOrds.length) return "free";
+  if (tOrds.every(o => o.status === "DELIVERED")) return "bill-requested";
+  return "occupied";
+}
+function timerStart(num: string, orders: Order[]): Date | null {
+  const firedAts = orders.filter(o => (o.tableNumber ?? "") === num)
+    .flatMap(o => o.items).map(i => i.firedAt).filter(Boolean).map(f => new Date(f!));
+  return firedAts.length ? new Date(Math.min(...firedAts.map(d => d.getTime()))) : null;
+}
+function fmtTimer(start: Date): string {
+  const s = Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+function tableGuests(num: string, orders: Order[]): number {
+  return Math.max(0, ...orders.filter(o => (o.tableNumber ?? "") === num).map(o => o.coversCount ?? 0));
+}
+function tableTotal(num: string, orders: Order[]): number {
+  return orders.filter(o => (o.tableNumber ?? "") === num).reduce((s, o) => s + o.totalAmount, 0);
+}
+function shapeBorderRadius(shape: TableShape): string {
+  if (shape === "round" || shape === "oval") return "50%";
+  if (shape === "banquet") return "12px";
+  return "6px";
+}
+function statusColor(s: "free" | "occupied" | "bill-requested"): string {
+  if (s === "free") return C.green;
+  if (s === "occupied") return C.orange;
+  return C.red;
+}
+
+// ── Main component ─────────────────────────────────────────────────
+export default function WaiterFloorClient({ restaurants, waiterName }: { restaurants: Restaurant[]; waiterName: string }) {
+  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
+  const [layout,       setLayout]       = useState<LayoutV2 | null>(null);
+  const [roomIdx,      setRoomIdx]      = useState(0);
+  const [orders,       setOrders]       = useState<Order[]>([]);
+  const [menu,         setMenu]         = useState<MenuCat[]>([]);
+  const [tick,         setTick]         = useState(0);
+
+  // panel state
+  const [panel,        setPanel]        = useState<"new" | "active" | null>(null);
+  const [selTable,     setSelTable]     = useState<string>("");   // table number string
+  const [guestCount,   setGuestCount]   = useState(2);
+  const [cart,         setCart]         = useState<CartItem[]>([]);
+  const [catIdx,       setCatIdx]       = useState(0);
+  const [orderNote,    setOrderNote]    = useState("");
+  const [menuSearch,   setMenuSearch]   = useState("");
+  const [submitting,   setSubmitting]   = useState(false);
+  const [toast,        setToast]        = useState("");
+
+  // payment modal
+  const [payModal,     setPayModal]     = useState(false);
+  const [tip,          setTip]          = useState(0);
+  const [payMethod,    setPayMethod]    = useState("card");
+  const [closing,      setClosing]      = useState(false);
+
+  // transfer modal
+  const [transferModal, setTransferModal] = useState(false);
+  const [transferTo,    setTransferTo]    = useState("");
+
+  // add-more state (for active table panel)
+  const [addingMore,   setAddingMore]   = useState(false);
+
+  const floorRef     = useRef<HTMLDivElement>(null);
+  const sseRef       = useRef<EventSource | null>(null);
+  const ridRef       = useRef(restaurantId);
+  useEffect(() => { ridRef.current = restaurantId; }, [restaurantId]);
+
+  // ── Data loading ─────────────────────────────────────────────────
+  const loadOrders = useCallback(async (rid: string) => {
+    if (!rid) return;
+    const res = await fetch(`/api/admin/orders?restaurantId=${rid}&activeOnly=1`);
+    if (res.ok) setOrders(await res.json());
+  }, []);
+
+  const loadLayout = useCallback(async (rid: string) => {
+    if (!rid) return;
+    const res = await fetch(`/api/admin/restaurants/${rid}/layout`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.tableLayoutJson) {
+        try { setLayout(JSON.parse(data.tableLayoutJson)); }
+        catch { setLayout(null); }
+      } else {
+        setLayout(null);
+      }
+    }
+  }, []);
+
+  const loadMenu = useCallback(async (rid: string) => {
+    if (!rid) return;
+    const res = await fetch(`/api/admin/waiter/menu?restaurantId=${rid}`);
+    if (res.ok) { const d = await res.json(); setMenu(d.categories ?? []); }
+  }, []);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    loadLayout(restaurantId);
+    loadOrders(restaurantId);
+    loadMenu(restaurantId);
+    setRoomIdx(0);
+    setPanel(null);
+  }, [restaurantId, loadLayout, loadOrders, loadMenu]);
+
+  // ── SSE ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!restaurantId) return;
+    sseRef.current?.close();
+    const es = new EventSource(`/api/admin/orders/stream?restaurantId=${restaurantId}`);
+    es.onmessage = () => loadOrders(ridRef.current);
+    es.onerror   = () => {};
+    sseRef.current = es;
+    return () => es.close();
+  }, [restaurantId, loadOrders]);
+
+  // ── Timer tick every second ───────────────────────────────────────
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── Floor scale ───────────────────────────────────────────────────
+  const activeRoom = layout?.rooms[roomIdx] ?? layout?.rooms[0] ?? null;
+
+  const { maxX, maxY } = useMemo(() => {
+    let mx = 400, my = 300;
+    if (activeRoom) {
+      for (const t of activeRoom.tables) { mx = Math.max(mx, t.x + t.w); my = Math.max(my, t.y + t.h); }
+    }
+    return { maxX: mx + 40, maxY: my + 40 };
+  }, [activeRoom]);
+
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = floorRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(() => {
+      const { width, height } = el.getBoundingClientRect();
+      setScale(Math.min((width - 8) / maxX, (height - 8) / maxY, 1));
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [maxX, maxY]);
+
+  // ── Toast ─────────────────────────────────────────────────────────
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2500);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function openTable(num: string) {
+    setSelTable(num);
+    const status = tableStatus(num, orders);
+    if (status === "free") {
+      setCart([]); setGuestCount(2); setOrderNote(""); setCatIdx(0); setMenuSearch(""); setAddingMore(false);
+      setPanel("new");
+    } else {
+      setAddingMore(false);
+      setPanel("active");
+    }
+  }
+
+  function addToCart(item: MenuItem, course = 1) {
+    setCart(prev => {
+      const ex = prev.find(c => c.itemId === item.id && c.course === course);
+      if (ex) return prev.map(c => c.itemId === item.id && c.course === course ? { ...c, qty: c.qty + 1 } : c);
+      return [...prev, { itemId: item.id, name: item.name, price: item.price, qty: 1, note: "", course }];
+    });
+  }
+  function removeFromCart(itemId: string, course: number) {
+    setCart(prev => prev.filter(c => !(c.itemId === itemId && c.course === course)));
+  }
+  function updateCartQty(itemId: string, course: number, delta: number) {
+    setCart(prev => prev.map(c => c.itemId === itemId && c.course === course
+      ? { ...c, qty: Math.max(0, c.qty + delta) }
+      : c).filter(c => c.qty > 0));
+  }
+
+  const cartTotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+
+  async function submitOrder() {
+    if (!cart.length || !restaurantId || !selTable) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/orders/waiter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId,
+          tableNumber: selTable,
+          coversCount: guestCount,
+          notes: orderNote || null,
+          items: cart.map(c => ({ itemId: c.itemId, quantity: c.qty, notes: c.note || null, course: c.course })),
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showToast(`הזמנה נשלחה לשולחן ${selTable} ✓`);
+      setCart([]); setOrderNote(""); setPanel(null);
+      await loadOrders(restaurantId);
+    } catch (e) {
+      showToast("שגיאה בשליחת ההזמנה");
+      console.error(e);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function requestBill() {
+    const tOrds = orders.filter(o => (o.tableNumber ?? "") === selTable);
+    await Promise.all(tOrds.map(o =>
+      fetch(`/api/admin/orders/${o.id}/status`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "DELIVERED" }),
+      })
+    ));
+    await loadOrders(restaurantId);
+    showToast(`שולחן ${selTable} — ביקש חשבון`);
+  }
+
+  async function closeTable() {
+    setClosing(true);
+    try {
+      const res = await fetch("/api/admin/orders/close-table", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, tableNumber: selTable, tipAmount: tip, payMethod }),
+      });
+      if (!res.ok) throw new Error();
+      showToast(`שולחן ${selTable} נסגר ✓`);
+      setPayModal(false); setPanel(null); setTip(0); setPayMethod("card");
+      await loadOrders(restaurantId);
+    } catch {
+      showToast("שגיאה בסגירת שולחן");
+    } finally {
+      setClosing(false);
+    }
+  }
+
+  async function fireCourse(orderId: string, course: number) {
+    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ course }),
+    });
+    await loadOrders(restaurantId);
+  }
+
+  async function doTransfer() {
+    if (!transferTo || transferTo === selTable) return;
+    const res = await fetch("/api/admin/orders/transfer-table", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restaurantId, fromTable: selTable, toTable: transferTo }),
+    });
+    if (res.ok) {
+      showToast(`שולחן ${selTable} → שולחן ${transferTo} ✓`);
+      setTransferModal(false); setPanel(null);
+      await loadOrders(restaurantId);
+    } else {
+      showToast("שגיאה בהעברת שולחן");
+    }
+  }
+
+  // ── Filtered menu items ───────────────────────────────────────────
+  const filteredMenu = useMemo(() => {
+    if (!menuSearch) return menu;
+    const q = menuSearch.toLowerCase();
+    return menu.map(cat => ({ ...cat, items: cat.items.filter(i => i.name.toLowerCase().includes(q) || (i.description ?? "").toLowerCase().includes(q)) }))
+      .filter(cat => cat.items.length > 0);
+  }, [menu, menuSearch]);
+
+  const activeCat = filteredMenu[catIdx] ?? filteredMenu[0];
+
+  // ── Active table data ─────────────────────────────────────────────
+  const activeTableOrders = orders.filter(o => (o.tableNumber ?? "") === selTable);
+  const activeTableTotal  = tableTotal(selTable, orders);
+  const selTableStatus    = tableStatus(selTable, orders);
+  const selTimerStart     = timerStart(selTable, orders);
+
+  // ── Render ────────────────────────────────────────────────────────
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: C.bg, color: C.text, fontFamily: "system-ui,sans-serif", direction: "rtl", position: "relative", overflow: "hidden" }}>
+
+      {/* Blink keyframe */}
+      <style>{`
+        @keyframes floorBlink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+        @keyframes slideIn    { from{transform:translateX(-100%)} to{transform:translateX(0)} }
+        .bill-blink { animation: floorBlink 1s ease-in-out infinite; }
+      `}</style>
+
+      {/* ── Topbar ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: `1px solid ${C.border}`, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", flexShrink: 0 }}>
+        <span style={{ fontWeight: 800, fontSize: 15, color: C.gold }}>🍽 רצפת שירות</span>
+        <span style={{ color: C.muted, fontSize: 13 }}>— {waiterName}</span>
+
+        {/* Restaurant picker */}
+        {restaurants.length > 1 && (
+          <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
+            style={{ ...INP, width: "auto", marginRight: "auto" }}>
+            {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        )}
+
+        {/* Live stats */}
+        <div style={{ display: "flex", gap: 8, marginRight: restaurants.length > 1 ? 0 : "auto" }}>
+          {(["free", "occupied", "bill-requested"] as const).map(s => {
+            const count = activeRoom?.tables.filter(t => tableStatus(String(t.num), orders) === s).length ?? 0;
+            const labels = { free: "פנויים", occupied: "תפוסים", "bill-requested": "חשבון" };
+            const colors = { free: C.green, occupied: C.orange, "bill-requested": C.red };
+            return (
+              <div key={s} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: `${colors[s]}22`, border: `1px solid ${colors[s]}55`, fontSize: 12 }}>
+                <span style={{ fontWeight: 800, color: colors[s] }}>{count}</span>
+                <span style={{ color: C.sub }}>{labels[s]}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Room tabs ── */}
+      {layout && layout.rooms.length > 1 && (
+        <div style={{ display: "flex", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${C.border}`, background: "rgba(10,4,2,0.92)", flexShrink: 0, overflowX: "auto" }}>
+          {layout.rooms.map((room, i) => (
+            <button key={room.id} onClick={() => setRoomIdx(i)} style={{
+              padding: "4px 14px", borderRadius: 20, fontSize: 13, fontWeight: i === roomIdx ? 700 : 400, cursor: "pointer",
+              background: i === roomIdx ? `${C.gold}22` : "transparent",
+              border: `1px solid ${i === roomIdx ? C.gold : C.border}`,
+              color: i === roomIdx ? C.gold : C.sub,
+            }}>{room.name}</button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Main area: floor + panel ── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+
+        {/* ── Floor map ── */}
+        <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+          {!layout && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: C.muted, fontSize: 14 }}>
+              אין פריסת שולחנות מוגדרת למסעדה זו
+            </div>
+          )}
+          {activeRoom && (
+            <div style={{ position: "absolute", top: 4, left: 4, width: maxX * scale, height: maxY * scale }}>
+              {activeRoom.tables.map(table => {
+                const tNum   = String(table.num);
+                const status = tableStatus(tNum, orders);
+                const start  = timerStart(tNum, orders);
+                const guests = tableGuests(tNum, orders);
+                const col    = statusColor(status);
+                const isSel  = selTable === tNum && panel !== null;
+
+                return (
+                  <div
+                    key={table.id}
+                    className={status === "bill-requested" ? "bill-blink" : ""}
+                    onClick={() => openTable(tNum)}
+                    title={`שולחן ${table.num}${table.name ? ` — ${table.name}` : ""}`}
+                    style={{
+                      position: "absolute",
+                      left:   table.x * scale,
+                      top:    table.y * scale,
+                      width:  table.w * scale,
+                      height: table.h * scale,
+                      borderRadius: shapeBorderRadius(table.shape),
+                      transform: table.rot ? `rotate(${table.rot}deg)` : undefined,
+                      background: `${col}22`,
+                      border: `2px solid ${isSel ? C.gold : col}`,
+                      boxShadow: isSel ? `0 0 0 2px ${C.gold}66` : undefined,
+                      cursor: "pointer",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                      gap: 1, transition: "border-color 0.2s",
+                      userSelect: "none",
+                    }}>
+                    <span style={{ fontWeight: 800, fontSize: Math.max(9, Math.min(14, table.w * scale * 0.17)), color: col, lineHeight: 1 }}>
+                      {table.num}
+                    </span>
+                    {start && (
+                      <span style={{ fontSize: Math.max(7, Math.min(11, table.w * scale * 0.13)), color: C.text, lineHeight: 1 }}>
+                        {fmtTimer(start)}
+                      </span>
+                    )}
+                    {guests > 0 && (
+                      <span style={{ fontSize: Math.max(7, Math.min(10, table.w * scale * 0.12)), color: C.sub, lineHeight: 1 }}>
+                        👤{guests}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Legend */}
+          <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[["free","#22c55e","פנוי"],["occupied","#f97316","תפוס"],["bill-requested","#ef4444","ביקש חשבון"]] .map(([,col,lbl]) => (
+              <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, background: "rgba(10,4,2,0.85)", border: `1px solid ${C.border}`, fontSize: 11 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, display: "inline-block" }} />
+                <span style={{ color: C.sub }}>{lbl}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Side Panel ── */}
+        {panel && (
+          <div style={{
+            width: 360, flexShrink: 0, borderRight: `1px solid ${C.border}`,
+            background: C.panel, display: "flex", flexDirection: "column",
+            animation: "slideIn 0.2s ease",
+          }}>
+            {/* Panel header */}
+            <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: C.gold }}>שולחן {selTable}</span>
+              {selTimerStart && panel === "active" && (
+                <span style={{ fontSize: 13, color: selTableStatus === "bill-requested" ? C.red : C.orange, fontWeight: 700 }}>
+                  ⏱ {fmtTimer(selTimerStart)}
+                </span>
+              )}
+              {panel === "active" && (
+                <span style={{ fontSize: 12, color: C.sub, marginRight: "auto" }}>
+                  👤 {tableGuests(selTable, orders)} · ₪{activeTableTotal.toFixed(0)}
+                </span>
+              )}
+              <button onClick={() => { setPanel(null); setSelTable(""); }} style={{ background: "none", border: "none", color: C.muted, fontSize: 18, cursor: "pointer", lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* ── NEW ORDER panel ── */}
+            {panel === "new" && (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                {/* Guest count */}
+                <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  <span style={{ fontSize: 13, color: C.sub }}>סועדים:</span>
+                  <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ ...BTN(C.gold, true), padding: "4px 12px", fontSize: 16 }}>−</button>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: C.text, minWidth: 24, textAlign: "center" }}>{guestCount}</span>
+                  <button onClick={() => setGuestCount(g => Math.min(50, g + 1))} style={{ ...BTN(C.gold, true), padding: "4px 12px", fontSize: 16 }}>+</button>
+                </div>
+
+                {/* Search */}
+                <div style={{ padding: "8px 14px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                  <input value={menuSearch} onChange={e => { setMenuSearch(e.target.value); setCatIdx(0); }}
+                    placeholder="חפש מנה..." style={INP} />
+                </div>
+
+                {/* Category tabs */}
+                <div style={{ display: "flex", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${C.border}`, overflowX: "auto", flexShrink: 0 }}>
+                  {filteredMenu.map((cat, i) => (
+                    <button key={cat.id} onClick={() => setCatIdx(i)} style={{
+                      padding: "3px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap",
+                      background: catIdx === i ? `${C.gold}22` : "transparent",
+                      border: `1px solid ${catIdx === i ? C.gold : C.border}`,
+                      color: catIdx === i ? C.gold : C.sub,
+                    }}>{cat.name}</button>
+                  ))}
+                </div>
+
+                {/* Items */}
+                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px" }}>
+                  {activeCat?.items.map(item => (
+                    <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
+                        {item.description && <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.description}</div>}
+                        <div style={{ fontSize: 12, color: C.gold, marginTop: 2 }}>₪{item.price.toFixed(0)}</div>
+                      </div>
+                      <button onClick={() => addToCart(item)} style={{ ...BTN(C.gold, true), padding: "4px 12px", fontSize: 18, marginRight: 8, flexShrink: 0 }}>+</button>
+                    </div>
+                  ))}
+                  {!activeCat?.items.length && <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>אין פריטים</div>}
+                </div>
+
+                {/* Cart */}
+                {cart.length > 0 && (
+                  <div style={{ borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+                    <div style={{ padding: "6px 14px", maxHeight: 160, overflowY: "auto" }}>
+                      {cart.map(c => (
+                        <div key={c.itemId + c.course} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0" }}>
+                          <button onClick={() => updateCartQty(c.itemId, c.course, -1)} style={{ background: "none", border: `1px solid ${C.border}`, color: C.sub, borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 14 }}>−</button>
+                          <span style={{ fontSize: 12, color: C.text, minWidth: 16, textAlign: "center" }}>{c.qty}</span>
+                          <button onClick={() => updateCartQty(c.itemId, c.course, 1)}  style={{ background: "none", border: `1px solid ${C.border}`, color: C.sub, borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 14 }}>+</button>
+                          <span style={{ flex: 1, fontSize: 12, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                          <span style={{ fontSize: 11, color: C.muted }}>{EMOJI[c.course] ?? ""}</span>
+                          <span style={{ fontSize: 12, color: C.gold }}>₪{(c.price * c.qty).toFixed(0)}</span>
+                          <button onClick={() => removeFromCart(c.itemId, c.course)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 13 }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ padding: "8px 14px", borderTop: `1px solid ${C.border}` }}>
+                      <input value={orderNote} onChange={e => setOrderNote(e.target.value)} placeholder="הערה להזמנה..." style={{ ...INP, marginBottom: 8 }} />
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 800, color: C.gold }}>₪{cartTotal.toFixed(0)}</span>
+                        <button onClick={submitOrder} disabled={submitting} style={{ ...BTN("#16a34a"), opacity: submitting ? 0.6 : 1 }}>
+                          {submitting ? "שולח..." : "🚀 שלח למטבח"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── ACTIVE TABLE panel ── */}
+            {panel === "active" && (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+                {/* Action buttons */}
+                <div style={{ padding: "10px 14px", display: "flex", gap: 6, flexWrap: "wrap", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                  <button onClick={() => setAddingMore(v => !v)} style={{ ...BTN(C.blue, true), fontSize: 12 }}>
+                    {addingMore ? "✕ סגור" : "＋ הוסף מנות"}
+                  </button>
+                  {selTableStatus !== "bill-requested" && (
+                    <button onClick={requestBill} style={{ ...BTN(C.orange, true), fontSize: 12 }}>🧾 ביקש חשבון</button>
+                  )}
+                  {(selTableStatus === "bill-requested" || selTableStatus === "occupied") && (
+                    <button onClick={() => setPayModal(true)} style={{ ...BTN("#16a34a"), fontSize: 12 }}>💳 סגור חשבון</button>
+                  )}
+                  <button onClick={() => { setTransferTo(""); setTransferModal(true); }} style={{ ...BTN(C.muted, true), fontSize: 12 }}>↔ העבר שולחן</button>
+                </div>
+
+                {/* Add-more mini menu */}
+                {addingMore && (
+                  <div style={{ borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                    <div style={{ padding: "6px 14px" }}>
+                      <input value={menuSearch} onChange={e => { setMenuSearch(e.target.value); setCatIdx(0); }} placeholder="חפש מנה..." style={INP} />
+                    </div>
+                    <div style={{ display: "flex", gap: 4, padding: "4px 14px", overflowX: "auto" }}>
+                      {filteredMenu.map((cat, i) => (
+                        <button key={cat.id} onClick={() => setCatIdx(i)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap", background: catIdx === i ? `${C.gold}22` : "transparent", border: `1px solid ${catIdx === i ? C.gold : C.border}`, color: catIdx === i ? C.gold : C.sub }}>
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ maxHeight: 150, overflowY: "auto", padding: "4px 14px" }}>
+                      {activeCat?.items.map(item => (
+                        <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${C.border}` }}>
+                          <span style={{ flex: 1, fontSize: 12, color: C.text }}>{item.name}</span>
+                          <span style={{ fontSize: 12, color: C.gold, marginLeft: 8 }}>₪{item.price.toFixed(0)}</span>
+                          <button onClick={() => addToCart(item)} style={{ ...BTN(C.gold, true), padding: "2px 10px", fontSize: 14, marginRight: 6 }}>+</button>
+                        </div>
+                      ))}
+                    </div>
+                    {cart.length > 0 && (
+                      <div style={{ padding: "6px 14px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: C.sub }}>{cart.reduce((s, c) => s + c.qty, 0)} פריטים · ₪{cartTotal.toFixed(0)}</span>
+                        <button onClick={submitOrder} disabled={submitting} style={{ ...BTN("#16a34a"), fontSize: 12, opacity: submitting ? 0.6 : 1 }}>
+                          {submitting ? "שולח..." : "🚀 שלח"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Current orders list */}
+                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px" }}>
+                  {activeTableOrders.map(order => {
+                    const heldByCourse = new Map<number, number>();
+                    order.items.forEach(i => { if (i.heldUntilFired && !i.firedAt) heldByCourse.set(i.course, (heldByCourse.get(i.course) ?? 0) + 1); });
+                    return (
+                      <div key={order.id} style={{ marginBottom: 12, background: "#1a0c0622", border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
+                        <div style={{ padding: "6px 10px", background: "rgba(212,160,23,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>הזמנה #{order.orderNumber ?? "—"}</span>
+                          <span style={{ fontSize: 11, color: C.sub }}>₪{order.totalAmount.toFixed(0)}</span>
+                        </div>
+                        {/* Fire course buttons */}
+                        {Array.from(heldByCourse.entries()).map(([course, count]) => (
+                          <button key={course} onClick={() => fireCourse(order.id, course)} style={{ margin: "4px 8px", ...BTN("#b45309", true), fontSize: 11, padding: "3px 10px" }}>
+                            🔥 הצת {COURSE[course] ?? `קורס ${course}`} ({count})
+                          </button>
+                        ))}
+                        {order.items.map(item => {
+                          const statusColors: Record<string, string> = { PENDING: C.muted, PREPARING: C.blue, DONE: C.green, CANCELLED: C.red, HELD: "#7c3aed" };
+                          const statusLabels: Record<string, string> = { PENDING: "ממתין", PREPARING: "בהכנה", DONE: "הוכן", CANCELLED: "בוטל", HELD: "ממתין להצתה" };
+                          const iHeld = item.heldUntilFired && !item.firedAt;
+                          const statusKey = iHeld ? "HELD" : item.itemStatus;
+                          return (
+                            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderTop: `1px solid ${C.border}`, opacity: item.itemStatus === "CANCELLED" ? 0.4 : 1 }}>
+                              <span style={{ fontSize: 11, color: C.muted, flexShrink: 0 }}>×{item.quantity}</span>
+                              <span style={{ flex: 1, fontSize: 12, color: C.text }}>{item.item.name}</span>
+                              {item.course > 1 && <span style={{ fontSize: 10, color: "#a78bfa" }}>{EMOJI[item.course]}</span>}
+                              <span style={{ fontSize: 10, color: statusColors[statusKey] ?? C.muted, whiteSpace: "nowrap" }}>
+                                {statusLabels[statusKey] ?? statusKey}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                  {!activeTableOrders.length && <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>אין הזמנות פעילות</div>}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Payment modal ── */}
+      {payModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={e => { if (e.target === e.currentTarget) setPayModal(false); }}>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 320, direction: "rtl" }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: C.gold, marginBottom: 16 }}>💳 סגירת שולחן {selTable}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 16 }}>סה"כ: ₪{activeTableTotal.toFixed(0)}</div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: C.sub, marginBottom: 6 }}>טיפ</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[0, 10, 12, 15].map(pct => (
+                  <button key={pct} onClick={() => setTip(pct === 0 ? 0 : activeTableTotal * pct / 100)}
+                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 12, cursor: "pointer", border: `1px solid ${C.border}`, background: tip === (pct === 0 ? 0 : activeTableTotal * pct / 100) ? `${C.gold}22` : "transparent", color: C.text }}>
+                    {pct === 0 ? "ללא" : `${pct}%`}
+                  </button>
+                ))}
+              </div>
+              <input type="number" value={tip === 0 ? "" : tip.toFixed(0)} onChange={e => setTip(Number(e.target.value) || 0)}
+                placeholder="טיפ ידני (₪)" style={{ ...INP, marginTop: 6 }} />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: C.sub, marginBottom: 6 }}>אמצעי תשלום</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[["card","אשראי"],["cash","מזומן"],["app","אפליקציה"]].map(([v, l]) => (
+                  <button key={v} onClick={() => setPayMethod(v)}
+                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 12, cursor: "pointer", border: `1px solid ${C.border}`, background: payMethod === v ? `${C.gold}22` : "transparent", color: C.text }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={closeTable} disabled={closing} style={{ flex: 1, ...BTN("#16a34a"), opacity: closing ? 0.6 : 1 }}>
+                {closing ? "סוגר..." : `✓ סגור · ₪${(activeTableTotal + tip).toFixed(0)}`}
+              </button>
+              <button onClick={() => setPayModal(false)} style={{ ...BTN(C.muted, true), padding: "8px 16px" }}>ביטול</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Transfer modal ── */}
+      {transferModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={e => { if (e.target === e.currentTarget) setTransferModal(false); }}>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 300, direction: "rtl" }}>
+            <div style={{ fontWeight: 800, fontSize: 16, color: C.gold, marginBottom: 14 }}>↔ העבר שולחן {selTable} אל</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+              {activeRoom?.tables.filter(t => String(t.num) !== selTable && tableStatus(String(t.num), orders) === "free")
+                .map(t => (
+                  <button key={t.id} onClick={() => setTransferTo(String(t.num))}
+                    style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, cursor: "pointer", border: `1px solid ${transferTo === String(t.num) ? C.gold : C.border}`, background: transferTo === String(t.num) ? `${C.gold}22` : "transparent", color: C.text }}>
+                    שולחן {t.num}
+                  </button>
+                ))}
+            </div>
+            {!activeRoom?.tables.some(t => String(t.num) !== selTable && tableStatus(String(t.num), orders) === "free") && (
+              <div style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>אין שולחנות פנויים להעברה</div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={doTransfer} disabled={!transferTo} style={{ flex: 1, ...BTN(C.gold), opacity: !transferTo ? 0.4 : 1 }}>העבר</button>
+              <button onClick={() => setTransferModal(false)} style={{ ...BTN(C.muted, true), padding: "8px 14px" }}>ביטול</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, right: "50%", transform: "translateX(50%)", zIndex: 9999, background: "#1a2e1a", border: "1px solid #22c55e", borderRadius: 10, padding: "10px 20px", color: "#22c55e", fontWeight: 700, fontSize: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
