@@ -75,8 +75,20 @@ function statusColor(s: "free" | "occupied" | "bill-requested"): string {
 }
 
 // ── Main component ─────────────────────────────────────────────────
+const LS_REST_KEY = "menu4u_active_restaurant";
+
 export default function WaiterFloorClient({ restaurants, waiterName }: { restaurants: Restaurant[]; waiterName: string }) {
-  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
+  const [restaurantId, setRestaurantId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(LS_REST_KEY);
+      if (saved && restaurants.some(r => r.id === saved)) return saved;
+    }
+    return restaurants[0]?.id ?? "";
+  });
+  // Persist selected restaurant so the screen reopens on the one you worked on
+  useEffect(() => {
+    if (restaurantId && typeof window !== "undefined") localStorage.setItem(LS_REST_KEY, restaurantId);
+  }, [restaurantId]);
   const [layout,       setLayout]       = useState<LayoutV2 | null>(null);
   const [roomIdx,      setRoomIdx]      = useState(0);
   const [orders,       setOrders]       = useState<Order[]>([]);

@@ -78,9 +78,17 @@ function fmtMin(min: number): string {
   return `${Math.floor(min / 60)}ש' ${min % 60 > 0 ? `${min % 60}ד'` : ""}`;
 }
 
+const LS_REST_KEY = "menu4u_active_restaurant";
+
 // ── Main component ─────────────────────────────────────────────────
 export default function ShiftManagerClient({ restaurants, managerName }: { restaurants: Restaurant[]; managerName: string }) {
-  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
+  const [restaurantId, setRestaurantId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(LS_REST_KEY);
+      if (saved && restaurants.some(r => r.id === saved)) return saved;
+    }
+    return restaurants[0]?.id ?? "";
+  });
   const [layout,       setLayout]       = useState<LayoutV2 | null>(null);
   const [orders,       setOrders]       = useState<Order[]>([]);
   const [menuCats,     setMenuCats]     = useState<MenuCat[]>([]);
@@ -114,6 +122,10 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
   const ridRef = useRef(restaurantId);
   useEffect(() => { ridRef.current = restaurantId; }, [restaurantId]);
+  // Persist selected restaurant so the screen reopens on the one you worked on
+  useEffect(() => {
+    if (restaurantId && typeof window !== "undefined") localStorage.setItem(LS_REST_KEY, restaurantId);
+  }, [restaurantId]);
 
   // ── Fetch layout ─────────────────────────────────────────────────
   const fetchLayout = useCallback(async (rid: string) => {

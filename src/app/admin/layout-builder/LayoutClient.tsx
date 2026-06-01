@@ -645,8 +645,16 @@ function StatsModal({ room, onClose, onResetEvening }: {
 }
 
 /* ═══════════════════════════ Main Component ══════════════════════════════ */
+const LS_REST_KEY = "menu4u_active_restaurant";
+
 export default function LayoutClient({ restaurants }: { restaurants: Restaurant[] }) {
-  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
+  const [restaurantId, setRestaurantId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(LS_REST_KEY);
+      if (saved && restaurants.some(r => r.id === saved)) return saved;
+    }
+    return restaurants[0]?.id ?? "";
+  });
   const [layout, setLayout]   = useState<LayoutV2>(emptyLayout());
   const [roomIdx, setRoomIdx] = useState(0);
   const [saving, setSaving]   = useState(false);
@@ -772,7 +780,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (restaurants[0]?.id) loadLayout(restaurants[0].id); }, []);
+  useEffect(() => { if (restaurantId) loadLayout(restaurantId); }, []);
+  // Persist selected restaurant so floor screens reopen on the one you built
+  useEffect(() => {
+    if (restaurantId && typeof window !== "undefined") localStorage.setItem(LS_REST_KEY, restaurantId);
+  }, [restaurantId]);
 
   /* ResizeObserver + fit on first measure */
   useEffect(() => {
