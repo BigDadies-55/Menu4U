@@ -90,6 +90,7 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
     if (restaurantId && typeof window !== "undefined") localStorage.setItem(LS_REST_KEY, restaurantId);
   }, [restaurantId]);
   const [layout,       setLayout]       = useState<LayoutV2 | null>(null);
+  const [layoutDiag,   setLayoutDiag]   = useState("");
   const [roomIdx,      setRoomIdx]      = useState(0);
   const [orders,       setOrders]       = useState<Order[]>([]);
   const [menu,         setMenu]         = useState<MenuCat[]>([]);
@@ -134,15 +135,30 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
 
   const loadLayout = useCallback(async (rid: string) => {
     if (!rid) return;
-    const res = await fetch(`/api/admin/restaurants/${rid}/layout`);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/admin/restaurants/${rid}/layout`);
+      if (!res.ok) { setLayout(null); setLayoutDiag(`שגיאת טעינה (HTTP ${res.status})`); return; }
       const data = await res.json();
-      if (data.tableLayoutJson) {
-        try { setLayout(JSON.parse(data.tableLayoutJson)); }
-        catch { setLayout(null); }
-      } else {
+      const raw = data.tableLayoutJson;
+      if (!raw) { setLayout(null); setLayoutDiag("לא נשמרה פריסה למסעדה זו"); return; }
+      try {
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const rooms = parsed?.rooms ?? (Array.isArray(parsed) ? parsed : null);
+        if (rooms && Array.isArray(rooms)) {
+          setLayout({ version: 2, rooms });
+          const tableCount = rooms.reduce((s: number, r: Room) => s + (r.tables?.length ?? 0), 0);
+          setLayoutDiag(tableCount === 0 ? "הפריסה קיימת אך ללא שולחנות" : "");
+        } else {
+          setLayout(null);
+          setLayoutDiag("מבנה פריסה לא מזוהה");
+        }
+      } catch {
         setLayout(null);
+        setLayoutDiag("שגיאת פענוח פריסה");
       }
+    } catch {
+      setLayout(null);
+      setLayoutDiag("שגיאת רשת בטעינת פריסה");
     }
   }, []);
 
@@ -410,8 +426,20 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
         {/* ── Floor map ── */}
         <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden" }}>
           {!layout && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: C.muted, fontSize: 14 }}>
-              אין פריסת שולחנות מוגדרת למסעדה זו
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", justifyContent: "center", height: "100%", color: C.muted, fontSize: 14, textAlign: "center", padding: 20 }}>
+              <div style={{ fontSize: 32 }}>🗺️</div>
+              <div style={{ color: C.sub, fontWeight: 700 }}>
+                {layoutDiag || "אין פריסת שולחנות מוגדרת"}
+              </div>
+              <div style={{ fontSize: 12 }}>
+                מסעדה נבחרת: <span style={{ color: C.gold }}>{restaurants.find(r => r.id === restaurantId)?.name ?? "—"}</span>
+              </div>
+              {restaurants.length > 1 && (
+                <div style={{ fontSize: 12 }}>אם בנית פריסה למסעדה אחרת — בחר אותה בבורר למעלה.</div>
+              )}
+              <button onClick={() => loadLayout(restaurantId)} style={{ marginTop: 6, background: `${C.gold}22`, color: C.gold, border: `1px solid ${C.gold}55`, borderRadius: 8, padding: "6px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                ↻ נסה שוב
+              </button>
             </div>
           )}
           {activeRoom && (
