@@ -110,6 +110,7 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
   const floorRef     = useRef<HTMLDivElement>(null);
   const sseRef       = useRef<EventSource | null>(null);
   const ridRef       = useRef(restaurantId);
+  const prevBillTables = useRef<Set<string>>(new Set());
   useEffect(() => { ridRef.current = restaurantId; }, [restaurantId]);
 
   // ── Data loading ─────────────────────────────────────────────────
@@ -158,6 +159,22 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
     sseRef.current = es;
     return () => es.close();
   }, [restaurantId, loadOrders]);
+
+  // ── Detect bill-requested transitions → toast ────────────────────
+  useEffect(() => {
+    if (!activeRoom) return;
+    const nowBill = new Set(
+      activeRoom.tables.filter(t => tableStatus(String(t.num), orders) === "bill-requested").map(t => String(t.num))
+    );
+    for (const num of nowBill) {
+      if (!prevBillTables.current.has(num)) {
+        showToast(`🔔 שולחן ${num} — מוכן לחשבון!`);
+        break;
+      }
+    }
+    prevBillTables.current = nowBill;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
   // ── Timer tick every second ───────────────────────────────────────
   useEffect(() => {
