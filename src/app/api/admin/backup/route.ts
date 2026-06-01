@@ -58,16 +58,18 @@ export async function GET(req: Request) {
     tableSessions,
     auditLogs,
     menuViews,
+    loyaltySettings,
+    loyaltyMembers,
+    loyaltyTransactions,
+    loyaltyCoupons,
+    orderCounters,
   ] = await Promise.all([
     prisma.restaurant.findMany({ where: { id: { in: allowedIds } } }),
 
     prisma.restaurantUser.findMany({ where: { restaurantId: { in: allowedIds } } }),
 
-    // Users linked to these restaurants
     prisma.user.findMany({
-      where: {
-        restaurantUsers: { some: { restaurantId: { in: allowedIds } } },
-      },
+      where: { restaurantUsers: { some: { restaurantId: { in: allowedIds } } } },
       select: {
         id: true, email: true, name: true, role: true,
         emailVerified: true, termsAccepted: true, createdAt: true,
@@ -119,7 +121,6 @@ export async function GET(req: Request) {
       where: {
         OR: [
           { meta: { path: ["restaurantId"], array_contains: allowedIds } },
-          // Also include logs without restaurantId for SUPER_ADMIN
           ...(role === "SUPER_ADMIN" ? [{}] : []),
         ],
       },
@@ -128,11 +129,30 @@ export async function GET(req: Request) {
     }).catch(() => [] as Awaited<ReturnType<typeof prisma.auditLog.findMany>>),
 
     prisma.menuView.findMany({ where: { restaurantId: { in: allowedIds } } }).catch(() => []),
+
+    prisma.loyaltySettings.findMany({ where: { restaurantId: { in: allowedIds } } }),
+
+    prisma.loyaltyMember.findMany({
+      where: { restaurantId: { in: allowedIds } },
+      orderBy: { createdAt: "asc" },
+    }),
+
+    prisma.loyaltyTransaction.findMany({
+      where: { member: { restaurantId: { in: allowedIds } } },
+      orderBy: { createdAt: "asc" },
+    }),
+
+    prisma.loyaltyCoupon.findMany({
+      where: { restaurantId: { in: allowedIds } },
+      orderBy: { createdAt: "asc" },
+    }),
+
+    prisma.orderCounter.findMany({ where: { restaurantId: { in: allowedIds } } }),
   ]);
 
   const backup = {
     _meta: {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       exportedBy: session.user.email,
       restaurantIds: allowedIds,
@@ -147,6 +167,9 @@ export async function GET(req: Request) {
         orders: orders.length,
         orderItems: orderItems.length,
         customers: customers.length,
+        loyaltyMembers: loyaltyMembers.length,
+        loyaltyTransactions: loyaltyTransactions.length,
+        loyaltyCoupons: loyaltyCoupons.length,
         auditLogs: auditLogs.length,
         tableSessions: tableSessions.length,
         menuViews: menuViews.length,
@@ -168,6 +191,11 @@ export async function GET(req: Request) {
     tableSessions,
     auditLogs,
     menuViews,
+    loyaltySettings,
+    loyaltyMembers,
+    loyaltyTransactions,
+    loyaltyCoupons,
+    orderCounters,
   };
 
   const json = JSON.stringify(backup, null, 2);

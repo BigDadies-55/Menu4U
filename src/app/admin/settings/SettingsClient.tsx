@@ -16,6 +16,7 @@ const C = {
   green:       "#51cf66",
   red:         "#ff6b6b",
   blue:        "#339af0",
+  gold:        "#d4a017",
 } as const;
 
 const DARK_INPUT: React.CSSProperties = {
@@ -411,6 +412,7 @@ const TYPE_LABELS: Record<string, string> = {
 function RestoreSection() {
   const [file,          setFile]          = useState<File | null>(null);
   const [backupData,    setBackupData]    = useState<BackupJSON | null>(null);
+  const [restoreScope,  setRestoreScope]  = useState<"menus" | "full">("menus");
   const [previewing,    setPreviewing]    = useState(false);
   const [diff,          setDiff]          = useState<DiffResult | null>(null);
   const [confirm,       setConfirm]       = useState(false);
@@ -443,7 +445,7 @@ function RestoreSection() {
       const res = await fetch("/api/admin/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backup: backupData, scope: "menus", mode: "preview" }),
+        body: JSON.stringify({ backup: backupData, scope: restoreScope, mode: "preview" }),
       });
       const data = await res.json() as DiffResult & { error?: string };
       if (!res.ok) throw new Error(data.error ?? `שגיאה ${res.status}`);
@@ -462,7 +464,7 @@ function RestoreSection() {
       const res = await fetch("/api/admin/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backup: backupData, scope: "menus", mode: "restore" }),
+        body: JSON.stringify({ backup: backupData, scope: restoreScope, mode: "restore" }),
       });
       const data = await res.json() as { created?: number; updated?: number; error?: string };
       if (!res.ok) throw new Error(data.error ?? `שגיאה ${res.status}`);
@@ -488,6 +490,25 @@ function RestoreSection() {
         borderRadius: 10, padding: "12px 16px", color: "#74c0fc", fontSize: 13,
         display: "flex", alignItems: "center", gap: 8 }}>
         ℹ️ העלה קובץ גיבוי לשחזור נתונים. תוצג השוואה לפני ביצוע השחזור.
+      </div>
+
+      {/* Scope selector */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {(["menus", "full"] as const).map(s => (
+          <button key={s} onClick={() => { setRestoreScope(s); setDiff(null); }}
+            style={{
+              flex: 1, padding: "9px 12px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700,
+              border: `1.5px solid ${restoreScope === s ? C.gold : C.inputBorder}`,
+              background: restoreScope === s ? "rgba(212,160,23,0.1)" : C.inputBg,
+              color: restoreScope === s ? C.gold : C.sub,
+              textAlign: "right" as const,
+            }}>
+            {s === "menus" ? "📋 תפריטים בלבד" : "🗄️ שחזור מלא"}
+            <div style={{ fontSize: 10, fontWeight: 400, marginTop: 2, color: restoreScope === s ? "rgba(212,160,23,0.7)" : C.muted }}>
+              {s === "menus" ? "מסעדות, תפריטים, קטגוריות, פריטים, תוספות" : "תפריטים + הזמנות + לקוחות + נאמנות + מוני הזמנות"}
+            </div>
+          </button>
+        ))}
       </div>
 
       {/* Drop zone */}
@@ -667,7 +688,7 @@ function RestoreSection() {
                     color: "#fff", fontSize: 13, fontWeight: 700,
                     padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
                     opacity: restoring || (diff.toCreate === 0 && diff.toUpdate === 0) ? 0.5 : 1 }}>
-                  {restoring ? "משחזר..." : "🔄 שחזר תפריטים"}
+                  {restoring ? "משחזר..." : restoreScope === "full" ? "🔄 שחזור מלא" : "🔄 שחזר תפריטים"}
                 </button>
                 <button onClick={() => { setDiff(null); setShowAllDiff(false); }} style={{
                   background: "transparent", color: C.sub, fontSize: 13, fontWeight: 600,
@@ -703,9 +724,6 @@ function RestoreSection() {
         </div>
       )}
 
-      <p style={{ fontSize: 12, color: C.muted }}>
-        לשחזור מלא של הזמנות, לקוחות ולוגים — השתמש בגיבוי Neon DB.
-      </p>
     </div>
   );
 }
