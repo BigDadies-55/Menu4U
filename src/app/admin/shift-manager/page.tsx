@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import dynamic from "next/dynamic";
+import ShiftManagerWrapper from "./ShiftManagerWrapper";
 
-const ShiftManagerClient = dynamic(() => import("./ShiftManagerClient"), { ssr: false });
+export const dynamic = "force-dynamic";
 
 export default async function ShiftManagerPage() {
   const session = await auth();
@@ -22,7 +22,7 @@ export default async function ShiftManagerPage() {
   if (restaurants.length === 0) redirect("/admin");
 
   return (
-    <ShiftManagerClient
+    <ShiftManagerWrapper
       restaurants={restaurants}
       managerName={session.user.name ?? session.user.email ?? "מנהל"}
     />
