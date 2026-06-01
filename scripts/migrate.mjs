@@ -9,6 +9,11 @@ const sqls = [
       ALTER TYPE "Role" ADD VALUE 'OWNER';
     END IF;
   END $$;`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'SHIFT_MANAGER' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'Role')) THEN
+      ALTER TYPE "Role" ADD VALUE 'SHIFT_MANAGER';
+    END IF;
+  END $$;`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "phone2" TEXT;`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "orderPhone" TEXT;`,
   `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "tags" TEXT[] DEFAULT '{}';`,

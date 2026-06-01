@@ -29,7 +29,7 @@ interface Props {
   currentUserRole: Role;
 }
 
-const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "VIEWER"];
+const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "EDITOR", "WAITER", "VIEWER", "DISPLAY"];
 
 // ── Dark palette ──────────────────────────────────────────────────────────────
 const C = {
@@ -41,19 +41,25 @@ const C = {
 } as const;
 
 const DARK_ROLE_STYLE: Record<string, React.CSSProperties> = {
-  SUPER_ADMIN: { background: "rgba(255,107,107,0.15)", color: "#ff6b6b" },
-  ADMIN:       { background: "rgba(51,154,240,0.15)",  color: "#339af0" },
-  OWNER:       { background: "rgba(252,196,25,0.15)",  color: "#fcc419" },
-  EDITOR:      { background: "rgba(190,75,219,0.15)",  color: "#be4bdb" },
-  VIEWER:      { background: "rgba(108,117,125,0.15)", color: "#6c757d" },
+  SUPER_ADMIN:   { background: "rgba(255,107,107,0.15)", color: "#ff6b6b" },
+  ADMIN:         { background: "rgba(51,154,240,0.15)",  color: "#339af0" },
+  OWNER:         { background: "rgba(252,196,25,0.15)",  color: "#fcc419" },
+  SHIFT_MANAGER: { background: "rgba(255,146,43,0.15)",  color: "#ff922b" },
+  EDITOR:        { background: "rgba(190,75,219,0.15)",  color: "#be4bdb" },
+  VIEWER:        { background: "rgba(108,117,125,0.15)", color: "#6c757d" },
+  WAITER:        { background: "rgba(81,207,102,0.15)",  color: "#51cf66" },
+  DISPLAY:       { background: "rgba(34,184,207,0.15)",  color: "#22b8cf" },
 };
 
 const AVATAR_GRADIENT: Record<string, string> = {
-  SUPER_ADMIN: "linear-gradient(135deg,#c92a2a,#ff6b6b)",
-  ADMIN:       "linear-gradient(135deg,#1971c2,#339af0)",
-  OWNER:       "linear-gradient(135deg,#2f9e44,#51cf66)",
-  EDITOR:      "linear-gradient(135deg,#6741d9,#9775fa)",
-  VIEWER:      "linear-gradient(135deg,#495057,#868e96)",
+  SUPER_ADMIN:   "linear-gradient(135deg,#c92a2a,#ff6b6b)",
+  ADMIN:         "linear-gradient(135deg,#1971c2,#339af0)",
+  OWNER:         "linear-gradient(135deg,#2f9e44,#51cf66)",
+  SHIFT_MANAGER: "linear-gradient(135deg,#e8590c,#ff922b)",
+  EDITOR:        "linear-gradient(135deg,#6741d9,#9775fa)",
+  VIEWER:        "linear-gradient(135deg,#495057,#868e96)",
+  WAITER:        "linear-gradient(135deg,#2f9e44,#51cf66)",
+  DISPLAY:       "linear-gradient(135deg,#0c8599,#22b8cf)",
 };
 
 const DARK_INPUT: React.CSSProperties = {
@@ -94,7 +100,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
-  const ROLE_ORDER: Record<string, number> = { SUPER_ADMIN: 0, ADMIN: 1, OWNER: 2, EDITOR: 3, VIEWER: 4 };
+  const ROLE_ORDER: Record<string, number> = { SUPER_ADMIN: 0, ADMIN: 1, OWNER: 2, SHIFT_MANAGER: 3, EDITOR: 4, WAITER: 5, VIEWER: 6, DISPLAY: 7 };
 
   const filtered = users
     .filter(

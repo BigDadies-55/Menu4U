@@ -305,13 +305,14 @@ export default function Sidebar({
   const isDisplay = user.role === "DISPLAY";
   const isEditor  = user.role === "EDITOR";
   const isViewer  = user.role === "VIEWER";
+  const isShiftMgr = user.role === "SHIFT_MANAGER";
 
   function filterLeaf(l: NavLeaf): boolean {
     if (l.waiterHide  && isWaiter)  return false;
     if (l.displayHide && isDisplay) return false;
     if (l.superAdmin  && user.role !== "SUPER_ADMIN") return false;
     if (l.adminOnly   && !["SUPER_ADMIN","ADMIN"].includes(user.role)) return false;
-    if (l.ownerOnly   && (isEditor || isViewer || isWaiter || isDisplay)) return false;
+    if (l.ownerOnly   && (isEditor || isViewer || isWaiter || isDisplay || isShiftMgr)) return false;
     return true;
   }
 

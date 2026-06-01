@@ -229,10 +229,10 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   async function toggle86(itemId: string, current: boolean) {
     setTogglingId(itemId);
     try {
-      const res = await fetch(`/api/admin/items/${itemId}`, {
+      const res = await fetch(`/api/admin/shift-manager/items`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !current }),
+        body: JSON.stringify({ itemId, isActive: !current }),
       });
       if (res.ok) {
         setMenuCats(cats => cats.map(c => ({
