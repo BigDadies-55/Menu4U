@@ -707,8 +707,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const [snapOn, setSnapOn]       = useState(false);
   const [showBg, setShowBg]       = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(210);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const sidebarResizing = useRef(false);
@@ -961,6 +960,28 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     };
     reader.readAsDataURL(file);
     e.target.value = "";
+  }
+
+  async function exportTablesToExcel() {
+    if (!restaurantId) { showToast("בחר מסעדה תחילה"); return; }
+    showToast("מייצר קובץ Excel…");
+    try {
+      const res = await fetch("/api/admin/export/tables-excel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, layout: layoutRef.current, origin }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = `tables-${restaurantId}.xlsx`;
+      a.click(); URL.revokeObjectURL(url);
+      showToast("Excel יוצא ✓");
+    } catch (err) {
+      console.error(err);
+      showToast("שגיאה בייצוא Excel");
+    }
   }
 
   function exportLayout() {
@@ -1560,21 +1581,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
         {/* Sidebar */}
         <div
-          onMouseLeave={() => { if (!sidebarPinned && showSidebar) setShowSidebar(false); }}
-          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.95)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative", zIndex: sidebarPinned ? "auto" as never : 10 }}>
+          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.30)", backdropFilter: "blur(10px)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative" }}>
 
-          {/* Header row: collapse + pin */}
+          {/* Header row: collapse toggle */}
           <div style={{ display: "flex", alignItems: "center", borderBottom: "1px solid rgba(212,160,23,0.12)", flexShrink: 0 }}>
             <button onClick={() => setShowSidebar(s => !s)} title={showSidebar ? "כווץ סרגל" : "פתח סרגל"}
               style={{ flex: 1, padding: "7px 0", background: "none", border: "none", color: C.gold, fontSize: 13, cursor: "pointer", lineHeight: 1 }}>
               {showSidebar ? "◁" : "▷"}
             </button>
-            {showSidebar && (
-              <button onClick={() => setSidebarPinned(s => !s)} title={sidebarPinned ? "בטל נעיצה" : "נעץ סרגל"}
-                style={{ padding: "7px 8px", background: "none", border: "none", color: sidebarPinned ? C.gold : "rgba(212,160,23,0.35)", fontSize: 13, cursor: "pointer", lineHeight: 1, flexShrink: 0 }}>
-                📌
-              </button>
-            )}
           </div>
 
           {/* Resize handle */}
@@ -1792,6 +1806,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               null,
               { icon: "⬇", label: "ייצא Layout", active: false, action: () => { exportLayout(); setToolsMenu(null); } },
               { icon: "⬆", label: "ייבא Layout", active: false, action: () => { importFileRef.current?.click(); setToolsMenu(null); } },
+              { icon: "📊", label: "ייצא שולחנות לאקסל", active: false, action: () => { exportTablesToExcel(); setToolsMenu(null); } },
             ] as (null | { icon: string; label: string; active: boolean; action: () => void })[]).map((item, i) => {
               if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
               return (
