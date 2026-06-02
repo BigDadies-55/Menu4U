@@ -91,6 +91,7 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
   }, [restaurantId]);
   const [layout,       setLayout]       = useState<LayoutV2 | null>(null);
   const [layoutDiag,   setLayoutDiag]   = useState("");
+  const [layoutLoading,setLayoutLoading]= useState(true);
   const [roomIdx,      setRoomIdx]      = useState(0);
   const [orders,       setOrders]       = useState<Order[]>([]);
   const [menu,         setMenu]         = useState<MenuCat[]>([]);
@@ -134,32 +135,42 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
   }, []);
 
   const loadLayout = useCallback(async (rid: string) => {
-    if (!rid) return;
+    if (!rid) { setLayoutLoading(false); return; }
+    setLayoutLoading(true);
     try {
       const res = await fetch(`/api/admin/restaurants/${rid}/layout`);
-      if (!res.ok) { setLayout(null); setLayoutDiag(`שגיאת טעינה (HTTP ${res.status})`); return; }
+      if (!res.ok) {
+        console.error("[waiter-floor] layout fetch failed", res.status);
+        setLayout(null); setLayoutDiag(`שגיאת טעינה (HTTP ${res.status})`); setLayoutLoading(false); return;
+      }
       const data = await res.json();
       const raw = data.tableLayoutJson;
-      if (!raw) { setLayout(null); setLayoutDiag("לא נשמרה פריסה למסעדה זו"); return; }
+      console.log("[waiter-floor] tableLayoutJson type:", typeof raw, "truthy:", !!raw, "preview:", typeof raw === "string" ? raw.slice(0, 80) : raw);
+      if (!raw) { setLayout(null); setLayoutDiag("לא נשמרה פריסה למסעדה זו — בנה פריסה בבונה הפריסה"); setLayoutLoading(false); return; }
       try {
         const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
         const rooms = parsed?.rooms ?? (Array.isArray(parsed) ? parsed : null);
+        console.log("[waiter-floor] rooms:", Array.isArray(rooms) ? `array[${rooms.length}]` : rooms);
         if (rooms && Array.isArray(rooms)) {
           setLayout({ version: 2, rooms });
           const tableCount = rooms.reduce((s: number, r: Room) => s + (r.tables?.length ?? 0), 0);
-          setLayoutDiag(tableCount === 0 ? "הפריסה קיימת אך ללא שולחנות" : "");
+          console.log("[waiter-floor] tableCount:", tableCount);
+          setLayoutDiag(tableCount === 0 ? "הפריסה קיימת אך ללא שולחנות — הוסף שולחנות בבונה הפריסה" : "");
         } else {
           setLayout(null);
-          setLayoutDiag("מבנה פריסה לא מזוהה");
+          setLayoutDiag(`מבנה פריסה לא מזוהה (version=${parsed?.version}, keys=${Object.keys(parsed ?? {}).join(",")})`);
         }
-      } catch {
+      } catch (e) {
+        console.error("[waiter-floor] parse error", e);
         setLayout(null);
         setLayoutDiag("שגיאת פענוח פריסה");
       }
-    } catch {
+    } catch (e) {
+      console.error("[waiter-floor] network error", e);
       setLayout(null);
       setLayoutDiag("שגיאת רשת בטעינת פריסה");
     }
+    setLayoutLoading(false);
   }, []);
 
   const loadMenu = useCallback(async (rid: string) => {
@@ -425,7 +436,12 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
 
         {/* ── Floor map ── */}
         <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-          {!layout && (
+          {layoutLoading && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: C.muted, fontSize: 14 }}>
+              טוען פריסה...
+            </div>
+          )}
+          {!layoutLoading && !layout && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", justifyContent: "center", height: "100%", color: C.muted, fontSize: 14, textAlign: "center", padding: 20 }}>
               <div style={{ fontSize: 32 }}>🗺️</div>
               <div style={{ color: C.sub, fontWeight: 700 }}>
