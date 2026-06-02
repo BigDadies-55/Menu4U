@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Concepts — Menu4U</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #0d0d0d; color: #f0e6d3; }
+
+  /* ── Nav ── */
+  .top-nav { display: flex; gap: 0; background: #000; border-bottom: 1px solid rgba(212,160,23,0.2); position: sticky; top: 0; z-index: 100; }
+  .top-nav button { flex: 1; padding: 14px; background: none; border: none; color: #7a6050; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent; }
+  .top-nav button.active { color: #d4a017; border-bottom-color: #d4a017; background: rgba(212,160,23,0.05); }
+  .top-nav button:hover:not(.active) { color: #c4a882; background: rgba(255,255,255,0.03); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── WAITER FLOOR ── */
+  .wf-root { height: calc(100vh - 49px); background: #0a0402; display: flex; flex-direction: column; overflow: hidden; }
+
+  .wf-topbar { display: flex; align-items: center; gap: 12; padding: 0 20px; height: 52px; background: rgba(10,4,2,0.97); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(212,160,23,0.15); flex-shrink: 0; }
+  .wf-topbar .logo { font-size: 18px; font-weight: 900; color: #d4a017; letter-spacing: 1px; }
+  .wf-topbar .sep { color: rgba(212,160,23,0.3); font-size: 18px; }
+  .wf-topbar .page-title { font-size: 13px; color: #c4a882; }
+  .wf-topbar .spacer { flex: 1; }
+  .wf-topbar .stat-pill { display: flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 12px; border: 1px solid; }
+  .stat-free { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); color: #22c55e; }
+  .stat-occ  { background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.3); color: #f97316; }
+  .stat-bill { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3);  color: #ef4444; }
+  .stat-num { font-weight: 900; }
+  .wf-topbar .waiter-badge { background: rgba(212,160,23,0.12); border: 1px solid rgba(212,160,23,0.25); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #d4a017; }
+
+  /* Main area */
+  .wf-main { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+  /* Floor */
+  .wf-floor { flex: 1; position: relative; overflow: hidden; background:
+    repeating-linear-gradient(0deg, rgba(212,160,23,0.035) 0px, rgba(212,160,23,0.035) 1px, transparent 1px, transparent 44px),
+    repeating-linear-gradient(90deg, rgba(212,160,23,0.035) 0px, rgba(212,160,23,0.035) 1px, transparent 1px, transparent 44px),
+    radial-gradient(ellipse at 40% 40%, #200c06 0%, #0a0402 100%); }
+
+  /* Table */
+  .tbl { position: absolute; cursor: pointer; transition: transform 0.15s; }
+  .tbl:hover { transform: scale(1.07); z-index: 10; }
+  .tbl-body { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; transition: box-shadow 0.2s; }
+  .tbl-gloss { position: absolute; top: 0; left: 0; right: 0; height: 45%; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; }
+  .tbl-num { font-size: 20px; font-weight: 900; color: #fff; line-height: 1; }
+  .tbl-seats { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+  .tbl-timer { font-size: 11px; font-weight: 700; color: #fcd34d; margin-top: 2px; }
+  .tbl-guests { font-size: 10px; color: rgba(255,255,255,0.55); }
+  .tbl-total { font-size: 10px; color: #d4a017; font-weight: 700; }
+  .tbl-badge { font-size: 9px; padding: 1px 5px; border-radius: 4px; margin-top: 2px; font-weight: 700; }
+
+  /* Table states */
+  .t-free     { background: radial-gradient(circle at 40% 35%, #2a5c2a, #0f2e0f); border: 2px solid #2e7d2e; box-shadow: 0 0 14px rgba(34,197,94,0.3), 0 3px 10px rgba(0,0,0,0.5); }
+  .t-occ      { background: radial-gradient(circle at 40% 35%, #5c3a00, #2e1900); border: 2px solid #b87520; box-shadow: 0 0 14px rgba(249,115,22,0.3), 0 3px 10px rgba(0,0,0,0.5); }
+  .t-bill     { background: radial-gradient(circle at 40% 35%, #5c1414, #2e0a0a); border: 2px solid #8b1a1a; box-shadow: 0 0 14px rgba(239,68,68,0.5), 0 3px 10px rgba(0,0,0,0.5); animation: blink 1.4s ease-in-out infinite; }
+  .t-mine-ring { outline: 2px solid rgba(212,160,23,0.6); outline-offset: 3px; border-radius: inherit; }
+  .t-other { opacity: 0.38; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.45} }
+  @keyframes slideLeft { from{transform:translateX(100%)} to{transform:translateX(0)} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+
+  /* ── Side panel (NEW design) ── */
+  .wf-panel { width: 380px; flex-shrink: 0; background: rgba(14,6,2,0.98); backdrop-filter: blur(20px); border-right: 1px solid rgba(212,160,23,0.15); display: flex; flex-direction: column; animation: slideLeft 0.22s ease; overflow: hidden; }
+
+  .panel-hdr { padding: 16px 18px; border-bottom: 1px solid rgba(212,160,23,0.12); display: flex; align-items: center; gap: 10; flex-shrink: 0; }
+  .panel-hdr .tbl-icon { width: 42px; height: 42px; border-radius: 12px; background: radial-gradient(circle at 40% 35%, #5c3a00, #2e1900); border: 2px solid #b87520; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff; flex-shrink: 0; }
+  .panel-hdr .tbl-info { flex: 1; }
+  .panel-hdr .tbl-info h3 { font-size: 17px; font-weight: 800; color: #d4a017; line-height: 1.2; }
+  .panel-hdr .tbl-info p  { font-size: 12px; color: #c4a882; margin-top: 2px; }
+  .panel-hdr .close-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #7a6050; font-size: 16px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+  .close-btn:hover { background: rgba(255,255,255,0.1); color: #f0e6d3; }
+
+  /* KPI strip */
+  .panel-kpis { display: flex; gap: 6px; padding: 12px 18px; flex-shrink: 0; border-bottom: 1px solid rgba(212,160,23,0.1); }
+  .kpi-card { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(212,160,23,0.12); border-radius: 10px; padding: 8px 10px; text-align: center; }
+  .kpi-card .kpi-val { font-size: 16px; font-weight: 900; color: #f0e6d3; line-height: 1; }
+  .kpi-card .kpi-lbl { font-size: 10px; color: #7a6050; margin-top: 3px; }
+  .kpi-card.gold .kpi-val { color: #d4a017; }
+  .kpi-card.green .kpi-val { color: #22c55e; }
+  .kpi-card.orange .kpi-val { color: #f97316; }
+
+  /* Action buttons */
+  .panel-actions { display: flex; gap: 6px; padding: 10px 18px; flex-wrap: wrap; border-bottom: 1px solid rgba(212,160,23,0.1); flex-shrink: 0; }
+  .act-btn { display: flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid; transition: all 0.15s; }
+  .act-btn:hover { filter: brightness(1.15); }
+  .act-add   { background: rgba(59,130,246,0.12);  border-color: rgba(59,130,246,0.35);  color: #3b82f6; }
+  .act-bill  { background: rgba(249,115,22,0.12);  border-color: rgba(249,115,22,0.35);  color: #f97316; }
+  .act-pay   { background: rgba(22,163,74,0.15);   border-color: rgba(22,163,74,0.4);    color: #22c55e; }
+  .act-move  { background: rgba(122,96,80,0.15);   border-color: rgba(122,96,80,0.35);   color: #c4a882; }
+
+  /* Order items */
+  .panel-orders { flex: 1; overflow-y: auto; padding: 12px 18px; }
+  .order-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(212,160,23,0.1); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+  .order-hdr { padding: 8px 12px; background: rgba(212,160,23,0.07); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212,160,23,0.08); }
+  .order-hdr span { font-size: 12px; font-weight: 700; color: #d4a017; }
+  .order-hdr .amt { color: #c4a882; font-weight: 600; }
+  .order-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid rgba(212,160,23,0.06); }
+  .item-qty { font-size: 11px; color: #7a6050; min-width: 18px; }
+  .item-name { flex: 1; font-size: 13px; color: #f0e6d3; }
+  .item-status { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700; }
+  .s-pending   { background: rgba(122,96,80,0.2);  color: #c4a882; }
+  .s-preparing { background: rgba(59,130,246,0.15); color: #3b82f6; }
+  .s-done      { background: rgba(34,197,94,0.15);  color: #22c55e; }
+  .s-comped    { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .item-actions { display: flex; gap: 4px; }
+  .item-btn { width: 24px; height: 24px; border-radius: 6px; border: 1px solid; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all 0.15s; }
+  .item-btn:hover { filter: brightness(1.3); }
+  .item-comp   { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.3); color: #a78bfa; }
+  .item-cancel { background: rgba(239,68,68,0.1);   border-color: rgba(239,68,68,0.3);   color: #ef4444; }
+  .item-price { font-size: 11px; color: #d4a017; font-weight: 700; min-width: 36px; text-align: left; }
+  .item-price.comped { text-decoration: line-through; color: #7a6050; }
+
+  /* Fire button */
+  .fire-btn { margin: 6px 12px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 8px; background: rgba(180,83,9,0.15); border: 1px solid rgba(180,83,9,0.4); color: #f97316; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .fire-btn:hover { background: rgba(180,83,9,0.25); }
+
+  /* Legend */
+  .floor-legend { position: absolute; bottom: 12px; left: 12px; display: flex; gap: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 8px; background: rgba(0,0,0,0.78); border: 1px solid; font-size: 11px; backdrop-filter: blur(6px); color: #e5d5b5; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .my-station-badge { position: absolute; top: 12px; right: 12px; background: rgba(212,160,23,0.12); border: 1px solid rgba(212,160,23,0.3); border-radius: 10px; padding: 6px 12px; font-size: 11px; color: #d4a017; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(6px); }
+  .my-station-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #d4a017; animation: pulse 2s infinite; }
+
+  /* ── PIN MODAL ── */
+  .pin-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; animation: fadeUp 0.15s ease; }
+  .pin-box { background: #160805; border: 1px solid rgba(212,160,23,0.25); border-radius: 18px; padding: 28px; width: 300px; text-align: center; }
+  .pin-icon { font-size: 32px; margin-bottom: 8px; }
+  .pin-title { font-size: 16px; font-weight: 800; color: #d4a017; margin-bottom: 4px; }
+  .pin-sub { font-size: 12px; color: #7a6050; margin-bottom: 20px; }
+  .pin-input { background: #2a1408; border: 1px solid rgba(212,160,23,0.25); border-radius: 10px; color: #f0e6d3; font-size: 28px; font-weight: 900; letter-spacing: 10px; text-align: center; padding: 12px; width: 100%; margin-bottom: 16px; }
+  .pin-dots { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(212,160,23,0.4); transition: all 0.15s; }
+  .pin-dot.filled { background: #d4a017; border-color: #d4a017; }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .pin-key { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,160,23,0.15); border-radius: 10px; padding: 14px; font-size: 18px; font-weight: 700; color: #f0e6d3; cursor: pointer; transition: all 0.1s; }
+  .pin-key:hover { background: rgba(212,160,23,0.1); border-color: rgba(212,160,23,0.3); }
+  .pin-confirm { width: 100%; padding: 11px; border-radius: 10px; background: linear-gradient(135deg, #b91c1c, #7f1d1d); border: none; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .pin-confirm.comp-mode { background: linear-gradient(135deg, #6d28d9, #4c1d95); }
+
+  /* ═══════════════════════════════════════════════
+     SHIFT MANAGER
+  ═══════════════════════════════════════════════ */
+  .sm-root { height: calc(100vh - 49px); background: #0a0402; display: flex; flex-direction: column; overflow: hidden; }
+
+  .sm-topbar { display: flex; align-items: center; gap: 14px; padding: 0 20px; height: 52px; background: rgba(10,4,2,0.97); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(212,160,23,0.15); flex-shrink: 0; }
+  .sm-topbar .logo { font-size: 18px; font-weight: 900; color: #d4a017; }
+  .sm-topbar .role { font-size: 12px; color: #c4a882; }
+  .sm-topbar .spacer { flex: 1; }
+  .sm-topbar .clock { font-size: 18px; font-weight: 900; color: #d4a017; font-variant-numeric: tabular-nums; }
+  .sm-topbar .rest-sel { background: rgba(42,20,8,0.8); border: 1px solid rgba(212,160,23,0.25); border-radius: 8px; color: #f0e6d3; font-size: 12px; padding: 5px 10px; }
+
+  /* SLA alert */
+  .sla-bar { background: rgba(239,68,68,0.1); border-bottom: 1px solid rgba(239,68,68,0.4); padding: 7px 20px; display: flex; align-items: center; gap: 12px; font-size: 12px; flex-shrink: 0; animation: blink 1.2s ease-in-out infinite; }
+  .sla-bar .sla-icon { font-size: 16px; }
+  .sla-bar .sla-text { color: #fca5a5; flex: 1; }
+  .sla-bar .sla-tables { color: #ef4444; font-weight: 800; }
+
+  /* KPI row */
+  .sm-kpis { display: flex; gap: 8px; padding: 12px 16px; background: rgba(22,8,5,0.9); border-bottom: 1px solid rgba(212,160,23,0.1); flex-shrink: 0; flex-wrap: wrap; }
+  .sm-kpi { flex: 1 1 100px; background: rgba(255,255,255,0.03); border: 1px solid rgba(212,160,23,0.12); border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative; overflow: hidden; }
+  .sm-kpi::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 60%); }
+  .sm-kpi .kv { font-size: 22px; font-weight: 900; line-height: 1; }
+  .sm-kpi .kl { font-size: 10px; color: #7a6050; }
+  .sm-kpi .kt { font-size: 9px; color: #7a6050; margin-top: 1px; }
+  .sm-kpi.trend-up .kv::after { content: '▲'; font-size: 10px; margin-right: 3px; opacity: 0.7; }
+  .sm-kpi.danger { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
+  .sm-kpi.danger .kv { color: #ef4444; }
+
+  /* Tabs */
+  .sm-tabs { display: flex; gap: 2px; padding: 8px 16px 0; background: rgba(22,8,5,0.9); border-bottom: 1px solid rgba(212,160,23,0.1); flex-shrink: 0; }
+  .sm-tab { padding: 7px 16px; font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 8px 8px 0 0; border: none; background: transparent; color: #7a6050; transition: all 0.15s; }
+  .sm-tab.active { background: #d4a017; color: #1a0c06; }
+  .sm-tab:hover:not(.active) { color: #c4a882; background: rgba(212,160,23,0.06); }
+
+  /* ── SPLIT LAYOUT (new concept) ── */
+  .sm-split { flex: 1; display: flex; overflow: hidden; }
+
+  /* Floor side */
+  .sm-floor-side { flex: 1.4; position: relative; overflow: hidden; background:
+    repeating-linear-gradient(0deg, rgba(212,160,23,0.035) 0px, rgba(212,160,23,0.035) 1px, transparent 1px, transparent 44px),
+    repeating-linear-gradient(90deg, rgba(212,160,23,0.035) 0px, rgba(212,160,23,0.035) 1px, transparent 1px, transparent 44px),
+    radial-gradient(ellipse at 40% 40%, #200c06 0%, #0a0402 100%); }
+  .sm-floor-title { position: absolute; top: 12px; right: 12px; font-size: 11px; color: #d4a017; background: rgba(212,160,23,0.1); border: 1px solid rgba(212,160,23,0.2); border-radius: 8px; padding: 4px 10px; backdrop-filter: blur(6px); }
+  .sm-fullscreen-btn { position: absolute; top: 12px; left: 12px; font-size: 14px; background: rgba(0,0,0,0.65); border: 1px solid rgba(212,160,23,0.2); border-radius: 8px; padding: 5px 9px; cursor: pointer; color: #7a6050; backdrop-filter: blur(4px); }
+
+  /* Dashboard side */
+  .sm-dash { width: 340px; flex-shrink: 0; border-right: 1px solid rgba(212,160,23,0.12); background: rgba(10,4,2,0.98); display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Dash sections */
+  .dash-section { border-bottom: 1px solid rgba(212,160,23,0.1); flex-shrink: 0; }
+  .dash-section-hdr { padding: 10px 14px 6px; font-size: 11px; font-weight: 800; color: #7a6050; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Waitlist */
+  .waitlist-party { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid rgba(212,160,23,0.07); }
+  .wl-rank { font-size: 12px; color: #7a6050; font-weight: 700; min-width: 18px; }
+  .wl-info { flex: 1; }
+  .wl-name { font-size: 13px; font-weight: 700; color: #f0e6d3; }
+  .wl-meta { font-size: 10px; color: #7a6050; }
+  .wl-meta.urgent { color: #ef4444; }
+  .wl-seat-btn { padding: 4px 10px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); border-radius: 7px; font-size: 11px; font-weight: 700; color: #22c55e; cursor: pointer; }
+  .wl-seat-btn:hover { background: rgba(34,197,94,0.22); }
+
+  /* Activity feed */
+  .activity-feed { flex: 1; overflow-y: auto; }
+  .activity-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 14px; border-top: 1px solid rgba(212,160,23,0.06); }
+  .act-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .act-text { flex: 1; font-size: 12px; color: #c4a882; line-height: 1.4; }
+  .act-text strong { color: #f0e6d3; }
+  .act-time { font-size: 10px; color: #7a6050; flex-shrink: 0; }
+
+  /* Status grid (for summary tab) */
+  .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; padding: 14px; overflow-y: auto; flex: 1; }
+  .status-card { border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; overflow: hidden; cursor: pointer; transition: transform 0.15s; }
+  .status-card:hover { transform: translateY(-2px); }
+  .status-card .sc-gloss { position: absolute; top: 0; left: 0; right: 0; height: 40%; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; }
+  .status-card .sc-num { font-size: 24px; font-weight: 900; color: #fff; line-height: 1; }
+  .status-card .sc-name { font-size: 10px; color: rgba(255,255,255,0.65); }
+  .status-card .sc-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; border: 1px solid; }
+  .status-card .sc-timer { font-size: 11px; font-weight: 700; color: #fcd34d; }
+  .status-card .sc-total { font-size: 11px; color: #d4a017; font-weight: 700; }
+
+  /* 86 tab */
+  .menu86-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 14px; overflow-y: auto; flex: 1; align-content: start; }
+  .cat-card { background: rgba(22,8,5,0.8); border: 1px solid rgba(212,160,23,0.12); border-radius: 12px; overflow: hidden; }
+  .cat-hdr { padding: 8px 12px; background: rgba(212,160,23,0.07); border-bottom: 1px solid rgba(212,160,23,0.08); }
+  .cat-hdr .cat-name { font-size: 13px; font-weight: 700; color: #d4a017; }
+  .cat-hdr .cat-menu { font-size: 10px; color: #7a6050; }
+  .cat-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid rgba(212,160,23,0.06); }
+  .cat-item.is86 { background: rgba(239,68,68,0.05); }
+  .ci-name { flex: 1; font-size: 12px; color: #f0e6d3; }
+  .ci-name.struck { text-decoration: line-through; color: #7a6050; }
+  .ci-price { font-size: 11px; color: #7a6050; }
+  .ci-btn { padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: none; }
+  .ci-btn.btn86 { background: #dc2626; color: #fff; }
+  .ci-btn.btnUndo { background: #16a34a; color: #fff; }
+
+  /* Stations tab */
+  .stations-list { padding: 14px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .station-card { background: rgba(22,8,5,0.8); border: 1px solid rgba(212,160,23,0.12); border-radius: 12px; padding: 14px; }
+  .station-card .sc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .sc-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(212,160,23,0.1); border: 1px solid rgba(212,160,23,0.25); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .sc-name-info { flex: 1; }
+  .sc-name-info .sc-nm { font-size: 14px; font-weight: 700; color: #f0e6d3; }
+  .sc-name-info .sc-em { font-size: 11px; color: #7a6050; }
+  .sc-tables-chip { font-size: 10px; color: #22c55e; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 20px; padding: 2px 8px; }
+  .table-picker { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .tbl-chip { padding: 4px 10px; border-radius: 7px; font-size: 11px; cursor: pointer; border: 1px solid; transition: all 0.15s; }
+  .tbl-chip.sel { background: rgba(212,160,23,0.15); border-color: rgba(212,160,23,0.5); color: #d4a017; }
+  .tbl-chip.unsel { background: transparent; border-color: rgba(212,160,23,0.15); color: #7a6050; }
+  .tbl-chip:hover:not(.sel) { border-color: rgba(212,160,23,0.3); color: #c4a882; }
+  .save-station-btn { padding: 7px 16px; border-radius: 8px; background: rgba(212,160,23,0.15); border: 1px solid rgba(212,160,23,0.4); color: #d4a017; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .save-station-btn:hover { background: rgba(212,160,23,0.25); }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(212,160,23,0.2); border-radius: 4px; }
+
+  /* Responsive label */
+  .concept-label { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: rgba(212,160,23,0.15); border: 1px solid rgba(212,160,23,0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; color: #d4a017; font-weight: 700; z-index: 99; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- Top navigation -->
+<div class="top-nav">
+  <button class="active" onclick="showPage('waiter')">🍽 רצפת שירות — Concept</button>
+  <button onclick="showPage('manager')">📊 מנהל משמרת — Concept</button>
+</div>
+
+<!-- ═══════════════════════════════════
+     PAGE 1: WAITER FLOOR
+═══════════════════════════════════ -->
+<div class="page active" id="page-waiter">
+  <div class="wf-root">
+
+    <!-- Topbar -->
+    <div class="wf-topbar">
+      <span class="logo">Menu4U</span>
+      <span class="sep">|</span>
+      <span class="page-title">🍽 רצפת שירות</span>
+      <span class="spacer"></span>
+      <div class="wf-topbar stat-pill stat-free"><span class="stat-num">4</span><span>פנויים</span></div>
+      <div class="wf-topbar stat-pill stat-occ"><span class="stat-num">6</span><span>תפוסים</span></div>
+      <div class="wf-topbar stat-pill stat-bill"><span class="stat-num">2</span><span>חשבון</span></div>
+      <div class="waiter-badge">👤 דן כהן</div>
+    </div>
+
+    <!-- Main -->
+    <div class="wf-main">
+
+      <!-- Floor map -->
+      <div class="wf-floor">
+
+        <!-- My station badge -->
+        <div class="my-station-badge">
+          <div class="dot"></div>
+          האזור שלי: שולחנות 1–6
+        </div>
+
+        <!-- Legend -->
+        <div class="floor-legend">
+          <div class="legend-item" style="border-color: #2e7d2e55;"><div class="leg-dot" style="background:#2e7d2e"></div>פנוי</div>
+          <div class="legend-item" style="border-color: #b8752055;"><div class="leg-dot" style="background:#b87520"></div>תפוס</div>
+          <div class="legend-item" style="border-color: #8b1a1a55;"><div class="leg-dot" style="background:#8b1a1a"></div>חשבון</div>
+          <div class="legend-item" style="border-color: rgba(212,160,23,0.4);"><div class="leg-dot" style="background:#d4a017"></div>נבחר</div>
+        </div>
+
+        <!-- Tables — ROW 1 -->
+        <!-- T1 FREE (mine + selected) -->
+        <div class="tbl t-mine-ring" style="left:40px;top:50px;width:80px;height:80px;" onclick="togglePanel()">
+          <div class="tbl-body t-occ" style="border-radius:12px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">1</div>
+            <div class="tbl-timer">⏱ 18:34</div>
+            <div class="tbl-guests">👤4</div>
+            <div class="tbl-total">₪284</div>
+          </div>
+        </div>
+        <!-- T2 occ (mine) -->
+        <div class="tbl t-mine-ring" style="left:140px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">2</div>
+            <div class="tbl-timer">⏱ 34:12</div>
+            <div class="tbl-guests">👤2</div>
+          </div>
+        </div>
+        <!-- T3 bill (mine) -->
+        <div class="tbl t-mine-ring" style="left:240px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-bill" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">3</div>
+            <div class="tbl-seats">(4) 🧾</div>
+          </div>
+        </div>
+        <!-- T4 free (mine) -->
+        <div class="tbl t-mine-ring" style="left:340px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">4</div>
+            <div class="tbl-seats">(6) פנוי</div>
+          </div>
+        </div>
+        <!-- T5 occ (mine) -->
+        <div class="tbl t-mine-ring" style="left:440px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:12px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">5</div>
+            <div class="tbl-timer">⏱ 09:45</div>
+            <div class="tbl-guests">👤3</div>
+            <div class="tbl-total">₪156</div>
+          </div>
+        </div>
+        <!-- T6 free (mine) -->
+        <div class="tbl t-mine-ring" style="left:540px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-free" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">6</div>
+            <div class="tbl-seats">(2)</div>
+          </div>
+        </div>
+
+        <!-- ROW 2 — NOT my section (dimmed) -->
+        <div class="tbl t-other" style="left:40px;top:170px;width:76px;height:76px;">
+          <div class="tbl-body t-occ" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num" style="font-size:16px">7</div>
+            <div class="tbl-guests">👤2</div>
+          </div>
+        </div>
+        <div class="tbl t-other" style="left:135px;top:170px;width:76px;height:76px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num" style="font-size:16px">8</div>
+          </div>
+        </div>
+        <div class="tbl t-other" style="left:230px;top:170px;width:76px;height:76px;">
+          <div class="tbl-body t-bill" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num" style="font-size:16px">9</div>
+          </div>
+        </div>
+        <div class="tbl t-other" style="left:325px;top:170px;width:120px;height:76px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num" style="font-size:16px">10</div>
+            <div class="tbl-guests">בנקט · 👤8</div>
+          </div>
+        </div>
+        <div class="tbl t-other" style="left:462px;top:170px;width:76px;height:76px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num" style="font-size:16px">11</div>
+          </div>
+        </div>
+        <div class="tbl t-other" style="left:556px;top:170px;width:76px;height:76px;">
+          <div class="tbl-body t-free" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num" style="font-size:16px">12</div>
+          </div>
+        </div>
+
+        <!-- ROW 3 -->
+        <div class="tbl t-mine-ring" style="left:40px;top:280px;width:90px;height:55px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div style="display:flex;align-items:baseline;gap:4px"><span class="tbl-num">13</span><span class="tbl-seats">(4)</span></div>
+            <div class="tbl-timer">⏱ 52:10 ⚠️</div>
+          </div>
+        </div>
+        <div class="tbl t-mine-ring" style="left:150px;top:280px;width:90px;height:55px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div style="display:flex;align-items:baseline;gap:4px"><span class="tbl-num">14</span><span class="tbl-seats">(4)</span></div>
+          </div>
+        </div>
+        <div class="tbl t-other" style="left:260px;top:280px;width:90px;height:55px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div style="display:flex;align-items:baseline;gap:4px"><span class="tbl-num" style="font-size:16px">15</span></div>
+            <div class="tbl-guests">👤6</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side panel -->
+      <div class="wf-panel" id="wf-panel" style="display:flex">
+        <div class="panel-hdr">
+          <div class="tbl-icon">1</div>
+          <div class="tbl-info">
+            <h3>שולחן 1</h3>
+            <p>⏱ 18:34 · תפוס · ₪284</p>
+          </div>
+          <button class="close-btn" onclick="togglePanel()">✕</button>
+        </div>
+
+        <!-- KPI strip -->
+        <div class="panel-kpis">
+          <div class="kpi-card orange"><div class="kpi-val">4</div><div class="kpi-lbl">👤 סועדים</div></div>
+          <div class="kpi-card gold"><div class="kpi-val">₪284</div><div class="kpi-lbl">סה"כ</div></div>
+          <div class="kpi-card green"><div class="kpi-val">18:34</div><div class="kpi-lbl">⏱ זמן</div></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="panel-actions">
+          <button class="act-btn act-add">＋ הוסף מנות</button>
+          <button class="act-btn act-bill">🧾 חשבון</button>
+          <button class="act-btn act-pay">💳 סגור</button>
+          <button class="act-btn act-move">↔ העבר</button>
+        </div>
+
+        <!-- Orders -->
+        <div class="panel-orders">
+          <div class="order-card">
+            <div class="order-hdr">
+              <span>הזמנה #42</span>
+              <span class="amt">₪168</span>
+            </div>
+            <button class="fire-btn">🔥 הצת עיקרי (2)</button>
+            <div class="order-item">
+              <span class="item-qty">×1</span>
+              <span class="item-name">פילה בקר</span>
+              <span class="item-status s-preparing">בהכנה</span>
+              <div class="item-actions">
+                <button class="item-btn item-comp" title="פיצוי">🎁</button>
+                <button class="item-btn item-cancel" title="ביטול" onclick="showPin('cancel')">✕</button>
+              </div>
+              <span class="item-price">₪98</span>
+            </div>
+            <div class="order-item">
+              <span class="item-qty">×1</span>
+              <span class="item-name">ריזוטו פטריות</span>
+              <span class="item-status s-done">הוכן ✓</span>
+              <div class="item-actions">
+                <button class="item-btn item-comp">🎁</button>
+                <button class="item-btn item-cancel">✕</button>
+              </div>
+              <span class="item-price">₪72</span>
+            </div>
+          </div>
+
+          <div class="order-card">
+            <div class="order-hdr">
+              <span>הזמנה #43</span>
+              <span class="amt">₪116</span>
+            </div>
+            <div class="order-item">
+              <span class="item-qty">×2</span>
+              <span class="item-name">קרפצ'יו טונה</span>
+              <span class="item-status s-done">הוכן ✓</span>
+              <div class="item-actions">
+                <button class="item-btn item-comp">🎁</button>
+                <button class="item-btn item-cancel">✕</button>
+              </div>
+              <span class="item-price">₪90</span>
+            </div>
+            <div class="order-item">
+              <span class="item-qty">×1</span>
+              <span class="item-name">סטייק שרוף</span>
+              <span class="item-status s-comped">פיצוי 🎁</span>
+              <div class="item-actions">
+                <button class="item-btn item-comp" style="background:rgba(167,139,250,0.25)">🎁</button>
+                <button class="item-btn item-cancel">✕</button>
+              </div>
+              <span class="item-price comped">₪128</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIN Modal -->
+    <div class="pin-overlay" id="pin-modal" style="display:none;">
+      <div class="pin-box">
+        <div class="pin-icon">🔐</div>
+        <div class="pin-title">אישור מנהל — ביטול מנה</div>
+        <div class="pin-sub">פילה בקר ×1 · שולחן 1</div>
+        <div class="pin-dots">
+          <div class="pin-dot filled" id="d1"></div>
+          <div class="pin-dot filled" id="d2"></div>
+          <div class="pin-dot filled" id="d3"></div>
+          <div class="pin-dot" id="d4"></div>
+        </div>
+        <div class="pin-pad">
+          <div class="pin-key">1</div><div class="pin-key">2</div><div class="pin-key">3</div>
+          <div class="pin-key">4</div><div class="pin-key">5</div><div class="pin-key">6</div>
+          <div class="pin-key">7</div><div class="pin-key">8</div><div class="pin-key">9</div>
+          <div class="pin-key" style="background:rgba(239,68,68,0.1);color:#ef4444">✕</div>
+          <div class="pin-key">0</div>
+          <div class="pin-key" style="background:rgba(34,197,94,0.1);color:#22c55e">⌫</div>
+        </div>
+        <button class="pin-confirm" onclick="closePin()">✓ אשר ביטול</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     PAGE 2: SHIFT MANAGER
+═══════════════════════════════════ -->
+<div class="page" id="page-manager">
+  <div class="sm-root">
+
+    <!-- Topbar -->
+    <div class="sm-topbar">
+      <span class="logo">Menu4U</span>
+      <span style="color:rgba(212,160,23,0.3)">|</span>
+      <span class="role">📊 מנהל משמרת</span>
+      <span class="spacer"></span>
+      <span style="font-size:12px;color:#c4a882">שלמה לוי</span>
+      <span class="clock">22:47:03</span>
+      <select class="rest-sel"><option>מסעדת השף</option></select>
+    </div>
+
+    <!-- SLA alert -->
+    <div class="sla-bar">
+      <span class="sla-icon">⚠️</span>
+      <span class="sla-text">שולחנות מעל 45 דקות:</span>
+      <span class="sla-tables">#2 · #8 · #13</span>
+    </div>
+
+    <!-- KPIs -->
+    <div class="sm-kpis">
+      <div class="sm-kpi" style="border-color:rgba(212,160,23,0.25)">
+        <span class="kv" style="color:#d4a017">₪4,820</span>
+        <span class="kl">הכנסה היום</span>
+        <span class="kt">+12% מאתמול</span>
+      </div>
+      <div class="sm-kpi">
+        <span class="kv" style="color:#f97316">8</span>
+        <span class="kl">הזמנות פתוחות</span>
+      </div>
+      <div class="sm-kpi">
+        <span class="kv" style="color:#22c55e">4/15</span>
+        <span class="kl">שולחנות פנויים</span>
+      </div>
+      <div class="sm-kpi">
+        <span class="kv" style="color:#3b82f6">24 דק'</span>
+        <span class="kl">ממוצע שירות</span>
+      </div>
+      <div class="sm-kpi danger">
+        <span class="kv">3</span>
+        <span class="kl">חריגות SLA</span>
+      </div>
+      <div class="sm-kpi" style="border-color:rgba(249,115,22,0.25)">
+        <span class="kv" style="color:#f97316">5</span>
+        <span class="kl">ממתינים</span>
+      </div>
+      <div style="display:flex;align-items:center;margin-right:auto">
+        <button style="padding:8px 14px;background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.3);border-radius:9px;color:#d4a017;font-size:12px;font-weight:700;cursor:pointer">📊 סיכום משמרת</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="sm-tabs">
+      <button class="sm-tab active" onclick="smTab(this,'floor')">🗺️ מפת רצפה</button>
+      <button class="sm-tab" onclick="smTab(this,'waitlist')">⏳ המתנה (5)</button>
+      <button class="sm-tab" onclick="smTab(this,'menu86')">🚫 86 תפריט</button>
+      <button class="sm-tab" onclick="smTab(this,'summary')">📋 סטטוס</button>
+      <button class="sm-tab" onclick="smTab(this,'stations')">📍 תחנות</button>
+    </div>
+
+    <!-- ── FLOOR TAB ── -->
+    <div class="sm-split" id="sm-floor">
+
+      <!-- Floor map -->
+      <div class="sm-floor-side">
+        <div class="sm-floor-title">חדר ראשי</div>
+        <button class="sm-fullscreen-btn">⛶</button>
+
+        <!-- Tables -->
+        <div class="tbl" style="left:30px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">1</div><div class="tbl-seats">(4) פנוי</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:125px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">2</div><div class="tbl-timer">⏱ 48:20 ⚠️</div><div class="tbl-total">₪340</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:220px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">3</div><div class="tbl-timer">⏱ 22:15</div><div class="tbl-guests">👤6</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:315px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-bill" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">4</div><div class="tbl-seats">🧾 חשבון</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:410px;top:50px;width:80px;height:80px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">5</div><div class="tbl-seats">(2)</div>
+          </div>
+        </div>
+
+        <div class="tbl" style="left:30px;top:160px;width:80px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:50%;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">6</div><div class="tbl-guests">👤4</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:125px;top:160px;width:80px;height:80px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">7</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:220px;top:160px;width:80px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:50%;" style="animation:blink 1.2s infinite">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">8</div><div class="tbl-timer">⏱ 61:04 ⚠️</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:315px;top:160px;width:80px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">9</div><div class="tbl-total">₪220</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:410px;top:160px;width:125px;height:80px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">10</div><div class="tbl-guests">בנקט 👤10</div>
+          </div>
+        </div>
+
+        <div class="tbl" style="left:30px;top:270px;width:90px;height:55px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">11</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:138px;top:270px;width:90px;height:55px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">12</div><div class="tbl-guests">👤3</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:246px;top:270px;width:90px;height:55px;">
+          <div class="tbl-body t-occ" style="border-radius:10px;animation:blink 1.2s infinite">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">13</div><div class="tbl-timer">⏱ 52:10 ⚠️</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:354px;top:270px;width:90px;height:55px;">
+          <div class="tbl-body t-bill" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">14</div><div class="tbl-seats">🧾</div>
+          </div>
+        </div>
+        <div class="tbl" style="left:462px;top:270px;width:73px;height:55px;">
+          <div class="tbl-body t-free" style="border-radius:10px;">
+            <div class="tbl-gloss"></div>
+            <div class="tbl-num">15</div>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="floor-legend">
+          <div class="legend-item" style="border-color:#2e7d2e55;"><div class="leg-dot" style="background:#2e7d2e"></div>פנוי</div>
+          <div class="legend-item" style="border-color:#b8752055;"><div class="leg-dot" style="background:#b87520"></div>תפוס</div>
+          <div class="legend-item" style="border-color:#8b1a1a55;"><div class="leg-dot" style="background:#8b1a1a"></div>חשבון</div>
+          <div class="legend-item" style="border-color:#ef444455;"><div class="leg-dot" style="background:#ef4444"></div>SLA ⚠️</div>
+        </div>
+      </div>
+
+      <!-- Dashboard sidebar -->
+      <div class="sm-dash">
+        <!-- Waitlist preview -->
+        <div class="dash-section">
+          <div class="dash-section-hdr">⏳ ממתינים (5)</div>
+          <div class="waitlist-party">
+            <div class="wl-rank">#1</div>
+            <div class="wl-info">
+              <div class="wl-name">משפחת כהן</div>
+              <div class="wl-meta urgent">👤4 · ⏱ 28 דק' ⚠️</div>
+            </div>
+            <button class="wl-seat-btn">הושב</button>
+          </div>
+          <div class="waitlist-party">
+            <div class="wl-rank">#2</div>
+            <div class="wl-info">
+              <div class="wl-name">זוג לוי</div>
+              <div class="wl-meta">👤2 · ⏱ 14 דק'</div>
+            </div>
+            <button class="wl-seat-btn">הושב</button>
+          </div>
+          <div class="waitlist-party">
+            <div class="wl-rank">#3</div>
+            <div class="wl-info">
+              <div class="wl-name">קבוצת שרון</div>
+              <div class="wl-meta">👤6 · ⏱ 8 דק'</div>
+            </div>
+            <button class="wl-seat-btn">הושב</button>
+          </div>
+        </div>
+
+        <!-- Live activity -->
+        <div class="dash-section-hdr" style="padding-top:10px">📡 פעילות חיה</div>
+        <div class="activity-feed">
+          <div class="activity-item">
+            <div class="act-dot" style="background:#ef4444"></div>
+            <div class="act-text"><strong>שולחן 2</strong> — SLA חריגה (48 דק')</div>
+            <div class="act-time">עכשיו</div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background:#22c55e"></div>
+            <div class="act-text"><strong>שולחן 4</strong> — ביקש חשבון</div>
+            <div class="act-time">2 דק'</div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background:#a78bfa"></div>
+            <div class="act-text"><strong>מנה סטייק</strong> — סומנה פיצוי (שולחן 1) · דן כהן</div>
+            <div class="act-time">4 דק'</div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background:#f97316"></div>
+            <div class="act-text"><strong>שולחן 6</strong> — הזמנה חדשה נפתחה</div>
+            <div class="act-time">5 דק'</div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background:#d4a017"></div>
+            <div class="act-text"><strong>שולחן 11</strong> — שולחן נסגר · ₪386</div>
+            <div class="act-time">8 דק'</div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background:#ef4444"></div>
+            <div class="act-text"><strong>86 — ריזוטו פטריות</strong> — הוסר מתפריט</div>
+            <div class="act-time">11 דק'</div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background:#22c55e"></div>
+            <div class="act-text"><strong>שולחן 9</strong> — תשלום ₪220 (אשראי)</div>
+            <div class="act-time">15 דק'</div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background:#ef4444"></div>
+            <div class="act-text"><strong>ביטול מנה</strong> — פילה בקר ×1 (שולחן 3) · שרה לוי</div>
+            <div class="act-time">18 דק'</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WAITLIST TAB ── -->
+    <div style="display:none;flex:1;overflow-y:auto;padding:20px;max-width:600px;margin:0 auto" id="sm-waitlist">
+      <h2 style="color:#d4a017;font-size:16px;font-weight:700;margin-bottom:16px">⏳ רשימת המתנה</h2>
+      <div style="background:#160805;border:1px solid rgba(212,160,23,0.18);border-radius:12px;padding:16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <input placeholder="שם קבוצה..." style="background:#2a1408;border:1px solid rgba(212,160,23,0.25);border-radius:8px;color:#f0e6d3;font-size:13px;padding:7px 10px;flex:1;outline:none" />
+        <div style="display:flex;gap:4px;align-items:center">
+          <button style="background:transparent;border:1px solid rgba(212,160,23,0.18);color:#c4a882;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px">−</button>
+          <span style="color:#f0e6d3;font-weight:800;min-width:24px;text-align:center;font-size:16px">2</span>
+          <button style="background:transparent;border:1px solid rgba(212,160,23,0.18);color:#c4a882;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px">+</button>
+        </div>
+        <button style="background:#d4a017;color:#1a0c06;border:none;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer">+ הוסף</button>
+      </div>
+    </div>
+
+    <!-- ── 86 MENU TAB ── -->
+    <div style="display:none;flex-direction:column;flex:1;overflow:hidden" id="sm-menu86">
+      <div style="padding:10px 16px;border-bottom:1px solid rgba(212,160,23,0.1);display:flex;align-items:center;gap:12px;background:#160805;flex-shrink:0">
+        <input placeholder="🔍 חפש פריט..." style="background:#2a1408;border:1px solid rgba(212,160,23,0.2);border-radius:8px;color:#f0e6d3;font-size:13px;padding:7px 10px;max-width:280px;outline:none" />
+        <span style="font-size:12px;color:#7a6050">24 פריטים · <span style="color:#ef4444;font-weight:700">3 ב-86</span></span>
+      </div>
+      <div class="menu86-grid">
+        <div class="cat-card">
+          <div class="cat-hdr"><div class="cat-name">ראשונות</div><div class="cat-menu">תפריט עיקרי</div></div>
+          <div class="cat-item"><span class="ci-name">קרפצ'יו טונה</span><span class="ci-price">₪68</span><button class="ci-btn btn86">86</button></div>
+          <div class="cat-item is86"><span class="ci-name struck">ריזוטו פטריות</span><span class="ci-price">₪72</span><button class="ci-btn btnUndo">✓ החזר</button></div>
+          <div class="cat-item"><span class="ci-name">מרק עגבניות</span><span class="ci-price">₪42</span><button class="ci-btn btn86">86</button></div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-hdr"><div class="cat-name">עיקריות</div><div class="cat-menu">תפריט עיקרי</div></div>
+          <div class="cat-item"><span class="ci-name">פילה בקר</span><span class="ci-price">₪128</span><button class="ci-btn btn86">86</button></div>
+          <div class="cat-item is86"><span class="ci-name struck">סלמון צרוב</span><span class="ci-price">₪98</span><button class="ci-btn btnUndo">✓ החזר</button></div>
+          <div class="cat-item"><span class="ci-name">פסטה ים תיכונית</span><span class="ci-price">₪72</span><button class="ci-btn btn86">86</button></div>
+          <div class="cat-item"><span class="ci-name">כבש צלוי</span><span class="ci-price">₪138</span><button class="ci-btn btn86">86</button></div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-hdr"><div class="cat-name">קינוחים</div><div class="cat-menu">תפריט עיקרי</div></div>
+          <div class="cat-item"><span class="ci-name">פונדנט שוקולד</span><span class="ci-price">₪52</span><button class="ci-btn btn86">86</button></div>
+          <div class="cat-item is86"><span class="ci-name struck">גלידת וניל</span><span class="ci-price">₪32</span><button class="ci-btn btnUndo">✓ החזר</button></div>
+          <div class="cat-item"><span class="ci-name">קרם ברולה</span><span class="ci-price">₪48</span><button class="ci-btn btn86">86</button></div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-hdr"><div class="cat-name">שתייה</div><div class="cat-menu">תפריט עיקרי</div></div>
+          <div class="cat-item"><span class="ci-name">יין אדום בית</span><span class="ci-price">₪38</span><button class="ci-btn btn86">86</button></div>
+          <div class="cat-item"><span class="ci-name">מים מינרלים</span><span class="ci-price">₪14</span><button class="ci-btn btn86">86</button></div>
+          <div class="cat-item"><span class="ci-name">קוקה קולה</span><span class="ci-price">₪14</span><button class="ci-btn btn86">86</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATUS TAB ── -->
+    <div style="display:none;flex-direction:column;overflow:hidden;flex:1" id="sm-summary">
+      <div style="display:flex;gap:8px;padding:12px 14px;flex-shrink:0;border-bottom:1px solid rgba(212,160,23,0.1)">
+        <div style="flex:1 1 80px;background:#160805;border:1px solid #2e7d2e44;border-radius:10px;padding:10px 0;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#2e7d2e">4</div><div style="font-size:11px;color:#7a6050">פנויים</div>
+        </div>
+        <div style="flex:1 1 80px;background:#160805;border:1px solid #b8752044;border-radius:10px;padding:10px 0;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#b87520">9</div><div style="font-size:11px;color:#7a6050">תפוסים</div>
+        </div>
+        <div style="flex:1 1 80px;background:#160805;border:1px solid #8b1a1a44;border-radius:10px;padding:10px 0;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#8b1a1a">2</div><div style="font-size:11px;color:#7a6050">חשבון</div>
+        </div>
+      </div>
+      <div class="status-grid">
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f);border:2px solid #2e7d2e;box-shadow:0 0 10px rgba(34,197,94,0.25)">
+          <div class="sc-gloss"></div><div class="sc-num">1</div><div class="sc-name">שולחן 1</div>
+          <div class="sc-badge" style="color:#2e7d2e;border-color:#2e7d2e55;background:#2e7d2e22">פנוי</div>
+        </div>
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#5c3a00,#2e1900);border:2px solid #b87520;box-shadow:0 0 10px rgba(249,115,22,0.25)">
+          <div class="sc-gloss"></div><div class="sc-num">2</div><div class="sc-name">שולחן 2</div>
+          <div class="sc-badge" style="color:#b87520;border-color:#b8752055;background:#b8752022">תפוס</div>
+          <div class="sc-timer" style="color:#fca5a5">⏱ 48:20 ⚠️</div>
+          <div class="sc-total">₪340</div>
+        </div>
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#5c3a00,#2e1900);border:2px solid #b87520;box-shadow:0 0 10px rgba(249,115,22,0.25)">
+          <div class="sc-gloss"></div><div class="sc-num">3</div><div class="sc-name">שולחן 3</div>
+          <div class="sc-badge" style="color:#b87520;border-color:#b8752055;background:#b8752022">תפוס</div>
+          <div class="sc-timer">⏱ 22:15</div>
+          <div class="sc-total">₪186</div>
+        </div>
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a);border:2px solid #8b1a1a;box-shadow:0 0 10px rgba(239,68,68,0.35);animation:blink 1.5s infinite">
+          <div class="sc-gloss"></div><div class="sc-num">4</div><div class="sc-name">שולחן 4</div>
+          <div class="sc-badge" style="color:#8b1a1a;border-color:#8b1a1a55;background:#8b1a1a22">חשבון 🧾</div>
+        </div>
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f);border:2px solid #2e7d2e;box-shadow:0 0 10px rgba(34,197,94,0.25)">
+          <div class="sc-gloss"></div><div class="sc-num">5</div><div class="sc-name">שולחן 5</div>
+          <div class="sc-badge" style="color:#2e7d2e;border-color:#2e7d2e55;background:#2e7d2e22">פנוי</div>
+        </div>
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#5c3a00,#2e1900);border:2px solid #b87520;box-shadow:0 0 10px rgba(249,115,22,0.25)">
+          <div class="sc-gloss"></div><div class="sc-num">6</div><div class="sc-name">שולחן 6</div>
+          <div class="sc-badge" style="color:#b87520;border-color:#b8752055;background:#b8752022">תפוס</div>
+          <div class="sc-timer">⏱ 14:30</div><div class="sc-total">₪128</div>
+        </div>
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f);border:2px solid #2e7d2e;box-shadow:0 0 10px rgba(34,197,94,0.25)">
+          <div class="sc-gloss"></div><div class="sc-num">7</div>
+          <div class="sc-badge" style="color:#2e7d2e;border-color:#2e7d2e55;background:#2e7d2e22">פנוי</div>
+        </div>
+        <div class="status-card" style="background:radial-gradient(circle at 40% 35%,#5c3a00,#2e1900);border:2px solid #ef4444;box-shadow:0 0 12px rgba(239,68,68,0.5);animation:blink 1.2s infinite">
+          <div class="sc-gloss"></div><div class="sc-num">8</div>
+          <div class="sc-badge" style="color:#ef4444;border-color:#ef444455;background:#ef444422">SLA ⚠️</div>
+          <div class="sc-timer" style="color:#fca5a5">⏱ 61:04</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATIONS TAB ── -->
+    <div style="display:none;flex-direction:column;overflow:hidden;flex:1" id="sm-stations">
+      <div style="padding:14px 20px;border-bottom:1px solid rgba(212,160,23,0.1);flex-shrink:0">
+        <div style="font-size:14px;font-weight:700;color:#d4a017;margin-bottom:4px">📍 שיוך תחנות מלצרים</div>
+        <div style="font-size:12px;color:#7a6050">בחר אילו שולחנות שייכים לכל מלצר — יוצג מודגש ברצפת השירות שלהם</div>
+      </div>
+      <div class="stations-list">
+        <div class="station-card">
+          <div class="sc-head">
+            <div class="sc-avatar">👤</div>
+            <div class="sc-name-info">
+              <div class="sc-nm">דן כהן</div>
+              <div class="sc-em">dan@restaurant.com · מלצר</div>
+            </div>
+            <div class="sc-tables-chip">שולחנות 1–6</div>
+          </div>
+          <div class="table-picker">
+            <div class="tbl-chip sel">1</div><div class="tbl-chip sel">2</div><div class="tbl-chip sel">3</div>
+            <div class="tbl-chip sel">4</div><div class="tbl-chip sel">5</div><div class="tbl-chip sel">6</div>
+            <div class="tbl-chip unsel">7</div><div class="tbl-chip unsel">8</div><div class="tbl-chip unsel">9</div>
+            <div class="tbl-chip unsel">10</div><div class="tbl-chip unsel">11</div><div class="tbl-chip unsel">12</div>
+            <div class="tbl-chip unsel">13</div><div class="tbl-chip unsel">14</div><div class="tbl-chip unsel">15</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="save-station-btn">💾 שמור</button>
+            <button style="padding:7px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer">🗑 מחק</button>
+          </div>
+        </div>
+        <div class="station-card">
+          <div class="sc-head">
+            <div class="sc-avatar">👤</div>
+            <div class="sc-name-info">
+              <div class="sc-nm">שרה לוי</div>
+              <div class="sc-em">sarah@restaurant.com · מלצר</div>
+            </div>
+            <div class="sc-tables-chip">שולחנות 7–12</div>
+          </div>
+          <div class="table-picker">
+            <div class="tbl-chip unsel">1</div><div class="tbl-chip unsel">2</div><div class="tbl-chip unsel">3</div>
+            <div class="tbl-chip unsel">4</div><div class="tbl-chip unsel">5</div><div class="tbl-chip unsel">6</div>
+            <div class="tbl-chip sel">7</div><div class="tbl-chip sel">8</div><div class="tbl-chip sel">9</div>
+            <div class="tbl-chip sel">10</div><div class="tbl-chip sel">11</div><div class="tbl-chip sel">12</div>
+            <div class="tbl-chip unsel">13</div><div class="tbl-chip unsel">14</div><div class="tbl-chip unsel">15</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="save-station-btn">💾 שמור</button>
+            <button style="padding:7px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer">🗑 מחק</button>
+          </div>
+        </div>
+        <div class="station-card" style="border-style:dashed;border-color:rgba(212,160,23,0.15)">
+          <div class="sc-head">
+            <div class="sc-avatar" style="border-style:dashed">👤</div>
+            <div class="sc-name-info">
+              <div class="sc-nm" style="color:#7a6050">רון מזרחי</div>
+              <div class="sc-em">ron@restaurant.com · מלצר</div>
+            </div>
+            <div style="font-size:10px;color:#7a6050;font-style:italic">ללא תחנה</div>
+          </div>
+          <div class="table-picker">
+            <div class="tbl-chip unsel">1</div><div class="tbl-chip unsel">2</div><div class="tbl-chip unsel">3</div>
+            <div class="tbl-chip unsel">4</div><div class="tbl-chip unsel">5</div>
+            <div class="tbl-chip sel">13</div><div class="tbl-chip sel">14</div><div class="tbl-chip sel">15</div>
+          </div>
+          <button class="save-station-btn">💾 שמור תחנה</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function togglePanel() {
+    const p = document.getElementById('wf-panel');
+    p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+  }
+
+  function showPin(type) {
+    document.getElementById('pin-modal').style.display = 'flex';
+  }
+  function closePin() {
+    document.getElementById('pin-modal').style.display = 'none';
+  }
+
+  // Shift manager tabs
+  const smSections = ['floor','waitlist','menu86','summary','stations'];
+  function smTab(btn, name) {
+    smSections.forEach(s => {
+      const el = document.getElementById('sm-' + s);
+      if (!el) return;
+      el.style.display = s === name ? (s === 'floor' ? 'flex' : (s === 'menu86' || s === 'summary' || s === 'stations' ? 'flex' : 'block')) : 'none';
+    });
+    document.querySelectorAll('.sm-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Live clock
+  function updateClock() {
+    const el = document.querySelector('.sm-topbar .clock');
+    if (el) el.textContent = new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+  setInterval(updateClock, 1000);
+
+  // Toggle table chips
+  document.querySelectorAll('.tbl-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('sel');
+      chip.classList.toggle('unsel');
+    });
+  });
+</script>
+</body>
+</html>
