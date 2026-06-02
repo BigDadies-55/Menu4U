@@ -612,36 +612,51 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                             }}
                           >
                             <div style={{
-                              position: "absolute", inset: 0, borderRadius: br,
+                              position: "absolute", inset: 0, borderRadius: 10,
                               background: cfg.bg,
                               border: `${Math.max(1, 1.5 * floorScale)}px solid ${brd}`,
                               boxShadow: breached
                                 ? `0 0 0 ${2 * floorScale}px ${C.red}55, 0 0 ${8 * floorScale}px rgba(239,68,68,0.3)`
                                 : `0 0 ${5 * floorScale}px ${cfg.glow}`,
-                              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                               overflow: "hidden", transition: "border-color 0.3s",
                               animation: breached ? "blink 1s infinite" : undefined,
+                              display: "flex", flexDirection: "column",
                             }}>
-                              {/* Top accent stripe */}
-                              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: Math.max(2, 3 * floorScale), background: breached ? C.red : accentColor }} />
-                              {/* Status badge */}
-                              {w >= 44 && (
-                                <div style={{ position: "absolute", top: Math.max(5, 7 * floorScale), right: Math.max(3, 4 * floorScale), background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: `0 ${Math.max(3, 5 * floorScale)}px`, lineHeight: `${Math.max(14, 17 * floorScale)}px`, zIndex: 2 }}>
-                                  <span style={{ fontSize: Math.max(6, 8 * floorScale), fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
+                              {/* Top stripe */}
+                              <div style={{ height: Math.max(2, 3 * floorScale), background: breached ? C.red : accentColor, flexShrink: 0 }} />
+
+                              {/* Card body */}
+                              <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: Math.max(3, 5 * floorScale) }}>
+                                {/* Badge — top-left */}
+                                {w >= 44 && (
+                                  <div style={{ alignSelf: "flex-start", background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: `0 ${Math.max(3, 5 * floorScale)}px`, lineHeight: `${Math.max(14, 16 * floorScale)}px` }}>
+                                    <span style={{ fontSize: Math.max(6, 7.5 * floorScale), fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
+                                  </div>
+                                )}
+
+                                {/* שולחן + number — centered */}
+                                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                  {h >= 56 && <span style={{ fontSize: Math.max(7, 9 * floorScale), color: "rgba(255,255,255,0.38)", lineHeight: 1.2 }}>שולחן</span>}
+                                  <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
+                                  {seated && orderSt === "free" && h >= 50 && (
+                                    <span style={{ fontSize: Math.max(7, fSz * 0.5), color: "#c4b5fd", lineHeight: 1.2 }}>{seated.partyName}</span>
+                                  )}
                                 </div>
-                              )}
-                              <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 2 * floorScale), zIndex: 1 }}>
-                                <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
-                                {t.seats > 0 && w >= 52 && <span style={{ fontSize: Math.max(7, fSz * 0.58), color: "rgba(255,255,255,0.32)", lineHeight: 1 }}>({t.seats})</span>}
+
+                                {/* Bottom info — right-aligned */}
+                                {h >= 44 && (
+                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                                    {start ? (
+                                      <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                                        {fmtTimer(start)} ⏱
+                                      </span>
+                                    ) : (
+                                      <span style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.26)", lineHeight: 1 }}>{cfg.label}</span>
+                                    )}
+                                    {canSeat && <span style={{ fontSize: Math.max(6, fSz * 0.5), color: "#86efac", lineHeight: 1 }}>👆 הושב</span>}
+                                  </div>
+                                )}
                               </div>
-                              {t.name && w >= 52 && <span style={{ fontSize: Math.max(7, fSz * 0.5), color: "rgba(255,255,255,0.38)", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>}
-                              {seated && orderSt === "free" && (
-                                <span style={{ fontSize: Math.max(7, fSz * 0.5), color: "#c4b5fd", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
-                              )}
-                              {start && <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1 }}>⏱ {fmtTimer(start)}</span>}
-                              {canSeat && (
-                                <span style={{ fontSize: Math.max(6, fSz * 0.5), color: "#86efac", zIndex: 1, lineHeight: 1 }}>👆 הושב</span>
-                              )}
                             </div>
                           </div>
                         );
@@ -920,45 +935,45 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                     background: cfg.bg,
                     border: `1.5px solid ${breached ? C.red : cfg.border}`,
                     borderRadius: 12,
-                    padding: "12px 10px",
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                    overflow: "hidden",
+                    display: "flex", flexDirection: "column",
+                    minHeight: 150,
                     boxShadow: breached
                       ? `0 0 0 2px ${C.red}55, 0 0 10px rgba(239,68,68,0.3)`
                       : `0 0 6px ${cfg.glow}`,
                     animation: breached ? "blink 1s infinite" : undefined,
-                    position: "relative", overflow: "hidden",
                   }}>
-                    {/* Top accent stripe */}
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: breached ? C.red : cfg.stripe, borderRadius: "10px 10px 0 0" }} />
+                    {/* Top stripe */}
+                    <div style={{ height: 3, background: breached ? C.red : cfg.stripe, flexShrink: 0 }} />
 
-                    {/* Status badge — top-right */}
-                    <div style={{ position: "absolute", top: 8, right: 8, background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: "1px 8px", zIndex: 2 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
-                    </div>
-
-                    {/* Table number */}
-                    <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", lineHeight: 1, marginTop: 14 }}>{t.num}</div>
-
-                    {/* Table name */}
-                    {t.name && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.38)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>}
-
-                    {/* Seated party name */}
-                    {seated && status === "free" && (
-                      <div style={{ fontSize: 10, color: "#c4b5fd", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</div>
-                    )}
-
-                    {/* Guests */}
-                    {guests > 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.52)" }}>👤 {guests}</div>}
-
-                    {/* Timer */}
-                    {start && (
-                      <div style={{ fontSize: 12, fontWeight: 700, color: breached ? "#fca5a5" : "#fcd34d", fontVariantNumeric: "tabular-nums" }}>
-                        ⏱ {fmtTimer(start)}
+                    {/* Card body */}
+                    <div style={{ flex: 1, padding: "8px 10px", display: "flex", flexDirection: "column" }}>
+                      {/* Badge — top-left */}
+                      <div style={{ alignSelf: "flex-start", background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: "2px 8px" }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
                       </div>
-                    )}
 
-                    {/* Total */}
-                    {total > 0 && <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>{fmtNis(total)}</div>}
+                      {/* שולחן + number — centered */}
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>שולחן</span>
+                        <span style={{ fontSize: 40, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
+                        {t.name && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.26)", marginTop: 2 }}>{t.name}</span>}
+                        {seated && status === "free" && (
+                          <span style={{ fontSize: 10, color: "#c4b5fd", marginTop: 2, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
+                        )}
+                      </div>
+
+                      {/* Bottom info — right-aligned */}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                        {guests > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{guests} סועדים</span>}
+                        {start ? (
+                          <span style={{ fontSize: 12, fontWeight: 700, color: breached ? "#fca5a5" : "#fcd34d", fontVariantNumeric: "tabular-nums" }}>{fmtTimer(start)} ⏱</span>
+                        ) : (
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.26)" }}>{cfg.label}</span>
+                        )}
+                        {total > 0 && <span style={{ fontSize: 11, color: C.gold, fontWeight: 700 }}>{fmtNis(total)}</span>}
+                      </div>
+                    </div>
                   </div>
                 );
               })}

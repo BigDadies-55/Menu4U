@@ -617,51 +617,45 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                           }}
                         >
                           <div style={{
-                            position: "absolute", inset: 0, borderRadius: br,
+                            position: "absolute", inset: 0, borderRadius: 10,
                             background: cfg.bg,
                             border: `${Math.max(1, 1.5 * scale)}px solid ${isSel ? "#d4a017" : isOther ? "rgba(255,255,255,0.06)" : brd}`,
                             boxShadow: isSel ? `0 0 0 ${2 * scale}px rgba(212,160,23,0.35)` : isOther ? "none" : `0 0 ${5 * scale}px ${cfg.glow}`,
-                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                             overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s",
+                            display: "flex", flexDirection: "column",
                           }}>
-                            {/* Top accent stripe */}
-                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: Math.max(2, 3 * scale), background: isSel ? "#d4a017" : accentColor, opacity: isOther ? 0.3 : 1 }} />
+                            {/* Top stripe */}
+                            <div style={{ height: Math.max(2, 3 * scale), background: isSel ? "#d4a017" : accentColor, opacity: isOther ? 0.3 : 1, flexShrink: 0 }} />
 
-                            {/* Status badge */}
-                            {!isOther && w >= 44 && (
-                              <div style={{ position: "absolute", top: Math.max(5, 7 * scale), right: Math.max(3, 4 * scale), background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: `0 ${Math.max(3, 5 * scale)}px`, lineHeight: `${Math.max(14, 17 * scale)}px`, zIndex: 2 }}>
-                                <span style={{ fontSize: Math.max(6, 8 * scale), fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
+                            {/* Card body */}
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: Math.max(3, 5 * scale) }}>
+                              {/* Badge — top-left */}
+                              {!isOther && w >= 44 && (
+                                <div style={{ alignSelf: "flex-start", background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: `0 ${Math.max(3, 5 * scale)}px`, lineHeight: `${Math.max(14, 16 * scale)}px` }}>
+                                  <span style={{ fontSize: Math.max(6, 7.5 * scale), fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
+                                </div>
+                              )}
+
+                              {/* שולחן + number — centered */}
+                              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                {h >= 56 && <span style={{ fontSize: Math.max(7, 9 * scale), color: "rgba(255,255,255,0.38)", lineHeight: 1.2 }}>שולחן</span>}
+                                <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{table.num}</span>
                               </div>
-                            )}
 
-                            {/* Number */}
-                            <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 2 * scale), zIndex: 1 }}>
-                              <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{table.num}</span>
-                              {table.seats > 0 && w >= 52 && (
-                                <span style={{ fontSize: Math.max(7, fSz * 0.58), color: "rgba(255,255,255,0.32)", lineHeight: 1 }}>({table.seats})</span>
+                              {/* Bottom info — right-aligned */}
+                              {h >= 44 && (
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                                  {start ? (
+                                    <span style={{ fontSize: Math.max(7, fSz * 0.6), color: status === "bill-requested" ? "#fca5a5" : "#fcd34d", fontWeight: 700, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                                      {fmtTimer(start)} ⏱
+                                    </span>
+                                  ) : (
+                                    <span style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.26)", lineHeight: 1 }}>{cfg.label}</span>
+                                  )}
+                                  {guests > 0 && <span style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.44)", lineHeight: 1 }}>{guests} סועדים</span>}
+                                </div>
                               )}
                             </div>
-
-                            {/* Table name */}
-                            {table.name && w >= 52 && (
-                              <div style={{ fontSize: Math.max(7, fSz * 0.5), color: "rgba(255,255,255,0.38)", zIndex: 1, marginTop: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {table.name}
-                              </div>
-                            )}
-
-                            {/* Timer */}
-                            {start && (
-                              <div style={{ fontSize: Math.max(7, fSz * 0.6), color: status === "bill-requested" ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1, lineHeight: 1 }}>
-                                ⏱ {fmtTimer(start)}
-                              </div>
-                            )}
-
-                            {/* Guests */}
-                            {guests > 0 && w >= 40 && (
-                              <div style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.42)", zIndex: 1, lineHeight: 1 }}>
-                                👤{guests}
-                              </div>
-                            )}
                           </div>
                         </div>
                       );
