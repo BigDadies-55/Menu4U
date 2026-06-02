@@ -2,10 +2,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────
-type TableShape = "round" | "rect" | "square" | "oval" | "long" | "banquet";
-type FreeTable  = { id: string; num: number; name: string; shape: TableShape; x: number; y: number; w: number; h: number; seats: number; rot: number };
-type Room       = { id: string; name: string; tables: FreeTable[] };
-type LayoutV2   = { version: 2; rooms: Room[] };
+type TableShape  = "round" | "rect" | "square" | "oval" | "long" | "banquet";
+type FreeTable   = { id: string; num: number; name: string; shape: TableShape; x: number; y: number; w: number; h: number; seats: number; rot: number; zIdx?: number; customColor?: string };
+type Decoration  = { id: string; kind: "line" | "label" | "image"; x: number; y: number; w: number; h: number; rot: number; text: string; color: string; zIdx: number; imgSrc?: string };
+type Room        = { id: string; name: string; tables: FreeTable[]; bg?: number; bgImg?: string; bgOpacity?: number; decos?: Decoration[] };
+type LayoutV2    = { version: 2; rooms: Room[] };
 type OrderItem  = { id: string; quantity: number; price: number; notes: string | null; itemStatus: string; course: number; heldUntilFired: boolean; firedAt: string | null; doneAt: string | null; item: { name: string } };
 type Order      = { id: string; tableNumber: string | null; status: string; orderNumber: number | null; totalAmount: number; notes: string | null; createdAt: string; coversCount: number | null; items: OrderItem[] };
 type CartItem   = { itemId: string; name: string; price: number; qty: number; note: string; course: number };
@@ -29,6 +30,28 @@ const C = {
   blue:     "#3b82f6",
   inp:      "#2a1408",
   inpBd:    "rgba(212,160,23,0.25)",
+};
+
+// ── Room background themes (identical to layout-builder) ───────────
+const BGS = [
+  { body: "#1a0a0a", cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#2a0e0e 0%,#0d0404 100%)` },
+  { body: "#0a150a", cw: `radial-gradient(ellipse at 30% 20%,#1a2a1a,#0a150a)` },
+  { body: "#0a0800", cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 60% 40%,#1a1205,#0a0800)` },
+  { body: "#050510", cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
+  { body: "#0a0502", cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
+  { body: "#f5f0e8", cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
+];
+
+// ── Table shape border-radius (identical to layout-builder) ────────
+const SHAPE_BR: Record<TableShape, string> = {
+  round: "50%", rect: "10px", square: "8px", oval: "50%/40%", long: "12px", banquet: "6px",
+};
+
+// ── Order-status visual config for floor rendering ─────────────────
+const ORDER_STATUS_CFG = {
+  free:            { bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: "#2e7d2e",  glow: "rgba(34,197,94,0.35)"  },
+  occupied:        { bg: "radial-gradient(circle at 40% 35%,#5c3a00,#2e1900)", border: "#b87520",  glow: "rgba(249,115,22,0.35)"  },
+  "bill-requested":{ bg: "radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a)", border: "#8b1a1a",  glow: "rgba(239,68,68,0.45)"   },
 };
 const INP: React.CSSProperties = { background: C.inp, border: `1px solid ${C.inpBd}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "7px 10px", width: "100%", outline: "none" };
 const BTN = (col: string, light = false): React.CSSProperties => ({
@@ -62,16 +85,6 @@ function tableGuests(num: string, orders: Order[]): number {
 }
 function tableTotal(num: string, orders: Order[]): number {
   return orders.filter(o => (o.tableNumber ?? "") === num).reduce((s, o) => s + o.totalAmount, 0);
-}
-function shapeBorderRadius(shape: TableShape): string {
-  if (shape === "round" || shape === "oval") return "50%";
-  if (shape === "banquet") return "12px";
-  return "6px";
-}
-function statusColor(s: "free" | "occupied" | "bill-requested"): string {
-  if (s === "free") return C.green;
-  if (s === "occupied") return C.orange;
-  return C.red;
 }
 
 // ── Main component ─────────────────────────────────────────────────
@@ -458,66 +471,148 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
               </button>
             </div>
           )}
-          {activeRoom && (
-            <div style={{ position: "absolute", top: 4, left: 4, width: maxX * scale, height: maxY * scale }}>
-              {activeRoom.tables.map(table => {
-                const tNum   = String(table.num);
-                const status = tableStatus(tNum, orders);
-                const start  = timerStart(tNum, orders);
-                const guests = tableGuests(tNum, orders);
-                const col    = statusColor(status);
-                const isSel  = selTable === tNum && panel !== null;
+          {activeRoom && (() => {
+            const bgCfg = BGS[activeRoom.bg ?? 0] ?? BGS[0];
+            return (
+              <>
+                {/* ── Room background (same as layout-builder) ── */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0,
+                  width: maxX * scale, height: maxY * scale,
+                  ...(activeRoom.bgImg
+                    ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
+                    : { background: bgCfg.cw, backgroundSize: `${40 * scale}px ${40 * scale}px` }
+                  ),
+                }} />
 
-                return (
-                  <div
-                    key={table.id}
-                    className={status === "bill-requested" ? "bill-blink" : ""}
-                    onClick={() => openTable(tNum)}
-                    title={`שולחן ${table.num}${table.name ? ` — ${table.name}` : ""}`}
-                    style={{
-                      position: "absolute",
-                      left:   table.x * scale,
-                      top:    table.y * scale,
-                      width:  table.w * scale,
-                      height: table.h * scale,
-                      borderRadius: shapeBorderRadius(table.shape),
-                      transform: table.rot ? `rotate(${table.rot}deg)` : undefined,
-                      background: `${col}22`,
-                      border: `2px solid ${isSel ? C.gold : col}`,
-                      boxShadow: isSel ? `0 0 0 2px ${C.gold}66` : undefined,
-                      cursor: "pointer",
-                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                      gap: 1, transition: "border-color 0.2s",
-                      userSelect: "none",
-                    }}>
-                    <span style={{ fontWeight: 800, fontSize: Math.max(9, Math.min(14, table.w * scale * 0.17)), color: col, lineHeight: 1 }}>
-                      {table.num}
-                    </span>
-                    {start && (
-                      <span style={{ fontSize: Math.max(7, Math.min(11, table.w * scale * 0.13)), color: C.text, lineHeight: 1 }}>
-                        {fmtTimer(start)}
-                      </span>
-                    )}
-                    {guests > 0 && (
-                      <span style={{ fontSize: Math.max(7, Math.min(10, table.w * scale * 0.12)), color: C.sub, lineHeight: 1 }}>
-                        👤{guests}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                {/* ── Canvas layer: decorations + tables ── */}
+                <div style={{ position: "absolute", top: 0, left: 0, width: maxX * scale, height: maxY * scale }}>
 
-          {/* Legend */}
-          <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {[["free","#22c55e","פנוי"],["occupied","#f97316","תפוס"],["bill-requested","#ef4444","ביקש חשבון"]] .map(([,col,lbl]) => (
-              <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, background: "rgba(10,4,2,0.85)", border: `1px solid ${C.border}`, fontSize: 11 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, display: "inline-block" }} />
-                <span style={{ color: C.sub }}>{lbl}</span>
-              </div>
-            ))}
-          </div>
+                  {/* Decorations (read-only) */}
+                  {(activeRoom.decos ?? [])
+                    .slice().sort((a, b) => a.zIdx - b.zIdx)
+                    .map(deco => {
+                      const isLine  = deco.kind === "line";
+                      const isImage = deco.kind === "image";
+                      const c = deco.color || "#d4a017";
+                      return (
+                        <div key={deco.id} style={{
+                          position: "absolute",
+                          left: deco.x * scale, top: deco.y * scale,
+                          width: deco.w * scale, height: Math.max(isLine ? 2 : 20, deco.h * scale),
+                          transform: `rotate(${deco.rot}deg)`, transformOrigin: "center",
+                          zIndex: deco.zIdx, pointerEvents: "none",
+                        }}>
+                          {isLine ? (
+                            <div style={{ position: "absolute", inset: 0, background: c, borderRadius: 2 }} />
+                          ) : isImage ? (
+                            <div style={{ position: "absolute", inset: 0, borderRadius: 6 * scale, overflow: "hidden" }}>
+                              {deco.imgSrc && <img src={deco.imgSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />}
+                            </div>
+                          ) : (
+                            <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1px solid ${c}60`, borderRadius: 6 * scale, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                              <span style={{ fontSize: Math.max(9, 13 * scale), color: c, fontWeight: 700, textAlign: "center", padding: "0 4px" }}>{deco.text}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                  {/* Tables */}
+                  {activeRoom.tables
+                    .slice().sort((a, b) => (a.zIdx ?? 0) - (b.zIdx ?? 0))
+                    .map(table => {
+                      const tNum   = String(table.num);
+                      const status = tableStatus(tNum, orders);
+                      const start  = timerStart(tNum, orders);
+                      const guests = tableGuests(tNum, orders);
+                      const cfg    = ORDER_STATUS_CFG[status];
+                      const bg     = table.customColor
+                        ? `radial-gradient(circle at 40% 35%,${table.customColor}cc,${table.customColor}44)`
+                        : cfg.bg;
+                      const brd    = table.customColor || cfg.border;
+                      const br     = SHAPE_BR[table.shape];
+                      const isSel  = selTable === tNum && panel !== null;
+                      const fSz    = Math.max(9, Math.min(table.w, table.h) * scale * 0.22);
+                      const w      = table.w * scale;
+                      const h      = table.h * scale;
+
+                      return (
+                        <div
+                          key={table.id}
+                          className={status === "bill-requested" ? "bill-blink" : ""}
+                          onClick={() => openTable(tNum)}
+                          title={`שולחן ${table.num}${table.name ? ` — ${table.name}` : ""}`}
+                          style={{
+                            position: "absolute",
+                            left: table.x * scale, top: table.y * scale,
+                            width: w, height: h,
+                            transform: table.rot ? `rotate(${table.rot}deg)` : undefined,
+                            transformOrigin: "center",
+                            zIndex: table.zIdx ?? 1,
+                            cursor: "pointer", userSelect: "none",
+                          }}
+                        >
+                          {/* Table body (layout-builder style) */}
+                          <div style={{
+                            position: "absolute", inset: 0, borderRadius: br,
+                            background: bg,
+                            border: `${Math.max(1, 2 * scale)}px solid ${isSel ? "#d4a017" : brd}`,
+                            boxShadow: isSel
+                              ? `0 0 0 ${2 * scale}px #d4a01766, 0 0 ${12 * scale}px ${cfg.glow}`
+                              : `0 0 ${8 * scale}px ${cfg.glow}, 0 ${2 * scale}px ${8 * scale}px rgba(0,0,0,0.4)`,
+                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                            overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s",
+                          }}>
+                            {/* Gloss highlight (same as layout-builder) */}
+                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
+
+                            {/* Number + seats */}
+                            <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 3 * scale), zIndex: 1 }}>
+                              <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{table.num}</span>
+                              {table.seats > 0 && (
+                                <span style={{ fontSize: Math.max(7, fSz * 0.65), fontWeight: 700, color: "rgba(255,255,255,0.7)", lineHeight: 1 }}>({table.seats})</span>
+                              )}
+                            </div>
+
+                            {/* Table name */}
+                            {table.name && (
+                              <div style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, marginTop: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {table.name}
+                              </div>
+                            )}
+
+                            {/* Live timer */}
+                            {start && (
+                              <div style={{ fontSize: Math.max(7, fSz * 0.6), color: status === "bill-requested" ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1, lineHeight: 1 }}>
+                                ⏱ {fmtTimer(start)}
+                              </div>
+                            )}
+
+                            {/* Covers */}
+                            {guests > 0 && (
+                              <div style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.6)", zIndex: 1, lineHeight: 1 }}>
+                                👤{guests}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                {/* Legend overlay */}
+                <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap", zIndex: 50 }}>
+                  {([["free","#2e7d2e","פנוי"],["occupied","#b87520","תפוס"],["bill-requested","#8b1a1a","חשבון"]] as const).map(([, col, lbl]) => (
+                    <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 11, backdropFilter: "blur(4px)" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, display: "inline-block" }} />
+                      <span style={{ color: "#e5d5b5" }}>{lbl}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* ── Side Panel ── */}
