@@ -688,30 +688,96 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
         {/* ── STATUS TAB ── */}
         {tab === "summary" && (
-          <div style={{ padding: 20, maxWidth: 700, margin: "0 auto", overflowY: "auto", flex: 1 }}>
-            <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 16 }}>סטטוס שולחנות</h2>
-            {activeRoom?.tables.map(t => {
-              const tNum   = String(t.num);
-              const status = tableStatus(tNum, orders);
-              const start  = timerStart(tNum, orders);
-              const mins   = start ? timerMinutes(start) : 0;
-              const tOrds  = orders.filter(o => (o.tableNumber ?? "") === tNum);
-              const total  = tOrds.reduce((s, o) => s + o.totalAmount, 0);
-              const guests = Math.max(0, ...tOrds.map(o => o.coversCount ?? 0));
-              const color  = statusColor(status);
+          <div style={{ padding: 16, overflowY: "auto", flex: 1 }}>
+            {/* Summary row */}
+            {activeRoom && (() => {
+              const tables = activeRoom.tables;
+              const freeCount     = tables.filter(t => tableStatus(String(t.num), orders) === "free").length;
+              const occupiedCount = tables.filter(t => tableStatus(String(t.num), orders) === "occupied").length;
+              const billCount     = tables.filter(t => tableStatus(String(t.num), orders) === "bill-requested").length;
+              const seatedCount   = [...seatedTables.keys()].filter(n => tableStatus(n, orders) === "free").length;
               return (
-                <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 12, background: C.card, border: `1px solid ${color}33`, borderRadius: 10, padding: "12px 16px", marginBottom: 8 }}>
-                  <span style={{ width: 36, height: 36, borderRadius: SHAPE_BR[t.shape], background: `${color}22`, border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color }}>{t.num}</span>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13 }}>{t.name || `שולחן ${t.num}`}</span>
-                    {status !== "free" && <span style={{ fontSize: 12, color: C.sub, marginRight: 8 }}>👤 {guests}</span>}
-                  </div>
-                  {start && <span style={{ fontSize: 13, color: mins >= slaMin ? C.red : C.sub, fontVariantNumeric: "tabular-nums" }}>{fmtTimer(start)}</span>}
-                  {total > 0 && <span style={{ fontSize: 13, color: C.gold, fontWeight: 700 }}>{fmtNis(total)}</span>}
-                  <span style={{ fontSize: 12, fontWeight: 700, color }}>{status === "free" ? "פנוי" : status === "occupied" ? "תפוס" : "ביקש חשבון"}</span>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {[
+                    { label: "פנויים",    value: freeCount,     color: "#2e7d2e" },
+                    { label: "הושבו",     value: seatedCount,   color: "#7c3aed" },
+                    { label: "תפוסים",   value: occupiedCount, color: "#b87520" },
+                    { label: "ביקשו חשבון", value: billCount,  color: "#8b1a1a" },
+                  ].map(s => (
+                    <div key={s.label} style={{ flex: "1 1 80px", background: C.card, border: `1px solid ${s.color}44`, borderRadius: 10, padding: "10px 0", textAlign: "center" }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
+                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{s.label}</div>
+                    </div>
+                  ))}
                 </div>
               );
-            })}
+            })()}
+
+            {/* Table grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 }}>
+              {activeRoom?.tables.slice().sort((a, b) => a.num - b.num).map(t => {
+                const tNum    = String(t.num);
+                const status  = tableStatus(tNum, orders);
+                const seated  = seatedTables.get(tNum);
+                const effectSt = seated && status === "free" ? "seated" : status;
+                const start   = timerStart(tNum, orders);
+                const mins    = start ? timerMinutes(start) : 0;
+                const breached = start && mins >= slaMin;
+                const tOrds   = orders.filter(o => (o.tableNumber ?? "") === tNum);
+                const total   = tOrds.reduce((s, o) => s + o.totalAmount, 0);
+                const guests  = Math.max(0, ...tOrds.map(o => o.coversCount ?? 0));
+                const cfg     = ORDER_STATUS_CFG[effectSt];
+                const statusLabel = {
+                  free: "פנוי", seated: "הושב", occupied: "תפוס", "bill-requested": "חשבון",
+                }[effectSt];
+                return (
+                  <div key={t.id} style={{
+                    background: cfg.bg,
+                    border: `2px solid ${breached ? C.red : cfg.border}`,
+                    borderRadius: 12,
+                    padding: "12px 10px",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                    boxShadow: breached
+                      ? `0 0 0 2px ${C.red}66, 0 0 12px rgba(239,68,68,0.4)`
+                      : `0 0 8px ${cfg.glow}`,
+                    animation: breached ? "blink 1s infinite" : undefined,
+                    position: "relative", overflow: "hidden",
+                  }}>
+                    {/* Gloss */}
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 100%)", pointerEvents: "none" }} />
+
+                    {/* Table number */}
+                    <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</div>
+
+                    {/* Table name */}
+                    {t.name && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>}
+
+                    {/* Status badge */}
+                    <div style={{ fontSize: 11, fontWeight: 700, color: cfg.border, background: `${cfg.border}22`, borderRadius: 20, padding: "2px 8px", border: `1px solid ${cfg.border}55` }}>
+                      {statusLabel}
+                    </div>
+
+                    {/* Seated party name */}
+                    {seated && status === "free" && (
+                      <div style={{ fontSize: 10, color: "#c4b5fd", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</div>
+                    )}
+
+                    {/* Guests */}
+                    {guests > 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>👤 {guests}</div>}
+
+                    {/* Timer */}
+                    {start && (
+                      <div style={{ fontSize: 12, fontWeight: 700, color: breached ? "#fca5a5" : "#fcd34d", fontVariantNumeric: "tabular-nums" }}>
+                        ⏱ {fmtTimer(start)}
+                      </div>
+                    )}
+
+                    {/* Total */}
+                    {total > 0 && <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>{fmtNis(total)}</div>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
