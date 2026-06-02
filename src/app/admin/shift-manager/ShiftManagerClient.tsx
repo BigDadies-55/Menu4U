@@ -2,10 +2,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────
-type TableShape = "round" | "rect" | "square" | "oval" | "long" | "banquet";
-type FreeTable  = { id: string; num: number; name: string; shape: TableShape; x: number; y: number; w: number; h: number; seats: number; rot: number };
-type Room       = { id: string; name: string; tables: FreeTable[] };
-type LayoutV2   = { version: 2; rooms: Room[] };
+type TableShape  = "round" | "rect" | "square" | "oval" | "long" | "banquet";
+type FreeTable   = { id: string; num: number; name: string; shape: TableShape; x: number; y: number; w: number; h: number; seats: number; rot: number; zIdx?: number; customColor?: string };
+type Decoration  = { id: string; kind: "line" | "label" | "image"; x: number; y: number; w: number; h: number; rot: number; text: string; color: string; zIdx: number; imgSrc?: string };
+type Room        = { id: string; name: string; tables: FreeTable[]; bg?: number; bgImg?: string; bgOpacity?: number; decos?: Decoration[] };
+type LayoutV2    = { version: 2; rooms: Room[] };
 type OrderItem  = { id: string; quantity: number; price: number; itemStatus: string; firedAt: string | null; item: { name: string } };
 type Order      = { id: string; tableNumber: string | null; status: string; totalAmount: number; createdAt: string; coversCount: number | null; items: OrderItem[] };
 type MenuItem   = { id: string; name: string; price: number; isActive: boolean };
@@ -62,11 +63,24 @@ function fmtTimer(start: Date): string {
 function timerMinutes(start: Date): number {
   return Math.floor((Date.now() - start.getTime()) / 60000);
 }
-function shapeBR(shape: TableShape): string {
-  if (shape === "round" || shape === "oval") return "50%";
-  if (shape === "banquet") return "12px";
-  return "6px";
-}
+// ── Room background themes (identical to layout-builder) ───────────
+const BGS = [
+  { body: "#1a0a0a", cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#2a0e0e 0%,#0d0404 100%)` },
+  { body: "#0a150a", cw: `radial-gradient(ellipse at 30% 20%,#1a2a1a,#0a150a)` },
+  { body: "#0a0800", cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 60% 40%,#1a1205,#0a0800)` },
+  { body: "#050510", cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
+  { body: "#0a0502", cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
+  { body: "#f5f0e8", cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
+];
+const SHAPE_BR: Record<TableShape, string> = {
+  round: "50%", rect: "10px", square: "8px", oval: "50%/40%", long: "12px", banquet: "6px",
+};
+const ORDER_STATUS_CFG = {
+  free:            { bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: "#2e7d2e", glow: "rgba(34,197,94,0.35)"  },
+  occupied:        { bg: "radial-gradient(circle at 40% 35%,#5c3a00,#2e1900)", border: "#b87520", glow: "rgba(249,115,22,0.35)"  },
+  "bill-requested":{ bg: "radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a)", border: "#8b1a1a", glow: "rgba(239,68,68,0.45)"  },
+};
+
 function statusColor(s: "free" | "occupied" | "bill-requested"): string {
   if (s === "free") return C.green;
   if (s === "occupied") return C.orange;
@@ -133,9 +147,13 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       const res = await fetch(`/api/admin/restaurants/${rid}/layout`);
       if (!res.ok) return;
       const data = await res.json();
-      setLayout(data?.version === 2 ? data : null);
+      const raw = data.tableLayoutJson;
+      if (!raw) { setLayout(null); return; }
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      const rooms = parsed?.rooms ?? (Array.isArray(parsed) ? parsed : null);
+      setLayout(rooms && Array.isArray(rooms) ? { version: 2, rooms } : null);
       setRoomIdx(0);
-    } catch { /* ignore */ }
+    } catch { setLayout(null); }
   }, []);
 
   // ── Fetch orders ──────────────────────────────────────────────────
@@ -408,47 +426,113 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
             )}
 
             {/* Floor canvas */}
-            <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", background: "rgba(10,4,2,0.4)", borderRadius: 12, border: `1px solid ${C.border}` }}>
-              {activeRoom?.tables.map(t => {
-                const tNum   = String(t.num);
-                const status = tableStatus(tNum, orders);
-                const start  = timerStart(tNum, orders);
-                const mins   = start ? timerMinutes(start) : 0;
-                const breached = start && mins >= slaMin;
-                const color  = statusColor(status);
-                return (
-                  <div key={t.id} style={{
-                    position: "absolute",
-                    left: t.x * floorScale, top: t.y * floorScale,
-                    width: t.w * floorScale, height: t.h * floorScale,
-                    background: `${color}22`,
-                    border: `2px solid ${breached ? C.red : color}`,
-                    borderRadius: shapeBR(t.shape),
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    transition: "border-color 0.3s",
-                    animation: breached ? "blink 1s infinite" : undefined,
-                  }}>
-                    <span style={{ fontSize: Math.max(9, 13 * floorScale), fontWeight: 700, color }}>{t.num}</span>
-                    {t.name && <span style={{ fontSize: Math.max(7, 9 * floorScale), color: C.muted }}>{t.name}</span>}
-                    {start && <span style={{ fontSize: Math.max(7, 10 * floorScale), color: breached ? C.red : C.sub, fontVariantNumeric: "tabular-nums" }}>{fmtTimer(start)}</span>}
-                  </div>
-                );
-              })}
-              {!activeRoom?.tables.length && (
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>
-                  אין שולחנות בחדר זה
+            <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", borderRadius: 12, border: `1px solid ${C.border}` }}>
+              {!activeRoom && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, fontSize: 13 }}>
+                  {layout ? "אין שולחנות בחדר זה" : "לא נשמרה פריסת שולחנות"}
                 </div>
               )}
-            </div>
+              {activeRoom && (() => {
+                const bgCfg = BGS[activeRoom.bg ?? 0] ?? BGS[0];
+                return (
+                  <>
+                    {/* Room background */}
+                    <div style={{
+                      position: "absolute", top: 0, left: 0,
+                      width: mapMaxX * floorScale, height: mapMaxY * floorScale,
+                      ...(activeRoom.bgImg
+                        ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
+                        : { background: bgCfg.cw, backgroundSize: `${40 * floorScale}px ${40 * floorScale}px` }
+                      ),
+                    }} />
 
-            {/* Legend */}
-            <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
-              {[["פנוי", C.green], ["תפוס", C.orange], ["ביקש חשבון", C.red]].map(([l, c]) => (
-                <span key={l} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: "50%", background: c as string, display: "inline-block" }} />
-                  <span style={{ color: C.muted }}>{l}</span>
-                </span>
-              ))}
+                    {/* Decorations */}
+                    {(activeRoom.decos ?? []).slice().sort((a, b) => a.zIdx - b.zIdx).map(deco => {
+                      const isLine = deco.kind === "line";
+                      const isImage = deco.kind === "image";
+                      const c = deco.color || "#d4a017";
+                      return (
+                        <div key={deco.id} style={{
+                          position: "absolute",
+                          left: deco.x * floorScale, top: deco.y * floorScale,
+                          width: deco.w * floorScale, height: Math.max(isLine ? 2 : 20, deco.h * floorScale),
+                          transform: `rotate(${deco.rot}deg)`, transformOrigin: "center",
+                          zIndex: deco.zIdx, pointerEvents: "none",
+                        }}>
+                          {isLine ? (
+                            <div style={{ position: "absolute", inset: 0, background: c, borderRadius: 2 }} />
+                          ) : isImage ? (
+                            <div style={{ position: "absolute", inset: 0, borderRadius: 6 * floorScale, overflow: "hidden" }}>
+                              {deco.imgSrc && <img src={deco.imgSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
+                            </div>
+                          ) : (
+                            <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1px solid ${c}60`, borderRadius: 6 * floorScale, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <span style={{ fontSize: Math.max(9, 13 * floorScale), color: c, fontWeight: 700, textAlign: "center", padding: "0 4px" }}>{deco.text}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Tables */}
+                    {activeRoom.tables.slice().sort((a, b) => (a.zIdx ?? 0) - (b.zIdx ?? 0)).map(t => {
+                      const tNum     = String(t.num);
+                      const status   = tableStatus(tNum, orders);
+                      const start    = timerStart(tNum, orders);
+                      const mins     = start ? timerMinutes(start) : 0;
+                      const breached = start && mins >= slaMin;
+                      const cfg      = ORDER_STATUS_CFG[status];
+                      const bg       = t.customColor
+                        ? `radial-gradient(circle at 40% 35%,${t.customColor}cc,${t.customColor}44)`
+                        : cfg.bg;
+                      const brd      = t.customColor || (breached ? C.red : cfg.border);
+                      const br       = SHAPE_BR[t.shape];
+                      const fSz      = Math.max(9, Math.min(t.w, t.h) * floorScale * 0.22);
+                      const w        = t.w * floorScale;
+                      const h        = t.h * floorScale;
+                      return (
+                        <div key={t.id} style={{
+                          position: "absolute",
+                          left: t.x * floorScale, top: t.y * floorScale,
+                          width: w, height: h,
+                          transform: t.rot ? `rotate(${t.rot}deg)` : undefined, transformOrigin: "center",
+                          zIndex: t.zIdx ?? 1,
+                        }}>
+                          <div style={{
+                            position: "absolute", inset: 0, borderRadius: br,
+                            background: bg,
+                            border: `${Math.max(1, 2 * floorScale)}px solid ${brd}`,
+                            boxShadow: breached
+                              ? `0 0 0 ${2 * floorScale}px ${C.red}66, 0 0 ${10 * floorScale}px rgba(239,68,68,0.5)`
+                              : `0 0 ${6 * floorScale}px ${cfg.glow}, 0 ${2 * floorScale}px ${6 * floorScale}px rgba(0,0,0,0.4)`,
+                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                            overflow: "hidden", transition: "border-color 0.3s",
+                            animation: breached ? "blink 1s infinite" : undefined,
+                          }}>
+                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
+                            <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 3 * floorScale), zIndex: 1 }}>
+                              <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
+                              {t.seats > 0 && <span style={{ fontSize: Math.max(7, fSz * 0.65), color: "rgba(255,255,255,0.7)", lineHeight: 1 }}>({t.seats})</span>}
+                            </div>
+                            {t.name && <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>}
+                            {start && <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1 }}>⏱ {fmtTimer(start)}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Legend */}
+                    <div style={{ position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 50 }}>
+                      {([["#2e7d2e","פנוי"],["#b87520","תפוס"],["#8b1a1a","חשבון"]] as const).map(([col, lbl]) => (
+                        <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 7, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 10, backdropFilter: "blur(4px)" }}>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, display: "inline-block" }} />
+                          <span style={{ color: "#e5d5b5" }}>{lbl}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -560,7 +644,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
               const color  = statusColor(status);
               return (
                 <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 12, background: C.card, border: `1px solid ${color}33`, borderRadius: 10, padding: "12px 16px", marginBottom: 8 }}>
-                  <span style={{ width: 36, height: 36, borderRadius: shapeBR(t.shape), background: `${color}22`, border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color }}>{t.num}</span>
+                  <span style={{ width: 36, height: 36, borderRadius: SHAPE_BR[t.shape], background: `${color}22`, border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color }}>{t.num}</span>
                   <div style={{ flex: 1 }}>
                     <span style={{ fontWeight: 700, fontSize: 13 }}>{t.name || `שולחן ${t.num}`}</span>
                     {status !== "free" && <span style={{ fontSize: 12, color: C.sub, marginRight: 8 }}>👤 {guests}</span>}
