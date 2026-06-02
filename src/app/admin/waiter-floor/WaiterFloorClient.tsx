@@ -135,6 +135,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
   // add-more state (for active table panel)
   const [addingMore,   setAddingMore]   = useState(false);
+  const [addCourse,    setAddCourse]    = useState(1);
 
   // PIN modal — used for cancel and comp actions
   const [pinModal,     setPinModal]     = useState<{ type: "cancel" | "comp"; orderId: string; itemId: string; itemName: string; isComped?: boolean } | null>(null);
@@ -269,16 +270,21 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   }, [activeRoom]);
 
   const [scale, setScale] = useState(1);
+  const [floorContainerSize, setFloorContainerSize] = useState({ w: 0, h: 0 });
   useEffect(() => {
     const el = floorRef.current;
     if (!el) return;
     const obs = new ResizeObserver(() => {
       const { width, height } = el.getBoundingClientRect();
+      setFloorContainerSize({ w: width, h: height });
       setScale(Math.min((width - 8) / maxX, (height - 8) / maxY, 1));
     });
     obs.observe(el);
     return () => obs.disconnect();
   }, [maxX, maxY]);
+
+  const offsetX = Math.max(0, (floorContainerSize.w - maxX * scale) / 2);
+  const offsetY = Math.max(0, (floorContainerSize.h - maxY * scale) / 2);
 
   // ── Toast ─────────────────────────────────────────────────────────
   function showToast(msg: string) {
@@ -387,8 +393,8 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
     setPinModal({ type, orderId, itemId, itemName, isComped });
   }
 
-  async function confirmPin() {
-    if (pinValue !== MANAGER_PIN) { setPinError(true); setPinValue(""); return; }
+  async function confirmPinValue(pin: string) {
+    if (pin !== MANAGER_PIN) { setPinError(true); setPinValue(""); return; }
     if (!pinModal) return;
     const { type, orderId, itemId } = pinModal;
     setPinModal(null);
@@ -415,6 +421,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
       }
     } catch { showToast("שגיאה בביצוע הפעולה"); }
   }
+  async function confirmPin() { await confirmPinValue(pinValue); }
 
   async function doTransfer() {
     if (!transferTo || transferTo === selTable) return;
@@ -534,7 +541,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
               <>
                 {/* ── Room background (same as layout-builder) ── */}
                 <div style={{
-                  position: "absolute", top: 0, left: 0,
+                  position: "absolute", top: offsetY, left: offsetX,
                   width: maxX * scale, height: maxY * scale,
                   ...(activeRoom.bgImg
                     ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
@@ -543,7 +550,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                 }} />
 
                 {/* ── Canvas layer: decorations + tables ── */}
-                <div style={{ position: "absolute", top: 0, left: 0, width: maxX * scale, height: maxY * scale }}>
+                <div style={{ position: "absolute", top: offsetY, left: offsetX, width: maxX * scale, height: maxY * scale }}>
 
                   {/* Decorations (read-only) */}
                   {(activeRoom.decos ?? [])
@@ -804,12 +811,20 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                         </button>
                       ))}
                     </div>
+                    {/* Course selector */}
+                    <div style={{ display: "flex", gap: 4, padding: "4px 14px", borderBottom: `1px solid ${C.border}` }}>
+                      {[1,2,3].map(c => (
+                        <button key={c} onClick={() => setAddCourse(c)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", background: addCourse === c ? "rgba(167,139,250,0.2)" : "transparent", border: `1px solid ${addCourse === c ? "#a78bfa" : C.border}`, color: addCourse === c ? "#a78bfa" : C.sub }}>
+                          {EMOJI[c]} {COURSE[c]}
+                        </button>
+                      ))}
+                    </div>
                     <div style={{ maxHeight: 150, overflowY: "auto", padding: "4px 14px" }}>
                       {activeCat?.items.map(item => (
                         <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${C.border}` }}>
                           <span style={{ flex: 1, fontSize: 12, color: C.text }}>{item.name}</span>
                           <span style={{ fontSize: 12, color: C.gold, marginLeft: 8 }}>₪{item.price.toFixed(0)}</span>
-                          <button onClick={() => addToCart(item)} style={{ ...BTN(C.gold, true), padding: "2px 10px", fontSize: 14, marginRight: 6 }}>+</button>
+                          <button onClick={() => addToCart(item, addCourse)} style={{ ...BTN(C.gold, true), padding: "2px 10px", fontSize: 14, marginRight: 6 }}>+</button>
                         </div>
                       ))}
                     </div>
@@ -973,27 +988,38 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                 style={{ ...INP, marginBottom: 12 }}
               />
             )}
-            <div style={{ fontSize: 12, color: C.sub, marginBottom: 8, textAlign: "center" }}>קוד מנהל</div>
-            <input
-              type="password" maxLength={4} value={pinValue}
-              onChange={e => { setPinValue(e.target.value); setPinError(false); }}
-              onKeyDown={e => e.key === "Enter" && confirmPin()}
-              placeholder="••••"
-              autoFocus
-              style={{ ...INP, textAlign: "center", fontSize: 20, letterSpacing: 8, marginBottom: 8 }}
-            />
-            {pinError && <div style={{ color: C.red, fontSize: 12, textAlign: "center", marginBottom: 8 }}>קוד שגוי — נסה שוב</div>}
-            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-              <button onClick={confirmPin} style={{ flex: 1, ...BTN(pinModal.type === "cancel" ? C.red : "#7c3aed") }}>אשר</button>
-              <button onClick={() => setPinModal(null)} style={{ ...BTN(C.muted, true), padding: "8px 14px" }}>ביטול</button>
+            {/* PIN dots */}
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 14 }}>
+              {[0,1,2,3].map(i => (
+                <div key={i} style={{ width: 14, height: 14, borderRadius: "50%", background: pinValue.length > i ? C.gold : "transparent", border: `2px solid ${pinValue.length > i ? C.gold : C.border}`, transition: "background 0.15s" }} />
+              ))}
             </div>
+            {pinError && <div style={{ color: C.red, fontSize: 12, textAlign: "center", marginBottom: 10 }}>קוד שגוי — נסה שוב</div>}
+            {/* Numpad */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 10 }}>
+              {(["1","2","3","4","5","6","7","8","9","","0","⌫"] as const).map((k, ki) => (
+                <button key={ki} onClick={() => {
+                  if (!k) return;
+                  if (k === "⌫") { setPinValue(v => v.slice(0, -1)); setPinError(false); return; }
+                  if (pinValue.length >= 4) return;
+                  const next = pinValue + k;
+                  setPinValue(next);
+                  setPinError(false);
+                  if (next.length === 4) setTimeout(() => confirmPinValue(next), 150);
+                }}
+                style={{ padding: "13px 0", fontSize: 18, fontWeight: 700, borderRadius: 10, cursor: k ? "pointer" : "default", border: `1px solid ${k ? C.border : "transparent"}`, background: k ? C.inp : "transparent", color: C.text, opacity: k ? 1 : 0 }}>
+                  {k}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setPinModal(null)} style={{ ...BTN(C.muted, true), width: "100%", padding: "8px 14px" }}>ביטול</button>
           </div>
         </div>
       )}
 
       {/* ── Toast ── */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 24, right: "50%", transform: "translateX(50%)", zIndex: 9999, background: "#1a2e1a", border: "1px solid #22c55e", borderRadius: 10, padding: "10px 20px", color: "#22c55e", fontWeight: 700, fontSize: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: "#1a2e1a", border: "1px solid #22c55e", borderRadius: 10, padding: "10px 20px", color: "#22c55e", fontWeight: 700, fontSize: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.5)", whiteSpace: "nowrap" }}>
           {toast}
         </div>
       )}

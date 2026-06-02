@@ -516,174 +516,238 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
         {/* ── FLOOR MAP TAB ── */}
         {tab === "floor" && (
-          <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: 16, gap: 12 }}>
-            {/* Room tabs */}
-            {layout && layout.rooms.length > 1 && (
-              <div style={{ display: "flex", gap: 6 }}>
-                {layout.rooms.map((r, i) => (
-                  <button key={r.id} onClick={() => setRoomIdx(i)} style={{
-                    padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    background: i === roomIdx ? C.gold : C.panel,
-                    color: i === roomIdx ? "#1a0c06" : C.sub,
-                    border: `1px solid ${C.border}`, borderRadius: 8,
-                  }}>{r.name}</button>
-                ))}
-              </div>
-            )}
+          <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
 
-            {/* SLA threshold control (when no banner) */}
-            {!kpis.slaBreached.length && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.muted }}>
-                <span>SLA:</span>
-                <input type="number" value={slaMin} onChange={e => setSlaMin(Number(e.target.value))} min={10} max={120}
-                  style={{ ...INP, width: 52, padding: "4px 6px", fontSize: 12 }} />
-                <span>דקות</span>
-              </div>
-            )}
-
-            {/* Floor canvas */}
-            <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", borderRadius: 12, border: `1px solid ${C.border}` }}>
-              {!activeRoom && (
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, fontSize: 13 }}>
-                  {layout ? "אין שולחנות בחדר זה" : "לא נשמרה פריסת שולחנות"}
+            {/* ── Floor canvas column ── */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "10px 12px", gap: 8, overflow: "hidden", minWidth: 0 }}>
+              {/* Room tabs */}
+              {layout && layout.rooms.length > 1 && (
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  {layout.rooms.map((r, i) => (
+                    <button key={r.id} onClick={() => setRoomIdx(i)} style={{
+                      padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      background: i === roomIdx ? C.gold : C.panel,
+                      color: i === roomIdx ? "#1a0c06" : C.sub,
+                      border: `1px solid ${C.border}`, borderRadius: 8,
+                    }}>{r.name}</button>
+                  ))}
                 </div>
               )}
-              {activeRoom && (() => {
-                const bgCfg = BGS[activeRoom.bg ?? 0] ?? BGS[0];
-                return (
-                  <>
-                    {/* Room background */}
-                    <div style={{
-                      position: "absolute", top: offsetY, left: offsetX,
-                      width: mapMaxX * floorScale, height: mapMaxY * floorScale,
-                      ...(activeRoom.bgImg
-                        ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
-                        : { background: bgCfg.cw, backgroundSize: `${40 * floorScale}px ${40 * floorScale}px` }
-                      ),
-                    }} />
 
-                    {/* Decorations */}
-                    {(activeRoom.decos ?? []).slice().sort((a, b) => a.zIdx - b.zIdx).map(deco => {
-                      const isLine = deco.kind === "line";
-                      const isImage = deco.kind === "image";
-                      const c = deco.color || "#d4a017";
-                      return (
-                        <div key={deco.id} style={{
-                          position: "absolute",
-                          left: offsetX + deco.x * floorScale, top: offsetY + deco.y * floorScale,
-                          width: deco.w * floorScale, height: Math.max(isLine ? 2 : 20, deco.h * floorScale),
-                          transform: `rotate(${deco.rot}deg)`, transformOrigin: "center",
-                          zIndex: deco.zIdx, pointerEvents: "none",
-                        }}>
-                          {isLine ? (
-                            <div style={{ position: "absolute", inset: 0, background: c, borderRadius: 2 }} />
-                          ) : isImage ? (
-                            <div style={{ position: "absolute", inset: 0, borderRadius: 6 * floorScale, overflow: "hidden" }}>
-                              {deco.imgSrc && <img src={deco.imgSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
-                            </div>
-                          ) : (
-                            <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1px solid ${c}60`, borderRadius: 6 * floorScale, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              <span style={{ fontSize: Math.max(9, 13 * floorScale), color: c, fontWeight: 700, textAlign: "center", padding: "0 4px" }}>{deco.text}</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+              {/* Floor canvas */}
+              <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", borderRadius: 12, border: `1px solid ${C.border}` }}>
+                {!activeRoom && (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, fontSize: 13 }}>
+                    {layout ? "אין שולחנות בחדר זה" : "לא נשמרה פריסת שולחנות"}
+                  </div>
+                )}
+                {activeRoom && (() => {
+                  const bgCfg = BGS[activeRoom.bg ?? 0] ?? BGS[0];
+                  return (
+                    <>
+                      {/* Room background */}
+                      <div style={{
+                        position: "absolute", top: offsetY, left: offsetX,
+                        width: mapMaxX * floorScale, height: mapMaxY * floorScale,
+                        ...(activeRoom.bgImg
+                          ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
+                          : { background: bgCfg.cw, backgroundSize: `${40 * floorScale}px ${40 * floorScale}px` }
+                        ),
+                      }} />
 
-                    {/* Tables */}
-                    {activeRoom.tables.slice().sort((a, b) => (a.zIdx ?? 0) - (b.zIdx ?? 0)).map(t => {
-                      const tNum      = String(t.num);
-                      const orderSt   = tableStatus(tNum, orders);
-                      const seated    = seatedTables.get(tNum);
-                      const effectSt  = seated && orderSt === "free" ? "seated" : orderSt;
-                      const start     = timerStart(tNum, orders);
-                      const mins      = start ? timerMinutes(start) : 0;
-                      const breached  = start && mins >= slaMin;
-                      const cfg       = ORDER_STATUS_CFG[effectSt];
-                      const bg        = t.customColor
-                        ? `radial-gradient(circle at 40% 35%,${t.customColor}cc,${t.customColor}44)`
-                        : cfg.bg;
-                      const brd       = t.customColor || (breached ? C.red : cfg.border);
-                      const br        = SHAPE_BR[t.shape];
-                      const fSz       = Math.max(9, Math.min(t.w, t.h) * floorScale * 0.22);
-                      const w         = t.w * floorScale;
-                      const h         = t.h * floorScale;
-                      const canSeat   = effectSt === "free" && waitlist.length > 0;
-                      return (
-                        <div
-                          key={t.id}
-                          onClick={() => canSeat && setSeatTableModal({ tableNum: tNum, seats: t.seats })}
-                          style={{
+                      {/* Decorations */}
+                      {(activeRoom.decos ?? []).slice().sort((a, b) => a.zIdx - b.zIdx).map(deco => {
+                        const isLine = deco.kind === "line";
+                        const isImage = deco.kind === "image";
+                        const c = deco.color || "#d4a017";
+                        return (
+                          <div key={deco.id} style={{
                             position: "absolute",
-                            left: offsetX + t.x * floorScale, top: offsetY + t.y * floorScale,
-                            width: w, height: h,
-                            transform: t.rot ? `rotate(${t.rot}deg)` : undefined, transformOrigin: "center",
-                            zIndex: t.zIdx ?? 1,
-                            cursor: canSeat ? "pointer" : "default",
-                          }}
-                        >
-                          <div style={{
-                            position: "absolute", inset: 0, borderRadius: br,
-                            background: bg,
-                            border: `${Math.max(1, 2 * floorScale)}px solid ${brd}`,
-                            boxShadow: breached
-                              ? `0 0 0 ${2 * floorScale}px ${C.red}66, 0 0 ${10 * floorScale}px rgba(239,68,68,0.5)`
-                              : `0 0 ${6 * floorScale}px ${cfg.glow}, 0 ${2 * floorScale}px ${6 * floorScale}px rgba(0,0,0,0.4)`,
-                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                            overflow: "hidden", transition: "border-color 0.3s",
-                            animation: breached ? "blink 1s infinite" : undefined,
+                            left: offsetX + deco.x * floorScale, top: offsetY + deco.y * floorScale,
+                            width: deco.w * floorScale, height: Math.max(isLine ? 2 : 20, deco.h * floorScale),
+                            transform: `rotate(${deco.rot}deg)`, transformOrigin: "center",
+                            zIndex: deco.zIdx, pointerEvents: "none",
                           }}>
-                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
-                            <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 3 * floorScale), zIndex: 1 }}>
-                              <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
-                              {t.seats > 0 && <span style={{ fontSize: Math.max(7, fSz * 0.65), color: "rgba(255,255,255,0.7)", lineHeight: 1 }}>({t.seats})</span>}
-                            </div>
-                            {t.name && <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>}
-                            {seated && orderSt === "free" && (
-                              <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "#c4b5fd", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
-                            )}
-                            {start && <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1 }}>⏱ {fmtTimer(start)}</span>}
-                            {canSeat && (
-                              <span style={{ fontSize: Math.max(6, fSz * 0.5), color: "#86efac", zIndex: 1, lineHeight: 1 }}>👆 הושב</span>
+                            {isLine ? (
+                              <div style={{ position: "absolute", inset: 0, background: c, borderRadius: 2 }} />
+                            ) : isImage ? (
+                              <div style={{ position: "absolute", inset: 0, borderRadius: 6 * floorScale, overflow: "hidden" }}>
+                                {deco.imgSrc && <img src={deco.imgSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
+                              </div>
+                            ) : (
+                              <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1px solid ${c}60`, borderRadius: 6 * floorScale, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <span style={{ fontSize: Math.max(9, 13 * floorScale), color: c, fontWeight: 700, textAlign: "center", padding: "0 4px" }}>{deco.text}</span>
+                              </div>
                             )}
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
 
-                    {/* Fullscreen button */}
-                    <button
-                      onClick={() => {
-                        if (!document.fullscreenElement) {
-                          floorRef.current?.requestFullscreen();
-                        } else {
-                          document.exitFullscreen();
-                        }
-                      }}
-                      title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"}
-                      style={{
-                        position: "absolute", top: 8, right: 8, zIndex: 50,
-                        background: "rgba(0,0,0,0.65)", border: `1px solid ${C.border}`,
-                        borderRadius: 8, padding: "5px 9px", cursor: "pointer",
-                        color: C.sub, fontSize: 15, backdropFilter: "blur(4px)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {isFullscreen ? "⊡" : "⛶"}
-                    </button>
+                      {/* Tables */}
+                      {activeRoom.tables.slice().sort((a, b) => (a.zIdx ?? 0) - (b.zIdx ?? 0)).map(t => {
+                        const tNum      = String(t.num);
+                        const orderSt   = tableStatus(tNum, orders);
+                        const seated    = seatedTables.get(tNum);
+                        const effectSt  = seated && orderSt === "free" ? "seated" : orderSt;
+                        const start     = timerStart(tNum, orders);
+                        const mins      = start ? timerMinutes(start) : 0;
+                        const breached  = start && mins >= slaMin;
+                        const cfg       = ORDER_STATUS_CFG[effectSt];
+                        const bg        = t.customColor
+                          ? `radial-gradient(circle at 40% 35%,${t.customColor}cc,${t.customColor}44)`
+                          : cfg.bg;
+                        const brd       = t.customColor || (breached ? C.red : cfg.border);
+                        const br        = SHAPE_BR[t.shape];
+                        const fSz       = Math.max(9, Math.min(t.w, t.h) * floorScale * 0.22);
+                        const w         = t.w * floorScale;
+                        const h         = t.h * floorScale;
+                        const canSeat   = effectSt === "free" && waitlist.length > 0;
+                        return (
+                          <div
+                            key={t.id}
+                            onClick={() => canSeat && setSeatTableModal({ tableNum: tNum, seats: t.seats })}
+                            style={{
+                              position: "absolute",
+                              left: offsetX + t.x * floorScale, top: offsetY + t.y * floorScale,
+                              width: w, height: h,
+                              transform: t.rot ? `rotate(${t.rot}deg)` : undefined, transformOrigin: "center",
+                              zIndex: t.zIdx ?? 1,
+                              cursor: canSeat ? "pointer" : "default",
+                            }}
+                          >
+                            <div style={{
+                              position: "absolute", inset: 0, borderRadius: br,
+                              background: bg,
+                              border: `${Math.max(1, 2 * floorScale)}px solid ${brd}`,
+                              boxShadow: breached
+                                ? `0 0 0 ${2 * floorScale}px ${C.red}66, 0 0 ${10 * floorScale}px rgba(239,68,68,0.5)`
+                                : `0 0 ${6 * floorScale}px ${cfg.glow}, 0 ${2 * floorScale}px ${6 * floorScale}px rgba(0,0,0,0.4)`,
+                              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                              overflow: "hidden", transition: "border-color 0.3s",
+                              animation: breached ? "blink 1s infinite" : undefined,
+                            }}>
+                              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
+                              <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 3 * floorScale), zIndex: 1 }}>
+                                <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
+                                {t.seats > 0 && <span style={{ fontSize: Math.max(7, fSz * 0.65), color: "rgba(255,255,255,0.7)", lineHeight: 1 }}>({t.seats})</span>}
+                              </div>
+                              {t.name && <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>}
+                              {seated && orderSt === "free" && (
+                                <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "#c4b5fd", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
+                              )}
+                              {start && <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1 }}>⏱ {fmtTimer(start)}</span>}
+                              {canSeat && (
+                                <span style={{ fontSize: Math.max(6, fSz * 0.5), color: "#86efac", zIndex: 1, lineHeight: 1 }}>👆 הושב</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
 
-                    {/* Legend */}
-                    <div style={{ position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 50 }}>
-                      {([["#2e7d2e","פנוי"],["#7c3aed","הושב"],["#b87520","תפוס"],["#8b1a1a","חשבון"]] as const).map(([col, lbl]) => (
-                        <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 7, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 10, backdropFilter: "blur(4px)" }}>
-                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, display: "inline-block" }} />
-                          <span style={{ color: "#e5d5b5" }}>{lbl}</span>
+                      {/* Fullscreen button */}
+                      <button
+                        onClick={() => {
+                          if (!document.fullscreenElement) {
+                            floorRef.current?.requestFullscreen();
+                          } else {
+                            document.exitFullscreen();
+                          }
+                        }}
+                        title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"}
+                        style={{
+                          position: "absolute", top: 8, right: 8, zIndex: 50,
+                          background: "rgba(0,0,0,0.65)", border: `1px solid ${C.border}`,
+                          borderRadius: 8, padding: "5px 9px", cursor: "pointer",
+                          color: C.sub, fontSize: 15, backdropFilter: "blur(4px)",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {isFullscreen ? "⊡" : "⛶"}
+                      </button>
+
+                      {/* Legend */}
+                      <div style={{ position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 50 }}>
+                        {([["#2e7d2e","פנוי"],["#7c3aed","הושב"],["#b87520","תפוס"],["#8b1a1a","חשבון"]] as const).map(([col, lbl]) => (
+                          <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 7, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 10, backdropFilter: "blur(4px)" }}>
+                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, display: "inline-block" }} />
+                            <span style={{ color: "#e5d5b5" }}>{lbl}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* ── Waitlist sidebar ── */}
+            <div style={{ width: 264, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", background: C.card, flexShrink: 0, overflow: "hidden" }}>
+              {/* Header */}
+              <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <span style={{ fontWeight: 700, color: C.gold, fontSize: 14 }}>⏳ המתנה</span>
+                {waitlist.length > 0 && (
+                  <span style={{ background: `${C.orange}22`, color: C.orange, borderRadius: 20, padding: "1px 8px", fontSize: 12, fontWeight: 700 }}>{waitlist.length}</span>
+                )}
+                <span style={{ flex: 1 }} />
+                <button onClick={() => setTab("waitlist")} style={{ fontSize: 11, color: C.sub, background: "none", border: "none", cursor: "pointer" }}>הכל ←</button>
+              </div>
+
+              {/* Quick-add */}
+              <div style={{ padding: "8px 14px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 5 }}>
+                  <input value={wName} onChange={e => setWName(e.target.value)} onKeyDown={e => e.key === "Enter" && addToWaitlist()}
+                    placeholder="שם קבוצה..." style={{ ...INP, flex: 1, padding: "5px 8px", fontSize: 12 }} />
+                  <input type="number" value={wGuests} min={1} max={20} onChange={e => setWGuests(Number(e.target.value))}
+                    style={{ ...INP, width: 44, padding: "5px 4px", fontSize: 12, textAlign: "center" }} />
+                  <button onClick={addToWaitlist} style={{ ...BTN(C.gold), padding: "5px 10px", fontSize: 13, flexShrink: 0 }}>+</button>
+                </div>
+              </div>
+
+              {/* Waitlist items */}
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                {waitlist.length === 0 ? (
+                  <div style={{ color: C.muted, textAlign: "center", padding: 24, fontSize: 12 }}>אין ממתינים</div>
+                ) : (
+                  waitlist.map((p, idx) => {
+                    const waitedMin = Math.floor((Date.now() - p.since) / 60000);
+                    const urgent = waitedMin >= 20;
+                    return (
+                      <div key={p.id} style={{ padding: "8px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8, background: urgent ? "rgba(239,68,68,0.05)" : "transparent" }}>
+                        <span style={{ color: C.muted, fontSize: 11, minWidth: 18 }}>#{idx + 1}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          <div style={{ fontSize: 11, color: urgent ? C.red : C.muted }}>👤{p.guests} · {fmtMin(waitedMin)}{urgent ? " ⚠" : ""}</div>
                         </div>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
+                        <button onClick={() => seatFromWaitlist(p)} style={{ ...BTN(C.green), padding: "4px 8px", fontSize: 11, flexShrink: 0 }}>הושב</button>
+                        <button onClick={() => removeFromWaitlist(p.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14, flexShrink: 0, lineHeight: 1 }}>✕</button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Table count summary + SLA control */}
+              <div style={{ borderTop: `1px solid ${C.border}`, padding: "10px 14px", flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                  {(["free","occupied","bill-requested"] as const).map(s => {
+                    const count = activeRoom?.tables.filter(t => tableStatus(String(t.num), orders) === s).length ?? 0;
+                    const col = { free: C.green, occupied: C.orange, "bill-requested": C.red }[s];
+                    const lbl = { free: "פנוי", occupied: "תפוס", "bill-requested": "חשבון" }[s];
+                    return (
+                      <div key={s} style={{ flex: 1, textAlign: "center" }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: col }}>{count}</div>
+                        <div style={{ fontSize: 10, color: C.muted }}>{lbl}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
+                  <span>SLA:</span>
+                  <input type="number" value={slaMin} onChange={e => setSlaMin(Number(e.target.value))} min={10} max={120}
+                    style={{ ...INP, width: 44, padding: "3px 5px", fontSize: 11 }} />
+                  <span>דק'</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
