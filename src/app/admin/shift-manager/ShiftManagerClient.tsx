@@ -77,6 +77,7 @@ const SHAPE_BR: Record<TableShape, string> = {
 };
 const ORDER_STATUS_CFG = {
   free:            { bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: "#2e7d2e", glow: "rgba(34,197,94,0.35)"  },
+  seated:          { bg: "radial-gradient(circle at 40% 35%,#3a1a5c,#1a0a2e)", border: "#7c3aed", glow: "rgba(124,58,237,0.45)" },
   occupied:        { bg: "radial-gradient(circle at 40% 35%,#5c3a00,#2e1900)", border: "#b87520", glow: "rgba(249,115,22,0.35)"  },
   "bill-requested":{ bg: "radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a)", border: "#8b1a1a", glow: "rgba(239,68,68,0.45)"  },
 };
@@ -119,8 +120,22 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const [floorScale,   setFloorScale]   = useState(1);
   const [slaMin,       setSlaMin]       = useState(45);
 
-  // Waitlist
-  const [waitlist,     setWaitlist]     = useState<WaitParty[]>([]);
+  // Seated tables — local state (party directed to table but no order yet)
+  const [seatedTables, setSeatedTables] = useState<Map<string, { partyName: string; guests: number; since: number }>>(new Map());
+  // Manual seat modal: pick which waitlist party to seat at a specific table
+  const [seatTableModal, setSeatTableModal] = useState<{ tableNum: string; seats: number } | null>(null);
+
+  // Waitlist — persisted to localStorage per restaurant
+  const waitlistKey = `menu4u_waitlist_${restaurantId}`;
+  const [waitlist, setWaitlist] = useState<WaitParty[]>(() => {
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem(waitlistKey) : null;
+      return saved ? (JSON.parse(saved) as WaitParty[]) : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(waitlistKey, JSON.stringify(waitlist)); } catch { /* ignore */ }
+  }, [waitlist, waitlistKey]);
   const [wName,        setWName]        = useState("");
   const [wGuests,      setWGuests]      = useState(2);
   const prevFreeTables                  = useRef<Set<string>>(new Set());
@@ -215,6 +230,18 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
     return () => obs.disconnect();
   }, [layout, roomIdx]);
 
+  // ── Auto-clear seatedTables once waiter creates a real order ────────
+  useEffect(() => {
+    setSeatedTables(prev => {
+      if (prev.size === 0) return prev;
+      const next = new Map(prev);
+      for (const tableNum of next.keys()) {
+        if (tableStatus(tableNum, orders) !== "free") next.delete(tableNum);
+      }
+      return next.size !== prev.size ? next : prev;
+    });
+  }, [orders]);
+
   // ── Auto-suggest waitlist when a table frees ──────────────────────
   useEffect(() => {
     const room = layout?.rooms[roomIdx];
@@ -249,10 +276,26 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   function removeFromWaitlist(id: string) {
     setWaitlist(w => w.filter(p => p.id !== id));
   }
-  function seatFromWaitlist(party: WaitParty) {
+  function seatPartyAtTable(party: WaitParty, tableNum: string) {
     removeFromWaitlist(party.id);
     setSeatSuggest(null);
-    showToast(`✓ ${party.name} הושבו`);
+    setSeatTableModal(null);
+    setSeatedTables(prev => {
+      const next = new Map(prev);
+      next.set(tableNum, { partyName: party.name, guests: party.guests, since: Date.now() });
+      return next;
+    });
+    showToast(`✓ ${party.name} הושבו לשולחן ${tableNum}`);
+  }
+  function seatFromWaitlist(party: WaitParty) {
+    const tableNum = seatSuggest?.table ? String(seatSuggest.table.num) : null;
+    if (tableNum) {
+      seatPartyAtTable(party, tableNum);
+    } else {
+      removeFromWaitlist(party.id);
+      setSeatSuggest(null);
+      showToast(`✓ ${party.name} הושבו`);
+    }
   }
 
   // ── 86 toggle ─────────────────────────────────────────────────────
@@ -476,28 +519,36 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
                     {/* Tables */}
                     {activeRoom.tables.slice().sort((a, b) => (a.zIdx ?? 0) - (b.zIdx ?? 0)).map(t => {
-                      const tNum     = String(t.num);
-                      const status   = tableStatus(tNum, orders);
-                      const start    = timerStart(tNum, orders);
-                      const mins     = start ? timerMinutes(start) : 0;
-                      const breached = start && mins >= slaMin;
-                      const cfg      = ORDER_STATUS_CFG[status];
-                      const bg       = t.customColor
+                      const tNum      = String(t.num);
+                      const orderSt   = tableStatus(tNum, orders);
+                      const seated    = seatedTables.get(tNum);
+                      const effectSt  = seated && orderSt === "free" ? "seated" : orderSt;
+                      const start     = timerStart(tNum, orders);
+                      const mins      = start ? timerMinutes(start) : 0;
+                      const breached  = start && mins >= slaMin;
+                      const cfg       = ORDER_STATUS_CFG[effectSt];
+                      const bg        = t.customColor
                         ? `radial-gradient(circle at 40% 35%,${t.customColor}cc,${t.customColor}44)`
                         : cfg.bg;
-                      const brd      = t.customColor || (breached ? C.red : cfg.border);
-                      const br       = SHAPE_BR[t.shape];
-                      const fSz      = Math.max(9, Math.min(t.w, t.h) * floorScale * 0.22);
-                      const w        = t.w * floorScale;
-                      const h        = t.h * floorScale;
+                      const brd       = t.customColor || (breached ? C.red : cfg.border);
+                      const br        = SHAPE_BR[t.shape];
+                      const fSz       = Math.max(9, Math.min(t.w, t.h) * floorScale * 0.22);
+                      const w         = t.w * floorScale;
+                      const h         = t.h * floorScale;
+                      const canSeat   = effectSt === "free" && waitlist.length > 0;
                       return (
-                        <div key={t.id} style={{
-                          position: "absolute",
-                          left: t.x * floorScale, top: t.y * floorScale,
-                          width: w, height: h,
-                          transform: t.rot ? `rotate(${t.rot}deg)` : undefined, transformOrigin: "center",
-                          zIndex: t.zIdx ?? 1,
-                        }}>
+                        <div
+                          key={t.id}
+                          onClick={() => canSeat && setSeatTableModal({ tableNum: tNum, seats: t.seats })}
+                          style={{
+                            position: "absolute",
+                            left: t.x * floorScale, top: t.y * floorScale,
+                            width: w, height: h,
+                            transform: t.rot ? `rotate(${t.rot}deg)` : undefined, transformOrigin: "center",
+                            zIndex: t.zIdx ?? 1,
+                            cursor: canSeat ? "pointer" : "default",
+                          }}
+                        >
                           <div style={{
                             position: "absolute", inset: 0, borderRadius: br,
                             background: bg,
@@ -515,7 +566,13 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                               {t.seats > 0 && <span style={{ fontSize: Math.max(7, fSz * 0.65), color: "rgba(255,255,255,0.7)", lineHeight: 1 }}>({t.seats})</span>}
                             </div>
                             {t.name && <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>}
+                            {seated && orderSt === "free" && (
+                              <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "#c4b5fd", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
+                            )}
                             {start && <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1 }}>⏱ {fmtTimer(start)}</span>}
+                            {canSeat && (
+                              <span style={{ fontSize: Math.max(6, fSz * 0.5), color: "#86efac", zIndex: 1, lineHeight: 1 }}>👆 הושב</span>
+                            )}
                           </div>
                         </div>
                       );
@@ -523,7 +580,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
                     {/* Legend */}
                     <div style={{ position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 50 }}>
-                      {([["#2e7d2e","פנוי"],["#b87520","תפוס"],["#8b1a1a","חשבון"]] as const).map(([col, lbl]) => (
+                      {([["#2e7d2e","פנוי"],["#7c3aed","הושב"],["#b87520","תפוס"],["#8b1a1a","חשבון"]] as const).map(([col, lbl]) => (
                         <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 7, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 10, backdropFilter: "blur(4px)" }}>
                           <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, display: "inline-block" }} />
                           <span style={{ color: "#e5d5b5" }}>{lbl}</span>
@@ -681,6 +738,31 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
               <button onClick={() => seatFromWaitlist(seatSuggest.party)} style={BTN(C.green)}>✓ הושב</button>
               <button onClick={() => setSeatSuggest(null)} style={BTN(C.red, true)}>דחה</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Manual seat modal (click free table → pick party) ── */}
+      {seatTableModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000 }} onClick={() => setSeatTableModal(null)}>
+          <div style={{ background: C.panel, border: `1px solid ${C.gold}`, borderRadius: 16, padding: 28, maxWidth: 360, width: "90%", animation: "slideDown 0.2s ease", direction: "rtl" }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 16, textAlign: "center" }}>
+              🪑 הושבה לשולחן {seatTableModal.tableNum} ({seatTableModal.seats} מקומות)
+            </h3>
+            {waitlist.length === 0 ? (
+              <p style={{ color: C.muted, fontSize: 13, textAlign: "center", marginBottom: 16 }}>אין קבוצות ברשימת ההמתנה</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                {waitlist.map(p => (
+                  <button key={p.id} onClick={() => seatPartyAtTable(p, seatTableModal.tableNum)}
+                    style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", color: C.text }}>
+                    <span style={{ fontWeight: 700 }}>{p.name}</span>
+                    <span style={{ fontSize: 12, color: C.sub }}>{p.guests} אורחים · {fmtMin(Math.floor((Date.now() - p.since) / 60000))}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setSeatTableModal(null)} style={{ ...BTN(C.muted, true), width: "100%" }}>ביטול</button>
           </div>
         </div>
       )}
