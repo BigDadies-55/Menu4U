@@ -379,7 +379,7 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
 
   // ── Render ────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: C.bg, color: C.text, fontFamily: "system-ui,sans-serif", direction: "rtl", position: "relative", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)", background: C.bg, color: C.text, fontFamily: "system-ui,sans-serif", direction: "rtl", position: "relative", overflow: "hidden" }}>
 
       {/* Blink keyframe */}
       <style>{`
