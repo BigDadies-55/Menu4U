@@ -644,45 +644,72 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
         {/* ── 86 MENU TAB ── */}
         {tab === "86" && (
-          <div style={{ padding: 20, maxWidth: 700, margin: "0 auto", overflowY: "auto", flex: 1 }}>
-            <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 4 }}>86 — ניהול זמינות תפריט</h2>
-            <p style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>פריטים מסומנים כ-86 לא יוצגו לאורחים ולמלצרים.</p>
-            <div style={{ marginBottom: 16 }}>
-              <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder="🔍 חפש פריט..." style={INP} />
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+
+            {/* Toolbar */}
+            <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: C.card }}>
+              <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder="🔍 חפש פריט..." style={{ ...INP, maxWidth: 280 }} />
+              <span style={{ fontSize: 12, color: C.muted }}>
+                {filtered86.reduce((s, c) => s + c.items.length, 0)} פריטים ·{" "}
+                <span style={{ color: C.red, fontWeight: 700 }}>
+                  {filtered86.reduce((s, c) => s + c.items.filter(i => !i.isActive).length, 0)} ב-86
+                </span>
+              </span>
             </div>
-            {filtered86.map(cat => (
-              <div key={cat.id} style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.gold, marginBottom: 8, borderBottom: `1px solid ${C.border}`, paddingBottom: 4 }}>
-                  {cat.name} <span style={{ color: C.muted, fontWeight: 400, fontSize: 11 }}>· {cat.menuName}</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {cat.items.map(item => {
-                    const is86 = !item.isActive;
-                    return (
-                      <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, background: C.card, border: `1px solid ${is86 ? C.red + "44" : C.border}`, borderRadius: 8, padding: "10px 14px", opacity: togglingId === item.id ? 0.6 : 1 }}>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontWeight: 600, fontSize: 14, textDecoration: is86 ? "line-through" : "none", color: is86 ? C.muted : C.text }}>
-                            {item.name}
-                          </span>
-                          {is86 && <span style={{ marginRight: 8, fontSize: 11, color: C.red, fontWeight: 700 }}>86</span>}
-                        </div>
-                        <span style={{ color: C.sub, fontSize: 13 }}>₪{item.price.toFixed(0)}</span>
-                        <button
-                          onClick={() => toggle86(item.id, item.isActive)}
-                          disabled={togglingId === item.id}
-                          style={BTN(is86 ? C.green : C.red, !is86)}
-                        >
-                          {is86 ? "החזר" : "86"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+
+            {/* Category columns */}
+            <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+              {filtered86.length === 0 && (
+                <div style={{ color: C.muted, textAlign: "center", padding: 60, fontSize: 14 }}>אין פריטים תואמים</div>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, alignItems: "start" }}>
+                {filtered86.map(cat => (
+                  <div key={cat.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+                    {/* Category header */}
+                    <div style={{ padding: "8px 12px", background: "rgba(212,160,23,0.08)", borderBottom: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>{cat.name}</div>
+                      <div style={{ fontSize: 10, color: C.muted }}>{cat.menuName}</div>
+                    </div>
+                    {/* Items */}
+                    <div style={{ padding: "6px 0" }}>
+                      {cat.items.map(item => {
+                        const is86 = !item.isActive;
+                        return (
+                          <div key={item.id} style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            padding: "8px 12px",
+                            borderBottom: `1px solid ${C.border}`,
+                            opacity: togglingId === item.id ? 0.5 : 1,
+                            background: is86 ? "rgba(239,68,68,0.06)" : "transparent",
+                            transition: "background 0.2s",
+                          }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: is86 ? C.muted : C.text, textDecoration: is86 ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {item.name}
+                              </div>
+                              <div style={{ fontSize: 11, color: C.muted }}>₪{item.price.toFixed(0)}</div>
+                            </div>
+                            <button
+                              onClick={() => toggle86(item.id, item.isActive)}
+                              disabled={togglingId === item.id}
+                              style={{
+                                flexShrink: 0,
+                                padding: "4px 10px", fontSize: 12, fontWeight: 700,
+                                borderRadius: 6, cursor: "pointer", border: "none",
+                                background: is86 ? "#16a34a" : "#dc2626",
+                                color: "#fff",
+                              }}
+                            >
+                              {is86 ? "✓ החזר" : "86"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-            {!filtered86.length && (
-              <div style={{ color: C.muted, textAlign: "center", padding: 40 }}>אין פריטים תואמים</div>
-            )}
+            </div>
           </div>
         )}
 
