@@ -49,9 +49,9 @@ const SHAPE_BR: Record<TableShape, string> = {
 
 // ── Order-status visual config for floor rendering ─────────────────
 const ORDER_STATUS_CFG = {
-  free:            { bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: "#2e7d2e",  glow: "rgba(34,197,94,0.35)"  },
-  occupied:        { bg: "radial-gradient(circle at 40% 35%,#5c3a00,#2e1900)", border: "#b87520",  glow: "rgba(249,115,22,0.35)"  },
-  "bill-requested":{ bg: "radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a)", border: "#8b1a1a",  glow: "rgba(239,68,68,0.45)"   },
+  free:            { bg: "#0e0c0a", border: "#1e5c1e", stripe: "#22c55e", badge: "#22c55e", badgeBg: "rgba(34,197,94,0.12)",  label: "פנוי",   glow: "rgba(34,197,94,0.1)"   },
+  occupied:        { bg: "#0e0c0a", border: "#7a4a00", stripe: "#f97316", badge: "#f97316", badgeBg: "rgba(249,115,22,0.12)", label: "תפוס",   glow: "rgba(249,115,22,0.1)"  },
+  "bill-requested":{ bg: "#0e0c0a", border: "#6b1414", stripe: "#ef4444", badge: "#ef4444", badgeBg: "rgba(239,68,68,0.12)",  label: "חשבון",  glow: "rgba(239,68,68,0.12)"  },
 };
 const INP: React.CSSProperties = { background: C.inp, border: `1px solid ${C.inpBd}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "7px 10px", width: "100%", outline: "none" };
 const BTN = (col: string, light = false): React.CSSProperties => ({
@@ -536,18 +536,16 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
             </div>
           )}
           {activeRoom && (() => {
-            const bgCfg = BGS[activeRoom.bg ?? 0] ?? BGS[0];
             return (
               <>
-                {/* ── Room background (same as layout-builder) ── */}
-                <div style={{
-                  position: "absolute", top: offsetY, left: offsetX,
-                  width: maxX * scale, height: maxY * scale,
-                  ...(activeRoom.bgImg
-                    ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
-                    : { background: bgCfg.cw, backgroundSize: `${40 * scale}px ${40 * scale}px` }
-                  ),
-                }} />
+                {/* Custom background image only — texture removed */}
+                {activeRoom.bgImg && (
+                  <div style={{
+                    position: "absolute", top: offsetY, left: offsetX,
+                    width: maxX * scale, height: maxY * scale,
+                    backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1,
+                  }} />
+                )}
 
                 {/* ── Canvas layer: decorations + tables ── */}
                 <div style={{ position: "absolute", top: offsetY, left: offsetX, width: maxX * scale, height: maxY * scale }}>
@@ -590,11 +588,9 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                       const status  = tableStatus(tNum, orders);
                       const start   = timerStart(tNum, orders);
                       const guests  = tableGuests(tNum, orders);
-                      const cfg     = ORDER_STATUS_CFG[status];
-                      const bg      = table.customColor
-                        ? `radial-gradient(circle at 40% 35%,${table.customColor}cc,${table.customColor}44)`
-                        : cfg.bg;
-                      const brd     = table.customColor || cfg.border;
+                      const cfg         = ORDER_STATUS_CFG[status];
+                      const accentColor = table.customColor || cfg.stripe;
+                      const brd         = table.customColor ? table.customColor + "99" : cfg.border;
                       const br      = SHAPE_BR[table.shape];
                       const isSel   = selTable === tNum && panel !== null;
                       const fSz     = Math.max(9, Math.min(table.w, table.h) * scale * 0.22);
@@ -620,46 +616,49 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                             opacity: isOther ? 0.45 : 1,
                           }}
                         >
-                          {/* Table body (layout-builder style) */}
                           <div style={{
                             position: "absolute", inset: 0, borderRadius: br,
-                            background: bg,
-                            border: `${Math.max(1, 2 * scale)}px solid ${isSel ? "#d4a017" : isOther ? "rgba(255,255,255,0.2)" : brd}`,
-                            boxShadow: isSel
-                              ? `0 0 0 ${2 * scale}px #d4a01766, 0 0 ${12 * scale}px ${cfg.glow}`
-                              : isOther ? "none"
-                              : `0 0 ${8 * scale}px ${cfg.glow}, 0 ${2 * scale}px ${8 * scale}px rgba(0,0,0,0.4)`,
+                            background: cfg.bg,
+                            border: `${Math.max(1, 1.5 * scale)}px solid ${isSel ? "#d4a017" : isOther ? "rgba(255,255,255,0.06)" : brd}`,
+                            boxShadow: isSel ? `0 0 0 ${2 * scale}px rgba(212,160,23,0.35)` : isOther ? "none" : `0 0 ${5 * scale}px ${cfg.glow}`,
                             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                             overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s",
                           }}>
-                            {/* Gloss highlight (same as layout-builder) */}
-                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
+                            {/* Top accent stripe */}
+                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: Math.max(2, 3 * scale), background: isSel ? "#d4a017" : accentColor, opacity: isOther ? 0.3 : 1 }} />
 
-                            {/* Number + seats */}
-                            <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 3 * scale), zIndex: 1 }}>
+                            {/* Status badge */}
+                            {!isOther && w >= 44 && (
+                              <div style={{ position: "absolute", top: Math.max(5, 7 * scale), right: Math.max(3, 4 * scale), background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: `0 ${Math.max(3, 5 * scale)}px`, lineHeight: `${Math.max(14, 17 * scale)}px`, zIndex: 2 }}>
+                                <span style={{ fontSize: Math.max(6, 8 * scale), fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
+                              </div>
+                            )}
+
+                            {/* Number */}
+                            <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 2 * scale), zIndex: 1 }}>
                               <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{table.num}</span>
-                              {table.seats > 0 && (
-                                <span style={{ fontSize: Math.max(7, fSz * 0.65), fontWeight: 700, color: "rgba(255,255,255,0.7)", lineHeight: 1 }}>({table.seats})</span>
+                              {table.seats > 0 && w >= 52 && (
+                                <span style={{ fontSize: Math.max(7, fSz * 0.58), color: "rgba(255,255,255,0.32)", lineHeight: 1 }}>({table.seats})</span>
                               )}
                             </div>
 
                             {/* Table name */}
-                            {table.name && (
-                              <div style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, marginTop: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {table.name && w >= 52 && (
+                              <div style={{ fontSize: Math.max(7, fSz * 0.5), color: "rgba(255,255,255,0.38)", zIndex: 1, marginTop: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {table.name}
                               </div>
                             )}
 
-                            {/* Live timer */}
+                            {/* Timer */}
                             {start && (
                               <div style={{ fontSize: Math.max(7, fSz * 0.6), color: status === "bill-requested" ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1, lineHeight: 1 }}>
                                 ⏱ {fmtTimer(start)}
                               </div>
                             )}
 
-                            {/* Covers */}
-                            {guests > 0 && (
-                              <div style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.6)", zIndex: 1, lineHeight: 1 }}>
+                            {/* Guests */}
+                            {guests > 0 && w >= 40 && (
+                              <div style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.42)", zIndex: 1, lineHeight: 1 }}>
                                 👤{guests}
                               </div>
                             )}
@@ -671,7 +670,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
                 {/* Legend overlay */}
                 <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap", zIndex: 50 }}>
-                  {([["free","#2e7d2e","פנוי"],["occupied","#b87520","תפוס"],["bill-requested","#8b1a1a","חשבון"]] as const).map(([, col, lbl]) => (
+                  {([["free","#22c55e","פנוי"],["occupied","#f97316","תפוס"],["bill-requested","#ef4444","חשבון"]] as const).map(([, col, lbl]) => (
                     <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 11, backdropFilter: "blur(4px)" }}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, display: "inline-block" }} />
                       <span style={{ color: "#e5d5b5" }}>{lbl}</span>

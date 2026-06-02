@@ -78,10 +78,10 @@ const SHAPE_BR: Record<TableShape, string> = {
   round: "50%", rect: "10px", square: "8px", oval: "50%/40%", long: "12px", banquet: "6px",
 };
 const ORDER_STATUS_CFG = {
-  free:            { bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: "#2e7d2e", glow: "rgba(34,197,94,0.35)"  },
-  seated:          { bg: "radial-gradient(circle at 40% 35%,#3a1a5c,#1a0a2e)", border: "#7c3aed", glow: "rgba(124,58,237,0.45)" },
-  occupied:        { bg: "radial-gradient(circle at 40% 35%,#5c3a00,#2e1900)", border: "#b87520", glow: "rgba(249,115,22,0.35)"  },
-  "bill-requested":{ bg: "radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a)", border: "#8b1a1a", glow: "rgba(239,68,68,0.45)"  },
+  free:            { bg: "#0e0c0a", border: "#1e5c1e", stripe: "#22c55e", badge: "#22c55e", badgeBg: "rgba(34,197,94,0.12)",   label: "פנוי",   glow: "rgba(34,197,94,0.1)"   },
+  seated:          { bg: "#0e0c0a", border: "#4a2080", stripe: "#a78bfa", badge: "#a78bfa", badgeBg: "rgba(167,139,250,0.12)", label: "הושב",   glow: "rgba(124,58,237,0.08)"  },
+  occupied:        { bg: "#0e0c0a", border: "#7a4a00", stripe: "#f97316", badge: "#f97316", badgeBg: "rgba(249,115,22,0.12)",  label: "תפוס",   glow: "rgba(249,115,22,0.1)"  },
+  "bill-requested":{ bg: "#0e0c0a", border: "#6b1414", stripe: "#ef4444", badge: "#ef4444", badgeBg: "rgba(239,68,68,0.12)",   label: "חשבון",  glow: "rgba(239,68,68,0.12)"  },
 };
 
 function statusColor(s: "free" | "occupied" | "bill-requested"): string {
@@ -542,18 +542,16 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                   </div>
                 )}
                 {activeRoom && (() => {
-                  const bgCfg = BGS[activeRoom.bg ?? 0] ?? BGS[0];
                   return (
                     <>
-                      {/* Room background */}
-                      <div style={{
-                        position: "absolute", top: offsetY, left: offsetX,
-                        width: mapMaxX * floorScale, height: mapMaxY * floorScale,
-                        ...(activeRoom.bgImg
-                          ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
-                          : { background: bgCfg.cw, backgroundSize: `${40 * floorScale}px ${40 * floorScale}px` }
-                        ),
-                      }} />
+                      {/* Custom background image only — texture removed */}
+                      {activeRoom.bgImg && (
+                        <div style={{
+                          position: "absolute", top: offsetY, left: offsetX,
+                          width: mapMaxX * floorScale, height: mapMaxY * floorScale,
+                          backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1,
+                        }} />
+                      )}
 
                       {/* Decorations */}
                       {(activeRoom.decos ?? []).slice().sort((a, b) => a.zIdx - b.zIdx).map(deco => {
@@ -592,11 +590,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                         const start     = timerStart(tNum, orders);
                         const mins      = start ? timerMinutes(start) : 0;
                         const breached  = start && mins >= slaMin;
-                        const cfg       = ORDER_STATUS_CFG[effectSt];
-                        const bg        = t.customColor
-                          ? `radial-gradient(circle at 40% 35%,${t.customColor}cc,${t.customColor}44)`
-                          : cfg.bg;
-                        const brd       = t.customColor || (breached ? C.red : cfg.border);
+                        const cfg         = ORDER_STATUS_CFG[effectSt];
+                        const accentColor = t.customColor || cfg.stripe;
+                        const brd         = t.customColor ? t.customColor + "99" : breached ? C.red : cfg.border;
                         const br        = SHAPE_BR[t.shape];
                         const fSz       = Math.max(9, Math.min(t.w, t.h) * floorScale * 0.22);
                         const w         = t.w * floorScale;
@@ -617,23 +613,30 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                           >
                             <div style={{
                               position: "absolute", inset: 0, borderRadius: br,
-                              background: bg,
-                              border: `${Math.max(1, 2 * floorScale)}px solid ${brd}`,
+                              background: cfg.bg,
+                              border: `${Math.max(1, 1.5 * floorScale)}px solid ${brd}`,
                               boxShadow: breached
-                                ? `0 0 0 ${2 * floorScale}px ${C.red}66, 0 0 ${10 * floorScale}px rgba(239,68,68,0.5)`
-                                : `0 0 ${6 * floorScale}px ${cfg.glow}, 0 ${2 * floorScale}px ${6 * floorScale}px rgba(0,0,0,0.4)`,
+                                ? `0 0 0 ${2 * floorScale}px ${C.red}55, 0 0 ${8 * floorScale}px rgba(239,68,68,0.3)`
+                                : `0 0 ${5 * floorScale}px ${cfg.glow}`,
                               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                               overflow: "hidden", transition: "border-color 0.3s",
                               animation: breached ? "blink 1s infinite" : undefined,
                             }}>
-                              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)", pointerEvents: "none" }} />
-                              <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 3 * floorScale), zIndex: 1 }}>
+                              {/* Top accent stripe */}
+                              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: Math.max(2, 3 * floorScale), background: breached ? C.red : accentColor }} />
+                              {/* Status badge */}
+                              {w >= 44 && (
+                                <div style={{ position: "absolute", top: Math.max(5, 7 * floorScale), right: Math.max(3, 4 * floorScale), background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: `0 ${Math.max(3, 5 * floorScale)}px`, lineHeight: `${Math.max(14, 17 * floorScale)}px`, zIndex: 2 }}>
+                                  <span style={{ fontSize: Math.max(6, 8 * floorScale), fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
+                                </div>
+                              )}
+                              <div style={{ display: "flex", alignItems: "baseline", gap: Math.max(1, 2 * floorScale), zIndex: 1 }}>
                                 <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
-                                {t.seats > 0 && <span style={{ fontSize: Math.max(7, fSz * 0.65), color: "rgba(255,255,255,0.7)", lineHeight: 1 }}>({t.seats})</span>}
+                                {t.seats > 0 && w >= 52 && <span style={{ fontSize: Math.max(7, fSz * 0.58), color: "rgba(255,255,255,0.32)", lineHeight: 1 }}>({t.seats})</span>}
                               </div>
-                              {t.name && <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>}
+                              {t.name && w >= 52 && <span style={{ fontSize: Math.max(7, fSz * 0.5), color: "rgba(255,255,255,0.38)", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>}
                               {seated && orderSt === "free" && (
-                                <span style={{ fontSize: Math.max(7, fSz * 0.55), color: "#c4b5fd", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
+                                <span style={{ fontSize: Math.max(7, fSz * 0.5), color: "#c4b5fd", zIndex: 1, maxWidth: w - 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
                               )}
                               {start && <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, zIndex: 1 }}>⏱ {fmtTimer(start)}</span>}
                               {canSeat && (
@@ -667,7 +670,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
                       {/* Legend */}
                       <div style={{ position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 50 }}>
-                        {([["#2e7d2e","פנוי"],["#7c3aed","הושב"],["#b87520","תפוס"],["#8b1a1a","חשבון"]] as const).map(([col, lbl]) => (
+                        {([["#22c55e","פנוי"],["#a78bfa","הושב"],["#f97316","תפוס"],["#ef4444","חשבון"]] as const).map(([col, lbl]) => (
                           <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 7, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 10, backdropFilter: "blur(4px)" }}>
                             <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, display: "inline-block" }} />
                             <span style={{ color: "#e5d5b5" }}>{lbl}</span>
@@ -884,10 +887,10 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
               return (
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                   {[
-                    { label: "פנויים",    value: freeCount,     color: "#2e7d2e" },
-                    { label: "הושבו",     value: seatedCount,   color: "#7c3aed" },
-                    { label: "תפוסים",   value: occupiedCount, color: "#b87520" },
-                    { label: "ביקשו חשבון", value: billCount,  color: "#8b1a1a" },
+                    { label: "פנויים",    value: freeCount,     color: "#22c55e" },
+                    { label: "הושבו",     value: seatedCount,   color: "#a78bfa" },
+                    { label: "תפוסים",   value: occupiedCount, color: "#f97316" },
+                    { label: "ביקשו חשבון", value: billCount,  color: "#ef4444" },
                   ].map(s => (
                     <div key={s.label} style={{ flex: "1 1 80px", background: C.card, border: `1px solid ${s.color}44`, borderRadius: 10, padding: "10px 0", textAlign: "center" }}>
                       <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
@@ -912,35 +915,32 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                 const total   = tOrds.reduce((s, o) => s + o.totalAmount, 0);
                 const guests  = Math.max(0, ...tOrds.map(o => o.coversCount ?? 0));
                 const cfg     = ORDER_STATUS_CFG[effectSt];
-                const statusLabel = {
-                  free: "פנוי", seated: "הושב", occupied: "תפוס", "bill-requested": "חשבון",
-                }[effectSt];
                 return (
                   <div key={t.id} style={{
                     background: cfg.bg,
-                    border: `2px solid ${breached ? C.red : cfg.border}`,
+                    border: `1.5px solid ${breached ? C.red : cfg.border}`,
                     borderRadius: 12,
                     padding: "12px 10px",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                     boxShadow: breached
-                      ? `0 0 0 2px ${C.red}66, 0 0 12px rgba(239,68,68,0.4)`
-                      : `0 0 8px ${cfg.glow}`,
+                      ? `0 0 0 2px ${C.red}55, 0 0 10px rgba(239,68,68,0.3)`
+                      : `0 0 6px ${cfg.glow}`,
                     animation: breached ? "blink 1s infinite" : undefined,
                     position: "relative", overflow: "hidden",
                   }}>
-                    {/* Gloss */}
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 100%)", pointerEvents: "none" }} />
+                    {/* Top accent stripe */}
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: breached ? C.red : cfg.stripe, borderRadius: "10px 10px 0 0" }} />
+
+                    {/* Status badge — top-right */}
+                    <div style={{ position: "absolute", top: 8, right: 8, background: cfg.badgeBg, border: `1px solid ${cfg.badge}44`, borderRadius: 20, padding: "1px 8px", zIndex: 2 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: cfg.badge }}>{cfg.label}</span>
+                    </div>
 
                     {/* Table number */}
-                    <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", lineHeight: 1, marginTop: 14 }}>{t.num}</div>
 
                     {/* Table name */}
-                    {t.name && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>}
-
-                    {/* Status badge */}
-                    <div style={{ fontSize: 11, fontWeight: 700, color: cfg.border, background: `${cfg.border}22`, borderRadius: 20, padding: "2px 8px", border: `1px solid ${cfg.border}55` }}>
-                      {statusLabel}
-                    </div>
+                    {t.name && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.38)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>}
 
                     {/* Seated party name */}
                     {seated && status === "free" && (
@@ -948,7 +948,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                     )}
 
                     {/* Guests */}
-                    {guests > 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>👤 {guests}</div>}
+                    {guests > 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.52)" }}>👤 {guests}</div>}
 
                     {/* Timer */}
                     {start && (
