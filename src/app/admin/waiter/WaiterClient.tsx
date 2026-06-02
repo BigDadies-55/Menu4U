@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 
 /* ── Types ── */
 type Restaurant = { id: string; name: string };
@@ -55,13 +56,28 @@ export default function WaiterClient({ restaurants, waiterName }: {
   const [mobileView,  setMobileView]  = useState<"menu" | "order">("menu");
 
   /* ── submit state ── */
-  const [sending,    setSending]    = useState(false);
-  const [sentOrder,  setSentOrder]  = useState<{ id: string; orderNumber?: number } | null>(null);
-  const [sendError,  setSendError]  = useState("");
+  const [sending,       setSending]       = useState(false);
+  const [sentOrder,     setSentOrder]     = useState<{ id: string; orderNumber?: number } | null>(null);
+  const [sendError,     setSendError]     = useState("");
+  const [queuedOffline, setQueuedOffline] = useState(false);
+
+  /* ── offline queue ── */
+  const { isOnline, pendingCount, isSyncing, enqueue } = useOfflineQueue(results => {
+    // when a queued order successfully syncs, show a toast
+    const ok = results.filter(r => r.ok);
+    if (ok.length > 0) console.info(`[offline] synced ${ok.length} order(s)`);
+  });
 
   /* ── search ── */
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+
+  /* ── register service worker ── */
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
   /* ── fetch menu ── */
   const fetchMenu = useCallback(async () => {
@@ -109,30 +125,41 @@ export default function WaiterClient({ restaurants, waiterName }: {
     setOrderNote("");
     setSentOrder(null);
     setSendError("");
+    setQueuedOffline(false);
     setMobileView("menu");
   }
 
   /* ── submit ── */
   async function handleSend() {
     if (order.length === 0 || !tableNum.trim()) return;
-    setSending(true);
     setSendError("");
+
+    const payload = {
+      restaurantId: rid,
+      tableNumber:  tableNum.trim(),
+      coversCount:  guests,
+      notes:        orderNote.trim() || null,
+      items: order.map(o => ({
+        itemId:   o.itemId,
+        quantity: o.qty,
+        notes:    o.note || null,
+        course:   1,
+      })),
+    };
+
+    // Offline — queue locally and show confirmation
+    if (!isOnline) {
+      enqueue(payload);
+      setQueuedOffline(true);
+      return;
+    }
+
+    setSending(true);
     try {
       const res = await fetch("/api/admin/orders/waiter", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantId: rid,
-          tableNumber:  tableNum.trim(),
-          coversCount:  guests,
-          notes:        orderNote.trim() || null,
-          items: order.map(o => ({
-            itemId:   o.itemId,
-            quantity: o.qty,
-            notes:    o.note || null,
-            course:   1,
-          })),
-        }),
+        body:    JSON.stringify(payload),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -142,7 +169,9 @@ export default function WaiterClient({ restaurants, waiterName }: {
         setSentOrder({ id: d.id, orderNumber: d.orderNumber });
       }
     } catch {
-      setSendError("שגיאת רשת");
+      // Network failed mid-request — queue it
+      enqueue(payload);
+      setQueuedOffline(true);
     } finally {
       setSending(false);
     }
@@ -161,6 +190,31 @@ export default function WaiterClient({ restaurants, waiterName }: {
     : activeCat
       ? categories.filter(c => c.id === activeCat)
       : categories;
+
+  /* ══ QUEUED OFFLINE SCREEN ══ */
+  if (queuedOffline) {
+    return (
+      <div style={{ minHeight: "100vh", background: D.bg, display: "flex", alignItems: "center", justifyContent: "center", direction: "rtl" }}>
+        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 20, padding: "40px 48px", textAlign: "center", maxWidth: 360 }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>📶</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#facc15", marginBottom: 8 }}>נשמר בתור</div>
+          <div style={{ color: D.sub, fontSize: 14, marginBottom: 6 }}>אין חיבור לרשת כרגע</div>
+          <div style={{ color: D.sub, fontSize: 13, marginBottom: 28 }}>
+            ההזמנה תישלח אוטומטית כשהחיבור יחזור
+          </div>
+          <div style={{ background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 10, padding: "8px 16px", marginBottom: 24, fontSize: 12, color: "#facc15" }}>
+            {pendingCount} הזמנה{pendingCount !== 1 ? "ות" : ""} ממתינ{pendingCount !== 1 ? "ות" : "ת"} לשליחה
+          </div>
+          <button onClick={newOrder} style={{
+            padding: "12px 32px", borderRadius: 10, border: "none",
+            background: D.amber, color: "#000", fontWeight: 800, fontSize: 15, cursor: "pointer",
+          }}>
+            + הזמנה חדשה
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   /* ══ SUCCESS SCREEN ══ */
   if (sentOrder) {
@@ -233,6 +287,24 @@ export default function WaiterClient({ restaurants, waiterName }: {
         </div>
 
         <div style={{ flex: 1 }} />
+
+        {/* Offline / pending indicator */}
+        {(!isOnline || pendingCount > 0) && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 5,
+            background: isOnline ? "rgba(250,204,21,0.10)" : "rgba(239,68,68,0.10)",
+            border: `1px solid ${isOnline ? "rgba(250,204,21,0.3)" : "rgba(239,68,68,0.3)"}`,
+            borderRadius: 20, padding: "3px 10px", fontSize: 12,
+            color: isOnline ? "#facc15" : "#f87171",
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: isOnline ? "#facc15" : "#ef4444", flexShrink: 0 }} />
+            {isOnline
+              ? isSyncing
+                ? `שולח ${pendingCount}...`
+                : `${pendingCount} ממתינות`
+              : "אופליין"}
+          </div>
+        )}
 
         {/* Waiter badge */}
         <span style={{ fontSize: 12, color: D.sub, display: "flex", alignItems: "center", gap: 5 }}>
@@ -453,12 +525,12 @@ export default function WaiterClient({ restaurants, waiterName }: {
               disabled={sending || order.length === 0 || !tableNum.trim()}
               style={{
                 width: "100%", padding: "12px 0", borderRadius: 10, border: "none",
-                background: order.length > 0 && tableNum.trim() ? D.amber : D.border,
-                color: order.length > 0 && tableNum.trim() ? "#000" : D.muted,
+                background: order.length > 0 && tableNum.trim() ? (isOnline ? D.amber : "#854d0e") : D.border,
+                color: order.length > 0 && tableNum.trim() ? (isOnline ? "#000" : "#fef08a") : D.muted,
                 fontWeight: 800, fontSize: 15, cursor: order.length > 0 ? "pointer" : "not-allowed",
                 opacity: sending ? 0.7 : 1, transition: "opacity 200ms",
               }}>
-              {sending ? "שולח..." : "📤 שלח למטבח"}
+              {sending ? "שולח..." : isOnline ? "📤 שלח למטבח" : "📥 שמור בתור (אופליין)"}
             </button>
           </div>
         </div>
