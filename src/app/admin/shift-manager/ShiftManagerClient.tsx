@@ -324,7 +324,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const clockStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "Arial, sans-serif", direction: "rtl", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "calc(100vh - 64px)", background: C.bg, color: C.text, fontFamily: "Arial, sans-serif", direction: "rtl", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{`
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
         @keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
@@ -396,7 +396,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       </div>
 
       {/* ── Tab content ── */}
-      <div style={{ flex: 1, overflow: "auto" }}>
+      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
         {/* ── FLOOR MAP TAB ── */}
         {tab === "floor" && (
@@ -539,7 +539,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
         {/* ── WAITLIST TAB ── */}
         {tab === "waitlist" && (
-          <div style={{ padding: 20, maxWidth: 600, margin: "0 auto" }}>
+          <div style={{ padding: 20, maxWidth: 600, margin: "0 auto", overflowY: "auto", flex: 1 }}>
             <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 16 }}>רשימת המתנה</h2>
 
             {/* Add party form */}
@@ -587,7 +587,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
         {/* ── 86 MENU TAB ── */}
         {tab === "86" && (
-          <div style={{ padding: 20, maxWidth: 700, margin: "0 auto" }}>
+          <div style={{ padding: 20, maxWidth: 700, margin: "0 auto", overflowY: "auto", flex: 1 }}>
             <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 4 }}>86 — ניהול זמינות תפריט</h2>
             <p style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>פריטים מסומנים כ-86 לא יוצגו לאורחים ולמלצרים.</p>
             <div style={{ marginBottom: 16 }}>
@@ -631,7 +631,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
         {/* ── STATUS TAB ── */}
         {tab === "summary" && (
-          <div style={{ padding: 20, maxWidth: 700, margin: "0 auto" }}>
+          <div style={{ padding: 20, maxWidth: 700, margin: "0 auto", overflowY: "auto", flex: 1 }}>
             <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 16 }}>סטטוס שולחנות</h2>
             {activeRoom?.tables.map(t => {
               const tNum   = String(t.num);
