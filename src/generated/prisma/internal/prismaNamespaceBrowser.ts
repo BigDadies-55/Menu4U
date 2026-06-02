@@ -78,6 +78,7 @@ export const ModelName = {
   LoyaltyMember: 'LoyaltyMember',
   LoyaltyTransaction: 'LoyaltyTransaction',
   LoyaltyCoupon: 'LoyaltyCoupon',
+  WaiterStation: 'WaiterStation',
   LoyaltySettings: 'LoyaltySettings'
 } as const
 
@@ -357,7 +358,9 @@ export const OrderItemScalarFieldEnum = {
   heldUntilFired: 'heldUntilFired',
   firedAt: 'firedAt',
   doneAt: 'doneAt',
-  servedAt: 'servedAt'
+  servedAt: 'servedAt',
+  isComped: 'isComped',
+  compReason: 'compReason'
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
@@ -512,6 +515,19 @@ export const LoyaltyCouponScalarFieldEnum = {
 } as const
 
 export type LoyaltyCouponScalarFieldEnum = (typeof LoyaltyCouponScalarFieldEnum)[keyof typeof LoyaltyCouponScalarFieldEnum]
+
+
+export const WaiterStationScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  userId: 'userId',
+  tableNumbers: 'tableNumbers',
+  label: 'label',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WaiterStationScalarFieldEnum = (typeof WaiterStationScalarFieldEnum)[keyof typeof WaiterStationScalarFieldEnum]
 
 
 export const LoyaltySettingsScalarFieldEnum = {

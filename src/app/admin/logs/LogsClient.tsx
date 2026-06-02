@@ -48,6 +48,13 @@ const ACTION_LABELS: Record<string, string> = {
   UPDATE_ORDER_STATUS: "שינוי סטטוס הזמנה",
   CLOSE_TABLE: "סגירת שולחן / תשלום",
   CLEAR_ALL_ORDERS: "מחיקת כל ההזמנות",
+  CANCEL_ORDER_ITEM: "ביטול פריט הזמנה",
+  COMP_ORDER_ITEM: "פיצוי פריט (חינם)",
+  UNCOMP_ORDER_ITEM: "ביטול פיצוי פריט",
+  ITEM_86_MARK: "86 — הסרת פריט מתפריט",
+  ITEM_86_RESTORE: "86 — החזרת פריט לתפריט",
+  ACCEPT_TERMS: "אישור תנאי שימוש",
+  UPDATE_SITE_CONFIG: "עדכון הגדרות אתר",
 };
 
 const ACTION_DOT: Record<string, string> = {
@@ -77,6 +84,13 @@ const ACTION_DOT: Record<string, string> = {
   UPDATE_ORDER_STATUS: "#22d3ee",
   CLOSE_TABLE: "#51cf66",
   CLEAR_ALL_ORDERS: "#ff6b6b",
+  CANCEL_ORDER_ITEM: "#ff6b6b",
+  COMP_ORDER_ITEM: "#be4bdb",
+  UNCOMP_ORDER_ITEM: "#ff922b",
+  ITEM_86_MARK: "#ff922b",
+  ITEM_86_RESTORE: "#51cf66",
+  ACCEPT_TERMS: "#22d3ee",
+  UPDATE_SITE_CONFIG: "#fcc419",
 };
 
 // Action bg colors (RGBA) for the badge

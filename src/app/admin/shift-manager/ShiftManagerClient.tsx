@@ -13,6 +13,8 @@ type MenuItem   = { id: string; name: string; price: number; isActive: boolean }
 type MenuCat    = { id: string; name: string; menuName: string; items: MenuItem[] };
 type Restaurant = { id: string; name: string };
 type WaitParty  = { id: string; name: string; guests: number; since: number };
+type WaiterUser = { id: string; name: string | null; email: string };
+type WaiterStation = { userId: string; tableNumbers: string[]; label: string | null; user: WaiterUser };
 
 // ── Design tokens ──────────────────────────────────────────────────
 const C = {
@@ -112,7 +114,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const [toast,        setToast]        = useState("");
 
   // Tab
-  const [tab,          setTab]          = useState<"floor" | "86" | "waitlist" | "summary">("floor");
+  const [tab,          setTab]          = useState<"floor" | "86" | "waitlist" | "summary" | "stations">("floor");
 
   // Floor map
   const [roomIdx,      setRoomIdx]      = useState(0);
@@ -146,6 +148,12 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   // 86 panel
   const [itemSearch,   setItemSearch]   = useState("");
   const [togglingId,   setTogglingId]   = useState<string | null>(null);
+
+  // Station assignment
+  const [stations,     setStations]     = useState<WaiterStation[]>([]);
+  const [waiters,      setWaiters]      = useState<WaiterUser[]>([]);
+  const [stationEdit,  setStationEdit]  = useState<Record<string, string>>({}); // userId → comma-sep table nums
+  const [stationSaving,setStationSaving]= useState<string | null>(null);
 
   // Shift summary modal
   const [summaryOpen,  setSummaryOpen]  = useState(false);
@@ -183,6 +191,30 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
     } catch { /* ignore */ }
   }, []);
 
+  // ── Fetch station assignments ─────────────────────────────────────
+  const fetchStations = useCallback(async (rid: string) => {
+    try {
+      const res = await fetch(`/api/admin/waiter-stations?restaurantId=${rid}`);
+      if (!res.ok) return;
+      const data: WaiterStation[] = await res.json();
+      setStations(data);
+      const editMap: Record<string, string> = {};
+      data.forEach(s => { editMap[s.userId] = s.tableNumbers.join(", "); });
+      setStationEdit(editMap);
+    } catch { /* ignore */ }
+  }, []);
+
+  const fetchWaiters = useCallback(async (rid: string) => {
+    try {
+      const res = await fetch(`/api/admin/restaurants/${rid}/users`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setWaiters((data as Array<{ user: WaiterUser; role: string }>)
+        .filter(ru => ru.role === "WAITER")
+        .map(ru => ru.user));
+    } catch { /* ignore */ }
+  }, []);
+
   // ── Fetch menu items ──────────────────────────────────────────────
   const fetchItems = useCallback(async (rid: string) => {
     try {
@@ -200,7 +232,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
     fetchLayout(rid);
     fetchOrders(rid);
     fetchItems(rid);
-  }, [restaurantId, fetchLayout, fetchOrders, fetchItems]);
+    fetchStations(rid);
+    fetchWaiters(rid);
+  }, [restaurantId, fetchLayout, fetchOrders, fetchItems, fetchStations, fetchWaiters]);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -307,6 +341,32 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       setSeatSuggest(null);
       showToast(`✓ ${party.name} הושבו`);
     }
+  }
+
+  // ── Station assignment save ───────────────────────────────────────
+  async function saveStation(userId: string) {
+    setStationSaving(userId);
+    try {
+      const raw = stationEdit[userId] ?? "";
+      const tableNumbers = raw.split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+      const res = await fetch("/api/admin/waiter-stations", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, userId, tableNumbers }),
+      });
+      if (res.ok) {
+        showToast("✓ תחנה נשמרה");
+        await fetchStations(restaurantId);
+      } else {
+        showToast("שגיאה בשמירת תחנה");
+      }
+    } finally { setStationSaving(null); }
+  }
+
+  async function deleteStation(userId: string) {
+    await fetch(`/api/admin/waiter-stations?restaurantId=${restaurantId}&userId=${userId}`, { method: "DELETE" });
+    showToast("✓ תחנה נמחקה");
+    await fetchStations(restaurantId);
+    const next = { ...stationEdit }; delete next[userId]; setStationEdit(next);
   }
 
   // ── 86 toggle ─────────────────────────────────────────────────────
@@ -438,8 +498,8 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
       {/* ── Tab bar ── */}
       <div style={{ display: "flex", gap: 4, padding: "10px 20px 0", borderBottom: `1px solid ${C.border}`, background: C.card }}>
-        {(["floor", "waitlist", "86", "summary"] as const).map(t => {
-          const label = { floor: "🗺️ מפת רצפה", waitlist: `⏳ המתנה (${waitlist.length})`, "86": "🚫 86 תפריט", summary: "📋 סטטוס" }[t];
+        {(["floor", "waitlist", "86", "summary", "stations"] as const).map(t => {
+          const label = { floor: "🗺️ מפת רצפה", waitlist: `⏳ המתנה (${waitlist.length})`, "86": "🚫 86 תפריט", summary: "📋 סטטוס", stations: "📍 תחנות" }[t];
           return (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
@@ -841,6 +901,103 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
             </div>
           </div>
         )}
+        {/* ── STATIONS TAB ── */}
+        {tab === "stations" && (
+          <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+            <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📍 שיוך תחנות מלצרים</h2>
+            <p style={{ fontSize: 12, color: C.muted, marginBottom: 20 }}>
+              הגדר אילו שולחנות שייכים לכל מלצר. המלצרים יראו את השולחנות שלהם מודגשים ברצפת השירות.
+            </p>
+
+            {waiters.length === 0 && (
+              <div style={{ color: C.muted, textAlign: "center", padding: 40, fontSize: 13 }}>
+                אין מלצרים משויכים למסעדה זו
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {waiters.map(waiter => {
+                const saved = stations.find(s => s.userId === waiter.id);
+                return (
+                  <div key={waiter.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${C.gold}22`, border: `1px solid ${C.gold}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                        👤
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{waiter.name ?? waiter.email}</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>{waiter.email}</div>
+                      </div>
+                      {saved && (
+                        <div style={{ fontSize: 11, color: C.green, background: `${C.green}18`, borderRadius: 20, padding: "2px 8px", border: `1px solid ${C.green}44` }}>
+                          {saved.tableNumbers.length} שולחנות
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={{ fontSize: 12, color: C.sub, display: "block", marginBottom: 4 }}>
+                        שולחנות (הפרד בפסיק: 1, 2, 3, 4, 5)
+                      </label>
+                      <input
+                        value={stationEdit[waiter.id] ?? ""}
+                        onChange={e => setStationEdit(prev => ({ ...prev, [waiter.id]: e.target.value }))}
+                        placeholder="לדוגמה: 1, 2, 3, 4, 5"
+                        style={INP}
+                      />
+                    </div>
+
+                    {/* Quick table buttons from current layout */}
+                    {activeRoom && activeRoom.tables.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                        {activeRoom.tables.slice().sort((a, b) => a.num - b.num).map(t => {
+                          const tStr = String(t.num);
+                          const current = (stationEdit[waiter.id] ?? "").split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+                          const isIn = current.includes(tStr);
+                          return (
+                            <button key={t.id} onClick={() => {
+                              setStationEdit(prev => {
+                                const cur = (prev[waiter.id] ?? "").split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+                                const next = isIn ? cur.filter(n => n !== tStr) : [...cur, tStr];
+                                return { ...prev, [waiter.id]: next.join(", ") };
+                              });
+                            }} style={{
+                              padding: "4px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                              border: `1px solid ${isIn ? C.gold : C.border}`,
+                              background: isIn ? `${C.gold}22` : "transparent",
+                              color: isIn ? C.gold : C.sub,
+                            }}>
+                              {t.num}{t.name ? ` ${t.name}` : ""}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => saveStation(waiter.id)}
+                        disabled={stationSaving === waiter.id}
+                        style={{ ...BTN(C.gold), fontSize: 12, opacity: stationSaving === waiter.id ? 0.6 : 1 }}
+                      >
+                        {stationSaving === waiter.id ? "שומר..." : "💾 שמור תחנה"}
+                      </button>
+                      {saved && (
+                        <button
+                          onClick={() => deleteStation(waiter.id)}
+                          style={{ ...BTN(C.red, true), fontSize: 12 }}
+                        >
+                          🗑 מחק תחנה
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ── Toast ── */}

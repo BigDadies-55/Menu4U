@@ -7,7 +7,7 @@ type FreeTable   = { id: string; num: number; name: string; shape: TableShape; x
 type Decoration  = { id: string; kind: "line" | "label" | "image"; x: number; y: number; w: number; h: number; rot: number; text: string; color: string; zIdx: number; imgSrc?: string };
 type Room        = { id: string; name: string; tables: FreeTable[]; bg?: number; bgImg?: string; bgOpacity?: number; decos?: Decoration[] };
 type LayoutV2    = { version: 2; rooms: Room[] };
-type OrderItem  = { id: string; quantity: number; price: number; notes: string | null; itemStatus: string; course: number; heldUntilFired: boolean; firedAt: string | null; doneAt: string | null; item: { name: string } };
+type OrderItem  = { id: string; quantity: number; price: number; notes: string | null; itemStatus: string; course: number; heldUntilFired: boolean; firedAt: string | null; doneAt: string | null; isComped: boolean; compReason: string | null; item: { name: string } };
 type Order      = { id: string; tableNumber: string | null; status: string; orderNumber: number | null; totalAmount: number; notes: string | null; createdAt: string; coversCount: number | null; items: OrderItem[] };
 type CartItem   = { itemId: string; name: string; price: number; qty: number; note: string; course: number };
 type MenuItem   = { id: string; name: string; price: number; description: string | null };
@@ -90,7 +90,9 @@ function tableTotal(num: string, orders: Order[]): number {
 // ── Main component ─────────────────────────────────────────────────
 const LS_REST_KEY = "menu4u_active_restaurant";
 
-export default function WaiterFloorClient({ restaurants, waiterName }: { restaurants: Restaurant[]; waiterName: string }) {
+const MANAGER_PIN = "1234";
+
+export default function WaiterFloorClient({ restaurants, waiterName, waiterId }: { restaurants: Restaurant[]; waiterName: string; waiterId: string }) {
   const [restaurantId, setRestaurantId] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(LS_REST_KEY);
@@ -133,6 +135,15 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
 
   // add-more state (for active table panel)
   const [addingMore,   setAddingMore]   = useState(false);
+
+  // PIN modal — used for cancel and comp actions
+  const [pinModal,     setPinModal]     = useState<{ type: "cancel" | "comp"; orderId: string; itemId: string; itemName: string; isComped?: boolean } | null>(null);
+  const [pinValue,     setPinValue]     = useState("");
+  const [pinError,     setPinError]     = useState(false);
+  const [compReason,   setCompReason]   = useState("");
+
+  // Station assignment — my tables for this waiter
+  const [myTables,     setMyTables]     = useState<Set<string>>(new Set());
 
   const floorRef     = useRef<HTMLDivElement>(null);
   const sseRef       = useRef<EventSource | null>(null);
@@ -192,14 +203,26 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
     if (res.ok) { const d = await res.json(); setMenu(d.categories ?? []); }
   }, []);
 
+  const loadMyStation = useCallback(async (rid: string) => {
+    if (!rid || !waiterId) return;
+    try {
+      const res = await fetch(`/api/admin/waiter-stations?restaurantId=${rid}&userId=${waiterId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const nums = data[0]?.tableNumbers as string[] | undefined;
+      setMyTables(nums?.length ? new Set(nums) : new Set());
+    } catch { /* no station assigned */ }
+  }, [waiterId]);
+
   useEffect(() => {
     if (!restaurantId) return;
     loadLayout(restaurantId);
     loadOrders(restaurantId);
     loadMenu(restaurantId);
+    loadMyStation(restaurantId);
     setRoomIdx(0);
     setPanel(null);
-  }, [restaurantId, loadLayout, loadOrders, loadMenu]);
+  }, [restaurantId, loadLayout, loadOrders, loadMenu, loadMyStation]);
 
   // ── SSE ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -357,6 +380,40 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
       body: JSON.stringify({ course }),
     });
     await loadOrders(restaurantId);
+  }
+
+  function openPinModal(type: "cancel" | "comp", orderId: string, itemId: string, itemName: string, isComped?: boolean) {
+    setPinValue(""); setPinError(false); setCompReason("");
+    setPinModal({ type, orderId, itemId, itemName, isComped });
+  }
+
+  async function confirmPin() {
+    if (pinValue !== MANAGER_PIN) { setPinError(true); setPinValue(""); return; }
+    if (!pinModal) return;
+    const { type, orderId, itemId } = pinModal;
+    setPinModal(null);
+    try {
+      if (type === "cancel") {
+        const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cancel: true }),
+        });
+        if (res.ok) {
+          showToast(`✓ מנה בוטלה`);
+          await loadOrders(restaurantId);
+        }
+      } else {
+        const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comp: true, compReason: compReason || null }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          showToast(data.isComped ? "✓ מנה סומנה כפיצוי (חינם)" : "✓ ביטול פיצוי — מנה חוזרת לחיוב");
+          await loadOrders(restaurantId);
+        }
+      }
+    } catch { showToast("שגיאה בביצוע הפעולה"); }
   }
 
   async function doTransfer() {
@@ -522,27 +579,29 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
                   {activeRoom.tables
                     .slice().sort((a, b) => (a.zIdx ?? 0) - (b.zIdx ?? 0))
                     .map(table => {
-                      const tNum   = String(table.num);
-                      const status = tableStatus(tNum, orders);
-                      const start  = timerStart(tNum, orders);
-                      const guests = tableGuests(tNum, orders);
-                      const cfg    = ORDER_STATUS_CFG[status];
-                      const bg     = table.customColor
+                      const tNum    = String(table.num);
+                      const status  = tableStatus(tNum, orders);
+                      const start   = timerStart(tNum, orders);
+                      const guests  = tableGuests(tNum, orders);
+                      const cfg     = ORDER_STATUS_CFG[status];
+                      const bg      = table.customColor
                         ? `radial-gradient(circle at 40% 35%,${table.customColor}cc,${table.customColor}44)`
                         : cfg.bg;
-                      const brd    = table.customColor || cfg.border;
-                      const br     = SHAPE_BR[table.shape];
-                      const isSel  = selTable === tNum && panel !== null;
-                      const fSz    = Math.max(9, Math.min(table.w, table.h) * scale * 0.22);
-                      const w      = table.w * scale;
-                      const h      = table.h * scale;
+                      const brd     = table.customColor || cfg.border;
+                      const br      = SHAPE_BR[table.shape];
+                      const isSel   = selTable === tNum && panel !== null;
+                      const fSz     = Math.max(9, Math.min(table.w, table.h) * scale * 0.22);
+                      const w       = table.w * scale;
+                      const h       = table.h * scale;
+                      const isMine  = myTables.size === 0 || myTables.has(tNum);
+                      const isOther = myTables.size > 0 && !myTables.has(tNum);
 
                       return (
                         <div
                           key={table.id}
-                          className={status === "bill-requested" ? "bill-blink" : ""}
+                          className={status === "bill-requested" && isMine ? "bill-blink" : ""}
                           onClick={() => openTable(tNum)}
-                          title={`שולחן ${table.num}${table.name ? ` — ${table.name}` : ""}`}
+                          title={`שולחן ${table.num}${table.name ? ` — ${table.name}` : ""}${isOther ? " (לא האזור שלך)" : ""}`}
                           style={{
                             position: "absolute",
                             left: table.x * scale, top: table.y * scale,
@@ -551,15 +610,17 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
                             transformOrigin: "center",
                             zIndex: table.zIdx ?? 1,
                             cursor: "pointer", userSelect: "none",
+                            opacity: isOther ? 0.45 : 1,
                           }}
                         >
                           {/* Table body (layout-builder style) */}
                           <div style={{
                             position: "absolute", inset: 0, borderRadius: br,
                             background: bg,
-                            border: `${Math.max(1, 2 * scale)}px solid ${isSel ? "#d4a017" : brd}`,
+                            border: `${Math.max(1, 2 * scale)}px solid ${isSel ? "#d4a017" : isOther ? "rgba(255,255,255,0.2)" : brd}`,
                             boxShadow: isSel
                               ? `0 0 0 ${2 * scale}px #d4a01766, 0 0 ${12 * scale}px ${cfg.glow}`
+                              : isOther ? "none"
                               : `0 0 ${8 * scale}px ${cfg.glow}, 0 ${2 * scale}px ${8 * scale}px rgba(0,0,0,0.4)`,
                             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                             overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s",
@@ -785,14 +846,31 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
                           const statusLabels: Record<string, string> = { PENDING: "ממתין", PREPARING: "בהכנה", DONE: "הוכן", CANCELLED: "בוטל", HELD: "ממתין להצתה" };
                           const iHeld = item.heldUntilFired && !item.firedAt;
                           const statusKey = iHeld ? "HELD" : item.itemStatus;
+                          const isCancelled = item.itemStatus === "CANCELLED";
+                          const canAct = !isCancelled;
                           return (
-                            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderTop: `1px solid ${C.border}`, opacity: item.itemStatus === "CANCELLED" ? 0.4 : 1 }}>
+                            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderTop: `1px solid ${C.border}`, opacity: isCancelled ? 0.4 : 1 }}>
                               <span style={{ fontSize: 11, color: C.muted, flexShrink: 0 }}>×{item.quantity}</span>
-                              <span style={{ flex: 1, fontSize: 12, color: C.text }}>{item.item.name}</span>
+                              <span style={{ flex: 1, fontSize: 12, color: item.isComped ? "#a78bfa" : C.text, textDecoration: item.isComped ? "line-through" : "none" }}>{item.item.name}</span>
+                              {item.isComped && <span style={{ fontSize: 9, color: "#a78bfa", background: "rgba(167,139,250,0.15)", borderRadius: 4, padding: "1px 4px", flexShrink: 0 }}>פיצוי</span>}
                               {item.course > 1 && <span style={{ fontSize: 10, color: "#a78bfa" }}>{EMOJI[item.course]}</span>}
                               <span style={{ fontSize: 10, color: statusColors[statusKey] ?? C.muted, whiteSpace: "nowrap" }}>
                                 {statusLabels[statusKey] ?? statusKey}
                               </span>
+                              {canAct && (
+                                <>
+                                  <button
+                                    onClick={() => openPinModal("comp", order.id, item.id, item.item.name, item.isComped)}
+                                    title={item.isComped ? "בטל פיצוי" : "סמן כפיצוי (חינם)"}
+                                    style={{ background: item.isComped ? "rgba(167,139,250,0.3)" : "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.4)", borderRadius: 5, padding: "2px 5px", fontSize: 11, cursor: "pointer", color: "#a78bfa", flexShrink: 0 }}
+                                  >🎁</button>
+                                  <button
+                                    onClick={() => openPinModal("cancel", order.id, item.id, item.item.name)}
+                                    title="בטל מנה (נדרש PIN מנהל)"
+                                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 5, padding: "2px 5px", fontSize: 11, cursor: "pointer", color: C.red, flexShrink: 0 }}
+                                  >✕</button>
+                                </>
+                              )}
                             </div>
                           );
                         })}
@@ -872,6 +950,42 @@ export default function WaiterFloorClient({ restaurants, waiterName }: { restaur
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={doTransfer} disabled={!transferTo} style={{ flex: 1, ...BTN(C.gold), opacity: !transferTo ? 0.4 : 1 }}>העבר</button>
               <button onClick={() => setTransferModal(false)} style={{ ...BTN(C.muted, true), padding: "8px 14px" }}>ביטול</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PIN Modal ── */}
+      {pinModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={e => { if (e.target === e.currentTarget) setPinModal(null); }}>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, width: 300, direction: "rtl" }}>
+            <div style={{ fontWeight: 800, fontSize: 16, color: C.gold, marginBottom: 4, textAlign: "center" }}>
+              {pinModal.type === "cancel" ? "🔐 ביטול מנה" : pinModal.isComped ? "🔐 ביטול פיצוי" : "🔐 סימון פיצוי"}
+            </div>
+            <div style={{ fontSize: 12, color: C.sub, marginBottom: 16, textAlign: "center" }}>
+              {pinModal.itemName}
+            </div>
+            {pinModal.type === "comp" && !pinModal.isComped && (
+              <input
+                value={compReason} onChange={e => setCompReason(e.target.value)}
+                placeholder="סיבה (אופציונלי — למשל: מנה שרופה)"
+                style={{ ...INP, marginBottom: 12 }}
+              />
+            )}
+            <div style={{ fontSize: 12, color: C.sub, marginBottom: 8, textAlign: "center" }}>קוד מנהל</div>
+            <input
+              type="password" maxLength={4} value={pinValue}
+              onChange={e => { setPinValue(e.target.value); setPinError(false); }}
+              onKeyDown={e => e.key === "Enter" && confirmPin()}
+              placeholder="••••"
+              autoFocus
+              style={{ ...INP, textAlign: "center", fontSize: 20, letterSpacing: 8, marginBottom: 8 }}
+            />
+            {pinError && <div style={{ color: C.red, fontSize: 12, textAlign: "center", marginBottom: 8 }}>קוד שגוי — נסה שוב</div>}
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <button onClick={confirmPin} style={{ flex: 1, ...BTN(pinModal.type === "cancel" ? C.red : "#7c3aed") }}>אשר</button>
+              <button onClick={() => setPinModal(null)} style={{ ...BTN(C.muted, true), padding: "8px 14px" }}>ביטול</button>
             </div>
           </div>
         </div>

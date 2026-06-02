@@ -11,6 +11,6 @@ const WaiterFloorClient = dynamic(() => import("./WaiterFloorClient"), {
   ),
 });
 
-export default function WaiterFloorWrapper(props: { restaurants: { id: string; name: string }[]; waiterName: string }) {
+export default function WaiterFloorWrapper(props: { restaurants: { id: string; name: string }[]; waiterName: string; waiterId: string }) {
   return <WaiterFloorClient {...props} />;
 }

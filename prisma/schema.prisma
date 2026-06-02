@@ -53,6 +53,7 @@ model User {
   sessions         Session[]
   restaurantUsers  RestaurantUser[]
   passwordHistory  PasswordHistory[]
+  waiterStations   WaiterStation[]
 }
 
 model PasswordHistory {
@@ -170,6 +171,7 @@ model Restaurant {
   orderCounter    OrderCounter?
   loyaltyMembers  LoyaltyMember[]
   loyaltySettings LoyaltySettings?
+  waiterStations  WaiterStation[]
 }
 
 model RestaurantUser {
@@ -299,6 +301,8 @@ model OrderItem {
   firedAt         DateTime?                 // מתי הפריט "הוצת" למטבח
   doneAt          DateTime?                 // מתי הפריט הושלם
   servedAt        DateTime?                 // מתי המנה הוגשה לשולחן בפועל
+  isComped        Boolean   @default(false) // פריט ניתן כפיצוי/חינם — לא יחויב
+  compReason      String?
 
   order     Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
   item      Item                @relation(fields: [itemId], references: [id])
@@ -446,6 +450,21 @@ model LoyaltyCoupon {
   createdAt         DateTime  @default(now())
 
   member       LoyaltyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model WaiterStation {
+  id           String   @id @default(cuid())
+  restaurantId String
+  userId       String
+  tableNumbers String[] @default([])
+  label        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, userId])
 }
 
 model LoyaltySettings {
