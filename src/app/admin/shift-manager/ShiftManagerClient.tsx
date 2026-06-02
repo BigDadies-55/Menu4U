@@ -118,6 +118,8 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const [roomIdx,      setRoomIdx]      = useState(0);
   const floorRef                        = useRef<HTMLDivElement>(null);
   const [floorScale,   setFloorScale]   = useState(1);
+  const [floorContainerSize, setFloorContainerSize] = useState({ w: 0, h: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [slaMin,       setSlaMin]       = useState(45);
 
   // Seated tables — local state (party directed to table but no order yet)
@@ -217,18 +219,27 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   useEffect(() => {
     if (!floorRef.current) return;
     const obs = new ResizeObserver(() => {
-      if (!floorRef.current || !layout) return;
+      if (!floorRef.current) return;
+      const cw = floorRef.current.clientWidth;
+      const ch = floorRef.current.clientHeight;
+      setFloorContainerSize({ w: cw, h: ch });
+      if (!layout) return;
       const room = layout.rooms[roomIdx];
       if (!room?.tables.length) return;
       const maxX = Math.max(...room.tables.map(t => t.x + t.w)) + 20;
       const maxY = Math.max(...room.tables.map(t => t.y + t.h)) + 20;
-      const cw = floorRef.current.clientWidth;
-      const ch = floorRef.current.clientHeight;
       setFloorScale(Math.min(cw / maxX, ch / maxY, 1));
     });
     obs.observe(floorRef.current);
     return () => obs.disconnect();
   }, [layout, roomIdx]);
+
+  // ── Fullscreen change listener ────────────────────────────────────
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
 
   // ── Auto-clear seatedTables once waiter creates a real order ────────
   useEffect(() => {
@@ -354,6 +365,8 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const activeRoom = layout?.rooms[roomIdx];
   const mapMaxX = activeRoom?.tables.length ? Math.max(...activeRoom.tables.map(t => t.x + t.w)) + 20 : 600;
   const mapMaxY = activeRoom?.tables.length ? Math.max(...activeRoom.tables.map(t => t.y + t.h)) + 20 : 400;
+  const offsetX = Math.max(0, (floorContainerSize.w - mapMaxX * floorScale) / 2);
+  const offsetY = Math.max(0, (floorContainerSize.h - mapMaxY * floorScale) / 2);
 
   // ── 86 filtered items ─────────────────────────────────────────────
   const filtered86 = useMemo(() => {
@@ -367,7 +380,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const clockStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   return (
-    <div style={{ height: "calc(100vh - 64px)", background: C.bg, color: C.text, fontFamily: "Arial, sans-serif", direction: "rtl", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ height: "calc(100vh - 64px)", background: C.bg, color: C.text, fontFamily: "system-ui,sans-serif", direction: "rtl", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{`
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
         @keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
@@ -375,7 +388,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ background: "linear-gradient(135deg,#1a1208,#3d2b00)", padding: "14px 24px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", padding: "10px 24px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         <span style={{ fontSize: 22, fontWeight: 900, color: C.gold, letterSpacing: 2 }}>Menu4U</span>
         <span style={{ fontSize: 13, color: C.sub }}>מנהל משמרת</span>
         <span style={{ flex: 1 }} />
@@ -481,7 +494,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                   <>
                     {/* Room background */}
                     <div style={{
-                      position: "absolute", top: 0, left: 0,
+                      position: "absolute", top: offsetY, left: offsetX,
                       width: mapMaxX * floorScale, height: mapMaxY * floorScale,
                       ...(activeRoom.bgImg
                         ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 }
@@ -497,7 +510,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                       return (
                         <div key={deco.id} style={{
                           position: "absolute",
-                          left: deco.x * floorScale, top: deco.y * floorScale,
+                          left: offsetX + deco.x * floorScale, top: offsetY + deco.y * floorScale,
                           width: deco.w * floorScale, height: Math.max(isLine ? 2 : 20, deco.h * floorScale),
                           transform: `rotate(${deco.rot}deg)`, transformOrigin: "center",
                           zIndex: deco.zIdx, pointerEvents: "none",
@@ -542,7 +555,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                           onClick={() => canSeat && setSeatTableModal({ tableNum: tNum, seats: t.seats })}
                           style={{
                             position: "absolute",
-                            left: t.x * floorScale, top: t.y * floorScale,
+                            left: offsetX + t.x * floorScale, top: offsetY + t.y * floorScale,
                             width: w, height: h,
                             transform: t.rot ? `rotate(${t.rot}deg)` : undefined, transformOrigin: "center",
                             zIndex: t.zIdx ?? 1,
@@ -577,6 +590,27 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                         </div>
                       );
                     })}
+
+                    {/* Fullscreen button */}
+                    <button
+                      onClick={() => {
+                        if (!document.fullscreenElement) {
+                          floorRef.current?.requestFullscreen();
+                        } else {
+                          document.exitFullscreen();
+                        }
+                      }}
+                      title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"}
+                      style={{
+                        position: "absolute", top: 8, right: 8, zIndex: 50,
+                        background: "rgba(0,0,0,0.65)", border: `1px solid ${C.border}`,
+                        borderRadius: 8, padding: "5px 9px", cursor: "pointer",
+                        color: C.sub, fontSize: 15, backdropFilter: "blur(4px)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {isFullscreen ? "⊡" : "⛶"}
+                    </button>
 
                     {/* Legend */}
                     <div style={{ position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 50 }}>
