@@ -18,24 +18,21 @@ import type { CSSProperties } from "react";
 
 export const T = {
   // Backgrounds (dark → light)
-  bg:       "#0a0402",   // page background
-  surface:  "#160805",   // card / panel base
-  panel:    "#1a0c06",   // topbar / sidebar surface
-  raised:   "#1e1008",   // elevated surface (nested cards)
-  overlay:  "#2a1408",   // input background, deep overlays
+  bg:      "#f5f0e8",
+  surface: "#ffffff",
+  panel:   "#f0ece3",
+  raised:  "#e8e0d0",
+  overlay: "#e0d8c8",
 
-  // Borders
-  border:   "rgba(212,160,23,0.18)",
-  borderSub:"rgba(212,160,23,0.08)",
+  border:    "rgba(180,140,60,0.25)",
+  borderSub: "rgba(180,140,60,0.10)",
 
-  // Text
-  text:     "#f0e6d3",   // primary
-  sub:      "#c4a882",   // secondary / labels
-  muted:    "#7a6050",   // placeholder / disabled
+  text:  "#1a1208",
+  sub:   "#5a4020",
+  muted: "#9a8060",
 
-  // Brand accent
-  gold:     "#d4a017",
-  goldSub:  "rgba(212,160,23,0.15)",
+  gold:    "#c9890a",
+  goldSub: "rgba(201,137,10,0.15)",
 
   // Semantic colors
   green:    "#22c55e",
