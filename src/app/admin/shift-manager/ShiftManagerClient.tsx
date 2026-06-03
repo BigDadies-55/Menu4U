@@ -446,7 +446,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", padding: "10px 24px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+      <div style={{ background: T.panel, padding: "10px 24px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
         <span style={{ fontSize: 22, fontWeight: 900, color: T.gold, letterSpacing: 2 }}>Menu4U</span>
         <span style={{ fontSize: 13, color: T.sub }}>מנהל משמרת</span>
         <span style={{ flex: 1 }} />
