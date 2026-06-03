@@ -502,7 +502,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
             <button key={t} onClick={() => setTab(t)} style={{
               padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
               background: tab === t ? T.gold : "transparent",
-              color: tab === t ? T.panel : T.sub,
+              color: tab === t ? T.text : T.sub,
               border: "none", borderRadius: "8px 8px 0 0",
             }}>{label}</button>
           );
@@ -525,7 +525,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                     <button key={r.id} onClick={() => setRoomIdx(i)} style={{
                       padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer",
                       background: i === roomIdx ? T.gold : T.panel,
-                      color: i === roomIdx ? T.panel : T.sub,
+                      color: i === roomIdx ? T.text : T.sub,
                       border: `1px solid ${T.border}`, borderRadius: 8,
                     }}>{r.name}</button>
                   ))}
@@ -634,8 +634,8 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
                                 {/* שולחן + number — centered */}
                                 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                  {h >= 56 && <span style={{ fontSize: Math.max(7, 9 * floorScale), color: "rgba(255,255,255,0.38)", lineHeight: 1.2 }}>שולחן</span>}
-                                  <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
+                                  {h >= 56 && <span style={{ fontSize: Math.max(7, 9 * floorScale), color: T.sub, lineHeight: 1.2 }}>שולחן</span>}
+                                  <span style={{ fontSize: fSz, fontWeight: 900, color: T.text, lineHeight: 1 }}>{t.num}</span>
                                   {seated && orderSt === "free" && h >= 50 && (
                                     <span style={{ fontSize: Math.max(7, fSz * 0.5), color: T.purple, lineHeight: 1.2 }}>{seated.partyName}</span>
                                   )}
@@ -649,7 +649,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                                         {fmtTimer(start)} ⏱
                                       </span>
                                     ) : (
-                                      <span style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.26)", lineHeight: 1 }}>{cfg.label}</span>
+                                      <span style={{ fontSize: Math.max(7, fSz * 0.52), color: T.muted, lineHeight: 1 }}>{cfg.label}</span>
                                     )}
                                     {canSeat && <span style={{ fontSize: Math.max(6, fSz * 0.5), color: T.green, lineHeight: 1 }}>👆 הושב</span>}
                                   </div>
@@ -1007,9 +1007,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
                       {/* שולחן + number — centered */}
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>שולחן</span>
-                        <span style={{ fontSize: 40, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
-                        {t.name && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.26)", marginTop: 2 }}>{t.name}</span>}
+                        <span style={{ fontSize: 12, color: T.sub, lineHeight: 1.4 }}>שולחן</span>
+                        <span style={{ fontSize: 40, fontWeight: 900, color: T.text, lineHeight: 1 }}>{t.num}</span>
+                        {t.name && <span style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>{t.name}</span>}
                         {seated && status === "free" && (
                           <span style={{ fontSize: 10, color: T.purple, marginTop: 2, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
                         )}
@@ -1017,11 +1017,11 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
                       {/* Bottom info — right-aligned */}
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-                        {guests > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{guests} סועדים</span>}
+                        {guests > 0 && <span style={{ fontSize: 11, color: T.sub }}>{guests} סועדים</span>}
                         {start ? (
                           <span style={{ fontSize: 12, fontWeight: 700, color: breached ? T.red : T.amber, fontVariantNumeric: "tabular-nums" }}>{fmtTimer(start)} ⏱</span>
                         ) : (
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.26)" }}>{cfg.label}</span>
+                          <span style={{ fontSize: 11, color: T.muted }}>{cfg.label}</span>
                         )}
                         {total > 0 && <span style={{ fontSize: 11, color: T.gold, fontWeight: 700 }}>{fmtNis(total)}</span>}
                       </div>
