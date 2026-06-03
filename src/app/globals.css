@@ -10,6 +10,26 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand colors — resolved from CSS vars injected by layout.tsx from T tokens */
+  --color-brand-bg:      var(--c-bg);
+  --color-brand-surface: var(--c-surface);
+  --color-brand-panel:   var(--c-panel);
+  --color-brand-raised:  var(--c-raised);
+  --color-brand-overlay: var(--c-overlay);
+  --color-brand-text:    var(--c-text);
+  --color-brand-sub:     var(--c-sub);
+  --color-brand-muted:   var(--c-muted);
+  --color-brand-gold:    var(--c-gold);
+  --color-brand-green:   var(--c-green);
+  --color-brand-orange:  var(--c-orange);
+  --color-brand-red:     var(--c-red);
+  --color-brand-blue:    var(--c-blue);
+  --color-brand-purple:  var(--c-purple);
+  --color-brand-cyan:    var(--c-cyan);
+  --color-brand-rose:    var(--c-rose);
+  --color-brand-emerald: var(--c-emerald);
+  --color-brand-amber:   var(--c-amber);
 }
 
 body {

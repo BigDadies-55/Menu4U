@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { T } from "@/lib/ui";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,6 +28,32 @@ export default function RootLayout({
       lang="he"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      {/* Inject T design tokens as CSS variables — the ONLY place to change the palette */}
+      <style>{`
+        :root {
+          --c-bg:       ${T.bg};
+          --c-surface:  ${T.surface};
+          --c-panel:    ${T.panel};
+          --c-raised:   ${T.raised};
+          --c-overlay:  ${T.overlay};
+          --c-border:   ${T.border};
+          --c-text:     ${T.text};
+          --c-sub:      ${T.sub};
+          --c-muted:    ${T.muted};
+          --c-gold:     ${T.gold};
+          --c-green:    ${T.green};
+          --c-orange:   ${T.orange};
+          --c-red:      ${T.red};
+          --c-blue:     ${T.blue};
+          --c-purple:   ${T.purple};
+          --c-cyan:     ${T.cyan};
+          --c-rose:     ${T.rose};
+          --c-emerald:  ${T.emerald};
+          --c-amber:    ${T.amber};
+          --c-yellow:   ${T.yellow};
+          --c-bg-neon:  ${T.bgNeon};
+        }
+      `}</style>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

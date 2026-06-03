@@ -44,7 +44,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Load site config — try with newest columns first, degrade gracefully
   let adminPalette  = "dark";
-  let adminBg: string       = T.surface;
+  let adminBg: string       = "var(--c-bg)";
   let adminBgImage: string | null = null;
   let siteLogo: string | null = null;
   let siteName = "Menu4U";
@@ -83,10 +83,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       return /^#[0-6]/i.test(t);
     }
 
+    // Old system-default backgrounds that predate the T token system.
+    // If DB still holds one of these, we treat it as "no custom override" and use T instead.
+    const LEGACY_SYSTEM_BGS = new Set([
+      "#0d0f18","#120b1e","#080f1e","#071510","#150a0e", // old ADMIN_PALETTE_MAP bgs
+      "#1a1d23","#0a0402","#160805","#1a0c06",           // old inline defaults
+    ]);
+
     if (rows[0]) {
       adminPalette           = rows[0].adminPalette           ?? "dark";
-      const rawBg            = rows[0].adminBg                ?? T.surface;
-      adminBg                = isLightBg(rawBg) ? T.surface : rawBg;
+      const rawBg            = rows[0].adminBg                ?? "";
+      // Use T.bg unless the user explicitly set a CUSTOM (non-system-default) background
+      const isCustomBg = rawBg && !LEGACY_SYSTEM_BGS.has(rawBg) && !isLightBg(rawBg);
+      adminBg                = isCustomBg ? rawBg : "var(--c-bg)";
       adminBgImage           = rows[0].adminBgImage           ?? null;
       siteLogo               = rows[0].logo                   ?? null;
       siteName               = rows[0].siteName               ?? "Menu4U";
