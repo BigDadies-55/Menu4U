@@ -18,10 +18,10 @@ import type { CSSProperties } from "react";
 
 export const T = {
   // Backgrounds (dark → light)
-  bg:       "#FAF7F2",   // page background "#0a0402"
+  bg:       "#0a0402",   // page background
   surface:  "#160805",   // card / panel base
   panel:    "#1a0c06",   // topbar / sidebar surface
-  raised:   "#292524",   // elevated surface (nested cards) #1e1008
+  raised:   "#1e1008",   // elevated surface (nested cards)
   overlay:  "#2a1408",   // input background, deep overlays
 
   // Borders
