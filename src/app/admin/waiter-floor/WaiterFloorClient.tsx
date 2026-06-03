@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { T, btn, btnGhost, inp, STATUS, type StatusKey } from "@/lib/ui";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 
 // ── Types ──────────────────────────────────────────────────────────
 type TableShape  = "round" | "rect" | "square" | "oval" | "long" | "banquet";
@@ -94,6 +95,13 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   const [submitting,   setSubmitting]   = useState(false);
   const [toast,        setToast]        = useState("");
   const [firingCourse, setFiringCourse] = useState<string>(""); // "orderId:course"
+
+  // offline
+  const [queuedOffline, setQueuedOffline] = useState(false);
+  const { isOnline, pendingCount, isSyncing, enqueue } = useOfflineQueue(results => {
+    const ok = results.filter(r => r.ok);
+    if (ok.length > 0) showToast(`✓ ${ok.length} הזמנה נשלחה לאחר שהרשת חזרה`);
+  });
 
   // payment modal
   const [payModal,     setPayModal]     = useState(false);
@@ -224,6 +232,13 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
+  // ── Service Worker registration ───────────────────────────────────
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
   // ── Timer tick every second ───────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 1000);
@@ -297,25 +312,36 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
   async function submitOrder() {
     if (!cart.length || !restaurantId || !selTable) return;
+    const payload = {
+      restaurantId,
+      tableNumber: selTable,
+      coversCount: guestCount,
+      notes: orderNote || null,
+      items: cart.map(c => ({ itemId: c.itemId, quantity: c.qty, notes: c.note || null, course: c.course })),
+    };
+    if (!isOnline) {
+      enqueue(payload);
+      setQueuedOffline(true);
+      showToast("📥 נשמר בתור — יישלח כשהרשת תחזור");
+      setCart([]); setOrderNote(""); setPanel(null);
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/admin/orders/waiter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantId,
-          tableNumber: selTable,
-          coversCount: guestCount,
-          notes: orderNote || null,
-          items: cart.map(c => ({ itemId: c.itemId, quantity: c.qty, notes: c.note || null, course: c.course })),
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(await res.text());
       showToast(`הזמנה נשלחה לשולחן ${selTable} ✓`);
       setCart([]); setOrderNote(""); setPanel(null);
       await loadOrders(restaurantId);
     } catch (e) {
-      showToast("שגיאה בשליחת ההזמנה");
+      enqueue(payload);
+      setQueuedOffline(true);
+      showToast("📥 שגיאה — נשמר בתור לשליחה מאוחרת");
+      setCart([]); setOrderNote(""); setPanel(null);
       console.error(e);
     } finally {
       setSubmitting(false);
@@ -455,6 +481,16 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
             style={{ ...inp, width: "auto", marginRight: "auto" }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
+        )}
+
+        {/* Offline badge */}
+        {(!isOnline || pendingCount > 0) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: isOnline ? T.yellowSub : T.redSub, border: `1px solid ${isOnline ? T.yellow + "55" : T.red + "55"}`, fontSize: 12 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: isOnline ? T.yellow : T.red, flexShrink: 0 }} />
+            <span style={{ color: isOnline ? T.yellow : T.red }}>
+              {isOnline ? (isSyncing ? `שולח ${pendingCount}...` : `${pendingCount} ממתינות`) : "אופליין"}
+            </span>
+          </div>
         )}
 
         {/* Live stats */}

@@ -8,7 +8,7 @@ type FreeTable   = { id: string; num: number; name: string; shape: TableShape; x
 type Decoration  = { id: string; kind: "line" | "label" | "image"; x: number; y: number; w: number; h: number; rot: number; text: string; color: string; zIdx: number; imgSrc?: string };
 type Room        = { id: string; name: string; tables: FreeTable[]; bg?: number; bgImg?: string; bgOpacity?: number; decos?: Decoration[] };
 type LayoutV2    = { version: 2; rooms: Room[] };
-type OrderItem  = { id: string; quantity: number; price: number; itemStatus: string; firedAt: string | null; item: { name: string } };
+type OrderItem  = { id: string; quantity: number; price: number; itemStatus: string; course: number; heldUntilFired: boolean; firedAt: string | null; item: { name: string } };
 type Order      = { id: string; tableNumber: string | null; status: string; totalAmount: number; createdAt: string; coversCount: number | null; items: OrderItem[] };
 type MenuItem   = { id: string; name: string; price: number; isActive: boolean };
 type MenuCat    = { id: string; name: string; menuName: string; items: MenuItem[] };
@@ -126,6 +126,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   // 86 panel
   const [itemSearch,   setItemSearch]   = useState("");
   const [togglingId,   setTogglingId]   = useState<string | null>(null);
+
+  // Expediter panel
+  const [firingCourse, setFiringCourse] = useState<string>("");
 
   // Station assignment
   const [stations,     setStations]     = useState<WaiterStation[]>([]);
@@ -288,6 +291,23 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
   };
+
+  // ── Expediter fire ────────────────────────────────────────────────
+  async function expediterFire(orderId: string, tableNum: string, course: number) {
+    const key = `${orderId}:${course}`;
+    setFiringCourse(key);
+    try {
+      await fetch(`/api/admin/orders/${orderId}/fire-course`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ course }),
+      });
+      const COURSE = ["", "ראשון", "עיקרי", "קינוח"];
+      showToast(`🔥 שולחן ${tableNum} — ${COURSE[course] ?? `קורס ${course}`} הוצת`);
+      fetchOrders(restaurantId);
+    } finally {
+      setFiringCourse("");
+    }
+  }
 
   // ── Waitlist actions ──────────────────────────────────────────────
   function addToWaitlist() {
@@ -698,6 +718,60 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                   <button onClick={addToWaitlist} style={{ ...BTN(T.gold), padding: "5px 10px", fontSize: 13, flexShrink: 0 }}>+</button>
                 </div>
               </div>
+
+              {/* ── Expediter panel ── */}
+              {(() => {
+                const COURSE_LBL = ["", "ראשון", "עיקרי", "קינוח"];
+                const COURSE_EMO = ["", "🥗", "🍖", "🍮"];
+                type HeldEntry = { orderId: string; tableNum: string; course: number; count: number; itemNames: string[] };
+                const heldMap = new Map<string, HeldEntry>();
+                for (const ord of orders) {
+                  const tNum = ord.tableNumber ?? "";
+                  for (const item of ord.items) {
+                    if (!item.heldUntilFired || item.firedAt) continue;
+                    const key = `${ord.id}:${item.course}`;
+                    const existing = heldMap.get(key);
+                    if (existing) { existing.count += item.quantity; existing.itemNames.push(item.item.name); }
+                    else heldMap.set(key, { orderId: ord.id, tableNum: tNum, course: item.course, count: item.quantity, itemNames: [item.item.name] });
+                  }
+                }
+                const held = Array.from(heldMap.values()).sort((a, b) => Number(a.tableNum) - Number(b.tableNum));
+                if (held.length === 0) return null;
+                return (
+                  <div style={{ borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+                    <div style={{ padding: "8px 14px 4px", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: T.orange }}>🔥 להוצאה</span>
+                      <span style={{ background: `${T.orange}22`, color: T.orange, borderRadius: 20, padding: "1px 6px", fontSize: 11, fontWeight: 700 }}>{held.length}</span>
+                    </div>
+                    <div style={{ maxHeight: 220, overflowY: "auto" }}>
+                      {held.map(h => {
+                        const key = `${h.orderId}:${h.course}`;
+                        const firing = firingCourse === key;
+                        return (
+                          <div key={key} style={{ padding: "6px 14px", display: "flex", alignItems: "center", gap: 8, borderBottom: `1px solid ${T.borderSub}` }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>
+                                {COURSE_EMO[h.course] || "🍽"} {COURSE_LBL[h.course] ?? `קורס ${h.course}`}
+                                <span style={{ marginRight: 4, color: T.muted, fontSize: 11 }}>ש׳{h.tableNum}</span>
+                              </div>
+                              <div style={{ fontSize: 10, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {h.count}× {h.itemNames.slice(0, 2).join(", ")}{h.itemNames.length > 2 ? `+${h.itemNames.length - 2}` : ""}
+                              </div>
+                            </div>
+                            <button
+                              disabled={firing}
+                              onClick={() => expediterFire(h.orderId, h.tableNum, h.course)}
+                              style={{ ...BTN(firing ? T.muted : T.orange), padding: "4px 10px", fontSize: 11, flexShrink: 0, opacity: firing ? 0.6 : 1 }}
+                            >
+                              {firing ? "..." : "🔥"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Waitlist items */}
               <div style={{ flex: 1, overflowY: "auto" }}>
