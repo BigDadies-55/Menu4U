@@ -583,7 +583,7 @@ export default function TicketsClient({
             display: "flex", alignItems: "center", justifyContent: "center",
             fontWeight: 900, color: "#fff", fontSize: 14,
           }}>M</div>
-          <span style={{ color: "#ccc", fontWeight: 700, fontSize: 13, fontFamily: "'Courier New', monospace", letterSpacing: 1 }}>
+          <span style={{ color: T.text, fontWeight: 700, fontSize: 13, fontFamily: "'Courier New', monospace", letterSpacing: 1 }}>
             🎫 TICKET BOARD
             {restName && <span style={{ color: "#444" }}> · {restName}</span>}
           </span>
@@ -591,7 +591,7 @@ export default function TicketsClient({
 
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-            style={{ background: T.bg, color: "#ccc", border: "1px solid #333", borderRadius: 4, padding: "4px 10px", fontSize: 12, fontFamily: "inherit" }}>
+            style={{ background: T.raised, color: T.sub, border: `1px solid ${T.border}`, borderRadius: 4, padding: "4px 10px", fontSize: 12, fontFamily: "inherit" }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
@@ -605,7 +605,7 @@ export default function TicketsClient({
             onChange={e => saveStationFilter(e.target.value)}
             placeholder="filter..."
             style={{
-              background: T.bg, color: "#ccc",
+              background: T.raised, color: T.sub,
               border: stationFilter ? "1px solid #c9a84c" : "1px solid #2a2a2a",
               borderRadius: 3, padding: "3px 8px", fontSize: 11,
               width: 120, outline: "none", fontFamily: "inherit",
@@ -666,14 +666,14 @@ export default function TicketsClient({
             gridColumn: "1 / -1",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
-            minHeight: 320, gap: 16, color: T.surface,
+            minHeight: 320, gap: 16, color: T.text,
             fontFamily: "inherit",
           }}>
             <div style={{ fontSize: 64 }}>■</div>
             <div style={{ color: "#333", fontWeight: 700, fontSize: 18, letterSpacing: 4 }}>
               {stationFilter ? `NO ITEMS FOR "${stationFilter.toUpperCase()}"` : "NO OPEN TICKETS"}
             </div>
-            <div style={{ color: T.surface, fontSize: 12, letterSpacing: 2 }}>
+            <div style={{ color: T.muted, fontSize: 12, letterSpacing: 2 }}>
               {now.toLocaleTimeString("he-IL")}
             </div>
           </div>

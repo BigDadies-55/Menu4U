@@ -1133,7 +1133,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
       {/* ── Toast ── */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.gold, color: T.panel, padding: "10px 24px", borderRadius: 24, fontWeight: 700, fontSize: 14, zIndex: 9999, animation: "slideDown 0.2s ease" }}>
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.gold, color: T.text, padding: "10px 24px", borderRadius: 24, fontWeight: 700, fontSize: 14, zIndex: 9999, animation: "slideDown 0.2s ease" }}>
           {toast}
         </div>
       )}

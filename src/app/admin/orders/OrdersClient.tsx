@@ -358,7 +358,7 @@ function TableCard({
     ? { label: actioning ? "..." : "✓ אשר הכל", color: T.green, disabled: actioning }
     : hasReady
     ? { label: actioning ? "..." : "🛎 הגש לשולחן", color: T.cyan, disabled: actioning }
-    : { label: "💳 לתשלום בקופה", color: T.panel, disabled: true };
+    : { label: "💳 לתשלום בקופה", color: T.muted, disabled: true };
 
   // Collapsed row (for closed tables)
   if (isCollapsed) {

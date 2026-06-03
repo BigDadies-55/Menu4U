@@ -41,7 +41,7 @@ const COLORS = {
   pageBg:       T.surface,
   cardBg:       T.panel,
   cardBorder:   T.raised,
-  textPrimary:  "#ffffff",
+  textPrimary:  T.text,
   textSecondary:T.sub,
   textMuted:    T.muted,
   blue:         T.blue,
@@ -187,7 +187,7 @@ function DonutChart({ statusCounts }: { statusCounts: Record<string, number> }) 
                 <span style={{ width: 10, height: 10, borderRadius: "50%", background: STATUS_CFG[k]?.color ?? "#888", display: "inline-block", flexShrink: 0 }} />
                 {STATUS_CFG[k]?.label ?? k}
               </span>
-              <span style={{ color: "#fff", fontWeight: 700 }}>{count}</span>
+              <span style={{ color: T.text, fontWeight: 700 }}>{count}</span>
             </div>
           );
         })}

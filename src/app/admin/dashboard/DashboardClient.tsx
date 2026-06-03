@@ -410,11 +410,11 @@ export default function DashboardClient({
   const restaurantName = restaurants.find(r => r.id === restaurantId)?.name ?? "כל המסעדות";
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: T.bg, color: "#fff" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: T.bgNeon, color: "#fff" }}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0"
-        style={{ background: newAlert ? T.bg : "#111" }}
+        style={{ background: newAlert ? T.gold : "#111" }}
       >
         <div className="flex items-center gap-4">
           <div className="text-xl font-black tracking-wide">📺 {restaurantName}</div>

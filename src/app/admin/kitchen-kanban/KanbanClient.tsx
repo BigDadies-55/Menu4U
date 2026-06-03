@@ -546,7 +546,7 @@ export default function KanbanClient({
           <div style={{ color: "#333", fontWeight: 700, fontSize: 22 }}>
             {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
           </div>
-          <div style={{ color: T.surface, fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
+          <div style={{ color: T.text, fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
         </div>
       ) : (
         <div style={{

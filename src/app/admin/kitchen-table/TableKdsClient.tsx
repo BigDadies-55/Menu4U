@@ -206,7 +206,7 @@ function TableGroupCard({
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "5px 14px",
-                background: T.text,
+                background: T.raised,
                 borderBottom: "1px solid #e2e8f0",
                 borderTop: oIdx > 0 ? "2px solid #e2e8f0" : undefined,
               }}>
@@ -272,8 +272,8 @@ function TableGroupCard({
 
                     {/* Qty */}
                     <span style={{
-                      flexShrink: 0, color: T.panel, fontWeight: 700, fontSize: 12,
-                      background: T.text, borderRadius: 5, padding: "1px 6px",
+                      flexShrink: 0, color: T.sub, fontWeight: 700, fontSize: 12,
+                      background: T.raised, borderRadius: 5, padding: "1px 6px",
                     }}>×{quantity}</span>
 
                     {/* Buttons */}
@@ -281,7 +281,7 @@ function TableGroupCard({
                       <>
                         {canBack && (
                           <button type="button" onClick={() => back(order.id, iid)} disabled={busyBack} style={{
-                            background: T.text, color: T.muted,
+                            background: T.raised, color: T.text,
                             border: "1px solid #e2e8f0", borderRadius: 5,
                             padding: "3px 7px", fontSize: 10, cursor: "pointer",
                             flexShrink: 0, opacity: busyBack ? 0.5 : 1,
@@ -310,7 +310,7 @@ function TableGroupCard({
       </div>
 
       {/* ── Footer: progress bar ── */}
-      <div style={{ padding: "10px 14px", borderTop: "2px solid #f1f5f9", background: T.text }}>
+      <div style={{ padding: "10px 14px", borderTop: "2px solid #f1f5f9", background: T.raised }}>
         <ProgressBar items={allItems} />
       </div>
     </div>
@@ -652,7 +652,7 @@ export default function TableKdsClient({
             <div style={{ color: T.muted, fontWeight: 700, fontSize: 18 }}>
               {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
             </div>
-            <div style={{ color: T.overlay, fontSize: 13 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
+            <div style={{ color: T.muted, fontSize: 13 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
           </div>
         ) : (
           Array.from(byTable.entries()).map(([tableKey, tableOrders]) => (

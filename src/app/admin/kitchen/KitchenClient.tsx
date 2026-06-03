@@ -712,13 +712,13 @@ export default function KitchenClient({
             gridColumn: "1 / -1",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
-            minHeight: 300, gap: 16, color: T.surface,
+            minHeight: 300, gap: 16, color: T.text,
           }}>
             <div style={{ fontSize: 72 }}>✅</div>
             <div style={{ color: T.muted, fontWeight: 700, fontSize: 20 }}>
               {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
             </div>
-            <div style={{ color: T.bg, fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
+            <div style={{ color: T.muted, fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
           </div>
         ) : (
           Array.from(byTable.entries()).map(([tableNumber, tableOrders]) => (

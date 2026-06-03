@@ -120,7 +120,7 @@ function TableCard({
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: T.bg }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
               {tableNumber === "–" ? "ללא שולחן" : `שולחן ${tableNumber}`}
             </div>
             <div style={{ fontSize: 12, color: T.gold, display: "flex", gap: 6, marginTop: 1 }}>
@@ -129,7 +129,7 @@ function TableCard({
               <span>{allItems.length} מנות</span>
             </div>
           </div>
-          <div style={{ fontWeight: 900, fontSize: 22, color: T.bg, flexShrink: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 22, color: T.text, flexShrink: 0 }}>
             ₪{total.toFixed(0)}
           </div>
         </div>
@@ -144,7 +144,7 @@ function TableCard({
             padding: "3px 0",
             borderBottom: idx < shownItems.length - 1 ? "1px solid #f9fafb" : "none",
           }}>
-            <span style={{ fontSize: 13, color: T.panel, flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 13, color: T.sub, flex: 1, minWidth: 0 }}>
               <span style={{ fontWeight: 700, color: T.muted }}>{item.quantity}×</span>
               {" "}{item.item.name}
             </span>
@@ -197,6 +197,11 @@ function BillModal({
   onClose: () => void;
   onOrdersRefresh: () => Promise<void>;
 }) {
+  // Receipt is always paper — fixed, theme-independent
+  const INK = "#1a1208";
+  const INK_SUB = "#6b5040";
+  const PAPER = "#fffdf5";
+
   const [tipPct, setTipPct] = useState<number>(0);
   const [customTip, setCustomTip] = useState("");
   const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
@@ -438,7 +443,7 @@ function BillModal({
             flex: "1 1 280px", minWidth: 260,
             padding: "20px 20px",
             borderLeft: "1px solid #f1f5f9",
-            background: T.text,
+            background: PAPER,
           }}>
             <div style={{
               background: "#fff",
@@ -448,16 +453,16 @@ function BillModal({
               fontFamily: "'Courier New', monospace",
               fontSize: 13,
               lineHeight: 1.6,
-              color: T.bg,
+              color: INK,
             }}>
               {/* Restaurant name */}
-              <div style={{ textAlign: "center", fontWeight: 900, fontSize: 16, marginBottom: 2, color: T.bg }}>
+              <div style={{ textAlign: "center", fontWeight: 900, fontSize: 16, marginBottom: 2, color: INK }}>
                 {restaurantName}
               </div>
-              <div style={{ textAlign: "center", color: T.panel, marginBottom: 8 }}>חשבון</div>
+              <div style={{ textAlign: "center", color: INK_SUB, marginBottom: 8 }}>חשבון</div>
               <div style={{ borderTop: "1px dashed #9ca3af", margin: "6px 0" }} />
               {/* Table + date */}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.bg }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: INK }}>
                 <span>שולחן: {tableNumber}</span>
                 <span style={{ direction: "ltr" }}>{dateStr}</span>
               </div>
@@ -466,17 +471,17 @@ function BillModal({
               {/* Items */}
               {allItems.map((item, idx) => (
                 <div key={idx}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: T.bg }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: INK }}>
                     <span style={{ flex: 1 }}>{item.quantity}× {item.item.name}</span>
                     <span style={{ flexShrink: 0, direction: "ltr" }}>₪{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                   {item.modifiers && item.modifiers.map((m, mi) => (
-                    <div key={mi} style={{ paddingRight: 12, fontSize: 11, color: T.panel }}>
+                    <div key={mi} style={{ paddingRight: 12, fontSize: 11, color: INK_SUB }}>
                       {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                     </div>
                   ))}
                   {item.notes && (
-                    <div style={{ paddingRight: 12, fontSize: 11, color: T.overlay, fontStyle: "italic" }}>
+                    <div style={{ paddingRight: 12, fontSize: 11, color: INK_SUB, fontStyle: "italic" }}>
                       💬 {item.notes}
                     </div>
                   )}
@@ -487,7 +492,7 @@ function BillModal({
 
               {/* Subtotal / discount lines */}
               {loyaltyDiscount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.panel }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK_SUB }}>
                   <span>סה&quot;כ לפני הנחה</span>
                   <span style={{ direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
                 </div>
@@ -498,12 +503,12 @@ function BillModal({
                   <span style={{ direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.bg }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK }}>
                 <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סה\"כ"}</span>
                 <span style={{ direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.bg }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK }}>
                   <span>טיפ {tipPct === -1 ? "" : `${tipPct}%`}</span>
                   <span style={{ direction: "ltr" }}>₪{tipAmount.toFixed(2)}</span>
                 </div>
@@ -514,7 +519,7 @@ function BillModal({
               {/* Grand total */}
               <div style={{
                 display: "flex", justifyContent: "space-between",
-                fontWeight: 900, fontSize: 17, color: T.bg,
+                fontWeight: 900, fontSize: 17, color: INK,
               }}>
                 <span>סה&quot;כ לתשלום</span>
                 <span style={{ color: T.gold, direction: "ltr" }}>₪{total.toFixed(2)}</span>
@@ -543,7 +548,7 @@ function BillModal({
           <div style={{ flex: "1 1 260px", minWidth: 240, padding: "20px 20px" }}>
             {/* Tip selector */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.panel, marginBottom: 8 }}>טיפ</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>טיפ</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {TIP_OPTS.map(opt => (
                   <button
@@ -553,7 +558,7 @@ function BillModal({
                     style={{
                       padding: "7px 16px", borderRadius: 22, fontSize: 13, fontWeight: 600,
                       border: `2px solid ${tipPct === opt.pct ? T.gold : T.sub}`,
-                      background: tipPct === opt.pct ? T.text : "#fff",
+                      background: tipPct === opt.pct ? T.goldSub : "#fff",
                       color: tipPct === opt.pct ? T.gold : T.muted,
                       cursor: "pointer",
                     }}
@@ -580,12 +585,12 @@ function BillModal({
 
             {/* Summary box */}
             <div style={{
-              background: T.text, borderRadius: 14, padding: "14px 16px", marginBottom: 20,
+              background: T.raised, borderRadius: 14, padding: "14px 16px", marginBottom: 20,
             }}>
               {loyaltyDiscount > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.muted, marginBottom: 6 }}>
                   <span>סכום לפני הנחה</span>
-                  <span style={{ fontWeight: 700, color: T.bg, direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
+                  <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
                 </div>
               )}
               {loyaltyDiscount > 0 && (
@@ -598,18 +603,18 @@ function BillModal({
               )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.muted, marginBottom: 6 }}>
                 <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סכום"}</span>
-                <span style={{ fontWeight: 700, color: T.bg, direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
+                <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.muted, marginBottom: 6 }}>
                   <span>טיפ</span>
-                  <span style={{ fontWeight: 700, color: T.bg, direction: "ltr" }}>₪{tipAmount.toFixed(2)}</span>
+                  <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{tipAmount.toFixed(2)}</span>
                 </div>
               )}
               <div style={{
                 display: "flex", justifyContent: "space-between",
-                fontSize: 20, fontWeight: 900, color: T.bg,
-                borderTop: "1px solid #e5e7eb", paddingTop: 10, marginTop: 4,
+                fontSize: 20, fontWeight: 900, color: T.text,
+                borderTop: `1px solid ${T.border}`, paddingTop: 10, marginTop: 4,
               }}>
                 <span>סה&quot;כ</span>
                 <span style={{ color: T.gold, direction: "ltr" }}>₪{total.toFixed(2)}</span>
@@ -622,7 +627,7 @@ function BillModal({
 
             {/* Payment method */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.panel, marginBottom: 8 }}>אמצעי תשלום</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>אמצעי תשלום</div>
               <div style={{ display: "flex", gap: 8 }}>
                 {PAY_METHODS.map(m => (
                   <button
@@ -632,7 +637,7 @@ function BillModal({
                     style={{
                       flex: 1, padding: "9px 0", borderRadius: 12, fontSize: 13, fontWeight: 600,
                       border: `2px solid ${payMethod === m.value ? T.gold : T.sub}`,
-                      background: payMethod === m.value ? T.text : "#fff",
+                      background: payMethod === m.value ? T.goldSub : "#fff",
                       color: payMethod === m.value ? T.gold : T.muted,
                       cursor: "pointer",
                     }}
@@ -645,7 +650,7 @@ function BillModal({
 
             {/* Loyalty club panel */}
             {loyaltyDiscount === 0 && clubStep !== "idle" && clubStep !== "done" && (
-              <div style={{ marginBottom: 16, background: T.text, borderRadius: 10, padding: "12px 14px", border: "1px solid #fde68a" }}>
+              <div style={{ marginBottom: 16, background: T.raised, borderRadius: 10, padding: "12px 14px", border: "1px solid #fde68a" }}>
                 {/* Phone search */}
                 {(clubStep === "phone" || clubStep === "searching") && (
                   <>
@@ -659,7 +664,7 @@ function BillModal({
                         style={{
                           flex: 1, padding: "7px 10px", borderRadius: 7,
                           border: "1px solid #fde68a", background: "#fff",
-                          fontSize: 13, color: T.bg, outline: "none",
+                          fontSize: 13, color: T.text, outline: "none",
                         }}
                       />
                       <button type="button" onClick={searchMember} disabled={clubStep === "searching"}
@@ -688,7 +693,7 @@ function BillModal({
                   <>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
                       <div>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: T.bg }}>{clubMember.name}</span>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: T.text }}>{clubMember.name}</span>
                         <span style={{ fontSize: 12, color: T.gold, marginRight: 8 }}>{clubMember.points} נקודות</span>
                       </div>
                       <button type="button" onClick={() => setClubStep("idle")}
@@ -709,10 +714,10 @@ function BillModal({
                             style={{
                               width: 90, padding: "6px 10px", borderRadius: 7,
                               border: "1px solid #fde68a", background: "#fff",
-                              fontSize: 13, color: T.bg, outline: "none",
+                              fontSize: 13, color: T.text, outline: "none",
                             }}
                           />
-                          <span style={{ fontSize: 12, color: T.panel }}>נקודות</span>
+                          <span style={{ fontSize: 12, color: T.sub }}>נקודות</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: T.green, marginRight: "auto" }}>
                             = ₪{(clubPoints * clubSettings.shekelPerPoint).toFixed(2)} הנחה
                           </span>
@@ -738,7 +743,7 @@ function BillModal({
             )}
 
             {clubStep === "done" && (
-              <div style={{ marginBottom: 12, background: T.text, borderRadius: 8, padding: "8px 12px", border: "1px solid #86efac", display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ marginBottom: 12, background: T.raised, borderRadius: 8, padding: "8px 12px", border: "1px solid #86efac", display: "flex", alignItems: "center", gap: 6 }}>
                 <span>✅</span>
                 <span style={{ fontWeight: 600, color: T.green, fontSize: 12 }}>הנחת מועדון הוחלה</span>
               </div>
@@ -752,7 +757,7 @@ function BillModal({
                 style={{
                   width: "100%", padding: "10px 0", borderRadius: 12,
                   border: "2px solid #e5e7eb", background: "#fff",
-                  color: T.panel, fontWeight: 700, fontSize: 14, cursor: "pointer",
+                  color: T.text, fontWeight: 700, fontSize: 14, cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 }}
               >
@@ -765,7 +770,7 @@ function BillModal({
                     onClick={() => { setClubStep("phone"); setClubPhone(""); setClubError(null); }}
                     style={{
                       width: 46, height: 46, flexShrink: 0, borderRadius: 12,
-                      border: "2px solid #fde68a", background: T.text,
+                      border: "2px solid #fde68a", background: T.raised,
                       color: T.gold, fontSize: 18, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}
@@ -955,7 +960,7 @@ export default function CashierClient({
     <div
       style={isFullscreen ? {
         position: "fixed", inset: 0, zIndex: 999,
-        background: T.text, overflowY: "auto",
+        background: T.bg, overflowY: "auto",
         padding: "12px 16px",
       } : { padding: "16px 20px" }}
       dir="rtl"
@@ -1071,7 +1076,7 @@ export default function CashierClient({
 
         {/* Title + count */}
         <div style={{ marginRight: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 20, fontWeight: 900, color: T.bg }}>💳 קאשייר</span>
+          <span style={{ fontSize: 20, fontWeight: 900, color: T.text }}>💳 קאשייר</span>
           <span style={{ fontSize: 13, color: T.muted }}>
             · {tableEntries.length} שולחנות ממתינים
           </span>
@@ -1086,7 +1091,7 @@ export default function CashierClient({
           padding: "64px 24px", textAlign: "center", color: T.muted,
         }}>
           <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
-          <div style={{ fontWeight: 700, fontSize: 18, color: T.panel, marginBottom: 4 }}>
+          <div style={{ fontWeight: 700, fontSize: 18, color: T.sub, marginBottom: 4 }}>
             אין שולחנות ממתינים לתשלום
           </div>
           <div style={{ fontSize: 14 }}>כל השולחנות מסולקים</div>

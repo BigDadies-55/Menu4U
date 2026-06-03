@@ -118,7 +118,7 @@ export default function GroupsPage() {
             style={{
               padding: "10px 20px", borderRadius: 8, border: "none",
               background: creating ? "rgba(197,168,128,0.3)" : T.gold,
-              color: T.bg, fontWeight: 700, fontSize: 14, cursor: "pointer",
+              color: T.text, fontWeight: 700, fontSize: 14, cursor: "pointer",
             }}
           >
             {creating ? "יוצר..." : "+ צור רשת"}
@@ -233,7 +233,7 @@ export default function GroupsPage() {
                               style={{
                                 padding: "8px 20px", borderRadius: 8, border: "none",
                                 background: saving ? "rgba(197,168,128,0.3)" : T.gold,
-                                color: T.bg, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                                color: T.text, fontWeight: 700, fontSize: 13, cursor: "pointer",
                               }}
                             >
                               {saving ? "שומר..." : "שמור"}
