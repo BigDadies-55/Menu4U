@@ -54,10 +54,11 @@ const ORDER_STATUS_CFG = {
   "bill-requested":{ bg: "#0e0c0a", border: "#6b1414", stripe: "#ef4444", badge: "#ef4444", badgeBg: "rgba(239,68,68,0.12)",  label: "חשבון",  glow: "rgba(239,68,68,0.12)"  },
 };
 const INP: React.CSSProperties = { background: C.inp, border: `1px solid ${C.inpBd}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "7px 10px", width: "100%", outline: "none" };
+// hex alpha suffixes: 26 ≈ 15%, 66 ≈ 40%
 const BTN = (col: string, light = false): React.CSSProperties => ({
-  background: light ? `rgba(${col},0.15)` : col,
+  background: light ? col + "26" : col,
   color: light ? col : "#fff",
-  border: light ? `1px solid rgba(${col},0.4)` : "none",
+  border: light ? `1px solid ${col}66` : "none",
   borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer",
 });
 
@@ -122,6 +123,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   const [menuSearch,   setMenuSearch]   = useState("");
   const [submitting,   setSubmitting]   = useState(false);
   const [toast,        setToast]        = useState("");
+  const [firingCourse, setFiringCourse] = useState<string>(""); // "orderId:course"
 
   // payment modal
   const [payModal,     setPayModal]     = useState(false);
@@ -381,11 +383,18 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   }
 
   async function fireCourse(orderId: string, course: number) {
-    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ course }),
-    });
-    await loadOrders(restaurantId);
+    const key = `${orderId}:${course}`;
+    setFiringCourse(key);
+    try {
+      await fetch(`/api/admin/orders/${orderId}/fire-course`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ course }),
+      });
+      showToast(`🔥 ${COURSE[course] ?? `קורס ${course}`} הוצת`);
+      await loadOrders(restaurantId);
+    } finally {
+      setFiringCourse("");
+    }
   }
 
   function openPinModal(type: "cancel" | "comp", orderId: string, itemId: string, itemName: string, isComped?: boolean) {
@@ -844,11 +853,33 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                           <span style={{ fontSize: 11, color: C.sub }}>₪{order.totalAmount.toFixed(0)}</span>
                         </div>
                         {/* Fire course buttons */}
-                        {Array.from(heldByCourse.entries()).map(([course, count]) => (
-                          <button key={course} onClick={() => fireCourse(order.id, course)} style={{ margin: "4px 8px", ...BTN("#b45309", true), fontSize: 11, padding: "3px 10px" }}>
-                            🔥 הצת {COURSE[course] ?? `קורס ${course}`} ({count})
-                          </button>
-                        ))}
+                        {heldByCourse.size > 0 && (
+                          <div style={{ padding: "6px 10px", display: "flex", flexWrap: "wrap", gap: 6, borderTop: `1px solid ${C.border}` }}>
+                            {Array.from(heldByCourse.entries()).sort(([a], [b]) => a - b).map(([course, count]) => {
+                              const key     = `${order.id}:${course}`;
+                              const loading = firingCourse === key;
+                              return (
+                                <button
+                                  key={course}
+                                  onClick={() => fireCourse(order.id, course)}
+                                  disabled={loading}
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 5,
+                                    padding: "5px 12px", borderRadius: 8, border: "1px solid #f97316aa",
+                                    background: loading ? "#7a3a0088" : "rgba(249,115,22,0.15)",
+                                    color: loading ? "#f97316aa" : "#f97316",
+                                    fontSize: 12, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
+                                    transition: "background 150ms",
+                                  }}
+                                >
+                                  <span style={{ fontSize: 14 }}>{loading ? "⏳" : "🔥"}</span>
+                                  <span>{loading ? "מצית..." : `הצת ${COURSE[course] ?? `קורס ${course}`}`}</span>
+                                  <span style={{ background: "rgba(249,115,22,0.25)", borderRadius: 20, padding: "0 6px", fontSize: 11 }}>{count}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                         {order.items.map(item => {
                           const statusColors: Record<string, string> = { PENDING: C.muted, PREPARING: C.blue, DONE: C.green, CANCELLED: C.red, HELD: "#7c3aed" };
                           const statusLabels: Record<string, string> = { PENDING: "ממתין", PREPARING: "בהכנה", DONE: "הוכן", CANCELLED: "בוטל", HELD: "ממתין להצתה" };
