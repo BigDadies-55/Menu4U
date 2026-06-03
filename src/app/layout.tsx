@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="he"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      {/* Inject T design tokens as CSS variables — the ONLY place to change the palette */}
+      {/* Inject T design tokens as CSS variables — the ONLY place to change the palette/fonts */}
       <style>{`
         :root {
           --c-bg:       ${T.bg};
@@ -52,6 +52,8 @@ export default function RootLayout({
           --c-amber:    ${T.amber};
           --c-yellow:   ${T.yellow};
           --c-bg-neon:  ${T.bgNeon};
+          --c-font-sans: ${T.fontSans};
+          --c-font-mono: ${T.fontMono};
         }
       `}</style>
       <body className="min-h-full flex flex-col">{children}</body>

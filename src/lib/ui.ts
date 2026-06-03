@@ -89,6 +89,13 @@ export const T = {
   p3: 12,
   p4: 16,
   p5: 24,
+
+  // ── Fonts ──────────────────────────────────
+  // Change fontSans here to switch the entire site font in one place.
+  // Use any CSS font-family value: a Google font name (after loading it),
+  // a system font stack, or a variable like "var(--font-inter)".
+  fontSans: "var(--font-geist-sans), Arial, Helvetica, sans-serif",
+  fontMono: "var(--font-geist-mono), 'Courier New', monospace",
 } as const;
 
 // ─────────────────────────────────────────────
