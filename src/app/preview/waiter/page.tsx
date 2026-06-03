@@ -1,2 +1,2 @@
-import WaiterTemplate from "@/templates/WaiterTemplate";
-export default function Page() { return <WaiterTemplate />; }
+import VibeWaiter from "@/templates/VibeWaiter";
+export default function Page() { return <VibeWaiter />; }

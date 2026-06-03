@@ -1,2 +1,2 @@
-import DashboardTemplate from "@/templates/DashboardTemplate";
-export default function Page() { return <DashboardTemplate />; }
+import PulseDashboard from "@/templates/PulseDashboard";
+export default function Page() { return <PulseDashboard />; }

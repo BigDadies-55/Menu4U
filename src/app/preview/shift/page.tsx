@@ -1,2 +1,2 @@
-import ShiftTemplate from "@/templates/ShiftTemplate";
-export default function Page() { return <ShiftTemplate />; }
+import CommandShift from "@/templates/CommandShift";
+export default function Page() { return <CommandShift />; }
