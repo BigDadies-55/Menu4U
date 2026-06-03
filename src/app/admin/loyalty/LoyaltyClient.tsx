@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback } from "react";
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -42,9 +43,9 @@ type LoyaltySettings = {
 
 /* ─── Styles ─────────────────────────────────────────────────── */
 const DARK_INPUT: React.CSSProperties = {
-  background: "#2d3239",
+  background: T.raised,
   border: "1px solid #3a3f47",
-  color: "#e9ecef",
+  color: T.text,
   borderRadius: 8,
   padding: "8px 12px",
   fontSize: 14,
@@ -53,7 +54,7 @@ const DARK_INPUT: React.CSSProperties = {
 };
 
 const BTN_PRIMARY: React.CSSProperties = {
-  background: "#c9a84c",
+  background: T.gold,
   color: "#000",
   border: "none",
   borderRadius: 8,
@@ -65,8 +66,8 @@ const BTN_PRIMARY: React.CSSProperties = {
 };
 
 const BTN_SECONDARY: React.CSSProperties = {
-  background: "#2d3239",
-  color: "#adb5bd",
+  background: T.raised,
+  color: T.sub,
   border: "1px solid #3a3f47",
   borderRadius: 8,
   padding: "8px 18px",
@@ -76,7 +77,7 @@ const BTN_SECONDARY: React.CSSProperties = {
 };
 
 const CARD: React.CSSProperties = {
-  background: "#212529",
+  background: T.panel,
   border: "1px solid #2d3239",
   borderRadius: 12,
   padding: "20px 24px",
@@ -91,10 +92,10 @@ const TRANS_TYPE_LABEL: Record<string, string> = {
 };
 
 const TRANS_TYPE_COLOR: Record<string, string> = {
-  EARN: "#4ade80",
-  REDEEM: "#f87171",
-  BONUS: "#c9a84c",
-  MANUAL: "#60a5fa",
+  EARN: T.green,
+  REDEEM: T.red,
+  BONUS: T.gold,
+  MANUAL: T.blue,
 };
 
 function formatDate(s: string) {
@@ -252,10 +253,10 @@ export default function LoyaltyClient({
 
       {/* Page header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: "#e9ecef", margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: T.text, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
           <span>⭐</span> מועדון לקוחות
         </h1>
-        <p style={{ color: "#6c757d", fontSize: 14, margin: "6px 0 0" }}>
+        <p style={{ color: T.muted, fontSize: 14, margin: "6px 0 0" }}>
           ניהול חברי מועדון, נקודות, קופונים והגדרות מועדון
         </p>
       </div>
@@ -263,7 +264,7 @@ export default function LoyaltyClient({
       {/* Restaurant selector */}
       {(isSuperAdmin || restaurants.length > 1) && (
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6c757d", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
             מסעדה
           </label>
           <select
@@ -291,7 +292,7 @@ export default function LoyaltyClient({
               cursor: "pointer",
               fontWeight: 600,
               fontSize: 14,
-              color: activeTab === tab ? "#c9a84c" : "#6c757d",
+              color: activeTab === tab ? T.gold : T.muted,
               borderBottom: activeTab === tab ? "2px solid #c9a84c" : "2px solid transparent",
               marginBottom: -1,
               transition: "color 150ms",
@@ -303,13 +304,13 @@ export default function LoyaltyClient({
       </div>
 
       {error && (
-        <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid #f87171", borderRadius: 8, padding: "10px 14px", color: "#f87171", marginBottom: 16, fontSize: 14 }}>
+        <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid #f87171", borderRadius: 8, padding: "10px 14px", color: T.red, marginBottom: 16, fontSize: 14 }}>
           {error}
         </div>
       )}
 
       {loading && (
-        <div style={{ color: "#6c757d", fontSize: 14, padding: "20px 0" }}>טוען...</div>
+        <div style={{ color: T.muted, fontSize: 14, padding: "20px 0" }}>טוען...</div>
       )}
 
       {/* ── MEMBERS TAB ── */}
@@ -321,13 +322,13 @@ export default function LoyaltyClient({
             {/* Stats bar */}
             <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
               {[
-                { label: "סה\"כ חברים", value: members.length, color: "#c9a84c" },
-                { label: "סה\"כ נקודות", value: members.reduce((s, m) => s + m.points, 0).toLocaleString(), color: "#4ade80" },
-                { label: "כספים שנוצלו", value: `₪${members.reduce((s, m) => s + m.totalSpent, 0).toFixed(0)}`, color: "#60a5fa" },
+                { label: "סה\"כ חברים", value: members.length, color: T.gold },
+                { label: "סה\"כ נקודות", value: members.reduce((s, m) => s + m.points, 0).toLocaleString(), color: T.green },
+                { label: "כספים שנוצלו", value: `₪${members.reduce((s, m) => s + m.totalSpent, 0).toFixed(0)}`, color: T.blue },
               ].map(stat => (
                 <div key={stat.label} style={{ ...CARD, flex: 1, padding: "14px 18px", margin: 0 }}>
                   <div style={{ fontSize: 22, fontWeight: 700, color: stat.color }}>{stat.value}</div>
-                  <div style={{ fontSize: 12, color: "#6c757d", marginTop: 2 }}>{stat.label}</div>
+                  <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -347,9 +348,9 @@ export default function LoyaltyClient({
             <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ background: "#1a1d23", borderBottom: "1px solid #2d3239" }}>
+                  <tr style={{ background: T.surface, borderBottom: "1px solid #2d3239" }}>
                     {["שם", "טלפון", "מס' חבר", "נקודות", "הצטרף", "פעולות"].map(h => (
-                      <th key={h} style={{ padding: "12px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: "#6c757d", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      <th key={h} style={{ padding: "12px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {h}
                       </th>
                     ))}
@@ -358,7 +359,7 @@ export default function LoyaltyClient({
                 <tbody>
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "#6c757d", fontSize: 14 }}>
+                      <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: T.muted, fontSize: 14 }}>
                         {search ? "לא נמצאו חברים התואמים לחיפוש" : "אין חברי מועדון עדיין"}
                       </td>
                     </tr>
@@ -374,21 +375,21 @@ export default function LoyaltyClient({
                       }}
                       onClick={() => setSelectedMember(m)}
                     >
-                      <td style={{ padding: "12px 16px", color: "#e9ecef", fontSize: 14, fontWeight: 500 }}>
+                      <td style={{ padding: "12px 16px", color: T.text, fontSize: 14, fontWeight: 500 }}>
                         {m.name}
-                        {m.email && <div style={{ fontSize: 11, color: "#6c757d" }}>{m.email}</div>}
+                        {m.email && <div style={{ fontSize: 11, color: T.muted }}>{m.email}</div>}
                       </td>
-                      <td style={{ padding: "12px 16px", color: "#adb5bd", fontSize: 14, direction: "ltr" }}>{m.phone}</td>
-                      <td style={{ padding: "12px 16px", fontFamily: "monospace", color: "#c9a84c", fontSize: 13 }}>#{m.memberNumber}</td>
+                      <td style={{ padding: "12px 16px", color: T.sub, fontSize: 14, direction: "ltr" }}>{m.phone}</td>
+                      <td style={{ padding: "12px 16px", fontFamily: "monospace", color: T.gold, fontSize: 13 }}>#{m.memberNumber}</td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{
-                          background: "rgba(74,222,128,0.1)", color: "#4ade80",
+                          background: "rgba(74,222,128,0.1)", color: T.green,
                           padding: "2px 8px", borderRadius: 12, fontSize: 13, fontWeight: 600,
                         }}>
                           {m.points.toLocaleString()} ⭐
                         </span>
                       </td>
-                      <td style={{ padding: "12px 16px", color: "#6c757d", fontSize: 13 }}>{formatDate(m.createdAt)}</td>
+                      <td style={{ padding: "12px 16px", color: T.muted, fontSize: 13 }}>{formatDate(m.createdAt)}</td>
                       <td style={{ padding: "12px 16px" }}>
                         <button
                           onClick={e => { e.stopPropagation(); setSelectedMember(m); setAdjustModal(true); }}
@@ -416,12 +417,12 @@ export default function LoyaltyClient({
               <div style={CARD}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: "#e9ecef" }}>{selectedMember.name}</div>
-                    <div style={{ fontSize: 13, color: "#6c757d", marginTop: 2 }}>#{selectedMember.memberNumber}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: T.text }}>{selectedMember.name}</div>
+                    <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>#{selectedMember.memberNumber}</div>
                   </div>
                   <button
                     onClick={() => setSelectedMember(null)}
-                    style={{ background: "none", border: "none", color: "#6c757d", fontSize: 18, cursor: "pointer" }}
+                    style={{ background: "none", border: "none", color: T.muted, fontSize: 18, cursor: "pointer" }}
                   >✕</button>
                 </div>
 
@@ -430,35 +431,35 @@ export default function LoyaltyClient({
                   background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)",
                   borderRadius: 10, padding: "14px 18px", marginBottom: 16, textAlign: "center",
                 }}>
-                  <div style={{ fontSize: 32, fontWeight: 800, color: "#c9a84c" }}>{selectedMember.points.toLocaleString()}</div>
-                  <div style={{ fontSize: 12, color: "#adb5bd", marginTop: 2 }}>נקודות</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: T.gold }}>{selectedMember.points.toLocaleString()}</div>
+                  <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>נקודות</div>
                   {settings && (
-                    <div style={{ fontSize: 13, color: "#6c757d", marginTop: 4 }}>
+                    <div style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
                       שווי: ₪{(selectedMember.points * settings.shekelPerPoint).toFixed(2)}
                     </div>
                   )}
                 </div>
 
                 {/* Contact info */}
-                <div style={{ fontSize: 13, color: "#adb5bd", marginBottom: 12 }}>
+                <div style={{ fontSize: 13, color: T.sub, marginBottom: 12 }}>
                   <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                    <span style={{ color: "#6c757d", minWidth: 60 }}>טלפון:</span>
+                    <span style={{ color: T.muted, minWidth: 60 }}>טלפון:</span>
                     <span dir="ltr">{selectedMember.phone}</span>
                   </div>
                   {selectedMember.email && (
                     <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                      <span style={{ color: "#6c757d", minWidth: 60 }}>מייל:</span>
+                      <span style={{ color: T.muted, minWidth: 60 }}>מייל:</span>
                       <span>{selectedMember.email}</span>
                     </div>
                   )}
                   {selectedMember.birthDate && (
                     <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                      <span style={{ color: "#6c757d", minWidth: 60 }}>יום הולדת:</span>
+                      <span style={{ color: T.muted, minWidth: 60 }}>יום הולדת:</span>
                       <span>{formatDate(selectedMember.birthDate)}</span>
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                    <span style={{ color: "#6c757d", minWidth: 60 }}>הצטרף:</span>
+                    <span style={{ color: T.muted, minWidth: 60 }}>הצטרף:</span>
                     <span>{formatDate(selectedMember.createdAt)}</span>
                   </div>
                 </div>
@@ -475,11 +476,11 @@ export default function LoyaltyClient({
 
                 {/* Transaction history */}
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#6c757d", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     היסטוריית עסקאות
                   </div>
                   {selectedMember.transactions.length === 0 && (
-                    <div style={{ color: "#6c757d", fontSize: 13, textAlign: "center", padding: "12px 0" }}>
+                    <div style={{ color: T.muted, fontSize: 13, textAlign: "center", padding: "12px 0" }}>
                       אין עסקאות עדיין
                     </div>
                   )}
@@ -491,19 +492,19 @@ export default function LoyaltyClient({
                       <div>
                         <span style={{
                           fontSize: 11, padding: "1px 6px", borderRadius: 8,
-                          background: `${TRANS_TYPE_COLOR[tx.type] ?? "#6c757d"}20`,
-                          color: TRANS_TYPE_COLOR[tx.type] ?? "#6c757d",
+                          background: `${TRANS_TYPE_COLOR[tx.type] ?? T.muted}20`,
+                          color: TRANS_TYPE_COLOR[tx.type] ?? T.muted,
                           fontWeight: 600, marginLeft: 6,
                         }}>
                           {TRANS_TYPE_LABEL[tx.type] ?? tx.type}
                         </span>
-                        <span style={{ fontSize: 12, color: "#6c757d" }}>{tx.note ?? ""}</span>
+                        <span style={{ fontSize: 12, color: T.muted }}>{tx.note ?? ""}</span>
                       </div>
                       <div style={{ textAlign: "left" }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: tx.points > 0 ? "#4ade80" : "#f87171" }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: tx.points > 0 ? T.green : T.red }}>
                           {tx.points > 0 ? "+" : ""}{tx.points}
                         </div>
-                        <div style={{ fontSize: 11, color: "#6c757d" }}>{formatDate(tx.createdAt)}</div>
+                        <div style={{ fontSize: 11, color: T.muted }}>{formatDate(tx.createdAt)}</div>
                       </div>
                     </div>
                   ))}
@@ -518,19 +519,19 @@ export default function LoyaltyClient({
       {activeTab === "settings" && !loading && (
         <div style={{ maxWidth: 540 }}>
           <div style={CARD}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#e9ecef", margin: "0 0 20px" }}>הגדרות מועדון לקוחות</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: T.text, margin: "0 0 20px" }}>הגדרות מועדון לקוחות</h3>
 
             {/* Active toggle */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: "#1a1d23", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.surface, borderRadius: 8 }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#e9ecef" }}>מועדון פעיל</div>
-                <div style={{ fontSize: 12, color: "#6c757d" }}>הפעל או כבה את מועדון הלקוחות</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>מועדון פעיל</div>
+                <div style={{ fontSize: 12, color: T.muted }}>הפעל או כבה את מועדון הלקוחות</div>
               </div>
               <button
                 onClick={() => setSettingsForm(f => ({ ...f, isActive: !f.isActive }))}
                 style={{
                   width: 44, height: 24, borderRadius: 12,
-                  background: settingsForm.isActive ? "#c9a84c" : "#3a3f47",
+                  background: settingsForm.isActive ? T.gold : T.overlay,
                   border: "none", cursor: "pointer", position: "relative",
                   transition: "background 200ms",
                 }}
@@ -553,7 +554,7 @@ export default function LoyaltyClient({
                 { key: "birthdayBonus", label: "בונוס יום הולדת", desc: "נקודות בונוס ביום ההולדת" },
               ].map(field => (
                 <div key={field.key}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6c757d", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     {field.label}
                   </label>
                   <input
@@ -564,7 +565,7 @@ export default function LoyaltyClient({
                     min={0}
                     step={field.key === "shekelPerPoint" ? 0.01 : 1}
                   />
-                  <div style={{ fontSize: 11, color: "#6c757d", marginTop: 3 }}>{field.desc}</div>
+                  <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>{field.desc}</div>
                 </div>
               ))}
             </div>
@@ -574,18 +575,18 @@ export default function LoyaltyClient({
                 {settingsLoading ? "שומר..." : "שמור הגדרות"}
               </button>
               {settingsSaved && (
-                <span style={{ fontSize: 13, color: "#4ade80" }}>✓ נשמר בהצלחה</span>
+                <span style={{ fontSize: 13, color: T.green }}>✓ נשמר בהצלחה</span>
               )}
             </div>
           </div>
 
           {/* Current settings summary */}
           {settings && (
-            <div style={{ ...CARD, background: "#1a1d23" }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#6c757d", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <div style={{ ...CARD, background: T.surface }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.muted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 הגדרות נוכחיות
               </div>
-              <div style={{ fontSize: 13, color: "#adb5bd", lineHeight: 2 }}>
+              <div style={{ fontSize: 13, color: T.sub, lineHeight: 2 }}>
                 <div>• {settings.pointsPerShekel} נקודות לכל שקל</div>
                 <div>• ₪{settings.shekelPerPoint} לנקודה בעת מימוש</div>
                 <div>• מינימום מימוש: {settings.minRedeemPoints} נקודות</div>
@@ -604,12 +605,12 @@ export default function LoyaltyClient({
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 50,
           display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
-          <div style={{ background: "#212529", borderRadius: 14, padding: "24px", width: "min(420px, 94vw)", border: "1px solid #2d3239" }}>
-            <h3 style={{ color: "#e9ecef", fontSize: 17, fontWeight: 700, margin: "0 0 16px" }}>
+          <div style={{ background: T.panel, borderRadius: 14, padding: "24px", width: "min(420px, 94vw)", border: "1px solid #2d3239" }}>
+            <h3 style={{ color: T.text, fontSize: 17, fontWeight: 700, margin: "0 0 16px" }}>
               התאמת נקודות — {selectedMember.name}
             </h3>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4, fontWeight: 600 }}>
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>
                 נקודות (חיובי = הוסף, שלילי = הפחת)
               </label>
               <input
@@ -622,7 +623,7 @@ export default function LoyaltyClient({
               />
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4, fontWeight: 600 }}>
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>
                 הערה (אופציונלי)
               </label>
               <input
@@ -651,13 +652,13 @@ export default function LoyaltyClient({
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 50,
           display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
-          <div style={{ background: "#212529", borderRadius: 14, padding: "24px", width: "min(420px, 94vw)", border: "1px solid #2d3239" }}>
-            <h3 style={{ color: "#e9ecef", fontSize: 17, fontWeight: 700, margin: "0 0 16px" }}>
+          <div style={{ background: T.panel, borderRadius: 14, padding: "24px", width: "min(420px, 94vw)", border: "1px solid #2d3239" }}>
+            <h3 style={{ color: T.text, fontSize: 17, fontWeight: 700, margin: "0 0 16px" }}>
               הנפקת קופון — {selectedMember.name}
             </h3>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4, fontWeight: 600 }}>סוג קופון</label>
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>סוג קופון</label>
               <select value={couponType} onChange={e => setCouponType(e.target.value)} style={DARK_INPUT}>
                 <option value="DISCOUNT_PERCENT">הנחה באחוזים (%)</option>
                 <option value="DISCOUNT_AMOUNT">הנחה בשקלים (₪)</option>
@@ -666,7 +667,7 @@ export default function LoyaltyClient({
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4, fontWeight: 600 }}>
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>
                 ערך ({couponType === "DISCOUNT_PERCENT" ? "%" : "₪"})
               </label>
               <input
@@ -680,7 +681,7 @@ export default function LoyaltyClient({
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4, fontWeight: 600 }}>תיאור (אופציונלי)</label>
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>תיאור (אופציונלי)</label>
               <input
                 type="text"
                 value={couponDesc}
@@ -691,7 +692,7 @@ export default function LoyaltyClient({
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 12, color: "#6c757d", marginBottom: 4, fontWeight: 600 }}>תפוגה (אופציונלי)</label>
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>תפוגה (אופציונלי)</label>
               <input
                 type="date"
                 value={couponExpiry}

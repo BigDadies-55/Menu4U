@@ -5,21 +5,23 @@
  * No traditional "card grid" — information floats in space
  */
 import React, { useState, useEffect } from "react";
+import { T } from "@/lib/ui";
 
+// ── Design tokens (mapped from T — edit src/lib/ui.ts to change) ──
 const V = {
-  bg:        "#060610",
-  glass:     "rgba(255,255,255,0.05)",
-  border:    "rgba(255,255,255,0.09)",
-  purple:    "#a855f7",
-  purpleDim: "rgba(168,85,247,0.15)",
-  purpleGlow:"rgba(168,85,247,0.4)",
-  cyan:      "#22d3ee",
-  cyanDim:   "rgba(34,211,238,0.12)",
-  cyanGlow:  "rgba(34,211,238,0.35)",
-  rose:      "#fb7185",
-  amber:     "#fbbf24",
-  emerald:   "#34d399",
-  text:      "#f1f5f9",
+  bg:        T.bgNeon,
+  glass:     T.glass,
+  border:    T.glassBorder,
+  purple:    T.purple,
+  purpleDim: T.purpleSub,
+  purpleGlow:T.purpleGlow,
+  cyan:      T.cyan,
+  cyanDim:   T.cyanSub,
+  cyanGlow:  T.cyanGlow,
+  rose:      T.rose,
+  amber:     T.amber,
+  emerald:   T.emerald,
+  text:      T.text,
   sub:       "rgba(241,245,249,0.55)",
   muted:     "rgba(241,245,249,0.3)",
 };
@@ -147,25 +149,25 @@ function FeedItem({ time, text, color, fresh }: { time:string; text:string; colo
 
 // ── Main ───────────────────────────────────────────────────
 const FEED = [
-  {time:"20:12",text:"שולחן 4 — ביקש חשבון · ₪580",color:"#fb7185",fresh:true},
-  {time:"20:09",text:"שולחן 11 — קורס עיקרי הוצת",  color:"#fbbf24",fresh:true},
-  {time:"20:07",text:"שולחן 7 — הזמנה חדשה · ₪320",  color:"#34d399",fresh:false},
-  {time:"20:01",text:"שולחן 9 — נסגר · ₪740",         color:"#a855f7",fresh:false},
-  {time:"19:55",text:"שולחן 2 — Comp מאושר (₪45)",    color:"#fbbf24",fresh:false},
-  {time:"19:48",text:"86: נתחי עוף — כבוי",           color:"#fb7185",fresh:false},
-  {time:"19:40",text:"שולחן 6 — הזמנה חדשה · ₪210",  color:"#34d399",fresh:false},
+  {time:"20:12",text:"שולחן 4 — ביקש חשבון · ₪580",color:T.rose,fresh:true},
+  {time:"20:09",text:"שולחן 11 — קורס עיקרי הוצת",  color:T.amber,fresh:true},
+  {time:"20:07",text:"שולחן 7 — הזמנה חדשה · ₪320",  color:T.emerald,fresh:false},
+  {time:"20:01",text:"שולחן 9 — נסגר · ₪740",         color:T.purple,fresh:false},
+  {time:"19:55",text:"שולחן 2 — Comp מאושר (₪45)",    color:T.amber,fresh:false},
+  {time:"19:48",text:"86: נתחי עוף — כבוי",           color:T.rose,fresh:false},
+  {time:"19:40",text:"שולחן 6 — הזמנה חדשה · ₪210",  color:T.emerald,fresh:false},
 ];
 const TEAM = [
-  {name:"דניאל",role:"מלצר",  orders:11,active:true, color:"#a855f7"},
-  {name:"מיכל", role:"מלצרית",orders:14,active:true, color:"#22d3ee"},
-  {name:"אריאל",role:"מלצר",  orders:8, active:true, color:"#fb7185"},
-  {name:"ליהי", role:"מטבח",  orders:0, active:true, color:"#fbbf24"},
-  {name:"רון",  role:"מנהל",  orders:0, active:false,color:"#94a3b8"},
+  {name:"דניאל",role:"מלצר",  orders:11,active:true, color:T.purple},
+  {name:"מיכל", role:"מלצרית",orders:14,active:true, color:T.cyan},
+  {name:"אריאל",role:"מלצר",  orders:8, active:true, color:T.rose},
+  {name:"ליהי", role:"מטבח",  orders:0, active:true, color:T.amber},
+  {name:"רון",  role:"מנהל",  orders:0, active:false,color:T.sub},
 ];
 const INSIGHTS = [
-  {icon:"🔥",text:"שיא שבועי צפוי — עוד ₪1,200 לשיא",color:"#fbbf24"},
-  {icon:"⚠️",text:"שולחן 4 ממתין 54 דק' — SLA חריגה",color:"#fb7185"},
-  {icon:"📈",text:"הפריט הנמכר: פילה סלמון (×18)",     color:"#34d399"},
+  {icon:"🔥",text:"שיא שבועי צפוי — עוד ₪1,200 לשיא",color:T.amber},
+  {icon:"⚠️",text:"שולחן 4 ממתין 54 דק' — SLA חריגה",color:T.rose},
+  {icon:"📈",text:"הפריט הנמכר: פילה סלמון (×18)",     color:T.emerald},
 ];
 
 export default function PulseDashboard() {

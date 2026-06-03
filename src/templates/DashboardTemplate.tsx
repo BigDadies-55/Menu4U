@@ -32,13 +32,13 @@ const MOCK = {
     { name: "רון",   role: "מנהל",  active: false, orders: 0  },
   ],
   feed: [
-    { time: "19:52", text: "שולחן 7 — ביקש חשבון", color: "#ef4444" },
-    { time: "19:48", text: "שולחן 12 — הזמנה חדשה (₪320)", color: "#22c55e" },
-    { time: "19:44", text: "שולחן 3 — קורס עיקרי הוצת", color: "#f97316" },
+    { time: "19:52", text: "שולחן 7 — ביקש חשבון", color: T.red },
+    { time: "19:48", text: "שולחן 12 — הזמנה חדשה (₪320)", color: T.green },
+    { time: "19:44", text: "שולחן 3 — קורס עיקרי הוצת", color: T.orange },
     { time: "19:41", text: "שולחן 9 — נסגר · ₪580", color: "#a78bfa" },
     { time: "19:38", text: "שולחן 5 — Comp מאושר (₪45)", color: "#facc15" },
-    { time: "19:31", text: "שולחן 2 — הזמנה חדשה (₪210)", color: "#22c55e" },
-    { time: "19:25", text: "פריט '86': נתחי עוף", color: "#ef4444" },
+    { time: "19:31", text: "שולחן 2 — הזמנה חדשה (₪210)", color: T.green },
+    { time: "19:25", text: "פריט '86': נתחי עוף", color: T.red },
   ],
   insights: [
     { icon: "📈", text: "הקצב הנוכחי צפוי לשיא שבועי — עוד ₪1,200 לשיא" },

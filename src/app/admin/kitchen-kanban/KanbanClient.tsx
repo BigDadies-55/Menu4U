@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 /* ── Types ── */
@@ -38,15 +39,15 @@ function fmtElapsed(m: number) {
   return `${Math.floor(m / 60)}ש'${m % 60}′`;
 }
 function timerColor(mins: number, urgent: boolean) {
-  if (urgent || mins >= 20) return "#ef4444";
-  if (mins >= 10)           return "#f59e0b";
-  return "#22c55e";
+  if (urgent || mins >= 20) return T.red;
+  if (mins >= 10)           return T.orange;
+  return T.green;
 }
 
 /* ── Column config ── */
 const COLS: { status: string; label: string; icon: string; accent: string; bg: string; border: string }[] = [
-  { status: "PREPARING", label: "בהכנה",  icon: "🔵", accent: "#38bdf8", bg: "#001a2e", border: "#0369a1" },
-  { status: "DONE",      label: "מוכן",   icon: "✅", accent: "#22c55e", bg: "#002211", border: "#166534" },
+  { status: "PREPARING", label: "בהכנה",  icon: "🔵", accent: T.cyan, bg: T.bg, border: T.blue },
+  { status: "DONE",      label: "מוכן",   icon: "✅", accent: T.green, bg: T.bg, border: T.green },
 ];
 
 const LS_STATION = "menu4u_kds_station_kanban";
@@ -118,7 +119,7 @@ function KanbanCard({
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>
+          <div style={{ color: T.text, fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>
             שולחן {card.tableLabel}
           </div>
           <div style={{ color: tColor, fontWeight: 700, fontSize: 12 }}>
@@ -140,7 +141,7 @@ function KanbanCard({
         {card.item.category?.name && (
           <div style={{
             display: "inline-block",
-            background: "#1e293b", color: "#64748b",
+            background: T.surface, color: T.muted,
             fontSize: 10, padding: "2px 7px", borderRadius: 20,
             marginBottom: 6, fontWeight: 600, letterSpacing: 0.5,
           }}>
@@ -150,7 +151,7 @@ function KanbanCard({
 
         {/* Item name */}
         <div style={{
-          color: isDone ? "#86efac" : "#f1f5f9",
+          color: isDone ? T.green : T.text,
           fontWeight: 700, fontSize: 16, lineHeight: 1.3,
           marginBottom: 4,
           textDecoration: isCancelled ? "line-through" : undefined,
@@ -163,7 +164,7 @@ function KanbanCard({
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
             {card.modifiers.map((m, i) => (
               <span key={i} style={{
-                background: "#1e3a2e", color: "#4ade80",
+                background: T.bg, color: T.green,
                 fontSize: 11, padding: "2px 7px", borderRadius: 20,
               }}>
                 {m.label}
@@ -174,7 +175,7 @@ function KanbanCard({
 
         {/* Notes */}
         {(card.notes || card.orderNotes) && (
-          <div style={{ color: "#64748b", fontSize: 11, fontStyle: "italic", marginBottom: 6 }}>
+          <div style={{ color: T.muted, fontSize: 11, fontStyle: "italic", marginBottom: 6 }}>
             💬 {card.notes ?? card.orderNotes}
           </div>
         )}
@@ -187,7 +188,7 @@ function KanbanCard({
                 onClick={goBack}
                 disabled={busyBack}
                 style={{
-                  background: "#1e293b", color: "#94a3b8",
+                  background: T.surface, color: T.sub,
                   border: "1px solid #334155", borderRadius: 8,
                   width: 36, height: 36, fontSize: 14,
                   cursor: busyBack ? "wait" : "pointer",
@@ -220,9 +221,9 @@ function KanbanCard({
             {isDone && (
               <div style={{
                 flex: 1, textAlign: "center",
-                color: "#22c55e", fontWeight: 800, fontSize: 14,
+                color: T.green, fontWeight: 800, fontSize: 14,
                 padding: "10px 0",
-                background: "#052e16", borderRadius: 10,
+                background: T.bg, borderRadius: 10,
               }}>✓ מוכן למסירה</div>
             )}
           </div>
@@ -431,7 +432,7 @@ export default function KanbanClient({
   return (
     <div ref={containerRef} style={{
       minHeight: "100vh",
-      background: "#0a0a0a",
+      background: T.bg,
       display: "flex", flexDirection: "column",
       fontFamily: "'Heebo', 'Segoe UI', sans-serif",
       direction: "rtl",
@@ -450,7 +451,7 @@ export default function KanbanClient({
             display: "flex", alignItems: "center", justifyContent: "center",
             fontWeight: 900, color: "#fff", fontSize: 15,
           }}>M</div>
-          <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 14 }}>
+          <span style={{ color: T.text, fontWeight: 700, fontSize: 14 }}>
             📋 Kanban מטבח
             {restName && <span style={{ color: "#555", fontWeight: 400 }}> · {restName}</span>}
           </span>
@@ -458,21 +459,21 @@ export default function KanbanClient({
 
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-            style={{ background: "#222", color: "#f1f5f9", border: "1px solid #333", borderRadius: 8, padding: "5px 10px", fontSize: 13 }}>
+            style={{ background: "#222", color: T.text, border: "1px solid #333", borderRadius: 8, padding: "5px 10px", fontSize: 13 }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
 
         {/* Station filter */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: "#64748b", fontSize: 12 }}>🔧 עמדה:</span>
+          <span style={{ color: T.muted, fontSize: 12 }}>🔧 עמדה:</span>
           <input
             type="text"
             value={stationFilter}
             onChange={e => saveStationFilter(e.target.value)}
             placeholder="סנן לפי קטגוריה..."
             style={{
-              background: "#1e293b", color: "#f1f5f9",
+              background: T.surface, color: T.text,
               border: stationFilter ? "1px solid #c9a84c" : "1px solid #334155",
               borderRadius: 8, padding: "4px 10px", fontSize: 12,
               width: 160, outline: "none",
@@ -480,7 +481,7 @@ export default function KanbanClient({
           />
           {stationFilter && (
             <button onClick={() => saveStationFilter("")}
-              style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>
+              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>
               ×
             </button>
           )}
@@ -490,7 +491,7 @@ export default function KanbanClient({
 
         {allReadyAlert && (
           <div style={{
-            background: "#22c55e", color: "#000",
+            background: T.green, color: "#000",
             padding: "6px 16px", borderRadius: 20,
             fontWeight: 900, fontSize: 13,
             animation: "pulse 1s infinite",
@@ -499,7 +500,7 @@ export default function KanbanClient({
 
         {newAlert && (
           <div style={{
-            background: "#facc15", color: "#000",
+            background: T.yellow, color: "#000",
             padding: "5px 14px", borderRadius: 20,
             fontWeight: 800, fontSize: 13,
           }}>🔔 הזמנה חדשה!</div>
@@ -524,12 +525,12 @@ export default function KanbanClient({
 
         <button onClick={fetchOrders}
           title="רענן (R)"
-          style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid #334155", borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
+          style={{ background: T.surface, color: T.sub, border: "1px solid #334155", borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
           ↻
         </button>
         <button onClick={toggleFullscreen}
           title="מסך מלא (F)"
-          style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid #334155", borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
+          style={{ background: T.surface, color: T.sub, border: "1px solid #334155", borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>
           {fullscreen ? "⊠ צא" : "⛶ מסך מלא"}
         </button>
       </div>
@@ -545,7 +546,7 @@ export default function KanbanClient({
           <div style={{ color: "#333", fontWeight: 700, fontSize: 22 }}>
             {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
           </div>
-          <div style={{ color: "#2a2a2a", fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
+          <div style={{ color: T.surface, fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
         </div>
       ) : (
         <div style={{
@@ -566,18 +567,18 @@ export default function KanbanClient({
                 {/* Column header */}
                 <div style={{
                   padding: "12px 16px",
-                  background: isAllDoneCol ? "#052e16" : `${col.accent}10`,
-                  borderBottom: `2px solid ${isAllDoneCol ? "#22c55e" : col.accent}`,
+                  background: isAllDoneCol ? T.bg : `${col.accent}10`,
+                  borderBottom: `2px solid ${isAllDoneCol ? T.green : col.accent}`,
                   display: "flex", alignItems: "center", gap: 10,
                   flexShrink: 0,
                   transition: "background 0.5s",
                 }}>
                   <span style={{ fontSize: 20 }}>{isAllDoneCol ? "🎉" : col.icon}</span>
-                  <span style={{ color: isAllDoneCol ? "#22c55e" : col.accent, fontWeight: 800, fontSize: 16 }}>
+                  <span style={{ color: isAllDoneCol ? T.green : col.accent, fontWeight: 800, fontSize: 16 }}>
                     {isAllDoneCol ? "הכל מוכן!" : col.label}
                   </span>
                   <span style={{
-                    background: isAllDoneCol ? "#22c55e" : col.accent,
+                    background: isAllDoneCol ? T.green : col.accent,
                     color: "#fff",
                     borderRadius: 20, padding: "2px 10px",
                     fontWeight: 900, fontSize: 13,

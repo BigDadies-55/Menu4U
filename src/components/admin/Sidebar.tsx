@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { T } from "@/lib/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@/generated/prisma/client";
@@ -15,12 +16,12 @@ const FAV_KEY = "menu4u_favorites";
 
 /* ─── Admin palettes ─────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
-  dark:   { bg: "#0d0f18", accent: "#c9a84c", accentMuted: "rgba(201,168,76,0.15)",  accentText: "#e0c47a" },
-  purple: { bg: "#120b1e", accent: "#9333ea", accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
-  blue:   { bg: "#080f1e", accent: "#3b82f6", accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
-  green:  { bg: "#071510", accent: "#22c55e", accentMuted: "rgba(34,197,94,0.15)",  accentText: "#86efac" },
+  dark:   { bg: "#0d0f18", accent: T.gold,   accentMuted: "rgba(201,168,76,0.15)",  accentText: "#e0c47a" },
+  purple: { bg: "#120b1e", accent: T.purple, accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
+  blue:   { bg: "#080f1e", accent: T.blue,   accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
+  green:  { bg: "#071510", accent: T.green,  accentMuted: "rgba(34,197,94,0.15)",  accentText: "#86efac" },
   rose:   { bg: "#150a0e", accent: "#f43f5e", accentMuted: "rgba(244,63,94,0.15)",  accentText: "#fda4af" },
-  custom: { bg: "#0d0f18", accent: "#c9a84c", accentMuted: "rgba(201,168,76,0.15)", accentText: "#e0c47a" },
+  custom: { bg: "#0d0f18", accent: T.gold,   accentMuted: "rgba(201,168,76,0.15)", accentText: "#e0c47a" },
 };
 
 /* ─── Icons ──────────────────────────────────────────────── */
@@ -207,7 +208,7 @@ function NavItem({
         className="absolute left-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-5 h-5 rounded transition-all duration-150"
         style={{
           opacity: hovered || isFavorite ? 1 : 0,
-          color: isFavorite ? "#fcc419" : "rgba(255,255,255,0.35)",
+          color: isFavorite ? T.gold : "rgba(255,255,255,0.35)",
           background: "transparent",
           border: "none",
           cursor: "pointer",
@@ -246,7 +247,7 @@ export default function Sidebar({
   user, kdsView,
   isOpen = false, onOpen: _onOpen, onClose,
   adminPalette = "dark", siteLogo, siteName = "Menu4U",
-  adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af",
+  adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = T.muted,
   pinned: _pinned, onTogglePin: _onTogglePin,
   favorites, onToggleFavorite,
 }: SidebarProps) {
@@ -294,7 +295,7 @@ export default function Sidebar({
   const pal = (() => {
     if (adminPalette === "custom" && adminSidebarAccent) {
       const accent = adminSidebarAccent;
-      const bg     = adminSidebarBg ?? "#0f111a";
+      const bg     = adminSidebarBg ?? T.surface;
       return { bg, accent, accentMuted: `${accent}26`, accentText: accent };
     }
     return ADMIN_PALETTE_MAP[adminPalette ?? "dark"] ?? ADMIN_PALETTE_MAP.dark;
@@ -356,7 +357,7 @@ export default function Sidebar({
             {process.env.NEXT_PUBLIC_APP_ENV === "development" && (
               <span
                 className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-md"
-                style={{ background: "#f59e0b", color: "#000", lineHeight: 1 }}
+                style={{ background: T.orange, color: "#000", lineHeight: 1 }}
               >
                 DEV
               </span>
@@ -429,7 +430,7 @@ export default function Sidebar({
             {userInitials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-medium truncate leading-tight" style={{ color: "#e5e7eb" }}>
+            <div className="text-[12px] font-medium truncate leading-tight" style={{ color: T.sub }}>
               {user.name ?? user.email ?? ""}
             </div>
             <div className="text-[10px] truncate mt-0.5" style={{ color: "rgba(255,255,255,0.32)" }}>

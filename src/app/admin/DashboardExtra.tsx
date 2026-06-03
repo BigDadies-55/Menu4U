@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect } from "react";
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -37,22 +38,22 @@ type Restaurant = { id: string; name: string };
 
 /* ─── Color palette ─────────────────────────────────────────── */
 const COLORS = {
-  pageBg:       "#1a1d23",
-  cardBg:       "#212529",
-  cardBorder:   "#2d3239",
+  pageBg:       T.surface,
+  cardBg:       T.panel,
+  cardBorder:   T.raised,
   textPrimary:  "#ffffff",
-  textSecondary:"#adb5bd",
-  textMuted:    "#6c757d",
-  blue:         "#339af0",
-  blueDark:     "#1971c2",
-  green:        "#51cf66",
-  greenDark:    "#2f9e44",
-  yellow:       "#fcc419",
-  yellowDark:   "#e67700",
-  red:          "#ff6b6b",
-  redDark:      "#c92a2a",
-  orange:       "#fd9800",
-  purple:       "#6366f1",
+  textSecondary:T.sub,
+  textMuted:    T.muted,
+  blue:         T.blue,
+  blueDark:     T.blue,
+  green:        T.green,
+  greenDark:    T.green,
+  yellow:       T.gold,
+  yellowDark:   T.gold,
+  red:          T.red,
+  redDark:      T.red,
+  orange:       T.orange,
+  purple:       T.purple,
 };
 
 const GRADIENTS = {
@@ -64,13 +65,13 @@ const GRADIENTS = {
 
 /* ─── Status config ─────────────────────────────────────────── */
 const STATUS_CFG: Record<string, { label: string; color: string; badgeBg: string; badgeColor: string }> = {
-  PENDING:   { label: "ממתין",  color: COLORS.yellow, badgeBg: "rgba(255,193,7,.15)",   badgeColor: "#ffc107" },
-  CONFIRMED: { label: "אושר",   color: COLORS.blue,   badgeBg: "rgba(13,110,253,.15)",  badgeColor: "#0d6efd" },
-  PREPARING: { label: "בהכנה",  color: COLORS.orange, badgeBg: "rgba(255,153,0,.15)",   badgeColor: "#fd9800" },
-  READY:     { label: "מוכן",   color: "#10b981",     badgeBg: "rgba(16,185,129,.15)",  badgeColor: "#10b981" },
-  DELIVERED: { label: "הוגש",   color: COLORS.purple, badgeBg: "rgba(99,102,241,.15)",  badgeColor: "#6366f1" },
-  PAID:      { label: "שולם",   color: "#22c55e",     badgeBg: "rgba(34,197,94,.15)",   badgeColor: "#22c55e" },
-  CANCELLED: { label: "בוטל",   color: COLORS.textMuted, badgeBg: "rgba(108,117,125,.15)", badgeColor: "#6c757d" },
+  PENDING:   { label: "ממתין",  color: COLORS.yellow, badgeBg: "rgba(255,193,7,.15)",   badgeColor: T.orange },
+  CONFIRMED: { label: "אושר",   color: COLORS.blue,   badgeBg: "rgba(13,110,253,.15)",  badgeColor: T.blue },
+  PREPARING: { label: "בהכנה",  color: COLORS.orange, badgeBg: "rgba(255,153,0,.15)",   badgeColor: T.orange },
+  READY:     { label: "מוכן",   color: T.green,     badgeBg: "rgba(16,185,129,.15)",  badgeColor: T.green },
+  DELIVERED: { label: "הוגש",   color: COLORS.purple, badgeBg: "rgba(99,102,241,.15)",  badgeColor: T.purple },
+  PAID:      { label: "שולם",   color: T.green,     badgeBg: "rgba(34,197,94,.15)",   badgeColor: T.green },
+  CANCELLED: { label: "בוטל",   color: COLORS.textMuted, badgeBg: "rgba(108,117,125,.15)", badgeColor: T.muted },
 };
 
 /* ─── Helpers ────────────────────────────────────────────────── */
@@ -274,7 +275,7 @@ function RevenueChartDark({ data, chartPeriod }: { data: DayPoint[]; chartPeriod
             />
             {hovered === i && (
               <g>
-                <rect x={Math.min(p.x - 55, W - 125)} y={p.yRev - 52} width={120} height={46} rx={6} fill="#1e293b" stroke="#334155" strokeWidth="1" />
+                <rect x={Math.min(p.x - 55, W - 125)} y={p.yRev - 52} width={120} height={46} rx={6} fill={T.surface} stroke={T.overlay} strokeWidth="1" />
                 <text x={Math.min(p.x - 55, W - 125) + 60} y={p.yRev - 34} textAnchor="middle" fill={COLORS.blue} fontSize="13" fontWeight="bold">
                   {fmtCurrency(p.revenue)}
                 </text>
@@ -304,7 +305,7 @@ function RevenueChartDark({ data, chartPeriod }: { data: DayPoint[]; chartPeriod
 
 /* ─── Status Badge ────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CFG[status] ?? { label: status, badgeBg: "rgba(108,117,125,.15)", badgeColor: "#6c757d" };
+  const cfg = STATUS_CFG[status] ?? { label: status, badgeBg: "rgba(108,117,125,.15)", badgeColor: T.muted };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.badgeBg, color: cfg.badgeColor }}>
       {cfg.label}
@@ -318,12 +319,12 @@ function DarkSkeleton() {
     <div style={{ background: COLORS.pageBg, minHeight: "100vh", padding: 0 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 22 }}>
         {[...Array(4)].map((_, i) => (
-          <div key={i} style={{ background: "#2b2f36", borderRadius: 12, height: 110, animation: "pulse 1.5s ease-in-out infinite" }} />
+          <div key={i} style={{ background: T.panel, borderRadius: 12, height: 110, animation: "pulse 1.5s ease-in-out infinite" }} />
         ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 16, marginBottom: 22 }}>
-        <div style={{ background: "#2b2f36", borderRadius: 12, height: 260, animation: "pulse 1.5s ease-in-out infinite" }} />
-        <div style={{ background: "#2b2f36", borderRadius: 12, height: 260, animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ background: T.panel, borderRadius: 12, height: 260, animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ background: T.panel, borderRadius: 12, height: 260, animation: "pulse 1.5s ease-in-out infinite" }} />
       </div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
@@ -369,7 +370,7 @@ export default function DashboardExtra({
   const completionRate = nonCancelledToday > 0 ? Math.round((completedToday / nonCancelledToday) * 100) : 0;
 
   // Top item badge colors by rank
-  const rankColors = [COLORS.blueDark, COLORS.greenDark, COLORS.yellowDark, COLORS.redDark, "#6741d9"];
+  const rankColors = [COLORS.blueDark, COLORS.greenDark, COLORS.yellowDark, COLORS.redDark, T.purple];
 
   return (
     <div style={{ background: COLORS.pageBg, direction: "rtl" }}>
@@ -447,7 +448,7 @@ export default function DashboardExtra({
                   key={p}
                   onClick={() => setChartPeriod(p)}
                   style={{
-                    background: chartPeriod === p ? COLORS.blueDark : "#2b2f36",
+                    background: chartPeriod === p ? COLORS.blueDark : T.panel,
                     color: chartPeriod === p ? "#fff" : COLORS.textSecondary,
                     border: "none",
                     borderRadius: 6,
@@ -485,7 +486,7 @@ export default function DashboardExtra({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 22 }}>
 
         {/* Recent orders */}
-        <DarkCard title="🛒 הזמנות אחרונות" extra={<a href="/admin/orders" style={{ fontSize: 12, color: "#C9A84C", textDecoration: "none" }}>הכל ←</a>}>
+        <DarkCard title="🛒 הזמנות אחרונות" extra={<a href="/admin/orders" style={{ fontSize: 12, color: T.gold, textDecoration: "none" }}>הכל ←</a>}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
@@ -502,7 +503,7 @@ export default function DashboardExtra({
                     onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = ""; }}
                   >
                     <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, fontFamily: "monospace", color: COLORS.textMuted }}>#{o.id.slice(-4).toUpperCase()}</td>
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: "#c9d1d9" }}>🪑 שולחן {o.tableNumber ?? "—"}</td>
+                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: T.sub }}>🪑 שולחן {o.tableNumber ?? "—"}</td>
                     <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: COLORS.green, fontWeight: 600 }}>{fmtCurrency(o.totalAmount)}</td>
                     <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}` }}><StatusBadge status={o.status} /></td>
                     <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: COLORS.textMuted }}>{minutesAgo(o.createdAt)}</td>
@@ -533,7 +534,7 @@ export default function DashboardExtra({
                     onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,.03)"; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = ""; }}
                   >
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: "#c9d1d9" }}>{item.name}</td>
+                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: T.sub }}>{item.name}</td>
                     <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}` }}>
                       <span style={{ background: rankColors[i] ?? "#555", color: "#fff", padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>{item.quantity}</span>
                     </td>
@@ -566,7 +567,7 @@ export default function DashboardExtra({
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>{r.name}</span>
                       <span style={{ color: barColor, fontWeight: 700 }}>{r.pct}%</span>
                     </div>
-                    <div style={{ height: 8, background: "#2b2f36", borderRadius: 10, overflow: "hidden" }}>
+                    <div style={{ height: 8, background: T.panel, borderRadius: 10, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${r.pct}%`, background: barColor, borderRadius: 10, transition: "width .4s" }} />
                     </div>
                   </div>
@@ -605,7 +606,7 @@ export default function DashboardExtra({
                 <div key={o.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: dot, marginTop: 5, flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 12, color: "#c9d1d9" }}>
+                    <div style={{ fontSize: 12, color: T.sub }}>
                       הזמנה #{o.id.slice(-4).toUpperCase()} — שולחן {o.tableNumber ?? "—"} — {fmtCurrency(o.totalAmount)}
                     </div>
                     <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 2 }}>{minutesAgo(o.createdAt)}</div>

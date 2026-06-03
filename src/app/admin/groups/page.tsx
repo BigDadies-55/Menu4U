@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useEffect, useState } from "react";
 
 type Restaurant = { id: string; name: string; logo: string | null; groupId: string | null };
@@ -116,8 +117,8 @@ export default function GroupsPage() {
             disabled={creating || !newGroupName.trim()}
             style={{
               padding: "10px 20px", borderRadius: 8, border: "none",
-              background: creating ? "rgba(197,168,128,0.3)" : "#C5A880",
-              color: "#0D0D0D", fontWeight: 700, fontSize: 14, cursor: "pointer",
+              background: creating ? "rgba(197,168,128,0.3)" : T.gold,
+              color: T.bg, fontWeight: 700, fontSize: 14, cursor: "pointer",
             }}
           >
             {creating ? "יוצר..." : "+ צור רשת"}
@@ -170,7 +171,7 @@ export default function GroupsPage() {
                       onClick={e => { e.stopPropagation(); startEdit(g); setExpandedGroup(g.id); }}
                       style={{
                         padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(197,168,128,0.3)",
-                        background: "rgba(197,168,128,0.08)", color: "#C5A880",
+                        background: "rgba(197,168,128,0.08)", color: T.gold,
                         fontSize: 12, cursor: "pointer",
                       }}
                     >
@@ -180,7 +181,7 @@ export default function GroupsPage() {
                       onClick={e => { e.stopPropagation(); deleteGroup(g.id); }}
                       style={{
                         padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)",
-                        background: "rgba(239,68,68,0.08)", color: "#fca5a5",
+                        background: "rgba(239,68,68,0.08)", color: T.red,
                         fontSize: 12, cursor: "pointer",
                       }}
                     >
@@ -231,8 +232,8 @@ export default function GroupsPage() {
                               disabled={saving || !editName.trim()}
                               style={{
                                 padding: "8px 20px", borderRadius: 8, border: "none",
-                                background: saving ? "rgba(197,168,128,0.3)" : "#C5A880",
-                                color: "#0D0D0D", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                                background: saving ? "rgba(197,168,128,0.3)" : T.gold,
+                                color: T.bg, fontWeight: 700, fontSize: 13, cursor: "pointer",
                               }}
                             >
                               {saving ? "שומר..." : "שמור"}
@@ -271,7 +272,7 @@ export default function GroupsPage() {
                               borderRadius: 8, padding: "8px 14px",
                             }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <span style={{ color: "#4ade80", fontSize: 14 }}>✓</span>
+                                <span style={{ color: T.green, fontSize: 14 }}>✓</span>
                                 <span style={{ fontSize: 14 }}>{r.name}</span>
                               </div>
                               <button
@@ -280,7 +281,7 @@ export default function GroupsPage() {
                                   padding: "3px 10px", borderRadius: 5,
                                   border: "1px solid rgba(239,68,68,0.2)",
                                   background: "rgba(239,68,68,0.06)",
-                                  color: "#fca5a5", fontSize: 11, cursor: "pointer",
+                                  color: T.red, fontSize: 11, cursor: "pointer",
                                 }}
                               >
                                 הסר
@@ -305,7 +306,7 @@ export default function GroupsPage() {
                               style={{
                                 padding: "6px 14px", borderRadius: 8,
                                 background: "rgba(197,168,128,0.1)", border: "1px solid rgba(197,168,128,0.3)",
-                                color: "#C5A880", fontSize: 13, cursor: "pointer",
+                                color: T.gold, fontSize: 13, cursor: "pointer",
                               }}
                             >
                               + {r.name}

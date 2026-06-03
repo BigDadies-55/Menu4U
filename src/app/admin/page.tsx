@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { T } from "@/lib/ui";
 import { prisma } from "@/lib/prisma";
 import DashboardExtra from "./DashboardExtra";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function AdminDashboard() {
   const stats = await getStats(session.user.id, session.user.role);
 
   return (
-    <div style={{ background: "#1a1d23", minHeight: "100vh" }}>
+    <div style={{ background: T.surface, minHeight: "100vh" }}>
       <DashboardExtra
         isSuperAdmin={session.user.role === "SUPER_ADMIN"}
         restaurants={(stats.restaurantDetails ?? []).map(r => ({ id: r.id, name: r.name }))}

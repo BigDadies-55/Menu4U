@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 /* ── Types ── */
@@ -29,30 +30,30 @@ function fmtTime(d: string) {
 
 /* ── Header color by urgency ── */
 function headerColor(mins: number, allDone: boolean): string {
-  if (allDone) return "#bbf7d0";
-  if (mins >= 20) return "#fecaca";
+  if (allDone) return T.green;
+  if (mins >= 20) return T.red;
   if (mins >= 10) return "#fed7aa";
-  return "#bae6fd";
+  return T.blue;
 }
 function headerTextColor(mins: number, allDone: boolean): string {
-  if (allDone) return "#14532d";
-  if (mins >= 20) return "#7f1d1d";
-  if (mins >= 10) return "#7c2d12";
-  return "#0c4a6e";
+  if (allDone) return T.bg;
+  if (mins >= 20) return T.bg;
+  if (mins >= 10) return T.bg;
+  return T.bg;
 }
 function headerBorderColor(mins: number, allDone: boolean): string {
-  if (allDone) return "#16a34a";
-  if (mins >= 20) return "#dc2626";
-  if (mins >= 10) return "#d97706";
-  return "#0891b2";
+  if (allDone) return T.green;
+  if (mins >= 20) return T.red;
+  if (mins >= 10) return T.orange;
+  return T.cyan;
 }
 
 /* ── Item status square color ── */
 function itemSquareColor(status: string): string {
-  if (status === "DONE")       return "#16a34a";
-  if (status === "PREPARING")  return "#f59e0b";
-  if (status === "CANCELLED")  return "#d1d5db";
-  return "#dc2626";
+  if (status === "DONE")       return T.green;
+  if (status === "PREPARING")  return T.orange;
+  if (status === "CANCELLED")  return T.sub;
+  return T.red;
 }
 
 /* ── Segmented progress bar ── */
@@ -64,32 +65,32 @@ function ProgressBar({ items }: { items: OrderItem[] }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <div style={{ position: "relative", height: 10, borderRadius: 6, background: "#e5e7eb", overflow: "hidden" }}>
+      <div style={{ position: "relative", height: 10, borderRadius: 6, background: T.sub, overflow: "hidden" }}>
         <div style={{
           position: "absolute", left: `${pct}%`, top: 0, bottom: 0,
           width: `${preparingPct}%`,
-          background: "#f59e0b",
+          background: T.orange,
           transition: "width 0.4s ease",
         }}/>
         <div style={{
           position: "absolute", left: 0, top: 0, bottom: 0,
           width: `${pct}%`,
-          background: "#16a34a",
+          background: T.green,
           transition: "width 0.4s ease",
         }}/>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, color: "#6b7280" }}>
+        <span style={{ fontSize: 10, color: T.muted }}>
           {valid.filter(i => i.itemStatus === "DONE").length}/{valid.length} פריטים הוכנו
         </span>
         <div style={{ display: "flex", gap: 8 }}>
           {valid.filter(i => i.itemStatus === "PREPARING").length > 0 && (
-            <span style={{ fontSize: 10, color: "#d97706", fontWeight: 600 }}>
+            <span style={{ fontSize: 10, color: T.orange, fontWeight: 600 }}>
               {valid.filter(i => i.itemStatus === "PREPARING").length} בהכנה
             </span>
           )}
           {valid.filter(i => i.itemStatus === "DONE").length > 0 && (
-            <span style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>
+            <span style={{ fontSize: 10, color: T.green, fontWeight: 600 }}>
               {valid.filter(i => i.itemStatus === "DONE").length} מוכן
             </span>
           )}
@@ -205,11 +206,11 @@ function TableGroupCard({
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "5px 14px",
-                background: "#f8fafc",
+                background: T.text,
                 borderBottom: "1px solid #e2e8f0",
                 borderTop: oIdx > 0 ? "2px solid #e2e8f0" : undefined,
               }}>
-                <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>
+                <span style={{ fontSize: 11, color: T.muted, fontWeight: 700 }}>
                   KOT #{kotStartIndex + oIdx} · {fmtTime(order.createdAt)}
                   {order.notes ? ` · 💬 ${order.notes}` : ""}
                 </span>
@@ -238,7 +239,7 @@ function TableGroupCard({
                     padding: "6px 14px",
                     borderBottom: "1px solid #f1f5f9",
                     opacity: isCancelled ? 0.4 : 1,
-                    background: isDone ? "#f0fdf4" : "transparent",
+                    background: isDone ? T.text : "transparent",
                     minWidth: 0,
                   }}>
                     {/* Status square */}
@@ -250,20 +251,20 @@ function TableGroupCard({
                     {/* Item name */}
                     <span style={{
                       flex: 1, minWidth: 0,
-                      color: isCancelled ? "#9ca3af" : isDone ? "#6b7280" : "#111827",
+                      color: isCancelled ? T.muted : isDone ? T.muted : T.bg,
                       textDecoration: isCancelled ? "line-through" : undefined,
                       fontSize: 12, fontWeight: 600,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
                       {item.name}
                       {modifiers && modifiers.length > 0 && (
-                        <span style={{ color: "#9ca3af", fontWeight: 400 }}>
+                        <span style={{ color: T.muted, fontWeight: 400 }}>
                           {" "}· {modifiers.map(m => m.label).join(", ")}
                         </span>
                       )}
-                      {notes && <span style={{ color: "#f59e0b" }}> 💬{notes}</span>}
+                      {notes && <span style={{ color: T.orange }}> 💬{notes}</span>}
                       {item.category?.name && (
-                        <span style={{ color: "#cbd5e1", fontWeight: 400, fontSize: 10 }}>
+                        <span style={{ color: T.sub, fontWeight: 400, fontSize: 10 }}>
                           {" "}·{item.category.name}
                         </span>
                       )}
@@ -271,8 +272,8 @@ function TableGroupCard({
 
                     {/* Qty */}
                     <span style={{
-                      flexShrink: 0, color: "#374151", fontWeight: 700, fontSize: 12,
-                      background: "#f1f5f9", borderRadius: 5, padding: "1px 6px",
+                      flexShrink: 0, color: T.panel, fontWeight: 700, fontSize: 12,
+                      background: T.text, borderRadius: 5, padding: "1px 6px",
                     }}>×{quantity}</span>
 
                     {/* Buttons */}
@@ -280,7 +281,7 @@ function TableGroupCard({
                       <>
                         {canBack && (
                           <button type="button" onClick={() => back(order.id, iid)} disabled={busyBack} style={{
-                            background: "#f1f5f9", color: "#64748b",
+                            background: T.text, color: T.muted,
                             border: "1px solid #e2e8f0", borderRadius: 5,
                             padding: "3px 7px", fontSize: 10, cursor: "pointer",
                             flexShrink: 0, opacity: busyBack ? 0.5 : 1,
@@ -288,7 +289,7 @@ function TableGroupCard({
                         )}
                         {canAdv && (
                           <button type="button" onClick={() => adv(order.id, iid)} disabled={busyAdv} style={{
-                            background: itemStatus === "PREPARING" ? "#16a34a" : "#0891b2",
+                            background: itemStatus === "PREPARING" ? T.green : T.cyan,
                             color: "#fff", border: "none", borderRadius: 5,
                             padding: "3px 8px", fontSize: 10, fontWeight: 700,
                             cursor: "pointer", flexShrink: 0,
@@ -309,7 +310,7 @@ function TableGroupCard({
       </div>
 
       {/* ── Footer: progress bar ── */}
-      <div style={{ padding: "10px 14px", borderTop: "2px solid #f1f5f9", background: "#f8fafc" }}>
+      <div style={{ padding: "10px 14px", borderTop: "2px solid #f1f5f9", background: T.text }}>
         <ProgressBar items={allItems} />
       </div>
     </div>
@@ -503,14 +504,14 @@ export default function TableKdsClient({
   return (
     <div ref={containerRef} style={{
       minHeight: "100vh",
-      background: "#0f172a",
+      background: T.bg,
       display: "flex", flexDirection: "column",
       fontFamily: "'Heebo', 'Segoe UI', sans-serif",
       direction: "rtl",
     }}>
       {/* ── Top bar ── */}
       <div style={{
-        background: "#1e293b",
+        background: T.surface,
         borderBottom: "1px solid #334155",
         padding: "10px 20px",
         display: "flex", alignItems: "center", gap: 14,
@@ -523,29 +524,29 @@ export default function TableKdsClient({
             display: "flex", alignItems: "center", justifyContent: "center",
             fontWeight: 900, fontSize: 14, color: "#fff",
           }}>M</div>
-          <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 13 }}>
+          <span style={{ color: T.text, fontWeight: 700, fontSize: 13 }}>
             📺 תצוגת שולחן
-            {restName && <span style={{ color: "#64748b", fontWeight: 400 }}> · {restName}</span>}
+            {restName && <span style={{ color: T.muted, fontWeight: 400 }}> · {restName}</span>}
           </span>
         </div>
 
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-            style={{ background: "#0f172a", color: "#f1f5f9", border: "1px solid #334155", borderRadius: 7, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>
+            style={{ background: T.bg, color: T.text, border: "1px solid #334155", borderRadius: 7, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
 
         {/* Station filter */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: "#64748b", fontSize: 11 }}>🔧</span>
+          <span style={{ color: T.muted, fontSize: 11 }}>🔧</span>
           <input
             type="text"
             value={stationFilter}
             onChange={e => saveStationFilter(e.target.value)}
             placeholder="סנן עמדה..."
             style={{
-              background: "#0f172a", color: "#f1f5f9",
+              background: T.bg, color: T.text,
               border: stationFilter ? "1px solid #c9a84c" : "1px solid #334155",
               borderRadius: 7, padding: "3px 8px", fontSize: 11,
               width: 130, outline: "none",
@@ -553,7 +554,7 @@ export default function TableKdsClient({
           />
           {stationFilter && (
             <button onClick={() => saveStationFilter("")}
-              style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 14 }}>
+              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14 }}>
               ×
             </button>
           )}
@@ -563,9 +564,9 @@ export default function TableKdsClient({
 
         {/* Status counters */}
         {[
-          { label: "בהכנה",   count: processingOrders, color: "#d97706" },
-          { label: "מוכן",    count: readyOrders,      color: "#16a34a" },
-          { label: "שולחנות", count: byTable.size,     color: "#0891b2" },
+          { label: "בהכנה",   count: processingOrders, color: T.orange },
+          { label: "מוכן",    count: readyOrders,      color: T.green },
+          { label: "שולחנות", count: byTable.size,     color: T.cyan },
         ].map(s => (
           <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <div style={{
@@ -574,61 +575,61 @@ export default function TableKdsClient({
               display: "flex", alignItems: "center", justifyContent: "center",
               fontWeight: 900, fontSize: 12,
             }}>{s.count}</div>
-            <span style={{ fontSize: 11, color: "#94a3b8" }}>{s.label}</span>
+            <span style={{ fontSize: 11, color: T.sub }}>{s.label}</span>
           </div>
         ))}
 
-        <div style={{ width: 1, height: 20, background: "#334155" }}/>
+        <div style={{ width: 1, height: 20, background: T.overlay }}/>
 
         {allReadyAlert && (
           <div style={{
-            background: "#22c55e", color: "#000",
+            background: T.green, color: "#000",
             padding: "4px 12px", borderRadius: 20,
             fontWeight: 900, fontSize: 11, animation: "pulse 1s infinite",
           }}>🎉 הכל מוכן!</div>
         )}
 
         {newAlert && (
-          <div style={{ background: "#facc15", color: "#000", padding: "4px 10px", borderRadius: 20, fontWeight: 800, fontSize: 11 }}>
+          <div style={{ background: T.yellow, color: "#000", padding: "4px 10px", borderRadius: 20, fontWeight: 800, fontSize: 11 }}>
             🔔 הזמנה חדשה!
           </div>
         )}
 
-        <span style={{ fontSize: 11, color: "#64748b" }}>
+        <span style={{ fontSize: 11, color: T.muted }}>
           {now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · ↻ {countdown}s
         </span>
 
         <button type="button" onClick={fetchOrders} title="רענן (R)" style={{
-          background: "#0f172a", color: "#94a3b8", border: "1px solid #334155",
+          background: T.bg, color: T.sub, border: "1px solid #334155",
           borderRadius: 7, padding: "4px 10px", fontSize: 11, cursor: "pointer",
         }}>↻ רענן</button>
         <button type="button" onClick={toggleFullscreen} title="מסך מלא (F)" style={{
-          background: "#0f172a", color: "#94a3b8", border: "1px solid #334155",
+          background: T.bg, color: T.sub, border: "1px solid #334155",
           borderRadius: 7, padding: "4px 10px", fontSize: 11, cursor: "pointer",
         }}>{fullscreen ? "⊠ צא" : "⛶ מסך מלא"}</button>
       </div>
 
       {/* ── Legend ── */}
       <div style={{
-        background: "#1a2540", borderBottom: "1px solid #1e293b",
+        background: T.surface, borderBottom: "1px solid #1e293b",
         padding: "5px 20px", display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap",
       }}>
         {[
-          { color: "#dc2626", label: "דחוף 20+ דק'" },
-          { color: "#d97706", label: "בינוני 10-20 דק'" },
-          { color: "#0891b2", label: "חדש < 10 דק'" },
-          { color: "#16a34a", label: "הכל מוכן" },
+          { color: T.red, label: "דחוף 20+ דק'" },
+          { color: T.orange, label: "בינוני 10-20 דק'" },
+          { color: T.cyan, label: "חדש < 10 דק'" },
+          { color: T.green, label: "הכל מוכן" },
         ].map(l => (
           <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <div style={{ width: 10, height: 10, borderRadius: 2, background: l.color }}/>
-            <span style={{ fontSize: 10, color: "#64748b" }}>{l.label}</span>
+            <span style={{ fontSize: 10, color: T.muted }}>{l.label}</span>
           </div>
         ))}
         <div style={{ marginRight: "auto", display: "flex", gap: 14 }}>
-          {[{ color: "#f59e0b", label: "בהכנה" }, { color: "#16a34a", label: "מוכן" }].map(l => (
+          {[{ color: T.orange, label: "בהכנה" }, { color: T.green, label: "מוכן" }].map(l => (
             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <div style={{ width: 9, height: 9, borderRadius: 2, background: l.color }}/>
-              <span style={{ fontSize: 10, color: "#64748b" }}>{l.label}</span>
+              <span style={{ fontSize: 10, color: T.muted }}>{l.label}</span>
             </div>
           ))}
         </div>
@@ -648,10 +649,10 @@ export default function TableKdsClient({
             minHeight: 300, gap: 12,
           }}>
             <div style={{ fontSize: 64 }}>✅</div>
-            <div style={{ color: "#475569", fontWeight: 700, fontSize: 18 }}>
+            <div style={{ color: T.muted, fontWeight: 700, fontSize: 18 }}>
               {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
             </div>
-            <div style={{ color: "#334155", fontSize: 13 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
+            <div style={{ color: T.overlay, fontSize: 13 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
           </div>
         ) : (
           Array.from(byTable.entries()).map(([tableKey, tableOrders]) => (

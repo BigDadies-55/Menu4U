@@ -41,11 +41,11 @@ function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 /* ── Gradient dark-stops (no T equivalent) ───────────────── */
 const C = {
-  blueDk:   "#1971c2",
-  greenDk:  "#2f9e44",
-  yellowDk: "#e67700",
-  redDk:    "#c92a2a",
-  purpleDk: "#6741d9",
+  blueDk:   T.blue,
+  greenDk:  T.green,
+  yellowDk: T.gold,
+  redDk:    T.red,
+  purpleDk: T.purple,
   pink:     "#f06595",
   pinkDk:   "#a61e4d",
 };
@@ -64,7 +64,7 @@ const STAGE_COLORS: Record<string, string> = {
   CONFIRMED: T.blue,
   PREPARING: "#f97316",
   READY:     T.green,
-  DELIVERED: "#c9a84c",
+  DELIVERED: T.gold,
 };
 const STAGE_LABELS: Record<string, string> = {
   PENDING:   "המתנה לאישור",
@@ -474,13 +474,13 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             <Card title="🍽 פילוג סטטוסים" sub="סך כל ההזמנות בתקופה לפי סטטוס אחרון">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
                 {([
-                  { k: "PENDING",   label: "ממתין", bg: "rgba(245,158,11,.1)",  border: "rgba(245,158,11,.25)", color: "#fcc419" },
+                  { k: "PENDING",   label: "ממתין", bg: "rgba(245,158,11,.1)",  border: "rgba(245,158,11,.25)", color: T.gold },
                   { k: "CONFIRMED", label: "אושר",  bg: "rgba(51,154,240,.1)",  border: "rgba(51,154,240,.25)", color: "#74c0fc" },
-                  { k: "PREPARING", label: "בהכנה", bg: "rgba(249,115,22,.1)",  border: "rgba(249,115,22,.25)", color: "#ff922b" },
+                  { k: "PREPARING", label: "בהכנה", bg: "rgba(249,115,22,.1)",  border: "rgba(249,115,22,.25)", color: T.orange },
                   { k: "READY",     label: "מוכן",  bg: "rgba(81,207,102,.1)",  border: "rgba(81,207,102,.25)", color: "#69db7c" },
-                  { k: "DELIVERED", label: "נמסר",  bg: "rgba(141,153,165,.1)", border: "rgba(141,153,165,.2)", color: "#adb5bd" },
+                  { k: "DELIVERED", label: "נמסר",  bg: "rgba(141,153,165,.1)", border: "rgba(141,153,165,.2)", color: T.sub },
                   { k: "PAID",      label: "שולם",  bg: "rgba(32,201,151,.1)",  border: "rgba(32,201,151,.25)", color: "#38d9a9" },
-                  { k: "CANCELLED", label: "בוטל",  bg: "rgba(240,62,62,.1)",   border: "rgba(240,62,62,.25)",  color: "#ff6b6b" },
+                  { k: "CANCELLED", label: "בוטל",  bg: "rgba(240,62,62,.1)",   border: "rgba(240,62,62,.25)",  color: T.red },
                 ] as const).map(({ k, label, bg, border, color }) => (
                   <div key={k} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
                     <div style={{ fontSize: 22, fontWeight: 800, color }}>{s.statusCounts[k] ?? 0}</div>

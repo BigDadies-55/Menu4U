@@ -5,22 +5,24 @@
  * Tables sized by urgency · pulsing SLA breach · neon course dots
  */
 import React, { useState, useEffect } from "react";
+import { T } from "@/lib/ui";
 
+// ── Design tokens (mapped from T — edit src/lib/ui.ts to change) ──
 const V = {
-  bg:        "#060610",
-  glass:     "rgba(255,255,255,0.055)",
-  border:    "rgba(255,255,255,0.09)",
-  purple:    "#a855f7",
-  purpleGlow:"rgba(168,85,247,0.5)",
-  cyan:      "#22d3ee",
-  cyanGlow:  "rgba(34,211,238,0.45)",
-  rose:      "#fb7185",
-  roseGlow:  "rgba(251,113,133,0.5)",
-  amber:     "#fbbf24",
-  amberGlow: "rgba(251,191,36,0.45)",
-  emerald:   "#34d399",
-  emeraldGlow:"rgba(52,211,153,0.45)",
-  text:      "#f1f5f9",
+  bg:        T.bgNeon,
+  glass:     T.glass,
+  border:    T.glassBorder,
+  purple:    T.purple,
+  purpleGlow:T.purpleGlow,
+  cyan:      T.cyan,
+  cyanGlow:  T.cyanGlow,
+  rose:      T.rose,
+  roseGlow:  T.roseGlow,
+  amber:     T.amber,
+  amberGlow: T.amberGlow,
+  emerald:   T.emerald,
+  emeraldGlow:T.emeraldGlow,
+  text:      T.text,
   sub:       "rgba(241,245,249,0.55)",
   muted:     "rgba(241,245,249,0.3)",
 };
@@ -232,7 +234,7 @@ export default function CommandShift() {
                 {/* Timer */}
                 {t.status==="occupied"&&t.sinceMin>0&&(
                   <text x={t.cx} y={t.cy+26} textAnchor="middle"
-                    fontSize={9} fill={breached?"#fca5a5":V.amber}
+                    fontSize={9} fill={breached?T.red:V.amber}
                     fontWeight={700} style={{fontFamily:"system-ui"}}>
                     {fmtM(t.sinceMin)}
                   </text>

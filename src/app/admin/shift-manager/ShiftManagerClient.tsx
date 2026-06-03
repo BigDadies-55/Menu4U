@@ -50,17 +50,17 @@ function timerMinutes(start: Date): number {
 }
 // ── Room background themes (identical to layout-builder) ───────────
 const BGS = [
-  { body: "#1a0a0a", cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#2a0e0e 0%,#0d0404 100%)` },
-  { body: "#0a150a", cw: `radial-gradient(ellipse at 30% 20%,#1a2a1a,#0a150a)` },
-  { body: "#0a0800", cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 60% 40%,#1a1205,#0a0800)` },
-  { body: "#050510", cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
-  { body: "#0a0502", cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
-  { body: "#f5f0e8", cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
+  { body: T.bg, cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#2a0e0e 0%,#0d0404 100%)` },
+  { body: T.bg, cw: `radial-gradient(ellipse at 30% 20%,#1a2a1a,#0a150a)` },
+  { body: T.bg, cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 60% 40%,#1a1205,#0a0800)` },
+  { body: T.bg, cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
+  { body: T.bg, cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
+  { body: T.text, cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
 ];
 const SHAPE_BR: Record<TableShape, string> = {
   round: "50%", rect: "10px", square: "8px", oval: "50%/40%", long: "12px", banquet: "6px",
 };
-const TABLE_BG = "#0e0c0a";
+const TABLE_BG = T.bg;
 
 function statusColor(s: "free" | "occupied" | "bill-requested"): string {
   if (s === "free") return T.green;
@@ -502,7 +502,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
             <button key={t} onClick={() => setTab(t)} style={{
               padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
               background: tab === t ? T.gold : "transparent",
-              color: tab === t ? "#1a0c06" : T.sub,
+              color: tab === t ? T.panel : T.sub,
               border: "none", borderRadius: "8px 8px 0 0",
             }}>{label}</button>
           );
@@ -525,7 +525,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                     <button key={r.id} onClick={() => setRoomIdx(i)} style={{
                       padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer",
                       background: i === roomIdx ? T.gold : T.panel,
-                      color: i === roomIdx ? "#1a0c06" : T.sub,
+                      color: i === roomIdx ? T.panel : T.sub,
                       border: `1px solid ${T.border}`, borderRadius: 8,
                     }}>{r.name}</button>
                   ))}
@@ -555,7 +555,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                       {(activeRoom.decos ?? []).slice().sort((a, b) => a.zIdx - b.zIdx).map(deco => {
                         const isLine = deco.kind === "line";
                         const isImage = deco.kind === "image";
-                        const c = deco.color || "#d4a017";
+                        const c = deco.color || T.gold;
                         return (
                           <div key={deco.id} style={{
                             position: "absolute",
@@ -637,7 +637,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                                   {h >= 56 && <span style={{ fontSize: Math.max(7, 9 * floorScale), color: "rgba(255,255,255,0.38)", lineHeight: 1.2 }}>שולחן</span>}
                                   <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
                                   {seated && orderSt === "free" && h >= 50 && (
-                                    <span style={{ fontSize: Math.max(7, fSz * 0.5), color: "#c4b5fd", lineHeight: 1.2 }}>{seated.partyName}</span>
+                                    <span style={{ fontSize: Math.max(7, fSz * 0.5), color: T.purple, lineHeight: 1.2 }}>{seated.partyName}</span>
                                   )}
                                 </div>
 
@@ -645,13 +645,13 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                                 {h >= 44 && (
                                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
                                     {start ? (
-                                      <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? "#fca5a5" : "#fcd34d", fontWeight: 700, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                                      <span style={{ fontSize: Math.max(7, fSz * 0.6), color: breached ? T.red : T.amber, fontWeight: 700, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
                                         {fmtTimer(start)} ⏱
                                       </span>
                                     ) : (
                                       <span style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.26)", lineHeight: 1 }}>{cfg.label}</span>
                                     )}
-                                    {canSeat && <span style={{ fontSize: Math.max(6, fSz * 0.5), color: "#86efac", lineHeight: 1 }}>👆 הושב</span>}
+                                    {canSeat && <span style={{ fontSize: Math.max(6, fSz * 0.5), color: T.green, lineHeight: 1 }}>👆 הושב</span>}
                                   </div>
                                 )}
                               </div>
@@ -683,10 +683,10 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
                       {/* Legend */}
                       <div style={{ position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 50 }}>
-                        {([["#22c55e","פנוי"],["#a78bfa","הושב"],["#f97316","תפוס"],["#ef4444","חשבון"]] as const).map(([col, lbl]) => (
+                        {([[T.green,"פנוי"],[T.purple,"הושב"],[T.orange,"תפוס"],[T.red,"חשבון"]] as const).map(([col, lbl]) => (
                           <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 7, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 10, backdropFilter: "blur(4px)" }}>
                             <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, display: "inline-block" }} />
-                            <span style={{ color: "#e5d5b5" }}>{lbl}</span>
+                            <span style={{ color: T.sub }}>{lbl}</span>
                           </div>
                         ))}
                       </div>
@@ -924,7 +924,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                                 flexShrink: 0,
                                 padding: "4px 10px", fontSize: 12, fontWeight: 700,
                                 borderRadius: 6, cursor: "pointer", border: "none",
-                                background: is86 ? "#16a34a" : "#dc2626",
+                                background: is86 ? T.green : T.red,
                                 color: "#fff",
                               }}
                             >
@@ -954,10 +954,10 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
               return (
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                   {[
-                    { label: "פנויים",    value: freeCount,     color: "#22c55e" },
-                    { label: "הושבו",     value: seatedCount,   color: "#a78bfa" },
-                    { label: "תפוסים",   value: occupiedCount, color: "#f97316" },
-                    { label: "ביקשו חשבון", value: billCount,  color: "#ef4444" },
+                    { label: "פנויים",    value: freeCount,     color: T.green },
+                    { label: "הושבו",     value: seatedCount,   color: T.purple },
+                    { label: "תפוסים",   value: occupiedCount, color: T.orange },
+                    { label: "ביקשו חשבון", value: billCount,  color: T.red },
                   ].map(s => (
                     <div key={s.label} style={{ flex: "1 1 80px", background: T.surface, border: `1px solid ${s.color}44`, borderRadius: 10, padding: "10px 0", textAlign: "center" }}>
                       <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
@@ -1011,7 +1011,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                         <span style={{ fontSize: 40, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{t.num}</span>
                         {t.name && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.26)", marginTop: 2 }}>{t.name}</span>}
                         {seated && status === "free" && (
-                          <span style={{ fontSize: 10, color: "#c4b5fd", marginTop: 2, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
+                          <span style={{ fontSize: 10, color: T.purple, marginTop: 2, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seated.partyName}</span>
                         )}
                       </div>
 
@@ -1019,7 +1019,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
                         {guests > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{guests} סועדים</span>}
                         {start ? (
-                          <span style={{ fontSize: 12, fontWeight: 700, color: breached ? "#fca5a5" : "#fcd34d", fontVariantNumeric: "tabular-nums" }}>{fmtTimer(start)} ⏱</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: breached ? T.red : T.amber, fontVariantNumeric: "tabular-nums" }}>{fmtTimer(start)} ⏱</span>
                         ) : (
                           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.26)" }}>{cfg.label}</span>
                         )}
@@ -1133,7 +1133,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
       {/* ── Toast ── */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.gold, color: "#1a0c06", padding: "10px 24px", borderRadius: 24, fontWeight: 700, fontSize: 14, zIndex: 9999, animation: "slideDown 0.2s ease" }}>
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.gold, color: T.panel, padding: "10px 24px", borderRadius: 24, fontWeight: 700, fontSize: 14, zIndex: 9999, animation: "slideDown 0.2s ease" }}>
           {toast}
         </div>
       )}

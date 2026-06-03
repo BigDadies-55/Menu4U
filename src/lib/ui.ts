@@ -46,10 +46,29 @@ export const T = {
   redSub:   "rgba(239,68,68,0.12)",
   blue:     "#3b82f6",
   blueSub:  "rgba(59,130,246,0.12)",
-  purple:   "#a78bfa",
-  purpleSub:"rgba(167,139,250,0.12)",
+  purple:   "#a855f7",
+  purpleSub:"rgba(168,85,247,0.12)",
+  purpleGlow:"rgba(168,85,247,0.45)",
   yellow:   "#facc15",
   yellowSub:"rgba(250,204,21,0.12)",
+  cyan:     "#22d3ee",
+  cyanSub:  "rgba(34,211,238,0.12)",
+  cyanGlow: "rgba(34,211,238,0.4)",
+  rose:     "#fb7185",
+  roseSub:  "rgba(251,113,133,0.12)",
+  roseGlow: "rgba(251,113,133,0.45)",
+  emerald:  "#34d399",
+  emeraldSub:"rgba(52,211,153,0.12)",
+  emeraldGlow:"rgba(52,211,153,0.45)",
+  amber:    "#fbbf24",
+  amberGlow:"rgba(251,191,36,0.45)",
+
+  // Neon / template palette
+  bgNeon:      "#060610",           // deep space bg for template screens
+  glass:       "rgba(255,255,255,0.055)",
+  glassHover:  "rgba(255,255,255,0.10)",
+  glassBorder: "rgba(255,255,255,0.10)",
+  glassBorderBright:"rgba(255,255,255,0.22)",
 
   // Radius
   rSm:  4,

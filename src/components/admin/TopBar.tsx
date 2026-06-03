@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -56,7 +57,7 @@ interface Props {
   onToggleFavorite?: (href: string, label: string) => void;
 }
 
-export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, adminTopBarBg, adminTopBarTextColor = "#374151", favorites = [], onToggleFavorite }: Props) {
+export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, adminTopBarBg, adminTopBarTextColor = T.panel, favorites = [], onToggleFavorite }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
 
@@ -189,18 +190,18 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
           <button
             onClick={() => setFavsOpen(v => !v)}
             className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-black/[0.06] relative"
-            style={{ color: favsOpen ? "#f59e0b" : iconColor }}
+            style={{ color: favsOpen ? T.orange : iconColor }}
             title="מועדפים"
           >
             <svg width="15" height="15" viewBox="0 0 24 24"
-              fill={favorites.length > 0 ? "#f59e0b" : "none"}
-              stroke={favorites.length > 0 ? "#f59e0b" : "currentColor"}
+              fill={favorites.length > 0 ? T.orange : "none"}
+              stroke={favorites.length > 0 ? T.orange : "currentColor"}
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
             {favorites.length > 0 && (
               <span className="absolute -top-0.5 -left-0.5 min-w-[14px] h-[14px] rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5"
-                style={{ background: "#f59e0b", lineHeight: 1 }}>
+                style={{ background: T.orange, lineHeight: 1 }}>
                 {favorites.length}
               </span>
             )}
@@ -229,7 +230,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
                         className="flex items-center gap-2.5 flex-1 px-4 py-2.5 text-sm text-gray-700"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24"
-                          fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          fill={T.orange} stroke={T.orange} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                           className="shrink-0">
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                         </svg>
@@ -276,7 +277,7 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
               style={{ direction: "rtl" }}
             />
             {searchLoading && (
-              <svg className="animate-spin shrink-0 ml-2" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5">
+              <svg className="animate-spin shrink-0 ml-2" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="2.5">
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
               </svg>
             )}

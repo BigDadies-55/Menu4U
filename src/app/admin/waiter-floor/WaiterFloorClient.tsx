@@ -24,7 +24,7 @@ const BGS = [
   { body: "#0a0800", cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 60% 40%,#1a1205,#0a0800)` },
   { body: "#050510", cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
   { body: "#0a0502", cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
-  { body: "#f5f0e8", cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
+  { body: T.text, cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
 ];
 
 // ── Table shape border-radius (identical to layout-builder) ────────
@@ -571,7 +571,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                     .map(deco => {
                       const isLine  = deco.kind === "line";
                       const isImage = deco.kind === "image";
-                      const c = deco.color || "#d4a017";
+                      const c = deco.color || T.gold;
                       return (
                         <div key={deco.id} style={{
                           position: "absolute",
@@ -634,13 +634,13 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                           <div style={{
                             position: "absolute", inset: 0, borderRadius: 10,
                             background: "#0e0c0a",
-                            border: `${Math.max(1, 1.5 * scale)}px solid ${isSel ? "#d4a017" : isOther ? "rgba(255,255,255,0.06)" : brd}`,
+                            border: `${Math.max(1, 1.5 * scale)}px solid ${isSel ? T.gold : isOther ? "rgba(255,255,255,0.06)" : brd}`,
                             boxShadow: isSel ? `0 0 0 ${2 * scale}px rgba(212,160,23,0.35)` : isOther ? "none" : `0 0 ${5 * scale}px ${cfg.glow}`,
                             overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s",
                             display: "flex", flexDirection: "column",
                           }}>
                             {/* Top stripe */}
-                            <div style={{ height: Math.max(2, 3 * scale), background: isSel ? "#d4a017" : accentColor, opacity: isOther ? 0.3 : 1, flexShrink: 0 }} />
+                            <div style={{ height: Math.max(2, 3 * scale), background: isSel ? T.gold : accentColor, opacity: isOther ? 0.3 : 1, flexShrink: 0 }} />
 
                             {/* Card body */}
                             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: Math.max(3, 5 * scale) }}>
@@ -661,7 +661,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                               {h >= 44 && (
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
                                   {start ? (
-                                    <span style={{ fontSize: Math.max(7, fSz * 0.6), color: status === "bill-requested" ? "#fca5a5" : "#fcd34d", fontWeight: 700, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                                    <span style={{ fontSize: Math.max(7, fSz * 0.6), color: status === "bill-requested" ? T.red : T.amber, fontWeight: 700, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
                                       {fmtTimer(start)} ⏱
                                     </span>
                                   ) : (
@@ -679,10 +679,10 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
                 {/* Legend overlay */}
                 <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap", zIndex: 50 }}>
-                  {([["free","#22c55e","פנוי"],["occupied","#f97316","תפוס"],["bill-requested","#ef4444","חשבון"]] as const).map(([, col, lbl]) => (
+                  {([["free",T.green,"פנוי"],["occupied",T.orange,"תפוס"],["bill-requested",T.red,"חשבון"]] as const).map(([, col, lbl]) => (
                     <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 11, backdropFilter: "blur(4px)" }}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, display: "inline-block" }} />
-                      <span style={{ color: "#e5d5b5" }}>{lbl}</span>
+                      <span style={{ color: T.sub }}>{lbl}</span>
                     </div>
                   ))}
                 </div>
@@ -778,7 +778,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                       <input value={orderNote} onChange={e => setOrderNote(e.target.value)} placeholder="הערה להזמנה..." style={{ ...inp, marginBottom: 8 }} />
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ fontWeight: 800, color: T.gold }}>₪{cartTotal.toFixed(0)}</span>
-                        <button onClick={submitOrder} disabled={submitting} style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: submitting ? 0.6 : 1 }}>
+                        <button onClick={submitOrder} disabled={submitting} style={{ background: T.green, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: submitting ? 0.6 : 1 }}>
                           {submitting ? "שולח..." : "🚀 שלח למטבח"}
                         </button>
                       </div>
@@ -801,7 +801,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                     <button onClick={requestBill} style={{ ...btnGhost(T.orange), fontSize: 12 }}>🧾 ביקש חשבון</button>
                   )}
                   {(selTableStatus === "bill-requested" || selTableStatus === "occupied") && (
-                    <button onClick={() => setPayModal(true)} style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>💳 סגור חשבון</button>
+                    <button onClick={() => setPayModal(true)} style={{ background: T.green, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>💳 סגור חשבון</button>
                   )}
                   <button onClick={() => { setTransferTo(""); setTransferModal(true); }} style={{ ...btnGhost(T.muted), fontSize: 12 }}>↔ העבר שולחן</button>
                 </div>
@@ -822,7 +822,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                     {/* Course selector */}
                     <div style={{ display: "flex", gap: 4, padding: "4px 14px", borderBottom: `1px solid ${T.border}` }}>
                       {[1,2,3].map(c => (
-                        <button key={c} onClick={() => setAddCourse(c)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", background: addCourse === c ? "rgba(167,139,250,0.2)" : "transparent", border: `1px solid ${addCourse === c ? "#a78bfa" : T.border}`, color: addCourse === c ? "#a78bfa" : T.sub }}>
+                        <button key={c} onClick={() => setAddCourse(c)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", background: addCourse === c ? "rgba(167,139,250,0.2)" : "transparent", border: `1px solid ${addCourse === c ? T.purple : T.border}`, color: addCourse === c ? T.purple : T.sub }}>
                           {EMOJI[c]} {COURSE[c]}
                         </button>
                       ))}
@@ -839,7 +839,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                     {cart.length > 0 && (
                       <div style={{ padding: "6px 14px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ fontSize: 12, color: T.sub }}>{cart.reduce((s, c) => s + c.qty, 0)} פריטים · ₪{cartTotal.toFixed(0)}</span>
-                        <button onClick={submitOrder} disabled={submitting} style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: submitting ? 0.6 : 1 }}>
+                        <button onClick={submitOrder} disabled={submitting} style={{ background: T.green, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: submitting ? 0.6 : 1 }}>
                           {submitting ? "שולח..." : "🚀 שלח"}
                         </button>
                       </div>
@@ -873,7 +873,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                                     display: "flex", alignItems: "center", gap: 5,
                                     padding: "5px 12px", borderRadius: 8, border: "1px solid #f97316aa",
                                     background: loading ? "#7a3a0088" : "rgba(249,115,22,0.15)",
-                                    color: loading ? "#f97316aa" : "#f97316",
+                                    color: loading ? "#f97316aa" : T.orange,
                                     fontSize: 12, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
                                     transition: "background 150ms",
                                   }}
@@ -896,9 +896,9 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                           return (
                             <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderTop: `1px solid ${T.border}`, opacity: isCancelled ? 0.4 : 1 }}>
                               <span style={{ fontSize: 11, color: T.muted, flexShrink: 0 }}>×{item.quantity}</span>
-                              <span style={{ flex: 1, fontSize: 12, color: item.isComped ? "#a78bfa" : T.text, textDecoration: item.isComped ? "line-through" : "none" }}>{item.item.name}</span>
-                              {item.isComped && <span style={{ fontSize: 9, color: "#a78bfa", background: "rgba(167,139,250,0.15)", borderRadius: 4, padding: "1px 4px", flexShrink: 0 }}>פיצוי</span>}
-                              {item.course > 1 && <span style={{ fontSize: 10, color: "#a78bfa" }}>{EMOJI[item.course]}</span>}
+                              <span style={{ flex: 1, fontSize: 12, color: item.isComped ? T.purple : T.text, textDecoration: item.isComped ? "line-through" : "none" }}>{item.item.name}</span>
+                              {item.isComped && <span style={{ fontSize: 9, color: T.purple, background: "rgba(167,139,250,0.15)", borderRadius: 4, padding: "1px 4px", flexShrink: 0 }}>פיצוי</span>}
+                              {item.course > 1 && <span style={{ fontSize: 10, color: T.purple }}>{EMOJI[item.course]}</span>}
                               <span style={{ fontSize: 10, color: statusColors[statusKey] ?? T.muted, whiteSpace: "nowrap" }}>
                                 {statusLabels[statusKey] ?? statusKey}
                               </span>
@@ -907,7 +907,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                                   <button
                                     onClick={() => openPinModal("comp", order.id, item.id, item.item.name, item.isComped)}
                                     title={item.isComped ? "בטל פיצוי" : "סמן כפיצוי (חינם)"}
-                                    style={{ background: item.isComped ? "rgba(167,139,250,0.3)" : "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.4)", borderRadius: 5, padding: "2px 5px", fontSize: 11, cursor: "pointer", color: "#a78bfa", flexShrink: 0 }}
+                                    style={{ background: item.isComped ? "rgba(167,139,250,0.3)" : "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.4)", borderRadius: 5, padding: "2px 5px", fontSize: 11, cursor: "pointer", color: T.purple, flexShrink: 0 }}
                                   >🎁</button>
                                   <button
                                     onClick={() => openPinModal("cancel", order.id, item.id, item.item.name)}
@@ -965,7 +965,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
             </div>
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={closeTable} disabled={closing} style={{ flex: 1, background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: closing ? 0.6 : 1 }}>
+              <button onClick={closeTable} disabled={closing} style={{ flex: 1, background: T.green, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: closing ? 0.6 : 1 }}>
                 {closing ? "סוגר..." : `✓ סגור · ₪${(activeTableTotal + tip).toFixed(0)}`}
               </button>
               <button onClick={() => setPayModal(false)} style={{ ...btnGhost(T.muted), padding: "8px 16px" }}>ביטול</button>
@@ -1049,7 +1049,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
       {/* ── Toast ── */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: "#1a2e1a", border: "1px solid #22c55e", borderRadius: 10, padding: "10px 20px", color: "#22c55e", fontWeight: 700, fontSize: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.5)", whiteSpace: "nowrap" }}>
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: "#1a2e1a", border: "1px solid #22c55e", borderRadius: 10, padding: "10px 20px", color: T.green, fontWeight: 700, fontSize: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.5)", whiteSpace: "nowrap" }}>
           {toast}
         </div>
       )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
@@ -27,9 +28,9 @@ type Order = {
 type Restaurant = { id: string; name: string };
 
 const ITEM_COLOR: Record<string, string> = {
-  PENDING: "#d97706",    // amber-600  — readable on white
-  PREPARING: "#0284c7",  // sky-600    — readable on white
-  DONE: "#16a34a",       // green-600  — readable on white
+  PENDING: T.orange,    // amber-600  — readable on white
+  PREPARING: T.blue,  // sky-600    — readable on white
+  DONE: T.green,       // green-600  — readable on white
 };
 
 const ITEM_LABEL: Record<string, string> = {
@@ -102,38 +103,38 @@ function TableCard({
     <div
       className="rounded-2xl flex flex-col overflow-hidden"
       style={{
-        background: "#1e2433",
-        border: `2px solid ${isUrgent ? "#ef4444" : "#374157"}`,
+        background: T.surface,
+        border: `2px solid ${isUrgent ? T.red : T.panel}`,
         boxShadow: isUrgent ? "0 0 16px #ef444440" : "0 2px 8px rgba(0,0,0,0.08)",
       }}
     >
       {/* Table header */}
-      <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#252d42", borderBottom: "1px solid #374157" }}>
+      <div className="flex items-center gap-3 px-4 py-3" style={{ background: T.surface, borderBottom: "1px solid #374157" }}>
         <div
           className="w-14 h-14 rounded-xl flex items-center justify-center font-black text-black text-2xl shrink-0"
-          style={{ background: isUrgent ? "#ef4444" : "#facc15" }}
+          style={{ background: isUrgent ? T.red : T.yellow }}
         >
           {tableNumber === "–" ? "?" : tableNumber}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold" style={{ color: "#f1f5f9" }}>שולחן {tableNumber}</span>
+            <span className="font-bold" style={{ color: T.text }}>שולחן {tableNumber}</span>
             <span className={`text-sm font-semibold ${isUrgent ? "text-red-400 animate-pulse" : "text-blue-300"}`}>
               ⏱ {fmtElapsed(mins)}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "#374157" }}>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: T.panel }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%`, background: progressPct === 100 ? "#4ade80" : "#60a5fa" }}
+                style={{ width: `${progressPct}%`, background: progressPct === 100 ? T.green : T.blue }}
               />
             </div>
-            <span className="text-xs shrink-0" style={{ color: "#6b7280" }}>{doneCount}/{totalCount}</span>
+            <span className="text-xs shrink-0" style={{ color: T.muted }}>{doneCount}/{totalCount}</span>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-bold text-lg" style={{ color: "#f1f5f9" }}>₪{totalAmount.toFixed(0)}</div>
+          <div className="font-bold text-lg" style={{ color: T.text }}>₪{totalAmount.toFixed(0)}</div>
         </div>
       </div>
 
@@ -147,10 +148,10 @@ function TableCard({
             {/* Order sub-header */}
             <div
               className="flex items-center justify-between px-4 py-2.5"
-              style={{ background: isPending ? "#2d2510" : isDelivered ? "#142414" : "#1e2433" }}
+              style={{ background: isPending ? T.bg : isDelivered ? T.bg : T.surface }}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-bold shrink-0" style={{ color: isPending ? "#fbbf24" : isDelivered ? "#4ade80" : "#94a3b8" }}>
+                <span className="text-xs font-bold shrink-0" style={{ color: isPending ? T.amber : isDelivered ? T.green : T.sub }}>
                   {isPending ? "🕐 ממתין לאישור" : isDelivered ? "✓ הושלם" : `הזמנה ${idx + 1}`}
                 </span>
                 <span className="text-xs text-gray-400 shrink-0">{order.items.length} מנות · ₪{order.totalAmount.toFixed(0)}</span>
@@ -162,7 +163,7 @@ function TableCard({
                 <button
                   onClick={() => onConfirmOrder(order.id)}
                   className="shrink-0 px-4 py-2 rounded-xl font-black text-black text-sm transition-all active:scale-95 hover:opacity-90"
-                  style={{ background: "#facc15", minHeight: 44, minWidth: 72 }}
+                  style={{ background: T.yellow, minHeight: 44, minWidth: 72 }}
                 >
                   ✓ אשר
                 </button>
@@ -181,7 +182,7 @@ function TableCard({
             {/* Items */}
             <div className="divide-y divide-white/5" style={{ opacity: isPending ? 0.6 : 1 }}>
               {order.items.map(({ id: itemId, quantity, notes, itemStatus, item, modifiers }) => {
-                const color = isDelivered ? "#4b5563" : (ITEM_COLOR[itemStatus] ?? "#9ca3af");
+                const color = isDelivered ? T.overlay : (ITEM_COLOR[itemStatus] ?? T.muted);
                 const nextLabel = !isPending && !isDelivered ? ITEM_NEXT_LABEL[itemStatus] : undefined;
                 const isDone = itemStatus === "DONE" || isDelivered;
                 const isBusy = busy.has(itemId);
@@ -191,7 +192,7 @@ function TableCard({
                     key={`${itemId}-${tick}`}
                     className="flex items-center gap-3 px-4 py-3 transition-all"
                     style={{
-                      background: isDone && !isDelivered ? "#142414" : "transparent",
+                      background: isDone && !isDelivered ? T.bg : "transparent",
                     }}
                   >
                     <span
@@ -203,14 +204,14 @@ function TableCard({
                     <div className="flex-1 min-w-0">
                       <div
                         className="text-base font-semibold truncate"
-                        style={{ color: isDelivered ? "#6b7280" : "#f1f5f9" }}
+                        style={{ color: isDelivered ? T.muted : T.text }}
                       >
                         {item.name}
                       </div>
                       {modifiers && modifiers.length > 0 && (
                         <div className="flex gap-1 flex-wrap mt-0.5">
                           {modifiers.map((m, i) => (
-                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "#1e3a2e", color: "#4ade80" }}>
+                            <span key={i} className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: T.bg, color: T.green }}>
                               {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                             </span>
                           ))}
@@ -234,7 +235,7 @@ function TableCard({
                         disabled={busy.has(itemId + "-back")}
                         title="חזור סטטוס"
                         className="shrink-0 rounded-lg transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
-                        style={{ background: "#2d3748", color: "#a0aec0", width: 28, height: 28, fontSize: 13 }}
+                        style={{ background: T.surface, color: T.sub, width: 28, height: 28, fontSize: 13 }}
                       >
                         {busy.has(itemId + "-back") ? "·" : "←"}
                       </button>
@@ -245,7 +246,7 @@ function TableCard({
                         disabled={isBusy}
                         className="shrink-0 rounded-xl font-bold text-white transition-all active:scale-95 hover:opacity-90 disabled:opacity-40"
                         style={{
-                          background: itemStatus === "PREPARING" ? "#16a34a" : "#0284c7",
+                          background: itemStatus === "PREPARING" ? T.green : T.blue,
                           padding: "10px 14px",
                           minHeight: 44,
                           minWidth: 80,
@@ -409,11 +410,11 @@ export default function DashboardClient({
   const restaurantName = restaurants.find(r => r.id === restaurantId)?.name ?? "כל המסעדות";
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#0a0a0a", color: "#fff" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: T.bg, color: "#fff" }}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0"
-        style={{ background: newAlert ? "#2a1f00" : "#111" }}
+        style={{ background: newAlert ? T.bg : "#111" }}
       >
         <div className="flex items-center gap-4">
           <div className="text-xl font-black tracking-wide">📺 {restaurantName}</div>
@@ -471,13 +472,13 @@ export default function DashboardClient({
       </div>
 
       {/* Bottom bar */}
-      <div className="shrink-0 px-5 py-2.5 border-t border-white/10 flex items-center justify-between text-sm" style={{ background: "#080808" }}>
+      <div className="shrink-0 px-5 py-2.5 border-t border-white/10 flex items-center justify-between text-sm" style={{ background: T.bg }}>
         <div className="flex gap-6">
-          <span style={{ color: pendingOrderCount > 0 ? "#facc15" : "#333" }}>🕐 {pendingOrderCount} לאישור</span>
-          <span style={{ color: doneItems < totalItems && totalItems > 0 ? "#38bdf8" : "#333" }}>
+          <span style={{ color: pendingOrderCount > 0 ? T.yellow : "#333" }}>🕐 {pendingOrderCount} לאישור</span>
+          <span style={{ color: doneItems < totalItems && totalItems > 0 ? T.cyan : "#333" }}>
             👨‍🍳 {totalItems - doneItems} בטיפול
           </span>
-          <span style={{ color: doneItems > 0 ? "#4ade80" : "#333" }}>✓ {doneItems}/{totalItems} הושלמו</span>
+          <span style={{ color: doneItems > 0 ? T.green : "#333" }}>✓ {doneItems}/{totalItems} הושלמו</span>
         </div>
         <div className="text-gray-600">{new Date().toLocaleTimeString("he-IL")}</div>
       </div>

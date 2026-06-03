@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import React, { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -34,10 +35,10 @@ type Restaurant = { id: string; name: string };
 const GRID = 20;
 
 const STATUS_CFG: Record<TableStatus, { label: string; bg: string; border: string; color: string }> = {
-  free:     { label: "פנוי",  bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: "#2e7d2e", color: "#4caf50" },
-  reserved: { label: "שמור", bg: "radial-gradient(circle at 40% 35%,#5c2a00,#2e1200)", border: "#c87720", color: "#ff9800" },
-  seated:   { label: "יושב", bg: "radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a)", border: "#8b1a1a", color: "#f44336" },
-  vip:      { label: "VIP",  bg: "radial-gradient(circle at 40% 35%,#5c4a00,#2e2500)", border: "#d4a017", color: "#ffd700" },
+  free:     { label: "פנוי",  bg: "radial-gradient(circle at 40% 35%,#2a5c2a,#0f2e0f)", border: T.green, color: T.green },
+  reserved: { label: "שמור", bg: "radial-gradient(circle at 40% 35%,#5c2a00,#2e1200)", border: T.gold, color: T.orange },
+  seated:   { label: "יושב", bg: "radial-gradient(circle at 40% 35%,#5c1414,#2e0a0a)", border: T.bg, color: T.red },
+  vip:      { label: "VIP",  bg: "radial-gradient(circle at 40% 35%,#5c4a00,#2e2500)", border: T.gold, color: T.gold },
 };
 
 const SHAPE_BR: Record<TableShape, string> = {
@@ -64,17 +65,17 @@ const DECO_PALETTE: DecoPaletteItem[] = [
 ];
 
 const BGS = [
-  { label: "קלאסי",  body: "#1a0a0a",
+  { label: "קלאסי",  body: T.bg,
     cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#2a0e0e 0%,#0d0404 100%)` },
-  { label: "אמרלד",  body: "#0a150a",
+  { label: "אמרלד",  body: T.bg,
     cw: `radial-gradient(ellipse at 30% 20%,#1a2a1a,#0a150a)` },
-  { label: "זהב",    body: "#0a0800",
+  { label: "זהב",    body: T.bg,
     cw: `repeating-linear-gradient(0deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(212,160,23,0.09) 0px,rgba(212,160,23,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 60% 40%,#1a1205,#0a0800)` },
-  { label: "מלכותי", body: "#050510",
+  { label: "מלכותי", body: T.bg,
     cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
-  { label: "בורדו",  body: "#0a0502",
+  { label: "בורדו",  body: T.bg,
     cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
-  { label: "שמנת",   body: "#f5f0e8",
+  { label: "שמנת",   body: T.text,
     cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
 ];
 
@@ -96,8 +97,8 @@ function SeatIndicators({ w, h, seats, seatedCount }: { w: number; h: number; se
           <div key={i} style={{
             position: "absolute",
             width: 9, height: 9, borderRadius: "50%",
-            background: i < seatedCount ? "#d4a017" : "rgba(255,255,255,0.15)",
-            border: `1px solid ${i < seatedCount ? "#ffd700" : "rgba(255,255,255,0.25)"}`,
+            background: i < seatedCount ? T.gold : "rgba(255,255,255,0.15)",
+            border: `1px solid ${i < seatedCount ? T.gold : "rgba(255,255,255,0.25)"}`,
             left: w / 2 + rx * Math.cos(a) - 4.5,
             top: h / 2 + ry * Math.sin(a) - 4.5,
             pointerEvents: "none",
@@ -123,7 +124,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
     const ctx = c.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, MW, MH);
-    ctx.fillStyle = "#0d0404";
+    ctx.fillStyle = T.bg;
     ctx.fillRect(0, 0, MW, MH);
     for (const t of room.tables) {
       const cfg = STATUS_CFG[t.status] ?? STATUS_CFG.free;
@@ -152,7 +153,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
     <div style={{ position: "absolute", bottom: 16, right: 16, width: MW, height: MH, background: "rgba(13,4,4,0.97)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 8, overflow: "hidden", zIndex: 100, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
       <canvas ref={canvasRef} width={MW} height={MH} style={{ display: "block" }} />
       <div style={{ position: "absolute", left: vpX, top: vpY, width: Math.max(6, vpW), height: Math.max(4, vpH), border: "1.5px solid #d4a017", background: "rgba(212,160,23,0.12)", pointerEvents: "none", borderRadius: 2 }} />
-      <div style={{ position: "absolute", bottom: 2, left: 4, fontSize: 9, color: "#6c757d", userSelect: "none" }}>{Math.round(zoom * 100)}%</div>
+      <div style={{ position: "absolute", bottom: 2, left: 4, fontSize: 9, color: T.muted, userSelect: "none" }}>{Math.round(zoom * 100)}%</div>
     </div>
   );
 }
@@ -160,7 +161,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
 /* ══════════════════════════ Toast ══ */
 function Toast({ msg }: { msg: string }) {
   return (
-    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "rgba(20,10,4,0.97)", border: "1px solid rgba(212,160,23,0.5)", color: "#ffd700", padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "rgba(20,10,4,0.97)", border: "1px solid rgba(212,160,23,0.5)", color: T.gold, padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
       {msg}
     </div>
   );
@@ -174,7 +175,7 @@ function TopBtn({ children, onClick, title, active, danger, wide }: {
     <button
       onClick={onClick}
       title={title}
-      style={{ minWidth: wide ? 40 : 28, height: 28, borderRadius: 7, padding: wide ? "0 8px" : 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none", background: active ? "rgba(212,160,23,0.22)" : "transparent", color: danger ? "#f44336" : active ? "#ffd700" : "#d4a017", fontSize: 14, fontWeight: 700, outline: active ? "1px solid rgba(212,160,23,0.45)" : "none", transition: "all 0.12s" }}
+      style={{ minWidth: wide ? 40 : 28, height: 28, borderRadius: 7, padding: wide ? "0 8px" : 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none", background: active ? "rgba(212,160,23,0.22)" : "transparent", color: danger ? T.red : active ? T.gold : T.gold, fontSize: 14, fontWeight: 700, outline: active ? "1px solid rgba(212,160,23,0.45)" : "none", transition: "all 0.12s" }}
       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = danger ? "rgba(244,67,54,0.15)" : "rgba(212,160,23,0.14)"; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = active ? "rgba(212,160,23,0.22)" : "transparent"; }}
     >{children}</button>
@@ -266,7 +267,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
             style={{
               width: Math.min(w - 16, 60), fontSize: Math.max(11, fSz * 0.56),
               background: "rgba(0,0,0,0.65)", border: "1.5px solid #d4a017",
-              color: "#ffd700", borderRadius: 6, textAlign: "center",
+              color: T.gold, borderRadius: 6, textAlign: "center",
               outline: "none", fontWeight: 700, zIndex: 10,
               padding: "2px 4px", marginTop: 3, fontFamily: "inherit",
             }}
@@ -289,7 +290,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
       {selected && (
         <div
           onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
-          style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: "#d4a017", border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }}
+          style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: T.gold, border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }}
         />
       )}
     </div>
@@ -311,7 +312,7 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
   const taRef = useRef<HTMLTextAreaElement>(null);
   const isLine  = deco.kind === "line";
   const isImage = deco.kind === "image";
-  const c = deco.color || "#d4a017";
+  const c = deco.color || T.gold;
 
   return (
     <div
@@ -368,7 +369,7 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
       {/* SE resize handle */}
       {selected && (
         <div onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
-          style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: "#d4a017", border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }} />
+          style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: T.gold, border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }} />
       )}
     </div>
   );
@@ -390,7 +391,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
     seats: String(table.seats), seatedCount: String(table.seatedCount),
     w: String(Math.round(table.w)), h: String(Math.round(table.h)),
     rot: String(Math.round(table.rot)),
-    status: table.status, customColor: table.customColor || "#d4a017",
+    status: table.status, customColor: table.customColor || T.gold,
   });
   const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
   const [off, setOff] = useState({ x: 0, y: 0 });
@@ -411,14 +412,14 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
       h: Math.max(40, parseInt(form.h) || table.h),
       rot: parseInt(form.rot) || 0,
       status: form.status,
-      customColor: form.customColor !== "#d4a017" ? form.customColor : "",
+      customColor: form.customColor !== T.gold ? form.customColor : "",
     });
   }
 
-  const inp: React.CSSProperties = { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(212,160,23,0.2)", color: "#e9ecef", borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(212,160,23,0.2)", color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
 
   return (
-    <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: "linear-gradient(160deg,#180a05 0%,#251008 60%,#1a0d06 100%)", border: "1px solid rgba(212,160,23,0.5)", borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: "#e9ecef" }}>
+    <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: "linear-gradient(160deg,#180a05 0%,#251008 60%,#1a0d06 100%)", border: "1px solid rgba(212,160,23,0.5)", borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: T.text }}>
 
       {/* Draggable header */}
       <div
@@ -431,7 +432,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
           window.addEventListener("mouseup", mu);
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#d4a017" }}>✏️ שולחן {table.num}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.gold }}>✏️ שולחן {table.num}</span>
         <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#888", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "2px 7px", borderRadius: 6 }}>×</button>
       </div>
 
@@ -505,7 +506,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
             { icon: "⬇", label: "אחורה", action: onSendBack },
             { icon: "🗑", label: "מחק",   action: onDelete, danger: true },
           ].map(btn => (
-            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? "rgba(244,67,54,0.13)" : "rgba(255,255,255,0.06)", color: btn.danger ? "#f44336" : "#adb5bd", border: `1px solid ${btn.danger ? "rgba(244,67,54,0.3)" : "rgba(255,255,255,0.1)"}`, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
+            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? "rgba(244,67,54,0.13)" : "rgba(255,255,255,0.06)", color: btn.danger ? T.red : T.sub, border: `1px solid ${btn.danger ? "rgba(244,67,54,0.3)" : "rgba(255,255,255,0.1)"}`, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
               <span style={{ fontSize: 14 }}>{btn.icon}</span>
               <span style={{ fontSize: 9 }}>{btn.label}</span>
             </button>
@@ -533,7 +534,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
                     setTimeout(() => setCopied(false), 2000);
                   }).catch(() => {});
                 }}
-                style={{ padding: "6px 10px", borderRadius: 7, background: copied ? "rgba(76,175,80,0.2)" : "rgba(212,160,23,0.15)", color: copied ? "#4caf50" : "#d4a017", border: `1px solid ${copied ? "rgba(76,175,80,0.4)" : "rgba(212,160,23,0.35)"}`, cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s" }}>
+                style={{ padding: "6px 10px", borderRadius: 7, background: copied ? "rgba(76,175,80,0.2)" : "rgba(212,160,23,0.15)", color: copied ? T.green : T.gold, border: `1px solid ${copied ? "rgba(76,175,80,0.4)" : "rgba(212,160,23,0.35)"}`, cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s" }}>
                 {copied ? "✓ הועתק" : "העתק"}
               </button>
             </div>
@@ -553,13 +554,13 @@ function BgModal({ room, onClose, onUpdate }: {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div style={{ background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.45)", borderRadius: 18, width: 420, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", color: "#fff" }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#d4a017", marginBottom: 16 }}>🖼 רקע קנבס</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: T.gold, marginBottom: 16 }}>🖼 רקע קנבס</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
           {BGS.map((bgs, i) => (
-            <div key={i} onClick={() => onUpdate({ bg: i, bgImg: undefined })} style={{ borderRadius: 10, overflow: "hidden", cursor: "pointer", border: `2px solid ${room.bg === i && !room.bgImg ? "#d4a017" : "rgba(255,255,255,0.1)"}`, boxShadow: room.bg === i && !room.bgImg ? "0 0 12px rgba(212,160,23,0.4)" : "none", transition: "all 0.15s" }}>
+            <div key={i} onClick={() => onUpdate({ bg: i, bgImg: undefined })} style={{ borderRadius: 10, overflow: "hidden", cursor: "pointer", border: `2px solid ${room.bg === i && !room.bgImg ? T.gold : "rgba(255,255,255,0.1)"}`, boxShadow: room.bg === i && !room.bgImg ? "0 0 12px rgba(212,160,23,0.4)" : "none", transition: "all 0.15s" }}>
               <div style={{ height: 46, background: bgs.cw, backgroundSize: "40px 40px" }} />
-              <div style={{ padding: "5px 8px", background: bgs.body, fontSize: 11, fontWeight: 700, color: room.bg === i && !room.bgImg ? "#d4a017" : "#aaa" }}>{bgs.label}</div>
+              <div style={{ padding: "5px 8px", background: bgs.body, fontSize: 11, fontWeight: 700, color: room.bg === i && !room.bgImg ? T.gold : "#aaa" }}>{bgs.label}</div>
             </div>
           ))}
         </div>
@@ -571,7 +572,7 @@ function BgModal({ room, onClose, onUpdate }: {
               📁 העלה תמונה
             </button>
             {room.bgImg && (
-              <button onClick={() => onUpdate({ bgImg: undefined })} style={{ padding: "9px 14px", borderRadius: 10, background: "rgba(244,67,54,0.1)", border: "1px solid rgba(244,67,54,0.3)", color: "#f44336", cursor: "pointer", fontSize: 13 }}>הסר</button>
+              <button onClick={() => onUpdate({ bgImg: undefined })} style={{ padding: "9px 14px", borderRadius: 10, background: "rgba(244,67,54,0.1)", border: "1px solid rgba(244,67,54,0.3)", color: T.red, cursor: "pointer", fontSize: 13 }}>הסר</button>
             )}
           </div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
@@ -586,7 +587,7 @@ function BgModal({ room, onClose, onUpdate }: {
               <div style={{ fontSize: 11, color: "#777", marginBottom: 4 }}>שקיפות: {Math.round((room.bgOpacity ?? 1) * 100)}%</div>
               <input type="range" min={0.1} max={1} step={0.05} value={room.bgOpacity ?? 1}
                 onChange={e => onUpdate({ bgOpacity: parseFloat(e.target.value) })}
-                style={{ width: "100%", accentColor: "#d4a017" }} />
+                style={{ width: "100%", accentColor: T.gold }} />
             </div>
           )}
         </div>
@@ -609,7 +610,7 @@ function StatsModal({ room, onClose, onResetEvening }: {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div style={{ background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.45)", borderRadius: 18, width: 360, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", color: "#fff" }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#d4a017", marginBottom: 16 }}>📊 סטטיסטיקות — {room.name}</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: T.gold, marginBottom: 16 }}>📊 סטטיסטיקות — {room.name}</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
           {(Object.entries(STATUS_CFG) as [TableStatus, typeof STATUS_CFG[TableStatus]][]).map(([s, cfg]) => {
@@ -626,7 +627,7 @@ function StatsModal({ room, onClose, onResetEvening }: {
         <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             <span style={{ fontSize: 13, color: "#aaa" }}>תפוסה</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#d4a017" }}>{seatedTotal}/{totalSeats} ({occPct}%)</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.gold }}>{seatedTotal}/{totalSeats} ({occPct}%)</span>
           </div>
           <div style={{ height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${occPct}%`, background: "linear-gradient(90deg,#d4a017,#ffd700)", borderRadius: 4, transition: "width 0.3s" }} />
@@ -634,7 +635,7 @@ function StatsModal({ room, onClose, onResetEvening }: {
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onResetEvening} style={{ flex: 1, padding: "10px 0", borderRadius: 10, background: "rgba(244,67,54,0.12)", border: "1px solid rgba(244,67,54,0.3)", color: "#f44336", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+          <button onClick={onResetEvening} style={{ flex: 1, padding: "10px 0", borderRadius: 10, background: "rgba(244,67,54,0.12)", border: "1px solid rgba(244,67,54,0.3)", color: T.red, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
             🔄 אפס ערב
           </button>
           <button onClick={onClose} style={{ flex: 1, padding: "10px 0", borderRadius: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", cursor: "pointer", fontSize: 13 }}>סגור</button>
@@ -948,7 +949,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       x: snapV(Math.max(0, cx - item.w / 2), snapOn),
       y: snapV(Math.max(0, cy - item.h / 2), snapOn),
       w: item.w, h: item.h,
-      rot: 0, text: "", color: "#d4a017", zIdx: 1,
+      rot: 0, text: "", color: T.gold, zIdx: 1,
     };
     updRoom(r => ({ ...r, decos: [...(r.decos ?? []), d] }));
     setSelDecoId(d.id); setSelId(null); clearMultiSel();
@@ -1479,7 +1480,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   }
 
   const C = {
-    gold: "#d4a017", text: "#e9ecef", muted: "#6c757d", sub: "#adb5bd",
+    gold: T.gold, text: T.text, muted: T.muted, sub: T.sub,
     border: "rgba(212,160,23,0.22)",
   };
 
@@ -1499,8 +1500,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {restaurants.length > 1 && (<>
           <div style={{ width: 1, height: 18, background: C.border, flexShrink: 0 }} />
           <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); loadLayout(e.target.value); }}
-            style={{ background: "#1a0a06", border: "1px solid rgba(212,160,23,0.3)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", direction: "rtl" }}>
-            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a0a06", color: C.text }}>{r.name}</option>)}
+            style={{ background: T.bg, border: "1px solid rgba(212,160,23,0.3)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", direction: "rtl" }}>
+            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: T.bg, color: C.text }}>{r.name}</option>)}
           </select>
         </>)}
 
@@ -1509,7 +1510,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Tools */}
         <button ref={toolsBtnRef}
           onClick={() => { if (toolsMenu) { setToolsMenu(null); return; } const r = toolsBtnRef.current!.getBoundingClientRect(); setToolsMenu({ x: r.left, y: r.bottom + 2 }); }}
-          style={{ padding: "4px 10px", borderRadius: 8, background: snapOn || showBg || showStats || !!toolsMenu ? "rgba(212,160,23,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${snapOn || showBg || showStats || !!toolsMenu ? "#d4a017" : "rgba(255,255,255,0.13)"}`, color: snapOn || showBg || showStats || !!toolsMenu ? "#ffd700" : "#e9ecef", fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
+          style={{ padding: "4px 10px", borderRadius: 8, background: snapOn || showBg || showStats || !!toolsMenu ? "rgba(212,160,23,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${snapOn || showBg || showStats || !!toolsMenu ? T.gold : "rgba(255,255,255,0.13)"}`, color: snapOn || showBg || showStats || !!toolsMenu ? T.gold : T.text, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
           ⚙ כלים ▾
         </button>
 
@@ -1533,7 +1534,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Autosave */}
         <button onClick={() => setAutoSave(s => !s)} title="שמירה אוטומטית כל 30 שניות"
           style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 8, background: autoSave ? "rgba(212,160,23,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${autoSave ? "rgba(212,160,23,0.35)" : "rgba(255,255,255,0.1)"}`, color: autoSave ? C.gold : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const, flexShrink: 0 }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: autoSave ? "#4caf50" : "#555", display: "inline-block", flexShrink: 0 }} />
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: autoSave ? T.green : "#555", display: "inline-block", flexShrink: 0 }} />
           אוטו
         </button>
 
@@ -1548,7 +1549,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         </TopBtn>
 
         {/* Save — leftmost */}
-        <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? "#4caf50" : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" as const, letterSpacing: ".02em", flexShrink: 0 }}>
+        <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? T.green : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" as const, letterSpacing: ".02em", flexShrink: 0 }}>
           {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור"}
         </button>
       </div>
@@ -1639,7 +1640,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   style={{ display: "flex", alignItems: "center", padding: "6px 8px", borderRadius: 8, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.22)", background: "rgba(212,160,23,0.04)", transition: "all 0.12s", gap: 0 }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.22)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.04)"; }}>
-                  <span style={{ fontSize: 16, color: "#d4a017", marginLeft: 8 }}>{pi.icon}</span>
+                  <span style={{ fontSize: 16, color: T.gold, marginLeft: 8 }}>{pi.icon}</span>
                   <span style={{ fontSize: 12, color: C.text, fontWeight: 600, flex: 1 }}>{pi.label}</span>
                   <span style={{ fontSize: 13, color: "rgba(212,160,23,0.3)", letterSpacing: "1px" }}>⠿</span>
                 </div>
@@ -1658,7 +1659,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   style={{ display: "flex", alignItems: "center", padding: "6px 8px", borderRadius: 8, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.22)", background: "rgba(212,160,23,0.04)", transition: "all 0.12s" }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.22)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.04)"; }}>
-                  <span style={{ fontSize: 16, color: "#d4a017", marginLeft: 8 }}>{pi.icon}</span>
+                  <span style={{ fontSize: 16, color: T.gold, marginLeft: 8 }}>{pi.icon}</span>
                   <span style={{ fontSize: 12, color: C.text, fontWeight: 600, flex: 1 }}>{pi.label}</span>
                   <span style={{ fontSize: 13, color: "rgba(212,160,23,0.3)", letterSpacing: "1px" }}>⠿</span>
                 </div>
@@ -1675,7 +1676,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   style={{ width: 28, height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.25)", background: "rgba(212,160,23,0.05)", flexShrink: 0 }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.2)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
-                  <span style={{ fontSize: 14, color: "#d4a017" }}>{pi.icon}</span>
+                  <span style={{ fontSize: 14, color: T.gold }}>{pi.icon}</span>
                 </div>
               ))}
             </div>
@@ -1775,7 +1776,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
           ? [
               { icon: "⎘", label: "שכפל", action: () => dupDeco(ctxMenu.id) },
               null,
-              { icon: "🗑", label: "מחק", color: "#f44336", action: () => delDeco(ctxMenu.id) },
+              { icon: "🗑", label: "מחק", color: T.red, action: () => delDeco(ctxMenu.id) },
             ]
           : [
               { icon: "✏️", label: "ערוך",      action: () => { openEdit(ctxMenu.id); setCtxMenu(null); } },
@@ -1786,7 +1787,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               null,
               ...Object.entries(STATUS_CFG).map(([s, cfg]) => ({ icon: "●", label: cfg.label, color: cfg.color, action: () => { updTable(ctxMenu.id, { status: s as TableStatus }); setCtxMenu(null); } })),
               null,
-              { icon: "🗑", label: "מחק", color: "#f44336", action: () => delTable(ctxMenu.id) },
+              { icon: "🗑", label: "מחק", color: T.red, action: () => delTable(ctxMenu.id) },
             ];
         return (
           <div style={{ position: "fixed", left: cx, top: cy, zIndex: 3000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.35)", borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: menuW }}
@@ -1823,11 +1824,11 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
               return (
                 <button key={i} onClick={item.action}
-                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.active ? "#ffd700" : "#e9ecef", background: item.active ? "rgba(212,160,23,0.12)" : "none", border: "none", cursor: "pointer", textAlign: "right" as const, fontFamily: "inherit" }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.active ? T.gold : T.text, background: item.active ? "rgba(212,160,23,0.12)" : "none", border: "none", cursor: "pointer", textAlign: "right" as const, fontFamily: "inherit" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.15)")}
                   onMouseLeave={e => (e.currentTarget.style.background = item.active ? "rgba(212,160,23,0.12)" : "none")}>
-                  <span style={{ minWidth: 16, color: "#d4a017" }}>{item.icon}</span>{item.label}
-                  {item.active && <span style={{ marginLeft: "auto", fontSize: 10, color: "#ffd700" }}>✓</span>}
+                  <span style={{ minWidth: 16, color: T.gold }}>{item.icon}</span>{item.label}
+                  {item.active && <span style={{ marginLeft: "auto", fontSize: 10, color: T.gold }}>✓</span>}
                 </button>
               );
             })}

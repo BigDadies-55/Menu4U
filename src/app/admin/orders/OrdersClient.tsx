@@ -211,10 +211,10 @@ function BillModal({
             )}
             {loyaltyDiscount > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, alignItems: "center" }}>
-                <span style={{ color: "#4ade80", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ color: T.green, display: "flex", alignItems: "center", gap: 4 }}>
                   ⭐ הנחת מועדון{loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames.join(", ")})` : ""}
                 </span>
-                <span style={{ fontWeight: 700, color: "#4ade80" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
+                <span style={{ fontWeight: 700, color: T.green }}>−₪{loyaltyDiscount.toFixed(2)}</span>
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: T.sub, marginBottom: 8 }}>
@@ -322,7 +322,7 @@ function TableCard({
   const allPaid    = nonCancelledOrders.length > 0 && nonCancelledOrders.every(o => ["PAID","CANCELLED"].includes(o.status));
 
   // Border / header color
-  const cardBorder = hasPending ? "#f59e0b" : isUrgent ? "#ef4444" : highlighted ? "#c9a84c" : "#e5e7eb";
+  const cardBorder = hasPending ? T.orange : isUrgent ? T.red : highlighted ? T.gold : T.sub;
   const headerBg   = hasPending ? "#fffbeb" : isUrgent ? "#fef2f2" : "#f9fafb";
 
   async function smartAction() {
@@ -353,12 +353,12 @@ function TableCard({
 
   // Smart button appearance
   const smartBtn = allPaid
-    ? { label: "✓ שולם", color: "#9ca3af", disabled: true }
+    ? { label: "✓ שולם", color: T.muted, disabled: true }
     : hasPending
-    ? { label: actioning ? "..." : "✓ אשר הכל", color: "#16a34a", disabled: actioning }
+    ? { label: actioning ? "..." : "✓ אשר הכל", color: T.green, disabled: actioning }
     : hasReady
-    ? { label: actioning ? "..." : "🛎 הגש לשולחן", color: "#0891b2", disabled: actioning }
-    : { label: "💳 לתשלום בקופה", color: "#374151", disabled: true };
+    ? { label: actioning ? "..." : "🛎 הגש לשולחן", color: T.cyan, disabled: actioning }
+    : { label: "💳 לתשלום בקופה", color: T.panel, disabled: true };
 
   // Collapsed row (for closed tables)
   if (isCollapsed) {

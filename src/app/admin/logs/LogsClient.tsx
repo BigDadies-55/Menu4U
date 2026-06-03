@@ -59,44 +59,44 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const ACTION_DOT: Record<string, string> = {
-  LOGIN_SUCCESS: "#339af0",
-  LOGIN_FAILED: "#ff6b6b",
-  LOGOUT: "#6c757d",
-  CREATE_RESTAURANT: "#51cf66",
-  UPDATE_RESTAURANT: "#fcc419",
-  DELETE_RESTAURANT: "#ff6b6b",
-  CREATE_MENU: "#51cf66",
-  UPDATE_MENU: "#fcc419",
-  DELETE_MENU: "#ff6b6b",
-  CREATE_CATEGORY: "#51cf66",
-  UPDATE_CATEGORY: "#fcc419",
-  DELETE_CATEGORY: "#ff6b6b",
-  CREATE_ITEM: "#51cf66",
-  UPDATE_ITEM: "#fcc419",
-  DELETE_ITEM: "#ff6b6b",
-  CREATE_USER: "#be4bdb",
-  UPDATE_USER: "#fcc419",
-  DELETE_USER: "#ff6b6b",
-  ASSIGN_USER_TO_RESTAURANT: "#22d3ee",
-  REMOVE_USER_FROM_RESTAURANT: "#ff922b",
-  CHANGE_PASSWORD: "#be4bdb",
-  RUN_MIGRATION: "#be4bdb",
-  CREATE_WAITER_ORDER: "#fcc419",
-  UPDATE_ORDER_STATUS: "#22d3ee",
-  CLOSE_TABLE: "#51cf66",
-  CLEAR_ALL_ORDERS: "#ff6b6b",
-  CANCEL_ORDER_ITEM: "#ff6b6b",
-  COMP_ORDER_ITEM: "#be4bdb",
-  UNCOMP_ORDER_ITEM: "#ff922b",
-  ITEM_86_MARK: "#ff922b",
-  ITEM_86_RESTORE: "#51cf66",
-  ACCEPT_TERMS: "#22d3ee",
-  UPDATE_SITE_CONFIG: "#fcc419",
+  LOGIN_SUCCESS: T.blue,
+  LOGIN_FAILED: T.red,
+  LOGOUT: T.muted,
+  CREATE_RESTAURANT: T.green,
+  UPDATE_RESTAURANT: T.gold,
+  DELETE_RESTAURANT: T.red,
+  CREATE_MENU: T.green,
+  UPDATE_MENU: T.gold,
+  DELETE_MENU: T.red,
+  CREATE_CATEGORY: T.green,
+  UPDATE_CATEGORY: T.gold,
+  DELETE_CATEGORY: T.red,
+  CREATE_ITEM: T.green,
+  UPDATE_ITEM: T.gold,
+  DELETE_ITEM: T.red,
+  CREATE_USER: T.purple,
+  UPDATE_USER: T.gold,
+  DELETE_USER: T.red,
+  ASSIGN_USER_TO_RESTAURANT: T.cyan,
+  REMOVE_USER_FROM_RESTAURANT: T.orange,
+  CHANGE_PASSWORD: T.purple,
+  RUN_MIGRATION: T.purple,
+  CREATE_WAITER_ORDER: T.gold,
+  UPDATE_ORDER_STATUS: T.cyan,
+  CLOSE_TABLE: T.green,
+  CLEAR_ALL_ORDERS: T.red,
+  CANCEL_ORDER_ITEM: T.red,
+  COMP_ORDER_ITEM: T.purple,
+  UNCOMP_ORDER_ITEM: T.orange,
+  ITEM_86_MARK: T.orange,
+  ITEM_86_RESTORE: T.green,
+  ACCEPT_TERMS: T.cyan,
+  UPDATE_SITE_CONFIG: T.gold,
 };
 
 // Action bg colors (RGBA) for the badge
 function actionBadgeStyle(action: string): React.CSSProperties {
-  const color = ACTION_DOT[action] ?? "#6c757d";
+  const color = ACTION_DOT[action] ?? T.muted;
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -296,7 +296,7 @@ export default function LogsClient() {
             <div className="overflow-x-auto">
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ background: "#1a1d23" }}>
+                  <tr style={{ background: T.surface }}>
                     {["זמן","פעולה","משתמש","ישות","פרטים"].map(h => (
                       <th key={h} style={{ padding: "11px 12px", textAlign: "right", fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".5px", borderBottom: `1px solid ${T.border}` }}>
                         {h}

@@ -72,7 +72,7 @@ const STATUS_CFG: Record<TableStatus, { stripe: string; glow: string; label: str
 function heatColor(mins: number): string {
   if (mins < 20) return T.orange;
   if (mins < 40) return "#fb923c";
-  return "#ef4444";
+  return T.red;
 }
 
 // Course dot colors

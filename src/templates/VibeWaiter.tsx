@@ -5,25 +5,26 @@
  * Flow: pick table (tap circle) → menu (photo grid) → floating cart pill
  */
 import React, { useState } from "react";
+import { T } from "@/lib/ui";
 
-// ── Design tokens ──────────────────────────────────────────
+// ── Design tokens (mapped from T — edit src/lib/ui.ts to change) ──
 const V = {
-  bg:          "#07050f",
-  glass:       "rgba(255,255,255,0.055)",
-  glassHover:  "rgba(255,255,255,0.10)",
-  border:      "rgba(255,255,255,0.10)",
-  borderBright:"rgba(255,255,255,0.22)",
-  purple:      "#a855f7",
-  purpleDim:   "rgba(168,85,247,0.18)",
-  purpleGlow:  "rgba(168,85,247,0.45)",
-  cyan:        "#22d3ee",
-  cyanDim:     "rgba(34,211,238,0.14)",
-  cyanGlow:    "rgba(34,211,238,0.4)",
-  rose:        "#fb7185",
-  roseDim:     "rgba(251,113,133,0.14)",
-  amber:       "#fbbf24",
-  emerald:     "#34d399",
-  text:        "#f1f5f9",
+  bg:          T.bgNeon,
+  glass:       T.glass,
+  glassHover:  T.glassHover,
+  border:      T.glassBorder,
+  borderBright:T.glassBorderBright,
+  purple:      T.purple,
+  purpleDim:   T.purpleSub,
+  purpleGlow:  T.purpleGlow,
+  cyan:        T.cyan,
+  cyanDim:     T.cyanSub,
+  cyanGlow:    T.cyanGlow,
+  rose:        T.rose,
+  roseDim:     T.roseSub,
+  amber:       T.amber,
+  emerald:     T.emerald,
+  text:        T.text,
   sub:         "rgba(241,245,249,0.6)",
   muted:       "rgba(241,245,249,0.32)",
 };

@@ -1,11 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { T } from "@/lib/ui";
 
 const WaiterFloorClient = dynamic(() => import("./WaiterFloorClient"), {
   ssr: false,
   loading: () => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 64px)", background: "#0a0402", color: "#7a6050", fontSize: 15 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 64px)", background: T.bg, color: "#7a6050", fontSize: 15 }}>
       טוען רצפת שירות...
     </div>
   ),

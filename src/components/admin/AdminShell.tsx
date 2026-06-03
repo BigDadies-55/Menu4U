@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/lib/ui";
 import { useState, useEffect } from "react";
 import Sidebar, { useFavorites } from "./Sidebar";
 import TopBar from "./TopBar";
@@ -23,7 +24,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#1a1d23", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#e9ecef", adminTopBarBg, adminTopBarTextColor = "#adb5bd", children }: Props) {
+export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = T.surface, adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = T.muted, adminContentTextColor = T.text, adminTopBarBg, adminTopBarTextColor = T.sub, children }: Props) {
   const [sidebarOpen,       setSidebarOpen]       = useState(false);
   const [pinned,            setPinned]             = useState(false);
   const [favorites, toggleFavorite] = useFavorites();

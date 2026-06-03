@@ -34,13 +34,13 @@ const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "ED
 
 
 const DARK_ROLE_STYLE: Record<string, React.CSSProperties> = {
-  SUPER_ADMIN:   { background: "rgba(255,107,107,0.15)", color: "#ff6b6b" },
-  ADMIN:         { background: "rgba(51,154,240,0.15)",  color: "#339af0" },
-  OWNER:         { background: "rgba(252,196,25,0.15)",  color: "#fcc419" },
-  SHIFT_MANAGER: { background: "rgba(255,146,43,0.15)",  color: "#ff922b" },
+  SUPER_ADMIN:   { background: "rgba(255,107,107,0.15)", color: T.red },
+  ADMIN:         { background: "rgba(51,154,240,0.15)",  color: T.blue },
+  OWNER:         { background: "rgba(252,196,25,0.15)",  color: T.gold },
+  SHIFT_MANAGER: { background: "rgba(255,146,43,0.15)",  color: T.orange },
   EDITOR:        { background: "rgba(190,75,219,0.15)",  color: "#be4bdb" },
-  VIEWER:        { background: "rgba(108,117,125,0.15)", color: "#6c757d" },
-  WAITER:        { background: "rgba(81,207,102,0.15)",  color: "#51cf66" },
+  VIEWER:        { background: "rgba(108,117,125,0.15)", color: T.muted },
+  WAITER:        { background: "rgba(81,207,102,0.15)",  color: T.green },
   DISPLAY:       { background: "rgba(34,184,207,0.15)",  color: "#22b8cf" },
 };
 
@@ -300,7 +300,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         <div className="hidden md:block overflow-x-auto">
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "#1a1d23" }}>
+              <tr style={{ background: T.surface }}>
                 {["משתמש","הרשאה","מסעדות משויכות","אימות","נרשם","כניסה אחרונה","פעולות"].map(h => (
                   <th key={h} style={{ padding: "11px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".5px", borderBottom: `1px solid ${T.border}` }}>
                     {h}
@@ -377,7 +377,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                             📨 ממתין להזמנה
                           </span>
                         ) : user.mustChangePassword ? (
-                          <span style={{ background: "rgba(239,68,68,0.12)", color: "#fca5a5", borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
+                          <span style={{ background: "rgba(239,68,68,0.12)", color: T.red, borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
                             🔐 חייב לשנות סיסמה
                           </span>
                         ) : (

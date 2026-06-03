@@ -72,12 +72,12 @@ function SmsTextarea({ value, onChange }: { value: string; onChange: (v: string)
           ...D_INPUT, width: "100%", boxSizing: "border-box",
           resize: "none", fontFamily: "inherit", lineHeight: 1.5,
           paddingBottom: 26,
-          border: `1px solid ${value.length === SMS_MAX ? T.red : value.length > 55 ? "#f59e0b" : T.border}`,
+          border: `1px solid ${value.length === SMS_MAX ? T.red : value.length > 55 ? T.orange : T.border}`,
         }}
       />
       <span style={{
         position: "absolute", bottom: 8, left: 10, fontSize: 11, fontWeight: 700,
-        color: value.length === SMS_MAX ? T.red : value.length > 55 ? "#f59e0b" : T.sub,
+        color: value.length === SMS_MAX ? T.red : value.length > 55 ? T.orange : T.sub,
       }}>
         {value.length} / {SMS_MAX}
       </span>
@@ -358,7 +358,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
 
       {/* Cron hint */}
       {tab === "campaigns" && (
-        <div style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 10, padding: "10px 16px", marginBottom: 20, fontSize: 12, color: "#c9a84c" }}>
+        <div style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 10, padding: "10px 16px", marginBottom: 20, fontSize: 12, color: T.gold }}>
           ⏰ כדי שהקמפיינים יופעלו אוטומטית — הגדר ב-<strong>cron-job.org</strong> שיקרא כל שעה לכתובת:
           {" "}<code style={{ background: "rgba(0,0,0,0.3)", padding: "1px 6px", borderRadius: 4 }}>
             {typeof window !== "undefined" ? window.location.origin : ""}/api/admin/crm/cron?secret=CRON_SECRET
@@ -403,7 +403,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               </div>
             </div>
             {sendTarget === "selected" && selectedIds.size === 0 && (
-              <div style={{ color: "#f59e0b", fontSize: 12, marginBottom: 10 }}>⚠️ בחר חברים מהרשימה למטה</div>
+              <div style={{ color: T.orange, fontSize: 12, marginBottom: 10 }}>⚠️ בחר חברים מהרשימה למטה</div>
             )}
             <SmsTextarea value={sendMsg} onChange={setSendMsg} />
             {sendResult && (

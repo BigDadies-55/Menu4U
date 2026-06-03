@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 /* ── Types ── */
@@ -30,10 +31,10 @@ function fmtElapsed(m: number) {
 }
 
 function urgencyColor(mins: number, allDone: boolean) {
-  if (allDone) return "#22c55e";
-  if (mins >= 20) return "#ef4444";
-  if (mins >= 10) return "#f59e0b";
-  return "#e2e8f0";
+  if (allDone) return T.green;
+  if (mins >= 20) return T.red;
+  if (mins >= 10) return T.orange;
+  return T.sub;
 }
 
 const LS_STATION = "menu4u_kds_station_tickets";
@@ -89,8 +90,8 @@ function Ticket({
 
   return (
     <div style={{
-      background: "#141414",
-      border: `1px solid ${isUrgent ? "#ef444460" : allDone ? "#22c55e40" : "#2a2a2a"}`,
+      background: T.bg,
+      border: `1px solid ${isUrgent ? "#ef444460" : allDone ? "#22c55e40" : T.surface}`,
       borderTop: `4px solid ${accentColor}`,
       borderRadius: 4,
       fontFamily: "'Courier New', 'Courier', monospace",
@@ -144,7 +145,7 @@ function Ticket({
             {doneCount}/{totalCount} פריטים
           </div>
           {allDone && (
-            <div style={{ color: "#22c55e", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginTop: 4 }}>
+            <div style={{ color: T.green, fontSize: 10, fontWeight: 700, letterSpacing: 1, marginTop: 4 }}>
               ● READY
             </div>
           )}
@@ -164,7 +165,7 @@ function Ticket({
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "5px 14px",
                   borderBottom: "1px dashed #222",
-                  background: isDelivered ? "#0a1a0a" : "#111",
+                  background: isDelivered ? T.bg : "#111",
                 }}>
                   <span style={{ color: "#444", fontSize: 10, fontWeight: 700, letterSpacing: 2 }}>
                     ORDER {oidx + 1}
@@ -181,7 +182,7 @@ function Ticket({
                   heldByCourse.get(it.course)!.push(it);
                 }
                 return [...heldByCourse.entries()].sort(([a], [b]) => a - b).map(([courseNum, heldItems]) => (
-                  <div key={`held-${courseNum}`} style={{ borderBottom: "1px solid #1a1a1a", background: "#0e0e0e", opacity: 0.75 }}>
+                  <div key={`held-${courseNum}`} style={{ borderBottom: "1px solid #1a1a1a", background: T.bg, opacity: 0.75 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 14px" }}>
                       <span style={{ color: "#555", fontSize: 9, letterSpacing: 2 }}>
                         ⏸ HOLD — קורס {courseNum}
@@ -189,7 +190,7 @@ function Ticket({
                       {canUpdate && !isDelivered && (
                         <button
                           onClick={() => onFireCourse(order.id, courseNum)}
-                          style={{ background: "#92400e", color: "#fcd34d", border: "none", borderRadius: 3, padding: "2px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer", letterSpacing: 1 }}>
+                          style={{ background: "#92400e", color: T.amber, border: "none", borderRadius: 3, padding: "2px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer", letterSpacing: 1 }}>
                           FIRE 🔥
                         </button>
                       )}
@@ -199,7 +200,7 @@ function Ticket({
                         <span style={{ color: "#444", fontWeight: 900, fontSize: 12 }}>×{hi.quantity}</span>
                         <span style={{ color: "#444", fontSize: 13 }}>{hi.item.name}</span>
                         {hi.item.isActive === false && (
-                          <span style={{ fontSize: 9, fontWeight: 700, color: "#ef4444", border: "1px solid #ef444440", borderRadius: 2, padding: "1px 4px" }}>86</span>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: T.red, border: "1px solid #ef444440", borderRadius: 2, padding: "1px 4px" }}>86</span>
                         )}
                       </div>
                     ))}
@@ -224,11 +225,11 @@ function Ticket({
                 const is86        = item.isActive === false;
 
                 const checkbox = isDone
-                  ? <span style={{ color: "#22c55e", fontSize: 14 }}>☑</span>
+                  ? <span style={{ color: T.green, fontSize: 14 }}>☑</span>
                   : isCancelled
                     ? <span style={{ color: "#333", fontSize: 14 }}>☒</span>
                     : isPreparing
-                      ? <span style={{ color: "#38bdf8", fontSize: 14 }}>◈</span>
+                      ? <span style={{ color: T.cyan, fontSize: 14 }}>◈</span>
                       : <span style={{ color: "#444", fontSize: 14 }}>☐</span>;
 
                 return (
@@ -236,7 +237,7 @@ function Ticket({
                     display: "flex", alignItems: "flex-start", gap: 8,
                     padding: "8px 14px",
                     borderBottom: "1px solid #1a1a1a",
-                    background: isDone && !isDelivered ? "#081208" : is86 ? "#1a0808" : "transparent",
+                    background: isDone && !isDelivered ? T.bg : is86 ? T.bg : "transparent",
                     opacity: isCancelled ? 0.35 : 1,
                   }}>
                     {/* Checkbox */}
@@ -251,7 +252,7 @@ function Ticket({
 
                     {/* Quantity */}
                     <span style={{
-                      color: isDone ? "#22c55e" : isPreparing ? "#38bdf8" : "#888",
+                      color: isDone ? T.green : isPreparing ? T.cyan : "#888",
                       fontWeight: 900, fontSize: 13, flexShrink: 0, minWidth: 22,
                     }}>×{quantity}</span>
 
@@ -260,10 +261,10 @@ function Ticket({
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{
                           color: isCancelled ? "#333"
-                            : isDone ? "#6ee7a0"
-                            : isPreparing ? "#7dd3fc"
-                            : is86 ? "#ef4444"
-                            : "#e2e8f0",
+                            : isDone ? T.green
+                            : isPreparing ? T.blue
+                            : is86 ? T.red
+                            : T.sub,
                           fontWeight: isDone || isPreparing ? 700 : 400,
                           fontSize: 14,
                           textDecoration: isCancelled ? "line-through" : undefined,
@@ -272,7 +273,7 @@ function Ticket({
                           {item.name}
                         </span>
                         {is86 && (
-                          <span style={{ fontSize: 9, fontWeight: 700, color: "#ef4444", border: "1px solid #ef444440", borderRadius: 2, padding: "1px 4px" }}>86</span>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: T.red, border: "1px solid #ef444440", borderRadius: 2, padding: "1px 4px" }}>86</span>
                         )}
                       </div>
                       {item.category?.name && (
@@ -284,7 +285,7 @@ function Ticket({
                         <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
                           {modifiers.map((m, i) => (
                             <span key={i} style={{
-                              color: "#4ade80", fontSize: 10,
+                              color: T.green, fontSize: 10,
                               border: "1px solid #1e3a2e",
                               borderRadius: 2, padding: "1px 5px",
                               fontFamily: "inherit",
@@ -323,7 +324,7 @@ function Ticket({
                             onClick={() => adv(order.id, iid)}
                             disabled={isBusy}
                             style={{
-                              background: isPreparing ? "#15803d" : "#1d4ed8",
+                              background: isPreparing ? T.green : T.blue,
                               color: "#fff", border: "none", borderRadius: 3,
                               padding: "4px 10px", fontWeight: 700, fontSize: 11,
                               cursor: isBusy ? "wait" : "pointer",
@@ -361,15 +362,15 @@ function Ticket({
         {/* Progress dots */}
         <div style={{ display: "flex", gap: 3 }}>
           {allItems.map((it, i) => {
-            const c = it.itemStatus === "DONE" ? "#22c55e"
-              : it.itemStatus === "PREPARING" ? "#38bdf8"
+            const c = it.itemStatus === "DONE" ? T.green
+              : it.itemStatus === "PREPARING" ? T.cyan
               : "#333";
             return <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />;
           })}
         </div>
 
         {allDone && (
-          <span style={{ color: "#22c55e", fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>
+          <span style={{ color: T.green, fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>
             ● READY TO SERVE
           </span>
         )}
@@ -562,7 +563,7 @@ export default function TicketsClient({
   return (
     <div ref={containerRef} style={{
       minHeight: "100vh",
-      background: "#0d0d0d",
+      background: T.bg,
       backgroundImage: "radial-gradient(circle at 50% 0%, #111 0%, #0d0d0d 60%)",
       display: "flex", flexDirection: "column",
       fontFamily: "'Courier New', monospace",
@@ -570,7 +571,7 @@ export default function TicketsClient({
     }}>
       {/* ── Top bar ── */}
       <div style={{
-        background: "#0a0a0a",
+        background: T.bg,
         borderBottom: "1px solid #1e1e1e",
         padding: "8px 20px",
         display: "flex", alignItems: "center", gap: 14, flexShrink: 0, flexWrap: "wrap",
@@ -590,7 +591,7 @@ export default function TicketsClient({
 
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-            style={{ background: "#1a1a1a", color: "#ccc", border: "1px solid #333", borderRadius: 4, padding: "4px 10px", fontSize: 12, fontFamily: "inherit" }}>
+            style={{ background: T.bg, color: "#ccc", border: "1px solid #333", borderRadius: 4, padding: "4px 10px", fontSize: 12, fontFamily: "inherit" }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
@@ -604,7 +605,7 @@ export default function TicketsClient({
             onChange={e => saveStationFilter(e.target.value)}
             placeholder="filter..."
             style={{
-              background: "#1a1a1a", color: "#ccc",
+              background: T.bg, color: "#ccc",
               border: stationFilter ? "1px solid #c9a84c" : "1px solid #2a2a2a",
               borderRadius: 3, padding: "3px 8px", fontSize: 11,
               width: 120, outline: "none", fontFamily: "inherit",
@@ -622,7 +623,7 @@ export default function TicketsClient({
 
         {allReadyAlert && (
           <div style={{
-            background: "#22c55e", color: "#000",
+            background: T.green, color: "#000",
             padding: "4px 12px", borderRadius: 3, fontWeight: 900, fontSize: 12,
             fontFamily: "inherit", letterSpacing: 1,
           }}>!! ALL READY !!</div>
@@ -630,7 +631,7 @@ export default function TicketsClient({
 
         {newAlert && (
           <div style={{
-            background: "#facc15", color: "#000",
+            background: T.yellow, color: "#000",
             padding: "4px 12px", borderRadius: 3, fontWeight: 900, fontSize: 12,
             fontFamily: "inherit", letterSpacing: 1,
           }}>!! NEW ORDER !!</div>
@@ -642,12 +643,12 @@ export default function TicketsClient({
 
         <button onClick={fetchOrders}
           title="R to refresh"
-          style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", borderRadius: 3, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+          style={{ background: T.bg, color: "#666", border: "1px solid #2a2a2a", borderRadius: 3, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
           REFRESH
         </button>
         <button onClick={toggleFullscreen}
           title="F for fullscreen"
-          style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", borderRadius: 3, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+          style={{ background: T.bg, color: "#666", border: "1px solid #2a2a2a", borderRadius: 3, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
           {fullscreen ? "EXIT FS" : "FULLSCREEN"}
         </button>
       </div>
@@ -665,14 +666,14 @@ export default function TicketsClient({
             gridColumn: "1 / -1",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
-            minHeight: 320, gap: 16, color: "#2a2a2a",
+            minHeight: 320, gap: 16, color: T.surface,
             fontFamily: "inherit",
           }}>
             <div style={{ fontSize: 64 }}>■</div>
             <div style={{ color: "#333", fontWeight: 700, fontSize: 18, letterSpacing: 4 }}>
               {stationFilter ? `NO ITEMS FOR "${stationFilter.toUpperCase()}"` : "NO OPEN TICKETS"}
             </div>
-            <div style={{ color: "#2a2a2a", fontSize: 12, letterSpacing: 2 }}>
+            <div style={{ color: T.surface, fontSize: 12, letterSpacing: 2 }}>
               {now.toLocaleTimeString("he-IL")}
             </div>
           </div>
