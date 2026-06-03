@@ -1,27 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-
-/* ─── Dark theme constants ───────────────────────────────── */
-const C = {
-  pageBg:      "#1a1d23",
-  cardBg:      "#212529",
-  border:      "#2d3239",
-  inputBg:     "#2d3239",
-  inputBorder: "#3a3f47",
-  text:        "#e9ecef",
-  sub:         "#adb5bd",
-  muted:       "#6c757d",
-  amber:       "#fcc419",
-  green:       "#51cf66",
-  red:         "#ff6b6b",
-  blue:        "#339af0",
-} as const;
+import { T } from "@/lib/ui";
 
 const DARK_INPUT: React.CSSProperties = {
-  background:   C.inputBg,
-  border:       `1px solid ${C.inputBorder}`,
-  color:        C.text,
+  background:   T.overlay,
+  border:       `1px solid ${T.border}`,
+  color:        T.text,
   borderRadius: 10,
   padding:      "10px 14px",
   fontSize:     14,
@@ -103,8 +88,8 @@ function AutoBackupStatus() {
 
   if (!status) {
     return (
-      <div style={{ border: `1px dashed ${C.inputBorder}`, borderRadius: 12, padding: 16,
-        background: C.inputBg, color: C.muted, fontSize: 13 }}>
+      <div style={{ border: `1px dashed ${T.border}`, borderRadius: 12, padding: 16,
+        background: T.overlay, color: T.muted, fontSize: 13 }}>
         טוען סטטוס גיבוי אוטומטי...
       </div>
     );
@@ -123,11 +108,11 @@ function AutoBackupStatus() {
       <div style={{ border: "1px solid rgba(81,207,102,0.3)", borderRadius: 12, overflow: "hidden",
         background: "rgba(81,207,102,0.06)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px" }}>
-          <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.green, flexShrink: 0,
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: T.green, flexShrink: 0,
             boxShadow: "0 0 0 3px rgba(81,207,102,0.2)" }} />
           <div style={{ flex: 1 }}>
-            <div style={{ color: C.green, fontWeight: 700, fontSize: 13 }}>גיבוי אוטומטי פעיל</div>
-            <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>
+            <div style={{ color: T.green, fontWeight: 700, fontSize: 13 }}>גיבוי אוטומטי פעיל</div>
+            <div style={{ color: T.sub, fontSize: 12, marginTop: 2 }}>
               תזמון: {SCHEDULE_LABEL[status.schedule ?? ""] ?? status.schedule}
               {nextLabel && ` · גיבוי הבא: ${nextLabel}`}
             </div>
@@ -141,7 +126,7 @@ function AutoBackupStatus() {
             borderRadius: 8,
             fontSize: 12,
             background: triggerMsg.ok ? "rgba(81,207,102,0.12)" : "rgba(255,107,107,0.12)",
-            color: triggerMsg.ok ? C.green : C.red,
+            color: triggerMsg.ok ? T.green : T.red,
             border: `1px solid ${triggerMsg.ok ? "rgba(81,207,102,0.3)" : "rgba(255,107,107,0.3)"}`,
           }}>
             {triggerMsg.ok ? "✓ " : "⚠️ "}{triggerMsg.text}
@@ -159,9 +144,9 @@ function AutoBackupStatus() {
           }}>
             {triggering ? "מבצע..." : "⬇️ גבה עכשיו"}
           </button>
-          <span style={{ fontSize: 11, color: C.muted }}>
+          <span style={{ fontSize: 11, color: T.muted }}>
             לשינוי תזמון: עדכן{" "}
-            <code style={{ background: C.inputBg, padding: "1px 5px", borderRadius: 4 }}>BACKUP_SCHEDULE</code>
+            <code style={{ background: T.overlay, padding: "1px 5px", borderRadius: 4 }}>BACKUP_SCHEDULE</code>
             {" "}ב-Vercel + Redeploy
           </span>
         </div>
@@ -172,32 +157,32 @@ function AutoBackupStatus() {
   /* Not active */
   const [showDebug, setShowDebug] = useState(false);
   return (
-    <div style={{ border: `1px dashed ${C.inputBorder}`, borderRadius: 12, overflow: "hidden",
-      background: C.inputBg }}>
+    <div style={{ border: `1px dashed ${T.border}`, borderRadius: 12, overflow: "hidden",
+      background: T.overlay }}>
       <div style={{ padding: 16 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
           <span style={{ fontSize: 18, flexShrink: 0 }}>⏰</span>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{ color: C.text, fontWeight: 700, fontSize: 13 }}>גיבוי אוטומטי</div>
+              <div style={{ color: T.text, fontWeight: 700, fontSize: 13 }}>גיבוי אוטומטי</div>
               <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 700,
-                background: "rgba(108,117,125,0.2)", color: C.muted }}>לא פעיל</span>
+                background: "rgba(108,117,125,0.2)", color: T.muted }}>לא פעיל</span>
             </div>
-            <div style={{ fontSize: 12, color: C.sub, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 12, color: T.sub, display: "flex", flexDirection: "column", gap: 6 }}>
               {[
                 { key: "CRON_SECRET",                        ok: status.hasCronSecret, desc: "מחרוזת סודית כלשהי" },
                 { key: "BACKUP_SCHEDULE",                    ok: !!status.schedule && status.schedule !== "off", desc: '"daily" או "weekly"' },
                 { key: "GMAIL_USER / GMAIL_APP_PASSWORD",    ok: status.hasGmail,      desc: "נדרש לשליחת המייל" },
               ].map(row => (
                 <div key={row.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: row.ok ? C.green : C.red, fontSize: 13 }}>{row.ok ? "✓" : "✗"}</span>
+                  <span style={{ color: row.ok ? T.green : T.red, fontSize: 13 }}>{row.ok ? "✓" : "✗"}</span>
                   <code style={{ padding: "1px 6px", borderRadius: 5, fontSize: 11,
                     background: row.ok ? "rgba(81,207,102,0.12)" : "rgba(255,107,107,0.12)",
-                    color: row.ok ? C.green : C.red }}>{row.key}</code>
-                  <span style={{ color: C.muted }}>{row.desc}</span>
+                    color: row.ok ? T.green : T.red }}>{row.key}</code>
+                  <span style={{ color: T.muted }}>{row.desc}</span>
                 </div>
               ))}
-              <div style={{ color: C.sub, fontWeight: 600, marginTop: 4 }}>
+              <div style={{ color: T.sub, fontWeight: 600, marginTop: 4 }}>
                 לאחר עדכון — בצע <strong>Redeploy</strong> ב-Vercel.
               </div>
             </div>
@@ -206,10 +191,10 @@ function AutoBackupStatus() {
       </div>
 
       {status.debug && (
-        <div style={{ borderTop: `1px solid ${C.border}` }}>
+        <div style={{ borderTop: `1px solid ${T.border}` }}>
           <button onClick={() => setShowDebug(v => !v)} style={{
             width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
-            fontSize: 12, color: C.muted, background: "transparent", border: "none", cursor: "pointer", textAlign: "right",
+            fontSize: 12, color: T.muted, background: "transparent", border: "none", cursor: "pointer", textAlign: "right",
           }}>
             ℹ️ {showDebug ? "הסתר אבחון" : "הצג אבחון"}
           </button>
@@ -217,8 +202,8 @@ function AutoBackupStatus() {
             <div style={{ padding: "0 16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
               {Object.entries(status.debug).map(([k, v]) => (
                 <div key={k} style={{ display: "flex", gap: 8, fontSize: 11, fontFamily: "monospace" }}>
-                  <span style={{ color: C.muted, flexShrink: 0 }}>{k}:</span>
-                  <span style={{ color: String(v).startsWith("✓") ? C.green : String(v).startsWith("✗") ? C.red : C.text }}>
+                  <span style={{ color: T.muted, flexShrink: 0 }}>{k}:</span>
+                  <span style={{ color: String(v).startsWith("✓") ? T.green : String(v).startsWith("✗") ? T.red : T.text }}>
                     {String(v)}
                   </span>
                 </div>
@@ -296,9 +281,9 @@ function BackupSection() {
         <span>ℹ️</span>
         <div>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>מה כלול בגיבוי?</div>
-          <div style={{ fontSize: 12, color: C.sub, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.6 }}>
             מסעדות, משתמשים, תפריטים, קטגוריות, פריטים, תוספות, הזמנות, לוגים ונתוני צפיות.<br/>
-            <span style={{ color: C.blue }}>🔒 סיסמאות לא נכללות בגיבוי</span>
+            <span style={{ color: T.blue }}>🔒 סיסמאות לא נכללות בגיבוי</span>
           </div>
         </div>
       </div>
@@ -308,12 +293,12 @@ function BackupSection() {
 
       {/* Google Drive hint */}
       <div style={{ background: "rgba(252,196,25,0.06)", border: "1px solid rgba(252,196,25,0.2)",
-        borderRadius: 10, padding: "12px 16px", color: C.amber, fontSize: 13,
+        borderRadius: 10, padding: "12px 16px", color: T.gold, fontSize: 13,
         display: "flex", alignItems: "flex-start", gap: 8 }}>
         <span>☁️</span>
         <span>
           <b>Google Drive:</b> הגדר{" "}
-          <code style={{ background: C.inputBg, padding: "1px 5px", borderRadius: 4 }}>GOOGLE_SERVICE_ACCOUNT_JSON</code>
+          <code style={{ background: T.overlay, padding: "1px 5px", borderRadius: 4 }}>GOOGLE_SERVICE_ACCOUNT_JSON</code>
           {" "}ב-Vercel לגיבוי אוטומטי לדרייב.
         </span>
       </div>
@@ -321,7 +306,7 @@ function BackupSection() {
       {/* Scope selector */}
       {restaurants.length > 1 && (
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase",
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase",
             letterSpacing: "0.08em", marginBottom: 6 }}>היקף הגיבוי</div>
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)} style={selectStyle}>
             <option value="">כל המסעדות</option>
@@ -348,7 +333,7 @@ function BackupSection() {
       {/* Error */}
       {error && (
         <div style={{ background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)",
-          borderRadius: 8, padding: "10px 14px", color: C.red, fontSize: 13 }}>
+          borderRadius: 8, padding: "10px 14px", color: T.red, fontSize: 13 }}>
           ⚠️ {error}
         </div>
       )}
@@ -356,7 +341,7 @@ function BackupSection() {
       {/* Success */}
       {lastBackup && (
         <div style={{ background: "rgba(81,207,102,0.1)", border: "1px solid rgba(81,207,102,0.3)",
-          borderRadius: 8, padding: "10px 14px", color: C.green, fontSize: 13 }}>
+          borderRadius: 8, padding: "10px 14px", color: T.green, fontSize: 13 }}>
           ✓ גיבוי הורד בהצלחה — {lastBackup}
         </div>
       )}
@@ -364,9 +349,9 @@ function BackupSection() {
       {/* History */}
       {history.length > 0 && (
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase",
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase",
             letterSpacing: "0.08em", marginBottom: 8 }}>גיבויים אחרונים</div>
-          <div style={{ border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
+          <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden" }}>
             {history.slice(0, 5).map((entry, i) => {
               const trigger  = (entry.meta as { trigger?: string } | null)?.trigger;
               const label    = trigger === "cron" ? "אוטומטי" : "ידני";
@@ -376,17 +361,17 @@ function BackupSection() {
                 <div key={entry.id} style={{
                   display: "flex", alignItems: "center", gap: 12,
                   padding: "10px 14px",
-                  borderBottom: i < history.slice(0,5).length - 1 ? `1px solid ${C.border}` : "none",
+                  borderBottom: i < history.slice(0,5).length - 1 ? `1px solid ${T.border}` : "none",
                   background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)",
                   fontSize: 13,
                 }}>
                   <span style={{
                     padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 700,
                     background: trigger === "cron" ? "rgba(190,75,219,0.15)" : "rgba(51,154,240,0.15)",
-                    color: trigger === "cron" ? "#be4bdb" : C.blue,
+                    color: trigger === "cron" ? "#be4bdb" : T.blue,
                   }}>{label}</span>
-                  <span style={{ color: C.sub, fontFamily: "monospace", fontSize: 12 }}>{dateStr}</span>
-                  <span style={{ color: C.muted, fontSize: 12, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{who}</span>
+                  <span style={{ color: T.sub, fontFamily: "monospace", fontSize: 12 }}>{dateStr}</span>
+                  <span style={{ color: T.muted, fontSize: 12, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{who}</span>
                 </div>
               );
             })}
@@ -496,19 +481,19 @@ function RestoreSection() {
         onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) parseFile(f); }}
         onClick={() => inputRef.current?.click()}
         style={{
-          background: backupData ? "rgba(81,207,102,0.06)" : C.inputBg,
-          border: `2px dashed ${backupData ? "rgba(81,207,102,0.5)" : C.inputBorder}`,
+          background: backupData ? "rgba(81,207,102,0.06)" : T.overlay,
+          border: `2px dashed ${backupData ? "rgba(81,207,102,0.5)" : T.border}`,
           borderRadius: 12, padding: 32, textAlign: "center", cursor: "pointer",
           transition: "border-color 0.15s",
         }}
       >
         <div style={{ fontSize: 34, marginBottom: 8 }}>{backupData ? "✅" : "📂"}</div>
-        <p style={{ color: C.sub, fontSize: 13 }}>
+        <p style={{ color: T.sub, fontSize: 13 }}>
           {file ? file.name : "גרור קובץ גיבוי (JSON) לכאן, או לחץ לבחירה"}
         </p>
-        <p style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>menu4u-backup-*.json</p>
+        <p style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>menu4u-backup-*.json</p>
         {backupData && (
-          <button style={{ color: C.muted, fontSize: 12, textDecoration: "underline",
+          <button style={{ color: T.muted, fontSize: 12, textDecoration: "underline",
             background: "transparent", border: "none", cursor: "pointer", marginTop: 8 }}
             onClick={e => { e.stopPropagation(); setFile(null); setBackupData(null); setDiff(null); setRestoreResult(null); setError(""); }}>
             החלף קובץ
@@ -521,38 +506,38 @@ function RestoreSection() {
       {/* Error */}
       {error && (
         <div style={{ background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)",
-          borderRadius: 8, padding: "10px 14px", color: C.red, fontSize: 13 }}>
+          borderRadius: 8, padding: "10px 14px", color: T.red, fontSize: 13 }}>
           ⚠️ {error}
         </div>
       )}
 
       {/* Backup metadata */}
       {backupData && meta && (
-        <div style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-          <div style={{ color: C.text, fontWeight: 700, fontSize: 14, marginBottom: 10 }}>פרטי הגיבוי</div>
+        <div style={{ background: T.overlay, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+          <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 10 }}>פרטי הגיבוי</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 12, marginBottom: 12 }}>
             {meta.exportedAt && (
-              <><span style={{ color: C.muted }}>יוצא ב:</span>
-              <span style={{ color: C.sub }}>{new Date(meta.exportedAt).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" })}</span></>
+              <><span style={{ color: T.muted }}>יוצא ב:</span>
+              <span style={{ color: T.sub }}>{new Date(meta.exportedAt).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" })}</span></>
             )}
             {meta.exportedBy && (
-              <><span style={{ color: C.muted }}>יוצא ע״י:</span>
-              <span style={{ color: C.sub, fontFamily: "monospace" }}>{meta.exportedBy}</span></>
+              <><span style={{ color: T.muted }}>יוצא ע״י:</span>
+              <span style={{ color: T.sub, fontFamily: "monospace" }}>{meta.exportedBy}</span></>
             )}
             {meta.restaurantIds && (
-              <><span style={{ color: C.muted }}>מסעדות:</span>
-              <span style={{ color: C.sub }}>{meta.restaurantIds.length}</span></>
+              <><span style={{ color: T.muted }}>מסעדות:</span>
+              <span style={{ color: T.sub }}>{meta.restaurantIds.length}</span></>
             )}
-            <span style={{ color: C.muted }}>גרסה:</span>
-            <span style={{ color: C.sub }}>{meta.version}</span>
+            <span style={{ color: T.muted }}>גרסה:</span>
+            <span style={{ color: T.sub }}>{meta.version}</span>
           </div>
           {counts && Object.keys(counts).length > 0 && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
               {Object.entries(counts).map(([key, val]) => (
-                <div key={key} style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 8,
+                <div key={key} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8,
                   padding: "8px 10px", textAlign: "center" }}>
-                  <div style={{ color: C.text, fontWeight: 700, fontSize: 16 }}>{val}</div>
-                  <div style={{ color: C.muted, fontSize: 10 }}>{key}</div>
+                  <div style={{ color: T.text, fontWeight: 700, fontSize: 16 }}>{val}</div>
+                  <div style={{ color: T.muted, fontSize: 10 }}>{key}</div>
                 </div>
               ))}
             </div>
@@ -573,29 +558,29 @@ function RestoreSection() {
 
       {/* Diff panel */}
       {diff && (
-        <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
           {/* Summary */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-            background: C.inputBg, borderBottom: `1px solid ${C.border}`, flexWrap: "wrap" }}>
-            <span style={{ color: C.text, fontWeight: 700, fontSize: 13 }}>תוצאת הבדיקה</span>
+            background: T.overlay, borderBottom: `1px solid ${T.border}`, flexWrap: "wrap" }}>
+            <span style={{ color: T.text, fontWeight: 700, fontSize: 13 }}>תוצאת הבדיקה</span>
             {diff.toCreate > 0 && (
               <span style={{ padding: "2px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-                background: "rgba(81,207,102,0.15)", color: C.green }}>✚ {diff.toCreate} חדשות</span>
+                background: "rgba(81,207,102,0.15)", color: T.green }}>✚ {diff.toCreate} חדשות</span>
             )}
             {diff.toUpdate > 0 && (
               <span style={{ padding: "2px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-                background: "rgba(252,196,25,0.15)", color: C.amber }}>✎ {diff.toUpdate} יידרסו</span>
+                background: "rgba(252,196,25,0.15)", color: T.gold }}>✎ {diff.toUpdate} יידרסו</span>
             )}
             {diff.noChange > 0 && (
               <span style={{ padding: "2px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-                background: `rgba(108,117,125,0.2)`, color: C.muted }}>✓ {diff.noChange} ללא שינוי</span>
+                background: `rgba(108,117,125,0.2)`, color: T.muted }}>✓ {diff.noChange} ללא שינוי</span>
             )}
             {diff.toCreate === 0 && diff.toUpdate === 0 && (
               <span style={{ padding: "2px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-                background: "rgba(81,207,102,0.15)", color: C.green }}>✓ אין שינויים — הנתונים זהים</span>
+                background: "rgba(81,207,102,0.15)", color: T.green }}>✓ אין שינויים — הנתונים זהים</span>
             )}
             <button onClick={() => { setDiff(null); setShowAllDiff(false); }}
-              style={{ marginRight: "auto", fontSize: 12, color: C.muted, background: "transparent",
+              style={{ marginRight: "auto", fontSize: 12, color: T.muted, background: "transparent",
                 border: "none", cursor: "pointer" }}>× סגור</button>
           </div>
 
@@ -603,28 +588,28 @@ function RestoreSection() {
             <div style={{ maxHeight: 280, overflowY: "auto" }}>
               {visibleEntries.map((entry, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px",
-                  borderBottom: `1px solid ${C.border}` }}>
+                  borderBottom: `1px solid ${T.border}` }}>
                   <span style={{
                     flexShrink: 0, padding: "2px 7px", borderRadius: 6, fontSize: 10, fontWeight: 700,
                     marginTop: 1,
                     background: entry.action === "create" ? "rgba(81,207,102,0.15)" : "rgba(252,196,25,0.15)",
-                    color: entry.action === "create" ? C.green : C.amber,
+                    color: entry.action === "create" ? T.green : T.gold,
                   }}>
                     {entry.action === "create" ? "חדש" : "עדכון"}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {entry.name}
-                      <span style={{ fontWeight: 400, color: C.muted, marginRight: 6 }}>— {TYPE_LABELS[entry.type] ?? entry.type}</span>
+                      <span style={{ fontWeight: 400, color: T.muted, marginRight: 6 }}>— {TYPE_LABELS[entry.type] ?? entry.type}</span>
                     </div>
                     {entry.changes && entry.changes.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", marginTop: 3 }}>
                         {entry.changes.map((fc, j) => (
-                          <span key={j} style={{ fontSize: 11, color: C.sub }}>
-                            <span style={{ fontWeight: 600, color: C.text }}>{fc.field}:</span>{" "}
-                            <span style={{ textDecoration: "line-through", color: C.red }}>{fc.from}</span>
+                          <span key={j} style={{ fontSize: 11, color: T.sub }}>
+                            <span style={{ fontWeight: 600, color: T.text }}>{fc.field}:</span>{" "}
+                            <span style={{ textDecoration: "line-through", color: T.red }}>{fc.from}</span>
                             {" → "}
-                            <span style={{ color: C.green, fontWeight: 600 }}>{fc.to}</span>
+                            <span style={{ color: T.green, fontWeight: 600 }}>{fc.to}</span>
                           </span>
                         ))}
                       </div>
@@ -633,9 +618,9 @@ function RestoreSection() {
                 </div>
               ))}
               {diffEntries.length > SHOW_N && (
-                <div style={{ padding: "10px", textAlign: "center", background: C.inputBg }}>
+                <div style={{ padding: "10px", textAlign: "center", background: T.overlay }}>
                   <button onClick={() => setShowAllDiff(v => !v)} style={{
-                    fontSize: 12, color: C.blue, background: "transparent", border: "none", cursor: "pointer", fontWeight: 600,
+                    fontSize: 12, color: T.blue, background: "transparent", border: "none", cursor: "pointer", fontWeight: 600,
                   }}>
                     {showAllDiff ? "הצג פחות ▲" : `הצג עוד ${diffEntries.length - SHOW_N} שינויים ▼`}
                   </button>
@@ -647,17 +632,17 @@ function RestoreSection() {
           {/* Warning + actions */}
           {diff.toUpdate > 0 && !confirm && (
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px",
-              background: "rgba(252,196,25,0.06)", borderTop: `1px solid ${C.border}` }}>
+              background: "rgba(252,196,25,0.06)", borderTop: `1px solid ${T.border}` }}>
               <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.amber }}>{diff.toUpdate} רשומות קיימות יידרסו</div>
-                <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>שינויים שביצעת מאז הגיבוי יאבדו לנצח.</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.gold }}>{diff.toUpdate} רשומות קיימות יידרסו</div>
+                <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>שינויים שביצעת מאז הגיבוי יאבדו לנצח.</div>
               </div>
             </div>
           )}
 
-          <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.border}`,
-            background: C.inputBg, display: "flex", gap: 8 }}>
+          <div style={{ padding: "12px 14px", borderTop: `1px solid ${T.border}`,
+            background: T.overlay, display: "flex", gap: 8 }}>
             {!confirm ? (
               <>
                 <button onClick={() => diff.toUpdate > 0 ? setConfirm(true) : doRestore()}
@@ -670,24 +655,24 @@ function RestoreSection() {
                   {restoring ? "משחזר..." : "🔄 שחזר תפריטים"}
                 </button>
                 <button onClick={() => { setDiff(null); setShowAllDiff(false); }} style={{
-                  background: "transparent", color: C.sub, fontSize: 13, fontWeight: 600,
-                  padding: "8px 14px", borderRadius: 8, border: `1px solid ${C.inputBorder}`, cursor: "pointer",
+                  background: "transparent", color: T.sub, fontSize: 13, fontWeight: 600,
+                  padding: "8px 14px", borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer",
                 }}>ביטול</button>
               </>
             ) : (
               <>
-                <div style={{ width: "100%", marginBottom: 8, fontSize: 12, fontWeight: 700, color: C.red }}>
+                <div style={{ width: "100%", marginBottom: 8, fontSize: 12, fontWeight: 700, color: T.red }}>
                   ⚠️ האם לדרוס {diff.toUpdate} רשומות קיימות?
                 </div>
                 <button onClick={doRestore} disabled={restoring} style={{
-                  background: C.red, color: "#fff", fontSize: 13, fontWeight: 700,
+                  background: T.red, color: "#fff", fontSize: 13, fontWeight: 700,
                   padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
                   opacity: restoring ? 0.6 : 1 }}>
                   {restoring ? "משחזר..." : "כן, דרוס והמשך"}
                 </button>
                 <button onClick={() => setConfirm(false)} style={{
-                  background: "transparent", color: C.sub, fontSize: 13, fontWeight: 600,
-                  padding: "8px 14px", borderRadius: 8, border: `1px solid ${C.inputBorder}`, cursor: "pointer",
+                  background: "transparent", color: T.sub, fontSize: 13, fontWeight: 600,
+                  padding: "8px 14px", borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer",
                 }}>חזור</button>
               </>
             )}
@@ -698,12 +683,12 @@ function RestoreSection() {
       {/* Success */}
       {restoreResult && (
         <div style={{ background: "rgba(81,207,102,0.1)", border: "1px solid rgba(81,207,102,0.3)",
-          borderRadius: 8, padding: "10px 14px", color: C.green, fontSize: 13 }}>
+          borderRadius: 8, padding: "10px 14px", color: T.green, fontSize: 13 }}>
           ✓ שחזור הושלם! נוצרו {restoreResult.created} רשומות חדשות, עודכנו {restoreResult.updated} רשומות קיימות.
         </div>
       )}
 
-      <p style={{ fontSize: 12, color: C.muted }}>
+      <p style={{ fontSize: 12, color: T.muted }}>
         לשחזור מלא של הזמנות, לקוחות ולוגים — השתמש בגיבוי Neon DB.
       </p>
     </div>
@@ -729,7 +714,7 @@ function ClearOrdersSection() {
   if (result) {
     return (
       <div style={{ background: "rgba(81,207,102,0.1)", border: "1px solid rgba(81,207,102,0.3)",
-        borderRadius: 10, padding: "12px 16px", color: C.green, fontSize: 13 }}>
+        borderRadius: 10, padding: "12px 16px", color: T.green, fontSize: 13 }}>
         ✓ נמחקו {result.count} הזמנות בהצלחה — הנתונים מתחילים מאפס.
       </div>
     );
@@ -739,17 +724,17 @@ function ClearOrdersSection() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.25)",
         borderRadius: 12, padding: "18px 20px" }}>
-        <div style={{ color: C.red, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>⚠️ ניקוי כל ההזמנות</div>
-        <div style={{ color: C.sub, fontSize: 13, lineHeight: 1.6 }}>
+        <div style={{ color: T.red, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>⚠️ ניקוי כל ההזמנות</div>
+        <div style={{ color: T.sub, fontSize: 13, lineHeight: 1.6 }}>
           פעולה זו תמחק לצמיתות את כל ההזמנות, פריטי ההזמנות ולוגי הסטטוס מכל המסעדות.<br/>
-          <span style={{ color: C.red, fontWeight: 600 }}>לא ניתן לבטל פעולה זו!</span>
+          <span style={{ color: T.red, fontWeight: 600 }}>לא ניתן לבטל פעולה זו!</span>
         </div>
       </div>
 
       {!confirm ? (
         <button onClick={() => setConfirm(true)} style={{
           display: "inline-flex", alignItems: "center", gap: 6,
-          background: "rgba(255,107,107,0.15)", color: C.red,
+          background: "rgba(255,107,107,0.15)", color: T.red,
           fontSize: 14, fontWeight: 700, padding: "10px 22px",
           borderRadius: 8, border: "1px solid rgba(255,107,107,0.3)", cursor: "pointer",
           width: "fit-content",
@@ -760,24 +745,24 @@ function ClearOrdersSection() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)",
             borderRadius: 10, padding: "12px 16px" }}>
-            <div style={{ color: C.red, fontWeight: 700, fontSize: 13, marginBottom: 4 }}>פעולה בלתי הפיכה!</div>
-            <div style={{ color: C.sub, fontSize: 12 }}>כל ההזמנות יימחקו לצמיתות. לא ניתן לשחזר.</div>
+            <div style={{ color: T.red, fontWeight: 700, fontSize: 13, marginBottom: 4 }}>פעולה בלתי הפיכה!</div>
+            <div style={{ color: T.sub, fontSize: 12 }}>כל ההזמנות יימחקו לצמיתות. לא ניתן לשחזר.</div>
           </div>
           {error && (
-            <div style={{ color: C.red, fontSize: 13, padding: "8px 12px",
+            <div style={{ color: T.red, fontSize: 13, padding: "8px 12px",
               background: "rgba(255,107,107,0.08)", borderRadius: 8 }}>{error}</div>
           )}
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={handleClear} disabled={clearing} style={{
-              background: C.red, color: "#fff", fontSize: 13, fontWeight: 700,
+              background: T.red, color: "#fff", fontSize: 13, fontWeight: 700,
               padding: "10px 22px", borderRadius: 8, border: "none", cursor: "pointer",
               opacity: clearing ? 0.6 : 1,
             }}>
               {clearing ? "מוחק..." : "כן, מחק הכל"}
             </button>
             <button onClick={() => setConfirm(false)} style={{
-              background: "transparent", color: C.sub, fontSize: 13, fontWeight: 600,
-              padding: "10px 18px", borderRadius: 8, border: `1px solid ${C.inputBorder}`, cursor: "pointer",
+              background: "transparent", color: T.sub, fontSize: 13, fontWeight: 600,
+              padding: "10px 18px", borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer",
             }}>ביטול</button>
           </div>
         </div>
@@ -823,75 +808,74 @@ function PasswordPolicyTab() {
     else setErr("שגיאה בשמירה");
   }
 
-  const C2 = { cardBg: "#212529", border: "#2d3239", inputBg: "#2d3239", inputBorder: "#3a3f47", text: "#e9ecef", muted: "#6c757d", amber: "#fcc419" };
-  const inp: React.CSSProperties = { background: C2.inputBg, border: `1px solid ${C2.inputBorder}`, color: C2.text, borderRadius: 8, padding: "8px 12px", fontSize: 14, width: 100, outline: "none" };
+  const inp: React.CSSProperties = { background: T.overlay, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "8px 12px", fontSize: 14, width: 100, outline: "none" };
 
-  if (!policy) return <div style={{ padding: 40, color: C2.muted, textAlign: "center" }}>טוען...</div>;
+  if (!policy) return <div style={{ padding: 40, color: T.muted, textAlign: "center" }}>טוען...</div>;
 
-  const card: React.CSSProperties = { background: C2.cardBg, border: `1px solid ${C2.border}`, borderRadius: 12, padding: "16px 20px" };
+  const card: React.CSSProperties = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "16px 20px" };
   const numInp: React.CSSProperties = { ...inp, width: 68, textAlign: "center", padding: "7px 10px" };
-  const hint = (text: string) => <div style={{ fontSize: 11, color: "#fbbf24", marginTop: 6 }}>{text}</div>;
+  const hint = (text: string) => <div style={{ fontSize: 11, color: T.gold, marginTop: 6 }}>{text}</div>;
 
   return (
     <div style={{ padding: "28px 0", maxWidth: 780, direction: "rtl" }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: C2.text, marginBottom: 2 }}>מדיניות סיסמאות</h2>
-      <p style={{ fontSize: 12, color: C2.muted, marginBottom: 20 }}>הגדרות אבטחה לכלל המשתמשים במערכת</p>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 2 }}>מדיניות סיסמאות</h2>
+      <p style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>הגדרות אבטחה לכלל המשתמשים במערכת</p>
 
       {/* Row 1+2: all 4 number cards in a 4-column grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12 }}>
 
         {/* Expiry */}
         <div style={card}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C2.text, marginBottom: 2 }}>⏳ תפוגת סיסמה</div>
-          <div style={{ fontSize: 11, color: C2.muted, marginBottom: 12 }}>ימים עד החלפה</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 2 }}>⏳ תפוגת סיסמה</div>
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>ימים עד החלפה</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="number" min={0} max={365} value={policy.maxAgeDays}
               onChange={e => setPolicy({ ...policy, maxAgeDays: Number(e.target.value) })} style={numInp} />
-            <span style={{ color: C2.muted, fontSize: 12 }}>ימים</span>
+            <span style={{ color: T.muted, fontSize: 12 }}>ימים</span>
           </div>
-          {policy.maxAgeDays > 0 ? hint(`כל ${policy.maxAgeDays} ימים`) : <div style={{ fontSize: 11, color: C2.muted, marginTop: 6 }}>0 = ללא הגבלה</div>}
+          {policy.maxAgeDays > 0 ? hint(`כל ${policy.maxAgeDays} ימים`) : <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>0 = ללא הגבלה</div>}
         </div>
 
         {/* Idle timeout */}
         <div style={card}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C2.text, marginBottom: 2 }}>🔒 ניתוק אוטומטי</div>
-          <div style={{ fontSize: 11, color: C2.muted, marginBottom: 12 }}>חוסר פעילות</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 2 }}>🔒 ניתוק אוטומטי</div>
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>חוסר פעילות</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="number" min={0} max={24} step={1} value={Math.round(policy.idleTimeoutMinutes / 60)}
               onChange={e => setPolicy({ ...policy, idleTimeoutMinutes: Number(e.target.value) * 60 })} style={numInp} />
-            <span style={{ color: C2.muted, fontSize: 12 }}>שעות</span>
+            <span style={{ color: T.muted, fontSize: 12 }}>שעות</span>
           </div>
-          {policy.idleTimeoutMinutes > 0 ? hint(`אחרי ${Math.round(policy.idleTimeoutMinutes / 60)} שעות`) : <div style={{ fontSize: 11, color: C2.muted, marginTop: 6 }}>0 = ללא ניתוק</div>}
+          {policy.idleTimeoutMinutes > 0 ? hint(`אחרי ${Math.round(policy.idleTimeoutMinutes / 60)} שעות`) : <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>0 = ללא ניתוק</div>}
         </div>
 
         {/* Min length */}
         <div style={card}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C2.text, marginBottom: 2 }}>📏 אורך מינימלי</div>
-          <div style={{ fontSize: 11, color: C2.muted, marginBottom: 12 }}>תווים לסיסמה</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 2 }}>📏 אורך מינימלי</div>
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>תווים לסיסמה</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="number" min={6} max={32} value={policy.minLength}
               onChange={e => setPolicy({ ...policy, minLength: Number(e.target.value) })} style={numInp} />
-            <span style={{ color: C2.muted, fontSize: 12 }}>תווים</span>
+            <span style={{ color: T.muted, fontSize: 12 }}>תווים</span>
           </div>
-          <div style={{ fontSize: 11, color: C2.muted, marginTop: 6 }}>מומלץ: 8+</div>
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>מומלץ: 8+</div>
         </div>
 
         {/* History */}
         <div style={card}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C2.text, marginBottom: 2 }}>🔁 היסטוריה</div>
-          <div style={{ fontSize: 11, color: C2.muted, marginBottom: 12 }}>מניעת שימוש חוזר</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 2 }}>🔁 היסטוריה</div>
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>מניעת שימוש חוזר</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="number" min={0} max={10} value={policy.historyCount}
               onChange={e => setPolicy({ ...policy, historyCount: Number(e.target.value) })} style={numInp} />
-            <span style={{ color: C2.muted, fontSize: 12 }}>סיסמאות</span>
+            <span style={{ color: T.muted, fontSize: 12 }}>סיסמאות</span>
           </div>
-          {policy.historyCount > 0 ? hint(`חסום ${policy.historyCount} אחרונות`) : <div style={{ fontSize: 11, color: C2.muted, marginTop: 6 }}>0 = ללא הגבלה</div>}
+          {policy.historyCount > 0 ? hint(`חסום ${policy.historyCount} אחרונות`) : <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>0 = ללא הגבלה</div>}
         </div>
       </div>
 
       {/* Row 3: Complexity — compact toggle rows */}
       <div style={{ ...card, marginBottom: 24 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C2.text, marginBottom: 14 }}>🔐 דרישות מורכבות</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 14 }}>🔐 דרישות מורכבות</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {([
             { key: "requireUppercase", label: "אות גדולה", desc: "A–Z" },
@@ -900,14 +884,14 @@ function PasswordPolicyTab() {
           ] as { key: keyof PolicyState; label: string; desc: string }[]).map(({ key, label: lbl, desc }, i, arr) => {
             const active = policy[key] as boolean;
             return (
-              <label key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: i < arr.length - 1 ? `1px solid ${C2.border}` : "none", cursor: "pointer" }}>
+              <label key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : "none", cursor: "pointer" }}>
                 <input type="checkbox" checked={active} onChange={e => setPolicy({ ...policy, [key]: e.target.checked })} style={{ display: "none" }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 13, color: active ? C2.text : C2.muted, fontWeight: active ? 600 : 400 }}>{lbl}</span>
-                  <span style={{ fontSize: 11, color: C2.muted }}>{desc}</span>
+                  <span style={{ fontSize: 13, color: active ? T.text : T.muted, fontWeight: active ? 600 : 400 }}>{lbl}</span>
+                  <span style={{ fontSize: 11, color: T.muted }}>{desc}</span>
                 </div>
                 {/* Toggle switch */}
-                <div style={{ width: 38, height: 22, borderRadius: 11, background: active ? C2.amber : C2.inputBorder, position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+                <div style={{ width: 38, height: 22, borderRadius: 11, background: active ? T.gold : T.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
                   <div style={{ position: "absolute", top: 3, right: active ? 3 : undefined, left: active ? undefined : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "all 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
                 </div>
               </label>
@@ -916,10 +900,10 @@ function PasswordPolicyTab() {
         </div>
       </div>
 
-      {err && <div style={{ color: "#ff6b6b", fontSize: 13, marginBottom: 12 }}>{err}</div>}
+      {err && <div style={{ color: T.red, fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
       <button onClick={handleSave} disabled={saving}
-        style={{ background: saving ? "#495057" : C2.amber, color: "#000", border: "none", padding: "12px 32px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", minWidth: 160 }}>
+        style={{ background: saving ? T.muted : T.gold, color: "#000", border: "none", padding: "12px 32px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", minWidth: 160 }}>
         {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור מדיניות"}
       </button>
     </div>
@@ -978,9 +962,9 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
   const tabBarStyle: React.CSSProperties = {
     display: "flex",
-    background: "#212529",
+    background: T.surface,
     borderRadius: "14px 14px 0 0",
-    borderBottom: `2px solid ${C.border}`,
+    borderBottom: `2px solid ${T.border}`,
     padding: "0 12px",
   };
 
@@ -990,8 +974,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
       display: "flex", alignItems: "center", gap: 8,
       padding: "14px 24px 12px",
       fontSize: 14, fontWeight: 700,
-      color: active ? C.amber : C.muted,
-      borderBottom: active ? `3px solid ${C.amber}` : "3px solid transparent",
+      color: active ? T.gold : T.muted,
+      borderBottom: active ? `3px solid ${T.gold}` : "3px solid transparent",
       position: "relative", bottom: -2,
       cursor: "pointer", background: "transparent", border: "none",
       outline: "none", transition: "color 0.15s",
@@ -1001,7 +985,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
   const subTabBarStyle: React.CSSProperties = {
     display: "flex",
-    borderBottom: `1px solid ${C.border}`,
+    borderBottom: `1px solid ${T.border}`,
     padding: "0 20px",
     background: "rgba(0,0,0,0.2)",
   };
@@ -1012,8 +996,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
       display: "flex", alignItems: "center", gap: 7,
       padding: "10px 18px 9px",
       fontSize: 13, fontWeight: 600,
-      color: active ? C.amber : C.muted,
-      borderBottom: active ? `2px solid ${C.amber}` : "2px solid transparent",
+      color: active ? T.gold : T.muted,
+      borderBottom: active ? `2px solid ${T.gold}` : "2px solid transparent",
       position: "relative", bottom: -1,
       cursor: "pointer", background: "transparent", border: "none",
       outline: "none", transition: "color 0.15s",
@@ -1036,8 +1020,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
       {/* ── Card ── */}
       <div style={{
-        background: C.cardBg,
-        border: `1px solid ${C.border}`,
+        background: T.surface,
+        border: `1px solid ${T.border}`,
         borderTop: "none",
         borderRadius: "0 0 16px 16px",
         overflow: "hidden",
@@ -1051,53 +1035,53 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               display: "grid",
               gridTemplateColumns: "repeat(4, 1fr)",
               gap: 1,
-              background: C.border,
+              background: T.border,
             }}>
               {/* שם האתר */}
-              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
+              <div style={{ background: T.surface, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>✏️</span> שם האתר
                 </div>
                 <input style={DARK_INPUT} type="text" value={form.siteName}
                   onChange={e => update("siteName", e.target.value)} placeholder="Menu4U" />
-                <p style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>מוצג בסיידבר לצד הלוגו</p>
+                <p style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>מוצג בסיידבר לצד הלוגו</p>
               </div>
 
               {/* דומיין ראשי */}
-              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
+              <div style={{ background: T.surface, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>🌐</span> דומיין ראשי
                 </div>
                 <input style={{ ...DARK_INPUT, direction: "ltr" }} type="text"
                   value={form.domain ?? ""} onChange={e => update("domain", e.target.value || null)}
                   placeholder="app.mysite.co.il" />
-                <p style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>הדומיין הראשי של הפלטפורמה</p>
+                <p style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>הדומיין הראשי של הפלטפורמה</p>
               </div>
 
               {/* זכויות יוצרים */}
-              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
+              <div style={{ background: T.surface, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>©</span> זכויות יוצרים
                 </div>
                 <input style={DARK_INPUT} type="text"
                   value={form.copyright ?? ""} onChange={e => update("copyright", e.target.value || null)}
                   placeholder={`© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות`} />
-                <p style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>מוצג בתחתית הפאנל</p>
+                <p style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>מוצג בתחתית הפאנל</p>
               </div>
 
               {/* לוגו */}
-              <div style={{ background: C.cardBg, padding: "20px 22px" }}>
+              <div style={{ background: T.surface, padding: "20px 22px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
                   <span style={{ fontSize: 15 }}>🖼️</span> לוגו האתר
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div onClick={() => fileRef.current?.click()}
-                    style={{ width: 58, height: 58, background: C.inputBg,
-                      border: `2px dashed ${C.inputBorder}`, borderRadius: 10,
+                    style={{ width: 58, height: 58, background: T.overlay,
+                      border: `2px dashed ${T.border}`, borderRadius: 10,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 22, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
                     {form.logo
@@ -1105,7 +1089,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                       : <span>🏪</span>}
                   </div>
                   <div>
-                    <p style={{ color: C.sub, fontSize: 12, marginBottom: 8 }}>PNG/SVG שקוף, 200×200px+</p>
+                    <p style={{ color: T.sub, fontSize: 12, marginBottom: 8 }}>PNG/SVG שקוף, 200×200px+</p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={() => fileRef.current?.click()} disabled={uploadingLogo} style={{
                         display: "inline-flex", alignItems: "center", gap: 6,
@@ -1118,7 +1102,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                       </button>
                       {form.logo && (
                         <button onClick={() => update("logo", null)} style={{
-                          background: "transparent", color: C.red, fontSize: 12, fontWeight: 600,
+                          background: "transparent", color: T.red, fontSize: 12, fontWeight: 600,
                           padding: "7px 12px", borderRadius: 8,
                           border: "1px solid rgba(255,107,107,0.3)", cursor: "pointer",
                         }}>הסר</button>
@@ -1133,7 +1117,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
             {/* Save bar */}
             <div style={{ display: "flex", alignItems: "center", gap: 12,
-              borderTop: `1px solid ${C.border}`, padding: "14px 22px",
+              borderTop: `1px solid ${T.border}`, padding: "14px 22px",
               background: "rgba(0,0,0,0.12)" }}>
               <button onClick={save} disabled={saving} style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
@@ -1145,7 +1129,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                 {saving ? "שומר..." : "💾 שמור שינויים"}
               </button>
               {saved && (
-                <span style={{ color: C.green, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ color: T.green, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                   נשמר בהצלחה!
                 </span>

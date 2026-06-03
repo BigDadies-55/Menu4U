@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { T } from "@/lib/ui";
 
 type DurationStat = { avg: number; median: number; count: number };
 
@@ -38,43 +39,31 @@ const fmtMin = (m: number) =>
   m < 1 ? "< 1 דק'" : m < 60 ? `${Math.round(m)} דק'` : `${Math.floor(m / 60)}ש' ${Math.round(m % 60)}דק'`;
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
-/* ── Dark palette ────────────────────────────────────────── */
+/* ── Gradient dark-stops (no T equivalent) ───────────────── */
 const C = {
-  pageBg:   "#1a1d23",
-  cardBg:   "#212529",
-  border:   "#2d3239",
-  input:    "#2d3239",
-  text:     "#e9ecef",
-  sub:      "#adb5bd",
-  muted:    "#6c757d",
-  blue:     "#339af0",
   blueDk:   "#1971c2",
-  green:    "#51cf66",
   greenDk:  "#2f9e44",
-  yellow:   "#fcc419",
   yellowDk: "#e67700",
-  red:      "#ff6b6b",
   redDk:    "#c92a2a",
-  purple:   "#9775fa",
   purpleDk: "#6741d9",
   pink:     "#f06595",
   pinkDk:   "#a61e4d",
 };
 
 const GRAD = {
-  blue:   `linear-gradient(135deg,${C.blueDk},${C.blue})`,
-  green:  `linear-gradient(135deg,${C.greenDk},${C.green})`,
-  yellow: `linear-gradient(135deg,${C.yellowDk},${C.yellow})`,
-  red:    `linear-gradient(135deg,${C.redDk},${C.red})`,
-  purple: `linear-gradient(135deg,${C.purpleDk},${C.purple})`,
+  blue:   `linear-gradient(135deg,${C.blueDk},${T.blue})`,
+  green:  `linear-gradient(135deg,${C.greenDk},${T.green})`,
+  yellow: `linear-gradient(135deg,${C.yellowDk},${T.yellow})`,
+  red:    `linear-gradient(135deg,${C.redDk},${T.red})`,
+  purple: `linear-gradient(135deg,${C.purpleDk},${T.purple})`,
   pink:   `linear-gradient(135deg,${C.pinkDk},${C.pink})`,
 };
 
 const STAGE_COLORS: Record<string, string> = {
-  PENDING:   C.yellow,
-  CONFIRMED: C.blue,
+  PENDING:   T.yellow,
+  CONFIRMED: T.blue,
   PREPARING: "#f97316",
-  READY:     C.green,
+  READY:     T.green,
   DELIVERED: "#c9a84c",
 };
 const STAGE_LABELS: Record<string, string> = {
@@ -93,10 +82,10 @@ const SOURCE_LABELS: Record<string, string> = {
 /* ── Card ────────────────────────────────────────────────── */
 function Card({ title, sub, children, style }: { title: React.ReactNode; sub?: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden", ...style }}>
-      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{title}</div>
-        {sub && <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>{sub}</div>}
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden", ...style }}>
+      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{title}</div>
+        {sub && <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>{sub}</div>}
       </div>
       <div style={{ padding: 20 }}>{children}</div>
     </div>
@@ -144,7 +133,7 @@ function RingGauge({ value, max, label, sublabel, displayValue, color }: {
           </linearGradient>
         </defs>
         {/* Track */}
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={strokeW}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={T.border} strokeWidth={strokeW}
           strokeDasharray={`${dashTotal} ${circ}`} strokeLinecap="round"
           transform={`rotate(${rot} ${cx} ${cy})`} />
         {/* Fill */}
@@ -158,16 +147,16 @@ function RingGauge({ value, max, label, sublabel, displayValue, color }: {
         {/* BG fill */}
         <circle cx={cx} cy={cy} r={r - strokeW / 2 - 2} fill={`${color}08`} />
         {/* Center text */}
-        <text x={cx} y={cy - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill={C.text}>
+        <text x={cx} y={cy - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill={T.text}>
           {displayValue ?? (Number.isFinite(value) ? String(Math.round(value)) : "—")}
         </text>
         {/* Mini bar */}
-        <rect x={cx - 22} y={cy + 14} width={44} height={3} rx={2} fill={C.border} />
+        <rect x={cx - 22} y={cy + 14} width={44} height={3} rx={2} fill={T.border} />
         <rect x={cx - 22} y={cy + 14} width={44 * pct} height={3} rx={2} fill={color} />
       </svg>
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.sub }}>{label}</div>
-        {sublabel && <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{sublabel}</div>}
+        <div style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>{label}</div>
+        {sublabel && <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>{sublabel}</div>}
       </div>
     </div>
   );
@@ -176,7 +165,7 @@ function RingGauge({ value, max, label, sublabel, displayValue, color }: {
 /* ── Bar ─────────────────────────────────────────────────── */
 function Bar({ pct, color }: { pct: number; color: string }) {
   return (
-    <div style={{ height: 6, background: C.border, borderRadius: 99, overflow: "hidden" }}>
+    <div style={{ height: 6, background: T.border, borderRadius: 99, overflow: "hidden" }}>
       <div style={{ height: "100%", width: `${Math.max(2, pct)}%`, background: color, borderRadius: 99, transition: "width .5s" }} />
     </div>
   );
@@ -252,30 +241,30 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
   }
 
   return (
-    <div style={{ background: C.pageBg, minHeight: "100vh", padding: "24px", direction: "rtl" }}>
+    <div style={{ background: T.bg, minHeight: "100vh", padding: "24px", direction: "rtl" }}>
 
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>📊 סטטיסטיקות הזמנות</h1>
-          <p style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>ניתוח זמני סטטוסים, עומסים והמלצות</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: T.text, margin: 0 }}>📊 סטטיסטיקות הזמנות</h1>
+          <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>ניתוח זמני סטטוסים, עומסים והמלצות</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           {/* Restaurant select */}
           {(isSuperAdmin && restaurants.length > 1) && (
             <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-              style={{ background: C.input, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "7px 12px", fontSize: 13, outline: "none" }}>
+              style={{ background: T.overlay, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 12px", fontSize: 13, outline: "none" }}>
               {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           )}
           {/* Period */}
-          <div style={{ display: "flex", background: C.input, borderRadius: 8, border: `1px solid ${C.border}`, overflow: "hidden" }}>
+          <div style={{ display: "flex", background: T.overlay, borderRadius: 8, border: `1px solid ${T.border}`, overflow: "hidden" }}>
             {[7, 30, 90].map(d => (
               <button key={d} onClick={() => { setPeriod(d); setDateFrom(""); setDateTo(""); }}
                 style={{
                   padding: "7px 16px", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
-                  background: !dateFrom && period === d ? C.blueDk : "transparent",
-                  color: !dateFrom && period === d ? "#fff" : C.sub,
+                  background: !dateFrom && period === d ? T.blue : "transparent",
+                  color: !dateFrom && period === d ? "#fff" : T.sub,
                   transition: "all .15s",
                 }}>
                 {d} ימים
@@ -283,23 +272,23 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
             ))}
           </div>
           {/* Date range */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: C.input, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>
-            <span style={{ color: C.muted }}>מ-</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: T.overlay, border: `1px solid ${T.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>
+            <span style={{ color: T.muted }}>מ-</span>
             <input type="date" value={dateFrom} max={dateTo || todayStr()} onChange={e => setDateFrom(e.target.value)}
-              style={{ background: "none", border: "none", color: C.sub, fontSize: 12, outline: "none", width: 120 }} />
-            <span style={{ color: C.muted }}>עד</span>
+              style={{ background: "none", border: "none", color: T.sub, fontSize: 12, outline: "none", width: 120 }} />
+            <span style={{ color: T.muted }}>עד</span>
             <input type="date" value={dateTo} min={dateFrom || undefined} max={todayStr()} onChange={e => setDateTo(e.target.value)}
-              style={{ background: "none", border: "none", color: C.sub, fontSize: 12, outline: "none", width: 120 }} />
+              style={{ background: "none", border: "none", color: T.sub, fontSize: 12, outline: "none", width: 120 }} />
             {dateFrom && (
               <button onClick={() => { setDateFrom(""); setDateTo(""); }}
-                style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14, padding: "0 2px" }}>✕</button>
+                style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, padding: "0 2px" }}>✕</button>
             )}
           </div>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, color: C.muted, fontSize: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, color: T.muted, fontSize: 14 }}>
           <svg style={{ animation: "spin 1s linear infinite", width: 20, height: 20, marginLeft: 10 }} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
@@ -325,19 +314,19 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
               <RingGauge value={s.completionRate} max={100}
                 label="שיעור השלמה" sublabel="DELIVERED + PAID"
                 displayValue={`${s.completionRate.toFixed(0)}%`}
-                color={gaugeColor(s.completionRate, [{ at: 0, c: C.red }, { at: 50, c: C.yellow }, { at: 75, c: C.green }])} />
+                color={gaugeColor(s.completionRate, [{ at: 0, c: T.red }, { at: 50, c: T.yellow }, { at: 75, c: T.green }])} />
               <RingGauge value={s.cancelRate} max={30}
                 label="שיעור ביטולים" sublabel="יעד: פחות מ-5%"
                 displayValue={`${s.cancelRate.toFixed(1)}%`}
-                color={gaugeColor(s.cancelRate, [{ at: 0, c: C.green }, { at: 5, c: C.yellow }, { at: 15, c: C.red }])} />
+                color={gaugeColor(s.cancelRate, [{ at: 0, c: T.green }, { at: 5, c: T.yellow }, { at: 15, c: T.red }])} />
               <RingGauge value={s.totalTime?.count > 0 ? s.totalTime.avg : 0} max={60}
                 label="זמן שירות ממוצע" sublabel="יעד: פחות מ-30 דק׳"
                 displayValue={s.totalTime?.count > 0 ? fmtMin(s.totalTime.avg) : "—"}
-                color={gaugeColor(s.totalTime?.count > 0 ? s.totalTime.avg : 0, [{ at: 0, c: C.green }, { at: 30, c: C.yellow }, { at: 40, c: C.red }])} />
+                color={gaugeColor(s.totalTime?.count > 0 ? s.totalTime.avg : 0, [{ at: 0, c: T.green }, { at: 30, c: T.yellow }, { at: 40, c: T.red }])} />
               <RingGauge value={s.deliveredToPayTime?.count > 0 ? s.deliveredToPayTime.avg : 0} max={30}
                 label="המתנה לתשלום" sublabel="DELIVERED → PAID"
                 displayValue={s.deliveredToPayTime?.count > 0 ? fmtMin(s.deliveredToPayTime.avg) : "—"}
-                color={gaugeColor(s.deliveredToPayTime?.count > 0 ? s.deliveredToPayTime.avg : 0, [{ at: 0, c: C.green }, { at: 10, c: C.yellow }, { at: 20, c: C.red }])} />
+                color={gaugeColor(s.deliveredToPayTime?.count > 0 ? s.deliveredToPayTime.avg : 0, [{ at: 0, c: T.green }, { at: 10, c: T.yellow }, { at: 20, c: T.red }])} />
             </div>
           </Card>
 
@@ -354,18 +343,18 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                   return (
                     <div key={st}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: C.sub }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: T.sub }}>
                           <span style={{ width: 9, height: 9, borderRadius: "50%", background: STAGE_COLORS[st], display: "inline-block", flexShrink: 0 }} />
                           {STAGE_LABELS[st]}
                         </span>
                         <span style={{ fontSize: 13, textAlign: "left" }}>
                           {d?.count > 0 ? (
                             <>
-                              <span style={{ fontWeight: 700, color: C.text }}>{fmtMin(d.avg)}</span>
-                              <span style={{ color: C.muted, fontSize: 11, marginRight: 6 }}>מדיאן {fmtMin(d.median)}</span>
-                              <span style={{ color: C.border, fontSize: 11 }}>({d.count})</span>
+                              <span style={{ fontWeight: 700, color: T.text }}>{fmtMin(d.avg)}</span>
+                              <span style={{ color: T.muted, fontSize: 11, marginRight: 6 }}>מדיאן {fmtMin(d.median)}</span>
+                              <span style={{ color: T.border, fontSize: 11 }}>({d.count})</span>
                             </>
-                          ) : <span style={{ color: C.border }}>—</span>}
+                          ) : <span style={{ color: T.border }}>—</span>}
                         </span>
                       </div>
                       <Bar pct={pct} color={STAGE_COLORS[st]} />
@@ -376,25 +365,25 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                 {s.deliveredToPayTime?.count > 0 && (
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: C.sub }}>
-                        <span style={{ width: 9, height: 9, borderRadius: "50%", background: C.green, display: "inline-block", flexShrink: 0 }} />
+                      <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: T.sub }}>
+                        <span style={{ width: 9, height: 9, borderRadius: "50%", background: T.green, display: "inline-block", flexShrink: 0 }} />
                         💳 נמסר → שולם
                       </span>
                       <span style={{ fontSize: 13 }}>
-                        <span style={{ fontWeight: 700, color: C.text }}>{fmtMin(s.deliveredToPayTime.avg)}</span>
-                        <span style={{ color: C.muted, fontSize: 11, marginRight: 6 }}>מדיאן {fmtMin(s.deliveredToPayTime.median)}</span>
+                        <span style={{ fontWeight: 700, color: T.text }}>{fmtMin(s.deliveredToPayTime.avg)}</span>
+                        <span style={{ color: T.muted, fontSize: 11, marginRight: 6 }}>מדיאן {fmtMin(s.deliveredToPayTime.median)}</span>
                       </span>
                     </div>
-                    <Bar pct={maxDur > 0 ? (s.deliveredToPayTime.avg / maxDur) * 100 : 0} color={C.green} />
+                    <Bar pct={maxDur > 0 ? (s.deliveredToPayTime.avg / maxDur) * 100 : 0} color={T.green} />
                   </div>
                 )}
                 {/* Total */}
                 {s.totalTime?.count > 0 && (
-                  <div style={{ marginTop: 6, paddingTop: 12, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.sub }}>⏱ זמן כולל (PENDING → DELIVERED/PAID)</span>
-                    <span style={{ fontSize: 15, fontWeight: 800, color: C.text }}>
+                  <div style={{ marginTop: 6, paddingTop: 12, borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: T.sub }}>⏱ זמן כולל (PENDING → DELIVERED/PAID)</span>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: T.text }}>
                       {fmtMin(s.totalTime.avg)}{" "}
-                      <span style={{ fontSize: 11, color: C.muted, fontWeight: 400 }}>({s.totalTime.count})</span>
+                      <span style={{ fontSize: 11, color: T.muted, fontWeight: 400 }}>({s.totalTime.count})</span>
                     </span>
                   </div>
                 )}
@@ -410,10 +399,10 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                     {Object.entries(s.bySource).map(([src, count]) => {
                       const pct = s.totalOrders > 0 ? ((count / s.totalOrders) * 100).toFixed(0) : "0";
                       return (
-                        <div key={src} style={{ flex: 1, background: "#2a2e35", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 10px", textAlign: "center" }}>
-                          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>{count}</div>
-                          <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>{SOURCE_LABELS[src] ?? src}</div>
-                          <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{pct}%</div>
+                        <div key={src} style={{ flex: 1, background: "#2a2e35", border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 10px", textAlign: "center" }}>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>{count}</div>
+                          <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>{SOURCE_LABELS[src] ?? src}</div>
+                          <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{pct}%</div>
                         </div>
                       );
                     })}
@@ -429,14 +418,14 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                     return (
                       <div key={h} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, height: "100%", justifyContent: "flex-end" }}
                         title={`${h}:00 — ${count} הזמנות`}>
-                        <div style={{ width: "100%", borderRadius: "3px 3px 0 0", height: `${pct}%`, background: isPeak ? C.yellow : C.blue, opacity: isPeak ? 1 : 0.55, transition: "height .5s" }} />
-                        {h % 4 === 0 && <span style={{ fontSize: 8, color: C.muted }}>{h}</span>}
+                        <div style={{ width: "100%", borderRadius: "3px 3px 0 0", height: `${pct}%`, background: isPeak ? T.yellow : T.blue, opacity: isPeak ? 1 : 0.55, transition: "height .5s" }} />
+                        {h % 4 === 0 && <span style={{ fontSize: 8, color: T.muted }}>{h}</span>}
                       </div>
                     );
                   })}
                 </div>
                 {s.byHour[s.peakHour] > 0 && (
-                  <p style={{ fontSize: 11, color: C.yellow, marginTop: 8, fontWeight: 600 }}>
+                  <p style={{ fontSize: 11, color: T.yellow, marginTop: 8, fontWeight: 600 }}>
                     🔶 שעת שיא: {s.peakHour}:00 — {s.byHour[s.peakHour]} הזמנות
                   </p>
                 )}
@@ -451,7 +440,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
                 const pct = Math.max(4, (count / maxByDay) * 100);
                 const label = new Date(date).toLocaleDateString("he-IL", { month: "short", day: "numeric" });
                 return (
-                  <div key={date} style={{ flexShrink: 0, width: period > 30 ? 8 : 12, height: `${pct}%`, background: count > 0 ? C.blue : C.border, borderRadius: "2px 2px 0 0", opacity: count > 0 ? 0.75 : 0.3 }}
+                  <div key={date} style={{ flexShrink: 0, width: period > 30 ? 8 : 12, height: `${pct}%`, background: count > 0 ? T.blue : T.border, borderRadius: "2px 2px 0 0", opacity: count > 0 ? 0.75 : 0.3 }}
                     title={`${label}: ${count} הזמנות · ${fmt(revenue)}`} />
                 );
               })}
@@ -465,10 +454,10 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {recs.map((rec, i) => {
                   const cfg = rec.sev === "warn"
-                    ? { bg: "rgba(224,49,49,.08)", border: "rgba(224,49,49,.25)", color: "#ff8787", dot: C.red }
+                    ? { bg: "rgba(224,49,49,.08)", border: "rgba(224,49,49,.25)", color: "#ff8787", dot: T.red }
                     : rec.sev === "ok"
-                    ? { bg: "rgba(55,178,77,.08)", border: "rgba(55,178,77,.25)", color: "#69db7c", dot: C.green }
-                    : { bg: "rgba(51,154,240,.08)", border: "rgba(51,154,240,.25)", color: "#74c0fc", dot: C.blue };
+                    ? { bg: "rgba(55,178,77,.08)", border: "rgba(55,178,77,.25)", color: "#69db7c", dot: T.green }
+                    : { bg: "rgba(51,154,240,.08)", border: "rgba(51,154,240,.25)", color: "#74c0fc", dot: T.blue };
                   return (
                     <div key={i} style={{ display: "flex", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${cfg.border}`, background: cfg.bg, alignItems: "flex-start" }}>
                       <span style={{ width: 7, height: 7, borderRadius: "50%", background: cfg.dot, flexShrink: 0, marginTop: 4 }} />

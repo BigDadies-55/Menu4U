@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { T, STATUS, type StatusKey } from "@/lib/ui";
 
 // ── Types ──────────────────────────────────────────────────────────
 type TableShape  = "round" | "rect" | "square" | "oval" | "long" | "banquet";
@@ -16,27 +17,9 @@ type WaitParty  = { id: string; name: string; guests: number; since: number };
 type WaiterUser = { id: string; name: string | null; email: string };
 type WaiterStation = { userId: string; tableNumbers: string[]; label: string | null; user: WaiterUser };
 
-// ── Design tokens ──────────────────────────────────────────────────
-const C = {
-  bg:     "#0a0402",
-  card:   "#160805",
-  panel:  "#1a0c06",
-  border: "rgba(212,160,23,0.18)",
-  gold:   "#d4a017",
-  text:   "#f0e6d3",
-  sub:    "#c4a882",
-  muted:  "#7a6050",
-  green:  "#22c55e",
-  orange: "#f97316",
-  red:    "#ef4444",
-  blue:   "#3b82f6",
-  inp:    "#2a1408",
-  inpBd:  "rgba(212,160,23,0.25)",
-};
-
 const INP: React.CSSProperties = {
-  background: C.inp, border: `1px solid ${C.inpBd}`, borderRadius: 8,
-  color: C.text, fontSize: 13, padding: "7px 10px", width: "100%", outline: "none",
+  background: T.overlay, border: `1px solid rgba(212,160,23,0.25)`, borderRadius: 8,
+  color: T.text, fontSize: 13, padding: "7px 10px", width: "100%", outline: "none",
 };
 const BTN = (bg: string, light = false): React.CSSProperties => ({
   background: light ? "transparent" : bg,
@@ -77,17 +60,12 @@ const BGS = [
 const SHAPE_BR: Record<TableShape, string> = {
   round: "50%", rect: "10px", square: "8px", oval: "50%/40%", long: "12px", banquet: "6px",
 };
-const ORDER_STATUS_CFG = {
-  free:            { bg: "#0e0c0a", border: "#1e5c1e", stripe: "#22c55e", badge: "#22c55e", badgeBg: "rgba(34,197,94,0.12)",   label: "פנוי",   glow: "rgba(34,197,94,0.1)"   },
-  seated:          { bg: "#0e0c0a", border: "#4a2080", stripe: "#a78bfa", badge: "#a78bfa", badgeBg: "rgba(167,139,250,0.12)", label: "הושב",   glow: "rgba(124,58,237,0.08)"  },
-  occupied:        { bg: "#0e0c0a", border: "#7a4a00", stripe: "#f97316", badge: "#f97316", badgeBg: "rgba(249,115,22,0.12)",  label: "תפוס",   glow: "rgba(249,115,22,0.1)"  },
-  "bill-requested":{ bg: "#0e0c0a", border: "#6b1414", stripe: "#ef4444", badge: "#ef4444", badgeBg: "rgba(239,68,68,0.12)",   label: "חשבון",  glow: "rgba(239,68,68,0.12)"  },
-};
+const TABLE_BG = "#0e0c0a";
 
 function statusColor(s: "free" | "occupied" | "bill-requested"): string {
-  if (s === "free") return C.green;
-  if (s === "occupied") return C.orange;
-  return C.red;
+  if (s === "free") return T.green;
+  if (s === "occupied") return T.orange;
+  return T.red;
 }
 function fmtNis(n: number): string { return `₪${n.toFixed(0)}`; }
 function fmtMin(min: number): string {
@@ -440,7 +418,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const clockStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   return (
-    <div style={{ height: "calc(100vh - 64px)", background: C.bg, color: C.text, fontFamily: "system-ui,sans-serif", direction: "rtl", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ height: "calc(100vh - 64px)", background: T.bg, color: T.text, fontFamily: "system-ui,sans-serif", direction: "rtl", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{`
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
         @keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
@@ -448,12 +426,12 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", padding: "10px 24px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-        <span style={{ fontSize: 22, fontWeight: 900, color: C.gold, letterSpacing: 2 }}>Menu4U</span>
-        <span style={{ fontSize: 13, color: C.sub }}>מנהל משמרת</span>
+      <div style={{ background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", padding: "10px 24px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+        <span style={{ fontSize: 22, fontWeight: 900, color: T.gold, letterSpacing: 2 }}>Menu4U</span>
+        <span style={{ fontSize: 13, color: T.sub }}>מנהל משמרת</span>
         <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 13, color: C.muted }}>{managerName}</span>
-        <span style={{ fontSize: 16, fontWeight: 700, color: C.gold, fontVariantNumeric: "tabular-nums" }}>{clockStr}</span>
+        <span style={{ fontSize: 13, color: T.muted }}>{managerName}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: T.gold, fontVariantNumeric: "tabular-nums" }}>{clockStr}</span>
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)} style={{ ...INP, width: "auto" }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -463,48 +441,48 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
       {/* ── SLA alert banner ── */}
       {kpis.slaBreached.length > 0 && (
-        <div className="sla-blink" style={{ background: "rgba(239,68,68,0.15)", borderBottom: `1px solid ${C.red}`, padding: "8px 24px", display: "flex", gap: 12, alignItems: "center" }}>
-          <span style={{ color: C.red, fontWeight: 700 }}>⚠️ SLA</span>
-          <span style={{ color: C.red, fontSize: 13 }}>
+        <div className="sla-blink" style={{ background: "rgba(239,68,68,0.15)", borderBottom: `1px solid ${T.red}`, padding: "8px 24px", display: "flex", gap: 12, alignItems: "center" }}>
+          <span style={{ color: T.red, fontWeight: 700 }}>⚠️ SLA</span>
+          <span style={{ color: T.red, fontSize: 13 }}>
             שולחנות מעל {slaMin} דקות: {kpis.slaBreached.map(t => `#${t.num}`).join(" · ")}
           </span>
           <span style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: C.muted }}>ספ: </span>
+          <span style={{ fontSize: 12, color: T.muted }}>ספ: </span>
           <input type="number" value={slaMin} onChange={e => setSlaMin(Number(e.target.value))} min={10} max={120}
             style={{ ...INP, width: 52, padding: "4px 6px", fontSize: 12 }} />
-          <span style={{ fontSize: 12, color: C.muted }}>דק'</span>
+          <span style={{ fontSize: 12, color: T.muted }}>דק'</span>
         </div>
       )}
 
       {/* ── KPI bar ── */}
-      <div style={{ display: "flex", gap: 2, padding: "12px 20px", background: C.card, borderBottom: `1px solid ${C.border}`, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 2, padding: "12px 20px", background: T.surface, borderBottom: `1px solid ${T.border}`, flexWrap: "wrap" }}>
         {[
-          { label: "הכנסה היום", value: fmtNis(kpis.revenue), color: C.gold },
-          { label: "הזמנות פתוחות", value: kpis.activeCount, color: C.orange },
-          { label: "שולחנות פנויים", value: `${kpis.freeTables}/${kpis.totalTables}`, color: C.green },
-          { label: "ממוצע שירות", value: kpis.avgServiceMin > 0 ? fmtMin(Math.round(kpis.avgServiceMin)) : "—", color: C.blue },
-          { label: "SLA חריגות", value: kpis.slaBreached.length, color: kpis.slaBreached.length ? C.red : C.green },
-          { label: "ממתינים", value: waitlist.length, color: waitlist.length ? C.orange : C.muted },
+          { label: "הכנסה היום", value: fmtNis(kpis.revenue), color: T.gold },
+          { label: "הזמנות פתוחות", value: kpis.activeCount, color: T.orange },
+          { label: "שולחנות פנויים", value: `${kpis.freeTables}/${kpis.totalTables}`, color: T.green },
+          { label: "ממוצע שירות", value: kpis.avgServiceMin > 0 ? fmtMin(Math.round(kpis.avgServiceMin)) : "—", color: T.blue },
+          { label: "SLA חריגות", value: kpis.slaBreached.length, color: kpis.slaBreached.length ? T.red : T.green },
+          { label: "ממתינים", value: waitlist.length, color: waitlist.length ? T.orange : T.muted },
         ].map(k => (
-          <div key={k.label} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 18px", minWidth: 110, textAlign: "center", flex: "1 1 110px" }}>
+          <div key={k.label} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 10, padding: "10px 18px", minWidth: 110, textAlign: "center", flex: "1 1 110px" }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: k.color }}>{k.value}</div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{k.label}</div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{k.label}</div>
           </div>
         ))}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginRight: "auto" }}>
-          <button onClick={() => setSummaryOpen(true)} style={BTN(C.gold)}>📊 סכום משמרת</button>
+          <button onClick={() => setSummaryOpen(true)} style={BTN(T.gold)}>📊 סכום משמרת</button>
         </div>
       </div>
 
       {/* ── Tab bar ── */}
-      <div style={{ display: "flex", gap: 4, padding: "10px 20px 0", borderBottom: `1px solid ${C.border}`, background: C.card }}>
+      <div style={{ display: "flex", gap: 4, padding: "10px 20px 0", borderBottom: `1px solid ${T.border}`, background: T.surface }}>
         {(["floor", "waitlist", "86", "summary", "stations"] as const).map(t => {
           const label = { floor: "🗺️ מפת רצפה", waitlist: `⏳ המתנה (${waitlist.length})`, "86": "🚫 86 תפריט", summary: "📋 סטטוס", stations: "📍 תחנות" }[t];
           return (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-              background: tab === t ? C.gold : "transparent",
-              color: tab === t ? "#1a0c06" : C.sub,
+              background: tab === t ? T.gold : "transparent",
+              color: tab === t ? "#1a0c06" : T.sub,
               border: "none", borderRadius: "8px 8px 0 0",
             }}>{label}</button>
           );
@@ -526,18 +504,18 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                   {layout.rooms.map((r, i) => (
                     <button key={r.id} onClick={() => setRoomIdx(i)} style={{
                       padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                      background: i === roomIdx ? C.gold : C.panel,
-                      color: i === roomIdx ? "#1a0c06" : C.sub,
-                      border: `1px solid ${C.border}`, borderRadius: 8,
+                      background: i === roomIdx ? T.gold : T.panel,
+                      color: i === roomIdx ? "#1a0c06" : T.sub,
+                      border: `1px solid ${T.border}`, borderRadius: 8,
                     }}>{r.name}</button>
                   ))}
                 </div>
               )}
 
               {/* Floor canvas */}
-              <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", borderRadius: 12, border: `1px solid ${C.border}` }}>
+              <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", borderRadius: 12, border: `1px solid ${T.border}` }}>
                 {!activeRoom && (
-                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, fontSize: 13 }}>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 13 }}>
                     {layout ? "אין שולחנות בחדר זה" : "לא נשמרה פריסת שולחנות"}
                   </div>
                 )}
@@ -590,9 +568,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                         const start     = timerStart(tNum, orders);
                         const mins      = start ? timerMinutes(start) : 0;
                         const breached  = start && mins >= slaMin;
-                        const cfg         = ORDER_STATUS_CFG[effectSt];
+                        const cfg         = STATUS[effectSt as StatusKey];
                         const accentColor = t.customColor || cfg.stripe;
-                        const brd         = t.customColor ? t.customColor + "99" : breached ? C.red : cfg.border;
+                        const brd         = t.customColor ? t.customColor + "99" : breached ? T.red : cfg.border;
                         const br        = SHAPE_BR[t.shape];
                         const fSz       = Math.max(9, Math.min(t.w, t.h) * floorScale * 0.22);
                         const w         = t.w * floorScale;
@@ -613,17 +591,17 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                           >
                             <div style={{
                               position: "absolute", inset: 0, borderRadius: 10,
-                              background: cfg.bg,
+                              background: TABLE_BG,
                               border: `${Math.max(1, 1.5 * floorScale)}px solid ${brd}`,
                               boxShadow: breached
-                                ? `0 0 0 ${2 * floorScale}px ${C.red}55, 0 0 ${8 * floorScale}px rgba(239,68,68,0.3)`
+                                ? `0 0 0 ${2 * floorScale}px ${T.red}55, 0 0 ${8 * floorScale}px rgba(239,68,68,0.3)`
                                 : `0 0 ${5 * floorScale}px ${cfg.glow}`,
                               overflow: "hidden", transition: "border-color 0.3s",
                               animation: breached ? "blink 1s infinite" : undefined,
                               display: "flex", flexDirection: "column",
                             }}>
                               {/* Top stripe */}
-                              <div style={{ height: Math.max(2, 3 * floorScale), background: breached ? C.red : accentColor, flexShrink: 0 }} />
+                              <div style={{ height: Math.max(2, 3 * floorScale), background: breached ? T.red : accentColor, flexShrink: 0 }} />
 
                               {/* Card body */}
                               <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: Math.max(3, 5 * floorScale) }}>
@@ -674,9 +652,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                         title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"}
                         style={{
                           position: "absolute", top: 8, right: 8, zIndex: 50,
-                          background: "rgba(0,0,0,0.65)", border: `1px solid ${C.border}`,
+                          background: "rgba(0,0,0,0.65)", border: `1px solid ${T.border}`,
                           borderRadius: 8, padding: "5px 9px", cursor: "pointer",
-                          color: C.sub, fontSize: 15, backdropFilter: "blur(4px)",
+                          color: T.sub, fontSize: 15, backdropFilter: "blur(4px)",
                           lineHeight: 1,
                         }}
                       >
@@ -699,45 +677,45 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
             </div>
 
             {/* ── Waitlist sidebar ── */}
-            <div style={{ width: 264, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", background: C.card, flexShrink: 0, overflow: "hidden" }}>
+            <div style={{ width: 264, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", background: T.surface, flexShrink: 0, overflow: "hidden" }}>
               {/* Header */}
-              <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                <span style={{ fontWeight: 700, color: C.gold, fontSize: 14 }}>⏳ המתנה</span>
+              <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <span style={{ fontWeight: 700, color: T.gold, fontSize: 14 }}>⏳ המתנה</span>
                 {waitlist.length > 0 && (
-                  <span style={{ background: `${C.orange}22`, color: C.orange, borderRadius: 20, padding: "1px 8px", fontSize: 12, fontWeight: 700 }}>{waitlist.length}</span>
+                  <span style={{ background: `${T.orange}22`, color: T.orange, borderRadius: 20, padding: "1px 8px", fontSize: 12, fontWeight: 700 }}>{waitlist.length}</span>
                 )}
                 <span style={{ flex: 1 }} />
-                <button onClick={() => setTab("waitlist")} style={{ fontSize: 11, color: C.sub, background: "none", border: "none", cursor: "pointer" }}>הכל ←</button>
+                <button onClick={() => setTab("waitlist")} style={{ fontSize: 11, color: T.sub, background: "none", border: "none", cursor: "pointer" }}>הכל ←</button>
               </div>
 
               {/* Quick-add */}
-              <div style={{ padding: "8px 14px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+              <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
                 <div style={{ display: "flex", gap: 5 }}>
                   <input value={wName} onChange={e => setWName(e.target.value)} onKeyDown={e => e.key === "Enter" && addToWaitlist()}
                     placeholder="שם קבוצה..." style={{ ...INP, flex: 1, padding: "5px 8px", fontSize: 12 }} />
                   <input type="number" value={wGuests} min={1} max={20} onChange={e => setWGuests(Number(e.target.value))}
                     style={{ ...INP, width: 44, padding: "5px 4px", fontSize: 12, textAlign: "center" }} />
-                  <button onClick={addToWaitlist} style={{ ...BTN(C.gold), padding: "5px 10px", fontSize: 13, flexShrink: 0 }}>+</button>
+                  <button onClick={addToWaitlist} style={{ ...BTN(T.gold), padding: "5px 10px", fontSize: 13, flexShrink: 0 }}>+</button>
                 </div>
               </div>
 
               {/* Waitlist items */}
               <div style={{ flex: 1, overflowY: "auto" }}>
                 {waitlist.length === 0 ? (
-                  <div style={{ color: C.muted, textAlign: "center", padding: 24, fontSize: 12 }}>אין ממתינים</div>
+                  <div style={{ color: T.muted, textAlign: "center", padding: 24, fontSize: 12 }}>אין ממתינים</div>
                 ) : (
                   waitlist.map((p, idx) => {
                     const waitedMin = Math.floor((Date.now() - p.since) / 60000);
                     const urgent = waitedMin >= 20;
                     return (
-                      <div key={p.id} style={{ padding: "8px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8, background: urgent ? "rgba(239,68,68,0.05)" : "transparent" }}>
-                        <span style={{ color: C.muted, fontSize: 11, minWidth: 18 }}>#{idx + 1}</span>
+                      <div key={p.id} style={{ padding: "8px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8, background: urgent ? "rgba(239,68,68,0.05)" : "transparent" }}>
+                        <span style={{ color: T.muted, fontSize: 11, minWidth: 18 }}>#{idx + 1}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: 13, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                          <div style={{ fontSize: 11, color: urgent ? C.red : C.muted }}>👤{p.guests} · {fmtMin(waitedMin)}{urgent ? " ⚠" : ""}</div>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          <div style={{ fontSize: 11, color: urgent ? T.red : T.muted }}>👤{p.guests} · {fmtMin(waitedMin)}{urgent ? " ⚠" : ""}</div>
                         </div>
-                        <button onClick={() => seatFromWaitlist(p)} style={{ ...BTN(C.green), padding: "4px 8px", fontSize: 11, flexShrink: 0 }}>הושב</button>
-                        <button onClick={() => removeFromWaitlist(p.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14, flexShrink: 0, lineHeight: 1 }}>✕</button>
+                        <button onClick={() => seatFromWaitlist(p)} style={{ ...BTN(T.green), padding: "4px 8px", fontSize: 11, flexShrink: 0 }}>הושב</button>
+                        <button onClick={() => removeFromWaitlist(p.id)} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, flexShrink: 0, lineHeight: 1 }}>✕</button>
                       </div>
                     );
                   })
@@ -745,21 +723,21 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
               </div>
 
               {/* Table count summary + SLA control */}
-              <div style={{ borderTop: `1px solid ${C.border}`, padding: "10px 14px", flexShrink: 0 }}>
+              <div style={{ borderTop: `1px solid ${T.border}`, padding: "10px 14px", flexShrink: 0 }}>
                 <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
                   {(["free","occupied","bill-requested"] as const).map(s => {
                     const count = activeRoom?.tables.filter(t => tableStatus(String(t.num), orders) === s).length ?? 0;
-                    const col = { free: C.green, occupied: C.orange, "bill-requested": C.red }[s];
+                    const col = { free: T.green, occupied: T.orange, "bill-requested": T.red }[s];
                     const lbl = { free: "פנוי", occupied: "תפוס", "bill-requested": "חשבון" }[s];
                     return (
                       <div key={s} style={{ flex: 1, textAlign: "center" }}>
                         <div style={{ fontSize: 18, fontWeight: 900, color: col }}>{count}</div>
-                        <div style={{ fontSize: 10, color: C.muted }}>{lbl}</div>
+                        <div style={{ fontSize: 10, color: T.muted }}>{lbl}</div>
                       </div>
                     );
                   })}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: T.muted }}>
                   <span>SLA:</span>
                   <input type="number" value={slaMin} onChange={e => setSlaMin(Number(e.target.value))} min={10} max={120}
                     style={{ ...INP, width: 44, padding: "3px 5px", fontSize: 11 }} />
@@ -773,43 +751,43 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
         {/* ── WAITLIST TAB ── */}
         {tab === "waitlist" && (
           <div style={{ padding: 20, maxWidth: 600, margin: "0 auto", overflowY: "auto", flex: 1 }}>
-            <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 16 }}>רשימת המתנה</h2>
+            <h2 style={{ color: T.gold, fontSize: 16, fontWeight: 700, marginBottom: 16 }}>רשימת המתנה</h2>
 
             {/* Add party form */}
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
               <div style={{ flex: 2, minWidth: 150 }}>
-                <label style={{ fontSize: 12, color: C.sub, display: "block", marginBottom: 4 }}>שם / מספר</label>
+                <label style={{ fontSize: 12, color: T.sub, display: "block", marginBottom: 4 }}>שם / מספר</label>
                 <input value={wName} onChange={e => setWName(e.target.value)} placeholder="שם קבוצה..." style={INP}
                   onKeyDown={e => e.key === "Enter" && addToWaitlist()} />
               </div>
               <div style={{ flex: 1, minWidth: 80 }}>
-                <label style={{ fontSize: 12, color: C.sub, display: "block", marginBottom: 4 }}>אורחים</label>
+                <label style={{ fontSize: 12, color: T.sub, display: "block", marginBottom: 4 }}>אורחים</label>
                 <div style={{ display: "flex", gap: 4 }}>
-                  <button onClick={() => setWGuests(g => Math.max(1, g - 1))} style={{ ...BTN(C.panel), padding: "7px 10px", border: `1px solid ${C.border}` }}>−</button>
+                  <button onClick={() => setWGuests(g => Math.max(1, g - 1))} style={{ ...BTN(T.panel), padding: "7px 10px", border: `1px solid ${T.border}` }}>−</button>
                   <input type="number" value={wGuests} min={1} max={20} readOnly style={{ ...INP, width: 50, textAlign: "center" }} />
-                  <button onClick={() => setWGuests(g => Math.min(20, g + 1))} style={{ ...BTN(C.panel), padding: "7px 10px", border: `1px solid ${C.border}` }}>+</button>
+                  <button onClick={() => setWGuests(g => Math.min(20, g + 1))} style={{ ...BTN(T.panel), padding: "7px 10px", border: `1px solid ${T.border}` }}>+</button>
                 </div>
               </div>
-              <button onClick={addToWaitlist} style={BTN(C.gold)}>+ הוסף</button>
+              <button onClick={addToWaitlist} style={BTN(T.gold)}>+ הוסף</button>
             </div>
 
             {/* Waitlist */}
             {waitlist.length === 0 ? (
-              <div style={{ color: C.muted, textAlign: "center", padding: 40, fontSize: 14 }}>אין ממתינים כרגע</div>
+              <div style={{ color: T.muted, textAlign: "center", padding: 40, fontSize: 14 }}>אין ממתינים כרגע</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {waitlist.map((p, idx) => {
                   const waitedMin = Math.floor((Date.now() - p.since) / 60000);
                   const urgent    = waitedMin >= 20;
                   return (
-                    <div key={p.id} style={{ background: C.card, border: `1px solid ${urgent ? C.red : C.border}`, borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: 14, color: C.muted, fontWeight: 700, minWidth: 20 }}>#{idx + 1}</span>
+                    <div key={p.id} style={{ background: T.surface, border: `1px solid ${urgent ? T.red : T.border}`, borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 14, color: T.muted, fontWeight: 700, minWidth: 20 }}>#{idx + 1}</span>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{p.name}</div>
-                        <div style={{ fontSize: 12, color: C.sub }}>👤 {p.guests} · ⏱ {fmtMin(waitedMin)}{urgent ? " ⚠️" : ""}</div>
+                        <div style={{ fontSize: 12, color: T.sub }}>👤 {p.guests} · ⏱ {fmtMin(waitedMin)}{urgent ? " ⚠️" : ""}</div>
                       </div>
-                      <button onClick={() => seatFromWaitlist(p)} style={BTN(C.green)}>הושב</button>
-                      <button onClick={() => removeFromWaitlist(p.id)} style={BTN(C.red, true)}>✕</button>
+                      <button onClick={() => seatFromWaitlist(p)} style={BTN(T.green)}>הושב</button>
+                      <button onClick={() => removeFromWaitlist(p.id)} style={BTN(T.red, true)}>✕</button>
                     </div>
                   );
                 })}
@@ -823,11 +801,11 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
           <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
 
             {/* Toolbar */}
-            <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: C.card }}>
+            <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: T.surface }}>
               <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder="🔍 חפש פריט..." style={{ ...INP, maxWidth: 280 }} />
-              <span style={{ fontSize: 12, color: C.muted }}>
+              <span style={{ fontSize: 12, color: T.muted }}>
                 {filtered86.reduce((s, c) => s + c.items.length, 0)} פריטים ·{" "}
-                <span style={{ color: C.red, fontWeight: 700 }}>
+                <span style={{ color: T.red, fontWeight: 700 }}>
                   {filtered86.reduce((s, c) => s + c.items.filter(i => !i.isActive).length, 0)} ב-86
                 </span>
               </span>
@@ -836,15 +814,15 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
             {/* Category columns */}
             <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
               {filtered86.length === 0 && (
-                <div style={{ color: C.muted, textAlign: "center", padding: 60, fontSize: 14 }}>אין פריטים תואמים</div>
+                <div style={{ color: T.muted, textAlign: "center", padding: 60, fontSize: 14 }}>אין פריטים תואמים</div>
               )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, alignItems: "start" }}>
                 {filtered86.map(cat => (
-                  <div key={cat.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+                  <div key={cat.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
                     {/* Category header */}
-                    <div style={{ padding: "8px 12px", background: "rgba(212,160,23,0.08)", borderBottom: `1px solid ${C.border}` }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>{cat.name}</div>
-                      <div style={{ fontSize: 10, color: C.muted }}>{cat.menuName}</div>
+                    <div style={{ padding: "8px 12px", background: "rgba(212,160,23,0.08)", borderBottom: `1px solid ${T.border}` }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.gold }}>{cat.name}</div>
+                      <div style={{ fontSize: 10, color: T.muted }}>{cat.menuName}</div>
                     </div>
                     {/* Items */}
                     <div style={{ padding: "6px 0" }}>
@@ -854,16 +832,16 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                           <div key={item.id} style={{
                             display: "flex", alignItems: "center", gap: 8,
                             padding: "8px 12px",
-                            borderBottom: `1px solid ${C.border}`,
+                            borderBottom: `1px solid ${T.border}`,
                             opacity: togglingId === item.id ? 0.5 : 1,
                             background: is86 ? "rgba(239,68,68,0.06)" : "transparent",
                             transition: "background 0.2s",
                           }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: is86 ? C.muted : C.text, textDecoration: is86 ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: is86 ? T.muted : T.text, textDecoration: is86 ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {item.name}
                               </div>
-                              <div style={{ fontSize: 11, color: C.muted }}>₪{item.price.toFixed(0)}</div>
+                              <div style={{ fontSize: 11, color: T.muted }}>₪{item.price.toFixed(0)}</div>
                             </div>
                             <button
                               onClick={() => toggle86(item.id, item.isActive)}
@@ -907,9 +885,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                     { label: "תפוסים",   value: occupiedCount, color: "#f97316" },
                     { label: "ביקשו חשבון", value: billCount,  color: "#ef4444" },
                   ].map(s => (
-                    <div key={s.label} style={{ flex: "1 1 80px", background: C.card, border: `1px solid ${s.color}44`, borderRadius: 10, padding: "10px 0", textAlign: "center" }}>
+                    <div key={s.label} style={{ flex: "1 1 80px", background: T.surface, border: `1px solid ${s.color}44`, borderRadius: 10, padding: "10px 0", textAlign: "center" }}>
                       <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
-                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{s.label}</div>
+                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
@@ -929,22 +907,22 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                 const tOrds   = orders.filter(o => (o.tableNumber ?? "") === tNum);
                 const total   = tOrds.reduce((s, o) => s + o.totalAmount, 0);
                 const guests  = Math.max(0, ...tOrds.map(o => o.coversCount ?? 0));
-                const cfg     = ORDER_STATUS_CFG[effectSt];
+                const cfg     = STATUS[effectSt as StatusKey];
                 return (
                   <div key={t.id} style={{
-                    background: cfg.bg,
-                    border: `1.5px solid ${breached ? C.red : cfg.border}`,
+                    background: TABLE_BG,
+                    border: `1.5px solid ${breached ? T.red : cfg.border}`,
                     borderRadius: 12,
                     overflow: "hidden",
                     display: "flex", flexDirection: "column",
                     minHeight: 150,
                     boxShadow: breached
-                      ? `0 0 0 2px ${C.red}55, 0 0 10px rgba(239,68,68,0.3)`
+                      ? `0 0 0 2px ${T.red}55, 0 0 10px rgba(239,68,68,0.3)`
                       : `0 0 6px ${cfg.glow}`,
                     animation: breached ? "blink 1s infinite" : undefined,
                   }}>
                     {/* Top stripe */}
-                    <div style={{ height: 3, background: breached ? C.red : cfg.stripe, flexShrink: 0 }} />
+                    <div style={{ height: 3, background: breached ? T.red : cfg.stripe, flexShrink: 0 }} />
 
                     {/* Card body */}
                     <div style={{ flex: 1, padding: "8px 10px", display: "flex", flexDirection: "column" }}>
@@ -971,7 +949,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                         ) : (
                           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.26)" }}>{cfg.label}</span>
                         )}
-                        {total > 0 && <span style={{ fontSize: 11, color: C.gold, fontWeight: 700 }}>{fmtNis(total)}</span>}
+                        {total > 0 && <span style={{ fontSize: 11, color: T.gold, fontWeight: 700 }}>{fmtNis(total)}</span>}
                       </div>
                     </div>
                   </div>
@@ -983,13 +961,13 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
         {/* ── STATIONS TAB ── */}
         {tab === "stations" && (
           <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
-            <h2 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📍 שיוך תחנות מלצרים</h2>
-            <p style={{ fontSize: 12, color: C.muted, marginBottom: 20 }}>
+            <h2 style={{ color: T.gold, fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📍 שיוך תחנות מלצרים</h2>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>
               הגדר אילו שולחנות שייכים לכל מלצר. המלצרים יראו את השולחנות שלהם מודגשים ברצפת השירות.
             </p>
 
             {waiters.length === 0 && (
-              <div style={{ color: C.muted, textAlign: "center", padding: 40, fontSize: 13 }}>
+              <div style={{ color: T.muted, textAlign: "center", padding: 40, fontSize: 13 }}>
                 אין מלצרים משויכים למסעדה זו
               </div>
             )}
@@ -998,24 +976,24 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
               {waiters.map(waiter => {
                 const saved = stations.find(s => s.userId === waiter.id);
                 return (
-                  <div key={waiter.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+                  <div key={waiter.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${C.gold}22`, border: `1px solid ${C.gold}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${T.gold}22`, border: `1px solid ${T.gold}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                         👤
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{waiter.name ?? waiter.email}</div>
-                        <div style={{ fontSize: 11, color: C.muted }}>{waiter.email}</div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: T.text }}>{waiter.name ?? waiter.email}</div>
+                        <div style={{ fontSize: 11, color: T.muted }}>{waiter.email}</div>
                       </div>
                       {saved && (
-                        <div style={{ fontSize: 11, color: C.green, background: `${C.green}18`, borderRadius: 20, padding: "2px 8px", border: `1px solid ${C.green}44` }}>
+                        <div style={{ fontSize: 11, color: T.green, background: `${T.green}18`, borderRadius: 20, padding: "2px 8px", border: `1px solid ${T.green}44` }}>
                           {saved.tableNumbers.length} שולחנות
                         </div>
                       )}
                     </div>
 
                     <div style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: 12, color: C.sub, display: "block", marginBottom: 4 }}>
+                      <label style={{ fontSize: 12, color: T.sub, display: "block", marginBottom: 4 }}>
                         שולחנות (הפרד בפסיק: 1, 2, 3, 4, 5)
                       </label>
                       <input
@@ -1042,9 +1020,9 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                               });
                             }} style={{
                               padding: "4px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                              border: `1px solid ${isIn ? C.gold : C.border}`,
-                              background: isIn ? `${C.gold}22` : "transparent",
-                              color: isIn ? C.gold : C.sub,
+                              border: `1px solid ${isIn ? T.gold : T.border}`,
+                              background: isIn ? `${T.gold}22` : "transparent",
+                              color: isIn ? T.gold : T.sub,
                             }}>
                               {t.num}{t.name ? ` ${t.name}` : ""}
                             </button>
@@ -1057,14 +1035,14 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                       <button
                         onClick={() => saveStation(waiter.id)}
                         disabled={stationSaving === waiter.id}
-                        style={{ ...BTN(C.gold), fontSize: 12, opacity: stationSaving === waiter.id ? 0.6 : 1 }}
+                        style={{ ...BTN(T.gold), fontSize: 12, opacity: stationSaving === waiter.id ? 0.6 : 1 }}
                       >
                         {stationSaving === waiter.id ? "שומר..." : "💾 שמור תחנה"}
                       </button>
                       {saved && (
                         <button
                           onClick={() => deleteStation(waiter.id)}
-                          style={{ ...BTN(C.red, true), fontSize: 12 }}
+                          style={{ ...BTN(T.red, true), fontSize: 12 }}
                         >
                           🗑 מחק תחנה
                         </button>
@@ -1081,7 +1059,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
       {/* ── Toast ── */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.gold, color: "#1a0c06", padding: "10px 24px", borderRadius: 24, fontWeight: 700, fontSize: 14, zIndex: 9999, animation: "slideDown 0.2s ease" }}>
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.gold, color: "#1a0c06", padding: "10px 24px", borderRadius: 24, fontWeight: 700, fontSize: 14, zIndex: 9999, animation: "slideDown 0.2s ease" }}>
           {toast}
         </div>
       )}
@@ -1089,17 +1067,17 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       {/* ── Waitlist seat suggestion modal ── */}
       {seatSuggest && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000 }}>
-          <div style={{ background: C.panel, border: `1px solid ${C.gold}`, borderRadius: 16, padding: 32, maxWidth: 380, width: "90%", textAlign: "center", animation: "slideDown 0.2s ease" }}>
+          <div style={{ background: T.panel, border: `1px solid ${T.gold}`, borderRadius: 16, padding: 32, maxWidth: 380, width: "90%", textAlign: "center", animation: "slideDown 0.2s ease" }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>🎉</div>
-            <h3 style={{ color: C.gold, fontSize: 18, fontWeight: 700, marginBottom: 8 }}>שולחן התפנה!</h3>
-            <p style={{ color: C.text, fontSize: 14, marginBottom: 20 }}>
-              שולחן <strong style={{ color: C.gold }}>#{seatSuggest.table.num}</strong> ({seatSuggest.table.seats} מקומות) פנוי.<br />
+            <h3 style={{ color: T.gold, fontSize: 18, fontWeight: 700, marginBottom: 8 }}>שולחן התפנה!</h3>
+            <p style={{ color: T.text, fontSize: 14, marginBottom: 20 }}>
+              שולחן <strong style={{ color: T.gold }}>#{seatSuggest.table.num}</strong> ({seatSuggest.table.seats} מקומות) פנוי.<br />
               <strong>{seatSuggest.party.name}</strong> ({seatSuggest.party.guests} אורחים) ממתין{" "}
               {fmtMin(Math.floor((Date.now() - seatSuggest.party.since) / 60000))}.
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button onClick={() => seatFromWaitlist(seatSuggest.party)} style={BTN(C.green)}>✓ הושב</button>
-              <button onClick={() => setSeatSuggest(null)} style={BTN(C.red, true)}>דחה</button>
+              <button onClick={() => seatFromWaitlist(seatSuggest.party)} style={BTN(T.green)}>✓ הושב</button>
+              <button onClick={() => setSeatSuggest(null)} style={BTN(T.red, true)}>דחה</button>
             </div>
           </div>
         </div>
@@ -1108,24 +1086,24 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       {/* ── Manual seat modal (click free table → pick party) ── */}
       {seatTableModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000 }} onClick={() => setSeatTableModal(null)}>
-          <div style={{ background: C.panel, border: `1px solid ${C.gold}`, borderRadius: 16, padding: 28, maxWidth: 360, width: "90%", animation: "slideDown 0.2s ease", direction: "rtl" }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: C.gold, fontSize: 16, fontWeight: 700, marginBottom: 16, textAlign: "center" }}>
+          <div style={{ background: T.panel, border: `1px solid ${T.gold}`, borderRadius: 16, padding: 28, maxWidth: 360, width: "90%", animation: "slideDown 0.2s ease", direction: "rtl" }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: T.gold, fontSize: 16, fontWeight: 700, marginBottom: 16, textAlign: "center" }}>
               🪑 הושבה לשולחן {seatTableModal.tableNum} ({seatTableModal.seats} מקומות)
             </h3>
             {waitlist.length === 0 ? (
-              <p style={{ color: C.muted, fontSize: 13, textAlign: "center", marginBottom: 16 }}>אין קבוצות ברשימת ההמתנה</p>
+              <p style={{ color: T.muted, fontSize: 13, textAlign: "center", marginBottom: 16 }}>אין קבוצות ברשימת ההמתנה</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                 {waitlist.map(p => (
                   <button key={p.id} onClick={() => seatPartyAtTable(p, seatTableModal.tableNum)}
-                    style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", color: C.text }}>
+                    style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "10px 14px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", color: T.text }}>
                     <span style={{ fontWeight: 700 }}>{p.name}</span>
-                    <span style={{ fontSize: 12, color: C.sub }}>{p.guests} אורחים · {fmtMin(Math.floor((Date.now() - p.since) / 60000))}</span>
+                    <span style={{ fontSize: 12, color: T.sub }}>{p.guests} אורחים · {fmtMin(Math.floor((Date.now() - p.since) / 60000))}</span>
                   </button>
                 ))}
               </div>
             )}
-            <button onClick={() => setSeatTableModal(null)} style={{ ...BTN(C.muted, true), width: "100%" }}>ביטול</button>
+            <button onClick={() => setSeatTableModal(null)} style={{ ...BTN(T.muted, true), width: "100%" }}>ביטול</button>
           </div>
         </div>
       )}
@@ -1133,8 +1111,8 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       {/* ── Shift summary modal ── */}
       {summaryOpen && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000 }} onClick={() => setSummaryOpen(false)}>
-          <div style={{ background: C.panel, border: `1px solid ${C.gold}`, borderRadius: 16, padding: 32, maxWidth: 440, width: "90%", animation: "slideDown 0.2s ease" }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: C.gold, fontSize: 18, fontWeight: 700, marginBottom: 20, textAlign: "center" }}>📊 סיכום משמרת</h3>
+          <div style={{ background: T.panel, border: `1px solid ${T.gold}`, borderRadius: 16, padding: 32, maxWidth: 440, width: "90%", animation: "slideDown 0.2s ease" }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: T.gold, fontSize: 18, fontWeight: 700, marginBottom: 20, textAlign: "center" }}>📊 סיכום משמרת</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
               {[
                 ["התחלה", shiftStart.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })],
@@ -1144,13 +1122,13 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
                 ["SLA חריגות עכשיו", kpis.slaBreached.length],
                 ["ממתינים בתור", waitlist.length],
               ].map(([l, v]) => (
-                <div key={String(l)} style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
-                  <span style={{ color: C.sub, fontSize: 14 }}>{l}</span>
-                  <span style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{v}</span>
+                <div key={String(l)} style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`, paddingBottom: 8 }}>
+                  <span style={{ color: T.sub, fontSize: 14 }}>{l}</span>
+                  <span style={{ color: T.text, fontWeight: 700, fontSize: 14 }}>{v}</span>
                 </div>
               ))}
             </div>
-            <button onClick={() => setSummaryOpen(false)} style={{ ...BTN(C.gold), width: "100%" }}>סגור</button>
+            <button onClick={() => setSummaryOpen(false)} style={{ ...BTN(T.gold), width: "100%" }}>סגור</button>
           </div>
         </div>
       )}

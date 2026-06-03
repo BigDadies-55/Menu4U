@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { T } from "@/lib/ui";
 
 interface AuditLog {
   id: string;
@@ -111,17 +112,9 @@ function actionBadgeStyle(action: string): React.CSSProperties {
 
 const ALL_ACTIONS = Object.keys(ACTION_LABELS);
 
-// ── Dark palette ──────────────────────────────────────────────────────────────
-const C = {
-  pageBg: "#1a1d23", cardBg: "#212529", border: "#2d3239",
-  inputBg: "#2d3239", inputBorder: "#3a3f47",
-  text: "#e9ecef", sub: "#adb5bd", muted: "#6c757d",
-  amber: "#fcc419", green: "#51cf66", red: "#ff6b6b",
-} as const;
-
 const DARK_INPUT: React.CSSProperties = {
-  background: C.inputBg, border: `1px solid ${C.inputBorder}`,
-  color: C.text, borderRadius: 8, padding: "7px 11px",
+  background: T.overlay, border: `1px solid ${T.border}`,
+  color: T.text, borderRadius: 8, padding: "7px 11px",
   fontSize: 12, outline: "none", width: "100%",
 };
 
@@ -139,7 +132,7 @@ function MetaDisplay({ meta }: { meta: Record<string, unknown> | null }) {
   return (
     <div className="flex flex-wrap gap-1">
       {entries.map(([k, v]) => (
-        <span key={k} style={{ background: C.inputBg, color: C.muted, padding: "2px 6px", borderRadius: 5, fontFamily: "monospace", fontSize: 10 }}>
+        <span key={k} style={{ background: T.overlay, color: T.muted, padding: "2px 6px", borderRadius: 5, fontFamily: "monospace", fontSize: 10 }}>
           {k}: {Array.isArray(v) ? (v as unknown[]).join(", ") : String(v)}
         </span>
       ))}
@@ -209,47 +202,47 @@ export default function LogsClient() {
   const hasFilters = !!(filterAction || filterEntity || search || dateFrom || dateTo);
 
   return (
-    <div className="p-4 md:p-6" dir="rtl" style={{ background: C.pageBg, minHeight: "100vh", color: C.text }}>
+    <div className="p-4 md:p-6" dir="rtl" style={{ background: T.bg, minHeight: "100vh", color: T.text }}>
 
       {/* Header */}
       <div className="flex items-center justify-between" style={{ marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text }}>לוג פעולות</h1>
-          <p style={{ color: C.muted, fontSize: 12, marginTop: 3 }}>היסטוריית פעולות מערכת הניהול</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: T.text }}>לוג פעולות</h1>
+          <p style={{ color: T.muted, fontSize: 12, marginTop: 3 }}>היסטוריית פעולות מערכת הניהול</p>
         </div>
         <button
           onClick={exportCSV}
           disabled={exporting}
-          style={{ background: "transparent", border: `1px solid ${C.amber}`, color: C.amber, padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: exporting ? 0.6 : 1 }}
+          style={{ background: "transparent", border: `1px solid ${T.gold}`, color: T.gold, padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: exporting ? 0.6 : 1 }}
         >
           {exporting ? "מייצא..." : "⬇ ייצוא לאקסל"}
         </button>
       </div>
 
       {/* Filters card */}
-      <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 18 }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 18 }}>
         <div className="flex flex-wrap gap-3 items-end">
           {/* Action filter */}
           <div style={{ flex: "1 1 160px" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>סוג פעולה</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>סוג פעולה</div>
             <select value={filterAction} onChange={e => { setFilterAction(e.target.value); setPage(1); }} style={DARK_SELECT}>
-              <option value="" style={{ background: C.cardBg }}>הכל</option>
-              {ALL_ACTIONS.map(a => <option key={a} value={a} style={{ background: C.cardBg }}>{ACTION_LABELS[a]}</option>)}
+              <option value="" style={{ background: T.surface }}>הכל</option>
+              {ALL_ACTIONS.map(a => <option key={a} value={a} style={{ background: T.surface }}>{ACTION_LABELS[a]}</option>)}
             </select>
           </div>
           {/* Entity filter */}
           <div style={{ flex: "1 1 130px" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>ישות</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>ישות</div>
             <select value={filterEntity} onChange={e => { setFilterEntity(e.target.value); setPage(1); }} style={DARK_SELECT}>
-              <option value="" style={{ background: C.cardBg }}>הכל</option>
+              <option value="" style={{ background: T.surface }}>הכל</option>
               {["restaurant","menu","category","item","user","restaurantUser","order","system"].map(e => (
-                <option key={e} value={e} style={{ background: C.cardBg }}>{e}</option>
+                <option key={e} value={e} style={{ background: T.surface }}>{e}</option>
               ))}
             </select>
           </div>
           {/* Search */}
           <div style={{ flex: "1 1 200px" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>חיפוש</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>חיפוש</div>
             <div className="flex gap-1.5">
               <input
                 value={searchInput}
@@ -258,7 +251,7 @@ export default function LogsClient() {
                 placeholder="אימייל / שם ישות..."
                 style={{ ...DARK_INPUT, flex: 1 }}
               />
-              <button onClick={applySearch} style={{ background: C.amber, color: "#000", border: "none", padding: "0 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+              <button onClick={applySearch} style={{ background: T.gold, color: "#000", border: "none", padding: "0 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
                 חפש
               </button>
             </div>
@@ -266,13 +259,13 @@ export default function LogsClient() {
         </div>
 
         {/* Second row */}
-        <div className="flex flex-wrap gap-3 items-center" style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+        <div className="flex flex-wrap gap-3 items-center" style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
           <div style={{ flex: "1 1 130px" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>מתאריך</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>מתאריך</div>
             <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} style={DARK_INPUT} />
           </div>
           <div style={{ flex: "1 1 130px" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>עד תאריך</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>עד תאריך</div>
             <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} style={DARK_INPUT} />
           </div>
           <label className="flex items-center gap-2" style={{ cursor: "pointer", userSelect: "none", marginTop: 18 }}>
@@ -280,12 +273,12 @@ export default function LogsClient() {
               type="checkbox"
               checked={hideMigration}
               onChange={e => { setHideMigration(e.target.checked); setPage(1); }}
-              style={{ width: 14, height: 14, accentColor: C.amber }}
+              style={{ width: 14, height: 14, accentColor: T.gold }}
             />
-            <span style={{ fontSize: 12, color: C.muted }}>הסתר הרצות מיגרציה</span>
+            <span style={{ fontSize: 12, color: T.muted }}>הסתר הרצות מיגרציה</span>
           </label>
           {hasFilters && (
-            <button onClick={clearFilters} style={{ marginTop: 18, fontSize: 12, color: C.red, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", marginRight: "auto" }}>
+            <button onClick={clearFilters} style={{ marginTop: 18, fontSize: 12, color: T.red, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", marginRight: "auto" }}>
               נקה סינון
             </button>
           )}
@@ -293,11 +286,11 @@ export default function LogsClient() {
       </div>
 
       {/* Table */}
-      <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
         {loading ? (
-          <div style={{ padding: "40px 24px", textAlign: "center", color: C.muted, fontSize: 14 }}>טוען...</div>
+          <div style={{ padding: "40px 24px", textAlign: "center", color: T.muted, fontSize: 14 }}>טוען...</div>
         ) : !data || data.logs.length === 0 ? (
-          <div style={{ padding: "40px 24px", textAlign: "center", color: C.muted, fontSize: 14 }}>אין לוגים</div>
+          <div style={{ padding: "40px 24px", textAlign: "center", color: T.muted, fontSize: 14 }}>אין לוגים</div>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -305,7 +298,7 @@ export default function LogsClient() {
                 <thead>
                   <tr style={{ background: "#1a1d23" }}>
                     {["זמן","פעולה","משתמש","ישות","פרטים"].map(h => (
-                      <th key={h} style={{ padding: "11px 12px", textAlign: "right", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".5px", borderBottom: `1px solid ${C.border}` }}>
+                      <th key={h} style={{ padding: "11px 12px", textAlign: "right", fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".5px", borderBottom: `1px solid ${T.border}` }}>
                         {h}
                       </th>
                     ))}
@@ -314,37 +307,37 @@ export default function LogsClient() {
                 <tbody>
                   {data.logs.map((log) => (
                     <tr key={log.id}
-                      style={{ borderBottom: `1px solid ${C.border}` }}
+                      style={{ borderBottom: `1px solid ${T.border}` }}
                       onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
                       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                     >
                       {/* Time */}
-                      <td style={{ padding: "10px 12px", fontSize: 11, color: C.muted, whiteSpace: "nowrap", fontFamily: "monospace" }}>
+                      <td style={{ padding: "10px 12px", fontSize: 11, color: T.muted, whiteSpace: "nowrap", fontFamily: "monospace" }}>
                         {formatDate(log.createdAt)}
                       </td>
                       {/* Action */}
                       <td style={{ padding: "10px 12px" }}>
                         <span style={actionBadgeStyle(log.action)}>
-                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACTION_DOT[log.action] ?? C.muted, flexShrink: 0, display: "inline-block" }} />
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACTION_DOT[log.action] ?? T.muted, flexShrink: 0, display: "inline-block" }} />
                           {ACTION_LABELS[log.action] ?? log.action}
                         </span>
                       </td>
                       {/* User */}
-                      <td style={{ padding: "10px 12px", fontSize: 12, color: C.sub, whiteSpace: "nowrap" }} dir="ltr">
-                        {log.userEmail ?? <span style={{ color: C.muted }}>—</span>}
+                      <td style={{ padding: "10px 12px", fontSize: 12, color: T.sub, whiteSpace: "nowrap" }} dir="ltr">
+                        {log.userEmail ?? <span style={{ color: T.muted }}>—</span>}
                       </td>
                       {/* Entity */}
                       <td style={{ padding: "10px 12px", fontSize: 12 }}>
                         {log.entityName
-                          ? <span style={{ fontWeight: 600, color: C.text }}>{log.entityName}</span>
+                          ? <span style={{ fontWeight: 600, color: T.text }}>{log.entityName}</span>
                           : log.entity
-                            ? <span style={{ color: C.muted }}>{log.entity}</span>
-                            : <span style={{ color: C.muted }}>—</span>}
+                            ? <span style={{ color: T.muted }}>{log.entity}</span>
+                            : <span style={{ color: T.muted }}>—</span>}
                       </td>
                       {/* Meta */}
                       <td style={{ padding: "10px 12px", maxWidth: 280 }}>
                         <MetaDisplay meta={log.meta} />
-                        {!log.meta && <span style={{ fontSize: 12, color: C.muted }}>—</span>}
+                        {!log.meta && <span style={{ fontSize: 12, color: T.muted }}>—</span>}
                       </td>
                     </tr>
                   ))}
@@ -353,19 +346,19 @@ export default function LogsClient() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between" style={{ padding: "12px 16px", borderTop: `1px solid ${C.border}` }}>
-              <span style={{ fontSize: 12, color: C.muted }}>סה&quot;כ {data.total.toLocaleString()} רשומות</span>
+            <div className="flex items-center justify-between" style={{ padding: "12px 16px", borderTop: `1px solid ${T.border}` }}>
+              <span style={{ fontSize: 12, color: T.muted }}>סה&quot;כ {data.total.toLocaleString()} רשומות</span>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${C.border}`, background: C.inputBg, color: C.sub, fontSize: 12, cursor: "pointer", opacity: page <= 1 ? 0.4 : 1 }}
+                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${T.border}`, background: T.overlay, color: T.sub, fontSize: 12, cursor: "pointer", opacity: page <= 1 ? 0.4 : 1 }}
                 >הקודם</button>
-                <span style={{ fontSize: 12, color: C.muted, padding: "0 8px" }}>{page} / {data.pages}</span>
+                <span style={{ fontSize: 12, color: T.muted, padding: "0 8px" }}>{page} / {data.pages}</span>
                 <button
                   onClick={() => setPage(p => Math.min(data.pages, p + 1))}
                   disabled={page >= data.pages}
-                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${C.border}`, background: C.inputBg, color: C.sub, fontSize: 12, cursor: "pointer", opacity: page >= data.pages ? 0.4 : 1 }}
+                  style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${T.border}`, background: T.overlay, color: T.sub, fontSize: 12, cursor: "pointer", opacity: page >= data.pages ? 0.4 : 1 }}
                 >הבא</button>
               </div>
             </div>

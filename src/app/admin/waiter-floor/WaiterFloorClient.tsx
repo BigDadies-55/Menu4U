@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { T, btn, btnGhost, inp, STATUS, type StatusKey } from "@/lib/ui";
 
 // ── Types ──────────────────────────────────────────────────────────
 type TableShape  = "round" | "rect" | "square" | "oval" | "long" | "banquet";
@@ -14,23 +15,6 @@ type MenuItem   = { id: string; name: string; price: number; description: string
 type MenuCat    = { id: string; name: string; items: MenuItem[] };
 type Restaurant = { id: string; name: string };
 
-// ── Design tokens ──────────────────────────────────────────────────
-const C = {
-  bg:       "#0a0402",
-  card:     "#160805",
-  panel:    "#1a0c06",
-  border:   "rgba(212,160,23,0.18)",
-  gold:     "#d4a017",
-  text:     "#f0e6d3",
-  sub:      "#c4a882",
-  muted:    "#7a6050",
-  green:    "#22c55e",
-  orange:   "#f97316",
-  red:      "#ef4444",
-  blue:     "#3b82f6",
-  inp:      "#2a1408",
-  inpBd:    "rgba(212,160,23,0.25)",
-};
 
 // ── Room background themes (identical to layout-builder) ───────────
 const BGS = [
@@ -47,20 +31,6 @@ const SHAPE_BR: Record<TableShape, string> = {
   round: "50%", rect: "10px", square: "8px", oval: "50%/40%", long: "12px", banquet: "6px",
 };
 
-// ── Order-status visual config for floor rendering ─────────────────
-const ORDER_STATUS_CFG = {
-  free:            { bg: "#0e0c0a", border: "#1e5c1e", stripe: "#22c55e", badge: "#22c55e", badgeBg: "rgba(34,197,94,0.12)",  label: "פנוי",   glow: "rgba(34,197,94,0.1)"   },
-  occupied:        { bg: "#0e0c0a", border: "#7a4a00", stripe: "#f97316", badge: "#f97316", badgeBg: "rgba(249,115,22,0.12)", label: "תפוס",   glow: "rgba(249,115,22,0.1)"  },
-  "bill-requested":{ bg: "#0e0c0a", border: "#6b1414", stripe: "#ef4444", badge: "#ef4444", badgeBg: "rgba(239,68,68,0.12)",  label: "חשבון",  glow: "rgba(239,68,68,0.12)"  },
-};
-const INP: React.CSSProperties = { background: C.inp, border: `1px solid ${C.inpBd}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "7px 10px", width: "100%", outline: "none" };
-// hex alpha suffixes: 26 ≈ 15%, 66 ≈ 40%
-const BTN = (col: string, light = false): React.CSSProperties => ({
-  background: light ? col + "26" : col,
-  color: light ? col : "#fff",
-  border: light ? `1px solid ${col}66` : "none",
-  borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-});
 
 // ── Helpers ────────────────────────────────────────────────────────
 const COURSE = ["", "ראשון", "עיקרי", "קינוח"];
@@ -465,7 +435,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
   // ── Render ────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)", background: C.bg, color: C.text, fontFamily: "system-ui,sans-serif", direction: "rtl", position: "relative", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)", background: T.bg, color: T.text, fontFamily: "system-ui,sans-serif", direction: "rtl", position: "relative", overflow: "hidden" }}>
 
       {/* Blink keyframe */}
       <style>{`
@@ -475,14 +445,14 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
       `}</style>
 
       {/* ── Topbar ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: `1px solid ${C.border}`, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", flexShrink: 0 }}>
-        <span style={{ fontWeight: 800, fontSize: 15, color: C.gold }}>🍽 רצפת שירות</span>
-        <span style={{ color: C.muted, fontSize: 13 }}>— {waiterName}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: `1px solid ${T.border}`, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", flexShrink: 0 }}>
+        <span style={{ fontWeight: 800, fontSize: 15, color: T.gold }}>🍽 רצפת שירות</span>
+        <span style={{ color: T.muted, fontSize: 13 }}>— {waiterName}</span>
 
         {/* Restaurant picker */}
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-            style={{ ...INP, width: "auto", marginRight: "auto" }}>
+            style={{ ...inp, width: "auto", marginRight: "auto" }}>
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
@@ -492,11 +462,11 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
           {(["free", "occupied", "bill-requested"] as const).map(s => {
             const count = activeRoom?.tables.filter(t => tableStatus(String(t.num), orders) === s).length ?? 0;
             const labels = { free: "פנויים", occupied: "תפוסים", "bill-requested": "חשבון" };
-            const colors = { free: C.green, occupied: C.orange, "bill-requested": C.red };
+            const colors = { free: T.green, occupied: T.orange, "bill-requested": T.red };
             return (
               <div key={s} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: `${colors[s]}22`, border: `1px solid ${colors[s]}55`, fontSize: 12 }}>
                 <span style={{ fontWeight: 800, color: colors[s] }}>{count}</span>
-                <span style={{ color: C.sub }}>{labels[s]}</span>
+                <span style={{ color: T.sub }}>{labels[s]}</span>
               </div>
             );
           })}
@@ -505,13 +475,13 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
       {/* ── Room tabs ── */}
       {layout && layout.rooms.length > 1 && (
-        <div style={{ display: "flex", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${C.border}`, background: "rgba(10,4,2,0.92)", flexShrink: 0, overflowX: "auto" }}>
+        <div style={{ display: "flex", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${T.border}`, background: "rgba(10,4,2,0.92)", flexShrink: 0, overflowX: "auto" }}>
           {layout.rooms.map((room, i) => (
             <button key={room.id} onClick={() => setRoomIdx(i)} style={{
               padding: "4px 14px", borderRadius: 20, fontSize: 13, fontWeight: i === roomIdx ? 700 : 400, cursor: "pointer",
-              background: i === roomIdx ? `${C.gold}22` : "transparent",
-              border: `1px solid ${i === roomIdx ? C.gold : C.border}`,
-              color: i === roomIdx ? C.gold : C.sub,
+              background: i === roomIdx ? `${T.gold}22` : "transparent",
+              border: `1px solid ${i === roomIdx ? T.gold : T.border}`,
+              color: i === roomIdx ? T.gold : T.sub,
             }}>{room.name}</button>
           ))}
         </div>
@@ -523,23 +493,23 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
         {/* ── Floor map ── */}
         <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden" }}>
           {layoutLoading && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: C.muted, fontSize: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: T.muted, fontSize: 14 }}>
               טוען פריסה...
             </div>
           )}
           {!layoutLoading && !layout && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", justifyContent: "center", height: "100%", color: C.muted, fontSize: 14, textAlign: "center", padding: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", justifyContent: "center", height: "100%", color: T.muted, fontSize: 14, textAlign: "center", padding: 20 }}>
               <div style={{ fontSize: 32 }}>🗺️</div>
-              <div style={{ color: C.sub, fontWeight: 700 }}>
+              <div style={{ color: T.sub, fontWeight: 700 }}>
                 {layoutDiag || "אין פריסת שולחנות מוגדרת"}
               </div>
               <div style={{ fontSize: 12 }}>
-                מסעדה נבחרת: <span style={{ color: C.gold }}>{restaurants.find(r => r.id === restaurantId)?.name ?? "—"}</span>
+                מסעדה נבחרת: <span style={{ color: T.gold }}>{restaurants.find(r => r.id === restaurantId)?.name ?? "—"}</span>
               </div>
               {restaurants.length > 1 && (
                 <div style={{ fontSize: 12 }}>אם בנית פריסה למסעדה אחרת — בחר אותה בבורר למעלה.</div>
               )}
-              <button onClick={() => loadLayout(restaurantId)} style={{ marginTop: 6, background: `${C.gold}22`, color: C.gold, border: `1px solid ${C.gold}55`, borderRadius: 8, padding: "6px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={() => loadLayout(restaurantId)} style={{ marginTop: 6, background: `${T.gold}22`, color: T.gold, border: `1px solid ${T.gold}55`, borderRadius: 8, padding: "6px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 ↻ נסה שוב
               </button>
             </div>
@@ -597,7 +567,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                       const status  = tableStatus(tNum, orders);
                       const start   = timerStart(tNum, orders);
                       const guests  = tableGuests(tNum, orders);
-                      const cfg         = ORDER_STATUS_CFG[status];
+                      const cfg         = STATUS[status as StatusKey];
                       const accentColor = table.customColor || cfg.stripe;
                       const brd         = table.customColor ? table.customColor + "99" : cfg.border;
                       const br      = SHAPE_BR[table.shape];
@@ -627,7 +597,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                         >
                           <div style={{
                             position: "absolute", inset: 0, borderRadius: 10,
-                            background: cfg.bg,
+                            background: "#0e0c0a",
                             border: `${Math.max(1, 1.5 * scale)}px solid ${isSel ? "#d4a017" : isOther ? "rgba(255,255,255,0.06)" : brd}`,
                             boxShadow: isSel ? `0 0 0 ${2 * scale}px rgba(212,160,23,0.35)` : isOther ? "none" : `0 0 ${5 * scale}px ${cfg.glow}`,
                             overflow: "hidden", transition: "border-color 0.2s, box-shadow 0.2s",
@@ -688,51 +658,51 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
         {/* ── Side Panel ── */}
         {panel && (
           <div style={{
-            width: 360, flexShrink: 0, borderRight: `1px solid ${C.border}`,
-            background: C.panel, display: "flex", flexDirection: "column",
+            width: 360, flexShrink: 0, borderRight: `1px solid ${T.border}`,
+            background: T.panel, display: "flex", flexDirection: "column",
             animation: "slideIn 0.2s ease",
           }}>
             {/* Panel header */}
-            <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <span style={{ fontWeight: 800, fontSize: 16, color: C.gold }}>שולחן {selTable}</span>
+            <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: T.gold }}>שולחן {selTable}</span>
               {selTimerStart && panel === "active" && (
-                <span style={{ fontSize: 13, color: selTableStatus === "bill-requested" ? C.red : C.orange, fontWeight: 700 }}>
+                <span style={{ fontSize: 13, color: selTableStatus === "bill-requested" ? T.red : T.orange, fontWeight: 700 }}>
                   ⏱ {fmtTimer(selTimerStart)}
                 </span>
               )}
               {panel === "active" && (
-                <span style={{ fontSize: 12, color: C.sub, marginRight: "auto" }}>
+                <span style={{ fontSize: 12, color: T.sub, marginRight: "auto" }}>
                   👤 {tableGuests(selTable, orders)} · ₪{activeTableTotal.toFixed(0)}
                 </span>
               )}
-              <button onClick={() => { setPanel(null); setSelTable(""); }} style={{ background: "none", border: "none", color: C.muted, fontSize: 18, cursor: "pointer", lineHeight: 1 }}>✕</button>
+              <button onClick={() => { setPanel(null); setSelTable(""); }} style={{ background: "none", border: "none", color: T.muted, fontSize: 18, cursor: "pointer", lineHeight: 1 }}>✕</button>
             </div>
 
             {/* ── NEW ORDER panel ── */}
             {panel === "new" && (
               <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                 {/* Guest count */}
-                <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                  <span style={{ fontSize: 13, color: C.sub }}>סועדים:</span>
-                  <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ ...BTN(C.gold, true), padding: "4px 12px", fontSize: 16 }}>−</button>
-                  <span style={{ fontWeight: 800, fontSize: 16, color: C.text, minWidth: 24, textAlign: "center" }}>{guestCount}</span>
-                  <button onClick={() => setGuestCount(g => Math.min(50, g + 1))} style={{ ...BTN(C.gold, true), padding: "4px 12px", fontSize: 16 }}>+</button>
+                <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  <span style={{ fontSize: 13, color: T.sub }}>סועדים:</span>
+                  <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ ...btnGhost(T.gold), padding: "4px 12px", fontSize: 16 }}>−</button>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: T.text, minWidth: 24, textAlign: "center" }}>{guestCount}</span>
+                  <button onClick={() => setGuestCount(g => Math.min(50, g + 1))} style={{ ...btnGhost(T.gold), padding: "4px 12px", fontSize: 16 }}>+</button>
                 </div>
 
                 {/* Search */}
-                <div style={{ padding: "8px 14px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
                   <input value={menuSearch} onChange={e => { setMenuSearch(e.target.value); setCatIdx(0); }}
-                    placeholder="חפש מנה..." style={INP} />
+                    placeholder="חפש מנה..." style={inp} />
                 </div>
 
                 {/* Category tabs */}
-                <div style={{ display: "flex", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${C.border}`, overflowX: "auto", flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${T.border}`, overflowX: "auto", flexShrink: 0 }}>
                   {filteredMenu.map((cat, i) => (
                     <button key={cat.id} onClick={() => setCatIdx(i)} style={{
                       padding: "3px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap",
-                      background: catIdx === i ? `${C.gold}22` : "transparent",
-                      border: `1px solid ${catIdx === i ? C.gold : C.border}`,
-                      color: catIdx === i ? C.gold : C.sub,
+                      background: catIdx === i ? `${T.gold}22` : "transparent",
+                      border: `1px solid ${catIdx === i ? T.gold : T.border}`,
+                      color: catIdx === i ? T.gold : T.sub,
                     }}>{cat.name}</button>
                   ))}
                 </div>
@@ -740,39 +710,39 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                 {/* Items */}
                 <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px" }}>
                   {activeCat?.items.map(item => (
-                    <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
+                    <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${T.border}` }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
-                        {item.description && <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.description}</div>}
-                        <div style={{ fontSize: 12, color: C.gold, marginTop: 2 }}>₪{item.price.toFixed(0)}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{item.name}</div>
+                        {item.description && <div style={{ fontSize: 11, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.description}</div>}
+                        <div style={{ fontSize: 12, color: T.gold, marginTop: 2 }}>₪{item.price.toFixed(0)}</div>
                       </div>
-                      <button onClick={() => addToCart(item)} style={{ ...BTN(C.gold, true), padding: "4px 12px", fontSize: 18, marginRight: 8, flexShrink: 0 }}>+</button>
+                      <button onClick={() => addToCart(item)} style={{ ...btnGhost(T.gold), padding: "4px 12px", fontSize: 18, marginRight: 8, flexShrink: 0 }}>+</button>
                     </div>
                   ))}
-                  {!activeCat?.items.length && <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>אין פריטים</div>}
+                  {!activeCat?.items.length && <div style={{ color: T.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>אין פריטים</div>}
                 </div>
 
                 {/* Cart */}
                 {cart.length > 0 && (
-                  <div style={{ borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+                  <div style={{ borderTop: `1px solid ${T.border}`, flexShrink: 0 }}>
                     <div style={{ padding: "6px 14px", maxHeight: 160, overflowY: "auto" }}>
                       {cart.map(c => (
                         <div key={c.itemId + c.course} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0" }}>
-                          <button onClick={() => updateCartQty(c.itemId, c.course, -1)} style={{ background: "none", border: `1px solid ${C.border}`, color: C.sub, borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 14 }}>−</button>
-                          <span style={{ fontSize: 12, color: C.text, minWidth: 16, textAlign: "center" }}>{c.qty}</span>
-                          <button onClick={() => updateCartQty(c.itemId, c.course, 1)}  style={{ background: "none", border: `1px solid ${C.border}`, color: C.sub, borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 14 }}>+</button>
-                          <span style={{ flex: 1, fontSize: 12, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
-                          <span style={{ fontSize: 11, color: C.muted }}>{EMOJI[c.course] ?? ""}</span>
-                          <span style={{ fontSize: 12, color: C.gold }}>₪{(c.price * c.qty).toFixed(0)}</span>
-                          <button onClick={() => removeFromCart(c.itemId, c.course)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 13 }}>✕</button>
+                          <button onClick={() => updateCartQty(c.itemId, c.course, -1)} style={{ background: "none", border: `1px solid ${T.border}`, color: T.sub, borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 14 }}>−</button>
+                          <span style={{ fontSize: 12, color: T.text, minWidth: 16, textAlign: "center" }}>{c.qty}</span>
+                          <button onClick={() => updateCartQty(c.itemId, c.course, 1)}  style={{ background: "none", border: `1px solid ${T.border}`, color: T.sub, borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 14 }}>+</button>
+                          <span style={{ flex: 1, fontSize: 12, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                          <span style={{ fontSize: 11, color: T.muted }}>{EMOJI[c.course] ?? ""}</span>
+                          <span style={{ fontSize: 12, color: T.gold }}>₪{(c.price * c.qty).toFixed(0)}</span>
+                          <button onClick={() => removeFromCart(c.itemId, c.course)} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 13 }}>✕</button>
                         </div>
                       ))}
                     </div>
-                    <div style={{ padding: "8px 14px", borderTop: `1px solid ${C.border}` }}>
-                      <input value={orderNote} onChange={e => setOrderNote(e.target.value)} placeholder="הערה להזמנה..." style={{ ...INP, marginBottom: 8 }} />
+                    <div style={{ padding: "8px 14px", borderTop: `1px solid ${T.border}` }}>
+                      <input value={orderNote} onChange={e => setOrderNote(e.target.value)} placeholder="הערה להזמנה..." style={{ ...inp, marginBottom: 8 }} />
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: 800, color: C.gold }}>₪{cartTotal.toFixed(0)}</span>
-                        <button onClick={submitOrder} disabled={submitting} style={{ ...BTN("#16a34a"), opacity: submitting ? 0.6 : 1 }}>
+                        <span style={{ fontWeight: 800, color: T.gold }}>₪{cartTotal.toFixed(0)}</span>
+                        <button onClick={submitOrder} disabled={submitting} style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: submitting ? 0.6 : 1 }}>
                           {submitting ? "שולח..." : "🚀 שלח למטבח"}
                         </button>
                       </div>
@@ -787,53 +757,53 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
               <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
                 {/* Action buttons */}
-                <div style={{ padding: "10px 14px", display: "flex", gap: 6, flexWrap: "wrap", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-                  <button onClick={() => setAddingMore(v => !v)} style={{ ...BTN(C.blue, true), fontSize: 12 }}>
+                <div style={{ padding: "10px 14px", display: "flex", gap: 6, flexWrap: "wrap", borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+                  <button onClick={() => setAddingMore(v => !v)} style={{ ...btnGhost(T.blue), fontSize: 12 }}>
                     {addingMore ? "✕ סגור" : "＋ הוסף מנות"}
                   </button>
                   {selTableStatus !== "bill-requested" && (
-                    <button onClick={requestBill} style={{ ...BTN(C.orange, true), fontSize: 12 }}>🧾 ביקש חשבון</button>
+                    <button onClick={requestBill} style={{ ...btnGhost(T.orange), fontSize: 12 }}>🧾 ביקש חשבון</button>
                   )}
                   {(selTableStatus === "bill-requested" || selTableStatus === "occupied") && (
-                    <button onClick={() => setPayModal(true)} style={{ ...BTN("#16a34a"), fontSize: 12 }}>💳 סגור חשבון</button>
+                    <button onClick={() => setPayModal(true)} style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>💳 סגור חשבון</button>
                   )}
-                  <button onClick={() => { setTransferTo(""); setTransferModal(true); }} style={{ ...BTN(C.muted, true), fontSize: 12 }}>↔ העבר שולחן</button>
+                  <button onClick={() => { setTransferTo(""); setTransferModal(true); }} style={{ ...btnGhost(T.muted), fontSize: 12 }}>↔ העבר שולחן</button>
                 </div>
 
                 {/* Add-more mini menu */}
                 {addingMore && (
-                  <div style={{ borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                  <div style={{ borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
                     <div style={{ padding: "6px 14px" }}>
-                      <input value={menuSearch} onChange={e => { setMenuSearch(e.target.value); setCatIdx(0); }} placeholder="חפש מנה..." style={INP} />
+                      <input value={menuSearch} onChange={e => { setMenuSearch(e.target.value); setCatIdx(0); }} placeholder="חפש מנה..." style={inp} />
                     </div>
                     <div style={{ display: "flex", gap: 4, padding: "4px 14px", overflowX: "auto" }}>
                       {filteredMenu.map((cat, i) => (
-                        <button key={cat.id} onClick={() => setCatIdx(i)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap", background: catIdx === i ? `${C.gold}22` : "transparent", border: `1px solid ${catIdx === i ? C.gold : C.border}`, color: catIdx === i ? C.gold : C.sub }}>
+                        <button key={cat.id} onClick={() => setCatIdx(i)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap", background: catIdx === i ? `${T.gold}22` : "transparent", border: `1px solid ${catIdx === i ? T.gold : T.border}`, color: catIdx === i ? T.gold : T.sub }}>
                           {cat.name}
                         </button>
                       ))}
                     </div>
                     {/* Course selector */}
-                    <div style={{ display: "flex", gap: 4, padding: "4px 14px", borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ display: "flex", gap: 4, padding: "4px 14px", borderBottom: `1px solid ${T.border}` }}>
                       {[1,2,3].map(c => (
-                        <button key={c} onClick={() => setAddCourse(c)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", background: addCourse === c ? "rgba(167,139,250,0.2)" : "transparent", border: `1px solid ${addCourse === c ? "#a78bfa" : C.border}`, color: addCourse === c ? "#a78bfa" : C.sub }}>
+                        <button key={c} onClick={() => setAddCourse(c)} style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer", background: addCourse === c ? "rgba(167,139,250,0.2)" : "transparent", border: `1px solid ${addCourse === c ? "#a78bfa" : T.border}`, color: addCourse === c ? "#a78bfa" : T.sub }}>
                           {EMOJI[c]} {COURSE[c]}
                         </button>
                       ))}
                     </div>
                     <div style={{ maxHeight: 150, overflowY: "auto", padding: "4px 14px" }}>
                       {activeCat?.items.map(item => (
-                        <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${C.border}` }}>
-                          <span style={{ flex: 1, fontSize: 12, color: C.text }}>{item.name}</span>
-                          <span style={{ fontSize: 12, color: C.gold, marginLeft: 8 }}>₪{item.price.toFixed(0)}</span>
-                          <button onClick={() => addToCart(item, addCourse)} style={{ ...BTN(C.gold, true), padding: "2px 10px", fontSize: 14, marginRight: 6 }}>+</button>
+                        <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${T.border}` }}>
+                          <span style={{ flex: 1, fontSize: 12, color: T.text }}>{item.name}</span>
+                          <span style={{ fontSize: 12, color: T.gold, marginLeft: 8 }}>₪{item.price.toFixed(0)}</span>
+                          <button onClick={() => addToCart(item, addCourse)} style={{ ...btnGhost(T.gold), padding: "2px 10px", fontSize: 14, marginRight: 6 }}>+</button>
                         </div>
                       ))}
                     </div>
                     {cart.length > 0 && (
-                      <div style={{ padding: "6px 14px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 12, color: C.sub }}>{cart.reduce((s, c) => s + c.qty, 0)} פריטים · ₪{cartTotal.toFixed(0)}</span>
-                        <button onClick={submitOrder} disabled={submitting} style={{ ...BTN("#16a34a"), fontSize: 12, opacity: submitting ? 0.6 : 1 }}>
+                      <div style={{ padding: "6px 14px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: T.sub }}>{cart.reduce((s, c) => s + c.qty, 0)} פריטים · ₪{cartTotal.toFixed(0)}</span>
+                        <button onClick={submitOrder} disabled={submitting} style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: submitting ? 0.6 : 1 }}>
                           {submitting ? "שולח..." : "🚀 שלח"}
                         </button>
                       </div>
@@ -847,14 +817,14 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                     const heldByCourse = new Map<number, number>();
                     order.items.forEach(i => { if (i.heldUntilFired && !i.firedAt) heldByCourse.set(i.course, (heldByCourse.get(i.course) ?? 0) + 1); });
                     return (
-                      <div key={order.id} style={{ marginBottom: 12, background: "#1a0c0622", border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
+                      <div key={order.id} style={{ marginBottom: 12, background: "#1a0c0622", border: `1px solid ${T.border}`, borderRadius: 8, overflow: "hidden" }}>
                         <div style={{ padding: "6px 10px", background: "rgba(212,160,23,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>הזמנה #{order.orderNumber ?? "—"}</span>
-                          <span style={{ fontSize: 11, color: C.sub }}>₪{order.totalAmount.toFixed(0)}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.gold }}>הזמנה #{order.orderNumber ?? "—"}</span>
+                          <span style={{ fontSize: 11, color: T.sub }}>₪{order.totalAmount.toFixed(0)}</span>
                         </div>
                         {/* Fire course buttons */}
                         {heldByCourse.size > 0 && (
-                          <div style={{ padding: "6px 10px", display: "flex", flexWrap: "wrap", gap: 6, borderTop: `1px solid ${C.border}` }}>
+                          <div style={{ padding: "6px 10px", display: "flex", flexWrap: "wrap", gap: 6, borderTop: `1px solid ${T.border}` }}>
                             {Array.from(heldByCourse.entries()).sort(([a], [b]) => a - b).map(([course, count]) => {
                               const key     = `${order.id}:${course}`;
                               const loading = firingCourse === key;
@@ -881,19 +851,19 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                           </div>
                         )}
                         {order.items.map(item => {
-                          const statusColors: Record<string, string> = { PENDING: C.muted, PREPARING: C.blue, DONE: C.green, CANCELLED: C.red, HELD: "#7c3aed" };
+                          const statusColors: Record<string, string> = { PENDING: T.muted, PREPARING: T.blue, DONE: T.green, CANCELLED: T.red, HELD: "#7c3aed" };
                           const statusLabels: Record<string, string> = { PENDING: "ממתין", PREPARING: "בהכנה", DONE: "הוכן", CANCELLED: "בוטל", HELD: "ממתין להצתה" };
                           const iHeld = item.heldUntilFired && !item.firedAt;
                           const statusKey = iHeld ? "HELD" : item.itemStatus;
                           const isCancelled = item.itemStatus === "CANCELLED";
                           const canAct = !isCancelled;
                           return (
-                            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderTop: `1px solid ${C.border}`, opacity: isCancelled ? 0.4 : 1 }}>
-                              <span style={{ fontSize: 11, color: C.muted, flexShrink: 0 }}>×{item.quantity}</span>
-                              <span style={{ flex: 1, fontSize: 12, color: item.isComped ? "#a78bfa" : C.text, textDecoration: item.isComped ? "line-through" : "none" }}>{item.item.name}</span>
+                            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderTop: `1px solid ${T.border}`, opacity: isCancelled ? 0.4 : 1 }}>
+                              <span style={{ fontSize: 11, color: T.muted, flexShrink: 0 }}>×{item.quantity}</span>
+                              <span style={{ flex: 1, fontSize: 12, color: item.isComped ? "#a78bfa" : T.text, textDecoration: item.isComped ? "line-through" : "none" }}>{item.item.name}</span>
                               {item.isComped && <span style={{ fontSize: 9, color: "#a78bfa", background: "rgba(167,139,250,0.15)", borderRadius: 4, padding: "1px 4px", flexShrink: 0 }}>פיצוי</span>}
                               {item.course > 1 && <span style={{ fontSize: 10, color: "#a78bfa" }}>{EMOJI[item.course]}</span>}
-                              <span style={{ fontSize: 10, color: statusColors[statusKey] ?? C.muted, whiteSpace: "nowrap" }}>
+                              <span style={{ fontSize: 10, color: statusColors[statusKey] ?? T.muted, whiteSpace: "nowrap" }}>
                                 {statusLabels[statusKey] ?? statusKey}
                               </span>
                               {canAct && (
@@ -906,7 +876,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                                   <button
                                     onClick={() => openPinModal("cancel", order.id, item.id, item.item.name)}
                                     title="בטל מנה (נדרש PIN מנהל)"
-                                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 5, padding: "2px 5px", fontSize: 11, cursor: "pointer", color: C.red, flexShrink: 0 }}
+                                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 5, padding: "2px 5px", fontSize: 11, cursor: "pointer", color: T.red, flexShrink: 0 }}
                                   >✕</button>
                                 </>
                               )}
@@ -916,7 +886,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                       </div>
                     );
                   })}
-                  {!activeTableOrders.length && <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>אין הזמנות פעילות</div>}
+                  {!activeTableOrders.length && <div style={{ color: T.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>אין הזמנות פעילות</div>}
                 </div>
               </div>
             )}
@@ -928,30 +898,30 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
       {payModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={e => { if (e.target === e.currentTarget) setPayModal(false); }}>
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 320, direction: "rtl" }}>
-            <div style={{ fontWeight: 800, fontSize: 18, color: C.gold, marginBottom: 16 }}>💳 סגירת שולחן {selTable}</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 16 }}>סה"כ: ₪{activeTableTotal.toFixed(0)}</div>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 320, direction: "rtl" }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: T.gold, marginBottom: 16 }}>💳 סגירת שולחן {selTable}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: T.text, marginBottom: 16 }}>סה"כ: ₪{activeTableTotal.toFixed(0)}</div>
 
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: C.sub, marginBottom: 6 }}>טיפ</div>
+              <div style={{ fontSize: 12, color: T.sub, marginBottom: 6 }}>טיפ</div>
               <div style={{ display: "flex", gap: 6 }}>
                 {[0, 10, 12, 15].map(pct => (
                   <button key={pct} onClick={() => setTip(pct === 0 ? 0 : activeTableTotal * pct / 100)}
-                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 12, cursor: "pointer", border: `1px solid ${C.border}`, background: tip === (pct === 0 ? 0 : activeTableTotal * pct / 100) ? `${C.gold}22` : "transparent", color: C.text }}>
+                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 12, cursor: "pointer", border: `1px solid ${T.border}`, background: tip === (pct === 0 ? 0 : activeTableTotal * pct / 100) ? `${T.gold}22` : "transparent", color: T.text }}>
                     {pct === 0 ? "ללא" : `${pct}%`}
                   </button>
                 ))}
               </div>
               <input type="number" value={tip === 0 ? "" : tip.toFixed(0)} onChange={e => setTip(Number(e.target.value) || 0)}
-                placeholder="טיפ ידני (₪)" style={{ ...INP, marginTop: 6 }} />
+                placeholder="טיפ ידני (₪)" style={{ ...inp, marginTop: 6 }} />
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: C.sub, marginBottom: 6 }}>אמצעי תשלום</div>
+              <div style={{ fontSize: 12, color: T.sub, marginBottom: 6 }}>אמצעי תשלום</div>
               <div style={{ display: "flex", gap: 6 }}>
                 {[["card","אשראי"],["cash","מזומן"],["app","אפליקציה"]].map(([v, l]) => (
                   <button key={v} onClick={() => setPayMethod(v)}
-                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 12, cursor: "pointer", border: `1px solid ${C.border}`, background: payMethod === v ? `${C.gold}22` : "transparent", color: C.text }}>
+                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 12, cursor: "pointer", border: `1px solid ${T.border}`, background: payMethod === v ? `${T.gold}22` : "transparent", color: T.text }}>
                     {l}
                   </button>
                 ))}
@@ -959,10 +929,10 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
             </div>
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={closeTable} disabled={closing} style={{ flex: 1, ...BTN("#16a34a"), opacity: closing ? 0.6 : 1 }}>
+              <button onClick={closeTable} disabled={closing} style={{ flex: 1, background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: closing ? 0.6 : 1 }}>
                 {closing ? "סוגר..." : `✓ סגור · ₪${(activeTableTotal + tip).toFixed(0)}`}
               </button>
-              <button onClick={() => setPayModal(false)} style={{ ...BTN(C.muted, true), padding: "8px 16px" }}>ביטול</button>
+              <button onClick={() => setPayModal(false)} style={{ ...btnGhost(T.muted), padding: "8px 16px" }}>ביטול</button>
             </div>
           </div>
         </div>
@@ -972,23 +942,23 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
       {transferModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={e => { if (e.target === e.currentTarget) setTransferModal(false); }}>
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 300, direction: "rtl" }}>
-            <div style={{ fontWeight: 800, fontSize: 16, color: C.gold, marginBottom: 14 }}>↔ העבר שולחן {selTable} אל</div>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 300, direction: "rtl" }}>
+            <div style={{ fontWeight: 800, fontSize: 16, color: T.gold, marginBottom: 14 }}>↔ העבר שולחן {selTable} אל</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
               {activeRoom?.tables.filter(t => String(t.num) !== selTable && tableStatus(String(t.num), orders) === "free")
                 .map(t => (
                   <button key={t.id} onClick={() => setTransferTo(String(t.num))}
-                    style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, cursor: "pointer", border: `1px solid ${transferTo === String(t.num) ? C.gold : C.border}`, background: transferTo === String(t.num) ? `${C.gold}22` : "transparent", color: C.text }}>
+                    style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, cursor: "pointer", border: `1px solid ${transferTo === String(t.num) ? T.gold : T.border}`, background: transferTo === String(t.num) ? `${T.gold}22` : "transparent", color: T.text }}>
                     שולחן {t.num}
                   </button>
                 ))}
             </div>
             {!activeRoom?.tables.some(t => String(t.num) !== selTable && tableStatus(String(t.num), orders) === "free") && (
-              <div style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>אין שולחנות פנויים להעברה</div>
+              <div style={{ color: T.muted, fontSize: 13, marginBottom: 12 }}>אין שולחנות פנויים להעברה</div>
             )}
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={doTransfer} disabled={!transferTo} style={{ flex: 1, ...BTN(C.gold), opacity: !transferTo ? 0.4 : 1 }}>העבר</button>
-              <button onClick={() => setTransferModal(false)} style={{ ...BTN(C.muted, true), padding: "8px 14px" }}>ביטול</button>
+              <button onClick={doTransfer} disabled={!transferTo} style={{ flex: 1, background: T.gold, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: !transferTo ? 0.4 : 1 }}>העבר</button>
+              <button onClick={() => setTransferModal(false)} style={{ ...btnGhost(T.muted), padding: "8px 14px" }}>ביטול</button>
             </div>
           </div>
         </div>
@@ -998,27 +968,27 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
       {pinModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={e => { if (e.target === e.currentTarget) setPinModal(null); }}>
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, width: 300, direction: "rtl" }}>
-            <div style={{ fontWeight: 800, fontSize: 16, color: C.gold, marginBottom: 4, textAlign: "center" }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 28, width: 300, direction: "rtl" }}>
+            <div style={{ fontWeight: 800, fontSize: 16, color: T.gold, marginBottom: 4, textAlign: "center" }}>
               {pinModal.type === "cancel" ? "🔐 ביטול מנה" : pinModal.isComped ? "🔐 ביטול פיצוי" : "🔐 סימון פיצוי"}
             </div>
-            <div style={{ fontSize: 12, color: C.sub, marginBottom: 16, textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: T.sub, marginBottom: 16, textAlign: "center" }}>
               {pinModal.itemName}
             </div>
             {pinModal.type === "comp" && !pinModal.isComped && (
               <input
                 value={compReason} onChange={e => setCompReason(e.target.value)}
                 placeholder="סיבה (אופציונלי — למשל: מנה שרופה)"
-                style={{ ...INP, marginBottom: 12 }}
+                style={{ ...inp, marginBottom: 12 }}
               />
             )}
             {/* PIN dots */}
             <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 14 }}>
               {[0,1,2,3].map(i => (
-                <div key={i} style={{ width: 14, height: 14, borderRadius: "50%", background: pinValue.length > i ? C.gold : "transparent", border: `2px solid ${pinValue.length > i ? C.gold : C.border}`, transition: "background 0.15s" }} />
+                <div key={i} style={{ width: 14, height: 14, borderRadius: "50%", background: pinValue.length > i ? T.gold : "transparent", border: `2px solid ${pinValue.length > i ? T.gold : T.border}`, transition: "background 0.15s" }} />
               ))}
             </div>
-            {pinError && <div style={{ color: C.red, fontSize: 12, textAlign: "center", marginBottom: 10 }}>קוד שגוי — נסה שוב</div>}
+            {pinError && <div style={{ color: T.red, fontSize: 12, textAlign: "center", marginBottom: 10 }}>קוד שגוי — נסה שוב</div>}
             {/* Numpad */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 10 }}>
               {(["1","2","3","4","5","6","7","8","9","","0","⌫"] as const).map((k, ki) => (
@@ -1031,12 +1001,12 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                   setPinError(false);
                   if (next.length === 4) setTimeout(() => confirmPinValue(next), 150);
                 }}
-                style={{ padding: "13px 0", fontSize: 18, fontWeight: 700, borderRadius: 10, cursor: k ? "pointer" : "default", border: `1px solid ${k ? C.border : "transparent"}`, background: k ? C.inp : "transparent", color: C.text, opacity: k ? 1 : 0 }}>
+                style={{ padding: "13px 0", fontSize: 18, fontWeight: 700, borderRadius: 10, cursor: k ? "pointer" : "default", border: `1px solid ${k ? T.border : "transparent"}`, background: k ? T.overlay : "transparent", color: T.text, opacity: k ? 1 : 0 }}>
                   {k}
                 </button>
               ))}
             </div>
-            <button onClick={() => setPinModal(null)} style={{ ...BTN(C.muted, true), width: "100%", padding: "8px 14px" }}>ביטול</button>
+            <button onClick={() => setPinModal(null)} style={{ ...btnGhost(T.muted), width: "100%", padding: "8px 14px" }}>ביטול</button>
           </div>
         </div>
       )}

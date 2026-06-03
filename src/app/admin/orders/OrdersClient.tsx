@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { T } from "@/lib/ui";
 
 type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
 
@@ -49,45 +50,28 @@ const ITEM_STATUS_LABEL: Record<string, string> = {
 const COURSE_LABEL: Record<number, string> = { 1: "ראשון", 2: "עיקרי", 3: "קינוח" };
 const COURSE_EMOJI: Record<number, string> = { 1: "🥗", 2: "🍖", 3: "🍮" };
 
-/* ── Dark theme palette ── */
-const D = {
-  card:     "#212529",
-  border:   "#2d3239",
-  inputBg:  "#2d3239",
-  inputBrd: "#3a3f47",
-  rowBg:    "#1e2128",
-  text:     "#e9ecef",
-  sub:      "#adb5bd",
-  muted:    "#6c757d",
-  amber:    "#fcc419",
-  blue:     "#339af0",
-  green:    "#51cf66",
-  red:      "#ff6b6b",
-  purple:   "#a78bfa",
-} as const;
-
 const DK_INPUT: React.CSSProperties = {
-  background: D.inputBg, border: `1px solid ${D.inputBrd}`, color: D.text,
+  background: T.overlay, border: `1px solid ${T.border}`, color: T.text,
   borderRadius: 10, padding: "8px 12px", fontSize: 13,
   outline: "none", width: "100%", fontFamily: "inherit",
 };
 
 const ITEM_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  PENDING:   { background: "rgba(252,196,25,.15)",  color: "#fcc419" },
-  PREPARING: { background: "rgba(51,154,240,.15)",  color: "#339af0" },
-  DONE:      { background: "rgba(81,207,102,.15)",  color: "#51cf66" },
-  CANCELLED: { background: "rgba(255,107,107,.12)", color: "#ff6b6b", textDecoration: "line-through" },
-  HELD:      { background: "rgba(167,139,250,.15)", color: "#a78bfa" },
+  PENDING:   { background: "rgba(212,160,23,.15)",  color: T.gold },
+  PREPARING: { background: "rgba(59,130,246,.15)",  color: T.blue },
+  DONE:      { background: "rgba(34,197,94,.15)",   color: T.green },
+  CANCELLED: { background: "rgba(239,68,68,.12)",   color: T.red, textDecoration: "line-through" },
+  HELD:      { background: "rgba(167,139,250,.15)", color: T.purple },
 };
 
 const ORDER_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  PENDING:   { background: "rgba(252,196,25,.15)",  color: "#fcc419" },
-  CONFIRMED: { background: "rgba(51,154,240,.15)",  color: "#339af0" },
-  PREPARING: { background: "rgba(255,152,0,.15)",   color: "#ffa94d" },
-  READY:     { background: "rgba(81,207,102,.15)",  color: "#51cf66" },
-  DELIVERED: { background: "rgba(108,117,125,.15)", color: "#6c757d" },
-  CANCELLED: { background: "rgba(108,117,125,.12)", color: "#6c757d" },
-  PAID:      { background: "rgba(81,207,102,.2)",   color: "#51cf66" },
+  PENDING:   { background: "rgba(212,160,23,.15)",  color: T.gold },
+  CONFIRMED: { background: "rgba(59,130,246,.15)",  color: T.blue },
+  PREPARING: { background: "rgba(249,115,22,.15)",  color: T.orange },
+  READY:     { background: "rgba(34,197,94,.15)",   color: T.green },
+  DELIVERED: { background: "rgba(122,96,80,.15)",   color: T.muted },
+  CANCELLED: { background: "rgba(122,96,80,.12)",   color: T.muted },
+  PAID:      { background: "rgba(34,197,94,.2)",    color: T.green },
 };
 
 // Keep old maps for any remaining usage (unused but avoids TS errors)
@@ -174,12 +158,12 @@ function BillModal({
   ];
 
   const lbl = (t: string) => (
-    <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>{t}</div>
+    <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>{t}</div>
   );
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, direction: "rtl" }}>
-      <div style={{ background: D.card, borderRadius: 18, border: `1px solid ${D.border}`, boxShadow: "0 24px 60px rgba(0,0,0,.5)", width: "100%", maxWidth: 480, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ background: T.surface, borderRadius: 18, border: `1px solid ${T.border}`, boxShadow: "0 24px 60px rgba(0,0,0,.5)", width: "100%", maxWidth: 480, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* Header */}
         <div style={{ padding: "16px 20px", background: "linear-gradient(135deg,#8B6914,#C9A84C)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -201,16 +185,16 @@ function BillModal({
                 <button key={opt.pct} type="button"
                   onClick={() => { setTipPct(opt.pct); if (opt.pct !== -1) setCustomTip(""); }}
                   style={{ padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                    border: `1px solid ${tipPct === opt.pct ? D.amber : D.inputBrd}`,
-                    background: tipPct === opt.pct ? "rgba(252,196,25,.15)" : D.inputBg,
-                    color: tipPct === opt.pct ? D.amber : D.sub }}>
+                    border: `1px solid ${tipPct === opt.pct ? T.gold : T.border}`,
+                    background: tipPct === opt.pct ? "rgba(252,196,25,.15)" : T.overlay,
+                    color: tipPct === opt.pct ? T.gold : T.sub }}>
                   {opt.label}
                 </button>
               ))}
             </div>
             {tipPct === -1 && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
-                <span style={{ fontSize: 13, color: D.muted }}>₪</span>
+                <span style={{ fontSize: 13, color: T.muted }}>₪</span>
                 <input type="number" min="0" step="1" value={customTip} onChange={e => setCustomTip(e.target.value)}
                   placeholder="סכום טיפ" style={{ ...DK_INPUT, width: 110 }} />
               </div>
@@ -218,11 +202,11 @@ function BillModal({
           </div>
 
           {/* Summary */}
-          <div style={{ background: D.inputBg, borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ background: T.overlay, borderRadius: 12, padding: "14px 16px" }}>
             {loyaltyDiscount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: D.sub, marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: T.sub, marginBottom: 8 }}>
                 <span>סכום לפני הנחה</span>
-                <span style={{ fontWeight: 600, color: D.text }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
+                <span style={{ fontWeight: 600, color: T.text }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
               </div>
             )}
             {loyaltyDiscount > 0 && (
@@ -233,19 +217,19 @@ function BillModal({
                 <span style={{ fontWeight: 700, color: "#4ade80" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: D.sub, marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: T.sub, marginBottom: 8 }}>
               <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סכום"}</span>
-              <span style={{ fontWeight: 600, color: D.text }}>₪{subtotal.toFixed(2)}</span>
+              <span style={{ fontWeight: 600, color: T.text }}>₪{subtotal.toFixed(2)}</span>
             </div>
             {tipAmount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: D.sub, marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: T.sub, marginBottom: 8 }}>
                 <span>טיפ</span>
-                <span style={{ fontWeight: 600, color: D.text }}>₪{tipAmount.toFixed(2)}</span>
+                <span style={{ fontWeight: 600, color: T.text }}>₪{tipAmount.toFixed(2)}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 900, borderTop: `1px solid ${D.inputBrd}`, paddingTop: 10 }}>
-              <span style={{ color: D.text }}>סה&quot;כ לתשלום</span>
-              <span style={{ color: D.amber }}>₪{total.toFixed(2)}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 900, borderTop: `1px solid ${T.border}`, paddingTop: 10 }}>
+              <span style={{ color: T.text }}>סה&quot;כ לתשלום</span>
+              <span style={{ color: T.gold }}>₪{total.toFixed(2)}</span>
             </div>
           </div>
 
@@ -256,9 +240,9 @@ function BillModal({
               {PAY_METHODS.map(m => (
                 <button key={m.value} type="button" onClick={() => setPayMethod(m.value)}
                   style={{ flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                    border: `1px solid ${payMethod === m.value ? D.amber : D.inputBrd}`,
-                    background: payMethod === m.value ? "rgba(252,196,25,.15)" : D.inputBg,
-                    color: payMethod === m.value ? D.amber : D.sub }}>
+                    border: `1px solid ${payMethod === m.value ? T.gold : T.border}`,
+                    background: payMethod === m.value ? "rgba(252,196,25,.15)" : T.overlay,
+                    color: payMethod === m.value ? T.gold : T.sub }}>
                   {m.label}
                 </button>
               ))}
@@ -267,9 +251,9 @@ function BillModal({
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "12px 20px", borderTop: `1px solid ${D.border}`, display: "flex", gap: 10 }}>
+        <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", gap: 10 }}>
           <button type="button" onClick={onClose}
-            style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+            style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: `1px solid ${T.border}`, background: T.overlay, color: T.sub, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
             ביטול
           </button>
           <button type="button" onClick={handleConfirm} disabled={confirming}
@@ -381,33 +365,33 @@ function TableCard({
     const lastOrder = nonCancelledOrders[nonCancelledOrders.length - 1];
     return (
       <div onClick={() => setIsCollapsed(false)}
-        style={{ background: D.card, borderRadius: 10, border: `1px solid ${highlighted ? D.amber : D.border}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-        <div style={{ width: 28, height: 28, borderRadius: 8, background: D.inputBg, border: `1px solid ${D.inputBrd}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 11, color: D.muted, flexShrink: 0 }}>
+        style={{ background: T.surface, borderRadius: 10, border: `1px solid ${highlighted ? T.gold : T.border}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: T.overlay, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 11, color: T.muted, flexShrink: 0 }}>
           {tableNumber === "–" ? "?" : tableNumber}
         </div>
-        <span style={{ fontSize: 13, fontWeight: 600, color: D.sub }}>שולחן {tableNumber}</span>
-        <span style={{ fontSize: 12, color: D.muted, flex: 1 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: T.sub }}>שולחן {tableNumber}</span>
+        <span style={{ fontSize: 12, color: T.muted, flex: 1 }}>
           {allPaid ? "✓ שולם" : "✓ סופק"} · ₪{totalAmount.toFixed(0)}
           {lastOrder ? ` · ${fmtTime(lastOrder.createdAt)}` : ""}
         </span>
-        <svg width="14" height="14" fill="none" stroke={D.muted} strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        <svg width="14" height="14" fill="none" stroke={T.muted} strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
       </div>
     );
   }
 
   // Header colors based on state
   const hdrBg   = hasPending ? "#2a2310" : isUrgent ? "#2a1a1a" : "#252930";
-  const hdrBdr  = hasPending ? "rgba(252,196,25,.3)" : isUrgent ? "rgba(255,107,107,.3)" : D.border;
+  const hdrBdr  = hasPending ? "rgba(252,196,25,.3)" : isUrgent ? "rgba(255,107,107,.3)" : T.border;
   const numStyle: React.CSSProperties = hasPending
-    ? { background: "rgba(252,196,25,.18)", border: `1.5px solid ${D.amber}`, color: D.amber }
+    ? { background: "rgba(252,196,25,.18)", border: `1.5px solid ${T.gold}`, color: T.gold }
     : isUrgent
-    ? { background: "rgba(255,107,107,.15)", border: "1.5px solid #ff6b6b", color: "#ff6b6b" }
-    : { background: D.inputBg, border: `1.5px solid ${D.inputBrd}`, color: D.muted };
-  const subTextColor = hasPending ? D.amber : isUrgent ? D.red : D.muted;
+    ? { background: "rgba(239,68,68,.15)", border: `1.5px solid ${T.red}`, color: T.red }
+    : { background: T.overlay, border: `1.5px solid ${T.border}`, color: T.muted };
+  const subTextColor = hasPending ? T.gold : isUrgent ? T.red : T.muted;
 
   return (
     <div id={`table-${tableNumber}`}
-      style={{ borderRadius: 14, overflow: "hidden", border: `${hasPending ? 2 : 1}px solid ${cardBorder}`, background: D.card }}>
+      style={{ borderRadius: 14, overflow: "hidden", border: `${hasPending ? 2 : 1}px solid ${cardBorder}`, background: T.surface }}>
 
       {/* Table header */}
       <div style={{ padding: "10px 12px 8px", background: hdrBg, borderBottom: `1px solid ${hdrBdr}` }}>
@@ -416,21 +400,21 @@ function TableCard({
             style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, flexShrink: 0, cursor: "pointer", ...numStyle }}>
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
-          <span style={{ fontWeight: 700, fontSize: 14, flex: 1, color: D.text }}>
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1, color: T.text }}>
             {tableNumber === "–" ? "ללא שולחן" : `שולחן ${tableNumber}`}
           </span>
           {hasPending && (
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, flexShrink: 0, background: "rgba(252,196,25,.15)", color: D.amber, border: `1px solid rgba(252,196,25,.3)` }}>
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, flexShrink: 0, background: "rgba(252,196,25,.15)", color: T.gold, border: `1px solid rgba(252,196,25,.3)` }}>
               🕐 ממתין לאישור
             </span>
           )}
           {orders.some(o => o.orderSource === "WAITER") && (
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, flexShrink: 0, background: "rgba(124,58,237,.2)", color: D.purple, border: "1px solid rgba(124,58,237,.3)" }}>
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, flexShrink: 0, background: "rgba(124,58,237,.2)", color: T.purple, border: "1px solid rgba(124,58,237,.3)" }}>
               🧑‍🍳 POS
             </span>
           )}
           <div style={{ textAlign: "left", flexShrink: 0 }}>
-            <span style={{ fontWeight: 900, fontSize: 18, color: D.text }}>₪{totalAmount.toFixed(0)}</span>
+            <span style={{ fontWeight: 900, fontSize: 18, color: T.text }}>₪{totalAmount.toFixed(0)}</span>
             {(() => {
               const disc = orders.find(o => o.loyaltyDiscountAmount && o.loyaltyDiscountAmount > 0);
               return disc ? (
@@ -449,7 +433,7 @@ function TableCard({
           <div style={{ display: "flex", gap: 3, marginTop: 6 }}>
             {allItems.map(i => (
               <div key={i.id} style={{ height: 4, flex: 1, borderRadius: 2,
-                background: i.itemStatus === "DONE" ? D.green : i.itemStatus === "PREPARING" ? D.blue : D.inputBrd }} />
+                background: i.itemStatus === "DONE" ? T.green : i.itemStatus === "PREPARING" ? T.blue : T.border }} />
             ))}
           </div>
         )}
@@ -463,14 +447,14 @@ function TableCard({
         const isPaid      = order.status === "PAID";
         const isCancelled = order.status === "CANCELLED";
 
-        const orderHdrBg = isPending ? "#262010" : isReady ? "#161e1a" : isPaid ? "#161520" : isCancelled ? "#1f1616" : D.rowBg;
+        const orderHdrBg = isPending ? "#262010" : isReady ? "#161e1a" : isPaid ? "#161520" : isCancelled ? "#1f1616" : T.raised;
         const orderStatusLabel = isPending ? "🕐 ממתין" : isDelivered ? "✓ סופק" : isReady ? "✅ מוכן"
           : isPaid ? "💜 שולם" : isCancelled ? "✕ בוטל" : "הזמנה";
-        const orderStatusColor = isPending ? D.amber : isDelivered ? D.muted : isReady ? D.green
-          : isPaid ? D.purple : isCancelled ? D.red : D.sub;
+        const orderStatusColor = isPending ? T.gold : isDelivered ? T.muted : isReady ? T.green
+          : isPaid ? T.purple : isCancelled ? T.red : T.sub;
 
         return (
-          <div key={order.id} style={{ borderTop: idx > 0 ? `1px solid ${D.border}` : undefined }}>
+          <div key={order.id} style={{ borderTop: idx > 0 ? `1px solid ${T.border}` : undefined }}>
             {/* Order sub-header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", background: orderHdrBg }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
@@ -478,20 +462,20 @@ function TableCard({
                   {orderStatusLabel}
                 </span>
                 {order.orderNumber != null && (
-                  <span style={{ fontSize: 11, fontWeight: 800, color: D.amber, flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: T.gold, flexShrink: 0 }}>
                     #{order.orderNumber}
                   </span>
                 )}
-                <span style={{ fontSize: 11, color: D.muted, flexShrink: 0 }}>
+                <span style={{ fontSize: 11, color: T.muted, flexShrink: 0 }}>
                   {order.items.length} מנות · ₪{order.totalAmount.toFixed(0)} · {timeSince(order.createdAt)}
                 </span>
                 {order.notes && (
-                  <span style={{ fontSize: 11, color: D.muted, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>· 💬 {order.notes}</span>
+                  <span style={{ fontSize: 11, color: T.muted, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>· 💬 {order.notes}</span>
                 )}
               </div>
               {!isPending && !isDelivered && !isReady && !isPaid && !isCancelled && (
                 <button onClick={() => onOrderCancel(order.id)}
-                  style={{ fontSize: 11, color: D.red, background: "rgba(255,107,107,.1)", border: "none", borderRadius: 8, padding: "2px 8px", cursor: "pointer", flexShrink: 0 }}>
+                  style={{ fontSize: 11, color: T.red, background: "rgba(255,107,107,.1)", border: "none", borderRadius: 8, padding: "2px 8px", cursor: "pointer", flexShrink: 0 }}>
                   ✕ בטל
                 </button>
               )}
@@ -528,11 +512,11 @@ function TableCard({
 
                 const rowBgStyle: React.CSSProperties = isHeld ? { background: "#1a1528" } : isServed ? { background: "#141e18" } : {};
                 const qtyStyle: React.CSSProperties = isItemCancelled
-                  ? { background: "rgba(255,107,107,.12)", color: D.red }
-                  : isHeld ? { background: "rgba(167,139,250,.18)", color: D.purple }
-                  : isServed ? { background: "rgba(81,207,102,.15)", color: D.green }
-                  : { background: D.inputBg, color: D.muted };
-                const nameColor = isItemCancelled ? D.muted : isHeld ? D.purple : isServed ? D.green : D.text;
+                  ? { background: "rgba(255,107,107,.12)", color: T.red }
+                  : isHeld ? { background: "rgba(167,139,250,.18)", color: T.purple }
+                  : isServed ? { background: "rgba(81,207,102,.15)", color: T.green }
+                  : { background: T.overlay, color: T.muted };
+                const nameColor = isItemCancelled ? T.muted : isHeld ? T.purple : isServed ? T.green : T.text;
 
                 return (
                   <div key={itemId}
@@ -549,7 +533,7 @@ function TableCard({
                         </span>
                       </div>
                       {firedAt && (
-                        <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>
+                        <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>
                           {doneAt
                             ? `⏱ ${Math.round((new Date(doneAt).getTime() - new Date(firedAt).getTime()) / 60000)} דק' להכנה`
                             : `🔥 הוצת לפני ${Math.round((Date.now() - new Date(firedAt).getTime()) / 60000)} דק'`}
@@ -558,14 +542,14 @@ function TableCard({
                       {modifiers && modifiers.length > 0 && !isItemCancelled && (
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 2 }}>
                           {modifiers.map((m, i) => (
-                            <span key={i} style={{ fontSize: 10, padding: "1px 7px", borderRadius: 20, background: "#1e3a2e", color: D.green }}>
+                            <span key={i} style={{ fontSize: 10, padding: "1px 7px", borderRadius: 20, background: "#1e3a2e", color: T.green }}>
                               {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                             </span>
                           ))}
                         </div>
                       )}
                       {notes && !isItemCancelled && (
-                        <div style={{ fontSize: 11, color: D.muted, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{notes}</div>
+                        <div style={{ fontSize: 11, color: T.muted, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{notes}</div>
                       )}
                     </div>
 
@@ -581,7 +565,7 @@ function TableCard({
                         style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer",
                           opacity: isServeBusy ? 0.4 : 1,
                           background: isServed ? "rgba(81,207,102,.15)" : "rgba(51,154,240,.15)",
-                          color: isServed ? D.green : D.blue,
+                          color: isServed ? T.green : T.blue,
                           border: `1px solid ${isServed ? "rgba(81,207,102,.35)" : "rgba(51,154,240,.35)"}` }}>
                         {isServeBusy ? "·" : isServed ? "✓ הוגש" : "🍽 הגש"}
                       </button>
@@ -590,7 +574,7 @@ function TableCard({
                     {canCancel && (
                       <button onClick={() => cancelItem(order.id, itemId)} disabled={isCancelBusy}
                         title="בטל פריט"
-                        style={{ flexShrink: 0, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", color: D.red, background: "rgba(255,107,107,.1)", border: "none", cursor: "pointer", fontSize: 11, opacity: isCancelBusy ? 0.4 : 1 }}>
+                        style={{ flexShrink: 0, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", color: T.red, background: "rgba(255,107,107,.1)", border: "none", cursor: "pointer", fontSize: 11, opacity: isCancelBusy ? 0.4 : 1 }}>
                         {isCancelBusy ? "·" : "✕"}
                       </button>
                     )}
@@ -604,7 +588,7 @@ function TableCard({
 
       {/* Smart footer */}
       {nonCancelledOrders.length > 0 && (
-        <div style={{ padding: "10px 12px", borderTop: `1px solid ${hasPending ? "rgba(252,196,25,.3)" : D.border}` }}>
+        <div style={{ padding: "10px 12px", borderTop: `1px solid ${hasPending ? "rgba(252,196,25,.3)" : T.border}` }}>
           <button type="button" onClick={smartAction} disabled={smartBtn.disabled}
             style={{ width: "100%", padding: "11px 0", borderRadius: 10, fontSize: 14, fontWeight: 700, color: "#fff", border: "none", cursor: smartBtn.disabled ? "not-allowed" : "pointer",
               background: smartBtn.color, opacity: smartBtn.disabled ? 0.5 : 1 }}>
@@ -901,14 +885,14 @@ export default function OrdersClient({
     <div
       style={isFullscreen ? {
         position: "fixed", inset: 0, zIndex: 999,
-        background: "#1a1d23", overflowY: "auto",
-        padding: "12px 16px", color: D.text,
-      } : { padding: "24px 28px", color: D.text }}
+        background: T.bg, overflowY: "auto",
+        padding: "12px 16px", color: T.text,
+      } : { padding: "24px 28px", color: T.text }}
     >
       {/* Waiter POS Modal */}
       {showPosModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, direction: "rtl" }}>
-          <div style={{ background: D.card, borderRadius: 18, border: `1px solid ${D.border}`, boxShadow: "0 24px 60px rgba(0,0,0,.5)", width: "100%", maxWidth: 520, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ background: T.surface, borderRadius: 18, border: `1px solid ${T.border}`, boxShadow: "0 24px 60px rgba(0,0,0,.5)", width: "100%", maxWidth: 520, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <div style={{ padding: "16px 20px", background: "linear-gradient(135deg,#5b21b6,#7c3aed)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>🧑‍🍳 הזמנה חדשה (POS)</div>
@@ -919,7 +903,7 @@ export default function OrdersClient({
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <div style={{ flex: 1, minWidth: 120 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>שולחן *</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>שולחן *</div>
                   {tableLayouts.length > 0 ? (
                     <select value={posTable}
                       onChange={e => { const val=e.target.value; setPosTable(val); const cell=tableLayouts.find(c=>c.tableNumber===val); if(cell?.seats) setPosCovers(String(cell.seats)); }}
@@ -932,29 +916,29 @@ export default function OrdersClient({
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 80 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>👥 סועדים</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>👥 סועדים</div>
                   <input type="number" min="1" max="50" value={posCovers} onChange={e => setPosCovers(e.target.value)} placeholder="כמות" style={DK_INPUT} />
                 </div>
                 <div style={{ flex: 2, minWidth: 140 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>הערות</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>הערות</div>
                   <input value={posNotes} onChange={e => setPosNotes(e.target.value)} placeholder="הערות להזמנה..." style={DK_INPUT} />
                 </div>
               </div>
-              <div style={{ background: D.inputBg, borderRadius: 12, padding: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>הוסף פריט</div>
+              <div style={{ background: T.overlay, borderRadius: 12, padding: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>הוסף פריט</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <input value={posNewItem.name} onChange={e => setPosNewItem(p=>({...p,name:e.target.value}))} placeholder="שם המנה"
-                    style={{ flex: 3, minWidth: 120, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, outline: "none" }} />
+                    style={{ flex: 3, minWidth: 120, background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, outline: "none" }} />
                   <input type="number" min="0" step="0.5" value={posNewItem.price} onChange={e => setPosNewItem(p=>({...p,price:e.target.value}))} placeholder="₪ מחיר"
-                    style={{ flex: 1, minWidth: 70, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, outline: "none" }} />
+                    style={{ flex: 1, minWidth: 70, background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, outline: "none" }} />
                   <select value={posNewItem.course} onChange={e => setPosNewItem(p=>({...p,course:Number(e.target.value)}))}
-                    style={{ flex: 1, minWidth: 85, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 8px", fontSize: 13, outline: "none" }}>
+                    style={{ flex: 1, minWidth: 85, background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 8px", fontSize: 13, outline: "none" }}>
                     <option value={1}>🥗 ראשון</option>
                     <option value={2}>🍖 עיקרי</option>
                     <option value={3}>🍮 קינוח</option>
                   </select>
                   <input type="number" min="1" max="20" value={posNewItem.qty} onChange={e => setPosNewItem(p=>({...p,qty:Number(e.target.value)}))}
-                    style={{ width: 44, background: "#1e2128", border: `1px solid ${D.inputBrd}`, color: D.text, borderRadius: 8, padding: "7px 8px", fontSize: 13, outline: "none", textAlign: "center" }} />
+                    style={{ width: 44, background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 8px", fontSize: 13, outline: "none", textAlign: "center" }} />
                   <button type="button"
                     onClick={() => { if(!posNewItem.name||!posNewItem.price) return; setPosItems(prev=>[...prev,{name:posNewItem.name,price:Number(posNewItem.price),course:posNewItem.course,qty:posNewItem.qty}]); setPosNewItem({name:"",price:"",course:posNewItem.course,qty:1}); }}
                     style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
@@ -963,35 +947,35 @@ export default function OrdersClient({
                 </div>
               </div>
               {posItems.length > 0 && (
-                <div style={{ background: D.inputBg, borderRadius: 12, padding: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>פריטים בהזמנה</div>
+                <div style={{ background: T.overlay, borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>פריטים בהזמנה</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {posItems.map((item, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1e2128", borderRadius: 8, padding: "7px 10px", border: `1px solid ${D.inputBrd}` }}>
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, background: T.raised, borderRadius: 8, padding: "7px 10px", border: `1px solid ${T.border}` }}>
                         <span style={{ fontSize: 14 }}>{COURSE_EMOJI[item.course] ?? "🍽"}</span>
-                        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: D.text }}>×{item.qty} {item.name}</span>
-                        <span style={{ fontSize: 13, color: D.sub }}>₪{(item.price * item.qty).toFixed(0)}</span>
+                        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: T.text }}>×{item.qty} {item.name}</span>
+                        <span style={{ fontSize: 13, color: T.sub }}>₪{(item.price * item.qty).toFixed(0)}</span>
                         {item.course > 1 && (
-                          <span style={{ fontSize: 11, color: D.purple, background: "rgba(124,58,237,.2)", padding: "2px 7px", borderRadius: 20 }}>{COURSE_LABEL[item.course]}</span>
+                          <span style={{ fontSize: 11, color: T.purple, background: "rgba(124,58,237,.2)", padding: "2px 7px", borderRadius: 20 }}>{COURSE_LABEL[item.course]}</span>
                         )}
                         <button type="button" onClick={() => setPosItems(prev => prev.filter((_,i) => i !== idx))}
-                          style={{ color: D.red, background: "none", border: "none", cursor: "pointer", fontSize: 16 }}>×</button>
+                          style={{ color: T.red, background: "none", border: "none", cursor: "pointer", fontSize: 16 }}>×</button>
                       </div>
                     ))}
-                    <div style={{ fontSize: 15, fontWeight: 900, color: D.text, paddingTop: 6, borderTop: `1px solid ${D.inputBrd}`, marginTop: 2 }}>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: T.text, paddingTop: 6, borderTop: `1px solid ${T.border}`, marginTop: 2 }}>
                       סה&quot;כ: ₪{posItems.reduce((s, i) => s + i.price * i.qty, 0).toFixed(0)}
                     </div>
                   </div>
                 </div>
               )}
               {posItems.some(i => i.course > 1) && (
-                <div style={{ background: "rgba(124,58,237,.12)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: D.purple, border: "1px solid rgba(124,58,237,.25)" }}>
+                <div style={{ background: "rgba(124,58,237,.12)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: T.purple, border: "1px solid rgba(124,58,237,.25)" }}>
                   🔥 מנות עיקריות/קינוח יוחזקו עד שתלחץ &quot;הצת קורס&quot; על השולחן
                 </div>
               )}
             </div>
-            <div style={{ padding: "12px 20px", borderTop: `1px solid ${D.border}`, display: "flex", gap: 10 }}>
-              <button type="button" onClick={() => setShowPosModal(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>ביטול</button>
+            <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", gap: 10 }}>
+              <button type="button" onClick={() => setShowPosModal(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: `1px solid ${T.border}`, background: T.overlay, color: T.sub, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>ביטול</button>
               <button type="button" onClick={createWaiterOrder} disabled={posSubmitting||!posTable||posItems.length===0}
                 style={{ flex: 2, padding: "11px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#5b21b6,#7c3aed)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: posSubmitting||!posTable||posItems.length===0?"not-allowed":"pointer", opacity: posSubmitting||!posTable||posItems.length===0?0.55:1 }}>
                 {posSubmitting ? "שולח..." : "🔥 שלח למטבח"}
@@ -1010,12 +994,12 @@ export default function OrdersClient({
             {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
-        <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: `1px solid ${D.inputBrd}` }}>
+        <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: `1px solid ${T.border}` }}>
           {(["active", "all"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
               style={{ padding: "8px 18px", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
-                background: filter === f ? "linear-gradient(135deg,#8B6914,#C9A84C)" : D.inputBg,
-                color: filter === f ? "#fff" : D.sub }}>
+                background: filter === f ? "linear-gradient(135deg,#8B6914,#C9A84C)" : T.overlay,
+                color: filter === f ? "#fff" : T.sub }}>
               {f === "active" ? "פעילות" : "הכל"}
             </button>
           ))}
@@ -1026,27 +1010,27 @@ export default function OrdersClient({
         </button>
         <div style={{ position: "relative" }}>
           <button onClick={() => setShowDateFilter(p => !p)} title="סינון תאריך"
-            style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${showDateFilter||dateFrom||dateTo ? D.amber : D.inputBrd}`, background: showDateFilter||dateFrom||dateTo ? "rgba(252,196,25,.1)" : D.inputBg, color: showDateFilter||dateFrom||dateTo ? D.amber : D.sub, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${showDateFilter||dateFrom||dateTo ? T.gold : T.border}`, background: showDateFilter||dateFrom||dateTo ? "rgba(252,196,25,.1)" : T.overlay, color: showDateFilter||dateFrom||dateTo ? T.gold : T.sub, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>
             📅{dateFrom || dateTo ? "✦" : ""}
           </button>
           {showDateFilter && (
-            <div style={{ position: "absolute", top: 42, right: 0, zIndex: 20, background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,.4)", padding: 16, display: "flex", flexDirection: "column", gap: 10, minWidth: 260 }} dir="rtl">
-              <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: ".05em" }}>סינון לפי תאריך</div>
+            <div style={{ position: "absolute", top: 42, right: 0, zIndex: 20, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,.4)", padding: 16, display: "flex", flexDirection: "column", gap: 10, minWidth: 260 }} dir="rtl">
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".05em" }}>סינון לפי תאריך</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, color: D.muted, width: 24 }}>מ-</span>
+                  <span style={{ fontSize: 12, color: T.muted, width: 24 }}>מ-</span>
                   <input type="datetime-local" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                     style={{ flex: 1, ...DK_INPUT, padding: "6px 10px", fontSize: 12 }} />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, color: D.muted, width: 24 }}>עד-</span>
+                  <span style={{ fontSize: 12, color: T.muted, width: 24 }}>עד-</span>
                   <input type="datetime-local" value={dateTo} onChange={e => setDateTo(e.target.value)}
                     style={{ flex: 1, ...DK_INPUT, padding: "6px 10px", fontSize: 12 }} />
                 </div>
               </div>
               {(dateFrom || dateTo) && (
                 <button onClick={() => { setDateFrom(""); setDateTo(""); setShowDateFilter(false); }}
-                  style={{ fontSize: 12, color: D.red, background: "rgba(255,107,107,.1)", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}>
+                  style={{ fontSize: 12, color: T.red, background: "rgba(255,107,107,.1)", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}>
                   ✕ נקה סינון
                 </button>
               )}
@@ -1054,63 +1038,63 @@ export default function OrdersClient({
           )}
         </div>
         <button onClick={() => setSoundEnabled(p => !p)} title={soundEnabled ? "כבה צליל" : "הפעל צליל"}
-          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.border}`, background: T.overlay, color: T.sub, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {soundEnabled ? "🔔" : "🔕"}
         </button>
         <button onClick={() => fetchOrders(true)} disabled={refreshing}
-          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: refreshing ? 0.5 : 1 }}>
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.border}`, background: T.overlay, color: T.sub, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: refreshing ? 0.5 : 1 }}>
           <svg width="16" height="16" style={{ animation: refreshing ? "spin 1s linear infinite" : undefined }} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
         <button onClick={() => setIsFullscreen(p => !p)} title={isFullscreen ? "יציאה ממסך מלא (Esc)" : "מסך מלא (F)"}
-          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${D.inputBrd}`, background: D.inputBg, color: D.sub, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.border}`, background: T.overlay, color: T.sub, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {isFullscreen ? (
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"/></svg>
           ) : (
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
           )}
         </button>
-        <span style={{ fontSize: 12, color: D.muted, marginRight: "auto" }}>
+        <span style={{ fontSize: 12, color: T.muted, marginRight: "auto" }}>
           {tableEntries.filter(e => !e.isClosed).length} שולחנות · {totalItems} מנות · {lastRefresh.toLocaleTimeString("he-IL")}
         </span>
       </div>
 
       {/* ── Action Rail ── */}
       {hasRail && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderRadius: 14, overflow: "hidden", border: `1px solid ${D.border}`, marginBottom: 16, background: D.card }} dir="rtl">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderRadius: 14, overflow: "hidden", border: `1px solid ${T.border}`, marginBottom: 16, background: T.surface }} dir="rtl">
           {/* Confirm */}
-          <div style={{ padding: 12, borderRight: `3px solid ${D.amber}` }}>
+          <div style={{ padding: 12, borderRight: `3px solid ${T.gold}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <span>🕐</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: D.amber, textTransform: "uppercase", letterSpacing: ".05em" }}>לאישור</span>
-              {railConfirm.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(252,196,25,.2)", color: D.amber, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railConfirm.length}</span>}
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.gold, textTransform: "uppercase", letterSpacing: ".05em" }}>לאישור</span>
+              {railConfirm.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(252,196,25,.2)", color: T.gold, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railConfirm.length}</span>}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
               {railConfirm.length === 0
-                ? <span style={{ fontSize: 11, color: D.muted }}>אין</span>
+                ? <span style={{ fontSize: 11, color: T.muted }}>אין</span>
                 : railConfirm.map(t => (
                   <button key={t} onClick={() => scrollToTable(t)}
-                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(252,196,25,.15)", color: D.amber, border: `1px solid rgba(252,196,25,.3)`, cursor: "pointer" }}>
+                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(252,196,25,.15)", color: T.gold, border: `1px solid rgba(252,196,25,.3)`, cursor: "pointer" }}>
                     {t}
                   </button>
                 ))}
             </div>
           </div>
           {/* Serve */}
-          <div style={{ padding: 12, borderRight: `1px solid ${D.border}`, borderLeft: `1px solid ${D.border}` }}>
+          <div style={{ padding: 12, borderRight: `1px solid ${T.border}`, borderLeft: `1px solid ${T.border}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <span>✅</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: D.blue, textTransform: "uppercase", letterSpacing: ".05em" }}>להגשה</span>
-              {railServe.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(51,154,240,.2)", color: D.blue, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railServe.length}</span>}
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.blue, textTransform: "uppercase", letterSpacing: ".05em" }}>להגשה</span>
+              {railServe.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(51,154,240,.2)", color: T.blue, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railServe.length}</span>}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
               {railServe.length === 0
-                ? <span style={{ fontSize: 11, color: D.muted }}>אין</span>
+                ? <span style={{ fontSize: 11, color: T.muted }}>אין</span>
                 : railServe.map(t => (
                   <button key={t} onClick={() => scrollToTable(t)}
-                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(51,154,240,.15)", color: D.blue, border: `1px solid rgba(51,154,240,.3)`, cursor: "pointer" }}>
+                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(51,154,240,.15)", color: T.blue, border: `1px solid rgba(51,154,240,.3)`, cursor: "pointer" }}>
                     {t}
                   </button>
                 ))}
@@ -1120,15 +1104,15 @@ export default function OrdersClient({
           <div style={{ padding: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <span>💳</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: D.green, textTransform: "uppercase", letterSpacing: ".05em" }}>לחשבון</span>
-              {railBill.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(81,207,102,.2)", color: D.green, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railBill.length}</span>}
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.green, textTransform: "uppercase", letterSpacing: ".05em" }}>לחשבון</span>
+              {railBill.length > 0 && <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(81,207,102,.2)", color: T.green, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{railBill.length}</span>}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
               {railBill.length === 0
-                ? <span style={{ fontSize: 11, color: D.muted }}>אין</span>
+                ? <span style={{ fontSize: 11, color: T.muted }}>אין</span>
                 : railBill.map(t => (
                   <button key={t} onClick={() => scrollToTable(t)}
-                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(81,207,102,.15)", color: D.green, border: `1px solid rgba(81,207,102,.3)`, cursor: "pointer" }}>
+                    style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "rgba(81,207,102,.15)", color: T.green, border: `1px solid rgba(81,207,102,.3)`, cursor: "pointer" }}>
                     {t}
                   </button>
                 ))}
@@ -1158,10 +1142,10 @@ export default function OrdersClient({
 
       {/* ── Tables grid ── */}
       {tableEntries.length === 0 ? (
-        <div style={{ background: D.card, borderRadius: 16, border: `1px solid ${D.border}`, padding: "64px 32px", textAlign: "center" }}>
+        <div style={{ background: T.surface, borderRadius: 16, border: `1px solid ${T.border}`, padding: "64px 32px", textAlign: "center" }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🍽</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: D.sub }}>אין הזמנות {filter === "active" ? "פעילות" : ""}</div>
-          <div style={{ fontSize: 13, color: D.muted, marginTop: 6 }}>הדף מתרענן אוטומטית כל 10 שניות</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: T.sub }}>אין הזמנות {filter === "active" ? "פעילות" : ""}</div>
+          <div style={{ fontSize: 13, color: T.muted, marginTop: 6 }}>הדף מתרענן אוטומטית כל 10 שניות</div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }} dir="rtl">
@@ -1180,7 +1164,7 @@ export default function OrdersClient({
           )}
           {tableEntries.filter(e => e.isClosed).length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, paddingRight: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>שולחנות סגורים</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, paddingRight: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>שולחנות סגורים</div>
               {tableEntries.filter(e => e.isClosed).map(({ table, tableOrders: tOrds }) => (
                 <TableCard
                   key={table} tableNumber={table} orders={tOrds}
