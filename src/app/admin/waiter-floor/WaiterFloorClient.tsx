@@ -473,7 +473,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
       {/* ── Topbar ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: `1px solid ${T.border}`, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(8px)", flexShrink: 0 }}>
         <span style={{ fontWeight: 800, fontSize: 15, color: T.gold }}>🍽 רצפת שירות</span>
-        <span style={{ color: T.muted, fontSize: 13 }}>— {waiterName}</span>
+        <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>— {waiterName}</span>
 
         {/* Restaurant picker */}
         {restaurants.length > 1 && (
@@ -502,7 +502,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
             return (
               <div key={s} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: `${colors[s]}22`, border: `1px solid ${colors[s]}55`, fontSize: 12 }}>
                 <span style={{ fontWeight: 800, color: colors[s] }}>{count}</span>
-                <span style={{ color: T.sub }}>{labels[s]}</span>
+                <span style={{ color: "rgba(255,255,255,0.7)" }}>{labels[s]}</span>
               </div>
             );
           })}
@@ -517,7 +517,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
               padding: "4px 14px", borderRadius: 20, fontSize: 13, fontWeight: i === roomIdx ? 700 : 400, cursor: "pointer",
               background: i === roomIdx ? `${T.gold}22` : "transparent",
               border: `1px solid ${i === roomIdx ? T.gold : T.border}`,
-              color: i === roomIdx ? T.gold : T.sub,
+              color: i === roomIdx ? T.gold : "rgba(255,255,255,0.6)",
             }}>{room.name}</button>
           ))}
         </div>
