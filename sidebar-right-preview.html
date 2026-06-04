@@ -171,21 +171,21 @@
     .favs-panel {
       position: fixed;
       right: 52px;
-      /* top set dynamically by JS */
       width: 240px;
       max-height: 400px;
       background: #ffffff;
       border: 1px solid rgba(180,140,60,0.22);
       border-radius: 12px 0 0 12px;
-      z-index: 350;
+      z-index: 250; /* below drawer (300) so drawer covers it */
       display: flex; flex-direction: column;
       transform: translateX(260px);
       transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
       box-shadow: -6px 4px 24px rgba(0,0,0,0.1);
       overflow: hidden;
       pointer-events: none;
+      visibility: hidden;
     }
-    .favs-panel.open { transform: translateX(0); pointer-events: auto; }
+    .favs-panel.open { transform: translateX(0); pointer-events: auto; visibility: visible; }
 
     .favs-panel-header {
       display: flex; align-items: center; gap: 8px;
@@ -344,6 +344,12 @@
   <div class="drawer" id="drawer">
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
     <div class="drawer-content">
+
+      <!-- Logo at top of drawer -->
+      <div style="padding: 0 0 16px; border-bottom: 1px solid rgba(180,140,60,0.15); margin-bottom: 14px;">
+        <div style="font-family:'Rubik',sans-serif; font-size:20px; font-weight:900; letter-spacing:-0.5px; background:linear-gradient(110deg,#7a4e04,#c9890a,#e8b84b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1;">Menu4U</div>
+        <div style="font-size:10px; color:#9a8060; margin-top:3px; font-family:'Heebo',sans-serif;">Restaurant OS</div>
+      </div>
 
       <a class="nav-standalone" href="#">▪ דשבורד</a>
 
