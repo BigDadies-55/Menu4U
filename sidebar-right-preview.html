@@ -166,6 +166,40 @@
 
     .group-padding { padding: 6px 0 4px; }
 
+    /* ══════════ FAVORITES ══════════ */
+    .favs-section {
+      border-bottom: 1px solid rgba(180,140,60,0.15);
+      padding: 10px 0 6px;
+      margin-bottom: 4px;
+    }
+    .favs-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 0 8px;
+      font-size: 10px; font-weight: 800; letter-spacing: 1.2px;
+      text-transform: uppercase; color: #9a8060;
+    }
+    .favs-empty {
+      font-size: 11px; color: #c0a878; padding: 4px 0 6px;
+      font-style: italic;
+    }
+    .fav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 7px;
+      font-size: 13px; color: #5a4020; text-decoration: none;
+      transition: all 0.12s; cursor: pointer; position: relative;
+    }
+    .fav-item:hover { background: rgba(201,137,10,0.07); color: #1a1208; }
+    .fav-star {
+      font-size: 12px; color: #c9890a; flex-shrink: 0;
+    }
+    .fav-remove {
+      margin-right: auto; opacity: 0; font-size: 13px; color: #9a8060;
+      cursor: pointer; padding: 0 2px; transition: opacity 0.15s;
+      background: none; border: none; flex-shrink: 0;
+    }
+    .fav-item:hover .fav-remove { opacity: 1; }
+    .fav-remove:hover { color: #e05252; }
+
     /* ══════════ USER ══════════ */
     .drawer-user {
       margin-top: auto;
@@ -257,6 +291,16 @@
 
     <div class="drawer-content">
 
+      <!-- Favorites -->
+      <div class="favs-section" id="favsSection">
+        <div class="favs-header">
+          <span>⭐ מועדפים</span>
+        </div>
+        <div id="favsList">
+          <div class="favs-empty" id="favsEmpty">לחץ ★ ליד פריט להוספה</div>
+        </div>
+      </div>
+
       <!-- Dashboard -->
       <a class="nav-standalone" href="#">▪ דשבורד</a>
 
@@ -267,12 +311,12 @@
       </button>
       <div class="group-items open">
         <div class="group-padding">
-          <a class="sub-item" href="#"><span class="sub-icon">🍴</span> מסעדות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">🏢</span> רשתות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">📋</span> תפריטים</a>
-          <a class="sub-item" href="#"><span class="sub-icon">👥</span> משתמשים</a>
-          <a class="sub-item active" href="#"><span class="sub-icon">⚙️</span> הגדרות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">📊</span> לוגים</a>
+          <a class="sub-item" href="#"><span class="sub-icon">🍴</span> מסעדות<button class="fav-remove" onclick="toggleFav(event,'מסעדות','🍴')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🏢</span> רשתות<button class="fav-remove" onclick="toggleFav(event,'רשתות','🏢')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📋</span> תפריטים<button class="fav-remove" onclick="toggleFav(event,'תפריטים','📋')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">👥</span> משתמשים<button class="fav-remove" onclick="toggleFav(event,'משתמשים','👥')">★</button></a>
+          <a class="sub-item active" href="#"><span class="sub-icon">⚙️</span> הגדרות<button class="fav-remove" onclick="toggleFav(event,'הגדרות','⚙️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📊</span> לוגים<button class="fav-remove" onclick="toggleFav(event,'לוגים','📊')">★</button></a>
         </div>
       </div>
 
@@ -283,15 +327,15 @@
       </button>
       <div class="group-items">
         <div class="group-padding">
-          <a class="sub-item" href="#"><span class="sub-icon">📦</span> הזמנות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">💳</span> קאשייר</a>
-          <a class="sub-item" href="#"><span class="sub-icon">🗺️</span> רצפת שירות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">🎛️</span> מנהל משמרת</a>
-          <a class="sub-item" href="#"><span class="sub-icon">🍽️</span> הזמנת מלצר</a>
-          <a class="sub-item" href="#"><span class="sub-icon">📐</span> פריסת שולחנות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">📈</span> סטטיסטיקות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">⭐</span> מועדון לקוחות</a>
-          <a class="sub-item" href="#"><span class="sub-icon">📱</span> קשרי לקוחות</a>
+          <a class="sub-item" href="#"><span class="sub-icon">📦</span> הזמנות<button class="fav-remove" onclick="toggleFav(event,'הזמנות','📦')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">💳</span> קאשייר<button class="fav-remove" onclick="toggleFav(event,'קאשייר','💳')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🗺️</span> רצפת שירות<button class="fav-remove" onclick="toggleFav(event,'רצפת שירות','🗺️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🎛️</span> מנהל משמרת<button class="fav-remove" onclick="toggleFav(event,'מנהל משמרת','🎛️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🍽️</span> הזמנת מלצר<button class="fav-remove" onclick="toggleFav(event,'הזמנת מלצר','🍽️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📐</span> פריסת שולחנות<button class="fav-remove" onclick="toggleFav(event,'פריסת שולחנות','📐')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📈</span> סטטיסטיקות<button class="fav-remove" onclick="toggleFav(event,'סטטיסטיקות','📈')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">⭐</span> מועדון לקוחות<button class="fav-remove" onclick="toggleFav(event,'מועדון לקוחות','⭐')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📱</span> קשרי לקוחות<button class="fav-remove" onclick="toggleFav(event,'קשרי לקוחות','📱')">★</button></a>
         </div>
       </div>
 
@@ -302,10 +346,10 @@
       </button>
       <div class="group-items">
         <div class="group-padding">
-          <a class="sub-item" href="#"><span class="sub-icon">🖥️</span> תצוגת שולחן</a>
-          <a class="sub-item" href="#"><span class="sub-icon">🌑</span> Station Dark</a>
-          <a class="sub-item" href="#"><span class="sub-icon">📋</span> Kanban</a>
-          <a class="sub-item" href="#"><span class="sub-icon">🎫</span> Ticket Board</a>
+          <a class="sub-item" href="#"><span class="sub-icon">🖥️</span> תצוגת שולחן<button class="fav-remove" onclick="toggleFav(event,'תצוגת שולחן','🖥️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🌑</span> Station Dark<button class="fav-remove" onclick="toggleFav(event,'Station Dark','🌑')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📋</span> Kanban<button class="fav-remove" onclick="toggleFav(event,'Kanban','📋')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🎫</span> Ticket Board<button class="fav-remove" onclick="toggleFav(event,'Ticket Board','🎫')">★</button></a>
         </div>
       </div>
 
@@ -349,6 +393,7 @@
 
   <script>
     let isOpen = false;
+    let favs = {}; // { label: icon }
 
     function toggleDrawer() { isOpen ? closeDrawer() : openDrawer(); }
 
@@ -377,9 +422,56 @@
 
     function toggleGroup(btn) {
       const items = btn.nextElementSibling;
-      const isOpen = btn.classList.contains('open');
-      btn.classList.toggle('open', !isOpen);
-      items.classList.toggle('open', !isOpen);
+      const open = btn.classList.contains('open');
+      btn.classList.toggle('open', !open);
+      items.classList.toggle('open', !open);
+    }
+
+    function toggleFav(e, label, icon) {
+      e.preventDefault(); e.stopPropagation();
+      if (favs[label]) {
+        delete favs[label];
+        e.target.style.color = '';
+        e.target.style.opacity = '';
+      } else {
+        favs[label] = icon;
+        e.target.style.color = '#c9890a';
+        e.target.style.opacity = '1';
+      }
+      renderFavs();
+    }
+
+    function renderFavs() {
+      const list = document.getElementById('favsList');
+      const empty = document.getElementById('favsEmpty');
+      const keys = Object.keys(favs);
+      if (keys.length === 0) {
+        empty.style.display = 'block';
+        list.querySelectorAll('.fav-item').forEach(el => el.remove());
+        return;
+      }
+      empty.style.display = 'none';
+      list.querySelectorAll('.fav-item').forEach(el => el.remove());
+      keys.forEach(label => {
+        const a = document.createElement('a');
+        a.className = 'fav-item';
+        a.href = '#';
+        a.innerHTML = `<span class="fav-star">${favs[label]}</span>${label}<button class="fav-remove" style="opacity:1;color:#c9890a;" onclick="removeFav(event,'${label}')">✕</button>`;
+        list.appendChild(a);
+      });
+    }
+
+    function removeFav(e, label) {
+      e.preventDefault(); e.stopPropagation();
+      delete favs[label];
+      // reset the star button in the list
+      document.querySelectorAll('.fav-remove').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${label}'`)) {
+          btn.style.color = '';
+          btn.style.opacity = '';
+        }
+      });
+      renderFavs();
     }
   </script>
 
