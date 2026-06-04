@@ -94,8 +94,6 @@ export default function AdminShell({
       >
         <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
 
-        <PageTitle />
-
         <div className="flex-1">
           {children}
         </div>
