@@ -266,7 +266,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   );
 
   return (
-    <div className="p-4 md:p-8" style={{ background: T.bg, minHeight: "100vh", color: T.text }}>
+    <div className="p-4 md:p-8" style={{ color: T.text }}>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-8">

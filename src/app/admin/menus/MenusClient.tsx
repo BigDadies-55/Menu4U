@@ -1033,7 +1033,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const isSingleMenu = (selectedRestaurant?.menus.length ?? 0) <= 1;
 
   return (
-    <div className="p-4 md:p-8" style={{ background: T.surface, minHeight: "100vh", color: T.text }}>
+    <div className="p-4 md:p-8" style={{ color: T.text }}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: T.text }}>ניהול תפריטים</h1>
         {selectedRestaurant && (

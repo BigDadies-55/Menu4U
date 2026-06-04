@@ -202,7 +202,7 @@ export default function LogsClient() {
   const hasFilters = !!(filterAction || filterEntity || search || dateFrom || dateTo);
 
   return (
-    <div className="p-4 md:p-6" dir="rtl" style={{ background: T.bg, minHeight: "100vh", color: T.text }}>
+    <div className="p-4 md:p-6" dir="rtl" style={{ color: T.text }}>
 
       {/* Header */}
       <div className="flex items-center justify-between" style={{ marginBottom: 20 }}>

@@ -33,7 +33,7 @@ export default async function AdminDashboard() {
   const stats = await getStats(session.user.id, session.user.role);
 
   return (
-    <div style={{ background: T.surface, minHeight: "100vh" }}>
+    <div style={{}}>
       <DashboardExtra
         isSuperAdmin={session.user.role === "SUPER_ADMIN"}
         restaurants={(stats.restaurantDetails ?? []).map(r => ({ id: r.id, name: r.name }))}

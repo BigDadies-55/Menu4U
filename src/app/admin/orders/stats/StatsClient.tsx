@@ -241,7 +241,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
   }
 
   return (
-    <div style={{ background: T.bg, minHeight: "100vh", padding: "24px", direction: "rtl" }}>
+    <div style={{ padding: "24px", direction: "rtl" }}>
 
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>

@@ -328,7 +328,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
   );
 
   return (
-    <div className="p-4 md:p-8" style={{ background: T.surface, minHeight: "100vh", color: T.text }}>
+    <div className="p-4 md:p-8" style={{ color: T.text }}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: T.text }}>ניהול מסעדות</h1>
