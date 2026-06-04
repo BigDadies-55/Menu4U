@@ -45,8 +45,7 @@ export default function PageTitle() {
   return (
     <div style={{
       padding: "18px 32px 14px",
-      borderBottom: "1px solid rgba(180,140,60,0.15)",
-      background: "linear-gradient(135deg,#f0ece3,#e8dcc8)",
+      background: "transparent",
       direction: "rtl",
     }}>
       {/* Title row */}
@@ -66,9 +65,7 @@ export default function PageTitle() {
         {/* Page name */}
         <h1 className={frankRuhl.className} style={{
           fontSize: 28, fontWeight: 900, lineHeight: 1, margin: 0,
-          background: "linear-gradient(110deg,#7a4e04 0%,#c9890a 45%,#e8b84b 100%)",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
+          color: "#1a1208",
         }}>
           {page.name}
         </h1>
