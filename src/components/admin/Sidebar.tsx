@@ -200,8 +200,8 @@ export default function Sidebar({
   /* ── Floating panels ── */
   const [favPanelOpen,    setFavPanelOpen]    = useState(false);
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
-  const [favBtnTop,       setFavBtnTop]       = useState(0);
-  const [searchBtnTop,    setSearchBtnTop]    = useState(0);
+  const [favBtnTop,          setFavBtnTop]          = useState(0);
+  const [searchBtnFromBottom, setSearchBtnFromBottom] = useState(0);
 
   const favBtnRef      = useRef<HTMLButtonElement>(null);
   const searchBtnRef   = useRef<HTMLButtonElement>(null);
@@ -363,7 +363,8 @@ export default function Sidebar({
     setDrawerOpen(false);
     setFavPanelOpen(false);
     if (searchBtnRef.current) {
-      setSearchBtnTop(searchBtnRef.current.getBoundingClientRect().top);
+      const rect = searchBtnRef.current.getBoundingClientRect();
+      setSearchBtnFromBottom(window.innerHeight - rect.bottom);
     }
     setSearchPanelOpen(true);
   }
@@ -934,9 +935,9 @@ export default function Sidebar({
         style={{
           position: "fixed",
           right: 52,
-          top: searchBtnTop,
+          bottom: searchBtnFromBottom,
           width: 260,
-          maxHeight: `calc(100vh - ${searchBtnTop + 16}px)`,
+          maxHeight: `calc(100vh - ${searchBtnFromBottom + 16}px)`,
           background: "#ffffff",
           border: "1px solid rgba(180,140,60,0.22)",
           borderRadius: "12px 0 0 12px",
