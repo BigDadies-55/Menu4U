@@ -280,6 +280,22 @@
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 4px;
     }
+    .page-hero-bar {
+      flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 4px;
+      justify-content: center; margin-left: 6px;
+    }
+    .page-hero-bar span {
+      display: block; height: 2px; border-radius: 2px;
+    }
+    .page-hero-bar span:nth-child(1) {
+      width: 28px;
+      background: linear-gradient(to left, transparent, #e8b84b);
+    }
+    .page-hero-bar span:nth-child(2) {
+      width: 18px;
+      background: linear-gradient(to left, transparent, #c9890a);
+    }
     .page-hero-dot {
       font-size: 20px; line-height: 1; flex-shrink: 0;
       background: linear-gradient(135deg, #c9890a, #e8b84b);
@@ -448,6 +464,7 @@
   <div class="page">
     <div class="page-hero">
       <div class="page-hero-title">
+        <div class="page-hero-bar"><span></span><span></span></div>
         <span class="page-hero-dot">•</span>
         <span class="page-hero-text">דשבורד</span>
         <span class="page-hero-line"></span>
