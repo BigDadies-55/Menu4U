@@ -9,54 +9,32 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-      background: #f5f0e8;
-      color: #1a1208;
-      overflow-x: hidden;
+      background: #f5f0e8; color: #1a1208; overflow-x: hidden;
     }
 
     /* ══════════ FONTS ══════════ */
-    .strip, .drawer {
-      font-family: "Heebo", "Rubik", sans-serif;
-    }
-    .brand-name {
-      font-family: "Rubik", "Heebo", sans-serif;
-      letter-spacing: -0.5px;
-    }
-    .group-header { font-family: "Rubik", "Heebo", sans-serif; letter-spacing: 0.2px; }
-    .sub-item, .nav-standalone, .favs-header, .fav-item { font-family: "Heebo", sans-serif; }
+    .strip, .drawer, .favs-panel { font-family: "Heebo", "Rubik", sans-serif; }
+    .group-header { font-family: "Rubik", "Heebo", sans-serif; }
+    .sub-item, .nav-standalone, .fav-item { font-family: "Heebo", sans-serif; }
 
     /* ══════════ STRIP ══════════ */
     .strip {
-      position: fixed;
-      top: 0; right: 0;
-      width: 52px;
-      height: 100vh;
+      position: fixed; top: 0; right: 0;
+      width: 52px; height: 100vh;
       background: #ffffff;
       border-left: 1px solid rgba(180,140,60,0.18);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: flex; flex-direction: column; align-items: center;
       z-index: 200;
     }
     .strip-burger {
       width: 52px; height: 52px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; border: none; background: transparent; flex-shrink: 0;
-      border-bottom: 1px solid rgba(180,140,60,0.15);
-      transition: background 0.15s;
+      border-bottom: 1px solid rgba(180,140,60,0.15); transition: background 0.15s;
     }
     .strip-burger:hover { background: rgba(201,137,10,0.07); }
     .strip-burger svg { width: 20px; height: 20px; }
-    .strip-labels {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 32px; padding: 16px 0;
-    }
-    .strip-label {
-      writing-mode: vertical-rl; text-orientation: mixed;
-      transform: rotate(180deg);
-      font-size: 10px; font-weight: 600; color: #9a8060;
-      letter-spacing: 0.8px; white-space: nowrap;
-    }
+    .strip-spacer { flex: 1; }
     .strip-icons {
       display: flex; flex-direction: column;
       align-items: center; gap: 2px; padding-bottom: 16px;
@@ -64,31 +42,29 @@
     .strip-icon {
       width: 40px; height: 40px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px; cursor: pointer; color: #5a4020;
-      transition: background 0.15s; border: none; background: transparent;
+      cursor: pointer; color: #5a4020;
+      transition: background 0.15s, color 0.15s;
+      border: none; background: transparent;
     }
-    .strip-icon:hover { background: rgba(201,137,10,0.1); }
+    .strip-icon:hover { background: rgba(201,137,10,0.1); color: #c9890a; }
+    .strip-icon.active { color: #c9890a; }
 
     /* ══════════ OVERLAY ══════════ */
     .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0);
-      z-index: 290; pointer-events: none;
-      transition: background 0.35s;
+      position: fixed; inset: 0; background: rgba(0,0,0,0);
+      z-index: 290; pointer-events: none; transition: background 0.35s;
     }
     .overlay.open { background: rgba(0,0,0,0.3); pointer-events: auto; }
 
     /* ══════════ DRAWER ══════════ */
     .drawer {
-      position: fixed;
-      top: 0; right: 52px;
+      position: fixed; top: 0; right: 52px;
       width: 340px; height: 100vh;
       background: #ffffff;
       border-left: 1px solid rgba(180,140,60,0.15);
-      z-index: 300;
-      display: flex; flex-direction: column;
+      z-index: 300; display: flex; flex-direction: column;
       transform: translateX(400px);
-      transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.38s cubic-bezier(0.4,0,0.2,1);
       overflow-y: auto;
     }
     .drawer.open { transform: translateX(0); }
@@ -103,72 +79,85 @@
     }
     .drawer-close:hover { background: #f0ece3; }
 
-    /* ══════════ DRAWER CONTENT ══════════ */
-    .drawer-content {
-      padding: 56px 28px 24px;
-      display: flex; flex-direction: column; gap: 0;
-    }
+    .drawer-content { padding: 56px 28px 24px; display: flex; flex-direction: column; }
 
-    /* Dashboard standalone link */
+    /* Dashboard */
     .nav-standalone {
       display: flex; align-items: center; gap: 10px;
-      padding: 8px 0;
-      font-size: 14px; font-weight: 600; color: #c9890a;
+      padding: 8px 0; font-size: 14px; font-weight: 600; color: #c9890a;
       text-decoration: none;
       border-bottom: 1px solid rgba(180,140,60,0.12);
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
-    /* Primary group header — clickable to expand/collapse */
+    /* ══ GROUP HEADER — dot + gradient text + line ══ */
     .group-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 11px 0;
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 0 11px;
       font-size: 15px; font-weight: 800;
-      color: #1a1208;
-      border-bottom: 1px solid rgba(180,140,60,0.15);
       cursor: pointer;
-      background: none; border-top: none; border-right: none; border-left: none;
+      background: none; border: none;
       width: 100%; text-align: right;
-      font-family: inherit;
-      transition: color 0.15s;
-      user-select: none;
+      font-family: "Rubik", "Heebo", sans-serif;
+      user-select: none; position: relative;
     }
-    .group-header:hover { color: #c9890a; }
-    .group-header.active-group { color: #c9890a; }
 
-    .group-chevron {
-      font-size: 11px; color: #9a8060;
-      transition: transform 0.22s;
-      flex-shrink: 0;
+    /* dot */
+    .group-header::before {
+      content: "•";
+      font-size: 18px;
+      background: linear-gradient(135deg, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      flex-shrink: 0; line-height: 1;
     }
-    .group-header.open .group-chevron {
-      transform: rotate(180deg);
-      color: #c9890a;
+
+    /* label with gradient */
+    .group-label {
+      background: linear-gradient(135deg, #8a5c06, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .group-header:hover .group-label { opacity: 0.8; }
+
+    /* line that fills remaining space */
+    .group-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to left, transparent, rgba(201,137,10,0.4));
+      margin: 0 4px;
+    }
+
+    /* chevron */
+    .group-chevron {
+      font-size: 10px; color: #c9890a; opacity: 0.6;
+      transition: transform 0.22s, opacity 0.15s; flex-shrink: 0;
+    }
+    .group-header.open .group-chevron { transform: rotate(180deg); opacity: 1; }
+
+    /* full-width bottom border */
+    .group-header::after {
+      content: "";
+      position: absolute; bottom: 0; right: 0; left: 0;
+      height: 1px;
+      background: rgba(180,140,60,0.12);
     }
 
     /* Sub items */
-    .group-items {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
+    .group-items { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
     .group-items.open { max-height: 600px; }
+    .group-padding { padding: 6px 0 4px; }
 
     .sub-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 8px 12px;
-      font-size: 13px; color: #5a4020;
-      text-decoration: none;
-      border-radius: 8px;
-      transition: all 0.12s;
-      cursor: pointer;
-      margin: 1px 0;
+      padding: 8px 10px; font-size: 13px; color: #5a4020;
+      text-decoration: none; border-radius: 8px;
+      transition: all 0.12s; cursor: pointer; margin: 1px 0;
     }
     .sub-item:hover { background: rgba(201,137,10,0.07); color: #1a1208; }
-    .sub-item.active {
-      background: rgba(201,137,10,0.1);
-      color: #c9890a; font-weight: 600;
-    }
+    .sub-item.active { background: rgba(201,137,10,0.1); color: #c9890a; font-weight: 600; }
     .sub-icon {
       width: 26px; height: 26px; border-radius: 6px;
       background: rgba(201,137,10,0.08);
@@ -177,52 +166,87 @@
     }
     .sub-item.active .sub-icon { background: rgba(201,137,10,0.18); }
 
-    .group-padding { padding: 6px 0 4px; }
+    /* star button on hover */
+    .fav-star-btn {
+      margin-right: auto; opacity: 0; font-size: 13px; color: #c0a060;
+      cursor: pointer; padding: 0 3px; transition: opacity 0.15s, color 0.15s;
+      background: none; border: none; flex-shrink: 0; line-height: 1;
+    }
+    .sub-item:hover .fav-star-btn { opacity: 1; }
+    .fav-star-btn.starred { opacity: 1; color: #c9890a; }
+    .fav-star-btn:hover { color: #c9890a; }
 
-    /* ══════════ FAVORITES ══════════ */
-    .favs-section {
+    /* ══════════ FAVORITES PANEL (slides from strip) ══════════ */
+    .favs-panel {
+      position: fixed; top: 0; right: 52px;
+      width: 280px; height: 100vh;
+      background: #ffffff;
+      border-left: 1px solid rgba(180,140,60,0.2);
+      z-index: 310;
+      display: flex; flex-direction: column;
+      transform: translateX(340px);
+      transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+    }
+    .favs-panel.open { transform: translateX(0); }
+
+    .favs-panel-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px;
       border-bottom: 1px solid rgba(180,140,60,0.15);
-      padding: 10px 0 6px;
-      margin-bottom: 4px;
+      flex-shrink: 0;
     }
-    .favs-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 0 8px;
-      font-size: 10px; font-weight: 800; letter-spacing: 1.2px;
-      text-transform: uppercase; color: #9a8060;
+    .favs-panel-title {
+      font-size: 13px; font-weight: 800; letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #8a5c06, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      flex: 1;
     }
-    .favs-empty {
-      font-size: 11px; color: #c0a878; padding: 4px 0 6px;
-      font-style: italic;
+    .favs-panel-close {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1px solid rgba(180,140,60,0.25); background: transparent;
+      color: #9a8060; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .favs-panel-close:hover { background: #f0ece3; color: #5a4020; }
+
+    .favs-panel-list { flex: 1; padding: 12px 12px; overflow-y: auto; }
+    .favs-panel-empty {
+      font-size: 12px; color: #c0a878; padding: 12px 8px;
+      font-style: italic; text-align: center; margin-top: 20px;
     }
     .fav-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 8px; border-radius: 7px;
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 8px;
       font-size: 13px; color: #5a4020; text-decoration: none;
-      transition: all 0.12s; cursor: pointer; position: relative;
+      transition: all 0.12s; cursor: pointer; margin: 1px 0;
     }
     .fav-item:hover { background: rgba(201,137,10,0.07); color: #1a1208; }
-    .fav-star {
-      font-size: 12px; color: #c9890a; flex-shrink: 0;
+    .fav-icon-badge {
+      width: 26px; height: 26px; border-radius: 6px;
+      background: rgba(201,137,10,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0;
     }
-    .fav-remove {
-      margin-right: auto; opacity: 0; font-size: 13px; color: #9a8060;
-      cursor: pointer; padding: 0 2px; transition: opacity 0.15s;
-      background: none; border: none; flex-shrink: 0;
+    .fav-remove-btn {
+      margin-right: auto; opacity: 0; font-size: 12px;
+      color: #9a8060; cursor: pointer;
+      background: none; border: none; transition: opacity 0.15s, color 0.15s;
     }
-    .fav-item:hover .fav-remove { opacity: 1; }
-    .fav-remove:hover { color: #e05252; }
+    .fav-item:hover .fav-remove-btn { opacity: 1; }
+    .fav-remove-btn:hover { color: #e05252; }
 
     /* ══════════ USER ══════════ */
     .drawer-user {
-      margin-top: auto;
-      padding: 16px 28px;
+      margin-top: auto; padding: 16px 20px;
       border-top: 1px solid rgba(180,140,60,0.15);
       display: flex; align-items: center; gap: 10px;
     }
     .user-avatar {
       width: 34px; height: 34px; border-radius: 50%;
-      background: linear-gradient(135deg, #c9890a, #7a5a0e);
+      background: linear-gradient(135deg,#c9890a,#7a5a0e);
       display: flex; align-items: center; justify-content: center;
       font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0;
     }
@@ -236,25 +260,13 @@
       color: #5a4020; font-size: 11px; cursor: pointer;
       font-family: inherit; transition: all 0.15s;
     }
-    .user-action-btn:hover {
-      background: rgba(201,137,10,0.1); border-color: #c9890a; color: #c9890a;
-    }
+    .user-action-btn:hover { background: rgba(201,137,10,0.1); border-color: #c9890a; color: #c9890a; }
 
     /* ══════════ PAGE ══════════ */
     .page { margin-right: 52px; min-height: 100vh; }
-    .page-topbar {
-      background: #ffffff;
-      border-bottom: 1px solid rgba(180,140,60,0.18);
-      height: 52px; display: flex; align-items: center;
-      padding: 0 24px; gap: 12px;
-    }
-    .brand-name { font-size: 20px; font-weight: 900; color: #1a1208; }
-    .brand-name span { color: #c9890a; }
-    .breadcrumb { font-size: 13px; color: #9a8060; }
     .page-hero {
-      background: linear-gradient(135deg, #f0ece3, #e8dcc8);
-      padding: 48px 32px;
-      border-bottom: 1px solid rgba(180,140,60,0.15);
+      background: linear-gradient(135deg,#f0ece3,#e8dcc8);
+      padding: 48px 32px; border-bottom: 1px solid rgba(180,140,60,0.15);
     }
     .page-hero h1 { font-size: 26px; font-weight: 900; color: #1a1208; margin-bottom: 4px; }
     .page-hero p { color: #9a8060; font-size: 14px; }
@@ -267,8 +279,7 @@
       position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
       background: #1a1208; color: #fff; padding: 9px 20px;
       border-radius: 50px; font-size: 12px; z-index: 500;
-      pointer-events: none; white-space: nowrap;
-      transition: opacity 0.3s;
+      pointer-events: none; white-space: nowrap; transition: opacity 0.3s;
     }
   </style>
 </head>
@@ -276,6 +287,14 @@
 
   <!-- STRIP -->
   <aside class="strip">
+    <!-- Logo -->
+    <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid rgba(180,140,60,0.15);flex-shrink:0;cursor:pointer;">
+      <div style="display:flex;flex-direction:column;align-items:center;line-height:1;">
+        <span style="font-family:'Rubik',sans-serif;font-size:11px;font-weight:900;background:linear-gradient(135deg,#8a5c06,#c9890a,#e8b84b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.5px;">Menu</span>
+        <span style="font-family:'Rubik',sans-serif;font-size:11px;font-weight:900;background:linear-gradient(135deg,#c9890a,#e8b84b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.5px;">4U</span>
+      </div>
+    </div>
+
     <button class="strip-burger" id="burgerBtn" onclick="toggleDrawer()">
       <svg id="burgerIcon" viewBox="0 0 24 24" fill="none" stroke="#5a4020" stroke-width="2" stroke-linecap="round">
         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -283,18 +302,27 @@
         <line x1="3" y1="18" x2="21" y2="18"/>
       </svg>
     </button>
-    <div class="strip-labels"></div>
+    <div class="strip-spacer"></div>
     <div class="strip-icons">
+      <!-- Star / Favorites -->
+      <button class="strip-icon" id="favStripBtn" title="מועדפים" onclick="toggleFavsPanel()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </button>
+      <!-- Search -->
       <button class="strip-icon" title="חיפוש">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
       </button>
+      <!-- Settings -->
       <button class="strip-icon" title="הגדרות">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
         </svg>
       </button>
+      <!-- User -->
       <button class="strip-icon" title="משתמש">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -304,7 +332,18 @@
   </aside>
 
   <!-- OVERLAY -->
-  <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+  <div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+  <!-- FAVORITES PANEL -->
+  <div class="favs-panel" id="favsPanel">
+    <div class="favs-panel-header">
+      <span class="favs-panel-title">מועדפים</span>
+      <button class="favs-panel-close" onclick="closeFavsPanel()">✕</button>
+    </div>
+    <div class="favs-panel-list" id="favsPanelList">
+      <div class="favs-panel-empty" id="favsPanelEmpty">לחץ ★ ליד פריט בתפריט להוספה</div>
+    </div>
+  </div>
 
   <!-- DRAWER -->
   <div class="drawer" id="drawer">
@@ -312,71 +351,63 @@
 
     <div class="drawer-content">
 
-      <!-- Favorites -->
-      <div class="favs-section" id="favsSection">
-        <div class="favs-header">
-          <span>⭐ מועדפים</span>
-        </div>
-        <div id="favsList">
-          <div class="favs-empty" id="favsEmpty">לחץ ★ ליד פריט להוספה</div>
-        </div>
-      </div>
-
       <!-- Dashboard -->
       <a class="nav-standalone" href="#">▪ דשבורד</a>
 
       <!-- ── ניהול ── -->
       <button class="group-header open" onclick="toggleGroup(this)">
-        ניהול
+        <span class="group-label">ניהול</span>
+        <span class="group-line"></span>
         <span class="group-chevron">▾</span>
       </button>
       <div class="group-items open">
         <div class="group-padding">
-          <a class="sub-item" href="#"><span class="sub-icon">🍴</span> מסעדות<button class="fav-remove" onclick="toggleFav(event,'מסעדות','🍴')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">🏢</span> רשתות<button class="fav-remove" onclick="toggleFav(event,'רשתות','🏢')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">📋</span> תפריטים<button class="fav-remove" onclick="toggleFav(event,'תפריטים','📋')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">👥</span> משתמשים<button class="fav-remove" onclick="toggleFav(event,'משתמשים','👥')">★</button></a>
-          <a class="sub-item active" href="#"><span class="sub-icon">⚙️</span> הגדרות<button class="fav-remove" onclick="toggleFav(event,'הגדרות','⚙️')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">📊</span> לוגים<button class="fav-remove" onclick="toggleFav(event,'לוגים','📊')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🍴</span> מסעדות<button class="fav-star-btn" onclick="toggleFav(event,'מסעדות','🍴')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🏢</span> רשתות<button class="fav-star-btn" onclick="toggleFav(event,'רשתות','🏢')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📋</span> תפריטים<button class="fav-star-btn" onclick="toggleFav(event,'תפריטים','📋')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">👥</span> משתמשים<button class="fav-star-btn" onclick="toggleFav(event,'משתמשים','👥')">★</button></a>
+          <a class="sub-item active" href="#"><span class="sub-icon">⚙️</span> הגדרות<button class="fav-star-btn" onclick="toggleFav(event,'הגדרות','⚙️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📊</span> לוגים<button class="fav-star-btn" onclick="toggleFav(event,'לוגים','📊')">★</button></a>
         </div>
       </div>
 
       <!-- ── שירות ── -->
       <button class="group-header" onclick="toggleGroup(this)">
-        שירות
+        <span class="group-label">שירות</span>
+        <span class="group-line"></span>
         <span class="group-chevron">▾</span>
       </button>
       <div class="group-items">
         <div class="group-padding">
-          <a class="sub-item" href="#"><span class="sub-icon">📦</span> הזמנות<button class="fav-remove" onclick="toggleFav(event,'הזמנות','📦')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">💳</span> קאשייר<button class="fav-remove" onclick="toggleFav(event,'קאשייר','💳')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">🗺️</span> רצפת שירות<button class="fav-remove" onclick="toggleFav(event,'רצפת שירות','🗺️')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">🎛️</span> מנהל משמרת<button class="fav-remove" onclick="toggleFav(event,'מנהל משמרת','🎛️')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">🍽️</span> הזמנת מלצר<button class="fav-remove" onclick="toggleFav(event,'הזמנת מלצר','🍽️')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">📐</span> פריסת שולחנות<button class="fav-remove" onclick="toggleFav(event,'פריסת שולחנות','📐')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">📈</span> סטטיסטיקות<button class="fav-remove" onclick="toggleFav(event,'סטטיסטיקות','📈')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">⭐</span> מועדון לקוחות<button class="fav-remove" onclick="toggleFav(event,'מועדון לקוחות','⭐')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">📱</span> קשרי לקוחות<button class="fav-remove" onclick="toggleFav(event,'קשרי לקוחות','📱')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📦</span> הזמנות<button class="fav-star-btn" onclick="toggleFav(event,'הזמנות','📦')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">💳</span> קאשייר<button class="fav-star-btn" onclick="toggleFav(event,'קאשייר','💳')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🗺️</span> רצפת שירות<button class="fav-star-btn" onclick="toggleFav(event,'רצפת שירות','🗺️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🎛️</span> מנהל משמרת<button class="fav-star-btn" onclick="toggleFav(event,'מנהל משמרת','🎛️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🍽️</span> הזמנת מלצר<button class="fav-star-btn" onclick="toggleFav(event,'הזמנת מלצר','🍽️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📐</span> פריסת שולחנות<button class="fav-star-btn" onclick="toggleFav(event,'פריסת שולחנות','📐')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📈</span> סטטיסטיקות<button class="fav-star-btn" onclick="toggleFav(event,'סטטיסטיקות','📈')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">⭐</span> מועדון לקוחות<button class="fav-star-btn" onclick="toggleFav(event,'מועדון לקוחות','⭐')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📱</span> קשרי לקוחות<button class="fav-star-btn" onclick="toggleFav(event,'קשרי לקוחות','📱')">★</button></a>
         </div>
       </div>
 
       <!-- ── מטבח ── -->
       <button class="group-header" onclick="toggleGroup(this)">
-        מטבח — KDS
+        <span class="group-label">מטבח — KDS</span>
+        <span class="group-line"></span>
         <span class="group-chevron">▾</span>
       </button>
       <div class="group-items">
         <div class="group-padding">
-          <a class="sub-item" href="#"><span class="sub-icon">🖥️</span> תצוגת שולחן<button class="fav-remove" onclick="toggleFav(event,'תצוגת שולחן','🖥️')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">🌑</span> Station Dark<button class="fav-remove" onclick="toggleFav(event,'Station Dark','🌑')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">📋</span> Kanban<button class="fav-remove" onclick="toggleFav(event,'Kanban','📋')">★</button></a>
-          <a class="sub-item" href="#"><span class="sub-icon">🎫</span> Ticket Board<button class="fav-remove" onclick="toggleFav(event,'Ticket Board','🎫')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🖥️</span> תצוגת שולחן<button class="fav-star-btn" onclick="toggleFav(event,'תצוגת שולחן','🖥️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🌑</span> Station Dark<button class="fav-star-btn" onclick="toggleFav(event,'Station Dark','🌑')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📋</span> Kanban<button class="fav-star-btn" onclick="toggleFav(event,'Kanban','📋')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🎫</span> Ticket Board<button class="fav-star-btn" onclick="toggleFav(event,'Ticket Board','🎫')">★</button></a>
         </div>
       </div>
 
     </div>
 
-    <!-- User -->
     <div class="drawer-user">
       <div class="user-avatar">A</div>
       <div class="user-info">
@@ -392,7 +423,6 @@
 
   <!-- PAGE -->
   <div class="page">
-
     <div class="page-hero">
       <h1>דשבורד</h1>
       <p>ברוך הבא — menu4u restaurant OS</p>
@@ -407,16 +437,19 @@
     </div>
   </div>
 
-  <div class="hint" id="hint">לחץ על ☰ בצד ימין לפתיחת הניווט</div>
+  <div class="hint" id="hint">לחץ ☰ לתפריט • לחץ ★ למועדפים</div>
 
   <script>
-    let isOpen = false;
-    let favs = {}; // { label: icon }
+    let drawerOpen = false;
+    let favsPanelOpen = false;
+    let favs = {};
 
-    function toggleDrawer() { isOpen ? closeDrawer() : openDrawer(); }
+    /* ── Drawer ── */
+    function toggleDrawer() { drawerOpen ? closeDrawer() : openDrawer(); }
 
     function openDrawer() {
-      isOpen = true;
+      closeFavsPanel();
+      drawerOpen = true;
       document.getElementById('drawer').classList.add('open');
       document.getElementById('overlay').classList.add('open');
       document.getElementById('burgerIcon').innerHTML = `
@@ -427,17 +460,40 @@
     }
 
     function closeDrawer() {
-      isOpen = false;
+      drawerOpen = false;
       document.getElementById('drawer').classList.remove('open');
-      document.getElementById('overlay').classList.remove('open');
+      if (!favsPanelOpen) document.getElementById('overlay').classList.remove('open');
       document.getElementById('burgerIcon').innerHTML = `
         <line x1="3" y1="6" x2="21" y2="6"/>
         <line x1="3" y1="12" x2="21" y2="12"/>
         <line x1="3" y1="18" x2="21" y2="18"/>
       `;
-      document.getElementById('hint').style.opacity = '1';
+      if (!favsPanelOpen) document.getElementById('hint').style.opacity = '1';
     }
 
+    /* ── Favs Panel ── */
+    function toggleFavsPanel() { favsPanelOpen ? closeFavsPanel() : openFavsPanel(); }
+
+    function openFavsPanel() {
+      closeDrawer();
+      favsPanelOpen = true;
+      document.getElementById('favsPanel').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+      document.getElementById('favStripBtn').classList.add('active');
+      document.getElementById('hint').style.opacity = '0';
+    }
+
+    function closeFavsPanel() {
+      favsPanelOpen = false;
+      document.getElementById('favsPanel').classList.remove('open');
+      if (!drawerOpen) document.getElementById('overlay').classList.remove('open');
+      document.getElementById('favStripBtn').classList.remove('active');
+      if (!drawerOpen) document.getElementById('hint').style.opacity = '1';
+    }
+
+    function closeAll() { closeDrawer(); closeFavsPanel(); }
+
+    /* ── Group accordion ── */
     function toggleGroup(btn) {
       const items = btn.nextElementSibling;
       const open = btn.classList.contains('open');
@@ -445,51 +501,45 @@
       items.classList.toggle('open', !open);
     }
 
+    /* ── Favorites ── */
     function toggleFav(e, label, icon) {
       e.preventDefault(); e.stopPropagation();
+      const btn = e.currentTarget;
       if (favs[label]) {
         delete favs[label];
-        e.target.style.color = '';
-        e.target.style.opacity = '';
+        btn.classList.remove('starred');
       } else {
         favs[label] = icon;
-        e.target.style.color = '#c9890a';
-        e.target.style.opacity = '1';
+        btn.classList.add('starred');
       }
-      renderFavs();
+      renderFavsPanel();
     }
 
-    function renderFavs() {
-      const list = document.getElementById('favsList');
-      const empty = document.getElementById('favsEmpty');
-      const keys = Object.keys(favs);
-      if (keys.length === 0) {
-        empty.style.display = 'block';
-        list.querySelectorAll('.fav-item').forEach(el => el.remove());
-        return;
-      }
-      empty.style.display = 'none';
+    function removeFav(label) {
+      delete favs[label];
+      document.querySelectorAll('.fav-star-btn').forEach(btn => {
+        if (btn.getAttribute('onclick')?.includes(`'${label}'`))
+          btn.classList.remove('starred');
+      });
+      renderFavsPanel();
+    }
+
+    function renderFavsPanel() {
+      const list = document.getElementById('favsPanelList');
+      const empty = document.getElementById('favsPanelEmpty');
       list.querySelectorAll('.fav-item').forEach(el => el.remove());
+      const keys = Object.keys(favs);
+      empty.style.display = keys.length ? 'none' : 'block';
       keys.forEach(label => {
         const a = document.createElement('a');
-        a.className = 'fav-item';
-        a.href = '#';
-        a.innerHTML = `<span class="fav-star">${favs[label]}</span>${label}<button class="fav-remove" style="opacity:1;color:#c9890a;" onclick="removeFav(event,'${label}')">✕</button>`;
+        a.className = 'fav-item'; a.href = '#';
+        a.innerHTML = `
+          <span class="fav-icon-badge">${favs[label]}</span>
+          ${label}
+          <button class="fav-remove-btn" onclick="event.preventDefault();event.stopPropagation();removeFav('${label}')">✕</button>
+        `;
         list.appendChild(a);
       });
-    }
-
-    function removeFav(e, label) {
-      e.preventDefault(); e.stopPropagation();
-      delete favs[label];
-      // reset the star button in the list
-      document.querySelectorAll('.fav-remove').forEach(btn => {
-        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${label}'`)) {
-          btn.style.color = '';
-          btn.style.opacity = '';
-        }
-      });
-      renderFavs();
     }
   </script>
 
