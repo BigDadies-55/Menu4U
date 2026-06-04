@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Menu4U — Right Sidebar Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: #f5f0e8;
+      color: #1a1208;
+      overflow-x: hidden;
+    }
+
+    /* ══════════ STRIP (always visible, right edge) ══════════ */
+    .strip {
+      position: fixed;
+      top: 0; right: 0;
+      width: 52px;
+      height: 100vh;
+      background: #ffffff;
+      border-left: 1px solid rgba(180,140,60,0.18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 200;
+    }
+
+    /* hamburger button */
+    .strip-burger {
+      width: 52px;
+      height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(180,140,60,0.15);
+      transition: background 0.15s;
+    }
+    .strip-burger:hover { background: rgba(201,137,10,0.07); }
+    .strip-burger svg { width: 20px; height: 20px; }
+
+    /* vertical text labels */
+    .strip-labels {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 16px 0;
+    }
+    .strip-label {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      font-size: 10px;
+      font-weight: 600;
+      color: #9a8060;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+      cursor: default;
+    }
+
+    /* bottom icons */
+    .strip-icons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding-bottom: 16px;
+    }
+    .strip-icon {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      color: #5a4020;
+      transition: background 0.15s;
+      border: none;
+      background: transparent;
+    }
+    .strip-icon:hover { background: rgba(201,137,10,0.1); }
+
+    /* ══════════ OVERLAY ══════════ */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      z-index: 290;
+      pointer-events: none;
+      transition: background 0.35s;
+    }
+    .overlay.open {
+      background: rgba(0,0,0,0.35);
+      pointer-events: auto;
+    }
+
+    /* ══════════ DRAWER ══════════ */
+    .drawer {
+      position: fixed;
+      top: 0; right: 52px; /* sits left of the strip */
+      width: 380px;
+      height: 100vh;
+      background: #ffffff;
+      border-left: 1px solid rgba(180,140,60,0.15);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(440px); /* hidden: pushed right */
+      transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+    }
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    /* close button */
+    .drawer-close {
+      position: absolute;
+      top: 12px; left: 12px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(180,140,60,0.25);
+      background: transparent;
+      color: #5a4020;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .drawer-close:hover {
+      background: #f0ece3;
+      border-color: rgba(180,140,60,0.5);
+    }
+
+    /* drawer content */
+    .drawer-content {
+      padding: 64px 36px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* section label */
+    .section-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #9a8060;
+      margin: 28px 0 10px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* nav link — large */
+    .nav-link-lg {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1208;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(180,140,60,0.1);
+      cursor: pointer;
+      transition: color 0.15s;
+      background: none;
+      border-top: none;
+      border-right: none;
+      border-left: none;
+      width: 100%;
+      text-align: right;
+      font-family: inherit;
+    }
+    .nav-link-lg:hover { color: #c9890a; }
+    .nav-link-lg.active { color: #c9890a; }
+    .nav-link-lg .plus {
+      font-size: 18px;
+      color: #9a8060;
+      font-weight: 300;
+      flex-shrink: 0;
+      margin-right: 8px;
+      transition: transform 0.2s;
+    }
+    .nav-link-lg.expanded .plus { transform: rotate(45deg); color: #c9890a; }
+
+    /* sub items */
+    .sub-items {
+      display: none;
+      flex-direction: column;
+      padding: 6px 0 10px 0;
+      border-bottom: 1px solid rgba(180,140,60,0.1);
+    }
+    .sub-items.open { display: flex; }
+    .sub-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 14px;
+      color: #5a4020;
+      text-decoration: none;
+      transition: color 0.12s;
+      cursor: pointer;
+    }
+    .sub-item:hover { color: #c9890a; }
+    .sub-item.active { color: #c9890a; font-weight: 600; }
+    .sub-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(180,140,60,0.4);
+      flex-shrink: 0;
+    }
+    .sub-item.active .sub-dot { background: #c9890a; }
+
+    /* divider */
+    .nav-divider {
+      height: 1px;
+      background: rgba(180,140,60,0.15);
+      margin: 16px 0;
+    }
+
+    /* user section at bottom of drawer */
+    .drawer-user {
+      margin-top: auto;
+      padding: 20px 36px;
+      border-top: 1px solid rgba(180,140,60,0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c9890a, #7a5a0e);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: #fff;
+      flex-shrink: 0;
+    }
+    .user-info { flex: 1; }
+    .user-name { font-size: 14px; font-weight: 700; color: #1a1208; }
+    .user-role { font-size: 11px; color: #9a8060; }
+    .user-actions { display: flex; gap: 6px; }
+    .user-action-btn {
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(180,140,60,0.3);
+      background: transparent;
+      color: #5a4020;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .user-action-btn:hover {
+      background: rgba(201,137,10,0.1);
+      border-color: #c9890a;
+      color: #c9890a;
+    }
+
+    /* ══════════ PAGE CONTENT (mock) ══════════ */
+    .page {
+      margin-right: 52px; /* offset for strip */
+      min-height: 100vh;
+    }
+    .page-topbar {
+      background: #ffffff;
+      border-bottom: 1px solid rgba(180,140,60,0.18);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 12px;
+    }
+    .brand-name {
+      font-size: 20px; font-weight: 900; color: #1a1208;
+    }
+    .brand-name span { color: #c9890a; }
+    .breadcrumb {
+      font-size: 13px; color: #9a8060;
+    }
+    .page-hero {
+      background: linear-gradient(135deg, #f0ece3, #e8dcc8);
+      padding: 48px 32px;
+      border-bottom: 1px solid rgba(180,140,60,0.15);
+    }
+    .page-hero h1 { font-size: 26px; font-weight: 900; color: #1a1208; margin-bottom: 4px; }
+    .page-hero p { color: #9a8060; font-size: 14px; }
+    .page-body {
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid rgba(180,140,60,0.18);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .card h3 { font-size: 12px; color: #9a8060; margin-bottom: 6px; }
+    .card .val { font-size: 30px; font-weight: 900; color: #c9890a; }
+
+    /* ══════════ INSTRUCTION BADGE ══════════ */
+    .instruction {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1208;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 50px;
+      font-size: 13px;
+      z-index: 500;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════ STRIP ══════════ -->
+  <aside class="strip">
+    <!-- Hamburger -->
+    <button class="strip-burger" id="burgerBtn" onclick="toggleDrawer()">
+      <svg id="burgerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    <!-- Vertical labels -->
+    <div class="strip-labels">
+      <span class="strip-label">ניהול מסעדה</span>
+      <span class="strip-label">שירות ומטבח</span>
+      <span class="strip-label">Menu4U OS</span>
+    </div>
+
+    <!-- Bottom icons -->
+    <div class="strip-icons">
+      <button class="strip-icon" title="חיפוש">🔍</button>
+      <button class="strip-icon" title="הגדרות">⚙️</button>
+      <button class="strip-icon" title="משתמש">👤</button>
+    </div>
+  </aside>
+
+  <!-- ══════════ OVERLAY ══════════ -->
+  <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+  <!-- ══════════ DRAWER ══════════ -->
+  <div class="drawer" id="drawer">
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+
+    <div class="drawer-content">
+
+      <!-- Dashboard -->
+      <div class="section-label">ראשי</div>
+      <a class="nav-link-lg active" href="#">דשבורד</a>
+
+      <!-- ניהול -->
+      <div class="section-label">ניהול</div>
+
+      <button class="nav-link-lg" onclick="toggleSub(this)">
+        מסעדה ומערכת
+        <span class="plus">+</span>
+      </button>
+      <div class="sub-items">
+        <a class="sub-item" href="#"><span class="sub-dot"></span> מסעדות</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> רשתות 🏢</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> תפריטים</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> משתמשים</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> הגדרות</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> לוגים</a>
+      </div>
+
+      <!-- שירות -->
+      <div class="section-label">שירות</div>
+
+      <a class="nav-link-lg" href="#">הזמנות</a>
+      <a class="nav-link-lg" href="#">קאשייר</a>
+
+      <button class="nav-link-lg" onclick="toggleSub(this)">
+        רצפת שירות
+        <span class="plus">+</span>
+      </button>
+      <div class="sub-items">
+        <a class="sub-item" href="#"><span class="sub-dot"></span> תצוגת רצפה 🗺️</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> מנהל משמרת 🎛️</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> הזמנת מלצר 🍽️</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> פריסת שולחנות</a>
+      </div>
+
+      <button class="nav-link-lg" onclick="toggleSub(this)">
+        לקוחות
+        <span class="plus">+</span>
+      </button>
+      <div class="sub-items">
+        <a class="sub-item" href="#"><span class="sub-dot"></span> מועדון לקוחות ⭐</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> קשרי לקוחות 📱</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> סטטיסטיקות</a>
+      </div>
+
+      <!-- KDS -->
+      <div class="section-label">מטבח — KDS</div>
+
+      <button class="nav-link-lg" onclick="toggleSub(this)">
+        תצוגות מטבח
+        <span class="plus">+</span>
+      </button>
+      <div class="sub-items">
+        <a class="sub-item" href="#"><span class="sub-dot"></span> תצוגת שולחן</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> Station Dark</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> Kanban</a>
+        <a class="sub-item" href="#"><span class="sub-dot"></span> Ticket Board</a>
+      </div>
+
+    </div><!-- /drawer-content -->
+
+    <!-- User section -->
+    <div class="drawer-user">
+      <div class="user-avatar">A</div>
+      <div class="user-info">
+        <div class="user-name">Admin</div>
+        <div class="user-role">SUPER ADMIN</div>
+      </div>
+      <div class="user-actions">
+        <button class="user-action-btn">🔑 סיסמה</button>
+        <button class="user-action-btn">יציאה</button>
+      </div>
+    </div>
+
+  </div><!-- /drawer -->
+
+  <!-- ══════════ PAGE ══════════ -->
+  <div class="page">
+    <div class="page-topbar">
+      <span class="brand-name">Menu<span>4U</span></span>
+      <span class="breadcrumb">/ דשבורד</span>
+    </div>
+    <div class="page-hero">
+      <h1>דשבורד</h1>
+      <p>ברוך הבא — menu4u restaurant OS</p>
+    </div>
+    <div class="page-body">
+      <div class="card"><h3>הזמנות פתוחות</h3><div class="val">12</div></div>
+      <div class="card"><h3>שולחנות תפוסים</h3><div class="val">7/10</div></div>
+      <div class="card"><h3>מחזור היום</h3><div class="val">₪4,820</div></div>
+      <div class="card"><h3>לקוחות היום</h3><div class="val">43</div></div>
+      <div class="card"><h3>ממוצע שולחן</h3><div class="val">₪112</div></div>
+      <div class="card"><h3>SLA ממוצע</h3><div class="val">18 דק'</div></div>
+    </div>
+  </div>
+
+  <div class="instruction">לחץ על ☰ בצד ימין לפתיחת הניווט</div>
+
+  <script>
+    let isOpen = false;
+
+    function toggleDrawer() {
+      isOpen ? closeDrawer() : openDrawer();
+    }
+
+    function openDrawer() {
+      isOpen = true;
+      document.getElementById('drawer').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+      // Switch hamburger to X
+      document.getElementById('burgerIcon').innerHTML = `
+        <line x1="4" y1="4" x2="20" y2="20"/>
+        <line x1="20" y1="4" x2="4" y2="20"/>
+      `;
+      document.querySelector('.instruction').style.opacity = '0';
+    }
+
+    function closeDrawer() {
+      isOpen = false;
+      document.getElementById('drawer').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+      document.getElementById('burgerIcon').innerHTML = `
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      `;
+      document.querySelector('.instruction').style.opacity = '1';
+    }
+
+    function toggleSub(btn) {
+      const sub = btn.nextElementSibling;
+      const isExpanded = btn.classList.contains('expanded');
+      btn.classList.toggle('expanded', !isExpanded);
+      sub.classList.toggle('open', !isExpanded);
+    }
+  </script>
+
+</body>
+</html>
