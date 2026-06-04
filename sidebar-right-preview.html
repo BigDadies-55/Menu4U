@@ -59,15 +59,25 @@
     /* ══════════ DRAWER ══════════ */
     .drawer {
       position: fixed; top: 0; right: 52px;
-      width: 320px; height: 100vh;
+      width: var(--drawer-w, 320px); height: 100vh;
       background: #ffffff;
       border-left: 1px solid rgba(180,140,60,0.15);
       z-index: 300; display: flex; flex-direction: column;
-      transform: translateX(380px);
+      transform: translateX(calc(var(--drawer-w, 320px) + 60px));
       transition: transform 0.36s cubic-bezier(0.4,0,0.2,1);
       overflow-y: auto;
     }
     .drawer.open { transform: translateX(0); }
+
+    /* resize handle on left edge of drawer */
+    .drawer-resize-handle {
+      position: absolute; top: 0; left: 0;
+      width: 5px; height: 100%;
+      cursor: ew-resize; z-index: 10;
+      background: transparent; transition: background 0.15s;
+    }
+    .drawer-resize-handle:hover,
+    .drawer-resize-handle.dragging { background: rgba(201,137,10,0.22); }
 
     .drawer-close {
       position: absolute; top: 10px; left: 10px;
@@ -266,10 +276,26 @@
       padding: 18px 32px 16px;
       border-bottom: 1px solid rgba(180,140,60,0.15);
     }
-    .page-hero h1 {
+    .page-hero-title {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 4px;
+    }
+    .page-hero-dot {
+      font-size: 20px; line-height: 1; flex-shrink: 0;
+      background: linear-gradient(135deg, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-hero-text {
       font-family: 'Frank Ruhl Libre', serif;
-      font-size: 30px; font-weight: 900; color: #1a1208;
-      margin-bottom: 3px; letter-spacing: 0.3px;
+      font-size: 30px; font-weight: 900; letter-spacing: 0.3px;
+      background: linear-gradient(110deg, #7a4e04 0%, #c9890a 45%, #e8b84b 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; flex-shrink: 0;
+    }
+    .page-hero-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(to right, rgba(201,137,10,0.4) 0%, transparent 100%);
     }
     .page-hero p { color: #9a8060; font-size: 12px; }
     .page-body { padding: 24px 32px; display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
@@ -337,6 +363,7 @@
 
   <!-- DRAWER -->
   <div class="drawer" id="drawer">
+    <div class="drawer-resize-handle" id="resizeHandle"></div>
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
     <div class="drawer-content">
 
@@ -349,13 +376,13 @@
       <a class="nav-standalone" href="#">▪ דשבורד</a>
 
       <!-- ניהול -->
-      <button class="group-header open" onclick="toggleGroup(this)">
+      <button class="group-header" onclick="toggleGroup(this)">
         <span class="group-dot">•</span>
         <span class="group-label">ניהול</span>
         <span class="group-line"></span>
         <span class="group-chevron">▾</span>
       </button>
-      <div class="group-items open">
+      <div class="group-items">
         <div class="group-padding">
           <a class="sub-item" href="#"><span class="sub-icon">🍴</span> מסעדות<button class="fav-star-btn" onclick="toggleFav(event,'מסעדות','🍴')">★</button></a>
           <a class="sub-item" href="#"><span class="sub-icon">🏢</span> רשתות<button class="fav-star-btn" onclick="toggleFav(event,'רשתות','🏢')">★</button></a>
@@ -420,7 +447,11 @@
   <!-- PAGE -->
   <div class="page">
     <div class="page-hero">
-      <h1>דשבורד</h1>
+      <div class="page-hero-title">
+        <span class="page-hero-dot">•</span>
+        <span class="page-hero-text">דשבורד</span>
+        <span class="page-hero-line"></span>
+      </div>
       <p>ברוך הבא — menu4u restaurant OS</p>
     </div>
     <div class="page-body">
@@ -439,6 +470,36 @@
     let drawerOpen = false;
     let favsPanelOpen = false;
     let favs = {};
+
+    /* ── Resize drawer ── */
+    (function() {
+      const handle = document.getElementById('resizeHandle');
+      const drawer = document.getElementById('drawer');
+      const STRIP_W = 52;
+      let resizing = false;
+
+      handle.addEventListener('mousedown', function(e) {
+        resizing = true;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!resizing) return;
+        const newW = Math.min(Math.max((window.innerWidth - STRIP_W) - e.clientX, 220), 520);
+        document.documentElement.style.setProperty('--drawer-w', newW + 'px');
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (!resizing) return;
+        resizing = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      });
+    })();
 
     /* ── position favs panel at the star icon ── */
     function positionFavsPanel() {
