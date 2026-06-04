@@ -1491,7 +1491,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       <input ref={importFileRef} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={onImportFile} />
 
       {/* ── Topbar ── RTL flow */}
-      <div style={{ padding: "5px 16px", borderBottom: "1px solid rgba(212,160,23,0.2)", display: "flex", alignItems: "center", flexShrink: 0, background: "rgba(10,4,2,0.97)", backdropFilter: "blur(10px)", direction: "rtl", gap: 6 }}>
+      <div style={{ padding: "5px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", flexShrink: 0, background: T.panel, direction: "rtl", gap: 6 }}>
 
         {/* Title (RTL start = rightmost) */}
         <span style={{ fontSize: 14, fontWeight: 800, color: C.gold, whiteSpace: "nowrap", paddingLeft: 6 }}>פריסת שולחנות</span>
@@ -1510,7 +1510,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Tools */}
         <button ref={toolsBtnRef}
           onClick={() => { if (toolsMenu) { setToolsMenu(null); return; } const r = toolsBtnRef.current!.getBoundingClientRect(); setToolsMenu({ x: r.left, y: r.bottom + 2 }); }}
-          style={{ padding: "4px 10px", borderRadius: 8, background: snapOn || showBg || showStats || !!toolsMenu ? "rgba(212,160,23,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${snapOn || showBg || showStats || !!toolsMenu ? T.gold : "rgba(255,255,255,0.13)"}`, color: snapOn || showBg || showStats || !!toolsMenu ? T.gold : T.text, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
+          style={{ padding: "4px 10px", borderRadius: 8, background: snapOn || showBg || showStats || !!toolsMenu ? "rgba(212,160,23,0.22)" : T.raised, border: `1px solid ${snapOn || showBg || showStats || !!toolsMenu ? T.gold : T.border}`, color: snapOn || showBg || showStats || !!toolsMenu ? T.gold : T.text, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
           ⚙ כלים ▾
         </button>
 
@@ -1533,7 +1533,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
         {/* Autosave */}
         <button onClick={() => setAutoSave(s => !s)} title="שמירה אוטומטית כל 30 שניות"
-          style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 8, background: autoSave ? "rgba(212,160,23,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${autoSave ? "rgba(212,160,23,0.35)" : "rgba(255,255,255,0.1)"}`, color: autoSave ? C.gold : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const, flexShrink: 0 }}>
+          style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 8, background: autoSave ? "rgba(212,160,23,0.12)" : T.raised, border: `1px solid ${autoSave ? "rgba(212,160,23,0.35)" : T.border}`, color: autoSave ? C.gold : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const, flexShrink: 0 }}>
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: autoSave ? T.green : "#555", display: "inline-block", flexShrink: 0 }} />
           אוטו
         </button>
@@ -1556,7 +1556,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
       {/* ── Room tabs ── */}
       {/* ── Room tabs ── RTL */}
-      <div style={{ display: "flex", alignItems: "center", padding: "0 14px", borderBottom: "1px solid rgba(212,160,23,0.15)", background: "rgba(10,4,2,0.92)", flexShrink: 0, direction: "rtl", height: 36 }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "0 14px", borderBottom: `1px solid ${T.border}`, background: T.panel, flexShrink: 0, direction: "rtl", height: 36 }}>
         {/* Tabs on right */}
         {layout.rooms.map((room, idx) => (
           <div key={room.id} style={{ display: "flex", alignItems: "center" }}>
@@ -1594,7 +1594,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
         {/* Sidebar */}
         <div
-          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: "rgba(10,4,2,0.30)", backdropFilter: "blur(10px)", borderRight: "1px solid rgba(212,160,23,0.18)", display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative" }}>
+          style={{ width: showSidebar ? sidebarWidth : 36, flexShrink: 0, background: T.panel, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", overflow: "visible", transition: sidebarResizing.current ? "none" : "width 0.18s ease", direction: "rtl", position: "relative" }}>
 
           {/* Header row: collapse toggle */}
           <div style={{ display: "flex", alignItems: "center", borderBottom: "1px solid rgba(212,160,23,0.12)", flexShrink: 0 }}>
