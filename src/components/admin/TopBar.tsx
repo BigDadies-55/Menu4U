@@ -145,8 +145,8 @@ export default function TopBar({ user, onChangePassword, onOpenMobileSidebar, ad
       style={{
         height: 40,
         background: adminTopBarBg ?? "transparent",
-        borderTop:    `1px solid ${borderColor}`,
-        borderBottom: `1px solid ${borderColor}`,
+        borderTop:    "none",
+        borderBottom: "none",
         direction: "rtl",
       }}
     >

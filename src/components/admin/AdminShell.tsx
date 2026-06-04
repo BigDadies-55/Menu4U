@@ -2,7 +2,7 @@
 import { T } from "@/lib/ui";
 import { useState } from "react";
 import Sidebar, { useFavorites } from "./Sidebar";
-import PageTitle from "./PageTitle";
+import TopBar from "./TopBar";
 import type { Role } from "@/generated/prisma/client";
 
 interface Props {
@@ -94,7 +94,15 @@ export default function AdminShell({
       >
         <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
 
-        <PageTitle />
+        <TopBar
+          user={user}
+          onChangePassword={openPasswordModal}
+          onOpenMobileSidebar={() => {}}
+          adminTopBarBg="transparent"
+          adminTopBarTextColor={T.sub}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+        />
 
         <div className="flex-1">
           {children}
