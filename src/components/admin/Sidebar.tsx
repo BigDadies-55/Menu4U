@@ -2,21 +2,25 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { T } from "@/lib/ui";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/client";
+import { ROLE_LABELS } from "@/lib/permissions";
+import { Playfair_Display } from "next/font/google";
 
-/* ─── Width ──────────────────────────────────────────────── */
-export const SIDEBAR_W_COLLAPSED = 256;
-export const SIDEBAR_W_EXPANDED  = 256;
-export const SIDEBAR_MIN_W = 180;
-export const SIDEBAR_MAX_W = 420;
-export const SIDEBAR_DEFAULT_W = 256;
-const LS_KEY  = "menu4u_sidebar_w";
+const playfair = Playfair_Display({ subsets: ["latin"], weight: ["700", "900"], display: "swap" });
+
+/* ─── Width constants (52 for API compat — strip width) ─────── */
+export const SIDEBAR_W_COLLAPSED = 52;
+export const SIDEBAR_W_EXPANDED  = 52;
+export const SIDEBAR_MIN_W = 220;
+export const SIDEBAR_MAX_W = 520;
+export const SIDEBAR_DEFAULT_W = 52;
+const LS_KEY_DRAWER = "menu4u_drawer_w";
 const FAV_KEY = "menu4u_favorites";
 
-/* ─── Admin palettes ─────────────────────────────────────── */
+/* ─── Admin palettes ─────────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
-  // "dark" tracks T — sidebar background uses the same CSS variable as the page background
   dark:   { bg: "var(--c-panel)", accent: T.gold,    accentMuted: "rgba(201,168,76,0.15)",  accentText: "#e0c47a" },
   purple: { bg: "#120b1e",        accent: T.purple,  accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
   blue:   { bg: "#080f1e",        accent: T.blue,    accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
@@ -25,7 +29,7 @@ export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; acc
   custom: { bg: "var(--c-panel)", accent: T.gold,    accentMuted: "rgba(201,168,76,0.15)", accentText: "#e0c47a" },
 };
 
-/* ─── Icons ──────────────────────────────────────────────── */
+/* ─── Icons ──────────────────────────────────────────────────── */
 const Ic = {
   Dashboard:  () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
   Restaurant: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2l1.5 9h15L21 2"/><path d="M3 11v9h18v-9"/><line x1="12" y1="2" x2="12" y2="11"/></svg>,
@@ -48,7 +52,7 @@ const Ic = {
   Cashier:    () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
 };
 
-/* ─── Favorites ──────────────────────────────────────────── */
+/* ─── Favorites ──────────────────────────────────────────────── */
 export type Favorite = { href: string; label: string };
 
 export function useFavorites(): [Favorite[], (href: string, label: string) => void] {
@@ -73,7 +77,7 @@ export function useFavorites(): [Favorite[], (href: string, label: string) => vo
   return [favs, toggle];
 }
 
-/* ─── Nav structure ──────────────────────────────────────── */
+/* ─── Nav structure ──────────────────────────────────────────── */
 type NavLeaf = {
   href: string; label: string; I: React.FC;
   exact?: boolean; superAdmin?: boolean; adminOnly?: boolean;
@@ -132,12 +136,12 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-/* ─── Props ──────────────────────────────────────────────── */
+/* ─── Props ──────────────────────────────────────────────────── */
 interface SidebarProps {
   user: { name?: string | null; email?: string | null; role: Role };
   kdsView: string;
-  pinned: boolean;
-  onTogglePin: () => void;
+  pinned?: boolean;
+  onTogglePin?: () => void;
   isOpen?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
@@ -152,161 +156,83 @@ interface SidebarProps {
   onToggleFavorite: (href: string, label: string) => void;
 }
 
-/* ─── Helpers ────────────────────────────────────────────── */
+/* ─── Search result type ─────────────────────────────────────── */
+type SearchResult = { type: string; id: string; label: string; sub: string; href: string };
+
+const TYPE_ICON: Record<string, string> = {
+  page:       "📄",
+  restaurant: "🍽️",
+  menu:       "📋",
+  item:       "🍕",
+  order:      "🧾",
+  user:       "👤",
+};
+
+/* ─── Helpers ────────────────────────────────────────────────── */
 function isLeafActive(leaf: NavLeaf, pathname: string): boolean {
   if (leaf.exact) return pathname === leaf.href;
   if (leaf.excludeStartsWith?.some(p => pathname === p || pathname.startsWith(p + "/"))) return false;
   return pathname === leaf.href || pathname.startsWith(leaf.href + "/");
 }
 
-/* ─── NavItem ────────────────────────────────────────────── */
-function NavItem({
-  href, label, I: Icon, isActive, onClick, accentColor, textColor, isFavorite, onToggleFavorite,
-}: {
-  href: string; label: string; I: React.FC;
-  isActive: boolean; onClick?: () => void;
-  accentColor: string; textColor: string;
-  isFavorite: boolean;
-  onToggleFavorite: (href: string, label: string) => void;
-}) {
-  const [hovered, setHovered] = useState(false);
+/* ─── Colors ─────────────────────────────────────────────────── */
+const GOLD_GRADIENT = "linear-gradient(110deg,#7a4e04 0%,#c9890a 50%,#e8b84b 100%)";
+const BORDER_COLOR  = "rgba(180,140,60,0.18)";
 
-  return (
-    <div
-      className="group relative"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <Link
-        href={href}
-        onClick={onClick}
-        className="flex items-center gap-2.5 rounded-lg transition-colors duration-150"
-        style={{
-          padding: "6px 8px",
-          paddingLeft: 30, /* space for star button on left */
-          color: isActive ? "#fff" : textColor,
-          background: isActive ? accentColor : "transparent",
-          fontWeight: isActive ? 500 : 400,
-          boxShadow: isActive ? `0 2px 8px ${accentColor}44` : "none",
-        }}
-      >
-        {!isActive && (
-          <span className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-            style={{ background: "rgba(255,255,255,0.05)" }} />
-        )}
-        <span className="shrink-0 relative z-10"
-          style={{ color: isActive ? "#fff" : textColor, opacity: isActive ? 1 : 0.6 }}>
-          <Icon />
-        </span>
-        <span className="relative z-10 text-[12.5px] whitespace-nowrap tracking-[-0.01em] flex-1">
-          {label}
-        </span>
-      </Link>
-
-      {/* ⭐ Star button — appears on hover, always accessible via z-index */}
-      <button
-        onClick={e => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(href, label); }}
-        className="absolute left-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-5 h-5 rounded transition-all duration-150"
-        style={{
-          opacity: hovered || isFavorite ? 1 : 0,
-          color: isFavorite ? T.gold : "rgba(255,255,255,0.35)",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-        }}
-        title={isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-      >
-        <svg width="11" height="11" viewBox="0 0 24 24"
-          fill={isFavorite ? "currentColor" : "none"}
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-        </svg>
-      </button>
-    </div>
-  );
-}
-
-/* ─── Section label ──────────────────────────────────────── */
-function SectionLabel({ label, accentText }: { label: string; accentText: string }) {
-  return (
-    <div style={{
-      padding: "14px 8px 5px",
-      fontSize: 10,
-      fontWeight: 700,
-      letterSpacing: "0.1em",
-      textTransform: "uppercase" as const,
-      color: accentText,
-      opacity: 0.55,
-    }}>
-      {label}
-    </div>
-  );
-}
-
-/* ─── Main Sidebar ───────────────────────────────────────── */
+/* ─── Main Sidebar ───────────────────────────────────────────── */
 export default function Sidebar({
   user, kdsView,
-  isOpen = false, onOpen: _onOpen, onClose,
+  isOpen: _isOpen = false,
+  onChangePassword,
   adminPalette = "dark", siteLogo, siteName = "Menu4U",
-  adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = T.muted,
+  adminSidebarBg, adminSidebarAccent, adminSidebarTextColor: _adminSidebarTextColor = T.muted,
   pinned: _pinned, onTogglePin: _onTogglePin,
   favorites, onToggleFavorite,
 }: SidebarProps) {
   const pathname = usePathname();
+  const router   = useRouter();
 
-  /* ── Resizable width ── */
-  const [sidebarW, setSidebarW] = useState(SIDEBAR_DEFAULT_W);
-  const dragging = useRef(false);
-  const [isDragging, setIsDragging] = useState(false);
+  /* ── Drawer state ── */
+  const [drawerOpen,   setDrawerOpen]   = useState(false);
+  const [drawerW,      setDrawerW]      = useState(320);
+  const drawerDragging = useRef(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(LS_KEY);
-    const w = saved ? Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, parseInt(saved))) : SIDEBAR_DEFAULT_W;
-    setSidebarW(w);
-    document.documentElement.style.setProperty("--sidebar-w", `${w}px`);
-  }, []);
+  /* ── Floating panels ── */
+  const [favPanelOpen,    setFavPanelOpen]    = useState(false);
+  const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+  const [favBtnTop,       setFavBtnTop]       = useState(0);
+  const [searchBtnTop,    setSearchBtnTop]    = useState(0);
 
-  const startResize = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    dragging.current = true;
-    setIsDragging(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+  const favBtnRef      = useRef<HTMLButtonElement>(null);
+  const searchBtnRef   = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-    function onMove(ev: MouseEvent) {
-      if (!dragging.current) return;
-      const newW = Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, window.innerWidth - ev.clientX));
-      setSidebarW(newW);
-      document.documentElement.style.setProperty("--sidebar-w", `${newW}px`);
-    }
-    function onUp() {
-      dragging.current = false;
-      setIsDragging(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      const cur = parseInt(document.documentElement.style.getPropertyValue("--sidebar-w")) || SIDEBAR_DEFAULT_W;
-      localStorage.setItem(LS_KEY, String(cur));
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    }
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  }, []);
+  /* ── Accordion groups (all start collapsed) ── */
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
+  /* ── Search state ── */
+  const [searchQuery,   setSearchQuery]   = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  /* ── Palette ── */
   const pal = (() => {
     if (adminPalette === "custom" && adminSidebarAccent) {
-      const accent = adminSidebarAccent;
-      const bg     = adminSidebarBg ?? T.surface;
-      return { bg, accent, accentMuted: `${accent}26`, accentText: accent };
+      const a  = adminSidebarAccent;
+      const bg = adminSidebarBg ?? T.surface;
+      return { bg, accent: a, accentMuted: `${a}26`, accentText: a };
     }
     return ADMIN_PALETTE_MAP[adminPalette ?? "dark"] ?? ADMIN_PALETTE_MAP.dark;
   })();
 
-  const textColor = adminSidebarTextColor;
-  const isWaiter  = user.role === "WAITER";
-  const isDisplay = user.role === "DISPLAY";
-  const isEditor  = user.role === "EDITOR";
-  const isViewer  = user.role === "VIEWER";
+  const sidebarBg = adminSidebarBg ?? pal.bg;
+  const accent    = adminSidebarAccent ?? pal.accent;
+
+  /* ── Role checks ── */
+  const isWaiter   = user.role === "WAITER";
+  const isDisplay  = user.role === "DISPLAY";
+  const isEditor   = user.role === "EDITOR";
+  const isViewer   = user.role === "VIEWER";
   const isShiftMgr = user.role === "SHIFT_MANAGER";
 
   function filterLeaf(l: NavLeaf): boolean {
@@ -329,173 +255,801 @@ export default function Sidebar({
     return true;
   }
 
-  const favSet = new Set(favorites.map(f => f.href));
+  /* ── Set CSS variable to 52px on mount ── */
+  useEffect(() => {
+    document.documentElement.style.setProperty("--sidebar-w", "52px");
+  }, []);
+
+  /* ── Restore drawer width from localStorage ── */
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_KEY_DRAWER);
+    if (saved) {
+      const w = Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, parseInt(saved)));
+      setDrawerW(w);
+    }
+  }, []);
+
+  /* ── Drawer resize ── */
+  const startDrawerResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    drawerDragging.current = true;
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+
+    function onMove(ev: MouseEvent) {
+      if (!drawerDragging.current) return;
+      const newW = Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, (window.innerWidth - 52) - ev.clientX));
+      setDrawerW(newW);
+    }
+    function onUp() {
+      if (!drawerDragging.current) return;
+      drawerDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, []);
+
+  /* Save drawer width to localStorage on change */
+  useEffect(() => {
+    localStorage.setItem(LS_KEY_DRAWER, String(drawerW));
+  }, [drawerW]);
+
+  /* ── Debounced search ── */
+  const doSearch = useCallback(async (q: string) => {
+    if (q.length < 2) { setSearchResults([]); return; }
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/admin/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setSearchResults(data);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => doSearch(searchQuery), 280);
+    return () => clearTimeout(t);
+  }, [searchQuery, doSearch]);
+
+  /* Focus search input when panel opens */
+  useEffect(() => {
+    if (searchPanelOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 320);
+    } else {
+      setSearchQuery("");
+      setSearchResults([]);
+    }
+  }, [searchPanelOpen]);
+
+  /* ── Close all on Escape ── */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setDrawerOpen(false);
+        setFavPanelOpen(false);
+        setSearchPanelOpen(false);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  /* ── Handlers ── */
+  function openDrawer() {
+    setFavPanelOpen(false);
+    setSearchPanelOpen(false);
+    setDrawerOpen(true);
+  }
+  function closeDrawer() { setDrawerOpen(false); }
+  function toggleDrawer() { drawerOpen ? closeDrawer() : openDrawer(); }
+
+  function openFavPanel() {
+    setDrawerOpen(false);
+    setSearchPanelOpen(false);
+    if (favBtnRef.current) {
+      setFavBtnTop(favBtnRef.current.getBoundingClientRect().top);
+    }
+    setFavPanelOpen(true);
+  }
+  function closeFavPanel() { setFavPanelOpen(false); }
+  function toggleFavPanel() { favPanelOpen ? closeFavPanel() : openFavPanel(); }
+
+  function openSearchPanel() {
+    setDrawerOpen(false);
+    setFavPanelOpen(false);
+    if (searchBtnRef.current) {
+      setSearchBtnTop(searchBtnRef.current.getBoundingClientRect().top);
+    }
+    setSearchPanelOpen(true);
+  }
+  function closeSearchPanel() { setSearchPanelOpen(false); }
+  function toggleSearchPanel() { searchPanelOpen ? closeSearchPanel() : openSearchPanel(); }
+
+  function closeAll() {
+    setDrawerOpen(false);
+    setFavPanelOpen(false);
+    setSearchPanelOpen(false);
+  }
+
+  function navigateSearch(href: string) {
+    router.push(href);
+    setSearchPanelOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+  }
+
+  function toggleGroup(id: string) {
+    setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  const overlayOpen     = drawerOpen || favPanelOpen || searchPanelOpen;
+  const drawerTranslate = drawerOpen ? "translateX(0)" : `translateX(${drawerW + 60}px)`;
+
+  const favSet       = new Set(favorites.map(f => f.href));
   const userInitials = (user.name ?? user.email ?? "?")
     .split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
-  /* ── Sidebar body ── */
-  function Body({ close }: { close?: () => void }) {
-    return (
-      <div className="flex flex-col h-full" style={{ direction: "rtl" }}>
-
-        {/* Logo */}
-        <div className="flex items-center shrink-0"
-          style={{ height: 58, padding: "0 14px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <Link href="/" className="flex items-center gap-3 group" title="עמוד הבית" onClick={close}>
-            {siteLogo ? (
-              <img src={siteLogo} alt={siteName} className="w-8 h-8 rounded-xl object-contain" />
-            ) : (
-              <div
-                className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center font-black text-[14px] text-white group-hover:opacity-80 transition-opacity"
-                style={{ background: `linear-gradient(135deg,${pal.accentText},${pal.accent})` }}
-              >
-                {siteName[0] ?? "M"}
-              </div>
-            )}
-            <span className="font-extrabold text-white text-[15px] tracking-tight group-hover:opacity-80 transition-opacity">
-              {siteName}<span style={{ color: pal.accentText }}>.</span>
-            </span>
-            {process.env.NEXT_PUBLIC_APP_ENV === "development" && (
-              <span
-                className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-md"
-                style={{ background: T.orange, color: "#000", lineHeight: 1 }}
-              >
-                DEV
-              </span>
-            )}
-          </Link>
-        </div>
-
-        {/* Nav — scrollable but scrollbar hidden */}
-        <nav
-          className="flex-1 overflow-y-auto overflow-x-hidden"
-          style={{ padding: "4px 8px 8px" }}
-        >
-          <style>{`
-            nav::-webkit-scrollbar { display: none; }
-            nav { scrollbar-width: none; }
-          `}</style>
-
-          {/* Dashboard */}
-          {filterLeaf(STANDALONE) && (
-            <div style={{ marginBottom: 2, marginTop: 6 }}>
-              <NavItem
-                href={STANDALONE.href} label={STANDALONE.label} I={STANDALONE.I}
-                isActive={isLeafActive(STANDALONE, pathname)} onClick={close}
-                accentColor={pal.accent} textColor={textColor}
-                isFavorite={favSet.has(STANDALONE.href)}
-                onToggleFavorite={(href, label) => { onToggleFavorite(href, label); }}
-              />
-            </div>
-          )}
-
-          {/* Groups — always expanded, no accordion */}
-          {GROUPS.map(group => {
-            if (group.waiterHide  && isWaiter)  return null;
-            if (group.displayHide && isDisplay) return null;
-            const filterFn = group.id === "kds" ? filterKds : filterLeaf;
-            const visItems  = group.items.filter(filterFn);
-            if (visItems.length === 0) return null;
-
-            return (
-              <div key={group.id}>
-                <SectionLabel label={group.label} accentText={pal.accentText} />
-                <div style={{
-                  borderRight: `2px solid ${pal.accent}22`,
-                  marginRight: 4,
-                  paddingRight: 2,
-                }}>
-                  {visItems.map(item => (
-                    <NavItem
-                      key={item.href}
-                      href={item.href} label={item.label} I={item.I}
-                      isActive={isLeafActive(item, pathname)} onClick={close}
-                      accentColor={pal.accent} textColor={textColor}
-                      isFavorite={favSet.has(item.href)}
-                      onToggleFavorite={(href, label) => { onToggleFavorite(href, label); }}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Footer: user badge */}
-        <div className="shrink-0 flex items-center gap-2.5"
-          style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div
-            className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold text-black"
-            style={{ background: pal.accent }}
-          >
-            {userInitials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-medium truncate leading-tight" style={{ color: T.sub }}>
-              {user.name ?? user.email ?? ""}
-            </div>
-            <div className="text-[10px] truncate mt-0.5" style={{ color: "rgba(255,255,255,0.32)" }}>
-              {user.role}
-            </div>
-          </div>
-        </div>
-
-      </div>
-    );
-  }
+  /* Drawer background: use white for default/dark palettes since design is light-theme */
+  const drawerBg = (sidebarBg === "var(--c-panel)" || !adminSidebarBg) ? "#ffffff" : sidebarBg;
 
   return (
     <>
-      {/* Desktop — always visible, resizable */}
-      <aside
-        className="hidden md:block fixed z-30"
-        style={{
-          right: 0, top: 0, bottom: 0,
-          width: sidebarW,
-          background: pal.bg,
-          borderLeft: "1px solid rgba(255,255,255,0.07)",
-        }}
-      >
-        <Body />
+      <style>{`
+        .nav-item-row:hover .fav-star-btn { opacity: 1 !important; }
+        .fav-star-btn.is-fav { opacity: 1 !important; }
+        .fav-item-row:hover .fav-remove-btn { opacity: 1 !important; }
+        .drawer-scroll::-webkit-scrollbar { display: none; }
+        .drawer-scroll { scrollbar-width: none; }
+        .group-items-inner { overflow: hidden; transition: max-height 0.3s ease; max-height: 0; }
+        .group-items-inner.open { max-height: 600px; }
+        .group-chevron { transition: transform 0.22s; display: inline-block; }
+        .group-chevron.open { transform: rotate(180deg); }
+        .strip-icon-link:hover { background: rgba(201,137,10,0.1) !important; color: #c9890a !important; }
+      `}</style>
 
-        {/* ── Drag handle ── */}
+      {/* ── Overlay ── */}
+      {overlayOpen && (
         <div
-          onMouseDown={startResize}
-          className="resize-handle group"
+          onClick={closeAll}
           style={{
-            position: "absolute", top: 0, left: 0, width: 5, bottom: 0,
-            cursor: "col-resize", zIndex: 10,
-            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "fixed", inset: 0,
+            background: "rgba(0,0,0,0.25)",
+            zIndex: 290,
           }}
-          title="גרור לשינוי רוחב"
+        />
+      )}
+
+      {/* ══════════ STRIP ══════════ */}
+      <aside style={{
+        position: "fixed", top: 0, right: 0,
+        width: 52, height: "100vh",
+        background: "#ffffff",
+        borderLeft: `1px solid ${BORDER_COLOR}`,
+        display: "flex", flexDirection: "column", alignItems: "center",
+        zIndex: 200,
+      }}>
+        {/* Hamburger */}
+        <button
+          onClick={toggleDrawer}
+          style={{
+            width: 52, height: 52, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", border: "none",
+            background: drawerOpen ? "rgba(201,137,10,0.07)" : "transparent",
+            borderBottom: "1px solid rgba(180,140,60,0.15)",
+            transition: "background 0.15s",
+          }}
+          title="תפריט"
         >
-          <div
+          {drawerOpen ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a4020" strokeWidth="2" strokeLinecap="round">
+              <line x1="4" y1="4" x2="20" y2="20"/>
+              <line x1="20" y1="4" x2="4" y2="20"/>
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a4020" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          )}
+        </button>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Bottom icon buttons */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingBottom: 16 }}>
+          {/* Favorites */}
+          <button
+            ref={favBtnRef}
+            onClick={toggleFavPanel}
+            title="מועדפים"
             style={{
-              width: 3, height: "100%", borderRadius: 99,
-              background: isDragging ? pal.accent : "transparent",
-              transition: "background 150ms",
+              width: 40, height: 40, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", border: "none",
+              color: favPanelOpen ? "#c9890a" : "#5a4020",
+              background: favPanelOpen ? "rgba(201,137,10,0.08)" : "transparent",
+              transition: "background 0.15s, color 0.15s",
             }}
-            className="group-hover:bg-white/20"
-          />
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24"
+              fill={favorites.length > 0 ? "#c9890a" : "none"}
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </button>
+
+          {/* Search */}
+          <button
+            ref={searchBtnRef}
+            onClick={toggleSearchPanel}
+            title="חיפוש"
+            style={{
+              width: 40, height: 40, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", border: "none",
+              color: searchPanelOpen ? "#c9890a" : "#5a4020",
+              background: searchPanelOpen ? "rgba(201,137,10,0.08)" : "transparent",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
+
+          {/* Settings */}
+          <Link
+            href="/admin/settings"
+            title="הגדרות"
+            className="strip-icon-link"
+            style={{
+              width: 40, height: 40, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#5a4020", textDecoration: "none",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            <Ic.Settings />
+          </Link>
+
+          {/* User */}
+          <button
+            onClick={() => onChangePassword?.()}
+            title={`${user.name ?? user.email ?? ""} · ${ROLE_LABELS[user.role]}`}
+            style={{
+              width: 40, height: 40, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", border: "none",
+              color: "#5a4020",
+              background: "transparent",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
         </div>
       </aside>
 
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 z-40 flex justify-end">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-          <div className="relative z-50 h-full overflow-hidden"
-            style={{ width: SIDEBAR_W_EXPANDED, background: pal.bg }}>
-            <button onClick={onClose}
-              className="absolute top-4 left-4 text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors z-10">
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-            <Body close={onClose} />
+      {/* ══════════ DRAWER ══════════ */}
+      <div
+        style={{
+          position: "fixed", top: 0, right: 52,
+          width: drawerW, height: "100vh",
+          background: drawerBg,
+          borderLeft: `1px solid ${BORDER_COLOR}`,
+          zIndex: 300,
+          display: "flex", flexDirection: "column",
+          transform: drawerTranslate,
+          transition: "transform 0.36s cubic-bezier(0.4,0,0.2,1)",
+          overflow: "hidden",
+          direction: "rtl",
+        }}
+      >
+        {/* Resize handle */}
+        <div
+          onMouseDown={startDrawerResize}
+          style={{
+            position: "absolute", top: 0, left: 0,
+            width: 5, height: "100%",
+            cursor: "ew-resize", zIndex: 10,
+            background: "transparent",
+            transition: "background 0.15s",
+          }}
+          title="גרור לשינוי רוחב"
+        />
+
+        {/* Close button */}
+        <button
+          onClick={closeDrawer}
+          style={{
+            position: "absolute", top: 10, left: 10,
+            width: 30, height: 30, borderRadius: "50%",
+            border: "1px solid rgba(180,140,60,0.25)", background: "transparent",
+            color: "#5a4020", fontSize: 15, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.15s", zIndex: 5,
+          }}
+        >
+          ✕
+        </button>
+
+        {/* Scrollable content */}
+        <div
+          className="drawer-scroll"
+          style={{ flex: 1, overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column" }}
+        >
+          {/* Logo */}
+          <div style={{ padding: "16px 24px 14px", borderBottom: `1px solid ${BORDER_COLOR}`, marginBottom: 14 }}>
+            {siteLogo ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={siteLogo} alt={siteName} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain" }} />
+                <div className={playfair.className} style={{
+                  fontSize: 26, fontWeight: 900, letterSpacing: 1,
+                  background: GOLD_GRADIENT,
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}>
+                  {siteName}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={playfair.className} style={{
+                  fontSize: 32, fontWeight: 900, letterSpacing: 1,
+                  background: GOLD_GRADIENT,
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  backgroundClip: "text", lineHeight: 1.1,
+                }}>
+                  {siteName}
+                </div>
+                <div style={{ fontSize: 10, color: "#9a8060", marginTop: 4, letterSpacing: "2px", textTransform: "uppercase" as const }}>
+                  Restaurant OS
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Nav */}
+          <div style={{ padding: "0 24px 20px" }}>
+            {/* Dashboard standalone link */}
+            {filterLeaf(STANDALONE) && (
+              <Link
+                href={STANDALONE.href}
+                onClick={closeDrawer}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "7px 0", fontSize: 13, fontWeight: 600,
+                  color: isLeafActive(STANDALONE, pathname) ? "#c9890a" : "#5a4020",
+                  textDecoration: "none",
+                  borderBottom: "1px solid rgba(180,140,60,0.12)",
+                  marginBottom: 10,
+                }}
+              >
+                <span style={{ opacity: 0.7 }}><Ic.Dashboard /></span>
+                {STANDALONE.label}
+              </Link>
+            )}
+
+            {/* Groups with accordion */}
+            {GROUPS.map(group => {
+              if (group.waiterHide  && isWaiter)  return null;
+              if (group.displayHide && isDisplay) return null;
+              const filterFn = group.id === "kds" ? filterKds : filterLeaf;
+              const visItems  = group.items.filter(filterFn);
+              if (visItems.length === 0) return null;
+
+              const isGroupOpen = !!openGroups[group.id];
+
+              return (
+                <div key={group.id}>
+                  {/* Group header */}
+                  <button
+                    onClick={() => toggleGroup(group.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "10px 0 9px",
+                      fontSize: 14, fontWeight: 800,
+                      cursor: "pointer", background: "none", border: "none",
+                      width: "100%", textAlign: "right" as const,
+                      userSelect: "none" as const, position: "relative" as const,
+                    }}
+                  >
+                    {/* bullet dot */}
+                    <span style={{
+                      fontSize: 16, lineHeight: 1, flexShrink: 0,
+                      background: "linear-gradient(135deg,#c9890a,#e8b84b)",
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}>•</span>
+
+                    {/* label with gradient */}
+                    <span style={{
+                      flexShrink: 0,
+                      background: GOLD_GRADIENT,
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}>
+                      {group.label}
+                    </span>
+
+                    {/* decorative line */}
+                    <span style={{
+                      flex: 1, height: 1, margin: "0 2px",
+                      background: "linear-gradient(to left, transparent 0%, rgba(201,137,10,0.35) 100%)",
+                      display: "block",
+                    }} />
+
+                    {/* chevron */}
+                    <span
+                      className={`group-chevron${isGroupOpen ? " open" : ""}`}
+                      style={{ fontSize: 9, color: "#c9890a", opacity: isGroupOpen ? 1 : 0.55, flexShrink: 0 }}
+                    >
+                      ▾
+                    </span>
+
+                    {/* bottom separator */}
+                    <span style={{
+                      position: "absolute", bottom: 0, right: 0, left: 0,
+                      height: 1, background: "rgba(180,140,60,0.1)",
+                      display: "block",
+                    }} />
+                  </button>
+
+                  {/* Group items */}
+                  <div className={`group-items-inner${isGroupOpen ? " open" : ""}`}>
+                    <div style={{ padding: "4px 0 3px" }}>
+                      {visItems.map(item => {
+                        const active = isLeafActive(item, pathname);
+                        const isFav  = favSet.has(item.href);
+                        return (
+                          <div
+                            key={item.href}
+                            className="nav-item-row"
+                            style={{ display: "flex", alignItems: "center", position: "relative", margin: "1px 0" }}
+                          >
+                            <Link
+                              href={item.href}
+                              onClick={closeDrawer}
+                              style={{
+                                display: "flex", alignItems: "center", gap: 9,
+                                padding: "7px 8px", fontSize: 13,
+                                color: active ? "#c9890a" : "#5a4020",
+                                textDecoration: "none", borderRadius: 7,
+                                background: active ? "rgba(201,137,10,0.1)" : "transparent",
+                                fontWeight: active ? 600 : 400,
+                                flex: 1,
+                                transition: "all 0.12s",
+                              }}
+                            >
+                              <span style={{
+                                width: 24, height: 24, borderRadius: 6,
+                                background: active ? "rgba(201,137,10,0.18)" : "rgba(201,137,10,0.08)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0,
+                                color: active ? "#c9890a" : "#5a4020",
+                              }}>
+                                <item.I />
+                              </span>
+                              {item.label}
+                            </Link>
+
+                            {/* Fav star button */}
+                            <button
+                              onClick={e => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(item.href, item.label); }}
+                              className={`fav-star-btn${isFav ? " is-fav" : ""}`}
+                              style={{
+                                position: "absolute", left: 6,
+                                opacity: isFav ? 1 : 0,
+                                fontSize: 12,
+                                color: isFav ? accent : "#c0a060",
+                                cursor: "pointer",
+                                padding: "0 3px",
+                                background: "none", border: "none",
+                                flexShrink: 0,
+                                lineHeight: 1,
+                                transition: "opacity 0.15s, color 0.15s",
+                              }}
+                              title={isFav ? "הסר ממועדפים" : "הוסף למועדפים"}
+                            >
+                              ★
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
+
+        {/* User footer */}
+        <div style={{
+          flexShrink: 0,
+          padding: "14px 18px",
+          borderTop: "1px solid rgba(180,140,60,0.15)",
+          display: "flex", alignItems: "center", gap: 10,
+          direction: "rtl",
+        }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: "linear-gradient(135deg,#c9890a,#7a5a0e)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 800, color: "#fff", flexShrink: 0,
+          }}>
+            {userInitials}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1208", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+              {user.name ?? user.email ?? ""}
+            </div>
+            <div style={{ fontSize: 10, color: "#9a8060" }}>
+              {ROLE_LABELS[user.role]}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+            {onChangePassword && (
+              <button
+                onClick={() => { closeDrawer(); onChangePassword(); }}
+                style={{
+                  padding: "3px 8px", borderRadius: 20,
+                  border: "1px solid rgba(180,140,60,0.25)", background: "transparent",
+                  color: "#5a4020", fontSize: 11, cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                🔑 סיסמה
+              </button>
+            )}
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              style={{
+                padding: "3px 8px", borderRadius: 20,
+                border: "1px solid rgba(180,140,60,0.25)", background: "transparent",
+                color: "#5a4020", fontSize: 11, cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+            >
+              יציאה
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════ FAVORITES PANEL ══════════ */}
+      <div
+        style={{
+          position: "fixed",
+          right: 52,
+          top: favBtnTop,
+          width: 240,
+          maxHeight: 400,
+          background: "#ffffff",
+          border: "1px solid rgba(180,140,60,0.22)",
+          borderRadius: "12px 0 0 12px",
+          zIndex: 250,
+          display: "flex", flexDirection: "column",
+          transform: favPanelOpen ? "translateX(0)" : "translateX(260px)",
+          transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+          boxShadow: "-6px 4px 24px rgba(0,0,0,0.1)",
+          overflow: "hidden",
+          pointerEvents: favPanelOpen ? "auto" : "none",
+          visibility: favPanelOpen ? "visible" : "hidden",
+          direction: "rtl",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "11px 14px 10px",
+          borderBottom: "1px solid rgba(180,140,60,0.12)",
+          flexShrink: 0,
+        }}>
+          <span style={{
+            fontSize: 12, fontWeight: 800, letterSpacing: "0.4px",
+            background: GOLD_GRADIENT,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            backgroundClip: "text", flex: 1,
+          }}>
+            ★ מועדפים
+          </span>
+          <button
+            onClick={closeFavPanel}
+            style={{
+              width: 22, height: 22, borderRadius: "50%",
+              border: "1px solid rgba(180,140,60,0.2)", background: "transparent",
+              color: "#9a8060", fontSize: 12, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.15s",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* List */}
+        <div style={{ overflowY: "auto", padding: 8 }}>
+          {favorites.length === 0 ? (
+            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
+              לחץ ★ ליד פריט בתפריט
+            </div>
+          ) : (
+            favorites.map(fav => (
+              <div
+                key={fav.href}
+                className="fav-item-row"
+                style={{ display: "flex", alignItems: "center", margin: "1px 0" }}
+              >
+                <Link
+                  href={fav.href}
+                  onClick={closeFavPanel}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "7px 8px", borderRadius: 7,
+                    fontSize: 13, color: "#5a4020", textDecoration: "none",
+                    flex: 1, transition: "all 0.12s",
+                  }}
+                >
+                  <span style={{
+                    width: 24, height: 24, borderRadius: 5,
+                    background: "rgba(201,137,10,0.1)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, flexShrink: 0, color: "#c9890a",
+                  }}>
+                    ★
+                  </span>
+                  {fav.label}
+                </Link>
+                <button
+                  onClick={e => { e.preventDefault(); onToggleFavorite(fav.href, fav.label); }}
+                  className="fav-remove-btn"
+                  style={{
+                    opacity: 0, fontSize: 11, color: "#9a8060", cursor: "pointer",
+                    background: "none", border: "none", padding: "0 6px 0 2px",
+                    transition: "opacity 0.15s, color 0.15s",
+                  }}
+                  title="הסר ממועדפים"
+                >
+                  ✕
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ══════════ SEARCH PANEL ══════════ */}
+      <div
+        style={{
+          position: "fixed",
+          right: 52,
+          top: searchBtnTop,
+          width: 260,
+          background: "#ffffff",
+          border: "1px solid rgba(180,140,60,0.22)",
+          borderRadius: "12px 0 0 12px",
+          zIndex: 250,
+          display: "flex", flexDirection: "column",
+          transform: searchPanelOpen ? "translateX(0)" : "translateX(280px)",
+          transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+          boxShadow: "-6px 4px 24px rgba(0,0,0,0.1)",
+          overflow: "hidden",
+          pointerEvents: searchPanelOpen ? "auto" : "none",
+          visibility: searchPanelOpen ? "visible" : "hidden",
+          direction: "rtl",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "11px 14px 10px",
+          borderBottom: "1px solid rgba(180,140,60,0.12)",
+          flexShrink: 0,
+        }}>
+          <span style={{
+            fontSize: 12, fontWeight: 800, letterSpacing: "0.4px",
+            background: GOLD_GRADIENT,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            backgroundClip: "text", flex: 1,
+          }}>
+            🔍 חיפוש
+          </span>
+          <button
+            onClick={closeSearchPanel}
+            style={{
+              width: 22, height: 22, borderRadius: "50%",
+              border: "1px solid rgba(180,140,60,0.2)", background: "transparent",
+              color: "#9a8060", fontSize: 12, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.15s",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Input */}
+        <div style={{ padding: "10px 12px 8px", borderBottom: "1px solid rgba(180,140,60,0.1)", flexShrink: 0 }}>
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === "Escape" && closeSearchPanel()}
+            placeholder="חפש פריט בתפריט..."
+            style={{
+              width: "100%", padding: "7px 10px",
+              border: "1px solid rgba(180,140,60,0.25)", borderRadius: 8,
+              fontSize: 13, color: "#1a1208", background: "#faf8f4",
+              outline: "none", textAlign: "right" as const,
+              direction: "rtl",
+            }}
+          />
+        </div>
+
+        {/* Results */}
+        <div style={{ overflowY: "auto", padding: 6, maxHeight: 320 }}>
+          {searchQuery.length < 2 ? (
+            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
+              התחל להקליד לחיפוש
+            </div>
+          ) : searchLoading ? (
+            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", textAlign: "center" as const }}>
+              טוען...
+            </div>
+          ) : searchResults.length === 0 ? (
+            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
+              לא נמצאו תוצאות
+            </div>
+          ) : (
+            searchResults.map((r, i) => (
+              <button
+                key={i}
+                onClick={() => navigateSearch(r.href)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 8,
+                  padding: "7px 8px", borderRadius: 7,
+                  fontSize: 13, color: "#5a4020",
+                  background: "transparent", border: "none",
+                  cursor: "pointer", textAlign: "right" as const,
+                  transition: "all 0.12s", direction: "rtl",
+                }}
+              >
+                <span style={{
+                  width: 24, height: 24, borderRadius: 5,
+                  background: "rgba(201,137,10,0.1)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, flexShrink: 0,
+                }}>
+                  {TYPE_ICON[r.type] ?? "🔍"}
+                </span>
+                <div style={{ flex: 1, textAlign: "right" as const, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1208", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                    {r.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#c0a878", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                    {r.sub}
+                  </div>
+                </div>
+                <span style={{ fontSize: 10, color: "#c0a878", marginRight: "auto", flexShrink: 0 }}>
+                  {r.type}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
     </>
   );
 }

@@ -5,7 +5,7 @@ import Sidebar, { useFavorites } from "./Sidebar";
 import TopBar from "./TopBar";
 import type { Role } from "@/generated/prisma/client";
 
-const SIDEBAR_PINNED = 256; // default; actual value driven by --sidebar-w CSS var
+const SIDEBAR_PINNED = 52; // strip width; actual value driven by --sidebar-w CSS var
 
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
