@@ -999,8 +999,8 @@ export default function Sidebar({
           />
         </div>
 
-        {/* Results */}
-        <div style={{ overflowY: "auto", padding: 6, flex: 1 }}>
+        {/* Results — flex:1 + minHeight:0 enables scroll when panel hits maxHeight */}
+        <div style={{ overflowY: "auto", padding: 6, flex: 1, minHeight: 0 }}>
           {searchQuery.length < 2 ? (
             <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
               התחל להקליד לחיפוש
