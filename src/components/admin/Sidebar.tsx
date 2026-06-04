@@ -936,6 +936,7 @@ export default function Sidebar({
           right: 52,
           top: searchBtnTop,
           width: 260,
+          maxHeight: `calc(100vh - ${searchBtnTop + 16}px)`,
           background: "#ffffff",
           border: "1px solid rgba(180,140,60,0.22)",
           borderRadius: "12px 0 0 12px",
@@ -999,7 +1000,7 @@ export default function Sidebar({
         </div>
 
         {/* Results */}
-        <div style={{ overflowY: "auto", padding: 6, maxHeight: 320 }}>
+        <div style={{ overflowY: "auto", padding: 6, flex: 1 }}>
           {searchQuery.length < 2 ? (
             <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
               התחל להקליד לחיפוש
