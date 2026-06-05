@@ -316,7 +316,7 @@ function StatusBadge({ status }: { status: string }) {
 /* ─── Dark Skeleton ───────────────────────────────────────────── */
 function DarkSkeleton() {
   return (
-    <div style={{ background: COLORS.pageBg, minHeight: "100vh", padding: 0 }}>
+    <div style={{ padding: 0 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 22 }}>
         {[...Array(4)].map((_, i) => (
           <div key={i} style={{ background: T.panel, borderRadius: 12, height: 110, animation: "pulse 1.5s ease-in-out infinite" }} />
@@ -373,7 +373,7 @@ export default function DashboardExtra({
   const rankColors = [COLORS.blueDark, COLORS.greenDark, COLORS.yellowDark, COLORS.redDark, T.purple];
 
   return (
-    <div style={{ background: COLORS.pageBg, direction: "rtl" }}>
+    <div style={{ direction: "rtl" }}>
 
       {/* ── Expiry warnings ── */}
       {expiringSubscriptions.length > 0 && (
