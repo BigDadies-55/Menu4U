@@ -18,21 +18,21 @@ import type { CSSProperties } from "react";
 
 export const T = {
   // Backgrounds (dark → light)
-  bg:      "#f5f0e8",
-  surface: "#ffffff",
-  panel:   "#f0ece3",
-  raised:  "#e8e0d0",
-  overlay: "#e0d8c8",
+  bg:      "#0c0c0c",
+  surface: "#161616",
+  panel:   "#1e1e1e",
+  raised:  "#2a2826",
+  overlay: "#242220",
 
-  border:    "rgba(180,140,60,0.25)",
-  borderSub: "rgba(180,140,60,0.10)",
+  border:    "rgba(255,255,255,0.08)",
+  borderSub: "rgba(255,255,255,0.04)",
 
-  text:  "#1a1208",
-  sub:   "#5a4020",
-  muted: "#9a8060",
+  text:  "#f0ece6",
+  sub:   "#c8bfb0",
+  muted: "#7a7268",
 
-  gold:    "#c9890a",
-  goldSub: "rgba(201,137,10,0.15)",
+  gold:    "#c96a1a",
+  goldSub: "rgba(201,106,26,0.18)",
 
   // Semantic colors
   green:    "#22c55e",
@@ -130,7 +130,7 @@ export type StatusKey = keyof typeof STATUS;
 type BtnVariant = "primary" | "danger" | "success" | "ghost" | "warning" | "info";
 
 const BTN_CFG: Record<BtnVariant, { bg: string; color: string; border?: string }> = {
-  primary: { bg: T.gold,   color: "#000" },
+  primary: { bg: T.gold,   color: "#fff" },
   danger:  { bg: T.red,    color: "#fff" },
   success: { bg: T.green,  color: "#000" },
   warning: { bg: T.orange, color: "#fff" },
@@ -182,7 +182,7 @@ export function btnGhost(color: string, size: "sm" | "md" | "lg" = "md"): CSSPro
 /** Input / textarea base style */
 export const inp: CSSProperties = {
   background:   T.overlay,
-  border:       `1px solid rgba(212,160,23,0.25)`,
+  border:       `1px solid ${T.border}`,
   borderRadius: T.rMd,
   color:        T.text,
   fontSize:     T.fmd,
