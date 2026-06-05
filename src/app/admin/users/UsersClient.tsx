@@ -5,6 +5,7 @@ import { ROLE_LABELS } from "@/lib/permissions";
 import { formatDate } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/client";
 import { T } from "@/lib/ui";
+import PageShell from "@/components/admin/PageShell";
 
 type RestaurantUser = {
   restaurantId: string;
@@ -266,7 +267,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   );
 
   return (
-    <div className="p-4 md:p-8" style={{ color: T.text }}>
+    <PageShell>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
@@ -671,6 +672,6 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

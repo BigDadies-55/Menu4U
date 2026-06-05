@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { formatDate } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { MENU_PALETTES } from "@/lib/menuPalettes";
+import PageShell from "@/components/admin/PageShell";
 
 type Restaurant = {
   id: string;
@@ -328,7 +329,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
   );
 
   return (
-    <div className="p-4 md:p-8" style={{ color: T.text }}>
+    <PageShell>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: T.text }}>ניהול מסעדות</h1>
@@ -1017,6 +1018,6 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
           </table>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

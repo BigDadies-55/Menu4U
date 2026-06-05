@@ -4,6 +4,7 @@ import { T } from "@/lib/ui";
 import { useState, useEffect, useRef } from "react";
 import { formatPrice } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
+import PageShell from "@/components/admin/PageShell";
 
 type ItemTranslationsMap = { en?: { name?: string; description?: string }; ru?: { name?: string; description?: string }; fr?: { name?: string; description?: string } };
 type CatTranslationsMap  = { en?: { name?: string }; ru?: { name?: string }; fr?: { name?: string } };
@@ -1033,7 +1034,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const isSingleMenu = (selectedRestaurant?.menus.length ?? 0) <= 1;
 
   return (
-    <div className="p-4 md:p-8" style={{ color: T.text }}>
+    <PageShell>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: T.text }}>ניהול תפריטים</h1>
         {selectedRestaurant && (
@@ -1815,6 +1816,6 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

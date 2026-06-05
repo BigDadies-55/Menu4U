@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { T } from "@/lib/ui";
+import PageShell from "@/components/admin/PageShell";
 
 type DurationStat = { avg: number; median: number; count: number };
 
@@ -241,7 +242,7 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
   }
 
   return (
-    <div style={{ padding: "24px", direction: "rtl" }}>
+    <PageShell>
 
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -493,6 +494,6 @@ export default function StatsClient({ restaurants, isSuperAdmin }: { restaurants
 
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

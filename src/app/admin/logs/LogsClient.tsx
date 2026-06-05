@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { T } from "@/lib/ui";
+import PageShell from "@/components/admin/PageShell";
 
 interface AuditLog {
   id: string;
@@ -202,7 +203,7 @@ export default function LogsClient() {
   const hasFilters = !!(filterAction || filterEntity || search || dateFrom || dateTo);
 
   return (
-    <div className="p-4 md:p-6" dir="rtl" style={{ color: T.text }}>
+    <PageShell>
 
       {/* Header */}
       <div className="flex items-center justify-between" style={{ marginBottom: 20 }}>
@@ -365,6 +366,6 @@ export default function LogsClient() {
           </>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }
