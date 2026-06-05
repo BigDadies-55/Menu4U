@@ -31,8 +31,8 @@ export const T = {
   sub:   "#c8bfb0",
   muted: "#7a7268",
 
-  gold:    "#c96a1a",
-  goldSub: "rgba(201,106,26,0.18)",
+  gold:    "#c9890a",
+  goldSub: "rgba(201,137,10,0.15)",
 
   // Semantic colors
   green:    "#22c55e",
