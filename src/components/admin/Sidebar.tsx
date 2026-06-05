@@ -21,12 +21,12 @@ const FAV_KEY = "menu4u_favorites";
 
 /* ─── Admin palettes ─────────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
-  dark:   { bg: "var(--c-panel)", accent: T.gold,    accentMuted: "rgba(201,168,76,0.15)",  accentText: "#e0c47a" },
+  dark:   { bg: "var(--c-panel)", accent: T.gold,    accentMuted: T.goldSub,              accentText: T.gold   },
   purple: { bg: "#120b1e",        accent: T.purple,  accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
   blue:   { bg: "#080f1e",        accent: T.blue,    accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
   green:  { bg: "#071510",        accent: T.green,   accentMuted: "rgba(34,197,94,0.15)",  accentText: "#86efac" },
   rose:   { bg: "#150a0e",        accent: "#f43f5e", accentMuted: "rgba(244,63,94,0.15)",  accentText: "#fda4af" },
-  custom: { bg: "var(--c-panel)", accent: T.gold,    accentMuted: "rgba(201,168,76,0.15)", accentText: "#e0c47a" },
+  custom: { bg: "var(--c-panel)", accent: T.gold,    accentMuted: T.goldSub,              accentText: T.gold   },
 };
 
 /* ─── Icons ──────────────────────────────────────────────────── */
@@ -176,8 +176,7 @@ function isLeafActive(leaf: NavLeaf, pathname: string): boolean {
 }
 
 /* ─── Colors ─────────────────────────────────────────────────── */
-const GOLD_GRADIENT = "linear-gradient(110deg,#7a4e04 0%,#c9890a 50%,#e8b84b 100%)";
-const BORDER_COLOR  = "rgba(180,140,60,0.18)";
+const GOLD_GRADIENT = `linear-gradient(110deg,#7a3c04 0%,${T.gold} 50%,#e8843a 100%)`;
 
 /* ─── Main Sidebar ───────────────────────────────────────────── */
 export default function Sidebar({
@@ -395,8 +394,7 @@ export default function Sidebar({
   const userInitials = (user.name ?? user.email ?? "?")
     .split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
-  /* Drawer background: use white for default/dark palettes since design is light-theme */
-  const drawerBg = (sidebarBg === "var(--c-panel)" || !adminSidebarBg) ? "#ffffff" : sidebarBg;
+  const drawerBg = (sidebarBg === "var(--c-panel)" || !adminSidebarBg) ? T.surface : sidebarBg;
 
   return (
     <>
@@ -410,7 +408,10 @@ export default function Sidebar({
         .group-items-inner.open { max-height: 600px; }
         .group-chevron { transition: transform 0.22s; display: inline-block; }
         .group-chevron.open { transform: rotate(180deg); }
-        .strip-icon-link:hover { background: rgba(201,137,10,0.1) !important; color: #c9890a !important; }
+        .strip-icon-link:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
+        .nav-item-link:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
+        .fav-item-link:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
+        .search-result-btn:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
       `}</style>
 
       {/* ── Overlay ── */}
@@ -419,7 +420,7 @@ export default function Sidebar({
           onClick={closeAll}
           style={{
             position: "fixed", inset: 0,
-            background: "rgba(0,0,0,0.25)",
+            background: "rgba(0,0,0,0.45)",
             zIndex: 290,
           }}
         />
@@ -429,8 +430,8 @@ export default function Sidebar({
       <aside style={{
         position: "fixed", top: 0, right: 0,
         width: 52, height: "100vh",
-        background: "#ffffff",
-        borderLeft: `1px solid ${BORDER_COLOR}`,
+        background: T.surface,
+        borderLeft: `1px solid ${T.border}`,
         display: "flex", flexDirection: "column", alignItems: "center",
         zIndex: 200,
       }}>
@@ -441,19 +442,19 @@ export default function Sidebar({
             width: 52, height: 52, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", border: "none",
-            background: drawerOpen ? "rgba(201,137,10,0.07)" : "transparent",
-            borderBottom: "1px solid rgba(180,140,60,0.15)",
+            background: drawerOpen ? T.goldSub : "transparent",
+            borderBottom: `1px solid ${T.border}`,
             transition: "background 0.15s",
           }}
           title="תפריט"
         >
           {drawerOpen ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a4020" strokeWidth="2" strokeLinecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round">
               <line x1="4" y1="4" x2="20" y2="20"/>
               <line x1="20" y1="4" x2="4" y2="20"/>
             </svg>
           ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a4020" strokeWidth="2" strokeLinecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round">
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="12" x2="21" y2="12"/>
               <line x1="3" y1="18" x2="21" y2="18"/>
@@ -474,13 +475,13 @@ export default function Sidebar({
               width: 40, height: 40, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", border: "none",
-              color: favPanelOpen ? "#c9890a" : "#5a4020",
-              background: favPanelOpen ? "rgba(201,137,10,0.08)" : "transparent",
+              color: favPanelOpen ? T.gold : T.sub,
+              background: favPanelOpen ? T.goldSub : "transparent",
               transition: "background 0.15s, color 0.15s",
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24"
-              fill={favorites.length > 0 ? "#c9890a" : "none"}
+              fill={favorites.length > 0 ? T.gold : "none"}
               stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
@@ -495,8 +496,8 @@ export default function Sidebar({
               width: 40, height: 40, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", border: "none",
-              color: searchPanelOpen ? "#c9890a" : "#5a4020",
-              background: searchPanelOpen ? "rgba(201,137,10,0.08)" : "transparent",
+              color: searchPanelOpen ? T.gold : T.sub,
+              background: searchPanelOpen ? T.goldSub : "transparent",
               transition: "background 0.15s, color 0.15s",
             }}
           >
@@ -513,7 +514,7 @@ export default function Sidebar({
             style={{
               width: 40, height: 40, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#5a4020", textDecoration: "none",
+              color: T.sub, textDecoration: "none",
               transition: "background 0.15s, color 0.15s",
             }}
           >
@@ -528,7 +529,7 @@ export default function Sidebar({
               width: 40, height: 40, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", border: "none",
-              color: "#5a4020",
+              color: T.sub,
               background: "transparent",
               transition: "background 0.15s, color 0.15s",
             }}
@@ -546,7 +547,7 @@ export default function Sidebar({
           position: "fixed", top: 0, right: 52,
           width: drawerW, height: "100vh",
           background: drawerBg,
-          borderLeft: `1px solid ${BORDER_COLOR}`,
+          borderLeft: `1px solid ${T.border}`,
           zIndex: 300,
           display: "flex", flexDirection: "column",
           transform: drawerTranslate,
@@ -574,8 +575,8 @@ export default function Sidebar({
           style={{
             position: "absolute", top: 10, left: 10,
             width: 30, height: 30, borderRadius: "50%",
-            border: "1px solid rgba(180,140,60,0.25)", background: "transparent",
-            color: "#5a4020", fontSize: 15, cursor: "pointer",
+            border: `1px solid ${T.border}`, background: "transparent",
+            color: T.sub, fontSize: 15, cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s", zIndex: 5,
           }}
@@ -589,7 +590,7 @@ export default function Sidebar({
           style={{ flex: 1, overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column" }}
         >
           {/* Logo */}
-          <div style={{ padding: "16px 24px 14px", borderBottom: `1px solid ${BORDER_COLOR}`, marginBottom: 14 }}>
+          <div style={{ padding: "16px 24px 14px", borderBottom: `1px solid ${T.border}`, marginBottom: 14 }}>
             {siteLogo ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -613,7 +614,7 @@ export default function Sidebar({
                 }}>
                   {siteName}
                 </div>
-                <div style={{ fontSize: 10, color: "#9a8060", marginTop: 4, letterSpacing: "2px", textTransform: "uppercase" as const }}>
+                <div style={{ fontSize: 10, color: T.muted, marginTop: 4, letterSpacing: "2px", textTransform: "uppercase" as const }}>
                   Restaurant OS
                 </div>
               </>
@@ -630,9 +631,9 @@ export default function Sidebar({
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "7px 0", fontSize: 13, fontWeight: 600,
-                  color: isLeafActive(STANDALONE, pathname) ? "#c9890a" : "#5a4020",
+                  color: isLeafActive(STANDALONE, pathname) ? T.gold : T.sub,
                   textDecoration: "none",
-                  borderBottom: "1px solid rgba(180,140,60,0.12)",
+                  borderBottom: `1px solid ${T.border}`,
                   marginBottom: 10,
                 }}
               >
@@ -668,7 +669,7 @@ export default function Sidebar({
                     {/* bullet dot */}
                     <span style={{
                       fontSize: 16, lineHeight: 1, flexShrink: 0,
-                      background: "linear-gradient(135deg,#c9890a,#e8b84b)",
+                      background: GOLD_GRADIENT,
                       WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                       backgroundClip: "text",
                     }}>•</span>
@@ -686,14 +687,14 @@ export default function Sidebar({
                     {/* decorative line */}
                     <span style={{
                       flex: 1, height: 1, margin: "0 2px",
-                      background: "linear-gradient(to left, transparent 0%, rgba(201,137,10,0.35) 100%)",
+                      background: `linear-gradient(to left, transparent 0%, ${T.gold}55 100%)`,
                       display: "block",
                     }} />
 
                     {/* chevron */}
                     <span
                       className={`group-chevron${isGroupOpen ? " open" : ""}`}
-                      style={{ fontSize: 9, color: "#c9890a", opacity: isGroupOpen ? 1 : 0.55, flexShrink: 0 }}
+                      style={{ fontSize: 9, color: T.gold, opacity: isGroupOpen ? 1 : 0.55, flexShrink: 0 }}
                     >
                       ▾
                     </span>
@@ -701,7 +702,7 @@ export default function Sidebar({
                     {/* bottom separator */}
                     <span style={{
                       position: "absolute", bottom: 0, right: 0, left: 0,
-                      height: 1, background: "rgba(180,140,60,0.1)",
+                      height: 1, background: T.border,
                       display: "block",
                     }} />
                   </button>
@@ -721,12 +722,13 @@ export default function Sidebar({
                             <Link
                               href={item.href}
                               onClick={closeDrawer}
+                              className="nav-item-link"
                               style={{
                                 display: "flex", alignItems: "center", gap: 9,
                                 padding: "7px 8px", fontSize: 13,
-                                color: active ? "#c9890a" : "#5a4020",
+                                color: active ? T.gold : T.sub,
                                 textDecoration: "none", borderRadius: 7,
-                                background: active ? "rgba(201,137,10,0.1)" : "transparent",
+                                background: active ? T.goldSub : "transparent",
                                 fontWeight: active ? 600 : 400,
                                 flex: 1,
                                 transition: "all 0.12s",
@@ -734,10 +736,10 @@ export default function Sidebar({
                             >
                               <span style={{
                                 width: 24, height: 24, borderRadius: 6,
-                                background: active ? "rgba(201,137,10,0.18)" : "rgba(201,137,10,0.08)",
+                                background: active ? T.goldSub : T.panel,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 flexShrink: 0,
-                                color: active ? "#c9890a" : "#5a4020",
+                                color: active ? T.gold : T.muted,
                               }}>
                                 <item.I />
                               </span>
@@ -752,7 +754,7 @@ export default function Sidebar({
                                 position: "absolute", left: 6,
                                 opacity: isFav ? 1 : 0,
                                 fontSize: 12,
-                                color: isFav ? accent : "#c0a060",
+                                color: isFav ? accent : T.muted,
                                 cursor: "pointer",
                                 padding: "0 3px",
                                 background: "none", border: "none",
@@ -779,23 +781,23 @@ export default function Sidebar({
         <div style={{
           flexShrink: 0,
           padding: "14px 18px",
-          borderTop: "1px solid rgba(180,140,60,0.15)",
+          borderTop: `1px solid ${T.border}`,
           display: "flex", alignItems: "center", gap: 10,
           direction: "rtl",
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
-            background: "linear-gradient(135deg,#c9890a,#7a5a0e)",
+            background: `linear-gradient(135deg,${T.gold},#7a3c04)`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 12, fontWeight: 800, color: "#fff", flexShrink: 0,
           }}>
             {userInitials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1208", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
               {user.name ?? user.email ?? ""}
             </div>
-            <div style={{ fontSize: 10, color: "#9a8060" }}>
+            <div style={{ fontSize: 10, color: T.muted }}>
               {ROLE_LABELS[user.role]}
             </div>
           </div>
@@ -805,8 +807,8 @@ export default function Sidebar({
                 onClick={() => { closeDrawer(); onChangePassword(); }}
                 style={{
                   padding: "3px 8px", borderRadius: 20,
-                  border: "1px solid rgba(180,140,60,0.25)", background: "transparent",
-                  color: "#5a4020", fontSize: 11, cursor: "pointer",
+                  border: `1px solid ${T.border}`, background: "transparent",
+                  color: T.sub, fontSize: 11, cursor: "pointer",
                   transition: "all 0.15s",
                 }}
               >
@@ -817,8 +819,8 @@ export default function Sidebar({
               onClick={() => signOut({ callbackUrl: "/login" })}
               style={{
                 padding: "3px 8px", borderRadius: 20,
-                border: "1px solid rgba(180,140,60,0.25)", background: "transparent",
-                color: "#5a4020", fontSize: 11, cursor: "pointer",
+                border: `1px solid ${T.border}`, background: "transparent",
+                color: T.sub, fontSize: 11, cursor: "pointer",
                 transition: "all 0.15s",
               }}
             >
@@ -836,14 +838,14 @@ export default function Sidebar({
           top: favBtnTop,
           width: 240,
           maxHeight: 400,
-          background: "#ffffff",
-          border: "1px solid rgba(180,140,60,0.22)",
+          background: T.surface,
+          border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
           zIndex: 250,
           display: "flex", flexDirection: "column",
           transform: favPanelOpen ? "translateX(0)" : "translateX(260px)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
-          boxShadow: "-6px 4px 24px rgba(0,0,0,0.1)",
+          boxShadow: "-6px 4px 24px rgba(0,0,0,0.4)",
           overflow: "hidden",
           pointerEvents: favPanelOpen ? "auto" : "none",
           visibility: favPanelOpen ? "visible" : "hidden",
@@ -854,7 +856,7 @@ export default function Sidebar({
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
           padding: "11px 14px 10px",
-          borderBottom: "1px solid rgba(180,140,60,0.12)",
+          borderBottom: `1px solid ${T.border}`,
           flexShrink: 0,
         }}>
           <span style={{
@@ -869,8 +871,8 @@ export default function Sidebar({
             onClick={closeFavPanel}
             style={{
               width: 22, height: 22, borderRadius: "50%",
-              border: "1px solid rgba(180,140,60,0.2)", background: "transparent",
-              color: "#9a8060", fontSize: 12, cursor: "pointer",
+              border: `1px solid ${T.border}`, background: "transparent",
+              color: T.muted, fontSize: 12, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "all 0.15s",
             }}
@@ -882,7 +884,7 @@ export default function Sidebar({
         {/* List */}
         <div style={{ overflowY: "auto", padding: 8 }}>
           {favorites.length === 0 ? (
-            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
+            <div style={{ fontSize: 11, color: T.muted, padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
               לחץ ★ ליד פריט בתפריט
             </div>
           ) : (
@@ -895,18 +897,19 @@ export default function Sidebar({
                 <Link
                   href={fav.href}
                   onClick={closeFavPanel}
+                  className="fav-item-link"
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
                     padding: "7px 8px", borderRadius: 7,
-                    fontSize: 13, color: "#5a4020", textDecoration: "none",
+                    fontSize: 13, color: T.sub, textDecoration: "none",
                     flex: 1, transition: "all 0.12s",
                   }}
                 >
                   <span style={{
                     width: 24, height: 24, borderRadius: 5,
-                    background: "rgba(201,137,10,0.1)",
+                    background: T.goldSub,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, flexShrink: 0, color: "#c9890a",
+                    fontSize: 11, flexShrink: 0, color: T.gold,
                   }}>
                     ★
                   </span>
@@ -916,7 +919,7 @@ export default function Sidebar({
                   onClick={e => { e.preventDefault(); onToggleFavorite(fav.href, fav.label); }}
                   className="fav-remove-btn"
                   style={{
-                    opacity: 0, fontSize: 11, color: "#9a8060", cursor: "pointer",
+                    opacity: 0, fontSize: 11, color: T.muted, cursor: "pointer",
                     background: "none", border: "none", padding: "0 6px 0 2px",
                     transition: "opacity 0.15s, color 0.15s",
                   }}
@@ -938,14 +941,14 @@ export default function Sidebar({
           bottom: searchBtnFromBottom,
           width: 260,
           maxHeight: `calc(100vh - ${searchBtnFromBottom + 16}px)`,
-          background: "#ffffff",
-          border: "1px solid rgba(180,140,60,0.22)",
+          background: T.surface,
+          border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
           zIndex: 250,
           display: "flex", flexDirection: "column",
           transform: searchPanelOpen ? "translateX(0)" : "translateX(280px)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
-          boxShadow: "-6px 4px 24px rgba(0,0,0,0.1)",
+          boxShadow: "-6px 4px 24px rgba(0,0,0,0.4)",
           overflow: "hidden",
           pointerEvents: searchPanelOpen ? "auto" : "none",
           visibility: searchPanelOpen ? "visible" : "hidden",
@@ -956,7 +959,7 @@ export default function Sidebar({
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
           padding: "11px 14px 10px",
-          borderBottom: "1px solid rgba(180,140,60,0.12)",
+          borderBottom: `1px solid ${T.border}`,
           flexShrink: 0,
         }}>
           <span style={{
@@ -971,8 +974,8 @@ export default function Sidebar({
             onClick={closeSearchPanel}
             style={{
               width: 22, height: 22, borderRadius: "50%",
-              border: "1px solid rgba(180,140,60,0.2)", background: "transparent",
-              color: "#9a8060", fontSize: 12, cursor: "pointer",
+              border: `1px solid ${T.border}`, background: "transparent",
+              color: T.muted, fontSize: 12, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "all 0.15s",
             }}
@@ -982,7 +985,7 @@ export default function Sidebar({
         </div>
 
         {/* Input */}
-        <div style={{ padding: "10px 12px 8px", borderBottom: "1px solid rgba(180,140,60,0.1)", flexShrink: 0 }}>
+        <div style={{ padding: "10px 12px 8px", borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
           <input
             ref={searchInputRef}
             type="text"
@@ -992,8 +995,8 @@ export default function Sidebar({
             placeholder="חפש פריט בתפריט..."
             style={{
               width: "100%", padding: "7px 10px",
-              border: "1px solid rgba(180,140,60,0.25)", borderRadius: 8,
-              fontSize: 13, color: "#1a1208", background: "#faf8f4",
+              border: `1px solid ${T.border}`, borderRadius: 8,
+              fontSize: 13, color: T.text, background: T.panel,
               outline: "none", textAlign: "right" as const,
               direction: "rtl",
             }}
@@ -1003,15 +1006,15 @@ export default function Sidebar({
         {/* Results — flex:1 + minHeight:0 enables scroll when panel hits maxHeight */}
         <div style={{ overflowY: "auto", padding: 6, flex: 1, minHeight: 0 }}>
           {searchQuery.length < 2 ? (
-            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
+            <div style={{ fontSize: 11, color: T.muted, padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
               התחל להקליד לחיפוש
             </div>
           ) : searchLoading ? (
-            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", textAlign: "center" as const }}>
+            <div style={{ fontSize: 11, color: T.muted, padding: "10px 8px", textAlign: "center" as const }}>
               טוען...
             </div>
           ) : searchResults.length === 0 ? (
-            <div style={{ fontSize: 11, color: "#c0a878", padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
+            <div style={{ fontSize: 11, color: T.muted, padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
               לא נמצאו תוצאות
             </div>
           ) : (
@@ -1019,10 +1022,11 @@ export default function Sidebar({
               <button
                 key={i}
                 onClick={() => navigateSearch(r.href)}
+                className="search-result-btn"
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 8,
                   padding: "7px 8px", borderRadius: 7,
-                  fontSize: 13, color: "#5a4020",
+                  fontSize: 13, color: T.sub,
                   background: "transparent", border: "none",
                   cursor: "pointer", textAlign: "right" as const,
                   transition: "all 0.12s", direction: "rtl",
@@ -1030,21 +1034,21 @@ export default function Sidebar({
               >
                 <span style={{
                   width: 24, height: 24, borderRadius: 5,
-                  background: "rgba(201,137,10,0.1)",
+                  background: T.goldSub,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, flexShrink: 0,
                 }}>
                   {TYPE_ICON[r.type] ?? "🔍"}
                 </span>
                 <div style={{ flex: 1, textAlign: "right" as const, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1208", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                     {r.label}
                   </div>
-                  <div style={{ fontSize: 11, color: "#c0a878", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                  <div style={{ fontSize: 11, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                     {r.sub}
                   </div>
                 </div>
-                <span style={{ fontSize: 10, color: "#c0a878", marginRight: "auto", flexShrink: 0 }}>
+                <span style={{ fontSize: 10, color: T.muted, marginRight: "auto", flexShrink: 0 }}>
                   {r.type}
                 </span>
               </button>
