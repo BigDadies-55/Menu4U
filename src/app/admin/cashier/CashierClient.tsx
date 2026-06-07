@@ -209,14 +209,19 @@ function BillModal({
 
   // Loyalty club flow
   type ClubStep = "idle" | "phone" | "searching" | "found" | "not_found" | "redeeming" | "done";
-  type LoyaltyMember = { id: string; name: string; points: number };
+  type LoyaltyCoupon = { id: string; code: string; type: string; value: number; description: string | null; expiresAt: string | null };
+  type LoyaltyMember = { id: string; name: string; points: number; coupons?: LoyaltyCoupon[] };
   type LoyaltySettings = { shekelPerPoint: number; minRedeemPoints: number };
+  // "points" | "coupon" — which redemption mode the cashier has selected
+  type RedeemMode = "points" | "coupon";
   const [clubStep, setClubStep] = useState<ClubStep>("idle");
   const [clubPhone, setClubPhone] = useState("");
   const [clubMember, setClubMember] = useState<LoyaltyMember | null>(null);
   const [clubSettings, setClubSettings] = useState<LoyaltySettings>({ shekelPerPoint: 0.1, minRedeemPoints: 100 });
   const [clubPoints, setClubPoints] = useState<number>(0);
   const [clubError, setClubError] = useState<string | null>(null);
+  const [redeemMode, setRedeemMode] = useState<RedeemMode>("points");
+  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
@@ -239,6 +244,10 @@ function BillModal({
         setClubMember(member);
         if (settings) setClubSettings({ shekelPerPoint: settings.shekelPerPoint ?? 0.1, minRedeemPoints: settings.minRedeemPoints ?? 100 });
         setClubPoints(Math.min(member.points, settings?.minRedeemPoints ?? 100));
+        // Default to coupon mode if member has active coupons, else points
+        const activeCoupons = (member.coupons ?? []).filter((c: LoyaltyCoupon) => !c.expiresAt || new Date(c.expiresAt) > new Date());
+        setRedeemMode(activeCoupons.length > 0 ? "coupon" : "points");
+        setSelectedCouponId(activeCoupons[0]?.id ?? null);
         setClubStep("found");
       } else {
         setClubStep("not_found");
@@ -248,26 +257,30 @@ function BillModal({
     }
   }
 
-  async function redeemPoints() {
-    if (!clubMember || clubPoints <= 0) return;
+  async function redeem() {
+    if (!clubMember) return;
     const targetOrder = validOrders[0];
     if (!targetOrder) return;
+    if (redeemMode === "coupon" && !selectedCouponId) return;
+    if (redeemMode === "points" && clubPoints <= 0) return;
     setClubStep("redeeming");
     setClubError(null);
     try {
+      const body = redeemMode === "coupon"
+        ? { orderId: targetOrder.id, memberId: clubMember.id, type: "COUPON", couponId: selectedCouponId }
+        : { orderId: targetOrder.id, memberId: clubMember.id, type: "POINTS", pointsToRedeem: clubPoints };
       const res = await fetch(`/api/loyalty/${restaurantId}/redeem`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: targetOrder.id,
-          memberId: clubMember.id,
-          type: "POINTS",
-          pointsToRedeem: clubPoints,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
-        setClubError(data.error === "already_redeemed" ? "הזמנה זו כבר מומשה" : data.error ?? "שגיאה");
+        const msg = data.error === "already_redeemed" ? "הזמנה זו כבר מומשה"
+          : data.error === "coupon_invalid" ? "הקופון אינו תקף"
+          : data.error === "coupon_expired" ? "הקופון פג תוקף"
+          : data.error ?? "שגיאה";
+        setClubError(msg);
         setClubStep("found");
         return;
       }
@@ -689,56 +702,130 @@ function BillModal({
                 )}
 
                 {/* Member found */}
-                {(clubStep === "found" || clubStep === "redeeming") && clubMember && (
-                  <>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                      <div>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: T.text }}>{clubMember.name}</span>
-                        <span style={{ fontSize: 12, color: T.gold, marginRight: 8 }}>{clubMember.points} נקודות</span>
-                      </div>
-                      <button type="button" onClick={() => setClubStep("idle")}
-                        style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
-                    </div>
-                    {clubMember.points >= clubSettings.minRedeemPoints ? (
-                      <>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <input
-                            type="number"
-                            min={clubSettings.minRedeemPoints}
-                            max={clubMember.points}
-                            value={clubPoints}
-                            onChange={e => {
-                              const v = Math.min(Math.max(Number(e.target.value) || 0, 0), clubMember.points);
-                              setClubPoints(v);
-                            }}
-                            style={{
-                              width: 90, padding: "6px 10px", borderRadius: 7,
-                              border: "1px solid #fde68a", background: "#fff",
-                              fontSize: 13, color: T.text, outline: "none",
-                            }}
-                          />
-                          <span style={{ fontSize: 12, color: T.sub }}>נקודות</span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: T.green, marginRight: "auto" }}>
-                            = ₪{(clubPoints * clubSettings.shekelPerPoint).toFixed(2)} הנחה
-                          </span>
+                {(clubStep === "found" || clubStep === "redeeming") && clubMember && (() => {
+                  const activeCoupons = (clubMember.coupons ?? []).filter(c => !c.expiresAt || new Date(c.expiresAt) > new Date());
+                  const hasCoupons = activeCoupons.length > 0;
+                  const hasPoints = clubMember.points >= clubSettings.minRedeemPoints;
+                  const selectedCoupon = activeCoupons.find(c => c.id === selectedCouponId) ?? null;
+                  const couponDiscount = selectedCoupon
+                    ? selectedCoupon.type === "DISCOUNT_PERCENT"
+                      ? subtotal * selectedCoupon.value / 100
+                      : selectedCoupon.value
+                    : 0;
+                  const canRedeem = redeemMode === "coupon" ? !!selectedCouponId : hasPoints && clubPoints >= clubSettings.minRedeemPoints;
+                  return (
+                    <>
+                      {/* Member header */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                        <div>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: T.text }}>{clubMember.name}</span>
+                          <span style={{ fontSize: 12, color: T.gold, marginRight: 8 }}>{clubMember.points} ⭐</span>
+                          {hasCoupons && <span style={{ fontSize: 12, color: T.green, marginRight: 4 }}>· {activeCoupons.length} קופונים</span>}
                         </div>
-                        {clubError && <div style={{ color: T.red, fontSize: 11, marginBottom: 6 }}>{clubError}</div>}
-                        <button type="button" onClick={redeemPoints}
-                          disabled={clubStep === "redeeming" || clubPoints < clubSettings.minRedeemPoints}
-                          style={{
-                            width: "100%", padding: "8px 0", borderRadius: 7, border: "none",
-                            background: (clubStep === "redeeming" || clubPoints < clubSettings.minRedeemPoints) ? T.gold : T.gold,
-                            color: "#fff", fontWeight: 700, fontSize: 13,
-                            cursor: (clubStep === "redeeming" || clubPoints < clubSettings.minRedeemPoints) ? "not-allowed" : "pointer",
-                          }}>
-                          {clubStep === "redeeming" ? "מממש..." : "✓ ממש נקודות"}
-                        </button>
-                      </>
-                    ) : (
-                      <div style={{ fontSize: 12, color: T.muted }}>אין מספיק נקודות (מינימום {clubSettings.minRedeemPoints})</div>
-                    )}
-                  </>
-                )}
+                        <button type="button" onClick={() => setClubStep("idle")}
+                          style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
+                      </div>
+
+                      {/* Mode toggle — only if both options available */}
+                      {hasCoupons && hasPoints && (
+                        <div style={{ display: "flex", background: "#f1f5f9", borderRadius: 8, padding: 3, gap: 2, marginBottom: 10 }}>
+                          {([
+                            { v: "coupon" as RedeemMode, label: "🎟 קופון" },
+                            { v: "points" as RedeemMode, label: "⭐ נקודות" },
+                          ]).map(opt => (
+                            <button key={opt.v} type="button" onClick={() => setRedeemMode(opt.v)}
+                              style={{
+                                flex: 1, padding: "5px 0", borderRadius: 6, border: "none",
+                                background: redeemMode === opt.v ? T.gold : "transparent",
+                                color: redeemMode === opt.v ? "#fff" : T.muted,
+                                fontWeight: 700, fontSize: 12, cursor: "pointer",
+                              }}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Coupon mode */}
+                      {redeemMode === "coupon" && (
+                        hasCoupons ? (
+                          <div style={{ marginBottom: 8 }}>
+                            {activeCoupons.map(c => {
+                              const val = c.type === "DISCOUNT_PERCENT"
+                                ? `${c.value}% הנחה (≈ ₪${(subtotal * c.value / 100).toFixed(0)})`
+                                : `₪${c.value} הנחה`;
+                              return (
+                                <div
+                                  key={c.id}
+                                  onClick={() => setSelectedCouponId(c.id)}
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 8,
+                                    padding: "7px 10px", borderRadius: 7, marginBottom: 5,
+                                    border: `2px solid ${selectedCouponId === c.id ? T.gold : "#e5e7eb"}`,
+                                    background: selectedCouponId === c.id ? T.goldSub : "#fff",
+                                    cursor: "pointer",
+                                  }}>
+                                  <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: T.gold, flexShrink: 0 }}>{c.code}</span>
+                                  <span style={{ fontSize: 12, color: T.sub, flex: 1 }}>{val}{c.description ? ` · ${c.description}` : ""}</span>
+                                  {selectedCouponId === c.id && <span style={{ fontSize: 14, color: T.gold }}>✓</span>}
+                                </div>
+                              );
+                            })}
+                            {selectedCoupon && (
+                              <div style={{ fontSize: 12, color: T.green, fontWeight: 700, textAlign: "center", marginTop: 2 }}>
+                                הנחה: ₪{couponDiscount.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>אין קופונים פעילים</div>
+                        )
+                      )}
+
+                      {/* Points mode */}
+                      {redeemMode === "points" && (
+                        hasPoints ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <input
+                              type="number"
+                              min={clubSettings.minRedeemPoints}
+                              max={clubMember.points}
+                              value={clubPoints}
+                              onChange={e => {
+                                const v = Math.min(Math.max(Number(e.target.value) || 0, 0), clubMember!.points);
+                                setClubPoints(v);
+                              }}
+                              style={{
+                                width: 90, padding: "6px 10px", borderRadius: 7,
+                                border: "1px solid #fde68a", background: "#fff",
+                                fontSize: 13, color: T.text, outline: "none",
+                              }}
+                            />
+                            <span style={{ fontSize: 12, color: T.sub }}>נקודות</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: T.green, marginRight: "auto" }}>
+                              = ₪{(clubPoints * clubSettings.shekelPerPoint).toFixed(2)} הנחה
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>אין מספיק נקודות (מינימום {clubSettings.minRedeemPoints})</div>
+                        )
+                      )}
+
+                      {clubError && <div style={{ color: T.red, fontSize: 11, marginBottom: 6 }}>{clubError}</div>}
+
+                      <button type="button" onClick={redeem}
+                        disabled={clubStep === "redeeming" || !canRedeem}
+                        style={{
+                          width: "100%", padding: "8px 0", borderRadius: 7, border: "none",
+                          background: T.gold, color: "#fff", fontWeight: 700, fontSize: 13,
+                          cursor: (clubStep === "redeeming" || !canRedeem) ? "not-allowed" : "pointer",
+                          opacity: (clubStep === "redeeming" || !canRedeem) ? 0.55 : 1,
+                        }}>
+                        {clubStep === "redeeming" ? "מממש..." : redeemMode === "coupon" ? "✓ ממש קופון" : "✓ ממש נקודות"}
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
