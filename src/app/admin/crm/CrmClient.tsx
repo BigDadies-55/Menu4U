@@ -40,7 +40,8 @@ const CAMPAIGN_TYPES = [
 
 const DAYS_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
-const SMS_MAX = 70;
+const SMS_MAX = 160;
+const SMS_SEGMENT = 70; // one Hebrew SMS segment; beyond this costs extra
 
 const D_INPUT = { background: T.overlay, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "8px 12px", fontSize: 13 };
 
@@ -66,18 +67,18 @@ function SmsTextarea({ value, onChange }: { value: string; onChange: (v: string)
       <textarea
         value={value}
         onChange={e => onChange(e.target.value.slice(0, SMS_MAX))}
-        placeholder="תוכן ההודעה... (עד 70 תווים)"
+        placeholder="תוכן ההודעה..."
         rows={3}
         style={{
           ...D_INPUT, width: "100%", boxSizing: "border-box",
           resize: "none", fontFamily: "inherit", lineHeight: 1.5,
           paddingBottom: 26,
-          border: `1px solid ${value.length === SMS_MAX ? T.red : value.length > 55 ? T.orange : T.border}`,
+          border: `1px solid ${value.length >= SMS_MAX ? T.red : value.length > SMS_SEGMENT ? T.orange : T.border}`,
         }}
       />
       <span style={{
         position: "absolute", bottom: 8, left: 10, fontSize: 11, fontWeight: 700,
-        color: value.length === SMS_MAX ? T.red : value.length > 55 ? T.orange : T.sub,
+        color: value.length >= SMS_MAX ? T.red : value.length > SMS_SEGMENT ? T.orange : T.sub,
       }}>
         {value.length} / {SMS_MAX}
       </span>
@@ -92,6 +93,42 @@ const PERSONALIZATION_TOKENS = [
   { token: "[#Points#]", label: "נקודות" },
   { token: "[#MemberNumber#]", label: "מס' חבר" },
 ];
+
+/* ── Ready-made message templates ── */
+const MESSAGE_TEMPLATES: { label: string; text: string }[] = [
+  { label: "יתרת נקודות",      text: "היי [#FirstName#], יש לך [#Points#] נקודות במועדון! 🎁" },
+  { label: "מבצע מיוחד",       text: "[#FirstName#] יקר/ה, מבצע מיוחד היום רק לחברי מועדון! בואו לבקר 🍽️" },
+  { label: "ברוכים הבאים",     text: "ברוך הבא למועדון [#FirstName#]! קיבלת נקודות פתיחה במתנה 🎉" },
+  { label: "יום הולדת",        text: "מזל טוב [#FirstName#]! 🎂 חוגגים איתך עם הטבה מיוחדת במועדון" },
+  { label: "התגעגענו",         text: "[#FirstName#], מזמן לא ראינו אותך! חכה לך מבצע מתוק 😍" },
+  { label: "מימוש נקודות",     text: "[#FirstName#], צברת [#Points#] נקודות! בוא לממש אותן להטבה 🤑" },
+  { label: "סוף שבוע",         text: "[#FirstName#], סופ\"ש מושלם מתחיל אצלנו! מצפים לך 🥳" },
+  { label: "תזכורת קופון",     text: "[#FirstName#], אל תשכח לממש את הקופון שלך לפני שיפוג! ⏳" },
+  { label: "תפריט חדש",        text: "[#FirstName#], השקנו תפריט חדש 🤩 בוא לטעום ראשון!" },
+  { label: "תודה",             text: "תודה [#FirstName#] שאתה חלק מהמשפחה שלנו ❤️ נתראה בקרוב!" },
+];
+
+/* ── Template picker: fills the message box from a preset ── */
+function TemplatePicker({ onPick }: { onPick: (text: string) => void }) {
+  return (
+    <div style={{ marginTop: 8 }}>
+      <Select
+        defaultValue=""
+        onChange={e => {
+          const t = MESSAGE_TEMPLATES.find(m => m.label === e.target.value);
+          if (t) onPick(t.text);
+          e.target.value = "";
+        }}
+        style={{ fontSize: 12 }}
+      >
+        <option value="" disabled>📝 בחר תבנית הודעה מוכנה...</option>
+        {MESSAGE_TEMPLATES.map(t => (
+          <option key={t.label} value={t.label}>{t.label} — {t.text}</option>
+        ))}
+      </Select>
+    </div>
+  );
+}
 
 function TokenChips({ onInsert }: { onInsert: (token: string) => void }) {
   return (
@@ -440,6 +477,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               <div style={{ color: T.orange, fontSize: 12, marginBottom: 10 }}>⚠️ בחר חברים מהרשימה למטה</div>
             )}
             <SmsTextarea value={sendMsg} onChange={setSendMsg} />
+            <TemplatePicker onPick={text => setSendMsg(text.slice(0, SMS_MAX))} />
             <TokenChips onInsert={tok => setSendMsg(m => (m + tok).slice(0, SMS_MAX))} />
             {sendResult && (
               <div style={{
@@ -554,6 +592,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                 <div>
                   <Label>הודעה</Label>
                   <SmsTextarea value={form.message} onChange={v => setForm(f => ({ ...f, message: v }))} />
+                  <TemplatePicker onPick={text => setForm(f => ({ ...f, message: text.slice(0, SMS_MAX) }))} />
                   <TokenChips onInsert={tok => setForm(f => ({ ...f, message: (f.message + tok).slice(0, SMS_MAX) }))} />
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>

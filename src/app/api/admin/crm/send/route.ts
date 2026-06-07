@@ -10,8 +10,8 @@ export async function POST(req: Request) {
   const { restaurantId, message, memberIds } = await req.json();
   if (!restaurantId || !message?.trim())
     return NextResponse.json({ error: "missing fields" }, { status: 400 });
-  if (message.trim().length > 70)
-    return NextResponse.json({ error: "message too long (max 70)" }, { status: 400 });
+  if (message.trim().length > 160)
+    return NextResponse.json({ error: "message too long (max 160)" }, { status: 400 });
 
   if (session.user.role !== "SUPER_ADMIN") {
     const access = await prisma.restaurantUser.findUnique({
