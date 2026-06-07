@@ -85,6 +85,35 @@ function SmsTextarea({ value, onChange }: { value: string; onChange: (v: string)
   );
 }
 
+/* ── Personalization token chips (insert [#Name#] etc. into a message) ── */
+const PERSONALIZATION_TOKENS = [
+  { token: "[#Name#]", label: "שם" },
+  { token: "[#FirstName#]", label: "שם פרטי" },
+  { token: "[#Points#]", label: "נקודות" },
+  { token: "[#MemberNumber#]", label: "מס' חבר" },
+];
+
+function TokenChips({ onInsert }: { onInsert: (token: string) => void }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, alignItems: "center" }}>
+      <span style={{ fontSize: 11, color: T.muted }}>הוסף שדה אישי:</span>
+      {PERSONALIZATION_TOKENS.map(t => (
+        <button
+          key={t.token}
+          type="button"
+          onClick={() => onInsert(t.token)}
+          style={{
+            fontSize: 11, padding: "3px 9px", borderRadius: 14, cursor: "pointer",
+            background: T.goldSub, color: T.gold, border: `1px solid ${T.border}`,
+          }}
+        >
+          + {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* ── Hour select: cron fires every hour on the hour, so minute precision is irrelevant ── */
 function HourSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const currentHour = typeof value === "string" && value.includes(":")
@@ -411,28 +440,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               <div style={{ color: T.orange, fontSize: 12, marginBottom: 10 }}>⚠️ בחר חברים מהרשימה למטה</div>
             )}
             <SmsTextarea value={sendMsg} onChange={setSendMsg} />
-            {/* Personalization tokens */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: T.muted }}>הוסף שדה אישי:</span>
-              {[
-                { token: "[#Name#]", label: "שם" },
-                { token: "[#FirstName#]", label: "שם פרטי" },
-                { token: "[#Points#]", label: "נקודות" },
-                { token: "[#MemberNumber#]", label: "מס' חבר" },
-              ].map(t => (
-                <button
-                  key={t.token}
-                  type="button"
-                  onClick={() => setSendMsg(m => (m + t.token).slice(0, SMS_MAX))}
-                  style={{
-                    fontSize: 11, padding: "3px 9px", borderRadius: 14, cursor: "pointer",
-                    background: T.goldSub, color: T.gold, border: `1px solid ${T.border}`,
-                  }}
-                >
-                  + {t.label}
-                </button>
-              ))}
-            </div>
+            <TokenChips onInsert={tok => setSendMsg(m => (m + tok).slice(0, SMS_MAX))} />
             {sendResult && (
               <div style={{
                 marginTop: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13,
@@ -546,6 +554,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                 <div>
                   <Label>הודעה</Label>
                   <SmsTextarea value={form.message} onChange={v => setForm(f => ({ ...f, message: v }))} />
+                  <TokenChips onInsert={tok => setForm(f => ({ ...f, message: (f.message + tok).slice(0, SMS_MAX) }))} />
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button onClick={handleSaveCampaign} disabled={formSaving || !form.name.trim() || !form.message.trim()}

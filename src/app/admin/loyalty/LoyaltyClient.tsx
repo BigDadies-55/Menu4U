@@ -135,6 +135,11 @@ export default function LoyaltyClient({
   const [couponDesc, setCouponDesc] = useState("");
   const [couponExpiry, setCouponExpiry] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+  // Coupon SMS delivery: none / now / schedule
+  const [couponDelivery, setCouponDelivery] = useState<"none" | "now" | "schedule">("none");
+  const [couponSmsText, setCouponSmsText] = useState("שלום [#FirstName#]! קיבלת קופון מתנה 🎁");
+  const [couponSchedule, setCouponSchedule] = useState(""); // datetime-local string
+  const [couponDeliveryNote, setCouponDeliveryNote] = useState("");
 
   // Create member modal
   const [createModal, setCreateModal] = useState(false);
@@ -260,9 +265,15 @@ export default function LoyaltyClient({
     if (!selectedMember) return;
     const val = parseFloat(couponValue);
     if (isNaN(val) || val <= 0) return;
+    if (couponDelivery === "schedule" && !couponSchedule) {
+      setCouponDeliveryNote("יש לבחור תאריך ושעה לתזמון");
+      return;
+    }
     setCouponLoading(true);
+    setCouponDeliveryNote("");
     try {
-      await fetch("/api/admin/loyalty", {
+      // 1. Create the coupon — response contains the generated code
+      const res = await fetch("/api/admin/loyalty", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -275,10 +286,55 @@ export default function LoyaltyClient({
           expiresAt: couponExpiry || null,
         }),
       });
+      const coupon = await res.json();
+      const code: string = coupon?.code ?? "";
+
+      // 2. Optionally deliver the coupon by SMS
+      if (couponDelivery !== "none" && code) {
+        const smsMessage = `${couponSmsText} קוד: ${code}`.slice(0, 160);
+
+        if (couponDelivery === "now") {
+          const smsRes = await fetch("/api/admin/loyalty/sms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              restaurantId: selectedRestaurantId,
+              message: smsMessage,
+              memberIds: [selectedMember.id],
+            }),
+          });
+          if (!smsRes.ok) {
+            const d = await smsRes.json();
+            setCouponDeliveryNote(d.error ?? "הקופון נוצר אך שליחת ה-SMS נכשלה");
+            setCouponLoading(false);
+            return;
+          }
+        } else if (couponDelivery === "schedule") {
+          await fetch("/api/admin/crm/campaigns", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              restaurantId: selectedRestaurantId,
+              name: `קופון ל${selectedMember.name}`,
+              type: "SCHEDULED",
+              message: smsMessage,
+              scheduleConfig: {
+                memberId: selectedMember.id,
+                runAt: new Date(couponSchedule).toISOString(),
+              },
+            }),
+          });
+        }
+      }
+
+      // 3. Reset
       setCouponModal(false);
       setCouponValue("");
       setCouponDesc("");
       setCouponExpiry("");
+      setCouponDelivery("none");
+      setCouponSchedule("");
+      setCouponDeliveryNote("");
     } finally {
       setCouponLoading(false);
     }
@@ -792,7 +848,7 @@ export default function LoyaltyClient({
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 50,
           display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
-          <div style={{ background: T.panel, borderRadius: 14, padding: "24px", width: "min(420px, 94vw)", border: "1px solid #2d3239" }}>
+          <div style={{ background: T.panel, borderRadius: 14, padding: "24px", width: "min(420px, 94vw)", maxHeight: "92vh", overflowY: "auto", border: "1px solid #2d3239" }}>
             <h3 style={{ color: T.text, fontSize: 17, fontWeight: 700, margin: "0 0 16px" }}>
               הנפקת קופון — {selectedMember.name}
             </h3>
@@ -831,7 +887,7 @@ export default function LoyaltyClient({
               />
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 16 }}>
               <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>תפוגה (אופציונלי)</label>
               <input
                 type="date"
@@ -841,11 +897,71 @@ export default function LoyaltyClient({
               />
             </div>
 
+            {/* ── SMS delivery ── */}
+            <div style={{ borderTop: "1px solid #2d3239", paddingTop: 16, marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 8, fontWeight: 600 }}>שליחת הקופון ב-SMS</label>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                {([
+                  { v: "none", label: "אל תשלח" },
+                  { v: "now", label: "📤 שלח עכשיו" },
+                  { v: "schedule", label: "⏰ תזמן" },
+                ] as const).map(opt => (
+                  <button
+                    key={opt.v}
+                    onClick={() => setCouponDelivery(opt.v)}
+                    style={{
+                      flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      border: `1px solid ${couponDelivery === opt.v ? T.gold : "#3a3f47"}`,
+                      background: couponDelivery === opt.v ? "rgba(201,137,10,0.12)" : "transparent",
+                      color: couponDelivery === opt.v ? T.gold : T.sub,
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {couponDelivery !== "none" && (
+                <>
+                  <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>תוכן ההודעה</label>
+                  <textarea
+                    value={couponSmsText}
+                    onChange={e => setCouponSmsText(e.target.value)}
+                    rows={2}
+                    style={{ ...DARK_INPUT, resize: "none", fontFamily: "inherit", lineHeight: 1.5 }}
+                  />
+                  <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>
+                    ניתן להשתמש ב-<code style={{ color: T.gold }}>[#FirstName#]</code> · קוד הקופון יתווסף אוטומטית בסוף ההודעה.
+                  </div>
+
+                  {couponDelivery === "schedule" && (
+                    <div style={{ marginTop: 12 }}>
+                      <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600 }}>מתי לשלוח</label>
+                      <input
+                        type="datetime-local"
+                        value={couponSchedule}
+                        onChange={e => setCouponSchedule(e.target.value)}
+                        style={{ ...DARK_INPUT, direction: "ltr" }}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {couponDeliveryNote && (
+                <div style={{ marginTop: 10, fontSize: 12, color: T.red }}>{couponDeliveryNote}</div>
+              )}
+            </div>
+
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={handleIssueCoupon} disabled={couponLoading || !couponValue} style={{ ...BTN_PRIMARY, flex: 1 }}>
-                {couponLoading ? "יוצר..." : "הנפק קופון"}
+                {couponLoading
+                  ? "יוצר..."
+                  : couponDelivery === "now" ? "הנפק ושלח"
+                  : couponDelivery === "schedule" ? "הנפק ותזמן"
+                  : "הנפק קופון"}
               </button>
-              <button onClick={() => { setCouponModal(false); setCouponValue(""); setCouponDesc(""); setCouponExpiry(""); }} style={{ ...BTN_SECONDARY, flex: 1 }}>
+              <button onClick={() => { setCouponModal(false); setCouponValue(""); setCouponDesc(""); setCouponExpiry(""); setCouponDelivery("none"); setCouponSchedule(""); setCouponDeliveryNote(""); }} style={{ ...BTN_SECONDARY, flex: 1 }}>
                 ביטול
               </button>
             </div>

@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulk, SmsConfigError } from "@/lib/sms";
+import { sendSmsBulkPersonalized, SmsConfigError } from "@/lib/sms";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -11,8 +11,8 @@ export async function POST(req: Request) {
   if (!restaurantId || !message?.trim()) {
     return NextResponse.json({ error: "restaurantId and message required" }, { status: 400 });
   }
-  if (message.trim().length > 70) {
-    return NextResponse.json({ error: "message too long (max 70 chars)" }, { status: 400 });
+  if (message.trim().length > 160) {
+    return NextResponse.json({ error: "message too long (max 160 chars)" }, { status: 400 });
   }
 
   // Verify access
@@ -24,16 +24,17 @@ export async function POST(req: Request) {
   }
 
   // Fetch members — specific list or all
-  type MemberRow = { phone: string };
+  type MemberRow = { phone: string; name: string; points: number; memberNumber: string };
+  const cols = `"phone", "name", "points", "memberNumber"`;
   const isFiltered = Array.isArray(memberIds) && memberIds.length > 0;
   const members: MemberRow[] = isFiltered
     ? await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember"
+        `SELECT ${cols} FROM "LoyaltyMember"
          WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
         restaurantId, memberIds
       )
     : await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
+        `SELECT ${cols} FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
         restaurantId
       );
 
@@ -41,10 +42,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ sent: 0, failed: 0, total: 0 });
   }
 
-  const phones = members.map(m => m.phone);
+  const recipients = members.map(m => ({
+    phone: m.phone,
+    fields: {
+      Name: m.name,
+      FirstName: (m.name ?? "").trim().split(/\s+/)[0] ?? "",
+      Points: m.points,
+      MemberNumber: m.memberNumber,
+    },
+  }));
   try {
-    const result = await sendSmsBulk(phones, message.trim());
-    return NextResponse.json({ ...result, total: phones.length });
+    const result = await sendSmsBulkPersonalized(recipients, message.trim());
+    return NextResponse.json({ ...result, total: recipients.length });
   } catch (e) {
     if (e instanceof SmsConfigError) {
       return NextResponse.json(

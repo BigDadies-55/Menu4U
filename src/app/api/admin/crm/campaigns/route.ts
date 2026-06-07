@@ -76,7 +76,7 @@ export async function POST(req: Request) {
   const { restaurantId, name, type, message, scheduleConfig } = await req.json();
   if (!restaurantId || !name || !type || !message)
     return NextResponse.json({ error: "missing fields" }, { status: 400 });
-  if (message.length > 70)
+  if (message.length > 160)
     return NextResponse.json({ error: "message too long" }, { status: 400 });
   if (!await checkAccess(session.user.id, session.user.role, restaurantId))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
