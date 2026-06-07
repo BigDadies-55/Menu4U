@@ -774,8 +774,8 @@ export default function LoyaltyClient({
                             </div>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0, marginRight: 8 }}>
-                            <div style={{ fontSize: 11, color: T.muted }}>
-                              {c.expiresAt ? `עד ${formatDate(c.expiresAt)}` : "ללא תפוגה"}
+                            <div style={{ fontSize: 11, color: used ? T.green : T.muted }}>
+                              {used ? `✓ מומש ${formatDate(c.usedAt!)}` : c.expiresAt ? `עד ${formatDate(c.expiresAt)}` : "ללא תפוגה"}
                             </div>
                             {!used && !expired && (
                               couponSentId === c.id ? (
