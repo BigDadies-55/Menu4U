@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulk, SmsConfigError } from "@/lib/sms";
+import { sendSmsBulkPersonalized, SmsConfigError } from "@/lib/sms";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -20,23 +20,34 @@ export async function POST(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  type MemberRow = { phone: string };
+  type MemberRow = { phone: string; name: string; points: number; memberNumber: string };
   const isFiltered = Array.isArray(memberIds) && memberIds.length > 0;
   const members: MemberRow[] = isFiltered
     ? await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
+        `SELECT "phone", "name", "points", "memberNumber" FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
         restaurantId, memberIds
       )
     : await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
+        `SELECT "phone", "name", "points", "memberNumber" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
         restaurantId
       );
 
   if (members.length === 0) return NextResponse.json({ sent: 0, failed: 0 });
 
+  // Build personalized recipients — tokens [#Name#] [#FirstName#] [#Points#] [#MemberNumber#]
+  const recipients = members.map(m => ({
+    phone: m.phone,
+    fields: {
+      Name: m.name,
+      FirstName: (m.name ?? "").trim().split(/\s+/)[0] ?? "",
+      Points: m.points,
+      MemberNumber: m.memberNumber,
+    },
+  }));
+
   let sent: number, failed: number;
   try {
-    ({ sent, failed } = await sendSmsBulk(members.map(m => m.phone), message.trim()));
+    ({ sent, failed } = await sendSmsBulkPersonalized(recipients, message.trim()));
   } catch (e) {
     if (e instanceof SmsConfigError) {
       return NextResponse.json(

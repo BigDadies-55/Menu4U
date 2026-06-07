@@ -411,6 +411,28 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               <div style={{ color: T.orange, fontSize: 12, marginBottom: 10 }}>⚠️ בחר חברים מהרשימה למטה</div>
             )}
             <SmsTextarea value={sendMsg} onChange={setSendMsg} />
+            {/* Personalization tokens */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: T.muted }}>הוסף שדה אישי:</span>
+              {[
+                { token: "[#Name#]", label: "שם" },
+                { token: "[#FirstName#]", label: "שם פרטי" },
+                { token: "[#Points#]", label: "נקודות" },
+                { token: "[#MemberNumber#]", label: "מס' חבר" },
+              ].map(t => (
+                <button
+                  key={t.token}
+                  type="button"
+                  onClick={() => setSendMsg(m => (m + t.token).slice(0, SMS_MAX))}
+                  style={{
+                    fontSize: 11, padding: "3px 9px", borderRadius: 14, cursor: "pointer",
+                    background: T.goldSub, color: T.gold, border: `1px solid ${T.border}`,
+                  }}
+                >
+                  + {t.label}
+                </button>
+              ))}
+            </div>
             {sendResult && (
               <div style={{
                 marginTop: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13,

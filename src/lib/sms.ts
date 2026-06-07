@@ -17,6 +17,15 @@ export class SmsConfigError extends Error {
   }
 }
 
+/**
+ * A recipient with optional personalization fields. Each field key can be
+ * referenced in the message body as a token, e.g. field `Name` -> `[#Name#]`.
+ */
+export type SmsRecipient = {
+  phone: string;
+  fields?: Record<string, string | number | null | undefined>;
+};
+
 /** Normalize to the local Israeli format Inforu expects (e.g. 0501234567). */
 function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
@@ -29,11 +38,24 @@ function authHeader(username: string, token: string): string {
   return `Basic ${Buffer.from(`${username}:${token}`).toString("base64")}`;
 }
 
-function buildPayload(phones: string[], message: string, sender: string) {
+/** Drop empty/null values and stringify the rest for the Inforu payload. */
+function cleanFields(fields?: SmsRecipient["fields"]): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!fields) return out;
+  for (const [k, v] of Object.entries(fields)) {
+    if (v !== null && v !== undefined && v !== "") out[k] = String(v);
+  }
+  return out;
+}
+
+function buildPayload(recipients: SmsRecipient[], message: string, sender: string) {
   return {
     Data: {
       Message: message,
-      Recipients: phones.map(p => ({ Phone: normalizePhone(p) })),
+      Recipients: recipients.map(r => ({
+        Phone: normalizePhone(r.phone),
+        ...cleanFields(r.fields),
+      })),
       Settings: { Sender: sender },
     },
   };
@@ -55,7 +77,7 @@ export function smsConfigStatus() {
 
 /** Low-level send to one or more recipients in a single API call. */
 async function postToInforu(
-  phones: string[],
+  recipients: SmsRecipient[],
   message: string
 ): Promise<{ ok: boolean; httpStatus?: number; response?: string; error?: string }> {
   const username = process.env.INFORU_USERNAME;
@@ -71,7 +93,7 @@ async function postToInforu(
         "Content-Type": "application/json",
         Authorization: authHeader(username, token),
       },
-      body: JSON.stringify(buildPayload(phones, message, sender)),
+      body: JSON.stringify(buildPayload(recipients, message, sender)),
     });
     const text = await res.text();
     let statusId: number | undefined;
@@ -87,26 +109,38 @@ async function postToInforu(
 
 export async function sendSms(phone: string, message: string): Promise<boolean> {
   if (!isSmsConfigured()) throw new SmsConfigError();
-  const r = await postToInforu([phone], message);
+  const r = await postToInforu([{ phone }], message);
   return r.ok;
 }
 
 /** Send one SMS and return the raw gateway response for diagnosis. */
 export async function sendSmsDetailed(phone: string, message: string) {
-  return postToInforu([phone], message);
+  return postToInforu([{ phone }], message);
 }
 
 export async function sendSmsBulk(
   phones: string[],
   message: string
 ): Promise<{ sent: number; failed: number }> {
+  return sendSmsBulkPersonalized(phones.map(phone => ({ phone })), message);
+}
+
+/**
+ * Send to recipients with per-recipient personalization fields. Tokens in the
+ * message such as `[#Name#]` are replaced by Inforu using each recipient's
+ * matching field (`Name`).
+ */
+export async function sendSmsBulkPersonalized(
+  recipients: SmsRecipient[],
+  message: string
+): Promise<{ sent: number; failed: number }> {
   // Surface a missing-config error up front instead of marking every number as "failed".
   if (!isSmsConfigured()) throw new SmsConfigError();
-  if (phones.length === 0) return { sent: 0, failed: 0 };
+  if (recipients.length === 0) return { sent: 0, failed: 0 };
 
   // v2 accepts many recipients in a single request.
-  const r = await postToInforu(phones, message);
+  const r = await postToInforu(recipients, message);
   return r.ok
-    ? { sent: phones.length, failed: 0 }
-    : { sent: 0, failed: phones.length };
+    ? { sent: recipients.length, failed: 0 }
+    : { sent: 0, failed: recipients.length };
 }
