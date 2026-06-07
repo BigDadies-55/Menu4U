@@ -16,6 +16,17 @@ type LoyaltyTransaction = {
   createdAt: string;
 };
 
+type MemberAnalytics = {
+  lastVisitAt: string | null;
+  visitCount: number;
+  avgSpend: number;
+  orderSpent: number;
+  favoriteItem: string | null;
+  couponsIssued: number;
+  couponsUsed: number;
+  status: "new" | "active" | "at_risk" | "inactive";
+};
+
 type LoyaltyMember = {
   id: string;
   restaurantId: string;
@@ -26,10 +37,30 @@ type LoyaltyMember = {
   memberNumber: string;
   points: number;
   totalSpent: number;
+  lastVisitAt: string | null;
   createdAt: string;
   updatedAt: string;
   transactions: LoyaltyTransaction[];
+  analytics?: MemberAnalytics;
 };
+
+const STATUS_META: Record<MemberAnalytics["status"], { label: string; color: string }> = {
+  active:   { label: "פעיל",   color: T.green },
+  at_risk:  { label: "בסיכון", color: T.gold },
+  inactive: { label: "רדום",   color: T.red },
+  new:      { label: "חדש",    color: T.blue },
+};
+
+function relativeDays(s: string | null): string {
+  if (!s) return "—";
+  const days = Math.floor((Date.now() - new Date(s).getTime()) / 86400000);
+  if (days <= 0) return "היום";
+  if (days === 1) return "אתמול";
+  if (days < 30) return `לפני ${days} ימים`;
+  if (days < 60) return "לפני חודש";
+  if (days < 365) return `לפני ${Math.floor(days / 30)} חודשים`;
+  return `לפני ${Math.floor(days / 365)} שנים`;
+}
 
 type LoyaltySettings = {
   restaurantId: string;
@@ -116,8 +147,9 @@ export default function LoyaltyClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Search
+  // Search + activity filter
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | MemberAnalytics["status"]>("all");
 
   // Selected member detail
   const [selectedMember, setSelectedMember] = useState<LoyaltyMember | null>(null);
@@ -180,13 +212,21 @@ export default function LoyaltyClient({
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filteredMembers = members.filter(m =>
-    !search ||
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.phone.includes(search) ||
-    m.memberNumber.includes(search) ||
-    (m.email ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredMembers = members.filter(m => {
+    const matchesSearch = !search ||
+      m.name.toLowerCase().includes(search.toLowerCase()) ||
+      m.phone.includes(search) ||
+      m.memberNumber.includes(search) ||
+      (m.email ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || m.analytics?.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const statusCounts = members.reduce((acc, m) => {
+    const s = m.analytics?.status ?? "new";
+    acc[s] = (acc[s] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   async function handleSaveSettings() {
     setSettingsLoading(true);
@@ -426,7 +466,7 @@ export default function LoyaltyClient({
             </div>
 
             {/* Search + Add */}
-            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
               <input
                 type="text"
                 value={search}
@@ -442,12 +482,39 @@ export default function LoyaltyClient({
               </button>
             </div>
 
+            {/* Activity status filter */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+              {([
+                { v: "all", label: `הכל (${members.length})`, color: T.sub },
+                ...(["active", "at_risk", "inactive", "new"] as const).map(s => ({
+                  v: s, label: `${STATUS_META[s].label} (${statusCounts[s] ?? 0})`, color: STATUS_META[s].color,
+                })),
+              ] as const).map(opt => {
+                const active = statusFilter === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    onClick={() => setStatusFilter(opt.v as typeof statusFilter)}
+                    style={{
+                      padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      border: `1px solid ${active ? opt.color : "#3a3f47"}`,
+                      background: active ? `${opt.color}22` : "transparent",
+                      color: active ? opt.color : T.muted,
+                      transition: "all 150ms",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Members table */}
             <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: T.surface, borderBottom: "1px solid #2d3239" }}>
-                    {["שם", "טלפון", "מס' חבר", "נקודות", "הצטרף", "פעולות"].map(h => (
+                    {["שם", "טלפון", "מס' חבר", "נקודות", "ביקור אחרון", "סטטוס", "פעולות"].map(h => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {h}
                       </th>
@@ -457,8 +524,8 @@ export default function LoyaltyClient({
                 <tbody>
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: T.muted, fontSize: 14 }}>
-                        {search ? "לא נמצאו חברים התואמים לחיפוש" : "אין חברי מועדון עדיין"}
+                      <td colSpan={7} style={{ padding: "32px 16px", textAlign: "center", color: T.muted, fontSize: 14 }}>
+                        {search || statusFilter !== "all" ? "לא נמצאו חברים התואמים לסינון" : "אין חברי מועדון עדיין"}
                       </td>
                     </tr>
                   )}
@@ -487,7 +554,20 @@ export default function LoyaltyClient({
                           {m.points.toLocaleString()} ⭐
                         </span>
                       </td>
-                      <td style={{ padding: "12px 16px", color: T.muted, fontSize: 13 }}>{formatDate(m.createdAt)}</td>
+                      <td style={{ padding: "12px 16px", color: T.muted, fontSize: 13 }}>{relativeDays(m.analytics?.lastVisitAt ?? m.lastVisitAt)}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {(() => {
+                          const meta = STATUS_META[m.analytics?.status ?? "new"];
+                          return (
+                            <span style={{
+                              background: `${meta.color}1a`, color: meta.color,
+                              padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600,
+                            }}>
+                              {meta.label}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td style={{ padding: "12px 16px" }}>
                         <button
                           onClick={e => { e.stopPropagation(); setSelectedMember(m); setAdjustModal(true); }}
@@ -561,6 +641,39 @@ export default function LoyaltyClient({
                     <span>{formatDate(selectedMember.createdAt)}</span>
                   </div>
                 </div>
+
+                {/* Analytics */}
+                {selectedMember.analytics && (() => {
+                  const a = selectedMember.analytics;
+                  const meta = STATUS_META[a.status];
+                  return (
+                    <div style={{ background: T.surface, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          סטטיסטיקה
+                        </span>
+                        <span style={{ background: `${meta.color}1a`, color: meta.color, padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
+                          {meta.label}
+                        </span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 12px", fontSize: 13 }}>
+                        {[
+                          { label: "ביקור אחרון", value: relativeDays(a.lastVisitAt) },
+                          { label: "מספר ביקורים", value: a.visitCount.toLocaleString() },
+                          { label: "ממוצע הוצאה", value: `₪${a.avgSpend.toFixed(0)}` },
+                          { label: "סך הוצאות", value: `₪${(a.orderSpent || selectedMember.totalSpent).toFixed(0)}` },
+                          { label: "פריט מועדף", value: a.favoriteItem ?? "—" },
+                          { label: "קופונים", value: `${a.couponsUsed}/${a.couponsIssued} מומשו` },
+                        ].map(stat => (
+                          <div key={stat.label}>
+                            <div style={{ color: T.muted, fontSize: 11, marginBottom: 2 }}>{stat.label}</div>
+                            <div style={{ color: T.text, fontWeight: 600 }}>{stat.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Action buttons */}
                 <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>

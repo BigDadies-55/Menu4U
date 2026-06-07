@@ -411,6 +411,7 @@ model LoyaltyMember {
   memberNumber String
   points       Int      @default(0)
   totalSpent   Float    @default(0)
+  lastVisitAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

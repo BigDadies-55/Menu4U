@@ -127,7 +127,7 @@ export async function POST(req: Request) {
         if (pointsEarned <= 0) continue;
         await prisma.loyaltyMember.update({
           where: { id: memberId },
-          data: { points: { increment: pointsEarned }, totalSpent: { increment: earnedAmount } },
+          data: { points: { increment: pointsEarned }, totalSpent: { increment: earnedAmount }, lastVisitAt: new Date() },
         });
         await prisma.loyaltyTransaction.create({
           data: {

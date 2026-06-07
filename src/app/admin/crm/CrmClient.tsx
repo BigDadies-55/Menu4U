@@ -26,7 +26,18 @@ type StatsData = {
   totals: { sent: number; failed: number; sends: number };
 };
 
-type Member = { id: string; name: string; phone: string; points: number };
+type ActivityStatus = "new" | "active" | "at_risk" | "inactive";
+type Member = {
+  id: string; name: string; phone: string; points: number;
+  analytics?: { status: ActivityStatus; lastVisitAt: string | null };
+};
+
+const STATUS_META: Record<ActivityStatus, { label: string; color: string }> = {
+  active:   { label: "פעיל",   color: T.green },
+  at_risk:  { label: "בסיכון", color: T.gold },
+  inactive: { label: "רדום",   color: T.red },
+  new:      { label: "חדש",    color: T.blue },
+};
 
 const CAMPAIGN_TYPES = [
   { value: "SCHEDULED",        label: "📅 חד פעמי",           desc: "שלח פעם אחת בתאריך ושעה מוגדרים" },
@@ -281,6 +292,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ActivityStatus>("all");
 
   /* ── campaigns ── */
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -406,10 +418,18 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
     fetchCampaigns();
   }
 
-  const filtered = members.filter(m =>
-    !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.phone.includes(search)
-  );
+  const filtered = members.filter(m => {
+    const matchesSearch = !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.phone.includes(search);
+    const matchesStatus = statusFilter === "all" || m.analytics?.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
   const allSelected = filtered.length > 0 && filtered.every(m => selectedIds.has(m.id));
+
+  const statusCounts = members.reduce((acc, m) => {
+    const s = m.analytics?.status ?? "new";
+    acc[s] = (acc[s] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   /* ══ RENDER ══════════════════════════════════════════════════ */
   return (
@@ -517,6 +537,32 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                 style={{ ...D_INPUT, flex: 1 }} />
               <span style={{ fontSize: 12, color: T.sub, whiteSpace: "nowrap" }}>{filtered.length} חברים</span>
             </div>
+
+            {/* Activity status filter — segment the audience (e.g. send only to "רדום") */}
+            <div style={{ padding: "10px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {([
+                { v: "all", label: `הכל (${members.length})`, color: T.sub },
+                ...(["active", "at_risk", "inactive", "new"] as const).map(s => ({
+                  v: s, label: `${STATUS_META[s].label} (${statusCounts[s] ?? 0})`, color: STATUS_META[s].color,
+                })),
+              ] as const).map(opt => {
+                const active = statusFilter === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    onClick={() => setStatusFilter(opt.v as typeof statusFilter)}
+                    style={{
+                      padding: "4px 11px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      border: `1px solid ${active ? opt.color : T.border}`,
+                      background: active ? `${opt.color}22` : "transparent",
+                      color: active ? opt.color : T.muted,
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
             {membersLoading ? (
               <div style={{ padding: 32, textAlign: "center", color: T.sub }}>טוען...</div>
             ) : (
@@ -539,6 +585,14 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                       <div style={{ fontSize: 14, fontWeight: 500, color: T.text }}>{m.name}</div>
                       <div style={{ fontSize: 12, color: T.sub, direction: "ltr", textAlign: "right" }}>{m.phone}</div>
                     </div>
+                    {m.analytics && (() => {
+                      const meta = STATUS_META[m.analytics.status];
+                      return (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: meta.color, background: `${meta.color}1a`, padding: "2px 8px", borderRadius: 10 }}>
+                          {meta.label}
+                        </span>
+                      );
+                    })()}
                     <span style={{ fontSize: 12, color: T.gold, fontWeight: 600 }}>{m.points} ⭐</span>
                   </div>
                 ))}

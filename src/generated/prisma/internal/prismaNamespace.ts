@@ -2998,6 +2998,7 @@ export const LoyaltyMemberScalarFieldEnum = {
   memberNumber: 'memberNumber',
   points: 'points',
   totalSpent: 'totalSpent',
+  lastVisitAt: 'lastVisitAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

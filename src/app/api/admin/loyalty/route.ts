@@ -2,6 +2,24 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+/** Strip a phone to comparable digits (drops +972 / leading-zero differences). */
+function normalizePhone(p: string | null | undefined): string {
+  if (!p) return "";
+  let d = p.replace(/\D/g, "");
+  if (d.startsWith("972")) d = "0" + d.slice(3);
+  if (d && !d.startsWith("0")) d = "0" + d;
+  return d;
+}
+
+/** Activity classification from days-since-last-visit. */
+function activityStatus(lastVisit: Date | null): "new" | "active" | "at_risk" | "inactive" {
+  if (!lastVisit) return "new";
+  const days = (Date.now() - lastVisit.getTime()) / 86400000;
+  if (days <= 30) return "active";
+  if (days <= 90) return "at_risk";
+  return "inactive";
+}
+
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -9,6 +27,11 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const restaurantId = searchParams.get("restaurantId");
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
+
+  // Ensure analytics column exists (idempotent — schema may predate it on older DBs)
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "lastVisitAt" TIMESTAMP`
+  ).catch(() => {});
 
   const [members, settings] = await Promise.all([
     prisma.loyaltyMember.findMany({
@@ -19,7 +42,102 @@ export async function GET(req: Request) {
     prisma.loyaltySettings.findUnique({ where: { restaurantId } }),
   ]);
 
-  return NextResponse.json({ members, settings });
+  // ── Aggregate visit/spend stats from orders ──
+  type OrderAgg = { member_id: string | null; phone: string | null; visits: number; spent: number; last_visit: Date | null };
+  type ItemAgg = { member_id: string | null; phone: string | null; item_name: string; qty: number };
+  type CouponAgg = { memberId: string; issued: number; used: number };
+
+  const [orderRows, itemRows, couponRows] = await Promise.all([
+    prisma.$queryRawUnsafe<OrderAgg[]>(
+      `SELECT "loyaltyMemberId" AS member_id, "customerPhone" AS phone,
+              COUNT(*)::int AS visits, COALESCE(SUM("totalAmount"),0)::float AS spent,
+              MAX("createdAt") AS last_visit
+         FROM "Order"
+        WHERE "restaurantId" = $1 AND "status" <> 'CANCELLED'
+          AND ("customerPhone" IS NOT NULL OR "loyaltyMemberId" IS NOT NULL)
+        GROUP BY "loyaltyMemberId", "customerPhone"`,
+      restaurantId
+    ).catch(() => [] as OrderAgg[]),
+    prisma.$queryRawUnsafe<ItemAgg[]>(
+      `SELECT o."loyaltyMemberId" AS member_id, o."customerPhone" AS phone,
+              i."name" AS item_name, SUM(oi."quantity")::int AS qty
+         FROM "OrderItem" oi
+         JOIN "Order" o ON o."id" = oi."orderId"
+         JOIN "Item" i ON i."id" = oi."itemId"
+        WHERE o."restaurantId" = $1 AND o."status" <> 'CANCELLED'
+          AND (o."customerPhone" IS NOT NULL OR o."loyaltyMemberId" IS NOT NULL)
+        GROUP BY o."loyaltyMemberId", o."customerPhone", i."name"`,
+      restaurantId
+    ).catch(() => [] as ItemAgg[]),
+    prisma.$queryRawUnsafe<CouponAgg[]>(
+      `SELECT "memberId", COUNT(*)::int AS issued, COUNT("usedAt")::int AS used
+         FROM "LoyaltyCoupon"
+        WHERE "restaurantId" = $1
+        GROUP BY "memberId"`,
+      restaurantId
+    ).catch(() => [] as CouponAgg[]),
+  ]);
+
+  // Index members for matching: by id and by normalized phone
+  const byId = new Map(members.map(m => [m.id, m]));
+  const byPhone = new Map(members.map(m => [normalizePhone(m.phone), m]));
+  const matchMember = (memberId: string | null, phone: string | null) =>
+    (memberId && byId.get(memberId)) || (phone && byPhone.get(normalizePhone(phone))) || null;
+
+  // Accumulate per-member visit aggregates (each order row maps to one member)
+  const stats = new Map<string, { visits: number; spent: number; last: Date | null }>();
+  for (const r of orderRows) {
+    const m = matchMember(r.member_id, r.phone);
+    if (!m) continue;
+    const cur = stats.get(m.id) ?? { visits: 0, spent: 0, last: null };
+    cur.visits += Number(r.visits) || 0;
+    cur.spent += Number(r.spent) || 0;
+    const last = r.last_visit ? new Date(r.last_visit) : null;
+    if (last && (!cur.last || last > cur.last)) cur.last = last;
+    stats.set(m.id, cur);
+  }
+
+  // Favorite item per member (highest total quantity)
+  const favTracker = new Map<string, { name: string; qty: number }>();
+  for (const r of itemRows) {
+    const m = matchMember(r.member_id, r.phone);
+    if (!m) continue;
+    const qty = Number(r.qty) || 0;
+    const cur = favTracker.get(m.id);
+    if (!cur || qty > cur.qty) favTracker.set(m.id, { name: r.item_name, qty });
+  }
+
+  const coupons = new Map(couponRows.map(c => [c.memberId, { issued: Number(c.issued) || 0, used: Number(c.used) || 0 }]));
+
+  const enriched = members.map(m => {
+    const s = stats.get(m.id);
+    // Prefer the stored lastVisitAt; fall back to the max order date we computed
+    const storedLast = (m as { lastVisitAt?: Date | null }).lastVisitAt ?? null;
+    const computedLast = s?.last ?? null;
+    const lastVisitAt =
+      storedLast && computedLast ? (storedLast > computedLast ? storedLast : computedLast)
+      : storedLast ?? computedLast;
+    const visitCount = s?.visits ?? 0;
+    const orderSpent = s?.spent ?? 0;
+    const avgSpend = visitCount > 0 ? orderSpent / visitCount : 0;
+    const fav = favTracker.get(m.id);
+    const cp = coupons.get(m.id) ?? { issued: 0, used: 0 };
+    return {
+      ...m,
+      analytics: {
+        lastVisitAt,
+        visitCount,
+        avgSpend,
+        orderSpent,
+        favoriteItem: fav?.name ?? null,
+        couponsIssued: cp.issued,
+        couponsUsed: cp.used,
+        status: activityStatus(lastVisitAt),
+      },
+    };
+  });
+
+  return NextResponse.json({ members: enriched, settings });
 }
 
 export async function POST(req: Request) {
