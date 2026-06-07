@@ -197,6 +197,10 @@ export default function LoyaltyClient({
   const [couponSchedule, setCouponSchedule] = useState(""); // datetime-local string
   const [couponDeliveryNote, setCouponDeliveryNote] = useState("");
 
+  // Per-coupon SMS send (from the coupons list)
+  const [couponSendingId, setCouponSendingId] = useState<string | null>(null);
+  const [couponSentId, setCouponSentId] = useState<string | null>(null);
+
   // Create member modal
   const [createModal, setCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", phone: "", email: "", birthDate: "" });
@@ -299,6 +303,29 @@ export default function LoyaltyClient({
       fetchData();
     } finally {
       setCreateLoading(false);
+    }
+  }
+
+  async function handleSendCoupon(c: LoyaltyCoupon) {
+    if (!selectedMember) return;
+    setCouponSendingId(c.id);
+    setCouponSentId(null);
+    try {
+      const message = `שלום ${selectedMember.name.split(/\s+/)[0]}! קיבלת קופון ${couponValueLabel(c)} 🎁 קוד: ${c.code}`.slice(0, 160);
+      const res = await fetch("/api/admin/loyalty/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: selectedRestaurantId, message, memberIds: [selectedMember.id] }),
+      });
+      const d = await res.json();
+      if (!res.ok || (d.sent ?? 0) === 0) {
+        alert(d.error ?? "שליחת ה-SMS נכשלה");
+        return;
+      }
+      setCouponSentId(c.id);
+      setTimeout(() => setCouponSentId(null), 3000);
+    } finally {
+      setCouponSendingId(null);
     }
   }
 
@@ -746,8 +773,26 @@ export default function LoyaltyClient({
                               {couponValueLabel(c)}{c.description ? ` · ${c.description}` : ""}
                             </div>
                           </div>
-                          <div style={{ textAlign: "left", fontSize: 11, color: T.muted, flexShrink: 0, marginRight: 8 }}>
-                            {c.expiresAt ? `עד ${formatDate(c.expiresAt)}` : "ללא תפוגה"}
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0, marginRight: 8 }}>
+                            <div style={{ fontSize: 11, color: T.muted }}>
+                              {c.expiresAt ? `עד ${formatDate(c.expiresAt)}` : "ללא תפוגה"}
+                            </div>
+                            {!used && !expired && (
+                              couponSentId === c.id ? (
+                                <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>✓ נשלח</span>
+                              ) : (
+                                <button
+                                  onClick={() => handleSendCoupon(c)}
+                                  disabled={couponSendingId === c.id}
+                                  style={{
+                                    ...BTN_SECONDARY, padding: "3px 9px", fontSize: 11,
+                                    opacity: couponSendingId === c.id ? 0.6 : 1, whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {couponSendingId === c.id ? "שולח..." : "📤 שלח ב-SMS"}
+                                </button>
+                              )
+                            )}
                           </div>
                         </div>
                       );
