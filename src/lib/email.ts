@@ -12,7 +12,7 @@ function createTransport() {
 
 export async function sendWelcomeEmail(email: string, name?: string | null) {
   const displayName = name ?? email;
-  const adminUrl = process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
+  const adminUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
 
   await createTransport().sendMail({
     from: `"Menu4U" <${process.env.GMAIL_USER}>`,
@@ -134,7 +134,7 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
 
 export async function sendInviteEmail(email: string, inviteLink: string, name?: string | null) {
   const displayName = name ?? email;
-  const adminUrl = process.env.NEXTAUTH_URL ?? "https://tech4bites.com";
+  const adminUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
 
   await createTransport().sendMail({
     from: `"Tech4Bites" <${process.env.GMAIL_USER}>`,
@@ -202,7 +202,7 @@ export async function sendInviteEmail(email: string, inviteLink: string, name?: 
 
 export async function sendTempPasswordEmail(email: string, tempPassword: string, name?: string | null) {
   const displayName = name ?? email;
-  const adminUrl = process.env.NEXTAUTH_URL ?? "https://tech4bites.com";
+  const adminUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
 
   await createTransport().sendMail({
     from: `"Tech4Bites" <${process.env.GMAIL_USER}>`,
