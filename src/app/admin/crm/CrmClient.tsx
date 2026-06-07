@@ -292,6 +292,11 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
       body: JSON.stringify({ restaurantId: rid, message: sendMsg.trim(), memberIds: targets }),
     });
     const d = await res.json();
+    if (!res.ok) {
+      alert(d.error ?? "שגיאה בשליחת SMS");
+      setSending(false);
+      return;
+    }
     setSendResult({ sent: d.sent ?? 0, failed: d.failed ?? 0 });
     if (d.sent > 0) { setSendMsg(""); setSelectedIds(new Set()); setSendTarget("all"); }
     setSending(false);

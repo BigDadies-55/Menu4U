@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulk } from "@/lib/sms";
+import { sendSmsBulk, SmsConfigError } from "@/lib/sms";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -34,7 +34,18 @@ export async function POST(req: Request) {
 
   if (members.length === 0) return NextResponse.json({ sent: 0, failed: 0 });
 
-  const { sent, failed } = await sendSmsBulk(members.map(m => m.phone), message.trim());
+  let sent: number, failed: number;
+  try {
+    ({ sent, failed } = await sendSmsBulk(members.map(m => m.phone), message.trim()));
+  } catch (e) {
+    if (e instanceof SmsConfigError) {
+      return NextResponse.json(
+        { error: "שירות ה-SMS אינו מוגדר בשרת (חסרים פרטי INFORU_USERNAME / INFORU_API_TOKEN)" },
+        { status: 503 }
+      );
+    }
+    throw e;
+  }
 
   await prisma.$executeRawUnsafe(
     `INSERT INTO "SmsLog" ("id","restaurantId","message","sentCount","failedCount","sentAt")

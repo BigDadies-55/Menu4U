@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulk } from "@/lib/sms";
+import { sendSmsBulk, isSmsConfigured } from "@/lib/sms";
 import { NextResponse } from "next/server";
 
 // Called by cron-job.org every hour
@@ -20,6 +20,13 @@ export async function GET(req: Request) {
   const campaigns = await prisma.$queryRawUnsafe<CampaignRow[]>(
     `SELECT * FROM "SmsCampaign" WHERE "isActive" = true`
   );
+
+  if (!isSmsConfigured()) {
+    return NextResponse.json(
+      { error: "SMS gateway not configured (INFORU_USERNAME / INFORU_API_TOKEN missing)", ran: 0 },
+      { status: 503 }
+    );
+  }
 
   const now = new Date();
   const results: { id: string; name: string; sent: number; skipped?: boolean }[] = [];
