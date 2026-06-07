@@ -118,5 +118,54 @@ export async function POST(req: Request) {
     return NextResponse.json(coupon);
   }
 
+  if (action === "createMember") {
+    const { name, phone, email, birthDate } = body;
+    if (!name || !phone || !restaurantId) {
+      return NextResponse.json({ error: "שם וטלפון הם שדות חובה" }, { status: 400 });
+    }
+    if (session.user.role !== "SUPER_ADMIN") {
+      const access = await prisma.restaurantUser.findFirst({ where: { userId: session.user.id, restaurantId } });
+      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    // Unique phone per restaurant
+    const existing = await prisma.loyaltyMember.findFirst({ where: { restaurantId, phone } });
+    if (existing) return NextResponse.json({ error: "חבר עם מספר טלפון זה כבר קיים" }, { status: 409 });
+
+    // Auto-generate member number
+    const count = await prisma.loyaltyMember.count({ where: { restaurantId } });
+    const memberNumber = String(count + 1).padStart(4, "0");
+
+    // Welcome bonus
+    const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { restaurantId } });
+    const welcomeBonus = loyaltySettings?.welcomeBonus ?? 0;
+
+    const member = await prisma.loyaltyMember.create({
+      data: {
+        id: `lm-${Date.now()}`,
+        restaurantId,
+        phone,
+        name,
+        email: email || null,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        memberNumber,
+        points: welcomeBonus,
+      },
+    });
+
+    if (welcomeBonus > 0) {
+      await prisma.loyaltyTransaction.create({
+        data: {
+          id: `lt-${Date.now()}`,
+          memberId: member.id,
+          type: "BONUS",
+          points: welcomeBonus,
+          note: "בונוס הצטרפות",
+        },
+      });
+    }
+
+    return NextResponse.json(member);
+  }
+
   return NextResponse.json({ error: "unknown action" }, { status: 400 });
 }

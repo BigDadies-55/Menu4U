@@ -136,6 +136,12 @@ export default function LoyaltyClient({
   const [couponExpiry, setCouponExpiry] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
 
+  // Create member modal
+  const [createModal, setCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", phone: "", email: "", birthDate: "" });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState("");
+
   // Settings form
   const [settingsForm, setSettingsForm] = useState<Partial<LoyaltySettings>>({});
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -191,6 +197,36 @@ export default function LoyaltyClient({
       fetchData();
     } finally {
       setSettingsLoading(false);
+    }
+  }
+
+  async function handleCreateMember() {
+    if (!createForm.name.trim() || !createForm.phone.trim()) return;
+    setCreateLoading(true);
+    setCreateError("");
+    try {
+      const res = await fetch("/api/admin/loyalty", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "createMember",
+          restaurantId: selectedRestaurantId,
+          name: createForm.name.trim(),
+          phone: createForm.phone.trim(),
+          email: createForm.email.trim() || null,
+          birthDate: createForm.birthDate || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setCreateError(data.error ?? "שגיאה");
+        return;
+      }
+      setCreateModal(false);
+      setCreateForm({ name: "", phone: "", email: "", birthDate: "" });
+      fetchData();
+    } finally {
+      setCreateLoading(false);
     }
   }
 
@@ -333,15 +369,21 @@ export default function LoyaltyClient({
               ))}
             </div>
 
-            {/* Search */}
-            <div style={{ marginBottom: 16 }}>
+            {/* Search + Add */}
+            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="חיפוש לפי שם, טלפון, מייל, מספר חבר..."
-                style={DARK_INPUT}
+                style={{ ...DARK_INPUT, flex: 1 }}
               />
+              <button
+                onClick={() => { setCreateError(""); setCreateModal(true); }}
+                style={{ ...BTN_PRIMARY, whiteSpace: "nowrap" }}
+              >
+                + הוסף חבר
+              </button>
             </div>
 
             {/* Members table */}
@@ -596,6 +638,104 @@ export default function LoyaltyClient({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Create Member Modal ── */}
+      {createModal && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 50,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+        }}>
+          <div style={{ background: T.panel, borderRadius: 14, padding: 24, width: "min(460px, 94vw)", border: "1px solid #2d3239" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ color: T.text, fontSize: 17, fontWeight: 700, margin: 0 }}>➕ הוספת חבר מועדון</h3>
+              <button onClick={() => setCreateModal(false)} style={{ background: "none", border: "none", color: T.muted, fontSize: 18, cursor: "pointer" }}>✕</button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Name */}
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  שם מלא *
+                </label>
+                <input
+                  type="text"
+                  value={createForm.name}
+                  onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="ישראל ישראלי"
+                  style={DARK_INPUT}
+                  autoFocus
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  טלפון *
+                </label>
+                <input
+                  type="tel"
+                  value={createForm.phone}
+                  onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="050-0000000"
+                  style={{ ...DARK_INPUT, direction: "ltr", textAlign: "right" }}
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  אימייל (אופציונלי)
+                </label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="example@email.com"
+                  style={{ ...DARK_INPUT, direction: "ltr", textAlign: "right" }}
+                />
+              </div>
+
+              {/* Birth date */}
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  תאריך לידה (אופציונלי)
+                </label>
+                <input
+                  type="date"
+                  value={createForm.birthDate}
+                  onChange={e => setCreateForm(f => ({ ...f, birthDate: e.target.value }))}
+                  style={{ ...DARK_INPUT, direction: "ltr" }}
+                />
+              </div>
+
+              {createError && (
+                <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid #f87171", borderRadius: 8, padding: "8px 12px", color: T.red, fontSize: 13 }}>
+                  {createError}
+                </div>
+              )}
+
+              {settings?.welcomeBonus ? (
+                <div style={{ fontSize: 12, color: T.muted, background: T.surface, borderRadius: 8, padding: "8px 12px" }}>
+                  ⭐ החבר יקבל {settings.welcomeBonus} נקודות בונוס הצטרפות
+                </div>
+              ) : null}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+              <button
+                onClick={handleCreateMember}
+                disabled={createLoading || !createForm.name.trim() || !createForm.phone.trim()}
+                style={{ ...BTN_PRIMARY, flex: 1, opacity: createLoading || !createForm.name.trim() || !createForm.phone.trim() ? 0.55 : 1 }}
+              >
+                {createLoading ? "מוסיף..." : "הוסף חבר"}
+              </button>
+              <button onClick={() => setCreateModal(false)} style={{ ...BTN_SECONDARY, flex: 1 }}>
+                ביטול
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
