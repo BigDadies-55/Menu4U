@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendSmsBulkPersonalized, SmsConfigError } from "@/lib/sms";
+import { getScopeRestaurantIds } from "@/lib/loyalty-scope";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -23,6 +24,9 @@ export async function POST(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Chain scope — a grouped restaurant shares its member pool with sibling branches
+  const scopeIds = await getScopeRestaurantIds(restaurantId);
+
   // Fetch members — specific list or all
   type MemberRow = { phone: string; name: string; points: number; memberNumber: string };
   const cols = `"phone", "name", "points", "memberNumber"`;
@@ -30,12 +34,12 @@ export async function POST(req: Request) {
   const members: MemberRow[] = isFiltered
     ? await prisma.$queryRawUnsafe<MemberRow[]>(
         `SELECT ${cols} FROM "LoyaltyMember"
-         WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
-        restaurantId, memberIds
+         WHERE "restaurantId" = ANY($1::text[]) AND "id" = ANY($2::text[])`,
+        scopeIds, memberIds
       )
     : await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT ${cols} FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
-        restaurantId
+        `SELECT ${cols} FROM "LoyaltyMember" WHERE "restaurantId" = ANY($1::text[])`,
+        scopeIds
       );
 
   if (members.length === 0) {

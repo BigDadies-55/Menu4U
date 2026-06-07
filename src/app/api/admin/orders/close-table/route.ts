@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { logAudit, getIp } from "@/lib/audit";
+import { getGroupId, scopeWhere } from "@/lib/loyalty-scope";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -98,6 +99,8 @@ export async function POST(req: Request) {
 
       // Group orders by loyaltyMemberId (if set) OR by customerPhone (look up member)
       const memberEarnings = new Map<string, { name: string; earnedAmount: number; orderIds: string[] }>();
+      // Resolve the chain once so phone lookups find chain members from sibling branches
+      const earnGroupId = await getGroupId(restaurantId);
 
       for (const ord of openOrders) {
         if (!ord.loyaltyMemberId && !ord.customerPhone) continue;
@@ -106,7 +109,7 @@ export async function POST(req: Request) {
 
         if (!memberId && ord.customerPhone) {
           const m = await prisma.loyaltyMember.findFirst({
-            where: { restaurantId, phone: ord.customerPhone },
+            where: { phone: ord.customerPhone, ...scopeWhere(restaurantId, earnGroupId) },
             select: { id: true, name: true },
           });
           if (m) { memberId = m.id; memberName = m.name; }

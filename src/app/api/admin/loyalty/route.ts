@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getGroupId, getScopeRestaurantIds, scopeWhere, canManageMemberScope } from "@/lib/loyalty-scope";
 import { NextResponse } from "next/server";
 
 /** Strip a phone to comparable digits (drops +972 / leading-zero differences). */
@@ -33,9 +34,13 @@ export async function GET(req: Request) {
     `ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "lastVisitAt" TIMESTAMP`
   ).catch(() => {});
 
+  // Chain scope: a grouped restaurant shares its member pool with sibling branches
+  const scopeGroupId = await getGroupId(restaurantId);
+  const scopeIds = await getScopeRestaurantIds(restaurantId, scopeGroupId);
+
   const [members, settings] = await Promise.all([
     prisma.loyaltyMember.findMany({
-      where: { restaurantId },
+      where: scopeWhere(restaurantId, scopeGroupId),
       orderBy: { createdAt: "desc" },
       include: {
         transactions: { orderBy: { createdAt: "desc" }, take: 5 },
@@ -56,10 +61,10 @@ export async function GET(req: Request) {
               COUNT(*)::int AS visits, COALESCE(SUM("totalAmount"),0)::float AS spent,
               MAX("createdAt") AS last_visit
          FROM "Order"
-        WHERE "restaurantId" = $1 AND "status" <> 'CANCELLED'
+        WHERE "restaurantId" = ANY($1::text[]) AND "status" <> 'CANCELLED'
           AND ("customerPhone" IS NOT NULL OR "loyaltyMemberId" IS NOT NULL)
         GROUP BY "loyaltyMemberId", "customerPhone"`,
-      restaurantId
+      scopeIds
     ).catch(() => [] as OrderAgg[]),
     prisma.$queryRawUnsafe<ItemAgg[]>(
       `SELECT o."loyaltyMemberId" AS member_id, o."customerPhone" AS phone,
@@ -67,17 +72,17 @@ export async function GET(req: Request) {
          FROM "OrderItem" oi
          JOIN "Order" o ON o."id" = oi."orderId"
          JOIN "Item" i ON i."id" = oi."itemId"
-        WHERE o."restaurantId" = $1 AND o."status" <> 'CANCELLED'
+        WHERE o."restaurantId" = ANY($1::text[]) AND o."status" <> 'CANCELLED'
           AND (o."customerPhone" IS NOT NULL OR o."loyaltyMemberId" IS NOT NULL)
         GROUP BY o."loyaltyMemberId", o."customerPhone", i."name"`,
-      restaurantId
+      scopeIds
     ).catch(() => [] as ItemAgg[]),
     prisma.$queryRawUnsafe<CouponAgg[]>(
       `SELECT "memberId", COUNT(*)::int AS issued, COUNT("usedAt")::int AS used
          FROM "LoyaltyCoupon"
-        WHERE "restaurantId" = $1
+        WHERE "restaurantId" = ANY($1::text[])
         GROUP BY "memberId"`,
-      restaurantId
+      scopeIds
     ).catch(() => [] as CouponAgg[]),
   ]);
 
@@ -180,8 +185,8 @@ export async function POST(req: Request) {
     const memberRecord = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
     if (!memberRecord) return NextResponse.json({ error: "Member not found" }, { status: 404 });
     if (session.user.role !== "SUPER_ADMIN") {
-      const access = await prisma.restaurantUser.findFirst({ where: { userId: session.user.id, restaurantId: memberRecord.restaurantId } });
-      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const ok = await canManageMemberScope(session.user.id, memberRecord.restaurantId);
+      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const member = await prisma.loyaltyMember.update({
       where: { id: memberId },
@@ -205,8 +210,8 @@ export async function POST(req: Request) {
     const memberRecord2 = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
     if (!memberRecord2) return NextResponse.json({ error: "Member not found" }, { status: 404 });
     if (session.user.role !== "SUPER_ADMIN") {
-      const access = await prisma.restaurantUser.findFirst({ where: { userId: session.user.id, restaurantId: memberRecord2.restaurantId } });
-      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const ok = await canManageMemberScope(session.user.id, memberRecord2.restaurantId);
+      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const code = `C${Date.now().toString(36).toUpperCase()}`;
 
@@ -248,10 +253,8 @@ export async function POST(req: Request) {
     if (!couponRecord) return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
     if (couponRecord.usedAt) return NextResponse.json({ error: "כבר מומש" }, { status: 409 });
     if (session.user.role !== "SUPER_ADMIN") {
-      const access = await prisma.restaurantUser.findFirst({
-        where: { userId: session.user.id, restaurantId: couponRecord.restaurantId },
-      });
-      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const ok = await canManageMemberScope(session.user.id, couponRecord.restaurantId);
+      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     await prisma.$executeRawUnsafe(
       `UPDATE "LoyaltyCoupon" SET "usedAt" = NOW(), "usedAtRestaurantId" = $1 WHERE "id" = $2 AND "usedAt" IS NULL`,
@@ -269,12 +272,15 @@ export async function POST(req: Request) {
       const access = await prisma.restaurantUser.findFirst({ where: { userId: session.user.id, restaurantId } });
       if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    // Unique phone per restaurant
-    const existing = await prisma.loyaltyMember.findFirst({ where: { restaurantId, phone } });
+    // Chain scope — a grouped restaurant shares its member pool with sibling branches
+    const createGroupId = await getGroupId(restaurantId);
+
+    // Unique phone within the restaurant or its chain
+    const existing = await prisma.loyaltyMember.findFirst({ where: { phone, ...scopeWhere(restaurantId, createGroupId) } });
     if (existing) return NextResponse.json({ error: "חבר עם מספר טלפון זה כבר קיים" }, { status: 409 });
 
-    // Auto-generate member number
-    const count = await prisma.loyaltyMember.count({ where: { restaurantId } });
+    // Auto-generate member number (per chain when grouped)
+    const count = await prisma.loyaltyMember.count({ where: scopeWhere(restaurantId, createGroupId) });
     const memberNumber = String(count + 1).padStart(4, "0");
 
     // Welcome bonus
@@ -285,6 +291,7 @@ export async function POST(req: Request) {
       data: {
         id: `lm-${Date.now()}`,
         restaurantId,
+        groupId: createGroupId,
         phone,
         name,
         email: email || null,

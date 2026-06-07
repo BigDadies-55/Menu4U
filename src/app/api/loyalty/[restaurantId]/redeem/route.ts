@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
+import { getGroupId, scopeWhere } from "@/lib/loyalty-scope";
 import { NextResponse } from "next/server";
 
 // Ensure loyalty-related columns on Order exist
@@ -31,9 +32,10 @@ export async function POST(
     return NextResponse.json({ error: "missing_params" }, { status: 400 });
   }
 
-  // Validate member belongs to this restaurant
+  // Validate member belongs to this restaurant or its chain (shared wallet)
+  const scopeGroupId = await getGroupId(restaurantId);
   const member = await prisma.loyaltyMember.findFirst({
-    where: { id: memberId, restaurantId },
+    where: { id: memberId, ...scopeWhere(restaurantId, scopeGroupId) },
   });
   if (!member) return NextResponse.json({ error: "member_not_found" }, { status: 404 });
 

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sseNotify } from "@/lib/sse";
+import { getGroupId, scopeWhere } from "@/lib/loyalty-scope";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -64,8 +65,9 @@ export async function POST(
   // Calculate discount server-side — never trust client-supplied loyaltyDiscountAmount
   let discount = 0;
   if (loyaltyMemberId) {
+    const scopeGroupId = await getGroupId(restaurantId);
     const [member, settings] = await Promise.all([
-      prisma.loyaltyMember.findUnique({ where: { id: loyaltyMemberId, restaurantId }, select: { points: true } }).catch(() => null),
+      prisma.loyaltyMember.findFirst({ where: { id: loyaltyMemberId, ...scopeWhere(restaurantId, scopeGroupId) }, select: { points: true } }).catch(() => null),
       prisma.loyaltySettings.findUnique({ where: { restaurantId }, select: { shekelPerPoint: true, minRedeemPoints: true } }).catch(() => null),
     ]);
     if (member && settings && loyaltyCouponId) {

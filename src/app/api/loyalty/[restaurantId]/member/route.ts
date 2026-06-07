@@ -173,14 +173,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ restaur
     return NextResponse.json({ error: "already_member", member: existingRows[0] }, { status: 409 });
   }
 
-  // Generate unique 6-digit member number
+  // Generate unique 6-digit member number — unique across the chain when grouped
   let memberNumber = "";
   for (let i = 0; i < 10; i++) {
     const candidate = String(Math.floor(100000 + Math.random() * 900000));
-    const taken = await prisma.$queryRawUnsafe<MemberRow[]>(
-      `SELECT id FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "memberNumber" = $2 LIMIT 1`,
-      restaurantId, candidate
-    );
+    const taken = groupId
+      ? await prisma.$queryRawUnsafe<MemberRow[]>(
+          `SELECT id FROM "LoyaltyMember" WHERE ("restaurantId" = $1 OR "groupId" = $2) AND "memberNumber" = $3 LIMIT 1`,
+          restaurantId, groupId, candidate
+        )
+      : await prisma.$queryRawUnsafe<MemberRow[]>(
+          `SELECT id FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "memberNumber" = $2 LIMIT 1`,
+          restaurantId, candidate
+        );
     if (taken.length === 0) { memberNumber = candidate; break; }
   }
 
