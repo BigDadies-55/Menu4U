@@ -199,7 +199,7 @@ export default function Sidebar({
   /* ── Floating panels ── */
   const [favPanelOpen,    setFavPanelOpen]    = useState(false);
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
-  const [favBtnTop,          setFavBtnTop]          = useState(0);
+  const [favBtnFromBottom,    setFavBtnFromBottom]    = useState(0);
   const [searchBtnFromBottom, setSearchBtnFromBottom] = useState(0);
 
   const favBtnRef      = useRef<HTMLButtonElement>(null);
@@ -351,7 +351,8 @@ export default function Sidebar({
     setDrawerOpen(false);
     setSearchPanelOpen(false);
     if (favBtnRef.current) {
-      setFavBtnTop(favBtnRef.current.getBoundingClientRect().top);
+      const rect = favBtnRef.current.getBoundingClientRect();
+      setFavBtnFromBottom(window.innerHeight - rect.bottom);
     }
     setFavPanelOpen(true);
   }
@@ -849,9 +850,9 @@ export default function Sidebar({
         style={{
           position: "fixed",
           right: 52,
-          top: favBtnTop,
+          bottom: favBtnFromBottom,
           width: 240,
-          maxHeight: 400,
+          maxHeight: `calc(100vh - ${favBtnFromBottom + 16}px)`,
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
@@ -895,8 +896,8 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* List */}
-        <div style={{ overflowY: "auto", padding: 8 }}>
+        {/* List — flex:1 + minHeight:0 enables scroll when panel hits maxHeight */}
+        <div style={{ overflowY: "auto", padding: 8, flex: 1, minHeight: 0 }}>
           {favorites.length === 0 ? (
             <div style={{ fontSize: 11, color: T.muted, padding: "10px 8px", fontStyle: "italic", textAlign: "center" as const }}>
               לחץ ★ ליד פריט בתפריט
