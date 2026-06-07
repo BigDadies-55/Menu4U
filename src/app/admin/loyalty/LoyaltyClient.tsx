@@ -202,6 +202,12 @@ export default function LoyaltyClient({
   const [couponSentId, setCouponSentId] = useState<string | null>(null);
   const [couponRedeemingId, setCouponRedeemingId] = useState<string | null>(null);
 
+  // Edit member modal
+  const [editModal, setEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", phone: "", email: "", birthDate: "" });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+
   // Create member modal
   const [createModal, setCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", phone: "", email: "", birthDate: "" });
@@ -304,6 +310,47 @@ export default function LoyaltyClient({
       fetchData();
     } finally {
       setCreateLoading(false);
+    }
+  }
+
+  function openEditModal(m: LoyaltyMember) {
+    setEditForm({
+      name: m.name,
+      phone: m.phone,
+      email: m.email ?? "",
+      birthDate: m.birthDate ? m.birthDate.slice(0, 10) : "",
+    });
+    setEditError("");
+    setEditModal(true);
+  }
+
+  async function handleEditMember() {
+    if (!selectedMember) return;
+    if (!editForm.name.trim() || !editForm.phone.trim()) return;
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const res = await fetch("/api/admin/loyalty", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "updateMember",
+          memberId: selectedMember.id,
+          name: editForm.name.trim(),
+          phone: editForm.phone.trim(),
+          email: editForm.email.trim() || null,
+          birthDate: editForm.birthDate || null,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setEditError(d.error ?? "שגיאה");
+        return;
+      }
+      setEditModal(false);
+      fetchData();
+    } finally {
+      setEditLoading(false);
     }
   }
 
@@ -751,11 +798,14 @@ export default function LoyaltyClient({
                 })()}
 
                 {/* Action buttons */}
-                <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-                  <button onClick={() => setAdjustModal(true)} style={{ ...BTN_SECONDARY, flex: 1 }}>
-                    ✏️ התאם נקודות
+                <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+                  <button onClick={() => openEditModal(selectedMember)} style={{ ...BTN_SECONDARY, flex: 1, minWidth: 110 }}>
+                    ✏️ עריכת פרופיל
                   </button>
-                  <button onClick={() => setCouponModal(true)} style={{ ...BTN_PRIMARY, flex: 1 }}>
+                  <button onClick={() => setAdjustModal(true)} style={{ ...BTN_SECONDARY, flex: 1, minWidth: 110 }}>
+                    🔢 התאם נקודות
+                  </button>
+                  <button onClick={() => setCouponModal(true)} style={{ ...BTN_PRIMARY, flex: 1, minWidth: 110 }}>
                     🎟️ הנפק קופון
                   </button>
                 </div>
@@ -953,6 +1003,94 @@ export default function LoyaltyClient({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Edit Member Modal ── */}
+      {editModal && selectedMember && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 50,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+        }}>
+          <div style={{ background: T.panel, borderRadius: 14, padding: 24, width: "min(460px, 94vw)", border: "1px solid #2d3239" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ color: T.text, fontSize: 17, fontWeight: 700, margin: 0 }}>✏️ עריכת פרופיל — {selectedMember.name}</h3>
+              <button onClick={() => setEditModal(false)} style={{ background: "none", border: "none", color: T.muted, fontSize: 18, cursor: "pointer" }}>✕</button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  שם מלא *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="ישראל ישראלי"
+                  style={DARK_INPUT}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  טלפון *
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="050-0000000"
+                  style={{ ...DARK_INPUT, direction: "ltr", textAlign: "right" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  אימייל (אופציונלי)
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="example@email.com"
+                  style={{ ...DARK_INPUT, direction: "ltr", textAlign: "right" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  תאריך לידה (אופציונלי)
+                </label>
+                <input
+                  type="date"
+                  value={editForm.birthDate}
+                  onChange={e => setEditForm(f => ({ ...f, birthDate: e.target.value }))}
+                  style={{ ...DARK_INPUT, direction: "ltr" }}
+                />
+              </div>
+
+              {editError && (
+                <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid #f87171", borderRadius: 8, padding: "8px 12px", color: T.red, fontSize: 13 }}>
+                  {editError}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+              <button
+                onClick={handleEditMember}
+                disabled={editLoading || !editForm.name.trim() || !editForm.phone.trim()}
+                style={{ ...BTN_PRIMARY, flex: 1, opacity: editLoading || !editForm.name.trim() || !editForm.phone.trim() ? 0.55 : 1 }}
+              >
+                {editLoading ? "שומר..." : "שמור שינויים"}
+              </button>
+              <button onClick={() => setEditModal(false)} style={{ ...BTN_SECONDARY, flex: 1 }}>
+                ביטול
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

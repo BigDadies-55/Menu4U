@@ -263,6 +263,35 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  if (action === "updateMember") {
+    const { memberId, name, phone, email, birthDate } = body;
+    if (!memberId) return NextResponse.json({ error: "memberId required" }, { status: 400 });
+    const memberRecord = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
+    if (!memberRecord) return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (session.user.role !== "SUPER_ADMIN") {
+      const ok = await canManageMemberScope(session.user.id, memberRecord.restaurantId);
+      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    // If phone changed, verify it's not taken within the scope
+    if (phone) {
+      const memberGroupId = await getGroupId(memberRecord.restaurantId);
+      const conflict = await prisma.loyaltyMember.findFirst({
+        where: { phone, ...scopeWhere(memberRecord.restaurantId, memberGroupId), NOT: { id: memberId } },
+      });
+      if (conflict) return NextResponse.json({ error: "מספר הטלפון כבר קיים אצל חבר אחר" }, { status: 409 });
+    }
+    const updated = await prisma.loyaltyMember.update({
+      where: { id: memberId },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(phone !== undefined && { phone }),
+        ...(email !== undefined && { email: email || null }),
+        ...(birthDate !== undefined && { birthDate: birthDate ? new Date(birthDate) : null }),
+      },
+    });
+    return NextResponse.json(updated);
+  }
+
   if (action === "createMember") {
     const { name, phone, email, birthDate } = body;
     if (!name || !phone || !restaurantId) {
