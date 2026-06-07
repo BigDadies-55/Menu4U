@@ -37,7 +37,10 @@ export async function GET(req: Request) {
     prisma.loyaltyMember.findMany({
       where: { restaurantId },
       orderBy: { createdAt: "desc" },
-      include: { transactions: { orderBy: { createdAt: "desc" }, take: 5 } },
+      include: {
+        transactions: { orderBy: { createdAt: "desc" }, take: 5 },
+        coupons: { orderBy: { createdAt: "desc" } },
+      },
     }),
     prisma.loyaltySettings.findUnique({ where: { restaurantId } }),
   ]);

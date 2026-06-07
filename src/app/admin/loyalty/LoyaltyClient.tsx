@@ -27,6 +27,17 @@ type MemberAnalytics = {
   status: "new" | "active" | "at_risk" | "inactive";
 };
 
+type LoyaltyCoupon = {
+  id: string;
+  code: string;
+  type: string;
+  value: number;
+  description: string | null;
+  usedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+};
+
 type LoyaltyMember = {
   id: string;
   restaurantId: string;
@@ -41,8 +52,21 @@ type LoyaltyMember = {
   createdAt: string;
   updatedAt: string;
   transactions: LoyaltyTransaction[];
+  coupons?: LoyaltyCoupon[];
   analytics?: MemberAnalytics;
 };
+
+const COUPON_TYPE_LABEL: Record<string, string> = {
+  DISCOUNT_PERCENT: "% הנחה",
+  DISCOUNT_AMOUNT: "₪ הנחה",
+  FREE_ITEM: "מנה חינם",
+};
+
+function couponValueLabel(c: LoyaltyCoupon): string {
+  if (c.type === "DISCOUNT_PERCENT") return `${c.value}%`;
+  if (c.type === "DISCOUNT_AMOUNT") return `₪${c.value}`;
+  return COUPON_TYPE_LABEL[c.type] ?? "";
+}
 
 const STATUS_META: Record<MemberAnalytics["status"], { label: string; color: string }> = {
   active:   { label: "פעיל",   color: T.green },
@@ -193,7 +217,10 @@ export default function LoyaltyClient({
       const res = await fetch(`/api/admin/loyalty?restaurantId=${selectedRestaurantId}`);
       if (!res.ok) throw new Error("שגיאה בטעינת הנתונים");
       const data = await res.json();
-      setMembers(data.members ?? []);
+      const nextMembers: LoyaltyMember[] = data.members ?? [];
+      setMembers(nextMembers);
+      // Keep the open detail panel in sync (e.g. after issuing a coupon)
+      setSelectedMember(prev => prev ? (nextMembers.find(m => m.id === prev.id) ?? prev) : prev);
       setSettings(data.settings ?? null);
       setSettingsForm(data.settings ?? {
         pointsPerShekel: 1,
@@ -367,7 +394,10 @@ export default function LoyaltyClient({
         }
       }
 
-      // 3. Reset
+      // 3. Refresh so the new coupon shows in the member's coupon list
+      fetchData();
+
+      // 4. Reset
       setCouponModal(false);
       setCouponValue("");
       setCouponDesc("");
@@ -683,6 +713,46 @@ export default function LoyaltyClient({
                   <button onClick={() => setCouponModal(true)} style={{ ...BTN_PRIMARY, flex: 1 }}>
                     🎟️ הנפק קופון
                   </button>
+                </div>
+
+                {/* Coupons */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    קופונים ({selectedMember.coupons?.length ?? 0})
+                  </div>
+                  {(!selectedMember.coupons || selectedMember.coupons.length === 0) ? (
+                    <div style={{ color: T.muted, fontSize: 13, textAlign: "center", padding: "12px 0" }}>
+                      לא הונפקו קופונים
+                    </div>
+                  ) : (
+                    selectedMember.coupons.map(c => {
+                      const used = !!c.usedAt;
+                      const expired = !used && c.expiresAt && new Date(c.expiresAt) < new Date();
+                      const statusColor = used ? T.muted : expired ? T.red : T.green;
+                      const statusLabel = used ? "מומש" : expired ? "פג תוקף" : "פעיל";
+                      return (
+                        <div key={c.id} style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center",
+                          padding: "8px 10px", marginBottom: 6, borderRadius: 8,
+                          background: T.surface, border: "1px solid #2d3239",
+                          opacity: used || expired ? 0.6 : 1,
+                        }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: T.gold }}>{c.code}</span>
+                              <span style={{ fontSize: 11, color: statusColor, fontWeight: 600 }}>● {statusLabel}</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>
+                              {couponValueLabel(c)}{c.description ? ` · ${c.description}` : ""}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "left", fontSize: 11, color: T.muted, flexShrink: 0, marginRight: 8 }}>
+                            {c.expiresAt ? `עד ${formatDate(c.expiresAt)}` : "ללא תפוגה"}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
 
                 {/* Transaction history */}
