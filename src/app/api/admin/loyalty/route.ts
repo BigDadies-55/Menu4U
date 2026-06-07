@@ -239,6 +239,27 @@ export async function POST(req: Request) {
     return NextResponse.json(coupon);
   }
 
+  if (action === "redeemCoupon") {
+    const { couponId } = body;
+    const couponRecord = await prisma.loyaltyCoupon.findUnique({
+      where: { id: couponId },
+      select: { restaurantId: true, usedAt: true },
+    });
+    if (!couponRecord) return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
+    if (couponRecord.usedAt) return NextResponse.json({ error: "כבר מומש" }, { status: 409 });
+    if (session.user.role !== "SUPER_ADMIN") {
+      const access = await prisma.restaurantUser.findFirst({
+        where: { userId: session.user.id, restaurantId: couponRecord.restaurantId },
+      });
+      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    await prisma.$executeRawUnsafe(
+      `UPDATE "LoyaltyCoupon" SET "usedAt" = NOW(), "usedAtRestaurantId" = $1 WHERE "id" = $2 AND "usedAt" IS NULL`,
+      couponRecord.restaurantId, couponId
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   if (action === "createMember") {
     const { name, phone, email, birthDate } = body;
     if (!name || !phone || !restaurantId) {

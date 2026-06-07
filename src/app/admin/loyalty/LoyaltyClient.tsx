@@ -197,9 +197,10 @@ export default function LoyaltyClient({
   const [couponSchedule, setCouponSchedule] = useState(""); // datetime-local string
   const [couponDeliveryNote, setCouponDeliveryNote] = useState("");
 
-  // Per-coupon SMS send (from the coupons list)
+  // Per-coupon SMS send / manual redeem
   const [couponSendingId, setCouponSendingId] = useState<string | null>(null);
   const [couponSentId, setCouponSentId] = useState<string | null>(null);
+  const [couponRedeemingId, setCouponRedeemingId] = useState<string | null>(null);
 
   // Create member modal
   const [createModal, setCreateModal] = useState(false);
@@ -326,6 +327,23 @@ export default function LoyaltyClient({
       setTimeout(() => setCouponSentId(null), 3000);
     } finally {
       setCouponSendingId(null);
+    }
+  }
+
+  async function handleRedeemCoupon(c: LoyaltyCoupon) {
+    if (!confirm(`לסמן את קופון ${c.code} כמומש? פעולה זו אינה הפיכה.`)) return;
+    setCouponRedeemingId(c.id);
+    try {
+      const res = await fetch("/api/admin/loyalty", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "redeemCoupon", couponId: c.id }),
+      });
+      const d = await res.json();
+      if (!res.ok) { alert(d.error ?? "שגיאה"); return; }
+      fetchData();
+    } finally {
+      setCouponRedeemingId(null);
     }
   }
 
@@ -778,20 +796,33 @@ export default function LoyaltyClient({
                               {used ? `✓ מומש ${formatDate(c.usedAt!)}` : c.expiresAt ? `עד ${formatDate(c.expiresAt)}` : "ללא תפוגה"}
                             </div>
                             {!used && !expired && (
-                              couponSentId === c.id ? (
-                                <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>✓ נשלח</span>
-                              ) : (
+                              <div style={{ display: "flex", gap: 5 }}>
+                                {couponSentId === c.id ? (
+                                  <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>✓ נשלח</span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleSendCoupon(c)}
+                                    disabled={!!couponSendingId || !!couponRedeemingId}
+                                    style={{
+                                      ...BTN_SECONDARY, padding: "3px 9px", fontSize: 11,
+                                      opacity: couponSendingId === c.id ? 0.6 : 1, whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {couponSendingId === c.id ? "שולח..." : "📤 SMS"}
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => handleSendCoupon(c)}
-                                  disabled={couponSendingId === c.id}
+                                  onClick={() => handleRedeemCoupon(c)}
+                                  disabled={!!couponRedeemingId || !!couponSendingId}
                                   style={{
                                     ...BTN_SECONDARY, padding: "3px 9px", fontSize: 11,
-                                    opacity: couponSendingId === c.id ? 0.6 : 1, whiteSpace: "nowrap",
+                                    opacity: couponRedeemingId === c.id ? 0.6 : 1, whiteSpace: "nowrap",
+                                    borderColor: "rgba(74,222,128,0.35)", color: T.green,
                                   }}
                                 >
-                                  {couponSendingId === c.id ? "שולח..." : "📤 שלח ב-SMS"}
+                                  {couponRedeemingId === c.id ? "מממש..." : "✓ מימוש"}
                                 </button>
-                              )
+                              </div>
                             )}
                           </div>
                         </div>
