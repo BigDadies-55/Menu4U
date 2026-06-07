@@ -34,6 +34,54 @@ export function isSmsConfigured(): boolean {
   return !!(process.env.INFORU_USERNAME && process.env.INFORU_API_TOKEN);
 }
 
+/** Diagnostic: which INFORU_* vars are present (never exposes the values). */
+export function smsConfigStatus() {
+  return {
+    hasUsername: !!process.env.INFORU_USERNAME,
+    hasToken:    !!process.env.INFORU_API_TOKEN,
+    senderName:  process.env.INFORU_SENDER_NAME ?? "Menu4U (default)",
+    endpoint:    INFORU_URL,
+  };
+}
+
+/** Send one SMS and return the raw gateway response for diagnosis. */
+export async function sendSmsDetailed(
+  phone: string,
+  message: string
+): Promise<{ ok: boolean; httpStatus?: number; response?: string; error?: string }> {
+  const username = process.env.INFORU_USERNAME;
+  const token    = process.env.INFORU_API_TOKEN;
+  const sender   = process.env.INFORU_SENDER_NAME ?? "Menu4U";
+
+  if (!username || !token) {
+    return { ok: false, error: "not_configured" };
+  }
+
+  const to = toIsraeliE164(phone);
+  const xml = `<Inforu>
+    <User>
+      <Username>${xmlEscape(username)}</Username>
+      <ApiToken>${xmlEscape(token)}</ApiToken>
+    </User>
+    <Content><Message>${xmlEscape(message)}</Message></Content>
+    <Recipients><PhoneNumber>${xmlEscape(to)}</PhoneNumber></Recipients>
+    <Settings><SenderName>${xmlEscape(sender)}</SenderName></Settings>
+  </Inforu>`;
+
+  try {
+    const res = await fetch(INFORU_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ InforuXML: xml }),
+    });
+    const text = await res.text();
+    const ok = text.includes("<Status>1</Status>") || text.includes("Status>1<");
+    return { ok, httpStatus: res.status, response: text.slice(0, 600) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "network_error" };
+  }
+}
+
 export async function sendSms(phone: string, message: string): Promise<boolean> {
   const username = process.env.INFORU_USERNAME;
   const token    = process.env.INFORU_API_TOKEN;
