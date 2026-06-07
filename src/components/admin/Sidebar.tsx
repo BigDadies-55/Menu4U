@@ -394,7 +394,11 @@ export default function Sidebar({
   const userInitials = (user.name ?? user.email ?? "?")
     .split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
-  const drawerBg = (sidebarBg === "var(--c-panel)" || !adminSidebarBg) ? T.surface : sidebarBg;
+  // Gradient D: dark vertical gradient (gold edge added as a child element below)
+  const useDefaultDrawer = sidebarBg === "var(--c-panel)" || !adminSidebarBg;
+  const drawerBg = useDefaultDrawer
+    ? "linear-gradient(180deg,#1c1c1c 0%,#161412 55%,#100f0d 100%)"
+    : sidebarBg;
 
   return (
     <>
@@ -556,6 +560,16 @@ export default function Sidebar({
           direction: "rtl",
         }}
       >
+        {/* Gradient D — gold accent edge on the right (toward the strip) */}
+        {useDefaultDrawer && (
+          <div style={{
+            position: "absolute", top: 0, right: 0,
+            width: 3, height: "100%",
+            background: "linear-gradient(180deg,#7a4e04 0%,#c9890a 50%,#e8b84b 100%)",
+            opacity: 0.7, zIndex: 6, pointerEvents: "none",
+          }} />
+        )}
+
         {/* Resize handle */}
         <div
           onMouseDown={startDrawerResize}
@@ -841,7 +855,7 @@ export default function Sidebar({
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
-          zIndex: 295,
+          zIndex: 360,
           display: "flex", flexDirection: "column",
           transform: favPanelOpen ? "translateX(0)" : "translateX(260px)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
@@ -944,7 +958,7 @@ export default function Sidebar({
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
-          zIndex: 295,
+          zIndex: 360,
           display: "flex", flexDirection: "column",
           transform: searchPanelOpen ? "translateX(0)" : "translateX(280px)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
