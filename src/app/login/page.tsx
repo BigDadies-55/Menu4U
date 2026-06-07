@@ -241,6 +241,15 @@ export default function LoginPage() {
               <button type="submit" className="login-btn" disabled={loading}>
                 {loading ? "מתחבר..." : "כניסה למערכת"}
               </button>
+
+              <div style={{ textAlign: "center", marginTop: 16 }}>
+                <a href="/forgot-password" style={{ fontSize: 12, color: "#6b6070", textDecoration: "none", transition: ".2s" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#dfc07e")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "#6b6070")}
+                >
+                  שכחתי סיסמה
+                </a>
+              </div>
             </form>
           </div>
 
