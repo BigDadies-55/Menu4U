@@ -94,6 +94,53 @@ type LoyaltySettings = {
   welcomeBonus: number;
   birthdayBonus: number;
   isActive: boolean;
+  // Permission controls
+  minRoleAdjustPoints: string;
+  minRoleIssueCoupon: string;
+  minRoleRedeemCoupon: string;
+  minRoleUpdateMember: string;
+  minRoleSendSms: string;
+  maxDailyPointsAdjust: number;
+};
+
+type AuditEntry = {
+  id: string;
+  userId: string | null;
+  userEmail: string | null;
+  action: string;
+  entity: string | null;
+  entityId: string | null;
+  entityName: string | null;
+  meta: Record<string, unknown> | null;
+  ip: string | null;
+  createdAt: string;
+};
+
+const ROLE_OPTIONS = [
+  { value: "SHIFT_MANAGER", label: "מנהל משמרת ומעלה" },
+  { value: "OWNER",         label: "בעל מסעדה ומעלה" },
+  { value: "ADMIN",         label: "מנהל מערכת ומעלה" },
+  { value: "SUPER_ADMIN",   label: "סופר-אדמין בלבד" },
+];
+
+const AUDIT_ACTION_LABEL: Record<string, string> = {
+  LOYALTY_ADJUST_POINTS:   "התאמת נקודות",
+  LOYALTY_ISSUE_COUPON:    "הנפקת קופון",
+  LOYALTY_REDEEM_COUPON:   "מימוש קופון",
+  LOYALTY_UPDATE_MEMBER:   "עריכת חבר",
+  LOYALTY_CREATE_MEMBER:   "הוספת חבר",
+  LOYALTY_SEND_SMS:        "שליחת SMS",
+  LOYALTY_UPDATE_SETTINGS: "עדכון הגדרות",
+};
+
+const AUDIT_ACTION_COLOR: Record<string, string> = {
+  LOYALTY_ADJUST_POINTS:   "#60a5fa",
+  LOYALTY_ISSUE_COUPON:    "#c9a84c",
+  LOYALTY_REDEEM_COUPON:   "#4ade80",
+  LOYALTY_UPDATE_MEMBER:   "#a78bfa",
+  LOYALTY_CREATE_MEMBER:   "#34d399",
+  LOYALTY_SEND_SMS:        "#fb923c",
+  LOYALTY_UPDATE_SETTINGS: "#94a3b8",
 };
 
 /* ─── Styles ─────────────────────────────────────────────────── */
@@ -218,7 +265,13 @@ export default function LoyaltyClient({
   const [settingsForm, setSettingsForm] = useState<Partial<LoyaltySettings>>({});
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<"members" | "settings">("members");
+  const [activeTab, setActiveTab] = useState<"members" | "settings" | "audit">("members");
+
+  // Audit log tab
+  const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditPages, setAuditPages] = useState(1);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!selectedRestaurantId) return;
@@ -240,6 +293,12 @@ export default function LoyaltyClient({
         welcomeBonus: 50,
         birthdayBonus: 100,
         isActive: true,
+        minRoleAdjustPoints: "SHIFT_MANAGER",
+        minRoleIssueCoupon: "OWNER",
+        minRoleRedeemCoupon: "SHIFT_MANAGER",
+        minRoleUpdateMember: "SHIFT_MANAGER",
+        minRoleSendSms: "OWNER",
+        maxDailyPointsAdjust: 0,
       });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "שגיאה");
@@ -249,6 +308,25 @@ export default function LoyaltyClient({
   }, [selectedRestaurantId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const fetchAudit = useCallback(async (page = 1) => {
+    if (!selectedRestaurantId) return;
+    setAuditLoading(true);
+    try {
+      const res = await fetch(`/api/admin/loyalty/audit?restaurantId=${selectedRestaurantId}&page=${page}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setAuditLogs(data.logs ?? []);
+      setAuditPage(data.page ?? 1);
+      setAuditPages(data.pages ?? 1);
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [selectedRestaurantId]);
+
+  useEffect(() => {
+    if (activeTab === "audit") fetchAudit(1);
+  }, [activeTab, fetchAudit]);
 
   const filteredMembers = members.filter(m => {
     const matchesSearch = !search ||
@@ -270,11 +348,20 @@ export default function LoyaltyClient({
     setSettingsLoading(true);
     setSettingsSaved(false);
     try {
-      await fetch("/api/admin/loyalty", {
+      const res = await fetch("/api/admin/loyalty", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "updateSettings", restaurantId: selectedRestaurantId, ...settingsForm }),
+        body: JSON.stringify({
+          action: "updateSettings",
+          restaurantId: selectedRestaurantId,
+          ...settingsForm,
+        }),
       });
+      if (!res.ok) {
+        const d = await res.json();
+        alert(d.error ?? "שגיאה בשמירת הגדרות");
+        return;
+      }
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 2000);
       fetchData();
@@ -535,10 +622,14 @@ export default function LoyaltyClient({
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #2d3239", paddingBottom: 0 }}>
-        {(["members", "settings"] as const).map(tab => (
+        {([
+          { key: "members", label: `👥 חברים (${members.length})` },
+          { key: "settings", label: "⚙️ הגדרות" },
+          { key: "audit", label: "📋 יומן פעולות" },
+        ] as const).map(tab => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             style={{
               padding: "10px 20px",
               background: "none",
@@ -546,13 +637,13 @@ export default function LoyaltyClient({
               cursor: "pointer",
               fontWeight: 600,
               fontSize: 14,
-              color: activeTab === tab ? T.gold : T.muted,
-              borderBottom: activeTab === tab ? "2px solid #c9a84c" : "2px solid transparent",
+              color: activeTab === tab.key ? T.gold : T.muted,
+              borderBottom: activeTab === tab.key ? "2px solid #c9a84c" : "2px solid transparent",
               marginBottom: -1,
               transition: "color 150ms",
             }}
           >
-            {tab === "members" ? `👥 חברים (${members.length})` : "⚙️ הגדרות"}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -987,22 +1078,146 @@ export default function LoyaltyClient({
             </div>
           </div>
 
-          {/* Current settings summary */}
-          {settings && (
-            <div style={{ ...CARD, background: T.surface }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.muted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                הגדרות נוכחיות
-              </div>
-              <div style={{ fontSize: 13, color: T.sub, lineHeight: 2 }}>
-                <div>• {settings.pointsPerShekel} נקודות לכל שקל</div>
-                <div>• ₪{settings.shekelPerPoint} לנקודה בעת מימוש</div>
-                <div>• מינימום מימוש: {settings.minRedeemPoints} נקודות</div>
-                <div>• בונוס הצטרפות: {settings.welcomeBonus} נקודות</div>
-                <div>• בונוס יום הולדת: {settings.birthdayBonus} נקודות</div>
-                <div>• סטטוס: {settings.isActive ? "✅ פעיל" : "❌ מושהה"}</div>
+          {/* ── Permission controls ── */}
+          <div style={CARD}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: T.text, margin: "0 0 6px" }}>🔐 הגדרות הרשאות</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: "0 0 20px" }}>הגדר מינימום תפקיד נדרש לכל פעולת מועדון. חל על כל המשתמשים שאינם SUPER_ADMIN.</p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {([
+                { key: "minRoleAdjustPoints",  label: "התאמת נקודות ידנית" },
+                { key: "minRoleIssueCoupon",   label: "הנפקת קופון" },
+                { key: "minRoleRedeemCoupon",  label: "מימוש קופון (ידני)" },
+                { key: "minRoleUpdateMember",  label: "עריכת פרופיל חבר" },
+                { key: "minRoleSendSms",       label: "שליחת SMS לחברים" },
+              ] as const).map(field => (
+                <div key={field.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <label style={{ fontSize: 13, color: T.sub, flex: 1 }}>{field.label}</label>
+                  <select
+                    value={(settingsForm as Record<string, unknown>)[field.key] as string ?? "SHIFT_MANAGER"}
+                    onChange={e => setSettingsForm(f => ({ ...f, [field.key]: e.target.value }))}
+                    style={{ ...DARK_INPUT, width: "auto", minWidth: 210 }}
+                  >
+                    {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                </div>
+              ))}
+
+              <div style={{ borderTop: "1px solid #2d3239", paddingTop: 14 }}>
+                <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  מגבלה יומית — התאמת נקודות ידנית (0 = ללא הגבלה)
+                </label>
+                <input
+                  type="number"
+                  value={(settingsForm as Record<string, unknown>).maxDailyPointsAdjust as number ?? 0}
+                  onChange={e => setSettingsForm(f => ({ ...f, maxDailyPointsAdjust: parseInt(e.target.value) || 0 }))}
+                  style={{ ...DARK_INPUT, maxWidth: 160 }}
+                  min={0}
+                  step={10}
+                />
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>
+                  סך נקודות מקסימלי שמפעיל יכול להוסיף/להפחית ביום
+                </div>
               </div>
             </div>
-          )}
+
+            <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
+              <button onClick={handleSaveSettings} disabled={settingsLoading} style={{ ...BTN_PRIMARY }}>
+                {settingsLoading ? "שומר..." : "שמור הגדרות הרשאות"}
+              </button>
+              {settingsSaved && <span style={{ fontSize: 13, color: T.green }}>✓ נשמר</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── AUDIT TAB ── */}
+      {activeTab === "audit" && (
+        <div>
+          <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #2d3239", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>📋 יומן פעולות מועדון לקוחות</div>
+              <button onClick={() => fetchAudit(auditPage)} style={{ ...BTN_SECONDARY, padding: "5px 12px", fontSize: 12 }}>
+                רענן
+              </button>
+            </div>
+
+            {auditLoading ? (
+              <div style={{ padding: "28px 20px", color: T.muted, fontSize: 14 }}>טוען...</div>
+            ) : auditLogs.length === 0 ? (
+              <div style={{ padding: "40px 20px", textAlign: "center", color: T.muted, fontSize: 14 }}>
+                אין רשומות יומן עדיין
+              </div>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: T.surface, borderBottom: "1px solid #2d3239" }}>
+                    {["תאריך", "מפעיל", "פעולה", "חבר/ישות", "פרטים"].map(h => (
+                      <th key={h} style={{ padding: "10px 14px", textAlign: "right", fontSize: 11, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log, i) => {
+                    const actionColor = AUDIT_ACTION_COLOR[log.action] ?? T.muted;
+                    const actionLabel = AUDIT_ACTION_LABEL[log.action] ?? log.action;
+                    const meta = log.meta ?? {};
+                    let detail = "";
+                    if (log.action === "LOYALTY_ADJUST_POINTS") {
+                      const pts = meta.points as number;
+                      detail = `${pts > 0 ? "+" : ""}${pts} נקודות`;
+                      if (meta.note) detail += ` · ${String(meta.note).replace(/\s*\[uid:[^\]]+\]/, "")}`;
+                    } else if (log.action === "LOYALTY_ISSUE_COUPON") {
+                      detail = `${meta.code} · ${meta.type} · ${meta.value}`;
+                    } else if (log.action === "LOYALTY_REDEEM_COUPON") {
+                      detail = String(meta.code ?? "");
+                    } else if (log.action === "LOYALTY_SEND_SMS") {
+                      detail = `נשלח ל-${meta.recipientCount} · "${String(meta.messagePreview ?? "").slice(0, 40)}..."`;
+                    } else if (log.action === "LOYALTY_UPDATE_MEMBER") {
+                      const changes = meta.changes as Record<string, unknown> ?? {};
+                      detail = Object.keys(changes).join(", ");
+                    }
+                    return (
+                      <tr key={log.id} style={{ borderBottom: "1px solid #2d3239", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                        <td style={{ padding: "10px 14px", fontSize: 12, color: T.muted, whiteSpace: "nowrap" }}>
+                          {new Date(log.createdAt).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                        <td style={{ padding: "10px 14px", fontSize: 12, color: T.sub }}>
+                          {log.userEmail ?? log.userId ?? "—"}
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ background: `${actionColor}1a`, color: actionColor, padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                            {actionLabel}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 14px", fontSize: 12, color: T.text, fontWeight: 500 }}>
+                          {log.entityName ?? log.entityId ?? "—"}
+                        </td>
+                        <td style={{ padding: "10px 14px", fontSize: 12, color: T.muted, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {detail || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            {/* Pagination */}
+            {auditPages > 1 && (
+              <div style={{ padding: "14px 20px", borderTop: "1px solid #2d3239", display: "flex", gap: 8, justifyContent: "center" }}>
+                <button onClick={() => fetchAudit(auditPage - 1)} disabled={auditPage <= 1} style={{ ...BTN_SECONDARY, padding: "5px 14px", fontSize: 12 }}>
+                  ← קודם
+                </button>
+                <span style={{ fontSize: 13, color: T.muted, alignSelf: "center" }}>עמוד {auditPage} מתוך {auditPages}</span>
+                <button onClick={() => fetchAudit(auditPage + 1)} disabled={auditPage >= auditPages} style={{ ...BTN_SECONDARY, padding: "5px 14px", fontSize: 12 }}>
+                  הבא →
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

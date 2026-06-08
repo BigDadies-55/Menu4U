@@ -477,5 +477,14 @@ model LoyaltySettings {
   birthdayBonus   Int    @default(100)
   isActive        Boolean @default(true)
 
+  // Granular action permissions — minimum RestaurantUser.role required
+  minRoleAdjustPoints  String @default("SHIFT_MANAGER")
+  minRoleIssueCoupon   String @default("OWNER")
+  minRoleRedeemCoupon  String @default("SHIFT_MANAGER")
+  minRoleUpdateMember  String @default("SHIFT_MANAGER")
+  minRoleSendSms       String @default("OWNER")
+  // Daily cap on manual point adjustments per operator (0 = unlimited)
+  maxDailyPointsAdjust Int    @default(0)
+
   restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }

@@ -1,6 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getGroupId, getScopeRestaurantIds, scopeWhere, canManageMemberScope } from "@/lib/loyalty-scope";
+import {
+  getGroupId, getScopeRestaurantIds, scopeWhere,
+  checkLoyaltyPermission, ensureLoyaltyPermissionColumns,
+} from "@/lib/loyalty-scope";
+import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 /** Strip a phone to comparable digits (drops +972 / leading-zero differences). */
@@ -29,10 +33,11 @@ export async function GET(req: Request) {
   const restaurantId = searchParams.get("restaurantId");
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
 
-  // Ensure analytics column exists (idempotent — schema may predate it on older DBs)
-  await prisma.$executeRawUnsafe(
-    `ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "lastVisitAt" TIMESTAMP`
-  ).catch(() => {});
+  // Ensure analytics + permission columns exist (idempotent)
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "lastVisitAt" TIMESTAMP`),
+    ensureLoyaltyPermissionColumns(),
+  ]);
 
   // Chain scope: a grouped restaurant shares its member pool with sibling branches
   const scopeGroupId = await getGroupId(restaurantId);
@@ -47,7 +52,10 @@ export async function GET(req: Request) {
         coupons: { orderBy: { createdAt: "desc" } },
       },
     }),
-    prisma.loyaltySettings.findUnique({ where: { restaurantId } }),
+    prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT * FROM "LoyaltySettings" WHERE "restaurantId" = $1 LIMIT 1`,
+      restaurantId
+    ).then(r => r[0] ?? null).catch(() => null),
   ]);
 
   // ── Aggregate visit/spend stats from orders ──
@@ -86,13 +94,11 @@ export async function GET(req: Request) {
     ).catch(() => [] as CouponAgg[]),
   ]);
 
-  // Index members for matching: by id and by normalized phone
   const byId = new Map(members.map(m => [m.id, m]));
   const byPhone = new Map(members.map(m => [normalizePhone(m.phone), m]));
   const matchMember = (memberId: string | null, phone: string | null) =>
     (memberId && byId.get(memberId)) || (phone && byPhone.get(normalizePhone(phone))) || null;
 
-  // Accumulate per-member visit aggregates (each order row maps to one member)
   const stats = new Map<string, { visits: number; spent: number; last: Date | null }>();
   for (const r of orderRows) {
     const m = matchMember(r.member_id, r.phone);
@@ -105,7 +111,6 @@ export async function GET(req: Request) {
     stats.set(m.id, cur);
   }
 
-  // Favorite item per member (highest total quantity)
   const favTracker = new Map<string, { name: string; qty: number }>();
   for (const r of itemRows) {
     const m = matchMember(r.member_id, r.phone);
@@ -119,7 +124,6 @@ export async function GET(req: Request) {
 
   const enriched = members.map(m => {
     const s = stats.get(m.id);
-    // Prefer the stored lastVisitAt; fall back to the max order date we computed
     const storedLast = (m as { lastVisitAt?: Date | null }).lastVisitAt ?? null;
     const computedLast = s?.last ?? null;
     const lastVisitAt =
@@ -154,92 +158,120 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   const { action, restaurantId } = body;
+  const ip = getIp(req);
 
   if (action === "updateSettings") {
-    const settings = await prisma.loyaltySettings.upsert({
-      where: { restaurantId },
-      update: {
-        pointsPerShekel: body.pointsPerShekel,
-        shekelPerPoint: body.shekelPerPoint,
-        minRedeemPoints: body.minRedeemPoints,
-        welcomeBonus: body.welcomeBonus,
-        birthdayBonus: body.birthdayBonus,
-        isActive: body.isActive,
-      },
-      create: {
-        restaurantId,
-        pointsPerShekel: body.pointsPerShekel ?? 1,
-        shekelPerPoint: body.shekelPerPoint ?? 0.1,
-        minRedeemPoints: body.minRedeemPoints ?? 100,
-        welcomeBonus: body.welcomeBonus ?? 50,
-        birthdayBonus: body.birthdayBonus ?? 100,
-        isActive: body.isActive ?? true,
-      },
+    // Only OWNER and above can update loyalty settings
+    if (session.user.role !== "SUPER_ADMIN") {
+      const access = await prisma.restaurantUser.findFirst({
+        where: { userId: session.user.id, restaurantId },
+        select: { role: true },
+      });
+      const { ROLE_HIERARCHY } = await import("@/lib/permissions");
+      const userLevel = ROLE_HIERARCHY[(access?.role ?? "VIEWER") as keyof typeof ROLE_HIERARCHY] ?? 0;
+      const ownerLevel = ROLE_HIERARCHY["OWNER"];
+      if (userLevel < ownerLevel) {
+        return NextResponse.json({ error: "נדרש תפקיד בעל מסעדה לעדכון הגדרות" }, { status: 403 });
+      }
+    }
+    // Use raw upsert to include new permission columns Prisma client might not know yet
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "LoyaltySettings"
+         ("restaurantId","pointsPerShekel","shekelPerPoint","minRedeemPoints",
+          "welcomeBonus","birthdayBonus","isActive",
+          "minRoleAdjustPoints","minRoleIssueCoupon","minRoleRedeemCoupon",
+          "minRoleUpdateMember","minRoleSendSms","maxDailyPointsAdjust")
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       ON CONFLICT ("restaurantId") DO UPDATE SET
+         "pointsPerShekel"     = EXCLUDED."pointsPerShekel",
+         "shekelPerPoint"      = EXCLUDED."shekelPerPoint",
+         "minRedeemPoints"     = EXCLUDED."minRedeemPoints",
+         "welcomeBonus"        = EXCLUDED."welcomeBonus",
+         "birthdayBonus"       = EXCLUDED."birthdayBonus",
+         "isActive"            = EXCLUDED."isActive",
+         "minRoleAdjustPoints" = EXCLUDED."minRoleAdjustPoints",
+         "minRoleIssueCoupon"  = EXCLUDED."minRoleIssueCoupon",
+         "minRoleRedeemCoupon" = EXCLUDED."minRoleRedeemCoupon",
+         "minRoleUpdateMember" = EXCLUDED."minRoleUpdateMember",
+         "minRoleSendSms"      = EXCLUDED."minRoleSendSms",
+         "maxDailyPointsAdjust" = EXCLUDED."maxDailyPointsAdjust"`,
+      restaurantId,
+      body.pointsPerShekel ?? 1,
+      body.shekelPerPoint ?? 0.1,
+      body.minRedeemPoints ?? 100,
+      body.welcomeBonus ?? 50,
+      body.birthdayBonus ?? 100,
+      body.isActive ?? true,
+      body.minRoleAdjustPoints ?? "SHIFT_MANAGER",
+      body.minRoleIssueCoupon ?? "OWNER",
+      body.minRoleRedeemCoupon ?? "SHIFT_MANAGER",
+      body.minRoleUpdateMember ?? "SHIFT_MANAGER",
+      body.minRoleSendSms ?? "OWNER",
+      body.maxDailyPointsAdjust ?? 0,
+    );
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "LOYALTY_UPDATE_SETTINGS", entity: "LoyaltySettings", entityId: restaurantId, ip,
+      meta: { pointsPerShekel: body.pointsPerShekel, shekelPerPoint: body.shekelPerPoint, isActive: body.isActive },
     });
-    return NextResponse.json(settings);
+    const updated = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "LoyaltySettings" WHERE "restaurantId" = $1 LIMIT 1`, restaurantId
+    ).then((r: unknown) => (r as unknown[])[0] ?? null);
+    return NextResponse.json(updated);
   }
 
   if (action === "adjustPoints") {
     const { memberId, points, note } = body;
-    // Verify caller has access to the member's restaurant
-    const memberRecord = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
+    const memberRecord = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true, name: true, phone: true } });
     if (!memberRecord) return NextResponse.json({ error: "Member not found" }, { status: 404 });
-    if (session.user.role !== "SUPER_ADMIN") {
-      const ok = await canManageMemberScope(session.user.id, memberRecord.restaurantId);
-      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const perm = await checkLoyaltyPermission(session.user.id, session.user.role, memberRecord.restaurantId, "adjustPoints", points);
+    if (!perm.allowed) return NextResponse.json({ error: perm.reason }, { status: 403 });
     const member = await prisma.loyaltyMember.update({
       where: { id: memberId },
       data: { points: { increment: points } },
     });
+    // Embed operator id in note so daily-cap query can filter by it
+    const fullNote = `${note || "התאמה ידנית"} [uid:${session.user.id}]`;
     await prisma.loyaltyTransaction.create({
-      data: {
-        id: `lt-${Date.now()}`,
-        memberId,
-        type: "MANUAL",
-        points,
-        note: note || "התאמה ידנית",
-      },
+      data: { id: `lt-${Date.now()}`, memberId, type: "MANUAL", points, note: fullNote },
+    });
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "LOYALTY_ADJUST_POINTS", entity: "LoyaltyMember",
+      entityId: memberId, entityName: memberRecord.name, ip,
+      meta: { points, note: note || null, newTotal: member.points },
     });
     return NextResponse.json(member);
   }
 
   if (action === "issueCoupon") {
     const { memberId, type, value, description, expiresAt, validForGroup } = body;
-    // Verify caller has access to the coupon's restaurant
-    const memberRecord2 = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
+    const memberRecord2 = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true, name: true } });
     if (!memberRecord2) return NextResponse.json({ error: "Member not found" }, { status: 404 });
-    if (session.user.role !== "SUPER_ADMIN") {
-      const ok = await canManageMemberScope(session.user.id, memberRecord2.restaurantId);
-      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const perm = await checkLoyaltyPermission(session.user.id, session.user.role, memberRecord2.restaurantId, "issueCoupon");
+    if (!perm.allowed) return NextResponse.json({ error: perm.reason }, { status: 403 });
     const code = `C${Date.now().toString(36).toUpperCase()}`;
-
-    // Resolve group if coupon should be valid chain-wide
     let validForGroupId: string | null = null;
     if (validForGroup) {
       try {
         type GRow = { groupId: string | null };
-        const rows = await prisma.$queryRawUnsafe<GRow[]>(
-          `SELECT "groupId" FROM "Restaurant" WHERE "id" = $1 LIMIT 1`,
-          restaurantId
-        );
+        const rows = await prisma.$queryRawUnsafe<GRow[]>(`SELECT "groupId" FROM "Restaurant" WHERE "id" = $1 LIMIT 1`, restaurantId);
         validForGroupId = rows[0]?.groupId ?? null;
       } catch { /* ignore */ }
     }
-
     const coupon = await prisma.loyaltyCoupon.create({
       data: {
         id: `lc-${Date.now()}`,
-        memberId,
-        restaurantId,
-        code,
-        type,
-        value,
-        description,
+        memberId, restaurantId, code, type, value, description,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         ...(validForGroupId ? { validForGroupId } : {}),
       },
+    });
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "LOYALTY_ISSUE_COUPON", entity: "LoyaltyMember",
+      entityId: memberId, entityName: memberRecord2.name, ip,
+      meta: { couponId: coupon.id, code, type, value, description, expiresAt: expiresAt ?? null },
     });
     return NextResponse.json(coupon);
   }
@@ -248,31 +280,33 @@ export async function POST(req: Request) {
     const { couponId } = body;
     const couponRecord = await prisma.loyaltyCoupon.findUnique({
       where: { id: couponId },
-      select: { restaurantId: true, usedAt: true },
+      select: { restaurantId: true, usedAt: true, memberId: true, code: true },
     });
     if (!couponRecord) return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
     if (couponRecord.usedAt) return NextResponse.json({ error: "כבר מומש" }, { status: 409 });
-    if (session.user.role !== "SUPER_ADMIN") {
-      const ok = await canManageMemberScope(session.user.id, couponRecord.restaurantId);
-      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const perm = await checkLoyaltyPermission(session.user.id, session.user.role, couponRecord.restaurantId, "redeemCoupon");
+    if (!perm.allowed) return NextResponse.json({ error: perm.reason }, { status: 403 });
     await prisma.$executeRawUnsafe(
       `UPDATE "LoyaltyCoupon" SET "usedAt" = NOW(), "usedAtRestaurantId" = $1 WHERE "id" = $2 AND "usedAt" IS NULL`,
       couponRecord.restaurantId, couponId
     );
+    const member = await prisma.loyaltyMember.findUnique({ where: { id: couponRecord.memberId }, select: { name: true } });
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "LOYALTY_REDEEM_COUPON", entity: "LoyaltyMember",
+      entityId: couponRecord.memberId, entityName: member?.name ?? undefined, ip,
+      meta: { couponId, code: couponRecord.code },
+    });
     return NextResponse.json({ ok: true });
   }
 
   if (action === "updateMember") {
     const { memberId, name, phone, email, birthDate } = body;
     if (!memberId) return NextResponse.json({ error: "memberId required" }, { status: 400 });
-    const memberRecord = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true } });
+    const memberRecord = await prisma.loyaltyMember.findUnique({ where: { id: memberId }, select: { restaurantId: true, name: true, phone: true } });
     if (!memberRecord) return NextResponse.json({ error: "Member not found" }, { status: 404 });
-    if (session.user.role !== "SUPER_ADMIN") {
-      const ok = await canManageMemberScope(session.user.id, memberRecord.restaurantId);
-      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    // If phone changed, verify it's not taken within the scope
+    const perm = await checkLoyaltyPermission(session.user.id, session.user.role, memberRecord.restaurantId, "updateMember");
+    if (!perm.allowed) return NextResponse.json({ error: perm.reason }, { status: 403 });
     if (phone) {
       const memberGroupId = await getGroupId(memberRecord.restaurantId);
       const conflict = await prisma.loyaltyMember.findFirst({
@@ -289,59 +323,54 @@ export async function POST(req: Request) {
         ...(birthDate !== undefined && { birthDate: birthDate ? new Date(birthDate) : null }),
       },
     });
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "LOYALTY_UPDATE_MEMBER", entity: "LoyaltyMember",
+      entityId: memberId, entityName: memberRecord.name, ip,
+      meta: {
+        changes: {
+          ...(name !== undefined && name !== memberRecord.name && { name: { from: memberRecord.name, to: name } }),
+          ...(phone !== undefined && phone !== memberRecord.phone && { phone: { from: memberRecord.phone, to: phone } }),
+          ...(email !== undefined && { email }),
+          ...(birthDate !== undefined && { birthDate }),
+        },
+      },
+    });
     return NextResponse.json(updated);
   }
 
   if (action === "createMember") {
     const { name, phone, email, birthDate } = body;
-    if (!name || !phone || !restaurantId) {
-      return NextResponse.json({ error: "שם וטלפון הם שדות חובה" }, { status: 400 });
-    }
-    if (session.user.role !== "SUPER_ADMIN") {
-      const access = await prisma.restaurantUser.findFirst({ where: { userId: session.user.id, restaurantId } });
-      if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    // Chain scope — a grouped restaurant shares its member pool with sibling branches
+    if (!name || !phone || !restaurantId) return NextResponse.json({ error: "שם וטלפון הם שדות חובה" }, { status: 400 });
+    const perm = await checkLoyaltyPermission(session.user.id, session.user.role, restaurantId, "createMember");
+    if (!perm.allowed) return NextResponse.json({ error: perm.reason }, { status: 403 });
     const createGroupId = await getGroupId(restaurantId);
-
-    // Unique phone within the restaurant or its chain
     const existing = await prisma.loyaltyMember.findFirst({ where: { phone, ...scopeWhere(restaurantId, createGroupId) } });
     if (existing) return NextResponse.json({ error: "חבר עם מספר טלפון זה כבר קיים" }, { status: 409 });
-
-    // Auto-generate member number (per chain when grouped)
     const count = await prisma.loyaltyMember.count({ where: scopeWhere(restaurantId, createGroupId) });
     const memberNumber = String(count + 1).padStart(4, "0");
-
-    // Welcome bonus
     const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { restaurantId } });
     const welcomeBonus = loyaltySettings?.welcomeBonus ?? 0;
-
     const member = await prisma.loyaltyMember.create({
       data: {
         id: `lm-${Date.now()}`,
-        restaurantId,
-        groupId: createGroupId,
-        phone,
-        name,
-        email: email || null,
+        restaurantId, groupId: createGroupId,
+        phone, name, email: email || null,
         birthDate: birthDate ? new Date(birthDate) : null,
-        memberNumber,
-        points: welcomeBonus,
+        memberNumber, points: welcomeBonus,
       },
     });
-
     if (welcomeBonus > 0) {
       await prisma.loyaltyTransaction.create({
-        data: {
-          id: `lt-${Date.now()}`,
-          memberId: member.id,
-          type: "BONUS",
-          points: welcomeBonus,
-          note: "בונוס הצטרפות",
-        },
+        data: { id: `lt-${Date.now()}`, memberId: member.id, type: "BONUS", points: welcomeBonus, note: "בונוס הצטרפות" },
       });
     }
-
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "LOYALTY_CREATE_MEMBER", entity: "LoyaltyMember",
+      entityId: member.id, entityName: name, ip,
+      meta: { phone, memberNumber, welcomeBonus },
+    });
     return NextResponse.json(member);
   }
 

@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendSmsBulkPersonalized, SmsConfigError } from "@/lib/sms";
-import { getScopeRestaurantIds } from "@/lib/loyalty-scope";
+import { getScopeRestaurantIds, checkLoyaltyPermission } from "@/lib/loyalty-scope";
+import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -16,20 +17,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "message too long (max 160 chars)" }, { status: 400 });
   }
 
-  // Verify access
-  if (session.user.role !== "SUPER_ADMIN") {
-    const access = await prisma.restaurantUser.findUnique({
-      where: { userId_restaurantId: { userId: session.user.id, restaurantId } },
-    });
-    if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // Permission check with role-based guard
+  const perm = await checkLoyaltyPermission(session.user.id, session.user.role, restaurantId, "sendSms");
+  if (!perm.allowed) return NextResponse.json({ error: perm.reason }, { status: 403 });
 
-  // Chain scope — a grouped restaurant shares its member pool with sibling branches
   const scopeIds = await getScopeRestaurantIds(restaurantId);
 
-  // Fetch members — specific list or all
-  type MemberRow = { phone: string; name: string; points: number; memberNumber: string };
-  const cols = `"phone", "name", "points", "memberNumber"`;
+  type MemberRow = { id: string; phone: string; name: string; points: number; memberNumber: string };
+  const cols = `"id", "phone", "name", "points", "memberNumber"`;
   const isFiltered = Array.isArray(memberIds) && memberIds.length > 0;
   const members: MemberRow[] = isFiltered
     ? await prisma.$queryRawUnsafe<MemberRow[]>(
@@ -55,9 +50,10 @@ export async function POST(req: Request) {
       MemberNumber: m.memberNumber,
     },
   }));
+
+  let result: { sent: number; failed: number };
   try {
-    const result = await sendSmsBulkPersonalized(recipients, message.trim());
-    return NextResponse.json({ ...result, total: recipients.length });
+    result = await sendSmsBulkPersonalized(recipients, message.trim());
   } catch (e) {
     if (e instanceof SmsConfigError) {
       return NextResponse.json(
@@ -67,4 +63,18 @@ export async function POST(req: Request) {
     }
     throw e;
   }
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "LOYALTY_SEND_SMS", entity: "Restaurant", entityId: restaurantId, ip: getIp(req),
+    meta: {
+      recipientCount: result.sent,
+      failedCount: result.failed,
+      filtered: isFiltered,
+      memberCount: members.length,
+      messagePreview: message.trim().slice(0, 80),
+    },
+  });
+
+  return NextResponse.json({ ...result, total: recipients.length });
 }

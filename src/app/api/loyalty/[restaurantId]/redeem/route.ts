@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
 import { getGroupId, scopeWhere } from "@/lib/loyalty-scope";
 import { NextResponse } from "next/server";
@@ -19,6 +20,11 @@ export async function POST(
   { params }: { params: Promise<{ restaurantId: string }> }
 ) {
   const { restaurantId } = await params;
+
+  // Must be an authenticated staff member (cashier / manager)
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   await ensureColumns();
 
   // Rate limit: 10 redeem attempts per IP per 5 min
