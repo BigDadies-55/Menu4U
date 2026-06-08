@@ -129,6 +129,11 @@ const sqls = [
       REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
   );`,
   `CREATE INDEX IF NOT EXISTS "PasswordHistory_userId_idx" ON "PasswordHistory"("userId");`,
+  // Auth security: account lockout + TOTP
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockedUntil" TIMESTAMP(3);`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totpSecret" TEXT;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totpEnabled" BOOLEAN NOT NULL DEFAULT false;`,
 ];
 
 async function run() {

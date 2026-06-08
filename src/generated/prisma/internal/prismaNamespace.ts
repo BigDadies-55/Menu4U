@@ -2559,7 +2559,11 @@ export const UserScalarFieldEnum = {
   termsAccepted: 'termsAccepted',
   termsAcceptedAt: 'termsAcceptedAt',
   termsAcceptedIp: 'termsAcceptedIp',
-  termsAcceptedUserAgent: 'termsAcceptedUserAgent'
+  termsAcceptedUserAgent: 'termsAcceptedUserAgent',
+  failedLoginAttempts: 'failedLoginAttempts',
+  lockedUntil: 'lockedUntil',
+  totpSecret: 'totpSecret',
+  totpEnabled: 'totpEnabled'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]

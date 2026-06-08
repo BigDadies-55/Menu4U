@@ -48,6 +48,11 @@ model User {
   termsAcceptedIp        String?
   termsAcceptedUserAgent String?
 
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  totpSecret           String?
+  totpEnabled          Boolean   @default(false)
+
   accounts         Account[]
   sessions         Session[]
   restaurantUsers  RestaurantUser[]
