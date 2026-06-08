@@ -2634,7 +2634,11 @@ export const UserScalarFieldEnum = {
   termsAccepted: 'termsAccepted',
   termsAcceptedAt: 'termsAcceptedAt',
   termsAcceptedIp: 'termsAcceptedIp',
-  termsAcceptedUserAgent: 'termsAcceptedUserAgent'
+  termsAcceptedUserAgent: 'termsAcceptedUserAgent',
+  failedLoginAttempts: 'failedLoginAttempts',
+  lockedUntil: 'lockedUntil',
+  totpSecret: 'totpSecret',
+  totpEnabled: 'totpEnabled'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -2998,6 +3002,7 @@ export const LoyaltyMemberScalarFieldEnum = {
   memberNumber: 'memberNumber',
   points: 'points',
   totalSpent: 'totalSpent',
+  lastSmsSentAt: 'lastSmsSentAt',
   lastVisitAt: 'lastVisitAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -3057,7 +3062,13 @@ export const LoyaltySettingsScalarFieldEnum = {
   minRedeemPoints: 'minRedeemPoints',
   welcomeBonus: 'welcomeBonus',
   birthdayBonus: 'birthdayBonus',
-  isActive: 'isActive'
+  isActive: 'isActive',
+  minRoleAdjustPoints: 'minRoleAdjustPoints',
+  minRoleIssueCoupon: 'minRoleIssueCoupon',
+  minRoleRedeemCoupon: 'minRoleRedeemCoupon',
+  minRoleUpdateMember: 'minRoleUpdateMember',
+  minRoleSendSms: 'minRoleSendSms',
+  maxDailyPointsAdjust: 'maxDailyPointsAdjust'
 } as const
 
 export type LoyaltySettingsScalarFieldEnum = (typeof LoyaltySettingsScalarFieldEnum)[keyof typeof LoyaltySettingsScalarFieldEnum]

@@ -47,6 +47,7 @@ export type LoyaltyMemberMinAggregateOutputType = {
   memberNumber: string | null
   points: number | null
   totalSpent: number | null
+  lastSmsSentAt: Date | null
   lastVisitAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -63,6 +64,7 @@ export type LoyaltyMemberMaxAggregateOutputType = {
   memberNumber: string | null
   points: number | null
   totalSpent: number | null
+  lastSmsSentAt: Date | null
   lastVisitAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -79,6 +81,7 @@ export type LoyaltyMemberCountAggregateOutputType = {
   memberNumber: number
   points: number
   totalSpent: number
+  lastSmsSentAt: number
   lastVisitAt: number
   createdAt: number
   updatedAt: number
@@ -107,6 +110,7 @@ export type LoyaltyMemberMinAggregateInputType = {
   memberNumber?: true
   points?: true
   totalSpent?: true
+  lastSmsSentAt?: true
   lastVisitAt?: true
   createdAt?: true
   updatedAt?: true
@@ -123,6 +127,7 @@ export type LoyaltyMemberMaxAggregateInputType = {
   memberNumber?: true
   points?: true
   totalSpent?: true
+  lastSmsSentAt?: true
   lastVisitAt?: true
   createdAt?: true
   updatedAt?: true
@@ -139,6 +144,7 @@ export type LoyaltyMemberCountAggregateInputType = {
   memberNumber?: true
   points?: true
   totalSpent?: true
+  lastSmsSentAt?: true
   lastVisitAt?: true
   createdAt?: true
   updatedAt?: true
@@ -242,6 +248,7 @@ export type LoyaltyMemberGroupByOutputType = {
   memberNumber: string
   points: number
   totalSpent: number
+  lastSmsSentAt: Date | null
   lastVisitAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -281,6 +288,7 @@ export type LoyaltyMemberWhereInput = {
   memberNumber?: Prisma.StringFilter<"LoyaltyMember"> | string
   points?: Prisma.IntFilter<"LoyaltyMember"> | number
   totalSpent?: Prisma.FloatFilter<"LoyaltyMember"> | number
+  lastSmsSentAt?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
   lastVisitAt?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
@@ -301,6 +309,7 @@ export type LoyaltyMemberOrderByWithRelationInput = {
   memberNumber?: Prisma.SortOrder
   points?: Prisma.SortOrder
   totalSpent?: Prisma.SortOrder
+  lastSmsSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastVisitAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -326,6 +335,7 @@ export type LoyaltyMemberWhereUniqueInput = Prisma.AtLeast<{
   memberNumber?: Prisma.StringFilter<"LoyaltyMember"> | string
   points?: Prisma.IntFilter<"LoyaltyMember"> | number
   totalSpent?: Prisma.FloatFilter<"LoyaltyMember"> | number
+  lastSmsSentAt?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
   lastVisitAt?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
@@ -346,6 +356,7 @@ export type LoyaltyMemberOrderByWithAggregationInput = {
   memberNumber?: Prisma.SortOrder
   points?: Prisma.SortOrder
   totalSpent?: Prisma.SortOrder
+  lastSmsSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastVisitAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -370,6 +381,7 @@ export type LoyaltyMemberScalarWhereWithAggregatesInput = {
   memberNumber?: Prisma.StringWithAggregatesFilter<"LoyaltyMember"> | string
   points?: Prisma.IntWithAggregatesFilter<"LoyaltyMember"> | number
   totalSpent?: Prisma.FloatWithAggregatesFilter<"LoyaltyMember"> | number
+  lastSmsSentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"LoyaltyMember"> | Date | string | null
   lastVisitAt?: Prisma.DateTimeNullableWithAggregatesFilter<"LoyaltyMember"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"LoyaltyMember"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"LoyaltyMember"> | Date | string
@@ -384,6 +396,7 @@ export type LoyaltyMemberCreateInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -404,6 +417,7 @@ export type LoyaltyMemberUncheckedCreateInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -420,6 +434,7 @@ export type LoyaltyMemberUpdateInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -440,6 +455,7 @@ export type LoyaltyMemberUncheckedUpdateInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -458,6 +474,7 @@ export type LoyaltyMemberCreateManyInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -472,6 +489,7 @@ export type LoyaltyMemberUpdateManyMutationInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -488,6 +506,7 @@ export type LoyaltyMemberUncheckedUpdateManyInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -524,6 +543,7 @@ export type LoyaltyMemberCountOrderByAggregateInput = {
   memberNumber?: Prisma.SortOrder
   points?: Prisma.SortOrder
   totalSpent?: Prisma.SortOrder
+  lastSmsSentAt?: Prisma.SortOrder
   lastVisitAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -545,6 +565,7 @@ export type LoyaltyMemberMaxOrderByAggregateInput = {
   memberNumber?: Prisma.SortOrder
   points?: Prisma.SortOrder
   totalSpent?: Prisma.SortOrder
+  lastSmsSentAt?: Prisma.SortOrder
   lastVisitAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -561,6 +582,7 @@ export type LoyaltyMemberMinOrderByAggregateInput = {
   memberNumber?: Prisma.SortOrder
   points?: Prisma.SortOrder
   totalSpent?: Prisma.SortOrder
+  lastSmsSentAt?: Prisma.SortOrder
   lastVisitAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -697,6 +719,7 @@ export type LoyaltyMemberCreateWithoutGroupInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -715,6 +738,7 @@ export type LoyaltyMemberUncheckedCreateWithoutGroupInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -762,6 +786,7 @@ export type LoyaltyMemberScalarWhereInput = {
   memberNumber?: Prisma.StringFilter<"LoyaltyMember"> | string
   points?: Prisma.IntFilter<"LoyaltyMember"> | number
   totalSpent?: Prisma.FloatFilter<"LoyaltyMember"> | number
+  lastSmsSentAt?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
   lastVisitAt?: Prisma.DateTimeNullableFilter<"LoyaltyMember"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"LoyaltyMember"> | Date | string
@@ -776,6 +801,7 @@ export type LoyaltyMemberCreateWithoutRestaurantInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -794,6 +820,7 @@ export type LoyaltyMemberUncheckedCreateWithoutRestaurantInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -836,6 +863,7 @@ export type LoyaltyMemberCreateWithoutTransactionsInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -855,6 +883,7 @@ export type LoyaltyMemberUncheckedCreateWithoutTransactionsInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -886,6 +915,7 @@ export type LoyaltyMemberUpdateWithoutTransactionsInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -905,6 +935,7 @@ export type LoyaltyMemberUncheckedUpdateWithoutTransactionsInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -920,6 +951,7 @@ export type LoyaltyMemberCreateWithoutCouponsInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -939,6 +971,7 @@ export type LoyaltyMemberUncheckedCreateWithoutCouponsInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -970,6 +1003,7 @@ export type LoyaltyMemberUpdateWithoutCouponsInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -989,6 +1023,7 @@ export type LoyaltyMemberUncheckedUpdateWithoutCouponsInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1005,6 +1040,7 @@ export type LoyaltyMemberCreateManyGroupInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1019,6 +1055,7 @@ export type LoyaltyMemberUpdateWithoutGroupInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1037,6 +1074,7 @@ export type LoyaltyMemberUncheckedUpdateWithoutGroupInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1054,6 +1092,7 @@ export type LoyaltyMemberUncheckedUpdateManyWithoutGroupInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1069,6 +1108,7 @@ export type LoyaltyMemberCreateManyRestaurantInput = {
   memberNumber: string
   points?: number
   totalSpent?: number
+  lastSmsSentAt?: Date | string | null
   lastVisitAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1083,6 +1123,7 @@ export type LoyaltyMemberUpdateWithoutRestaurantInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1101,6 +1142,7 @@ export type LoyaltyMemberUncheckedUpdateWithoutRestaurantInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1118,6 +1160,7 @@ export type LoyaltyMemberUncheckedUpdateManyWithoutRestaurantInput = {
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   totalSpent?: Prisma.FloatFieldUpdateOperationsInput | number
+  lastSmsSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastVisitAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1174,6 +1217,7 @@ export type LoyaltyMemberSelect<ExtArgs extends runtime.Types.Extensions.Interna
   memberNumber?: boolean
   points?: boolean
   totalSpent?: boolean
+  lastSmsSentAt?: boolean
   lastVisitAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1195,6 +1239,7 @@ export type LoyaltyMemberSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   memberNumber?: boolean
   points?: boolean
   totalSpent?: boolean
+  lastSmsSentAt?: boolean
   lastVisitAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1213,6 +1258,7 @@ export type LoyaltyMemberSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   memberNumber?: boolean
   points?: boolean
   totalSpent?: boolean
+  lastSmsSentAt?: boolean
   lastVisitAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1231,12 +1277,13 @@ export type LoyaltyMemberSelectScalar = {
   memberNumber?: boolean
   points?: boolean
   totalSpent?: boolean
+  lastSmsSentAt?: boolean
   lastVisitAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type LoyaltyMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "groupId" | "phone" | "name" | "email" | "birthDate" | "memberNumber" | "points" | "totalSpent" | "lastVisitAt" | "createdAt" | "updatedAt", ExtArgs["result"]["loyaltyMember"]>
+export type LoyaltyMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "groupId" | "phone" | "name" | "email" | "birthDate" | "memberNumber" | "points" | "totalSpent" | "lastSmsSentAt" | "lastVisitAt" | "createdAt" | "updatedAt", ExtArgs["result"]["loyaltyMember"]>
 export type LoyaltyMemberInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
   group?: boolean | Prisma.LoyaltyMember$groupArgs<ExtArgs>
@@ -1272,6 +1319,7 @@ export type $LoyaltyMemberPayload<ExtArgs extends runtime.Types.Extensions.Inter
     memberNumber: string
     points: number
     totalSpent: number
+    lastSmsSentAt: Date | null
     lastVisitAt: Date | null
     createdAt: Date
     updatedAt: Date
@@ -1712,6 +1760,7 @@ export interface LoyaltyMemberFieldRefs {
   readonly memberNumber: Prisma.FieldRef<"LoyaltyMember", 'String'>
   readonly points: Prisma.FieldRef<"LoyaltyMember", 'Int'>
   readonly totalSpent: Prisma.FieldRef<"LoyaltyMember", 'Float'>
+  readonly lastSmsSentAt: Prisma.FieldRef<"LoyaltyMember", 'DateTime'>
   readonly lastVisitAt: Prisma.FieldRef<"LoyaltyMember", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"LoyaltyMember", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"LoyaltyMember", 'DateTime'>

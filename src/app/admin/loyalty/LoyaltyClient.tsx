@@ -49,11 +49,22 @@ type LoyaltyMember = {
   points: number;
   totalSpent: number;
   lastVisitAt: string | null;
+  lastSmsSentAt: string | null;
   createdAt: string;
   updatedAt: string;
   transactions: LoyaltyTransaction[];
   coupons?: LoyaltyCoupon[];
   analytics?: MemberAnalytics;
+};
+
+type SmsLogEntry = {
+  id: string;
+  sentAt: string;
+  sentBy: string;
+  message: string;
+  sent: number;
+  failed: number;
+  total: number;
 };
 
 const COUPON_TYPE_LABEL: Record<string, string> = {
@@ -224,6 +235,9 @@ export default function LoyaltyClient({
 
   // Selected member detail
   const [selectedMember, setSelectedMember] = useState<LoyaltyMember | null>(null);
+  const [smsHistory,        setSmsHistory]        = useState<SmsLogEntry[]>([]);
+  const [smsHistoryLoading, setSmsHistoryLoading] = useState(false);
+  const [smsDetailEntry,    setSmsDetailEntry]    = useState<SmsLogEntry | null>(null);
 
   // Adjust points modal
   const [adjustModal, setAdjustModal] = useState(false);
@@ -308,6 +322,18 @@ export default function LoyaltyClient({
   }, [selectedRestaurantId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    if (!selectedMember || !selectedRestaurantId) { setSmsHistory([]); return; }
+    setSmsHistoryLoading(true);
+    setSmsHistory([]);
+    fetch(`/api/admin/loyalty/sms-history?memberId=${selectedMember.id}&restaurantId=${selectedRestaurantId}`)
+      .then(r => r.json())
+      .then((d: SmsLogEntry[]) => setSmsHistory(Array.isArray(d) ? d : []))
+      .catch(() => setSmsHistory([]))
+      .finally(() => setSmsHistoryLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMember?.id, selectedRestaurantId]);
 
   const fetchAudit = useCallback(async (page = 1) => {
     if (!selectedRestaurantId) return;
@@ -727,7 +753,7 @@ export default function LoyaltyClient({
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: T.surface, borderBottom: "1px solid #2d3239" }}>
-                    {["שם", "טלפון", "מס' חבר", "נקודות", "ביקור אחרון", "סטטוס", "פעולות"].map(h => (
+                    {["שם", "טלפון", "מס' חבר", "נקודות", "ביקור אחרון", "SMS אחרון", "סטטוס", "פעולות"].map(h => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {h}
                       </th>
@@ -737,7 +763,7 @@ export default function LoyaltyClient({
                 <tbody>
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ padding: "32px 16px", textAlign: "center", color: T.muted, fontSize: 14 }}>
+                      <td colSpan={8} style={{ padding: "32px 16px", textAlign: "center", color: T.muted, fontSize: 14 }}>
                         {search || statusFilter !== "all" ? "לא נמצאו חברים התואמים לסינון" : "אין חברי מועדון עדיין"}
                       </td>
                     </tr>
@@ -768,6 +794,24 @@ export default function LoyaltyClient({
                         </span>
                       </td>
                       <td style={{ padding: "12px 16px", color: T.muted, fontSize: 13 }}>{relativeDays(m.analytics?.lastVisitAt ?? m.lastVisitAt)}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {m.lastSmsSentAt ? (
+                          <button
+                            onClick={e => { e.stopPropagation(); setSelectedMember(m); }}
+                            title="לחץ לצפייה בהיסטוריית SMS"
+                            style={{
+                              background: "rgba(96,165,250,0.12)", color: "#60a5fa",
+                              border: "1px solid rgba(96,165,250,0.25)",
+                              borderRadius: 8, padding: "3px 9px", fontSize: 12,
+                              fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap",
+                            }}
+                          >
+                            📱 {formatDate(m.lastSmsSentAt)}
+                          </button>
+                        ) : (
+                          <span style={{ color: T.border, fontSize: 12 }}>—</span>
+                        )}
+                      </td>
                       <td style={{ padding: "12px 16px" }}>
                         {(() => {
                           const meta = STATUS_META[m.analytics?.status ?? "new"];
@@ -973,7 +1017,7 @@ export default function LoyaltyClient({
                 </div>
 
                 {/* Transaction history */}
-                <div>
+                <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     היסטוריית עסקאות
                   </div>
@@ -1005,6 +1049,45 @@ export default function LoyaltyClient({
                         <div style={{ fontSize: 11, color: T.muted }}>{formatDate(tx.createdAt)}</div>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* SMS history */}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    📱 הודעות SMS שנשלחו
+                  </div>
+                  {smsHistoryLoading && <div style={{ color: T.muted, fontSize: 12, padding: "8px 0" }}>טוען...</div>}
+                  {!smsHistoryLoading && smsHistory.length === 0 && (
+                    <div style={{ color: T.muted, fontSize: 13, textAlign: "center", padding: "10px 0" }}>
+                      לא נשלחו הודעות SMS לחבר זה
+                    </div>
+                  )}
+                  {!smsHistoryLoading && smsHistory.map(entry => (
+                    <button
+                      key={entry.id}
+                      onClick={() => setSmsDetailEntry(entry)}
+                      style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        width: "100%", padding: "9px 10px", borderRadius: 8, marginBottom: 5,
+                        background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.15)",
+                        cursor: "pointer", textAlign: "right",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, color: T.text, fontWeight: 500,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {entry.message}
+                        </div>
+                        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                          {entry.sentBy} · ✓ {entry.sent}/{entry.total}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "left", flexShrink: 0, marginRight: 8 }}>
+                        <div style={{ fontSize: 11, color: T.muted }}>{formatDate(entry.sentAt)}</div>
+                        <div style={{ fontSize: 10, color: "#60a5fa", marginTop: 2 }}>לפרטים ›</div>
+                      </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1576,6 +1659,57 @@ export default function LoyaltyClient({
               <button onClick={() => { setCouponModal(false); setCouponValue(""); setCouponDesc(""); setCouponExpiry(""); setCouponDelivery("none"); setCouponSchedule(""); setCouponDeliveryNote(""); }} style={{ ...BTN_SECONDARY, flex: 1 }}>
                 ביטול
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SMS Detail Modal ── */}
+      {smsDetailEntry && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 60,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+        }} onClick={() => setSmsDetailEntry(null)}>
+          <div
+            style={{ background: "#212529", borderRadius: 14, padding: "24px", width: "min(440px, 94vw)", border: "1px solid #2d3239" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ color: T.text, fontSize: 17, fontWeight: 700, margin: 0 }}>📱 פרטי הודעת SMS</h3>
+              <button onClick={() => setSmsDetailEntry(null)} style={{ background: "none", border: "none", color: T.muted, fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            <div style={{
+              background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.22)",
+              borderRadius: 12, padding: "16px 18px", marginBottom: 20,
+              fontSize: 15, color: T.text, lineHeight: 1.6, direction: "rtl", fontWeight: 500,
+            }}>
+              {smsDetailEntry.message}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13, color: T.sub }}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ color: T.muted, minWidth: 80 }}>תאריך:</span>
+                <span>{new Date(smsDetailEntry.sentAt).toLocaleString("he-IL", { dateStyle: "long", timeStyle: "short" })}</span>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ color: T.muted, minWidth: 80 }}>נשלח ע"י:</span>
+                <span>{smsDetailEntry.sentBy}</span>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ color: T.muted, minWidth: 80 }}>נמענים:</span>
+                <span>
+                  <span style={{ color: T.green, fontWeight: 600 }}>{smsDetailEntry.sent}</span>
+                  <span style={{ color: T.muted }}> הצליחו</span>
+                  {smsDetailEntry.failed > 0 && (<>
+                    <span style={{ color: T.muted }}> · </span>
+                    <span style={{ color: T.red, fontWeight: 600 }}>{smsDetailEntry.failed}</span>
+                    <span style={{ color: T.muted }}> נכשלו</span>
+                  </>)}
+                  <span style={{ color: T.muted }}> מתוך {smsDetailEntry.total}</span>
+                </span>
+              </div>
+            </div>
+            <div style={{ marginTop: 24, textAlign: "center" }}>
+              <button onClick={() => setSmsDetailEntry(null)} style={{ ...BTN_SECONDARY }}>סגור</button>
             </div>
           </div>
         </div>

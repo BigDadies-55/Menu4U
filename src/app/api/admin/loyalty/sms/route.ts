@@ -64,15 +64,22 @@ export async function POST(req: Request) {
     throw e;
   }
 
+  // Stamp lastSmsSentAt on every recipient member
+  await prisma.loyaltyMember.updateMany({
+    where: { id: { in: members.map(m => m.id) } },
+    data:  { lastSmsSentAt: new Date() },
+  });
+
   await logAudit({
     userId: session.user.id, userEmail: session.user.email,
     action: "LOYALTY_SEND_SMS", entity: "Restaurant", entityId: restaurantId, ip: getIp(req),
     meta: {
-      recipientCount: result.sent,
-      failedCount: result.failed,
-      filtered: isFiltered,
-      memberCount: members.length,
-      messagePreview: message.trim().slice(0, 80),
+      message: message.trim(),
+      phones: members.map(m => m.phone),
+      memberIds: members.map(m => m.id),
+      sent: result.sent,
+      failed: result.failed,
+      total: members.length,
     },
   });
 
