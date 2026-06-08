@@ -129,6 +129,8 @@ const sqls = [
       REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
   );`,
   `CREATE INDEX IF NOT EXISTS "PasswordHistory_userId_idx" ON "PasswordHistory"("userId");`,
+  // Loyalty: last SMS sent timestamp per member
+  `ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "lastSmsSentAt" TIMESTAMP(3);`,
   // Auth security: account lockout + TOTP
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0;`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockedUntil" TIMESTAMP(3);`,

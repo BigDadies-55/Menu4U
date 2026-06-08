@@ -25,6 +25,7 @@ type LoyaltyMember = {
   memberNumber: string;
   points: number;
   totalSpent: number;
+  lastSmsSentAt: string | null;
   createdAt: string;
   updatedAt: string;
   transactions: LoyaltyTransaction[];
@@ -375,7 +376,7 @@ export default function LoyaltyClient({
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#1a1d23", borderBottom: "1px solid #2d3239" }}>
-                    {["שם", "טלפון", "מס' חבר", "נקודות", "הצטרף", "פעולות"].map(h => (
+                    {["שם", "טלפון", "מס' חבר", "נקודות", "📱 SMS אחרון", "הצטרף", "פעולות"].map(h => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: "#6c757d", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {h}
                       </th>
@@ -414,6 +415,24 @@ export default function LoyaltyClient({
                         }}>
                           {m.points.toLocaleString()} ⭐
                         </span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {m.lastSmsSentAt ? (
+                          <button
+                            onClick={e => { e.stopPropagation(); setSelectedMember(m); }}
+                            title="לחץ לצפייה בהיסטוריית SMS"
+                            style={{
+                              background: "rgba(96,165,250,0.1)", color: "#60a5fa",
+                              border: "1px solid rgba(96,165,250,0.25)",
+                              borderRadius: 8, padding: "3px 9px", fontSize: 12,
+                              fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap",
+                            }}
+                          >
+                            📱 {formatDate(m.lastSmsSentAt)}
+                          </button>
+                        ) : (
+                          <span style={{ color: "#3a3f47", fontSize: 12 }}>—</span>
+                        )}
                       </td>
                       <td style={{ padding: "12px 16px", color: "#6c757d", fontSize: 13 }}>{formatDate(m.createdAt)}</td>
                       <td style={{ padding: "12px 16px" }}>

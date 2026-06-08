@@ -45,6 +45,13 @@ export async function POST(req: Request) {
   const phones = members.map(m => m.phone);
   const result = await sendSmsBulk(phones, message.trim());
 
+  // Stamp lastSmsSentAt on all targeted members
+  const now = new Date();
+  await prisma.loyaltyMember.updateMany({
+    where: { id: { in: members.map(m => m.id) } },
+    data:  { lastSmsSentAt: now },
+  });
+
   // Audit log with full details for SMS history per member
   await logAudit({
     userId: session.user.id,
