@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendSmsBulk } from "@/lib/sms";
 import { NextResponse } from "next/server";
+import { logAudit, getIp } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -23,17 +24,17 @@ export async function POST(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Fetch members — specific list or all
-  type MemberRow = { phone: string };
+  // Fetch members — specific list or all (include id so we can store memberIds in log)
+  type MemberRow = { id: string; phone: string };
   const isFiltered = Array.isArray(memberIds) && memberIds.length > 0;
   const members: MemberRow[] = isFiltered
     ? await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember"
+        `SELECT "id", "phone" FROM "LoyaltyMember"
          WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
         restaurantId, memberIds
       )
     : await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
+        `SELECT "id", "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
         restaurantId
       );
 
@@ -43,6 +44,24 @@ export async function POST(req: Request) {
 
   const phones = members.map(m => m.phone);
   const result = await sendSmsBulk(phones, message.trim());
+
+  // Audit log with full details for SMS history per member
+  await logAudit({
+    userId: session.user.id,
+    userEmail: session.user.email,
+    action: "LOYALTY_SEND_SMS",
+    entity: "restaurant",
+    entityId: restaurantId,
+    meta: {
+      message: message.trim(),
+      phones,
+      memberIds: members.map(m => m.id),
+      sent: result.sent,
+      failed: result.failed,
+      total: phones.length,
+    },
+    ip: getIp(req),
+  });
 
   return NextResponse.json({ ...result, total: phones.length });
 }

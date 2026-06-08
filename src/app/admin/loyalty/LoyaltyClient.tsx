@@ -40,6 +40,16 @@ type LoyaltySettings = {
   isActive: boolean;
 };
 
+type SmsLogEntry = {
+  id: string;
+  sentAt: string;
+  sentBy: string;
+  message: string;
+  sent: number;
+  failed: number;
+  total: number;
+};
+
 /* ─── Styles ─────────────────────────────────────────────────── */
 const DARK_INPUT: React.CSSProperties = {
   background: "#2d3239",
@@ -121,6 +131,11 @@ export default function LoyaltyClient({
   // Selected member detail
   const [selectedMember, setSelectedMember] = useState<LoyaltyMember | null>(null);
 
+  // SMS history for selected member
+  const [smsHistory,        setSmsHistory]        = useState<SmsLogEntry[]>([]);
+  const [smsHistoryLoading, setSmsHistoryLoading] = useState(false);
+  const [smsDetailEntry,    setSmsDetailEntry]    = useState<SmsLogEntry | null>(null);
+
   // Adjust points modal
   const [adjustModal, setAdjustModal] = useState(false);
   const [adjustPoints, setAdjustPoints] = useState("");
@@ -167,6 +182,18 @@ export default function LoyaltyClient({
   }, [selectedRestaurantId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Fetch SMS history whenever selected member changes
+  useEffect(() => {
+    if (!selectedMember || !selectedRestaurantId) { setSmsHistory([]); return; }
+    setSmsHistoryLoading(true);
+    setSmsHistory([]);
+    fetch(`/api/admin/loyalty/sms-history?memberId=${selectedMember.id}&restaurantId=${selectedRestaurantId}`)
+      .then(r => r.json())
+      .then((d: SmsLogEntry[]) => setSmsHistory(Array.isArray(d) ? d : []))
+      .catch(() => setSmsHistory([]))
+      .finally(() => setSmsHistoryLoading(false));
+  }, [selectedMember?.id, selectedRestaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredMembers = members.filter(m =>
     !search ||
@@ -474,7 +501,7 @@ export default function LoyaltyClient({
                 </div>
 
                 {/* Transaction history */}
-                <div>
+                <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#6c757d", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     היסטוריית עסקאות
                   </div>
@@ -506,6 +533,50 @@ export default function LoyaltyClient({
                         <div style={{ fontSize: 11, color: "#6c757d" }}>{formatDate(tx.createdAt)}</div>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* SMS history */}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#6c757d", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    📱 הודעות SMS שנשלחו
+                  </div>
+                  {smsHistoryLoading && (
+                    <div style={{ color: "#6c757d", fontSize: 12, padding: "8px 0" }}>טוען...</div>
+                  )}
+                  {!smsHistoryLoading && smsHistory.length === 0 && (
+                    <div style={{ color: "#6c757d", fontSize: 13, textAlign: "center", padding: "10px 0" }}>
+                      לא נשלחו הודעות SMS לחבר זה
+                    </div>
+                  )}
+                  {!smsHistoryLoading && smsHistory.map(entry => (
+                    <button
+                      key={entry.id}
+                      onClick={() => setSmsDetailEntry(entry)}
+                      style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        width: "100%", padding: "9px 10px", borderRadius: 8, marginBottom: 4,
+                        background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.15)",
+                        cursor: "pointer", textAlign: "right",
+                        transition: "background 150ms",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, color: "#e9ecef", fontWeight: 500,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {entry.message}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#6c757d", marginTop: 2 }}>
+                          {entry.sentBy} · נשלח {entry.sent}/{entry.total}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "left", flexShrink: 0, marginRight: 8 }}>
+                        <div style={{ fontSize: 11, color: "#6c757d" }}>
+                          {formatDate(entry.sentAt)}
+                        </div>
+                        <div style={{ fontSize: 10, color: "#60a5fa", marginTop: 2 }}>לחץ לפרטים ›</div>
+                      </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -639,6 +710,69 @@ export default function LoyaltyClient({
               </button>
               <button onClick={() => { setAdjustModal(false); setAdjustPoints(""); setAdjustNote(""); }} style={{ ...BTN_SECONDARY, flex: 1 }}>
                 ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SMS Detail Modal ── */}
+      {smsDetailEntry && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 50,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+        }} onClick={() => setSmsDetailEntry(null)}>
+          <div
+            style={{ background: "#212529", borderRadius: 14, padding: "24px", width: "min(440px, 94vw)", border: "1px solid #2d3239" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ color: "#e9ecef", fontSize: 17, fontWeight: 700, margin: 0 }}>
+                📱 פרטי הודעת SMS
+              </h3>
+              <button onClick={() => setSmsDetailEntry(null)} style={{ background: "none", border: "none", color: "#6c757d", fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+
+            {/* Message bubble */}
+            <div style={{
+              background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.25)",
+              borderRadius: 12, padding: "16px 18px", marginBottom: 20,
+              fontSize: 15, color: "#e9ecef", lineHeight: 1.6,
+              direction: "rtl", fontWeight: 500,
+            }}>
+              {smsDetailEntry.message}
+            </div>
+
+            {/* Meta info */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13, color: "#adb5bd" }}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ color: "#6c757d", minWidth: 80 }}>נשלח בתאריך:</span>
+                <span>{new Date(smsDetailEntry.sentAt).toLocaleString("he-IL", { dateStyle: "long", timeStyle: "short" })}</span>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ color: "#6c757d", minWidth: 80 }}>נשלח על ידי:</span>
+                <span>{smsDetailEntry.sentBy}</span>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ color: "#6c757d", minWidth: 80 }}>נמענים:</span>
+                <span>
+                  <span style={{ color: "#4ade80", fontWeight: 600 }}>{smsDetailEntry.sent}</span>
+                  <span style={{ color: "#6c757d" }}> הצליחו</span>
+                  {smsDetailEntry.failed > 0 && (
+                    <>
+                      {" · "}
+                      <span style={{ color: "#f87171", fontWeight: 600 }}>{smsDetailEntry.failed}</span>
+                      <span style={{ color: "#6c757d" }}> נכשלו</span>
+                    </>
+                  )}
+                  <span style={{ color: "#6c757d" }}> מתוך {smsDetailEntry.total}</span>
+                </span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, textAlign: "center" }}>
+              <button onClick={() => setSmsDetailEntry(null)} style={{ ...BTN_SECONDARY }}>
+                סגור
               </button>
             </div>
           </div>
