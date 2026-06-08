@@ -12,6 +12,11 @@ export default async function DashboardPage() {
   if (!session?.user) redirect("/login");
 
   const role = session.user.role;
+
+  // WAITER and DISPLAY have no access to this dashboard
+  if (role === "WAITER") redirect("/admin/waiter");
+  if (role === "DISPLAY") redirect("/admin/kds");
+
   const isSuperAdmin = role === "SUPER_ADMIN";
 
   let restaurantIds: string[] = [];

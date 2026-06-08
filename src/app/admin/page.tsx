@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import DashboardExtra from "./DashboardExtra";
 import PageShell from "@/components/admin/PageShell";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,11 @@ async function getStats(userId: string, role: string) {
 
 export default async function AdminDashboard() {
   const session = await auth();
-  if (!session?.user) return null;
+  if (!session?.user) redirect("/login");
+
+  const role = session.user.role;
+  if (role === "WAITER")  redirect("/admin/waiter");
+  if (role === "DISPLAY") redirect("/admin/kds");
 
   const stats = await getStats(session.user.id, session.user.role);
 
