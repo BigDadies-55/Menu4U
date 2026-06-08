@@ -57,6 +57,8 @@ export type OrderMinAggregateOutputType = {
   loyaltyDiscountType: string | null
   loyaltyDiscountAmount: number | null
   loyaltyCouponId: string | null
+  createdByUserId: string | null
+  closedByUserId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -78,6 +80,8 @@ export type OrderMaxAggregateOutputType = {
   loyaltyDiscountType: string | null
   loyaltyDiscountAmount: number | null
   loyaltyCouponId: string | null
+  createdByUserId: string | null
+  closedByUserId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -99,6 +103,8 @@ export type OrderCountAggregateOutputType = {
   loyaltyDiscountType: number
   loyaltyDiscountAmount: number
   loyaltyCouponId: number
+  createdByUserId: number
+  closedByUserId: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -136,6 +142,8 @@ export type OrderMinAggregateInputType = {
   loyaltyDiscountType?: true
   loyaltyDiscountAmount?: true
   loyaltyCouponId?: true
+  createdByUserId?: true
+  closedByUserId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -157,6 +165,8 @@ export type OrderMaxAggregateInputType = {
   loyaltyDiscountType?: true
   loyaltyDiscountAmount?: true
   loyaltyCouponId?: true
+  createdByUserId?: true
+  closedByUserId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -178,6 +188,8 @@ export type OrderCountAggregateInputType = {
   loyaltyDiscountType?: true
   loyaltyDiscountAmount?: true
   loyaltyCouponId?: true
+  createdByUserId?: true
+  closedByUserId?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -286,6 +298,8 @@ export type OrderGroupByOutputType = {
   loyaltyDiscountType: string | null
   loyaltyDiscountAmount: number | null
   loyaltyCouponId: string | null
+  createdByUserId: string | null
+  closedByUserId: string | null
   createdAt: Date
   updatedAt: Date
   _count: OrderCountAggregateOutputType | null
@@ -330,6 +344,8 @@ export type OrderWhereInput = {
   loyaltyDiscountType?: Prisma.StringNullableFilter<"Order"> | string | null
   loyaltyDiscountAmount?: Prisma.FloatNullableFilter<"Order"> | number | null
   loyaltyCouponId?: Prisma.StringNullableFilter<"Order"> | string | null
+  createdByUserId?: Prisma.StringNullableFilter<"Order"> | string | null
+  closedByUserId?: Prisma.StringNullableFilter<"Order"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
@@ -354,6 +370,8 @@ export type OrderOrderByWithRelationInput = {
   loyaltyDiscountType?: Prisma.SortOrderInput | Prisma.SortOrder
   loyaltyDiscountAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   loyaltyCouponId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  closedByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   restaurant?: Prisma.RestaurantOrderByWithRelationInput
@@ -381,6 +399,8 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   loyaltyDiscountType?: Prisma.StringNullableFilter<"Order"> | string | null
   loyaltyDiscountAmount?: Prisma.FloatNullableFilter<"Order"> | number | null
   loyaltyCouponId?: Prisma.StringNullableFilter<"Order"> | string | null
+  createdByUserId?: Prisma.StringNullableFilter<"Order"> | string | null
+  closedByUserId?: Prisma.StringNullableFilter<"Order"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
@@ -405,6 +425,8 @@ export type OrderOrderByWithAggregationInput = {
   loyaltyDiscountType?: Prisma.SortOrderInput | Prisma.SortOrder
   loyaltyDiscountAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   loyaltyCouponId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  closedByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.OrderCountOrderByAggregateInput
@@ -434,6 +456,8 @@ export type OrderScalarWhereWithAggregatesInput = {
   loyaltyDiscountType?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   loyaltyDiscountAmount?: Prisma.FloatNullableWithAggregatesFilter<"Order"> | number | null
   loyaltyCouponId?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  createdByUserId?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  closedByUserId?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Order"> | Date | string
 }
@@ -454,6 +478,8 @@ export type OrderCreateInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutOrdersInput
@@ -478,6 +504,8 @@ export type OrderUncheckedCreateInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
@@ -500,6 +528,8 @@ export type OrderUpdateInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutOrdersNestedInput
@@ -524,6 +554,8 @@ export type OrderUncheckedUpdateInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -547,6 +579,8 @@ export type OrderCreateManyInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -567,6 +601,8 @@ export type OrderUpdateManyMutationInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -588,6 +624,8 @@ export type OrderUncheckedUpdateManyInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -619,6 +657,8 @@ export type OrderCountOrderByAggregateInput = {
   loyaltyDiscountType?: Prisma.SortOrder
   loyaltyDiscountAmount?: Prisma.SortOrder
   loyaltyCouponId?: Prisma.SortOrder
+  createdByUserId?: Prisma.SortOrder
+  closedByUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -647,6 +687,8 @@ export type OrderMaxOrderByAggregateInput = {
   loyaltyDiscountType?: Prisma.SortOrder
   loyaltyDiscountAmount?: Prisma.SortOrder
   loyaltyCouponId?: Prisma.SortOrder
+  createdByUserId?: Prisma.SortOrder
+  closedByUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -668,6 +710,8 @@ export type OrderMinOrderByAggregateInput = {
   loyaltyDiscountType?: Prisma.SortOrder
   loyaltyDiscountAmount?: Prisma.SortOrder
   loyaltyCouponId?: Prisma.SortOrder
+  createdByUserId?: Prisma.SortOrder
+  closedByUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -782,6 +826,8 @@ export type OrderCreateWithoutRestaurantInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
@@ -804,6 +850,8 @@ export type OrderUncheckedCreateWithoutRestaurantInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
@@ -856,6 +904,8 @@ export type OrderScalarWhereInput = {
   loyaltyDiscountType?: Prisma.StringNullableFilter<"Order"> | string | null
   loyaltyDiscountAmount?: Prisma.FloatNullableFilter<"Order"> | number | null
   loyaltyCouponId?: Prisma.StringNullableFilter<"Order"> | string | null
+  createdByUserId?: Prisma.StringNullableFilter<"Order"> | string | null
+  closedByUserId?: Prisma.StringNullableFilter<"Order"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
 }
@@ -876,6 +926,8 @@ export type OrderCreateWithoutStatusLogsInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutOrdersInput
@@ -899,6 +951,8 @@ export type OrderUncheckedCreateWithoutStatusLogsInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
@@ -936,6 +990,8 @@ export type OrderUpdateWithoutStatusLogsInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutOrdersNestedInput
@@ -959,6 +1015,8 @@ export type OrderUncheckedUpdateWithoutStatusLogsInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -980,6 +1038,8 @@ export type OrderCreateWithoutItemsInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   restaurant: Prisma.RestaurantCreateNestedOneWithoutOrdersInput
@@ -1003,6 +1063,8 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   statusLogs?: Prisma.OrderStatusLogUncheckedCreateNestedManyWithoutOrderInput
@@ -1040,6 +1102,8 @@ export type OrderUpdateWithoutItemsInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutOrdersNestedInput
@@ -1063,6 +1127,8 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   statusLogs?: Prisma.OrderStatusLogUncheckedUpdateManyWithoutOrderNestedInput
@@ -1084,6 +1150,8 @@ export type OrderCreateManyRestaurantInput = {
   loyaltyDiscountType?: string | null
   loyaltyDiscountAmount?: number | null
   loyaltyCouponId?: string | null
+  createdByUserId?: string | null
+  closedByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1104,6 +1172,8 @@ export type OrderUpdateWithoutRestaurantInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
@@ -1126,6 +1196,8 @@ export type OrderUncheckedUpdateWithoutRestaurantInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -1148,6 +1220,8 @@ export type OrderUncheckedUpdateManyWithoutRestaurantInput = {
   loyaltyDiscountType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loyaltyDiscountAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   loyaltyCouponId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1209,6 +1283,8 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   loyaltyDiscountType?: boolean
   loyaltyDiscountAmount?: boolean
   loyaltyCouponId?: boolean
+  createdByUserId?: boolean
+  closedByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
@@ -1234,6 +1310,8 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   loyaltyDiscountType?: boolean
   loyaltyDiscountAmount?: boolean
   loyaltyCouponId?: boolean
+  createdByUserId?: boolean
+  closedByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
@@ -1256,6 +1334,8 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   loyaltyDiscountType?: boolean
   loyaltyDiscountAmount?: boolean
   loyaltyCouponId?: boolean
+  createdByUserId?: boolean
+  closedByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
@@ -1278,11 +1358,13 @@ export type OrderSelectScalar = {
   loyaltyDiscountType?: boolean
   loyaltyDiscountAmount?: boolean
   loyaltyCouponId?: boolean
+  createdByUserId?: boolean
+  closedByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "status" | "orderNumber" | "totalAmount" | "notes" | "coversCount" | "orderSource" | "loyaltyMemberId" | "loyaltyMemberName" | "loyaltyDiscountType" | "loyaltyDiscountAmount" | "loyaltyCouponId" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "status" | "orderNumber" | "totalAmount" | "notes" | "coversCount" | "orderSource" | "loyaltyMemberId" | "loyaltyMemberName" | "loyaltyDiscountType" | "loyaltyDiscountAmount" | "loyaltyCouponId" | "createdByUserId" | "closedByUserId" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
@@ -1320,6 +1402,8 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     loyaltyDiscountType: string | null
     loyaltyDiscountAmount: number | null
     loyaltyCouponId: string | null
+    createdByUserId: string | null
+    closedByUserId: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["order"]>
@@ -1764,6 +1848,8 @@ export interface OrderFieldRefs {
   readonly loyaltyDiscountType: Prisma.FieldRef<"Order", 'String'>
   readonly loyaltyDiscountAmount: Prisma.FieldRef<"Order", 'Float'>
   readonly loyaltyCouponId: Prisma.FieldRef<"Order", 'String'>
+  readonly createdByUserId: Prisma.FieldRef<"Order", 'String'>
+  readonly closedByUserId: Prisma.FieldRef<"Order", 'String'>
   readonly createdAt: Prisma.FieldRef<"Order", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Order", 'DateTime'>
 }

@@ -140,6 +140,10 @@ const sqls = [
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totpSecret" TEXT;`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totpEnabled" BOOLEAN NOT NULL DEFAULT false;`,
   `ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "lastSmsSentAt" TIMESTAMP(3);`,
+  // Waiter tracking fields for per-table timeline
+  `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "createdByUserId" TEXT;`,
+  `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "closedByUserId" TEXT;`,
+  `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedByUserId" TEXT;`,
 ];
 
 async function run() {
