@@ -37,7 +37,8 @@ const SHAPE_BR: Record<TableShape, string> = {
 const COURSE = ["", "ראשון", "עיקרי", "קינוח"];
 const EMOJI  = ["", "🥗", "🍖", "🍮"];
 
-function tableStatus(num: string, orders: Order[]): "free" | "occupied" | "bill-requested" {
+function tableStatus(num: string, orders: Order[], reserved?: Set<string>): "free" | "occupied" | "bill-requested" | "reserved" {
+  if (reserved?.has(num)) return "reserved";
   const tOrds = orders.filter(o => (o.tableNumber ?? "") === num);
   if (!tOrds.length) return "free";
   if (tOrds.every(o => o.status === "DELIVERED")) return "bill-requested";
@@ -123,6 +124,10 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   const [pinError,     setPinError]     = useState(false);
   const [compReason,   setCompReason]   = useState("");
 
+  // Reserved tables (from tableStatusOverridesJson)
+  const [reservedTables, setReservedTables] = useState<Set<string>>(new Set());
+  const [togglingReserve, setTogglingReserve] = useState(false);
+
   // Station assignment — my tables for this waiter
   const [myTables,     setMyTables]     = useState<Set<string>>(new Set());
 
@@ -184,6 +189,37 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
     if (res.ok) { const d = await res.json(); setMenu(d.categories ?? []); }
   }, []);
 
+  const loadReservedTables = useCallback(async (rid: string) => {
+    if (!rid) return;
+    try {
+      const res = await fetch(`/api/admin/waiter-pos/tables?restaurantId=${rid}`);
+      if (!res.ok) return;
+      const data: Array<{ tableNum: string; availStatus: string }> = await res.json();
+      setReservedTables(new Set(data.filter(t => t.availStatus === "reserved").map(t => t.tableNum)));
+    } catch { /* ignore */ }
+  }, []);
+
+  async function toggleReserved(tableNum: string) {
+    const isReserved = reservedTables.has(tableNum);
+    setTogglingReserve(true);
+    try {
+      const res = await fetch("/api/admin/waiter-pos/tables", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, tableNum, status: isReserved ? "free" : "reserved" }),
+      });
+      if (res.ok) {
+        setReservedTables(prev => {
+          const next = new Set(prev);
+          if (isReserved) next.delete(tableNum); else next.add(tableNum);
+          return next;
+        });
+        showToast(isReserved ? `שולחן ${tableNum} — הוסר ממוזמן` : `שולחן ${tableNum} — סומן כמוזמן 🔵`);
+      }
+    } catch { showToast("שגיאה בעדכון הסטטוס"); }
+    finally { setTogglingReserve(false); }
+  }
+
   const loadMyStation = useCallback(async (rid: string) => {
     if (!rid || !waiterId) return;
     try {
@@ -201,9 +237,10 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
     loadOrders(restaurantId);
     loadMenu(restaurantId);
     loadMyStation(restaurantId);
+    loadReservedTables(restaurantId);
     setRoomIdx(0);
     setPanel(null);
-  }, [restaurantId, loadLayout, loadOrders, loadMenu, loadMyStation]);
+  }, [restaurantId, loadLayout, loadOrders, loadMenu, loadMyStation, loadReservedTables]);
 
   // ── SSE ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -220,7 +257,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   useEffect(() => {
     if (!activeRoom) return;
     const nowBill = new Set(
-      activeRoom.tables.filter(t => tableStatus(String(t.num), orders) === "bill-requested").map(t => String(t.num))
+      activeRoom.tables.filter(t => tableStatus(String(t.num), orders, reservedTables) === "bill-requested").map(t => String(t.num))
     );
     for (const num of nowBill) {
       if (!prevBillTables.current.has(num)) {
@@ -282,8 +319,8 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   // ── Helpers ───────────────────────────────────────────────────────
   function openTable(num: string) {
     setSelTable(num);
-    const status = tableStatus(num, orders);
-    if (status === "free") {
+    const status = tableStatus(num, orders, reservedTables);
+    if (status === "free" || status === "reserved") {
       setCart([]); setGuestCount(2); setOrderNote(""); setCatIdx(0); setMenuSearch(""); setAddingMore(false);
       setPanel("new");
     } else {
@@ -456,7 +493,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
   // ── Active table data ─────────────────────────────────────────────
   const activeTableOrders = orders.filter(o => (o.tableNumber ?? "") === selTable);
   const activeTableTotal  = tableTotal(selTable, orders);
-  const selTableStatus    = tableStatus(selTable, orders);
+  const selTableStatus    = tableStatus(selTable, orders, reservedTables);
   const selTimerStart     = timerStart(selTable, orders);
 
   // ── Render ────────────────────────────────────────────────────────
@@ -495,10 +532,11 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
         {/* Live stats */}
         <div style={{ display: "flex", gap: 8, marginRight: restaurants.length > 1 ? 0 : "auto" }}>
-          {(["free", "occupied", "bill-requested"] as const).map(s => {
-            const count = activeRoom?.tables.filter(t => tableStatus(String(t.num), orders) === s).length ?? 0;
-            const labels = { free: "פנויים", occupied: "תפוסים", "bill-requested": "חשבון" };
-            const colors = { free: T.green, occupied: T.orange, "bill-requested": T.red };
+          {(["free", "reserved", "occupied", "bill-requested"] as const).map(s => {
+            const count = activeRoom?.tables.filter(t => tableStatus(String(t.num), orders, reservedTables) === s).length ?? 0;
+            if (count === 0 && s === "reserved") return null;
+            const labels = { free: "פנויים", reserved: "מוזמנים", occupied: "תפוסים", "bill-requested": "חשבון" };
+            const colors = { free: T.green, reserved: T.blue, occupied: T.orange, "bill-requested": T.red };
             return (
               <div key={s} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: `${colors[s]}22`, border: `1px solid ${colors[s]}55`, fontSize: 12 }}>
                 <span style={{ fontWeight: 800, color: colors[s] }}>{count}</span>
@@ -600,7 +638,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                     .slice().sort((a, b) => (a.zIdx ?? 0) - (b.zIdx ?? 0))
                     .map(table => {
                       const tNum    = String(table.num);
-                      const status  = tableStatus(tNum, orders);
+                      const status  = tableStatus(tNum, orders, reservedTables);
                       const start   = timerStart(tNum, orders);
                       const guests  = tableGuests(tNum, orders);
                       const cfg         = STATUS[status as StatusKey];
@@ -679,7 +717,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
 
                 {/* Legend overlay */}
                 <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap", zIndex: 50 }}>
-                  {([["free",T.green,"פנוי"],["occupied",T.orange,"תפוס"],["bill-requested",T.red,"חשבון"]] as const).map(([, col, lbl]) => (
+                  {([["free",T.green,"פנוי"],["reserved",T.blue,"מוזמן"],["occupied",T.orange,"תפוס"],["bill-requested",T.red,"חשבון"]] as const).map(([, col, lbl]) => (
                     <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.75)", border: `1px solid ${col}55`, fontSize: 11, backdropFilter: "blur(4px)" }}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, display: "inline-block" }} />
                       <span style={{ color: T.sub }}>{lbl}</span>
@@ -717,6 +755,22 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
             {/* ── NEW ORDER panel ── */}
             {panel === "new" && (
               <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                {/* Reserve toggle */}
+                <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.border}`, flexShrink: 0, display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => toggleReserved(selTable)}
+                    disabled={togglingReserve}
+                    style={{
+                      flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                      background: reservedTables.has(selTable) ? `${T.blue}33` : "transparent",
+                      border: `1px solid ${reservedTables.has(selTable) ? T.blue : T.border}`,
+                      color: reservedTables.has(selTable) ? T.blue : T.sub,
+                      opacity: togglingReserve ? 0.6 : 1,
+                    }}
+                  >
+                    🔵 {reservedTables.has(selTable) ? "בטל הזמנה (מוזמן)" : "סמן כמוזמן"}
+                  </button>
+                </div>
                 {/* Guest count */}
                 <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                   <span style={{ fontSize: 13, color: T.sub }}>סועדים:</span>
@@ -981,7 +1035,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 300, direction: "rtl" }}>
             <div style={{ fontWeight: 800, fontSize: 16, color: T.gold, marginBottom: 14 }}>↔ העבר שולחן {selTable} אל</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-              {activeRoom?.tables.filter(t => String(t.num) !== selTable && tableStatus(String(t.num), orders) === "free")
+              {activeRoom?.tables.filter(t => String(t.num) !== selTable && tableStatus(String(t.num), orders, reservedTables) === "free")
                 .map(t => (
                   <button key={t.id} onClick={() => setTransferTo(String(t.num))}
                     style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, cursor: "pointer", border: `1px solid ${transferTo === String(t.num) ? T.gold : T.border}`, background: transferTo === String(t.num) ? `${T.gold}22` : "transparent", color: T.text }}>
@@ -989,7 +1043,7 @@ export default function WaiterFloorClient({ restaurants, waiterName, waiterId }:
                   </button>
                 ))}
             </div>
-            {!activeRoom?.tables.some(t => String(t.num) !== selTable && tableStatus(String(t.num), orders) === "free") && (
+            {!activeRoom?.tables.some(t => String(t.num) !== selTable && tableStatus(String(t.num), orders, reservedTables) === "free") && (
               <div style={{ color: T.muted, fontSize: 13, marginBottom: 12 }}>אין שולחנות פנויים להעברה</div>
             )}
             <div style={{ display: "flex", gap: 8 }}>

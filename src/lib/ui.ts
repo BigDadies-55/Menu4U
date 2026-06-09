@@ -197,6 +197,10 @@ export const STATUS = {
     stripe: T.purple, badge: T.purple, badgeBg: T.purpleSub,
     border: "#4a2080", glow: "rgba(124,58,237,0.08)", label: "הושב",
   },
+  reserved: {
+    stripe: T.blue,   badge: T.blue,   badgeBg: T.blueSub,
+    border: "#1e3a6e", glow: "rgba(59,130,246,0.12)", label: "מוזמן",
+  },
 } as const;
 
 export type StatusKey = keyof typeof STATUS;
