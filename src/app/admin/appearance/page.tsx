@@ -14,19 +14,47 @@ export default async function AppearancePage() {
   const role = session.user.role as string;
   if (!ALLOWED_ROLES.includes(role)) redirect("/admin");
 
-  let restaurants: { id: string; name: string; adminPalette: string }[] = [];
+  type RestaurantRow = { id: string; name: string; adminPalette: string };
+  let restaurants: RestaurantRow[] = [];
 
-  if (role === "SUPER_ADMIN" || role === "ADMIN") {
-    restaurants = await prisma.restaurant.findMany({
-      select: { id: true, name: true, adminPalette: true },
-      orderBy: { name: "asc" },
-    });
-  } else {
-    const links = await prisma.restaurantUser.findMany({
-      where: { userId: session.user.id },
-      include: { restaurant: { select: { id: true, name: true, adminPalette: true } } },
-    });
-    restaurants = links.map(l => l.restaurant);
+  try {
+    if (role === "SUPER_ADMIN" || role === "ADMIN") {
+      const rows = await prisma.$queryRaw<{ id: string; name: string; adminPalette: string | null }[]>`
+        SELECT id, name, COALESCE("adminPalette", 'dark') AS "adminPalette"
+        FROM "Restaurant" ORDER BY name ASC
+      `;
+      restaurants = rows.map(r => ({ ...r, adminPalette: r.adminPalette ?? "dark" }));
+    } else {
+      const rows = await prisma.$queryRaw<{ id: string; name: string; adminPalette: string | null }[]>`
+        SELECT r.id, r.name, COALESCE(r."adminPalette", 'dark') AS "adminPalette"
+        FROM "Restaurant" r
+        INNER JOIN "RestaurantUser" ru ON ru."restaurantId" = r.id
+        WHERE ru."userId" = ${session.user.id}
+        ORDER BY r.name ASC
+      `;
+      restaurants = rows.map(r => ({ ...r, adminPalette: r.adminPalette ?? "dark" }));
+    }
+  } catch {
+    // Column may not exist yet — load restaurant list without palette
+    try {
+      if (role === "SUPER_ADMIN" || role === "ADMIN") {
+        const rows = await prisma.$queryRaw<{ id: string; name: string }[]>`
+          SELECT id, name FROM "Restaurant" ORDER BY name ASC
+        `;
+        restaurants = rows.map(r => ({ ...r, adminPalette: "dark" }));
+      } else {
+        const rows = await prisma.$queryRaw<{ id: string; name: string }[]>`
+          SELECT r.id, r.name
+          FROM "Restaurant" r
+          INNER JOIN "RestaurantUser" ru ON ru."restaurantId" = r.id
+          WHERE ru."userId" = ${session.user.id}
+          ORDER BY r.name ASC
+        `;
+        restaurants = rows.map(r => ({ ...r, adminPalette: "dark" }));
+      }
+    } catch {
+      // DB completely unavailable
+    }
   }
 
   if (restaurants.length === 0) redirect("/admin");
