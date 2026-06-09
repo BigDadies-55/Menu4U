@@ -17,24 +17,24 @@ import type { CSSProperties } from "react";
 // ─────────────────────────────────────────────
 
 export const T = {
-  // Backgrounds (dark → light)
-  bg:      "#0c0c0c",
-  surface: "#161616",
-  panel:   "#1e1e1e",
-  raised:  "#2a2826",
-  overlay: "#242220",
+  // Backgrounds — resolved via CSS variables so palettes work
+  bg:      "var(--c-bg)",
+  surface: "var(--c-surface)",
+  panel:   "var(--c-panel)",
+  raised:  "var(--c-raised)",
+  overlay: "var(--c-overlay)",
 
-  border:    "rgba(255,255,255,0.08)",
-  borderSub: "rgba(255,255,255,0.04)",
+  border:    "var(--c-border)",
+  borderSub: "var(--c-border-sub)",
 
-  text:  "#f0ece6",
-  sub:   "#c8bfb0",
-  muted: "#7a7268",
+  text:  "var(--c-text)",
+  sub:   "var(--c-sub)",
+  muted: "var(--c-muted)",
 
-  gold:    "#c9890a",
-  goldSub: "rgba(201,137,10,0.15)",
+  gold:    "var(--c-gold)",
+  goldSub: "var(--c-gold-sub)",
 
-  // Semantic colors
+  // Semantic colors — hardcoded, look fine on all palettes
   green:    "#22c55e",
   greenSub: "rgba(34,197,94,0.12)",
   orange:   "#f97316",
@@ -61,7 +61,7 @@ export const T = {
   amberGlow:"rgba(251,191,36,0.45)",
 
   // Neon / template palette
-  bgNeon:      "#060610",           // deep space bg for template screens
+  bgNeon:      "#060610",
   glass:       "rgba(255,255,255,0.055)",
   glassHover:  "rgba(255,255,255,0.10)",
   glassBorder: "rgba(255,255,255,0.10)",
@@ -90,13 +90,73 @@ export const T = {
   p4: 16,
   p5: 24,
 
-  // ── Fonts ──────────────────────────────────
-  // Change fontSans here to switch the entire site font in one place.
-  // Use any CSS font-family value: a Google font name (after loading it),
-  // a system font stack, or a variable like "var(--font-inter)".
   fontSans: "var(--font-geist-sans), Arial, Helvetica, sans-serif",
   fontMono: "var(--font-geist-mono), 'Courier New', monospace",
 } as const;
+
+// ─────────────────────────────────────────────
+// PALETTE DEFINITIONS
+// ─────────────────────────────────────────────
+
+export const ADMIN_PALETTES: Record<string, Record<string, string>> = {
+  dark: {
+    "--c-bg":         "#0c0c0c",
+    "--c-surface":    "#161616",
+    "--c-panel":      "#1e1e1e",
+    "--c-raised":     "#2a2826",
+    "--c-overlay":    "#242220",
+    "--c-border":     "rgba(255,255,255,0.08)",
+    "--c-border-sub": "rgba(255,255,255,0.04)",
+    "--c-text":       "#f0ece6",
+    "--c-sub":        "#c8bfb0",
+    "--c-muted":      "#7a7268",
+    "--c-gold":       "#c9890a",
+    "--c-gold-sub":   "rgba(201,137,10,0.15)",
+    "--c-sidebar-from": "#050505",
+    "--c-sidebar-mid":  "#161616",
+    "--c-sidebar-to":   "#26200e",
+  },
+  "warm-light": {
+    "--c-bg":         "#eeeae2",
+    "--c-surface":    "#f8f5ef",
+    "--c-panel":      "#f0ebe0",
+    "--c-raised":     "#e8e0d0",
+    "--c-overlay":    "#ece8de",
+    "--c-border":     "rgba(60,45,20,0.10)",
+    "--c-border-sub": "rgba(60,45,20,0.05)",
+    "--c-text":       "#1c1710",
+    "--c-sub":        "#5a5048",
+    "--c-muted":      "#a09484",
+    "--c-gold":       "#4a7c8c",
+    "--c-gold-sub":   "rgba(74,124,140,0.12)",
+    "--c-sidebar-from": "#c8c0b2",
+    "--c-sidebar-mid":  "#d4ccc0",
+    "--c-sidebar-to":   "#e0dace",
+  },
+  earthy: {
+    "--c-bg":         "#f5ede0",
+    "--c-surface":    "#fdf8f0",
+    "--c-panel":      "#e8dcc8",
+    "--c-raised":     "#ddd0bc",
+    "--c-overlay":    "#f0e8d8",
+    "--c-border":     "rgba(100,55,20,0.12)",
+    "--c-border-sub": "rgba(100,55,20,0.06)",
+    "--c-text":       "#1e0e08",
+    "--c-sub":        "#5a3c22",
+    "--c-muted":      "#9a7050",
+    "--c-gold":       "#65011b",
+    "--c-gold-sub":   "rgba(101,1,27,0.12)",
+    "--c-sidebar-from": "#1a0a06",
+    "--c-sidebar-mid":  "#2d1010",
+    "--c-sidebar-to":   "#4a1020",
+  },
+};
+
+export const ADMIN_PALETTE_LABELS: Record<string, string> = {
+  dark:         "כהה קלאסי",
+  "warm-light": "בהיר נעים",
+  earthy:       "אורגני יוקרתי",
+};
 
 // ─────────────────────────────────────────────
 // STATUS CONFIG — table / order states
@@ -130,12 +190,12 @@ export type StatusKey = keyof typeof STATUS;
 type BtnVariant = "primary" | "danger" | "success" | "ghost" | "warning" | "info";
 
 const BTN_CFG: Record<BtnVariant, { bg: string; color: string; border?: string }> = {
-  primary: { bg: T.gold,   color: "#fff" },
+  primary: { bg: "var(--c-gold)",   color: "#fff" },
   danger:  { bg: T.red,    color: "#fff" },
   success: { bg: T.green,  color: "#000" },
   warning: { bg: T.orange, color: "#fff" },
   info:    { bg: T.blue,   color: "#fff" },
-  ghost:   { bg: "transparent", color: T.sub, border: T.border },
+  ghost:   { bg: "transparent", color: "var(--c-sub)", border: "var(--c-border)" },
 };
 
 /** Solid button styles */
@@ -163,10 +223,13 @@ export function btn(variant: BtnVariant = "primary", size: "sm" | "md" | "lg" = 
 export function btnGhost(color: string, size: "sm" | "md" | "lg" = "md"): CSSProperties {
   const pad = size === "sm" ? "3px 10px" : size === "lg" ? "10px 24px" : "6px 16px";
   const fs  = size === "sm" ? T.fsm : size === "lg" ? T.flg : T.fmd;
+  const isVar = color.startsWith("var(");
+  const bg     = isVar ? `color-mix(in srgb, ${color} 13%, transparent)` : color + "22";
+  const border = isVar ? `color-mix(in srgb, ${color} 33%, transparent)` : color + "55";
   return {
-    background:   color + "22",
+    background:   bg,
     color,
-    border:       `1px solid ${color}55`,
+    border:       `1px solid ${border}`,
     borderRadius: T.rMd,
     padding:      pad,
     fontSize:     fs,
@@ -181,10 +244,10 @@ export function btnGhost(color: string, size: "sm" | "md" | "lg" = "md"): CSSPro
 
 /** Input / textarea base style */
 export const inp: CSSProperties = {
-  background:   T.overlay,
-  border:       `1px solid ${T.border}`,
+  background:   "var(--c-overlay)",
+  border:       "1px solid var(--c-border)",
   borderRadius: T.rMd,
-  color:        T.text,
+  color:        "var(--c-text)",
   fontSize:     T.fmd,
   padding:      "7px 10px",
   width:        "100%",
@@ -195,17 +258,18 @@ export const inp: CSSProperties = {
 /** Card container */
 export function card(elevated = false): CSSProperties {
   return {
-    background:   elevated ? T.raised : T.surface,
-    border:       `1px solid ${T.border}`,
+    background:   elevated ? "var(--c-raised)" : "var(--c-surface)",
+    border:       "1px solid var(--c-border)",
     borderRadius: T.rLg,
   };
 }
 
 /** Small status/label badge */
 export function badge(color: string): CSSProperties {
+  const isVar = color.startsWith("var(");
   return {
-    background:   color + "20",
-    border:       `1px solid ${color}44`,
+    background:   isVar ? `color-mix(in srgb, ${color} 13%, transparent)` : color + "20",
+    border:       `1px solid ${isVar ? `color-mix(in srgb, ${color} 27%, transparent)` : color + "44"}`,
     borderRadius: T.rFull,
     color,
     fontSize:     T.fxs,
@@ -219,10 +283,11 @@ export function badge(color: string): CSSProperties {
 
 /** Chip / tag (slightly larger than badge) */
 export function chip(color: string, active = false): CSSProperties {
+  const isVar = color.startsWith("var(");
   return {
-    background:   active ? color : color + "18",
+    background:   active ? color : (isVar ? `color-mix(in srgb, ${color} 9%, transparent)` : color + "18"),
     color:        active ? "#000" : color,
-    border:       `1px solid ${active ? color : color + "44"}`,
+    border:       `1px solid ${active ? color : (isVar ? `color-mix(in srgb, ${color} 27%, transparent)` : color + "44")}`,
     borderRadius: T.rFull,
     padding:      "4px 12px",
     fontSize:     T.fmd,
@@ -262,14 +327,14 @@ export function modal(width = 360): CSSProperties {
 export const heading: CSSProperties = {
   fontSize:   T.fxl,
   fontWeight: 800,
-  color:      T.gold,
+  color:      "var(--c-gold)",
   lineHeight: 1.2,
 };
 
 export const label: CSSProperties = {
   fontSize:   T.fsm,
   fontWeight: 600,
-  color:      T.sub,
+  color:      "var(--c-sub)",
   letterSpacing: "0.04em",
 };
 

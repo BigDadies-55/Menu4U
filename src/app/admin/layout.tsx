@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { ADMIN_PALETTES } from "@/lib/ui";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
@@ -28,15 +29,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     if (!user?.termsAccepted) redirect("/terms");
   }
 
-  // Determine which KDS views this user can see
+  // Determine which KDS views this user can see + per-restaurant palette
   let kdsView = "ALL";
+  let restaurantPalette = "dark";
   if (!isSuperAdmin) {
     try {
       const link = await prisma.restaurantUser.findFirst({
         where: { userId: session.user.id },
-        include: { restaurant: { select: { kdsView: true } } },
+        include: { restaurant: { select: { kdsView: true, adminPalette: true } } },
       });
-      kdsView = link?.restaurant?.kdsView ?? "STATION_DARK";
+      kdsView           = link?.restaurant?.kdsView       ?? "STATION_DARK";
+      restaurantPalette = link?.restaurant?.adminPalette  ?? "dark";
     } catch {
       kdsView = "STATION_DARK";
     }
@@ -116,11 +119,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
   }
 
+  // Inject CSS variables: SUPER_ADMIN uses global palette, others use restaurant palette
+  const effectivePalette = isSuperAdmin ? adminPalette : restaurantPalette;
+  const paletteVars = ADMIN_PALETTES[effectivePalette] ?? ADMIN_PALETTES["dark"];
+  const cssVars = Object.entries(paletteVars).map(([k, v]) => `${k}:${v}`).join(";");
+
   return (
-    <AdminShell
-      user={session.user}
-      kdsView={kdsView}
-      adminPalette={adminPalette}
+    <>
+      <style>{`:root{${cssVars}}`}</style>
+      <AdminShell
+        user={session.user}
+        kdsView={kdsView}
+        adminPalette={effectivePalette}
       adminBg={adminBg}
       adminBgImage={adminBgImage}
       siteLogo={siteLogo}
@@ -131,8 +141,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       adminContentTextColor={adminContentTextColor}
       adminTopBarBg={adminTopBarBg}
       adminTopBarTextColor={adminTopBarTextColor}
-    >
-      {children}
-    </AdminShell>
+      >
+        {children}
+      </AdminShell>
+    </>
   );
 }

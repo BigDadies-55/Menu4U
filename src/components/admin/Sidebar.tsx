@@ -15,12 +15,14 @@ const FAV_KEY = "menu4u_favorites";
 
 /* ─── Admin palettes ─────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
-  dark:   { bg: "#0d0f18", accent: "#c9a84c", accentMuted: "rgba(201,168,76,0.15)",  accentText: "#e0c47a" },
+  dark:         { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
+  "warm-light": { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
+  earthy:       { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
   purple: { bg: "#120b1e", accent: "#9333ea", accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
   blue:   { bg: "#080f1e", accent: "#3b82f6", accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
   green:  { bg: "#071510", accent: "#22c55e", accentMuted: "rgba(34,197,94,0.15)",  accentText: "#86efac" },
   rose:   { bg: "#150a0e", accent: "#f43f5e", accentMuted: "rgba(244,63,94,0.15)",  accentText: "#fda4af" },
-  custom: { bg: "#0d0f18", accent: "#c9a84c", accentMuted: "rgba(201,168,76,0.15)", accentText: "#e0c47a" },
+  custom: { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
 };
 
 /* ─── Icons ──────────────────────────────────────────────── */
@@ -103,6 +105,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/logs",        label: "לוגים",         I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,   adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,   waiterHide: true, displayHide: true },
+      { href: "/admin/appearance",  label: "מראה 🎨",        I: Ic.Settings,   waiterHide: true, displayHide: true },
     ],
   },
   {
