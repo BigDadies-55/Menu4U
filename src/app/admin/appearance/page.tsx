@@ -5,15 +5,14 @@ import AppearanceClient from "./AppearanceClient";
 
 export const dynamic = "force-dynamic";
 
+const ALLOWED_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
+
 export default async function AppearancePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
   const role = session.user.role as string;
-  // All roles with admin access can reach this page; SUPER_ADMIN sees all restaurants
-  if (!["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "EDITOR", "VIEWER"].includes(role)) {
-    redirect("/admin");
-  }
+  if (!ALLOWED_ROLES.includes(role)) redirect("/admin");
 
   let restaurants: { id: string; name: string; adminPalette: string }[] = [];
 
@@ -32,8 +31,5 @@ export default async function AppearancePage() {
 
   if (restaurants.length === 0) redirect("/admin");
 
-  // Editors/viewers can view but not save (handled in client)
-  const canSave = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"].includes(role);
-
-  return <AppearanceClient restaurants={restaurants} canSave={canSave} />;
+  return <AppearanceClient restaurants={restaurants} canSave />;
 }

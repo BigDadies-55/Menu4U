@@ -10,7 +10,7 @@ interface Restaurant {
 
 interface Props {
   restaurants: Restaurant[];
-  canSave: boolean;
+  canSave?: boolean;
 }
 
 const PALETTE_PREVIEWS: Record<string, {
