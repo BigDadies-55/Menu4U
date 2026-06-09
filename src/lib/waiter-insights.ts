@@ -1,7 +1,8 @@
 export type InsightType = "alert" | "tip" | "info";
 
 export interface Condition {
-  field: "minutesSitting" | "orderStatus" | "availStatus" | "guests" | "seats";
+  field: "minutesSitting" | "orderStatus" | "availStatus" | "guests" | "seats"
+       | "totalAmount" | "orderCount" | "minutesSinceLastOrder";
   operator: "gt" | "lt" | "gte" | "lte" | "eq" | "neq";
   value: string | number;
 }
@@ -12,7 +13,7 @@ export interface CustomRule {
   enabled: boolean;
   conditions: Condition[];
   type: InsightType;
-  text: string;   // supports {tableNum} {minutesSitting} {guests} {seats} {orderStatus}
+  text: string; // supports {tableNum} {minutesSitting} {guests} {seats} {orderStatus} {totalAmount} {orderCount} {minutesSinceLastOrder}
   priority: number;
 }
 
@@ -23,6 +24,9 @@ export interface TableInput {
   minutesSitting: number;
   guests: number;
   orderStatus: string | null;
+  totalAmount: number;
+  orderCount: number;
+  minutesSinceLastOrder: number;
 }
 
 export interface Insight {
@@ -32,7 +36,7 @@ export interface Insight {
   priority: number;
 }
 
-// ── Built-in rules ────────────────────────────────────────────────────────────
+// ── Built-in rules — sorted by priority DESC so first match = highest priority ─
 
 interface BuiltinRule {
   match: (t: TableInput) => boolean;
@@ -42,45 +46,113 @@ interface BuiltinRule {
 }
 
 const BUILTIN_RULES: BuiltinRule[] = [
-  // alerts
+  // ── ALERTS ─────────────────────────────────────────────────────────────────
+
+  // READY for too long — food going cold
+  { priority: 105, type: "alert",
+    match: t => t.orderStatus === "READY" && t.minutesSinceLastOrder >= 15,
+    text:  t => `שולחן ${t.tableNum} — מוכן ${t.minutesSinceLastOrder} דק׳ ומתקרר, יש להגיש מיד!` },
+
+  // READY — standard
   { priority: 100, type: "alert",
     match: t => t.availStatus === "occupied" && t.orderStatus === "READY",
     text:  t => `שולחן ${t.tableNum} — הזמנה מוכנה, יש להגיש` },
 
-  { priority: 90, type: "alert",
+  // Cancellation — needs attention
+  { priority: 97, type: "alert",
+    match: t => t.orderStatus === "CANCELLED",
+    text:  t => `שולחן ${t.tableNum} — הזמנה בוטלה, יש לבדוק ולטפל` },
+
+  // Long sit — suggest bill
+  { priority: 92, type: "alert",
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 90,
     text:  t => `שולחן ${t.tableNum} — ${t.minutesSitting} דק׳ ישיבה, שקול להציע חשבון` },
 
+  // CONFIRMED stuck in kitchen way too long
+  { priority: 88, type: "alert",
+    match: t => t.availStatus === "occupied" && t.minutesSitting >= 60 && t.orderStatus === "CONFIRMED",
+    text:  t => `שולחן ${t.tableNum} — מאושר ${t.minutesSitting} דק׳ ועוד לא הגיע למטבח?` },
+
+  // Long sit without any open order
   { priority: 85, type: "alert",
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 30 && t.orderStatus === null,
     text:  t => `שולחן ${t.tableNum} — ${t.minutesSitting} דק׳ ללא הזמנה פתוחה` },
 
-  // tips
+  // Reserved but nobody arrived
+  { priority: 80, type: "alert",
+    match: t => t.availStatus === "reserved" && t.minutesSitting >= 20,
+    text:  t => `שולחן ${t.tableNum} — שמור ${t.minutesSitting} דק׳, האם הגיע?` },
+
+  // ── TIPS ────────────────────────────────────────────────────────────────────
+
+  // Delivered a while ago — upsell dessert/coffee
   { priority: 70, type: "tip",
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 45 && t.orderStatus === "DELIVERED",
     text:  t => `שולחן ${t.tableNum} — הוגש לפני זמן, הצע קינוח או קפה` },
 
+  // Delivered recently — upsell drinks
+  { priority: 68, type: "tip",
+    match: t => t.availStatus === "occupied" && t.minutesSitting >= 30 && t.orderStatus === "DELIVERED",
+    text:  t => `שולחן ${t.tableNum} — הוגש, הצע משקאות נוספים` },
+
+  // CONFIRMED in kitchen — follow up
   { priority: 65, type: "tip",
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 20 && t.orderStatus === "CONFIRMED",
     text:  t => `שולחן ${t.tableNum} — מאושר לפני ${t.minutesSitting} דק׳, בדוק סטטוס במטבח` },
 
+  // In prep long time — update guests
   { priority: 60, type: "tip",
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 20 && t.orderStatus === "PREPARING",
     text:  t => `שולחן ${t.tableNum} — מתבשל ${t.minutesSitting} דק׳, עדכן סועדים` },
 
+  // Just sat — take order
   { priority: 55, type: "tip",
     match: t => t.availStatus === "occupied" && t.minutesSitting < 5 && t.orderStatus === null,
     text:  t => `שולחן ${t.tableNum} — זה עתה ישב, קח הזמנה` },
 
+  // Order pending approval
   { priority: 50, type: "tip",
     match: t => t.availStatus === "occupied" && t.minutesSitting < 5 && t.orderStatus === "PENDING",
     text:  t => `שולחן ${t.tableNum} — הזמנה ממתינה לאישור` },
 
-  // info
+  // High bill — VIP treatment
+  { priority: 45, type: "tip",
+    match: t => t.availStatus === "occupied" && t.totalAmount >= 300,
+    text:  t => `שולחן ${t.tableNum} — חשבון ₪${Math.round(t.totalAmount)}, תן שירות VIP` },
+
+  // Multiple orders — make sure everything was served
+  { priority: 42, type: "tip",
+    match: t => t.availStatus === "occupied" && t.orderCount >= 2,
+    text:  t => `שולחן ${t.tableNum} — ${t.orderCount} הזמנות, ודא שהכל הוגש` },
+
+  // Large group — offer sharing plates
+  { priority: 40, type: "tip",
+    match: t => t.availStatus === "occupied" && t.guests >= 6,
+    text:  t => `שולחן ${t.tableNum} — קבוצה גדולה (${t.guests} סועדים), הצע מנות לשיתוף` },
+
+  // ── INFO ────────────────────────────────────────────────────────────────────
+
+  // Full table
   { priority: 30, type: "info",
     match: t => t.availStatus === "occupied" && t.guests > 0 && t.seats > 0 && t.guests >= t.seats,
     text:  t => `שולחן ${t.tableNum} — שולחן מלא (${t.guests}/${t.seats})` },
 
+  // Empty seats — suggest joining
+  { priority: 27, type: "info",
+    match: t => t.availStatus === "occupied" && t.guests > 0 && t.seats > 0 && t.guests < t.seats - 2,
+    text:  t => `שולחן ${t.tableNum} — ${t.guests}/${t.seats} מקומות תפוסים, ניתן להוסיף סועדים` },
+
+  // Couple at large table
+  { priority: 25, type: "info",
+    match: t => t.availStatus === "occupied" && t.guests > 0 && t.guests <= 2 && t.seats >= 6,
+    text:  t => `שולחן ${t.tableNum} — זוג בשולחן ל-${t.seats}, שקול שיבוץ נוח יותר` },
+
+  // Order just confirmed — tracking start
+  { priority: 22, type: "info",
+    match: t => t.availStatus === "occupied" && t.minutesSitting < 3 && t.orderStatus === "CONFIRMED",
+    text:  t => `שולחן ${t.tableNum} — הזמנה אושרה, בישול התחיל` },
+
+  // Reserved — prepare the table
   { priority: 20, type: "info",
     match: t => t.availStatus === "reserved",
     text:  t => `שולחן ${t.tableNum} — שמור, יש להכין` },
@@ -89,7 +161,7 @@ const BUILTIN_RULES: BuiltinRule[] = [
 // ── Custom rule evaluation ────────────────────────────────────────────────────
 
 function evalCondition(t: TableInput, c: Condition): boolean {
-  const actual = t[c.field] as string | number | null;
+  const actual = t[c.field as keyof TableInput] as string | number | null;
   switch (c.operator) {
     case "gt":  return Number(actual) >  Number(c.value);
     case "lt":  return Number(actual) <  Number(c.value);
@@ -103,11 +175,14 @@ function evalCondition(t: TableInput, c: Condition): boolean {
 
 function renderText(tpl: string, t: TableInput): string {
   return tpl
-    .replace(/\{tableNum\}/g,       t.tableNum)
-    .replace(/\{minutesSitting\}/g, String(t.minutesSitting))
-    .replace(/\{guests\}/g,         String(t.guests))
-    .replace(/\{seats\}/g,          String(t.seats))
-    .replace(/\{orderStatus\}/g,    t.orderStatus ?? "");
+    .replace(/\{tableNum\}/g,               t.tableNum)
+    .replace(/\{minutesSitting\}/g,         String(t.minutesSitting))
+    .replace(/\{guests\}/g,                 String(t.guests))
+    .replace(/\{seats\}/g,                  String(t.seats))
+    .replace(/\{orderStatus\}/g,            t.orderStatus ?? "")
+    .replace(/\{totalAmount\}/g,            String(Math.round(t.totalAmount)))
+    .replace(/\{orderCount\}/g,             String(t.orderCount))
+    .replace(/\{minutesSinceLastOrder\}/g,  String(t.minutesSinceLastOrder));
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -117,7 +192,6 @@ export function computeInsights(
   customRules: CustomRule[] = [],
   maxResults = 3,
 ): Insight[] {
-  // Per-table: highest-priority match wins
   const best = new Map<string, Insight>();
 
   function trySet(ins: Insight) {
@@ -126,14 +200,14 @@ export function computeInsights(
   }
 
   for (const table of tables) {
-    // Built-in (first matching rule per table)
+    // Built-in rules — sorted highest priority first; first match wins
     for (const rule of BUILTIN_RULES) {
       if (rule.match(table)) {
         trySet({ tableNum: table.tableNum, type: rule.type, text: rule.text(table), priority: rule.priority });
         break;
       }
     }
-    // Custom (enabled, all conditions must match, first wins)
+    // Custom rules — all enabled rules compete via trySet
     for (const rule of customRules.filter(r => r.enabled && r.conditions.length > 0)) {
       if (rule.conditions.every(c => evalCondition(table, c))) {
         trySet({ tableNum: table.tableNum, type: rule.type, text: renderText(rule.text, table), priority: rule.priority });
@@ -147,17 +221,28 @@ export function computeInsights(
     .slice(0, maxResults);
 }
 
-// ── Expose built-in rule definitions (for display in admin UI) ────────────────
+// ── Built-in rule labels (for admin UI display) ───────────────────────────────
 
 export const DEFAULT_RULE_LABELS: { text: string; type: InsightType; priority: number }[] = [
+  { priority: 105, type: "alert", text: "מוכן 15+ דק׳ ומתקרר — הגש מיד!" },
   { priority: 100, type: "alert", text: "הזמנה בסטטוס READY — יש להגיש" },
-  { priority: 90,  type: "alert", text: "ישיבה 90+ דקות — שקול חשבון" },
+  { priority: 97,  type: "alert", text: "הזמנה בוטלה — יש לבדוק" },
+  { priority: 92,  type: "alert", text: "ישיבה 90+ דקות — שקול חשבון" },
+  { priority: 88,  type: "alert", text: "CONFIRMED 60+ דקות — תקוע במטבח?" },
   { priority: 85,  type: "alert", text: "30+ דקות ללא הזמנה פתוחה" },
-  { priority: 70,  type: "tip",   text: "45+ דקות + הוגש — הצע קינוח/קפה" },
-  { priority: 65,  type: "tip",   text: "20+ דקות + מאושר — בדוק מטבח" },
-  { priority: 60,  type: "tip",   text: "20+ דקות + מכין — עדכן סועדים" },
+  { priority: 80,  type: "alert", text: "שמור 20+ דקות — האם הגיע?" },
+  { priority: 70,  type: "tip",   text: "45+ דקות + DELIVERED — הצע קינוח/קפה" },
+  { priority: 68,  type: "tip",   text: "30+ דקות + DELIVERED — הצע משקאות" },
+  { priority: 65,  type: "tip",   text: "20+ דקות + CONFIRMED — בדוק מטבח" },
+  { priority: 60,  type: "tip",   text: "20+ דקות + PREPARING — עדכן סועדים" },
   { priority: 55,  type: "tip",   text: "זה עתה ישב + ללא הזמנה — קח הזמנה" },
   { priority: 50,  type: "tip",   text: "הזמנה PENDING — ממתינה לאישור" },
+  { priority: 45,  type: "tip",   text: "חשבון ₪300+ — שירות VIP" },
+  { priority: 42,  type: "tip",   text: "2+ הזמנות — ודא שהכל הוגש" },
+  { priority: 40,  type: "tip",   text: "6+ סועדים — הצע מנות לשיתוף" },
   { priority: 30,  type: "info",  text: "שולחן מלא (סועדים ≥ מושבים)" },
+  { priority: 27,  type: "info",  text: "מקומות פנויים — ניתן להוסיף סועדים" },
+  { priority: 25,  type: "info",  text: "זוג בשולחן גדול — שקול שיבוץ" },
+  { priority: 22,  type: "info",  text: "הזמנה אושרה — בישול התחיל" },
   { priority: 20,  type: "info",  text: "שולחן שמור — יש להכין" },
 ];

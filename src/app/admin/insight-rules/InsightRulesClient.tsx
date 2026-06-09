@@ -5,11 +5,14 @@ import type { CustomRule, Condition, InsightType } from "@/lib/waiter-insights";
 import { DEFAULT_RULE_LABELS } from "@/lib/waiter-insights";
 
 const FIELDS: { value: Condition["field"]; label: string }[] = [
-  { value: "minutesSitting", label: "דקות ישיבה" },
-  { value: "orderStatus",    label: "סטטוס הזמנה" },
-  { value: "availStatus",    label: "סטטוס שולחן" },
-  { value: "guests",         label: "מספר סועדים" },
-  { value: "seats",          label: "קיבולת שולחן" },
+  { value: "minutesSitting",        label: "דקות ישיבה" },
+  { value: "orderStatus",           label: "סטטוס הזמנה" },
+  { value: "availStatus",           label: "סטטוס שולחן" },
+  { value: "guests",                label: "מספר סועדים" },
+  { value: "seats",                 label: "קיבולת שולחן" },
+  { value: "totalAmount",           label: "סכום חשבון (₪)" },
+  { value: "orderCount",            label: "מספר הזמנות" },
+  { value: "minutesSinceLastOrder", label: "דקות מאז עדכון הזמנה" },
 ];
 const OPERATORS: { value: Condition["operator"]; label: string }[] = [
   { value: "gt",  label: "גדול מ-" },
@@ -319,7 +322,7 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
             <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
               טקסט התובנה
               <span style={{ color: T.muted, marginRight: 8, fontSize: 11 }}>
-                משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{seats}"} {"{orderStatus}"}
+                משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{seats}"} {"{orderStatus}"} {"{totalAmount}"} {"{orderCount}"} {"{minutesSinceLastOrder}"}
               </span>
             </div>
             <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
