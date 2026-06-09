@@ -117,11 +117,27 @@ export default function WaiterPosClient({
   const lastInsightFetch = useRef(0);
   const router = useRouter();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFsBanner, setShowFsBanner] = useState(false);
 
   useEffect(() => {
-    function onFsChange() { setIsFullscreen(!!document.fullscreenElement); }
+    function onFsChange() {
+      setIsFullscreen(!!document.fullscreenElement);
+      if (document.fullscreenElement) setShowFsBanner(false);
+    }
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  // Auto-enter fullscreen on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {
+          setShowFsBanner(true); // browser blocked — show manual prompt
+        });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
   }, []);
 
   function toggleFullscreen() {
@@ -329,6 +345,41 @@ export default function WaiterPosClient({
           </button>
         </div>
       </div>
+
+      {/* ══ FULLSCREEN BANNER (shown if browser blocked auto-fullscreen) ══ */}
+      {showFsBanner && (
+        <div style={{
+          background: "#1d4ed8", color: "#fff",
+          padding: "10px 20px", display: "flex", alignItems: "center",
+          justifyContent: "space-between", direction: "rtl", gap: 12,
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>
+            💡 למיטב החוויה — כנס למסך מלא
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => { toggleFullscreen(); setShowFsBanner(false); }}
+              style={{
+                background: "#fff", color: "#1d4ed8", border: "none",
+                borderRadius: 8, padding: "6px 16px", fontSize: 13,
+                fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              מסך מלא
+            </button>
+            <button
+              onClick={() => setShowFsBanner(false)}
+              style={{
+                background: "transparent", color: "rgba(255,255,255,0.7)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer",
+              }}
+            >
+              לא עכשיו
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ══ TABLE GRID ══ */}
       <div style={{
