@@ -72,6 +72,7 @@ export async function GET(req: Request) {
       status: true,
       createdAt: true,
       coversCount: true,
+      totalAmount: true,
     },
     orderBy: { createdAt: "asc" },
   });
@@ -108,6 +109,8 @@ export async function GET(req: Request) {
       ? Math.floor((now - new Date(sittingStart).getTime()) / 60000)
       : 0;
 
+    const totalAmount = tableOrders.reduce((s, o) => s + (o.totalAmount ?? 0), 0);
+
     return {
       tableNum,
       seats: t.seats,
@@ -117,6 +120,7 @@ export async function GET(req: Request) {
       orderStatus: latestOrder?.status ?? null,
       minutesSitting,
       activeOrderIds: tableOrders.map(o => o.id),
+      totalAmount,
     };
   });
 

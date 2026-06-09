@@ -452,7 +452,7 @@ export default function Sidebar({
           style={{
             position: "fixed", inset: 0,
             background: "rgba(0,0,0,0.45)",
-            zIndex: 290,
+            zIndex: 490,
           }}
         />
       )}
@@ -464,7 +464,7 @@ export default function Sidebar({
         background: T.surface,
         borderLeft: `1px solid ${T.border}`,
         display: "flex", flexDirection: "column", alignItems: "center",
-        zIndex: 200,
+        zIndex: 500,
       }}>
         {/* Hamburger */}
         <button
@@ -580,7 +580,7 @@ export default function Sidebar({
           width: drawerW, height: "100vh",
           background: drawerBg,
           borderLeft: `1px solid ${T.border}`,
-          zIndex: 300,
+          zIndex: 510,
           display: "flex", flexDirection: "column",
           transform: drawerTranslate,
           transition: "transform 0.36s cubic-bezier(0.4,0,0.2,1)",
@@ -883,7 +883,7 @@ export default function Sidebar({
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
-          zIndex: 360,
+          zIndex: 520,
           display: "flex", flexDirection: "column",
           transform: favPanelOpen ? "translateX(0)" : "translateX(260px)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
@@ -986,7 +986,7 @@ export default function Sidebar({
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
-          zIndex: 360,
+          zIndex: 520,
           display: "flex", flexDirection: "column",
           transform: searchPanelOpen ? "translateX(0)" : "translateX(280px)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
@@ -1109,7 +1109,7 @@ export default function Sidebar({
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: "12px 0 0 12px",
-          zIndex: 360,
+          zIndex: 520,
           display: "flex", flexDirection: "column",
           transform: userPanelOpen ? "translateX(0)" : "translateX(240px)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",

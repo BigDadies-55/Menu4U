@@ -15,6 +15,7 @@ type TableData = {
   orderStatus: string | null;
   minutesSitting: number;
   activeOrderIds: string[];
+  totalAmount: number;
 };
 
 type Insight = {
@@ -251,6 +252,16 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const inactiveCount = tables.filter(t => t.availStatus === "inactive").length;
   const totalDiners   = tables.filter(t => t.availStatus === "occupied").reduce((s, t) => s + t.guests, 0);
   const alertsCount   = insights.filter(i => i.type === "alert").length;
+
+  const occupiedTables = tables.filter(t => t.availStatus === "occupied");
+  const avgSittingMin  = occupiedTables.length > 0 && occupiedTables.some(t => t.minutesSitting > 0)
+    ? Math.round(occupiedTables.filter(t => t.minutesSitting > 0).reduce((s, t) => s + t.minutesSitting, 0) /
+        occupiedTables.filter(t => t.minutesSitting > 0).length)
+    : 0;
+  const tablesWithCost = occupiedTables.filter(t => t.totalAmount > 0);
+  const avgCost        = tablesWithCost.length > 0
+    ? Math.round(tablesWithCost.reduce((s, t) => s + t.totalAmount, 0) / tablesWithCost.length)
+    : 0;
 
   const currentInsight = insights[insightIdx] ?? null;
   const overlayTable   = tables.find(t => t.tableNum === tableOverlay) ?? null;
@@ -757,6 +768,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />
           <KpiCard label="סועדים"          value={totalDiners} color="#3b82f6" bg="#eff6ff" small={isMobile} />
           <KpiCard label="דורשים תשומת לב" value={alertsCount} color="#f59e0b" bg="#fffbeb" small={isMobile} />
+          <KpiCard label="זמן ממוצע"   value={avgSittingMin > 0 ? fmtAgo(avgSittingMin) : "—"} color="#6366f1" bg="#eef2ff" small={isMobile} />
+          <KpiCard label="עלות ממוצעת" value={avgCost > 0 ? `₪${avgCost}` : "—"}             color="#059669" bg="#ecfdf5" small={isMobile} />
           {/* Refresh — far left (last in RTL row) */}
           <button onClick={manualRefresh} title="רענן נתונים" style={{
             marginRight: "auto",
@@ -828,14 +841,14 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 }
 
 // ── Sub-components ────────────────────────────────────────────────────
-function KpiCard({ label, value, color, bg, small }: { label: string; value: number; color: string; bg: string; small?: boolean }) {
+function KpiCard({ label, value, color, bg, small }: { label: string; value: number | string; color: string; bg: string; small?: boolean }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       borderRadius: small ? 8 : 10, padding: small ? "4px 8px" : "6px 12px",
       minWidth: small ? 44 : 62, background: bg, borderTop: `${small ? 2 : 3}px solid ${color}`,
     }}>
-      <div style={{ fontSize: small ? 16 : 20, fontWeight: 800, lineHeight: 1, color, marginBottom: 2 }}>{value}</div>
+      <div style={{ fontSize: typeof value === "string" ? (small ? 12 : 14) : (small ? 16 : 20), fontWeight: 800, lineHeight: 1, color, marginBottom: 2, whiteSpace: "nowrap" }}>{value}</div>
       <div style={{ fontSize: small ? 9 : 10, fontWeight: 600, color: "#888", whiteSpace: "nowrap" }}>{label}</div>
     </div>
   );
