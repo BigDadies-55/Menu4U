@@ -203,6 +203,7 @@ export default function TableTimelineClient({ restaurants }: { restaurants: { id
   const [rid, setRid]             = useState(restaurants[0]?.id ?? "");
   const [tables, setTables]       = useState<TableData[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [apiError, setApiError]   = useState<string | null>(null);
   const [floorMin, setFloorMin]   = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedItem,  setSelectedItem]  = useState<TLItem | null>(null);
@@ -213,7 +214,16 @@ export default function TableTimelineClient({ restaurants }: { restaurants: { id
     if (!rid) return;
     try {
       const r = await fetch(`/api/admin/orders/table-timeline?restaurantId=${rid}`);
-      if (r.ok) setTables((await r.json()).tables ?? []);
+      if (r.ok) {
+        const data = await r.json();
+        setTables(data.tables ?? []);
+        setApiError(null);
+      } else {
+        const err = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+        setApiError(err.error ?? `שגיאת שרת ${r.status}`);
+      }
+    } catch (e) {
+      setApiError(String(e));
     } finally { setLoading(false); }
   }, [rid]);
 
@@ -268,7 +278,11 @@ export default function TableTimelineClient({ restaurants }: { restaurants: { id
           מסקנות ופעולות נדרשות
           {loading && <span style={{ marginRight:8, fontSize:10 }}>טוען...</span>}
         </div>
-        {insights.length > 0 ? (
+        {apiError ? (
+          <div style={{ padding:"12px 16px", background:T.redSub, border:`1px solid ${T.red}44`, borderRadius:10, color:T.red, fontSize:13, fontWeight:600 }}>
+            שגיאה: {apiError}
+          </div>
+        ) : insights.length > 0 ? (
           <div style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:4 }}>
             {insights.map((ins,i) => (
               <InsightCard key={i} ins={ins}
