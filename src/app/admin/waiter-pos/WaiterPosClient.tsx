@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string };
@@ -264,7 +265,7 @@ export default function WaiterPosClient({
 
   return (
     <div dir="rtl" style={{
-      position: "fixed", inset: 0, zIndex: 50,
+      position: "fixed", inset: 0, zIndex: 400,
       background: "#f0f2f5", color: "#111", fontFamily: "inherit",
       overflowY: "auto", paddingBottom: 100,
     }}>
@@ -333,15 +334,15 @@ export default function WaiterPosClient({
           </button>
 
           <button
-            onClick={() => router.push("/admin")}
+            onClick={() => signOut({ callbackUrl: "/login" })}
             style={{
-              background: "#f5f5f7", border: "1px solid #e0e0e0",
+              background: "#fef2f2", border: "1px solid #fecaca",
               borderRadius: 8, padding: "6px 14px",
-              fontSize: 13, fontWeight: 600, color: "#555",
+              fontSize: 13, fontWeight: 600, color: "#dc2626",
               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
             }}
           >
-            ← יציאה
+            ⬅ יציאה
           </button>
         </div>
       </div>
@@ -384,8 +385,8 @@ export default function WaiterPosClient({
       {/* ══ TABLE GRID ══ */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-        gap: 16, padding: 20, direction: "rtl",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+        gap: 10, padding: 14, direction: "rtl",
       }}>
         {loadingTables ? (
           <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 40, fontSize: 15 }}>
@@ -427,64 +428,64 @@ export default function WaiterPosClient({
               }}
             >
               {/* ── Card top ── */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 14px 6px", direction: "rtl" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "8px 10px 4px", direction: "rtl" }}>
                 {/* Right: table info */}
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, fontWeight: 500, color: "#888" }}>שולחן</div>
-                  <div style={{ fontSize: 38, fontWeight: 800, color: "#111", lineHeight: 1 }}>{t.tableNum}</div>
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>
+                  <div style={{ fontSize: 10, fontWeight: 500, color: "#888" }}>שולחן</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#111", lineHeight: 1 }}>{t.tableNum}</div>
+                  <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
                     👤 {t.availStatus === "occupied" && t.guests > 0 ? `${t.guests} סועדים` : `${t.seats} מקומות`}
                   </div>
                 </div>
                 {/* Left: timer */}
                 <div style={{ textAlign: "left", direction: "ltr" }}>
                   <div style={{
-                    fontSize: 16, fontWeight: 400, color: isWarn ? "#ef4444" : "#111",
+                    fontSize: 13, fontWeight: 400, color: isWarn ? "#ef4444" : "#111",
                     fontVariantNumeric: "tabular-nums",
                   }}>
                     {t.availStatus === "occupied" ? fmtTimer(t.sittingStart) : "--:--"}
                   </div>
-                  <div style={{ fontSize: 10, color: "#aaa", marginTop: 1 }}>זמן ישיבה</div>
+                  <div style={{ fontSize: 9, color: "#aaa", marginTop: 1 }}>זמן ישיבה</div>
                 </div>
               </div>
 
               {/* ── Divider ── */}
-              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 10px" }} />
+              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 8px" }} />
 
               {/* ── Status row ── */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", direction: "rtl" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: statusBadgeBg, flexShrink: 0, display: "inline-block" }} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", direction: "rtl" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: statusBadgeBg, flexShrink: 0, display: "inline-block" }} />
                   <span style={{
                     background: statusBadgeBg, color: "#fff", border: "none",
-                    borderRadius: 6, padding: "4px 9px", fontSize: 11, fontWeight: 700,
+                    borderRadius: 5, padding: "3px 7px", fontSize: 10, fontWeight: 700,
                   }}>{statusBadgeText}</span>
                 </div>
-                <div style={{ fontSize: 12, color: "#888" }}>
+                <div style={{ fontSize: 10, color: "#888" }}>
                   {t.availStatus === "occupied" && t.minutesSitting > 0 ? fmtAgo(t.minutesSitting) : "—"}
                 </div>
               </div>
 
               {/* ── Divider ── */}
-              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 10px" }} />
+              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 8px" }} />
 
               {/* ── AI row ── */}
-              <div style={{ padding: "6px 14px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
+              <div style={{ padding: "4px 10px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
                 <button
                   onClick={e => { e.stopPropagation(); setTableOverlay(t.tableNum); }}
                   style={{
                     background: "none", border: "none", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 5,
-                    color: "#9b59e8", fontSize: 13, fontWeight: 600,
-                    padding: "3px 5px", borderRadius: 7,
+                    display: "flex", alignItems: "center", gap: 4,
+                    color: "#9b59e8", fontSize: 11, fontWeight: 600,
+                    padding: "2px 4px", borderRadius: 6,
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#f3eeff")}
                   onMouseLeave={e => (e.currentTarget.style.background = "none")}
                 >
-                  <span style={{ fontSize: 18 }}>✨</span>
-                  {tableInsights.length > 0 ? `${tableInsights.length} תובנות` : "תובנות AI"}
+                  <span style={{ fontSize: 14 }}>✨</span>
+                  {tableInsights.length > 0 ? `${tableInsights.length} תובנות` : "AI"}
                 </button>
-                <span style={{ fontSize: 11, color: "#bbb" }}>לחץ לפרטים</span>
+                <span style={{ fontSize: 10, color: "#bbb" }}>לחץ לפרטים</span>
               </div>
             </div>
           );
