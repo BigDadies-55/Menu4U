@@ -3,25 +3,28 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import TableTimelineClient from "./TableTimelineClient";
 
-export const dynamic = "force-dynamic";
-
 export default async function TableTimelinePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
   const role = session.user.role as string;
-  if (!["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"].includes(role)) {
-    redirect("/admin");
+  const allowedRoles = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
+  if (!allowedRoles.includes(role)) redirect("/admin");
+
+  // Fetch restaurants this user can access
+  let restaurants: { id: string; name: string }[] = [];
+  if (role === "SUPER_ADMIN") {
+    restaurants = await prisma.restaurant.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+  } else {
+    const links = await prisma.restaurantUser.findMany({
+      where: { userId: session.user.id },
+      include: { restaurant: { select: { id: true, name: true } } },
+    });
+    restaurants = links.map(l => l.restaurant);
   }
-
-  const restaurants =
-    role === "SUPER_ADMIN" || role === "ADMIN"
-      ? await prisma.restaurant.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } })
-      : await prisma.restaurantUser
-          .findMany({ where: { userId: session.user.id }, include: { restaurant: { select: { id: true, name: true } } } })
-          .then(rs => rs.map(r => r.restaurant));
-
-  if (restaurants.length === 0) redirect("/admin");
 
   return <TableTimelineClient restaurants={restaurants} />;
 }

@@ -1,440 +1,394 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { T, btnGhost } from "@/lib/ui";
+import { useState, useEffect, useCallback } from "react";
+import { T, btn, badge, card } from "@/lib/ui";
 
-// ── Types ──────────────────────────────────────────────────────────────────
-interface TLItem {
-  id: string; name: string; basePrice: number; quantity: number; price: number;
-  notes: string | null; itemStatus: string; course: number;
-  heldUntilFired: boolean; firedAt: string | null; doneAt: string | null;
-  servedAt: string | null; createdAt: string; isComped: boolean;
-}
-interface TLOrder {
-  id: string; orderNumber: number | null; status: string; totalAmount: number;
-  coversCount: number | null; createdAt: string; items: TLItem[];
-}
-interface TableData {
-  tableNumber: string; status: "green" | "red" | "purple"; statusTag: string;
-  coversCount: number; totalAmount: number; ageMin: number; startedAt: string;
-  itemCount: number; orders: TLOrder[];
-}
-interface Insight {
-  kind: "alert" | "upsell" | "info";
-  icon: string; title: string; body: string; tableRef?: string;
+interface Restaurant { id: string; name: string; }
+
+interface TimelineEvent {
+  type: string;
+  at: string;
+  actor: string;
+  actorId: string | null;
+  detail: string;
+  orderId?: string;
+  tableNumber?: string;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-function fmt(iso: string) {
+interface WaiterStat {
+  id: string; name: string;
+  ordersCreated: number; tablesClosed: number; itemsServed: number;
+  totalRevenue: number;
+}
+
+interface Insights {
+  totalSessions: number;
+  totalOrders: number;
+  avgSessionMinutes: number;
+  avgAmountPerSession: number;
+  cancellationRatePercent: number;
+  busiestHour: number;
+  topWaiters: WaiterStat[];
+}
+
+interface ApiResponse {
+  tableNumbers: string[];
+  sessions: {
+    id: string; tableNumber: string; openedAt: string; closedAt: string;
+    totalAmount: number; orderCount: number; durationMinutes: number;
+  }[];
+  events: TimelineEvent[];
+  insights: Insights;
+}
+
+const EVENT_CFG: Record<string, { label: string; color: string; icon: string }> = {
+  ORDER_CREATED:   { label: "הזמנה נפתחה",  color: T.blue,    icon: "📋" },
+  ITEM_SERVED:     { label: "מנה הוגשה",    color: T.green,   icon: "🍽️" },
+  TABLE_PAID:      { label: "שולחן שולם",   color: T.gold,    icon: "💳" },
+  ORDER_CANCELLED: { label: "הזמנה בוטלה",  color: T.red,     icon: "❌" },
+};
+
+function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
 }
-function diffMin(a: string, b: string) {
-  return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 60000);
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit" });
 }
-function nowIso() { return new Date().toISOString(); }
-
-function meColor(item: TLItem) {
-  if (item.basePrice >= 80) return "#fbbf24";
-  if (item.basePrice >= 35) return "#60a5fa";
-  return "#d1cdc7";
-}
-function meLabel(item: TLItem) {
-  if (item.basePrice >= 80) return "כוכב";
-  if (item.basePrice >= 35) return "סוס עבודה";
-  return "—";
-}
-function statusColor(s: TableData["status"]) {
-  return s === "red" ? T.red : s === "purple" ? T.purple : T.green;
-}
-function statusBg(s: TableData["status"]) {
-  return s === "red" ? T.redSub : s === "purple" ? T.purpleSub : T.greenSub;
-}
-function itemStatusLabel(s: string) {
-  return ({ PENDING: "ממתין", PREPARING: "מכין 🔥", DONE: "מוכן ✓", DELIVERED: "הוגש" } as Record<string,string>)[s] ?? s;
-}
-function itemStatusColor(s: string) {
-  if (s === "DONE")      return T.green;
-  if (s === "PREPARING") return T.orange;
-  if (s === "DELIVERED") return T.muted;
-  return T.blue;
+function fmtDuration(mins: number) {
+  if (mins < 60) return `${mins} דק'`;
+  return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")} שע'`;
 }
 
-// compute insights from tables
-function computeInsights(tables: TableData[]): Insight[] {
-  const ins: Insight[] = [];
-  for (const t of tables) {
-    const allItems = t.orders.flatMap(o => o.items);
-    // delayed prep
-    const delayed = allItems.filter(i =>
-      i.itemStatus === "PREPARING" && i.firedAt &&
-      diffMin(i.firedAt, nowIso()) > 15
-    );
-    if (delayed.length > 0) {
-      ins.push({ kind: "alert", icon: "⚠️", title: `שולחן ${t.tableNumber} — עיכוב הכנה`, body: `${delayed.length} מנה/ות על הגריל מעל 15 דקות — בדוק עם המטבח`, tableRef: t.tableNumber });
-    }
-    // upsell: all mains done
-    const mains = allItems.filter(i => i.course === 2);
-    if (mains.length > 0 && mains.every(i => ["DONE","DELIVERED"].includes(i.itemStatus))) {
-      const lateDone = mains.map(i => i.doneAt ? diffMin(i.doneAt, nowIso()) : 0);
-      if (Math.min(...lateDone) > 5) {
-        ins.push({ kind: "upsell", icon: "🍷", title: `שולחן ${t.tableNumber} — הצע קינוח`, body: "עיקריות הוגשו לפחות 5 דקות — רגע טוב להציע קינוח ומשקה", tableRef: t.tableNumber });
-      }
-    }
-    // very old table
-    if (t.ageMin > 50 && t.status !== "red") {
-      ins.push({ kind: "alert", icon: "⏱", title: `שולחן ${t.tableNumber} — שהייה ארוכה`, body: `${t.ageMin} דקות פעיל — בדוק שהשולחן מרוצה`, tableRef: t.tableNumber });
-    }
-    // ready items not served
-    const readyNotServed = allItems.filter(i => i.itemStatus === "DONE" && !i.servedAt);
-    if (readyNotServed.length >= 2) {
-      ins.push({ kind: "upsell", icon: "🍽️", title: `שולחן ${t.tableNumber} — ${readyNotServed.length} מנות מחכות`, body: "מנות מוכנות בחלון ההגשה, לא הוגשו עדיין", tableRef: t.tableNumber });
-    }
-  }
-  // summary insight
-  const redCount = tables.filter(t => t.status === "red").length;
-  if (redCount === 0 && tables.length > 0) {
-    ins.push({ kind: "info", icon: "✅", title: "שירות זורם בצורה תקינה", body: `כל ${tables.length} השולחנות הפעילים ללא עיכובים` });
-  }
-  return ins.slice(0, 6);
-}
-
-// build item events
-function buildEvents(item: TLItem) {
-  const evs: { time: string; title: string; body: string; kind: "ok"|"warn"|"error"|"muted" }[] = [];
-  evs.push({ time: fmt(item.createdAt), title: "הזמנה נקלטה", body: `${item.quantity}× ${item.name}${item.notes ? ` — ${item.notes}` : ""}`, kind: "ok" });
-  if (item.firedAt) {
-    const w = diffMin(item.createdAt, item.firedAt);
-    evs.push({ time: fmt(item.firedAt), title: "נשלח למטבח", body: `${w > 0 ? `${w} דקות מהזמנה` : "מיידי"}`, kind: "ok" });
-  }
-  if (item.firedAt && !item.doneAt) {
-    const m = diffMin(item.firedAt, nowIso());
-    if (m > 15) evs.push({ time: "—", title: "עיכוב חריג", body: `${m} דקות בהכנה — מעל לתקן`, kind: "error" });
-  }
-  if (item.doneAt) {
-    const m = item.firedAt ? diffMin(item.firedAt, item.doneAt) : null;
-    evs.push({ time: fmt(item.doneAt), title: "הכנה הושלמה", body: m !== null ? `${m} דקות הכנה${m > 15 ? " — חריגה!" : ""}` : "הושלם", kind: m !== null && m > 15 ? "warn" : "ok" });
-  }
-  if (item.servedAt) {
-    const m = item.doneAt ? diffMin(item.doneAt, item.servedAt) : null;
-    evs.push({ time: fmt(item.servedAt), title: "הוגש לשולחן", body: m !== null ? `${m} דקות מסיום הכנה` : "הגשה", kind: "ok" });
-  }
-  return evs;
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────────
-
-function InsightCard({ ins, onClick }: { ins: Insight; onClick?: () => void }) {
-  const cfg = {
-    alert:  { bg: T.redSub,    border: T.red + "44",    color: T.red    },
-    upsell: { bg: T.purpleSub, border: T.purple + "44", color: T.purple },
-    info:   { bg: T.greenSub,  border: T.green + "44",  color: T.green  },
-  }[ins.kind];
-  return (
-    <div onClick={onClick} style={{
-      flexShrink: 0, minWidth: 240, maxWidth: 280,
-      background: cfg.bg, border: `1.5px solid ${cfg.border}`,
-      borderRadius: 14, padding: "14px 16px",
-      cursor: onClick ? "pointer" : "default",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: 20 }}>{ins.icon}</span>
-        <span style={{ fontSize: 14, fontWeight: 800, color: cfg.color, lineHeight: 1.2 }}>{ins.title}</span>
-      </div>
-      <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.5 }}>{ins.body}</div>
-    </div>
-  );
-}
-
-function FloorCard({ t, selected, onClick }: { t: TableData; selected: boolean; onClick: () => void }) {
-  const c = statusColor(t.status);
-  return (
-    <div onClick={onClick} style={{
-      borderRadius: 12, border: `1.5px solid ${selected ? T.text : T.border}`,
-      background: T.surface, padding: "10px 10px 10px 12px",
-      cursor: "pointer", position: "relative", overflow: "hidden",
-      minHeight: 84, display: "flex", flexDirection: "column", justifyContent: "space-between",
-      boxShadow: selected ? `0 0 0 2px ${T.text}` : undefined,
-      transform: selected ? "translateY(-1px)" : undefined,
-      transition: "box-shadow 0.1s, transform 0.1s",
-    }}>
-      <div style={{ position: "absolute", top: 0, right: 0, width: 4, height: "100%", background: c, borderRadius: "0 10px 10px 0" }} />
-      <div style={{ paddingRight: 6 }}>
-        <div style={{ fontSize: 20, fontWeight: 900, color: c, lineHeight: 1 }}>
-          {t.tableNumber.padStart(2, "0")}
-        </div>
-        <div style={{ fontSize: 10, color: T.muted, marginTop: 2, lineHeight: 1.3 }}>
-          {t.coversCount > 0 ? `${t.coversCount} קאב׳` : ""}
-          {t.ageMin > 0 ? ` · ${t.ageMin} דק׳` : ""}
-        </div>
-      </div>
-      <div style={{
-        display: "inline-flex", alignItems: "center", padding: "2px 7px",
-        borderRadius: 999, fontSize: 10, fontWeight: 700,
-        background: statusBg(t.status), color: c, width: "fit-content",
-      }}>
-        {t.statusTag}
-      </div>
-    </div>
-  );
-}
-
-function TLEvent({ ev, expanded, onToggle }: {
-  ev: { time: string; title: string; body: string; kind: "ok"|"warn"|"error"|"muted" };
-  expanded: boolean; onToggle: () => void;
-}) {
-  const c = ev.kind === "ok" ? T.green : ev.kind === "error" ? T.red : ev.kind === "warn" ? T.orange : T.muted;
-  return (
-    <div onClick={onToggle} style={{ display: "flex", gap: 10, padding: expanded ? "9px 16px" : "5px 16px", cursor: "pointer", position: "relative" }}>
-      <div style={{
-        width: expanded ? 16 : 10, height: expanded ? 16 : 10, borderRadius: "50%",
-        flexShrink: 0, marginTop: 3, background: c + "22", border: `2px solid ${c}55`, zIndex: 1, transition: "all 0.15s",
-      }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 10, color: T.muted, fontWeight: 700, fontFamily: "monospace" }}>{ev.time}</div>
-        <div style={{ fontSize: expanded ? 13 : 12, fontWeight: expanded ? 800 : 600, color: ev.kind === "error" ? T.red : T.text, marginTop: 1 }}>{ev.title}</div>
-        {expanded && <div style={{ fontSize: 11, color: T.sub, marginTop: 3, lineHeight: 1.5 }}>{ev.body}</div>}
-      </div>
-    </div>
-  );
-}
-
-// ── Main ───────────────────────────────────────────────────────────────────
-
-export default function TableTimelineClient({ restaurants }: { restaurants: { id: string; name: string }[] }) {
-  const [rid, setRid]             = useState(restaurants[0]?.id ?? "");
-  const [tables, setTables]       = useState<TableData[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [apiError, setApiError]   = useState<string | null>(null);
-  const [floorMin, setFloorMin]   = useState(false);
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [selectedItem,  setSelectedItem]  = useState<TLItem | null>(null);
-  const [expandedEvs,   setExpandedEvs]   = useState<Set<number>>(new Set());
-  const timer = useRef<ReturnType<typeof setInterval>|null>(null);
+export default function TableTimelineClient({ restaurants }: { restaurants: Restaurant[] }) {
+  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
+  const [tableNumber,  setTableNumber]  = useState<string>("");
+  const [days,         setDays]         = useState(7);
+  const [data,         setData]         = useState<ApiResponse | null>(null);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState("");
 
   const load = useCallback(async () => {
-    if (!rid) return;
+    if (!restaurantId) return;
+    setLoading(true);
+    setError("");
     try {
-      const r = await fetch(`/api/admin/orders/table-timeline?restaurantId=${rid}`);
-      if (r.ok) {
-        const data = await r.json();
-        setTables(data.tables ?? []);
-        setApiError(null);
-      } else {
-        const err = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
-        setApiError(err.error ?? `שגיאת שרת ${r.status}`);
-      }
+      const params = new URLSearchParams({ restaurantId, days: String(days) });
+      if (tableNumber) params.set("tableNumber", tableNumber);
+      const res = await fetch(`/api/admin/orders/table-timeline?${params}`);
+      if (!res.ok) throw new Error(await res.text());
+      setData(await res.json());
     } catch (e) {
-      setApiError(String(e));
-    } finally { setLoading(false); }
-  }, [rid]);
+      setError(e instanceof Error ? e.message : "שגיאה");
+    } finally {
+      setLoading(false);
+    }
+  }, [restaurantId, tableNumber, days]);
 
-  useEffect(() => {
-    setLoading(true); load();
-    timer.current = setInterval(load, 15000);
-    return () => { if (timer.current) clearInterval(timer.current); };
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
-  const selectedTableData = tables.find(t => t.tableNumber === selectedTable) ?? null;
-  const allItems = selectedTableData?.orders.flatMap(o => o.items) ?? [];
-  const events   = selectedItem ? buildEvents(selectedItem) : [];
-  const insights = computeInsights(tables);
-
-  function toggleTable(tn: string) {
-    if (selectedTable === tn) { setSelectedTable(null); setSelectedItem(null); }
-    else { setSelectedTable(tn); setSelectedItem(null); }
-  }
-  function toggleEv(i: number) {
-    setExpandedEvs(prev => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; });
-  }
+  const insights = data?.insights;
+  const events   = data?.events ?? [];
 
   return (
-    <div style={{ direction: "rtl", fontFamily: "'Heebo', Arial, sans-serif", background: T.bg, minHeight: "100vh", color: T.text, display: "flex", flexDirection: "column" }}>
+    <div style={{ direction: "rtl", padding: "24px 28px", minHeight: "100vh", background: T.bg, fontFamily: T.fontSans, color: T.text }}>
 
       {/* ── Header ── */}
-      <div style={{ padding: "20px 28px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div style={{ fontSize: 22, fontWeight: 900 }}>מפת שולחנות חיה</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ display: "flex", gap: 14 }}>
-            {([["green","תקין"],["red","עיכוב שירות"],["purple","פעולת AI"]] as const).map(([c,l]) => (
-              <div key={l} style={{ display:"flex", alignItems:"center", gap:5, fontSize:12, fontWeight:600, color:T.sub }}>
-                <div style={{ width:10, height:10, borderRadius:"50%", background: c==="green"?T.green:c==="red"?T.red:T.purple }} />{l}
-              </div>
-            ))}
-          </div>
-          {restaurants.length > 1
-            ? <select value={rid} onChange={e=>setRid(e.target.value)} style={{ background:T.panel, border:`1px solid ${T.border}`, borderRadius:8, color:T.text, fontSize:13, padding:"5px 10px" }}>
-                {restaurants.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-            : <div style={{ fontSize:13, color:T.muted }}>{restaurants[0]?.name}</div>
-          }
-        </div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: T.f2xl, fontWeight: 800, color: T.gold, margin: 0 }}>
+          🗂️ ציר זמן שולחנות
+        </h1>
+        <p style={{ fontSize: T.fmd, color: T.muted, marginTop: 4 }}>
+          מעקב פעולות מלצרים · תובנות ביצוע
+        </p>
       </div>
-      <div style={{ height:1, background:T.border, margin:"12px 28px 0", flexShrink:0 }} />
 
-      {/* ══════════════════════════════════════════════
-          INSIGHTS — prominent, full-width, top section
-      ══════════════════════════════════════════════ */}
-      <div style={{ padding:"14px 28px 0", flexShrink:0 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:T.muted, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:10 }}>
-          מסקנות ופעולות נדרשות
-          {loading && <span style={{ marginRight:8, fontSize:10 }}>טוען...</span>}
-        </div>
-        {apiError ? (
-          <div style={{ padding:"12px 16px", background:T.redSub, border:`1px solid ${T.red}44`, borderRadius:10, color:T.red, fontSize:13, fontWeight:600 }}>
-            שגיאה: {apiError}
-          </div>
-        ) : insights.length > 0 ? (
-          <div style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:4 }}>
-            {insights.map((ins,i) => (
-              <InsightCard key={i} ins={ins}
-                onClick={ins.tableRef ? () => setSelectedTable(ins.tableRef!) : undefined}
-              />
+      {/* ── Filters ── */}
+      <div style={{
+        display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
+        marginBottom: 24, padding: "14px 16px",
+        background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg,
+      }}>
+        {restaurants.length > 1 && (
+          <select
+            value={restaurantId}
+            onChange={e => { setRestaurantId(e.target.value); setTableNumber(""); }}
+            style={{ ...selectStyle }}
+          >
+            {restaurants.map(r => (
+              <option key={r.id} value={r.id}>{r.name}</option>
             ))}
-          </div>
-        ) : (
-          <div style={{ padding:"12px 0", color:T.muted, fontSize:13 }}>
-            {loading ? "טוען נתונים..." : "אין שולחנות פעילים — אין מסקנות"}
-          </div>
+          </select>
         )}
-      </div>
 
-      <div style={{ height:1, background:T.borderSub, margin:"14px 28px 0", flexShrink:0 }} />
-
-      {/* ── Floor grid (minimizable) ── */}
-      <div style={{ padding:"12px 28px 0", flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:T.muted, letterSpacing:"0.07em", textTransform:"uppercase" }}>
-            מצב המסעדה עכשיו
-          </div>
-          <button onClick={()=>setFloorMin(v=>!v)} style={{ ...btnGhost(T.muted,"sm"), fontSize:11 }}>
-            {floorMin ? "▼ הצג מפה" : "▲ מזעור"}
-          </button>
-        </div>
-        {!floorMin && (
-          <div style={{ display:"grid", gridTemplateColumns:`repeat(${Math.min(Math.max(tables.length,4),9)},1fr)`, gap:8 }}>
-            {tables.map(t=>(
-              <FloorCard key={t.tableNumber} t={t} selected={selectedTable===t.tableNumber} onClick={()=>toggleTable(t.tableNumber)} />
-            ))}
-            {tables.length===0 && !loading && (
-              <div style={{ gridColumn:"1/-1", padding:"16px 0", textAlign:"center", color:T.muted, fontSize:13 }}>אין שולחנות פעילים</div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Expand panel ── */}
-      {selectedTableData && !floorMin && (
-        <div style={{ margin:"10px 28px 0", background:T.surface, border:`1.5px solid ${T.border}`, borderRadius:14, padding:"14px 20px", display:"flex", alignItems:"center", gap:20, flexShrink:0 }}>
-          <div style={{ fontSize:34, fontWeight:900, color:statusColor(selectedTableData.status), lineHeight:1, flexShrink:0 }}>
-            {selectedTableData.tableNumber.padStart(2,"0")}
-          </div>
-          <div style={{ flex:1, borderRight:`1.5px solid ${T.border}`, paddingRight:18 }}>
-            <div style={{ fontSize:15, fontWeight:800 }}>שולחן {selectedTableData.tableNumber}</div>
-            <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>
-              {selectedTableData.coversCount>0 ? `${selectedTableData.coversCount} קאברים · ` : ""}{selectedTableData.ageMin} דקות פעיל
-            </div>
-            <div style={{ display:"inline-flex", alignItems:"center", marginTop:6, padding:"3px 9px", borderRadius:999, fontSize:11, fontWeight:700, background:statusBg(selectedTableData.status), color:statusColor(selectedTableData.status) }}>
-              {selectedTableData.statusTag}
-            </div>
-          </div>
-          {[{val:selectedTableData.itemCount,lbl:"מנות"},{val:selectedTableData.ageMin,lbl:"דקות"},{val:`₪${Math.round(selectedTableData.totalAmount)}`,lbl:"סה״כ"}].map(({val,lbl})=>(
-            <div key={lbl} style={{ textAlign:"center", flexShrink:0 }}>
-              <div style={{ fontSize:20, fontWeight:900 }}>{val}</div>
-              <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{lbl}</div>
-            </div>
+        <select
+          value={tableNumber}
+          onChange={e => setTableNumber(e.target.value)}
+          style={{ ...selectStyle }}
+        >
+          <option value="">כל השולחנות</option>
+          {(data?.tableNumbers ?? []).map(t => (
+            <option key={t} value={t}>שולחן {t}</option>
           ))}
-          <button onClick={()=>setSelectedTable(null)} style={{ ...btnGhost(T.muted,"sm"), flexShrink:0 }}>✕</button>
+        </select>
+
+        <select
+          value={days}
+          onChange={e => setDays(Number(e.target.value))}
+          style={{ ...selectStyle }}
+        >
+          <option value={1}>היום</option>
+          <option value={3}>3 ימים</option>
+          <option value={7}>שבוע</option>
+          <option value={14}>שבועיים</option>
+          <option value={30}>30 ימים</option>
+        </select>
+
+        <button onClick={load} style={{ ...btn("ghost", "sm"), marginRight: "auto" }}>
+          🔄 רענן
+        </button>
+
+        {loading && <span style={{ fontSize: T.fsm, color: T.muted }}>טוען...</span>}
+        {error   && <span style={{ fontSize: T.fsm, color: T.red }}>{error}</span>}
+      </div>
+
+      {/* ── Insight cards ── */}
+      {insights && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12, marginBottom: 24 }}>
+          <InsightCard label="סשנים" value={String(insights.totalSessions)} icon="📊" color={T.blue} />
+          <InsightCard label="הזמנות" value={String(insights.totalOrders)} icon="📋" color={T.purple} />
+          <InsightCard label="זמן ממוצע" value={fmtDuration(insights.avgSessionMinutes)} icon="⏱️" color={T.cyan} />
+          <InsightCard label="ממוצע לשולחן" value={`₪${insights.avgAmountPerSession}`} icon="💰" color={T.gold} />
+          <InsightCard label="ביטולים" value={`${insights.cancellationRatePercent}%`} icon="❌" color={insights.cancellationRatePercent > 10 ? T.red : T.green} />
+          <InsightCard label="שעת שיא" value={`${insights.busiestHour}:00`} icon="🕐" color={T.orange} />
         </div>
       )}
 
-      {/* ── Main panels (orders + timeline) ── */}
-      <div style={{ display:"flex", gap:14, padding:"12px 28px 24px", flex:1, minHeight:0, overflow:"hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20, alignItems: "start" }}>
 
-        {/* Orders panel — flexible width */}
-        <div style={{ flex:1, background:T.surface, borderRadius:16, border:`1px solid ${T.border}`, display:"flex", flexDirection:"column", overflow:"hidden", minHeight:260 }}>
-          <div style={{ padding:"12px 16px 8px", borderBottom:`1px solid ${T.border}`, flexShrink:0 }}>
-            <div style={{ fontSize:14, fontWeight:800 }}>📋 פירוט הזמנות{selectedTable ? ` — שולחן ${selectedTable}` : ""}</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{selectedTable ? "לחץ מנה לציר זמן" : "בחר שולחן למעלה"}</div>
+        {/* ── Timeline ── */}
+        <div style={{ ...card(), padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}` }}>
+            <span style={{ fontSize: T.flg, fontWeight: 700 }}>
+              {tableNumber ? `שולחן ${tableNumber} · ` : ""}אירועים
+            </span>
+            <span style={{ fontSize: T.fsm, color: T.muted, marginRight: 8 }}>
+              {events.length} אירועים
+            </span>
           </div>
-          <div style={{ display:"flex", gap:8, padding:"7px 16px 5px", borderBottom:`1px solid ${T.borderSub}`, flexShrink:0 }}>
-            {[["#fbbf24","כוכב"],["#60a5fa","סוס עבודה"],["#d1cdc7","רגיל"]].map(([c,l])=>(
-              <div key={l} style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:T.muted, fontWeight:600 }}>
-                <div style={{ width:9, height:9, borderRadius:2, background:c }} />{l}
-              </div>
-            ))}
-          </div>
-          <div style={{ flex:1, overflowY:"auto" }}>
-            {allItems.length===0 && (
-              <div style={{ padding:"32px 0", textAlign:"center", color:T.muted, fontSize:13 }}>{selectedTable?"אין מנות":"בחר שולחן לצפייה"}</div>
-            )}
-            {allItems.map(item=>(
-              <div key={item.id} onClick={()=>{ setSelectedItem(item); setExpandedEvs(new Set()); }}
-                style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 16px", borderBottom:`1px solid ${T.borderSub}`, cursor:"pointer", background:selectedItem?.id===item.id?T.raised:undefined, transition:"background 0.1s" }}>
-                <div style={{ width:4, height:32, borderRadius:2, background:meColor(item), flexShrink:0 }} />
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:700 }}>{item.quantity>1?`${item.quantity}× `:""}{item.name}</div>
-                  <div style={{ fontSize:10, color:T.muted, marginTop:1 }}>{meLabel(item)}{item.notes?` · ${item.notes}`:""}</div>
-                </div>
-                <div style={{ fontSize:11, fontWeight:700, padding:"2px 7px", borderRadius:6, background:itemStatusColor(item.itemStatus)+"22", color:itemStatusColor(item.itemStatus), flexShrink:0 }}>
-                  {itemStatusLabel(item.itemStatus)}
-                </div>
-                {item.firedAt && (()=>{
-                  const m = diffMin(item.firedAt!, item.doneAt ?? nowIso());
-                  const c = m>15?T.red:m>10?T.orange:T.green;
-                  return <div style={{ fontSize:11, fontWeight:700, padding:"2px 7px", borderRadius:6, background:c+"22", color:c, flexShrink:0 }}>{m} דק׳</div>;
-                })()}
-                <div style={{ color:T.muted, fontSize:12, flexShrink:0 }}>›</div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Timeline panel — narrower: 280px */}
-        <div style={{ width:280, flexShrink:0, background:T.surface, borderRadius:16, border:`1px solid ${T.border}`, display:"flex", flexDirection:"column", overflow:"hidden", minHeight:260 }}>
-          <div style={{ padding:"12px 16px 8px", borderBottom:`1px solid ${T.border}`, flexShrink:0 }}>
-            <div style={{ fontSize:14, fontWeight:800 }}>⏱ ציר זמן</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {selectedItem ? selectedItem.name : "בחר מנה לצפייה"}
-            </div>
-          </div>
-          <div style={{ flex:1, overflowY:"auto", padding:"4px 0 16px" }}>
-            {events.length===0 && (
-              <div style={{ padding:"32px 0", textAlign:"center", color:T.muted, fontSize:13 }}>{selectedItem?"אין נתונים":"בחר מנה לצפייה"}</div>
+          <div style={{ maxHeight: 640, overflowY: "auto", padding: "12px 0" }}>
+            {events.length === 0 && !loading && (
+              <div style={{ textAlign: "center", padding: "40px 20px", color: T.muted, fontSize: T.fmd }}>
+                אין אירועים בטווח הזמן הנבחר
+              </div>
             )}
-            {events.map((ev,idx)=>(
-              <React.Fragment key={idx}>
-                <div style={{ position:"relative" }}>
-                  {idx<events.length-1 && (
-                    <div style={{ position:"absolute", top:expandedEvs.has(idx)?26:20, right:25, width:2, height:"100%", background:T.border, zIndex:0 }} />
-                  )}
-                  <TLEvent ev={ev} expanded={expandedEvs.has(idx)} onToggle={()=>toggleEv(idx)} />
-                </div>
-                {idx<events.length-1 && (()=>{
-                  const pairs: [string,string][] = [
-                    [selectedItem!.createdAt, selectedItem!.firedAt??selectedItem!.doneAt??selectedItem!.servedAt??nowIso()],
-                    [selectedItem!.firedAt??selectedItem!.createdAt, selectedItem!.doneAt??selectedItem!.servedAt??nowIso()],
-                    [selectedItem!.doneAt??selectedItem!.firedAt??selectedItem!.createdAt, selectedItem!.servedAt??nowIso()],
-                    [selectedItem!.servedAt??selectedItem!.doneAt??selectedItem!.createdAt, nowIso()],
-                  ];
-                  const [t1,t2] = pairs[idx] ?? [null,null];
-                  if (!t1||!t2) return null;
-                  const m = diffMin(t1,t2);
-                  const c = m>15?T.red:m>8?T.orange:T.green;
-                  return (
-                    <div style={{ display:"flex", alignItems:"center", gap:5, padding:"0 16px 0 36px", margin:"-2px 0", position:"relative", zIndex:1 }}>
-                      <div style={{ flex:1, height:1, background:T.border }} />
-                      <div style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:999, background:c+"22", color:c, border:`1px solid ${c}33`, whiteSpace:"nowrap" }}>
-                        {m} דק׳{m>15?" ⚠":""}
-                      </div>
-                      <div style={{ flex:1, height:1, background:T.border }} />
+            {events.map((ev, i) => {
+              const cfg = EVENT_CFG[ev.type] ?? { label: ev.type, color: T.muted, icon: "•" };
+              const showDateHeader = i === 0 || fmtDate(events[i - 1].at) !== fmtDate(ev.at);
+              return (
+                <div key={i}>
+                  {showDateHeader && (
+                    <div style={{
+                      padding: "6px 18px",
+                      fontSize: T.fxs, fontWeight: 700, color: T.muted,
+                      letterSpacing: "0.05em", textTransform: "uppercase" as const,
+                      borderBottom: `1px solid ${T.borderSub}`,
+                      marginBottom: 4, marginTop: i > 0 ? 8 : 0,
+                    }}>
+                      {fmtDate(ev.at)}
                     </div>
-                  );
-                })()}
-              </React.Fragment>
-            ))}
+                  )}
+                  <div style={{
+                    display: "flex", alignItems: "flex-start", gap: 12,
+                    padding: "10px 18px",
+                    borderBottom: `1px solid ${T.borderSub}`,
+                    transition: "background 0.12s",
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.background = T.panel)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {/* Timeline dot */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 2 }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: "50%",
+                        background: cfg.color + "22",
+                        border: `1.5px solid ${cfg.color}55`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 14,
+                      }}>
+                        {cfg.icon}
+                      </div>
+                      {i < events.length - 1 && (
+                        <div style={{ width: 1, height: 18, background: T.borderSub, marginTop: 3 }} />
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: T.fmd, fontWeight: 600, color: cfg.color }}>{cfg.label}</span>
+                        {!tableNumber && ev.tableNumber && ev.tableNumber !== "—" && (
+                          <span style={{ ...badge(T.blue) }}>שולחן {ev.tableNumber}</span>
+                        )}
+                        <span style={{ fontSize: T.fsm, color: T.muted, marginRight: "auto" }}>
+                          {fmtTime(ev.at)}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: T.fsm, color: T.sub, marginTop: 2 }}>
+                        {ev.actor !== "מערכת" && <span style={{ color: T.gold, fontWeight: 600 }}>{ev.actor} · </span>}
+                        {ev.detail}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
+        {/* ── Waiters panel ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* AI insights box */}
+          {insights && (
+            <div style={{ ...card(), padding: 16, borderColor: T.purple + "44" }}>
+              <div style={{ fontSize: T.fsm, fontWeight: 800, color: T.purple, marginBottom: 12, letterSpacing: "0.06em" }}>
+                ✨ תובנות AI
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: T.fsm }}>
+                <AiInsight
+                  icon="⏱️"
+                  text={insights.avgSessionMinutes === 0
+                    ? "אין נתוני משך שולחן עדיין"
+                    : `ממוצע שהייה: ${fmtDuration(insights.avgSessionMinutes)} לשולחן`}
+                />
+                <AiInsight
+                  icon="🕐"
+                  text={`שעת השיא: ${insights.busiestHour}:00–${insights.busiestHour + 1}:00`}
+                />
+                <AiInsight
+                  icon={insights.cancellationRatePercent > 10 ? "⚠️" : "✅"}
+                  text={insights.cancellationRatePercent > 10
+                    ? `אחוז ביטול גבוה: ${insights.cancellationRatePercent}% — מומלץ לבדוק`
+                    : `אחוז ביטול תקין: ${insights.cancellationRatePercent}%`}
+                  color={insights.cancellationRatePercent > 10 ? T.orange : T.green}
+                />
+                {insights.avgAmountPerSession > 0 && (
+                  <AiInsight
+                    icon="💰"
+                    text={`ממוצע הכנסה לשולחן: ₪${insights.avgAmountPerSession}`}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Waiters leaderboard */}
+          {insights && insights.topWaiters.length > 0 && (
+            <div style={{ ...card(), padding: 16 }}>
+              <div style={{ fontSize: T.fsm, fontWeight: 800, color: T.gold, marginBottom: 12, letterSpacing: "0.06em" }}>
+                🏆 דירוג מלצרים
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {insights.topWaiters.map((w, idx) => (
+                  <div key={w.id} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "9px 10px", borderRadius: T.rMd,
+                    background: idx === 0 ? T.goldSub : T.panel,
+                    border: `1px solid ${idx === 0 ? T.gold + "33" : T.borderSub}`,
+                  }}>
+                    <div style={{
+                      width: 24, height: 24, borderRadius: "50%",
+                      background: idx === 0 ? T.gold : T.raised,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: T.fsm, fontWeight: 800, color: idx === 0 ? "#000" : T.muted,
+                      flexShrink: 0,
+                    }}>
+                      {idx + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: T.fmd, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                        {w.name}
+                      </div>
+                      <div style={{ fontSize: T.fxs, color: T.muted }}>
+                        {w.ordersCreated} הזמנות · {w.itemsServed} הגשות
+                        {w.totalRevenue > 0 && ` · ₪${Math.round(w.totalRevenue)}`}
+                      </div>
+                    </div>
+                    {idx === 0 && <span style={{ fontSize: 16 }}>🥇</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sessions summary */}
+          {(data?.sessions?.length ?? 0) > 0 && (
+            <div style={{ ...card(), padding: 16 }}>
+              <div style={{ fontSize: T.fsm, fontWeight: 800, color: T.sub, marginBottom: 12, letterSpacing: "0.06em" }}>
+                📅 סשנים אחרונים
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 260, overflowY: "auto" }}>
+                {data!.sessions.slice(0, 20).map(sess => (
+                  <button
+                    key={sess.id}
+                    onClick={() => setTableNumber(sess.tableNumber)}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "8px 10px", borderRadius: T.rMd,
+                      background: tableNumber === sess.tableNumber ? T.goldSub : T.panel,
+                      border: `1px solid ${tableNumber === sess.tableNumber ? T.gold + "44" : T.borderSub}`,
+                      cursor: "pointer", textAlign: "right" as const, direction: "rtl",
+                      transition: "background 0.12s",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: T.fsm, fontWeight: 600, color: T.text }}>
+                        שולחן {sess.tableNumber}
+                      </div>
+                      <div style={{ fontSize: T.fxs, color: T.muted }}>
+                        {fmtDate(sess.closedAt)} · {fmtDuration(sess.durationMinutes)}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.gold }}>
+                      ₪{Math.round(sess.totalAmount)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+/* ── Small helper components ── */
+
+function InsightCard({ label, value, icon, color }: { label: string; value: string; icon: string; color: string }) {
+  return (
+    <div style={{
+      background: T.surface, border: `1px solid ${color}33`, borderRadius: T.rLg,
+      padding: "14px 16px",
+    }}>
+      <div style={{ fontSize: 22, marginBottom: 6 }}>{icon}</div>
+      <div style={{ fontSize: T.f2xl, fontWeight: 800, color }}>{value}</div>
+      <div style={{ fontSize: T.fsm, color: T.muted, marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+function AiInsight({ icon, text, color = T.sub }: { icon: string; text: string; color?: string }) {
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+      <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
+      <span style={{ color, lineHeight: 1.4 }}>{text}</span>
+    </div>
+  );
+}
+
+const selectStyle: React.CSSProperties = {
+  background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd,
+  color: T.text, fontSize: T.fmd, padding: "6px 10px", outline: "none",
+  direction: "rtl",
+};
