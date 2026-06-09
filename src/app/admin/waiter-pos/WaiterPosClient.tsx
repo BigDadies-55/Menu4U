@@ -69,8 +69,8 @@ function fmtAgo(minutes: number): string {
 const LS_REST_KEY = "menu4u_active_restaurant";
 
 // ── Main ─────────────────────────────────────────────────────────────
-export default function WaiterPosClient({ restaurants, waiterName, waiterId: _w }: {
-  restaurants: Restaurant[]; waiterName: string; waiterId?: string;
+export default function WaiterPosClient({ restaurants, waiterName, isWaiter = false, waiterId: _w }: {
+  restaurants: Restaurant[]; waiterName: string; isWaiter?: boolean; waiterId?: string;
 }) {
   const [restaurantId, setRestaurantId] = useState(() => {
     if (typeof window !== "undefined") {
@@ -119,12 +119,13 @@ export default function WaiterPosClient({ restaurants, waiterName, waiterId: _w 
   }, []);
 
   useEffect(() => {
+    if (!isWaiter) return;
     const t = setTimeout(() => {
       if (!document.fullscreenElement)
         document.documentElement.requestFullscreen().catch(() => setShowFsBanner(true));
     }, 300);
     return () => clearTimeout(t);
-  }, []);
+  }, [isWaiter]);
 
   function toggleFullscreen() {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
@@ -168,10 +169,13 @@ export default function WaiterPosClient({ restaurants, waiterName, waiterId: _w 
       const r = await fetch(`/api/admin/restaurants/${restaurantId}/layout`);
       if (r.ok) {
         const d = await r.json();
-        setLayout(d?.version === 2 ? d : null);
+        // API returns { tableLayoutJson: string }
+        const raw = d?.tableLayoutJson;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        setLayout(parsed?.version === 2 ? parsed : null);
         setRoomIdx(0);
       }
-    } catch { /* ignore */ }
+    } catch { setLayout(null); }
   }, [restaurantId]);
 
   useEffect(() => { fetchLayout(); }, [fetchLayout]);
@@ -263,7 +267,7 @@ export default function WaiterPosClient({ restaurants, waiterName, waiterId: _w 
 
   return (
     <div dir="rtl" style={{
-      position: "fixed", inset: 0, zIndex: 400,
+      ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
       background: "#f0f2f5", color: "#111", fontFamily: "inherit",
       overflowY: viewMode === "floor" ? "hidden" : "auto",
       paddingBottom: viewMode === "floor" ? 0 : 110,
@@ -649,23 +653,23 @@ export default function WaiterPosClient({ restaurants, waiterName, waiterId: _w 
           background: "#0d0d0d",
           padding: isMobile ? "8px 12px" : "10px 20px",
           display: "flex", alignItems: "center", gap: 8,
-          minHeight: isMobile ? 38 : 44,
+          minHeight: isMobile ? 44 : 52,
           opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
         }}>
           {currentInsight ? (
             <>
-              <span style={{ fontSize: isMobile ? 15 : 18, flexShrink: 0 }}>
+              <span style={{ fontSize: isMobile ? 18 : 22, flexShrink: 0 }}>
                 {currentInsight.type === "alert" ? "⚠️" : currentInsight.type === "tip" ? "💡" : "ℹ️"}
               </span>
               <span style={{
-                fontSize: isMobile ? 13 : 15, fontWeight: 800,
+                fontSize: isMobile ? 16 : 18, fontWeight: 800,
                 color: INSIGHT_TYPE_COLOR[currentInsight.type],
                 whiteSpace: "nowrap", flexShrink: 0, letterSpacing: "0.01em",
               }}>
                 שולחן {currentInsight.tableNum}:
               </span>
               <span style={{
-                fontSize: isMobile ? 13 : 15, fontWeight: 600,
+                fontSize: isMobile ? 15 : 17, fontWeight: 600,
                 color: INSIGHT_TYPE_DIM[currentInsight.type],
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
               }}>
