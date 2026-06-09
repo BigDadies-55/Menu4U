@@ -25,6 +25,7 @@ export default async function WaiterPosPage() {
     <WaiterPosWrapper
       restaurants={restaurants}
       waiterName={session.user.name ?? session.user.email ?? "מלצר"}
+      isWaiter={role === "WAITER"}
     />
   );
 }

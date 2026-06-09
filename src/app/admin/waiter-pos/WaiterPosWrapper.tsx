@@ -12,6 +12,6 @@ const WaiterPosClient = dynamic(() => import("./WaiterPosClient"), {
   ),
 });
 
-export default function WaiterPosWrapper(props: { restaurants: { id: string; name: string }[]; waiterName: string }) {
+export default function WaiterPosWrapper(props: { restaurants: { id: string; name: string }[]; waiterName: string; isWaiter?: boolean }) {
   return <WaiterPosClient {...props} />;
 }
