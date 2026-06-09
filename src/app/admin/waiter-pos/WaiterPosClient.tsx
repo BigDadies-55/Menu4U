@@ -16,6 +16,8 @@ type TableData = {
   minutesSitting: number;
   activeOrderIds: string[];
   totalAmount: number;
+  orderCount: number;
+  minutesSinceLastOrder: number;
 };
 
 type Insight = {

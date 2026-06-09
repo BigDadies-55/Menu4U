@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-// Ensure the tableStatusOverridesJson column exists
 async function ensureColumn() {
   await prisma.$executeRawUnsafe(
     `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tableStatusOverridesJson" TEXT DEFAULT '{}'`
@@ -30,7 +29,6 @@ export async function GET(req: Request) {
 
   await ensureColumn();
 
-  // Fetch restaurant layout + overrides
   const restaurant = await prisma.$queryRawUnsafe<Array<{ tableLayoutJson: string | null; tableStatusOverridesJson: string | null }>>(
     `SELECT "tableLayoutJson", "tableStatusOverridesJson" FROM "Restaurant" WHERE id = $1`,
     restaurantId
@@ -40,11 +38,9 @@ export async function GET(req: Request) {
 
   const { tableLayoutJson, tableStatusOverridesJson } = restaurant[0];
 
-  // Parse overrides
   let overrides: Record<string, string> = {};
   try { overrides = JSON.parse(tableStatusOverridesJson ?? "{}"); } catch { overrides = {}; }
 
-  // Parse layout
   let layoutTables: Array<{ num: number | string; seats: number }> = [];
   if (tableLayoutJson) {
     try {
@@ -60,17 +56,23 @@ export async function GET(req: Request) {
     } catch { layoutTables = []; }
   }
 
-  // Fetch active orders (not PAID, not CANCELLED)
-  const activeOrders = await prisma.order.findMany({
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+  // Fetch active orders + recently cancelled/paid (last 2h) for richer insight data
+  const allOrders = await prisma.order.findMany({
     where: {
       restaurantId,
-      status: { notIn: ["PAID", "CANCELLED"] },
+      OR: [
+        { status: { notIn: ["PAID", "CANCELLED"] } },
+        { status: { in: ["PAID", "CANCELLED"] }, updatedAt: { gte: twoHoursAgo } },
+      ],
     },
     select: {
       id: true,
       tableNumber: true,
       status: true,
       createdAt: true,
+      updatedAt: true,
       coversCount: true,
       totalAmount: true,
     },
@@ -81,35 +83,50 @@ export async function GET(req: Request) {
 
   const tables = layoutTables.map((t) => {
     const tableNum = String(t.num);
-    const tableOrders = activeOrders.filter(o => (o.tableNumber ?? "") === tableNum);
+    const tableOrders    = allOrders.filter(o => (o.tableNumber ?? "") === tableNum);
+    const activeOrders   = tableOrders.filter(o => o.status !== "PAID" && o.status !== "CANCELLED");
+    const closedOrders   = tableOrders.filter(o => o.status === "PAID" || o.status === "CANCELLED");
 
-    // Determine status
+    // availStatus driven by active (non-paid, non-cancelled) orders + manual overrides
     let availStatus: "occupied" | "free" | "reserved" | "inactive" = "free";
     if (overrides[tableNum] === "inactive") {
       availStatus = "inactive";
     } else if (overrides[tableNum] === "reserved") {
       availStatus = "reserved";
-    } else if (tableOrders.length > 0) {
+    } else if (activeOrders.length > 0) {
       availStatus = "occupied";
     }
 
-    const sittingStart = tableOrders.length > 0
-      ? tableOrders.reduce((earliest, o) => o.createdAt < earliest ? o.createdAt : earliest, tableOrders[0].createdAt).toISOString()
+    const sittingStart = activeOrders.length > 0
+      ? activeOrders.reduce((e, o) => o.createdAt < e ? o.createdAt : e, activeOrders[0].createdAt).toISOString()
       : null;
 
-    const guests = tableOrders.length > 0
-      ? Math.max(...tableOrders.map(o => o.coversCount ?? 0), 0)
+    const guests = activeOrders.length > 0
+      ? Math.max(...activeOrders.map(o => o.coversCount ?? 0), 0)
       : 0;
 
-    const latestOrder = tableOrders.length > 0
-      ? tableOrders[tableOrders.length - 1]
-      : null;
+    const latestActive = activeOrders.length > 0 ? activeOrders[activeOrders.length - 1] : null;
 
     const minutesSitting = sittingStart
       ? Math.floor((now - new Date(sittingStart).getTime()) / 60000)
       : 0;
 
-    const totalAmount = tableOrders.reduce((s, o) => s + (o.totalAmount ?? 0), 0);
+    // orderStatus: latest active status; fallback to latest closed status for insight rules
+    const latestClosed = closedOrders.length > 0
+      ? closedOrders.reduce((a, b) => b.updatedAt > a.updatedAt ? b : a, closedOrders[0])
+      : null;
+    const orderStatus = latestActive?.status ?? latestClosed?.status ?? null;
+
+    const totalAmount = activeOrders.reduce((s, o) => s + (o.totalAmount ?? 0), 0);
+    const orderCount  = tableOrders.length;
+
+    // minutesSinceLastOrder: time since the most recently updated order (any status)
+    const latestAny = tableOrders.length > 0
+      ? tableOrders.reduce((a, b) => b.updatedAt > a.updatedAt ? b : a, tableOrders[0])
+      : null;
+    const minutesSinceLastOrder = latestAny
+      ? Math.floor((now - new Date(latestAny.updatedAt).getTime()) / 60000)
+      : 0;
 
     return {
       tableNum,
@@ -117,10 +134,12 @@ export async function GET(req: Request) {
       availStatus,
       sittingStart,
       guests,
-      orderStatus: latestOrder?.status ?? null,
+      orderStatus,
       minutesSitting,
-      activeOrderIds: tableOrders.map(o => o.id),
+      activeOrderIds: activeOrders.map(o => o.id),
       totalAmount,
+      orderCount,
+      minutesSinceLastOrder,
     };
   });
 
