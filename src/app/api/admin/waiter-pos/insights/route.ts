@@ -1,12 +1,22 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { computeInsights, type TableInput } from "@/lib/waiter-insights";
+import { computeInsights, type TableInput, type CustomRule } from "@/lib/waiter-insights";
 
 async function checkAccess(userId: string, role: string, restaurantId: string): Promise<boolean> {
   if (role === "SUPER_ADMIN") return true;
   const access = await prisma.restaurantUser.findFirst({ where: { userId, restaurantId } });
   return !!access;
+}
+
+async function getCustomRules(restaurantId: string): Promise<CustomRule[]> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ insightRulesJson: string | null }>>(
+      `SELECT "insightRulesJson" FROM "Restaurant" WHERE id = $1`,
+      restaurantId
+    );
+    return JSON.parse(rows[0]?.insightRulesJson ?? "[]");
+  } catch { return []; }
 }
 
 // POST /api/admin/waiter-pos/insights
@@ -24,6 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const insights = computeInsights(tables ?? []);
+  const customRules = await getCustomRules(restaurantId);
+  const insights = computeInsights(tables ?? [], customRules);
   return NextResponse.json({ insights });
 }

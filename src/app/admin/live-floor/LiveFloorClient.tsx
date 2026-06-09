@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { T, btnGhost } from "@/lib/ui";
+import { computeInsights as computeCustom, type CustomRule } from "@/lib/waiter-insights";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface TLItem {
@@ -202,6 +203,7 @@ export default function LiveFloorClient({ restaurants }: { restaurants: { id: st
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedItem, setSelectedItem]   = useState<TLItem | null>(null);
   const [expandedEvs, setExpandedEvs]     = useState<Set<number>>(new Set());
+  const [customRules, setCustomRules]     = useState<CustomRule[]>([]);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
@@ -223,6 +225,14 @@ export default function LiveFloorClient({ restaurants }: { restaurants: { id: st
   }, [rid]);
 
   useEffect(() => {
+    // Fetch custom insight rules for this restaurant
+    fetch(`/api/admin/insight-rules?restaurantId=${rid}`)
+      .then(r => r.ok ? r.json() : { rules: [] })
+      .then(d => setCustomRules(d.rules ?? []))
+      .catch(() => setCustomRules([]));
+  }, [rid]);
+
+  useEffect(() => {
     setLoading(true);
     load();
     timer.current = setInterval(load, 15000);
@@ -232,7 +242,24 @@ export default function LiveFloorClient({ restaurants }: { restaurants: { id: st
   const selectedTableData = tables.find(t => t.tableNumber === selectedTable) ?? null;
   const allItems          = selectedTableData?.orders.flatMap(o => o.items) ?? [];
   const events            = selectedItem ? buildEvents(selectedItem) : [];
-  const insights          = computeInsights(tables);
+  const localInsights     = computeInsights(tables);
+  const customInsights    = computeCustom(
+    tables.map(t => ({
+      tableNum:       t.tableNumber,
+      seats:          t.coversCount + 1,
+      availStatus:    "occupied" as const,
+      minutesSitting: t.ageMin,
+      guests:         t.coversCount,
+      orderStatus:    t.orders[t.orders.length - 1]?.status ?? null,
+    })),
+    customRules,
+  );
+  // Merge: local insights first (item-level), custom rules add any not already covered
+  const coveredTables = new Set(localInsights.map(i => i.tableRef ?? ""));
+  const extraInsights = customInsights
+    .filter(ci => !coveredTables.has(ci.tableNum))
+    .map(ci => ({ kind: ci.type === "alert" ? "alert" as const : ci.type === "tip" ? "upsell" as const : "info" as const, icon: ci.type === "alert" ? "⚠️" : ci.type === "tip" ? "💡" : "ℹ️", title: ci.text, body: "", tableRef: ci.tableNum }));
+  const insights = [...localInsights, ...extraInsights];
 
   function toggleTable(tn: string) {
     if (selectedTable === tn) { setSelectedTable(null); setSelectedItem(null); }

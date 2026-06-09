@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { T, STATUS, type StatusKey } from "@/lib/ui";
+import InsightsFloater from "@/components/admin/InsightsFloater";
+import type { TableInput } from "@/lib/waiter-insights";
 
 // ── Types ──────────────────────────────────────────────────────────
 type TableShape  = "round" | "rect" | "square" | "oval" | "long" | "banquet";
@@ -437,6 +439,30 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
 
   const clockStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
+  const insightTables = useMemo((): TableInput[] => {
+    const now_ = Date.now();
+    const byTable = new Map<string, Order[]>();
+    orders.forEach(o => {
+      if (!o.tableNumber) return;
+      const arr = byTable.get(o.tableNumber) ?? [];
+      arr.push(o);
+      byTable.set(o.tableNumber, arr);
+    });
+    return [...byTable.entries()].map(([tableNum, tOrders]) => {
+      const sorted = [...tOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const last   = sorted[sorted.length - 1];
+      const seats  = layout?.rooms.flatMap(r => r.tables).find(t => String(t.num) === tableNum)?.seats ?? 4;
+      return {
+        tableNum,
+        seats,
+        availStatus: "occupied" as const,
+        minutesSitting: Math.floor((now_ - new Date(sorted[0].createdAt).getTime()) / 60000),
+        guests: last.coversCount ?? 0,
+        orderStatus: last.status,
+      };
+    });
+  }, [orders, layout]);
+
   return (
     <div style={{ height: "calc(100vh - 64px)", background: T.bg, color: T.text, fontFamily: "system-ui,sans-serif", direction: "rtl", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{`
@@ -451,6 +477,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
         <span style={{ fontSize: 13, color: T.sub }}>מנהל משמרת</span>
         <span style={{ flex: 1 }} />
         <span style={{ fontSize: 13, color: T.muted }}>{managerName}</span>
+        <InsightsFloater restaurantId={restaurantId} tables={insightTables} />
         <span style={{ fontSize: 16, fontWeight: 700, color: T.gold, fontVariantNumeric: "tabular-nums" }}>{clockStr}</span>
         {restaurants.length > 1 && (
           <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)} style={{ ...INP, width: "auto" }}>
