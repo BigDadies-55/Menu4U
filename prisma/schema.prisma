@@ -145,6 +145,7 @@ model Restaurant {
   ordersEnabled   Boolean @default(false)
   tableLayoutJson String?
   kdsView       String   @default("STATION_DARK")
+  adminPalette  String   @default("dark")
   customDomain  String?
   copyright     String?
   language      String    @default("he")

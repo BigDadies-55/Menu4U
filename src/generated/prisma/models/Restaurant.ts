@@ -43,7 +43,7 @@ export type RestaurantMinAggregateOutputType = {
   ordersEnabled: boolean | null
   tableLayoutJson: string | null
   kdsView: string | null
-  adminPalette: string
+  adminPalette: string | null
   customDomain: string | null
   copyright: string | null
   language: string | null
@@ -82,7 +82,7 @@ export type RestaurantMaxAggregateOutputType = {
   ordersEnabled: boolean | null
   tableLayoutJson: string | null
   kdsView: string | null
-  adminPalette: string
+  adminPalette: string | null
   customDomain: string | null
   copyright: string | null
   language: string | null
@@ -162,6 +162,7 @@ export type RestaurantMinAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -200,6 +201,7 @@ export type RestaurantMaxAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -238,6 +240,7 @@ export type RestaurantCountAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -409,6 +412,7 @@ export type RestaurantWhereInput = {
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -458,6 +462,7 @@ export type RestaurantOrderByWithRelationInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrderInput | Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -510,6 +515,7 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -559,6 +565,7 @@ export type RestaurantOrderByWithAggregationInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrderInput | Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -603,6 +610,7 @@ export type RestaurantScalarWhereWithAggregatesInput = {
   ordersEnabled?: Prisma.BoolWithAggregatesFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   language?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
@@ -963,6 +971,7 @@ export type RestaurantCountOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -1001,6 +1010,7 @@ export type RestaurantMaxOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -1039,6 +1049,7 @@ export type RestaurantMinOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -1389,6 +1400,7 @@ export type RestaurantScalarWhereInput = {
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -3924,7 +3936,7 @@ export type RestaurantSelectScalar = {
   updatedAt?: boolean
 }
 
-export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "instagram" | "facebook" | "whatsapp" | "tripadvisor" | "googleReview" | "showPhonePublic" | "showAddressPublic" | "groupId" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
+export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "adminPalette" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "instagram" | "facebook" | "whatsapp" | "tripadvisor" | "googleReview" | "showPhonePublic" | "showAddressPublic" | "groupId" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
 export type RestaurantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   group?: boolean | Prisma.Restaurant$groupArgs<ExtArgs>
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
@@ -3980,6 +3992,7 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     ordersEnabled: boolean
     tableLayoutJson: string | null
     kdsView: string
+    adminPalette: string
     customDomain: string | null
     copyright: string | null
     language: string
@@ -4449,6 +4462,7 @@ export interface RestaurantFieldRefs {
   readonly ordersEnabled: Prisma.FieldRef<"Restaurant", 'Boolean'>
   readonly tableLayoutJson: Prisma.FieldRef<"Restaurant", 'String'>
   readonly kdsView: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly adminPalette: Prisma.FieldRef<"Restaurant", 'String'>
   readonly customDomain: Prisma.FieldRef<"Restaurant", 'String'>
   readonly copyright: Prisma.FieldRef<"Restaurant", 'String'>
   readonly language: Prisma.FieldRef<"Restaurant", 'String'>
