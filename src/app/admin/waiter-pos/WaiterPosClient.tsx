@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string };
@@ -114,6 +115,7 @@ export default function WaiterPosClient({
   const [clock, setClock]                     = useState("");
 
   const lastInsightFetch = useRef(0);
+  const router = useRouter();
 
   // Persist restaurant
   useEffect(() => {
@@ -230,7 +232,11 @@ export default function WaiterPosClient({
   void tick;
 
   return (
-    <div dir="rtl" style={{ minHeight: "100vh", background: "#f0f2f5", color: "#111", fontFamily: "inherit", paddingBottom: 100 }}>
+    <div dir="rtl" style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      background: "#f0f2f5", color: "#111", fontFamily: "inherit",
+      overflowY: "auto", paddingBottom: 100,
+    }}>
 
       {/* ══ TOP BAR ══ */}
       <div style={{
@@ -276,6 +282,18 @@ export default function WaiterPosClient({
             background: "#f5f5f7", border: "1px solid #e0e0e0",
             borderRadius: 8, padding: "5px 11px",
           }}>{clock}</div>
+
+          <button
+            onClick={() => router.push("/admin")}
+            style={{
+              background: "#f5f5f7", border: "1px solid #e0e0e0",
+              borderRadius: 8, padding: "6px 14px",
+              fontSize: 13, fontWeight: 600, color: "#555",
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+            }}
+          >
+            ← יציאה
+          </button>
         </div>
       </div>
 
