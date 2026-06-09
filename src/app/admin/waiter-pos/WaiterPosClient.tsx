@@ -117,6 +117,13 @@ export default function WaiterPosClient({
 
   const lastInsightFetch = useRef(0);
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    function check() { setIsMobile(window.innerWidth < 640); }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFsBanner, setShowFsBanner] = useState(false);
 
@@ -617,56 +624,90 @@ export default function WaiterPosClient({
       )}
 
       {/* ══ BOTTOM KPI BAR ══ */}
-      <div style={{ position: "fixed", bottom: 0, right: 0, left: 0, background: "#fff", borderTop: "1px solid #dde1e8", zIndex: 100, direction: "rtl" }}>
+      <div style={{ position: "fixed", bottom: 0, right: 0, left: 0, background: "#fff", borderTop: "1px solid #dde1e8", zIndex: 450, direction: "rtl" }}>
+
         {/* Segment bar */}
         <div style={{ display: "flex", height: 3, overflow: "hidden" }}>
-          <div style={{ flex: occupiedCount,  background: "#ef4444", transition: "flex 0.4s" }} />
-          <div style={{ flex: reservedCount,  background: "#7c3aed", transition: "flex 0.4s" }} />
-          <div style={{ flex: freeCount,      background: "#22c55e", transition: "flex 0.4s" }} />
+          <div style={{ flex: occupiedCount,             background: "#ef4444", transition: "flex 0.4s" }} />
+          <div style={{ flex: reservedCount,             background: "#7c3aed", transition: "flex 0.4s" }} />
+          <div style={{ flex: freeCount,                 background: "#22c55e", transition: "flex 0.4s" }} />
           <div style={{ flex: Math.max(inactiveCount, 0.01), background: "#e5e7eb", transition: "flex 0.4s" }} />
         </div>
 
-        {/* KPI row */}
-        <div style={{ display: "flex", gap: 8, alignItems: "stretch", padding: "10px 16px", overflowX: "auto" }}>
-          <KpiCard label="תפוס"  value={occupiedCount} color="#ef4444" bg="#fef2f2" />
-          <KpiCard label="שמור"  value={reservedCount} color="#7c3aed" bg="#f5f0ff" />
-          <KpiCard label="פנוי"  value={freeCount}     color="#22c55e" bg="#f0fdf4" />
-          <KpiCard label="לא פעיל" value={inactiveCount} color="#9ca3af" bg="#f9fafb" />
-          <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />
-          <KpiCard label="סועדים" value={totalDiners} color="#3b82f6" bg="#eff6ff" />
-          <KpiCard label="דורשים תשומת לב" value={alertsCount} color="#f59e0b" bg="#fffbeb" />
-          <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />
+        {/* ── MOBILE: insight strip above KPI row ── */}
+        {isMobile && currentInsight && (
+          <div style={{
+            background: "linear-gradient(135deg, #6c3fc5 0%, #9b59e8 100%)",
+            padding: "7px 14px",
+            display: "flex", alignItems: "center", gap: 8,
+            opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
+          }}>
+            <span style={{ fontSize: 15, flexShrink: 0 }}>
+              {INSIGHT_ICON[currentInsight.type] ?? "⚠️"}
+            </span>
+            <span style={{
+              fontSize: 12, fontWeight: 700, color: "#ffe0ff",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              ש׳{currentInsight.tableNum}
+            </span>
+            <span style={{
+              fontSize: 12, color: "#f0e8ff", fontWeight: 500,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
+            }}>
+              {currentInsight.text}
+            </span>
+            {insights.length > 1 && (
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", flexShrink: 0 }}>
+                {insightIdx + 1}/{insights.length}
+              </span>
+            )}
+          </div>
+        )}
 
-          {/* Critical insight rotator */}
-          {currentInsight && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px 0 12px", flex: 1, minWidth: 0 }}>
-              <div style={{
-                background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6,
-                padding: "3px 10px", fontSize: 17, fontWeight: 700, color: "#dc2626",
-                whiteSpace: "nowrap", flexShrink: 0,
-                opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
-              }}>
-                {INSIGHT_ICON[currentInsight.type] ?? "⚠️"} שולחן {currentInsight.tableNum}
-              </div>
-              <div style={{
-                fontSize: 17, color: "#374151", fontWeight: 500, lineHeight: 1.35,
-                overflow: "hidden", display: "-webkit-box",
-                WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
-                opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
-              }}>
-                {currentInsight.text}
-              </div>
-            </div>
-          )}
-          {!currentInsight && insightLoading && (
-            <div style={{ display: "flex", alignItems: "center", padding: "0 12px", color: "#aaa", fontSize: 13 }}>
-              מנתח תובנות AI...
-            </div>
-          )}
-          {!currentInsight && !insightLoading && tables.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", padding: "0 12px", color: "#ccc", fontSize: 13 }}>
-              אין תובנות כרגע
-            </div>
+        {/* KPI row */}
+        <div style={{
+          display: "flex", gap: isMobile ? 5 : 8, alignItems: "stretch",
+          padding: isMobile ? "6px 10px" : "10px 16px",
+          overflowX: "auto",
+        }}>
+          <KpiCard label="תפוס"    value={occupiedCount} color="#ef4444" bg="#fef2f2" small={isMobile} />
+          <KpiCard label="שמור"    value={reservedCount} color="#7c3aed" bg="#f5f0ff" small={isMobile} />
+          <KpiCard label="פנוי"    value={freeCount}     color="#22c55e" bg="#f0fdf4" small={isMobile} />
+          <KpiCard label="לא פעיל" value={inactiveCount} color="#9ca3af" bg="#f9fafb" small={isMobile} />
+          <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />
+          <KpiCard label="סועדים"          value={totalDiners}  color="#3b82f6" bg="#eff6ff" small={isMobile} />
+          <KpiCard label="דורשים תשומת לב" value={alertsCount}  color="#f59e0b" bg="#fffbeb" small={isMobile} />
+
+          {/* Desktop: insight inline */}
+          {!isMobile && (
+            <>
+              <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />
+              {currentInsight ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px 0 12px", flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6,
+                    padding: "3px 10px", fontSize: 17, fontWeight: 700, color: "#dc2626",
+                    whiteSpace: "nowrap", flexShrink: 0,
+                    opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
+                  }}>
+                    {INSIGHT_ICON[currentInsight.type] ?? "⚠️"} שולחן {currentInsight.tableNum}
+                  </div>
+                  <div style={{
+                    fontSize: 17, color: "#374151", fontWeight: 500, lineHeight: 1.35,
+                    overflow: "hidden", display: "-webkit-box",
+                    WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
+                    opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
+                  }}>
+                    {currentInsight.text}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", padding: "0 12px", color: insightLoading ? "#aaa" : "#ccc", fontSize: 13 }}>
+                  {insightLoading ? "מנתח תובנות AI..." : "אין תובנות כרגע"}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -690,15 +731,17 @@ export default function WaiterPosClient({
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────
-function KpiCard({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+function KpiCard({ label, value, color, bg, small }: { label: string; value: number; color: string; bg: string; small?: boolean }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      borderRadius: 10, padding: "8px 14px", minWidth: 64,
-      background: bg, borderTop: `3px solid ${color}`,
+      borderRadius: small ? 8 : 10,
+      padding: small ? "4px 8px" : "8px 14px",
+      minWidth: small ? 44 : 64,
+      background: bg, borderTop: `${small ? 2 : 3}px solid ${color}`,
     }}>
-      <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color, marginBottom: 2 }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 600, color: "#888", whiteSpace: "nowrap" }}>{label}</div>
+      <div style={{ fontSize: small ? 16 : 22, fontWeight: 800, lineHeight: 1, color, marginBottom: 2 }}>{value}</div>
+      <div style={{ fontSize: small ? 9 : 10, fontWeight: 600, color: "#888", whiteSpace: "nowrap" }}>{label}</div>
     </div>
   );
 }
