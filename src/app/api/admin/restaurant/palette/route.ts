@@ -14,8 +14,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const { restaurantId, palette } = body as { restaurantId?: string; palette?: string };
+  let body: { restaurantId?: string; palette?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const { restaurantId, palette } = body;
 
   if (!restaurantId || !palette) {
     return NextResponse.json({ error: "restaurantId and palette are required" }, { status: 400 });
@@ -25,7 +30,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Invalid palette" }, { status: 400 });
   }
 
-  // SUPER_ADMIN and ADMIN can update any restaurant
+  // OWNER / SHIFT_MANAGER: verify they belong to this restaurant
   if (!["SUPER_ADMIN", "ADMIN"].includes(role)) {
     const link = await prisma.restaurantUser.findFirst({
       where: { userId: session.user.id, restaurantId },
@@ -33,10 +38,18 @@ export async function PATCH(req: NextRequest) {
     if (!link) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await prisma.restaurant.update({
-    where: { id: restaurantId },
-    data: { adminPalette: palette },
-  });
+  try {
+    // Use raw SQL so we degrade gracefully if the column doesn't exist yet
+    await prisma.$executeRaw`
+      ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "adminPalette" TEXT NOT NULL DEFAULT 'dark'
+    `;
+    await prisma.$executeRaw`
+      UPDATE "Restaurant" SET "adminPalette" = ${palette} WHERE id = ${restaurantId}
+    `;
+  } catch (err) {
+    console.error("[palette] update failed", err);
+    return NextResponse.json({ error: "שגיאה בשמירה" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
