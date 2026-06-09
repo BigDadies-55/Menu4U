@@ -105,13 +105,13 @@ const GROUPS: NavGroup[] = [
     waiterHide: true, displayHide: true,
     items: [
       { href: "/admin/restaurants", label: "מסעדות",       I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
-      { href: "/admin/groups",      label: "רשתות 🏢",      I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
+      { href: "/admin/groups",      label: "רשתות",         I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
       { href: "/admin/menus",       label: "תפריטים",      I: Ic.Menus,      waiterHide: true, displayHide: true },
       { href: "/admin/users",       label: "משתמשים",      I: Ic.Users,      adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/logs",        label: "לוגים",         I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,   adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,   waiterHide: true, displayHide: true },
-      { href: "/admin/appearance",  label: "מראה 🎨",        I: Ic.Settings,   ownerOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/appearance",  label: "מראה",           I: Ic.Settings,   ownerOnly: true,  waiterHide: true, displayHide: true },
     ],
   },
   {
@@ -120,14 +120,14 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
       { href: "/admin/cashier",        label: "קאשייר",             I: Ic.Cashier,   displayHide: true },
-      { href: "/admin/waiter-pos",      label: "מלצר POS 🍽️",        I: Ic.Orders,    displayHide: true },
-      { href: "/admin/shift-manager",   label: "מנהל משמרת 🎛️",     I: Ic.Stats,     displayHide: true, waiterHide: true },
-      { href: "/admin/live-floor",       label: "מפת שולחנות חיה 🗺️",  I: Ic.Layout,    displayHide: true, waiterHide: true, ownerOnly: true },
-      { href: "/admin/table-timeline",  label: "ציר זמן שולחנות 🗂️", I: Ic.TableView, displayHide: true, waiterHide: true, ownerOnly: true },
+      { href: "/admin/waiter-pos",      label: "מלצר POS",           I: Ic.Orders,    displayHide: true },
+      { href: "/admin/shift-manager",   label: "מנהל משמרת",         I: Ic.Stats,     displayHide: true, waiterHide: true },
+      { href: "/admin/live-floor",       label: "מפת שולחנות חיה",   I: Ic.Layout,    displayHide: true, waiterHide: true, ownerOnly: true },
+      { href: "/admin/table-timeline",  label: "ציר זמן שולחנות",   I: Ic.TableView, displayHide: true, waiterHide: true, ownerOnly: true },
       { href: "/admin/orders/stats",    label: "סטטיסטיקות",         I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
-      { href: "/admin/loyalty",        label: "מועדון לקוחות ⭐", I: Ic.Loyalty,   displayHide: true },
-      { href: "/admin/crm",            label: "קשרי לקוחות 📱",   I: Ic.Customers, displayHide: true },
+      { href: "/admin/loyalty",        label: "מועדון לקוחות",    I: Ic.Loyalty,   displayHide: true },
+      { href: "/admin/crm",            label: "קשרי לקוחות",      I: Ic.Customers, displayHide: true },
     ],
   },
   {
@@ -657,6 +657,7 @@ export default function Sidebar({
                   marginBottom: 10,
                 }}
               >
+                <span style={{ opacity: 0.7 }}><Ic.Dashboard /></span>
                 {STANDALONE.label}
               </Link>
             )}
@@ -753,6 +754,15 @@ export default function Sidebar({
                                 transition: "all 0.12s",
                               }}
                             >
+                              <span style={{
+                                width: 24, height: 24, borderRadius: 6,
+                                background: active ? T.goldSub : T.panel,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0,
+                                color: active ? T.gold : T.muted,
+                              }}>
+                                <item.I />
+                              </span>
                               {item.label}
                             </Link>
 
