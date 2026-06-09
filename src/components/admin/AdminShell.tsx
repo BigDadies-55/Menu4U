@@ -62,6 +62,8 @@ export default function AdminShell({
     setPwLoading(false);
   }
 
+  const isWaiter = user.role === "WAITER";
+
   return (
     <div
       className="min-h-screen"
@@ -72,23 +74,25 @@ export default function AdminShell({
       }}
       dir="rtl"
     >
-      <Sidebar
-        user={user} kdsView={kdsView}
-        onChangePassword={openPasswordModal}
-        adminPalette={adminPalette}
-        siteLogo={siteLogo}
-        siteName={siteName}
-        adminSidebarBg={adminSidebarBg}
-        adminSidebarAccent={adminSidebarAccent}
-        adminSidebarTextColor={adminSidebarTextColor}
-        favorites={favorites}
-        onToggleFavorite={toggleFavorite}
-      />
+      {!isWaiter && (
+        <Sidebar
+          user={user} kdsView={kdsView}
+          onChangePassword={openPasswordModal}
+          adminPalette={adminPalette}
+          siteLogo={siteLogo}
+          siteName={siteName}
+          adminSidebarBg={adminSidebarBg}
+          adminSidebarAccent={adminSidebarAccent}
+          adminSidebarTextColor={adminSidebarTextColor}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+        />
+      )}
 
       <main
         className="overflow-x-hidden overflow-y-auto flex flex-col min-h-screen"
         style={{
-          marginRight: "var(--sidebar-w, 52px)",
+          marginRight: isWaiter ? 0 : "var(--sidebar-w, 52px)",
           color: adminContentTextColor,
         }}
       >
