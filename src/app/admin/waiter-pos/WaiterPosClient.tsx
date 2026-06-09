@@ -574,7 +574,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
       {/* ══ FLOOR VIEW ══ */}
       {viewMode === "floor" && (
-        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: isMobile ? 96 : 120 }}>
           <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", background: "#e8eaf0" }}>
             {!layout ? (
               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: 14 }}>

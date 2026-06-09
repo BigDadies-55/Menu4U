@@ -71,6 +71,8 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
     setPwLoading(false);
   }
 
+  const isWaiter = user.role === "WAITER";
+
   return (
     <div
       className="min-h-screen"
@@ -83,28 +85,30 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
       dir="rtl"
     >
 
-      <Sidebar
-        user={user} kdsView={kdsView}
-        pinned={pinned} onTogglePin={togglePin}
-        isOpen={sidebarOpen}
-        onOpen={() => setSidebarOpen(true)}
-        onClose={() => setSidebarOpen(false)}
-        onChangePassword={openPasswordModal}
-        adminPalette={adminPalette}
-        siteLogo={siteLogo}
-        siteName={siteName}
-        adminSidebarBg={adminSidebarBg}
-        adminSidebarAccent={adminSidebarAccent}
-        adminSidebarTextColor={adminSidebarTextColor}
-        favorites={favorites}
-        onToggleFavorite={toggleFavorite}
-      />
+      {!isWaiter && (
+        <Sidebar
+          user={user} kdsView={kdsView}
+          pinned={pinned} onTogglePin={togglePin}
+          isOpen={sidebarOpen}
+          onOpen={() => setSidebarOpen(true)}
+          onClose={() => setSidebarOpen(false)}
+          onChangePassword={openPasswordModal}
+          adminPalette={adminPalette}
+          siteLogo={siteLogo}
+          siteName={siteName}
+          adminSidebarBg={adminSidebarBg}
+          adminSidebarAccent={adminSidebarAccent}
+          adminSidebarTextColor={adminSidebarTextColor}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+        />
+      )}
 
       {/* Main — offset right so content is never under the sidebar */}
       <main
         className="overflow-auto flex flex-col min-h-screen"
         style={{
-          marginRight: `var(--sidebar-w, ${SIDEBAR_PINNED}px)`,
+          marginRight: isWaiter ? 0 : `var(--sidebar-w, ${SIDEBAR_PINNED}px)`,
           color: adminContentTextColor,
         }}
       >
