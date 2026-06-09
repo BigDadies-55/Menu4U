@@ -204,11 +204,14 @@ export default function Sidebar({
   /* ── Floating panels ── */
   const [favPanelOpen,    setFavPanelOpen]    = useState(false);
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+  const [userPanelOpen,   setUserPanelOpen]   = useState(false);
   const [favBtnFromBottom,    setFavBtnFromBottom]    = useState(0);
   const [searchBtnFromBottom, setSearchBtnFromBottom] = useState(0);
+  const [userBtnFromBottom,   setUserBtnFromBottom]   = useState(0);
 
   const favBtnRef      = useRef<HTMLButtonElement>(null);
   const searchBtnRef   = useRef<HTMLButtonElement>(null);
+  const userBtnRef     = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Accordion groups (all start collapsed) ── */
@@ -376,10 +379,24 @@ export default function Sidebar({
   function closeSearchPanel() { setSearchPanelOpen(false); }
   function toggleSearchPanel() { searchPanelOpen ? closeSearchPanel() : openSearchPanel(); }
 
+  function openUserPanel() {
+    setDrawerOpen(false);
+    setFavPanelOpen(false);
+    setSearchPanelOpen(false);
+    if (userBtnRef.current) {
+      const rect = userBtnRef.current.getBoundingClientRect();
+      setUserBtnFromBottom(window.innerHeight - rect.bottom);
+    }
+    setUserPanelOpen(true);
+  }
+  function closeUserPanel() { setUserPanelOpen(false); }
+  function toggleUserPanel() { userPanelOpen ? closeUserPanel() : openUserPanel(); }
+
   function closeAll() {
     setDrawerOpen(false);
     setFavPanelOpen(false);
     setSearchPanelOpen(false);
+    setUserPanelOpen(false);
   }
 
   function navigateSearch(href: string) {
@@ -393,7 +410,7 @@ export default function Sidebar({
     setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));
   }
 
-  const overlayOpen     = drawerOpen || favPanelOpen || searchPanelOpen;
+  const overlayOpen     = drawerOpen || favPanelOpen || searchPanelOpen || userPanelOpen;
   const drawerTranslate = drawerOpen ? "translateX(0)" : `translateX(${drawerW + 60}px)`;
 
   const favSet       = new Set(favorites.map(f => f.href));
@@ -533,20 +550,21 @@ export default function Sidebar({
 
           {/* User */}
           <button
-            onClick={() => onChangePassword?.()}
+            ref={userBtnRef}
+            onClick={toggleUserPanel}
             title={`${user.name ?? user.email ?? ""} · ${ROLE_LABELS[user.role]}`}
             style={{
-              width: 40, height: 40, borderRadius: 8,
+              width: 40, height: 40, borderRadius: "50%",
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", border: "none",
-              color: T.sub,
-              background: "transparent",
-              transition: "background 0.15s, color 0.15s",
+              cursor: "pointer",
+              border: `1px solid ${T.border}`,
+              background: userPanelOpen ? T.goldSub : "transparent",
+              color: userPanelOpen ? T.gold : T.sub,
+              fontSize: 12, fontWeight: 700, letterSpacing: "0.03em",
+              transition: "background 0.15s, color 0.15s, border-color 0.15s",
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
+            {userInitials}
           </button>
         </div>
       </aside>
@@ -1074,6 +1092,74 @@ export default function Sidebar({
               </button>
             ))
           )}
+        </div>
+      </div>
+
+      {/* ══════════ USER PANEL ══════════ */}
+      <div
+        style={{
+          position: "fixed",
+          right: 52,
+          bottom: userBtnFromBottom,
+          width: 220,
+          background: T.surface,
+          border: `1px solid ${T.border}`,
+          borderRadius: "12px 0 0 12px",
+          zIndex: 360,
+          display: "flex", flexDirection: "column",
+          transform: userPanelOpen ? "translateX(0)" : "translateX(240px)",
+          transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+          boxShadow: "-6px 4px 24px rgba(0,0,0,0.4)",
+          overflow: "hidden",
+          pointerEvents: userPanelOpen ? "auto" : "none",
+          visibility: userPanelOpen ? "visible" : "hidden",
+          direction: "rtl",
+        }}
+      >
+        {/* User info header */}
+        <div style={{
+          padding: "12px 14px 10px",
+          borderBottom: `1px solid ${T.border}`,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {user.name ?? user.email ?? ""}
+          </div>
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+            {ROLE_LABELS[user.role]}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ padding: "6px 8px" }}>
+          {onChangePassword && (
+            <button
+              onClick={() => { closeUserPanel(); onChangePassword(); }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 8px", borderRadius: 7,
+                fontSize: 13, color: T.sub,
+                background: "transparent", border: "none",
+                cursor: "pointer", textAlign: "right" as const,
+                transition: "all 0.12s",
+              }}
+              className="nav-item-link"
+            >
+              🔑 שינוי סיסמה
+            </button>
+          )}
+          <button
+            onClick={() => { closeUserPanel(); signOut({ callbackUrl: "/login" }); }}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", gap: 8,
+              padding: "8px 8px", borderRadius: 7,
+              fontSize: 13, color: T.red,
+              background: "transparent", border: "none",
+              cursor: "pointer", textAlign: "right" as const,
+              transition: "all 0.12s",
+            }}
+          >
+            ⬅ יציאה
+          </button>
         </div>
       </div>
     </>
