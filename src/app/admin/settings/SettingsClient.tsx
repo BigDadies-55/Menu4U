@@ -1200,7 +1200,26 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               })}
             </div>
 
-            <div style={{ fontSize: 12, color: T.muted }}>השינוי ייכנס לתוקף בפעם הבאה שתיכנס לממשק — לחץ "שמור" בתחתית הדף כדי לשמור.</div>
+            {/* Save bar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12,
+              borderTop: `1px solid ${T.border}`, padding: "14px 0 0",
+            }}>
+              <button onClick={save} disabled={saving} style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                background: "linear-gradient(135deg,#8B6914,#C9A84C)",
+                color: "#fff", fontSize: 14, fontWeight: 700,
+                padding: "10px 24px", borderRadius: 8, border: "none", cursor: "pointer",
+                opacity: saving ? 0.6 : 1,
+              }}>
+                {saving ? "שומר..." : "💾 שמור שינויים"}
+              </button>
+              {saved && (
+                <span style={{ color: T.green, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  נשמר בהצלחה!
+                </span>
+              )}
+            </div>
           </div>
         )}
 
