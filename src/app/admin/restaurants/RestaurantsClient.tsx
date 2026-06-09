@@ -82,8 +82,7 @@ const emptyForm = {
 /* ── Solid primary button style ── */
 const BTN_PRIMARY = {
   background: T.gold,
-  color: "#000",
-  boxShadow: "0 2px 8px rgba(201,168,76,0.35)",
+  color: "#fff",
 } as const;
 
 /* ── Dark input style ── */

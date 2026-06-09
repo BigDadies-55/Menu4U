@@ -682,12 +682,12 @@ function OrderTab({ menu, catIdx, setCatIdx, menuSearch, setMenuSearch, displayI
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", paddingTop: 4 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: T.gold }}>₪{item.price.toFixed(0)}</span>
                   {cartQty === 0 ? (
-                    <button onClick={() => addToCart(item)} style={{ width: 26, height: 26, borderRadius: "50%", background: T.gold, color: "#000", border: "none", cursor: "pointer", fontSize: 18, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                    <button onClick={() => addToCart(item)} style={{ width: 26, height: 26, borderRadius: "50%", background: T.gold, color: "#fff", border: "none", cursor: "pointer", fontSize: 18, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                       <button onClick={() => changeQty(item.id, addCourse, -1)} style={{ width: 22, height: 22, borderRadius: "50%", background: T.raised, color: T.text, border: `1px solid ${T.border}`, cursor: "pointer", fontSize: 13 }}>−</button>
                       <span style={{ fontSize: 13, fontWeight: 700, minWidth: 14, textAlign: "center" as const }}>{cartQty}</span>
-                      <button onClick={() => changeQty(item.id, addCourse, 1)} style={{ width: 22, height: 22, borderRadius: "50%", background: T.gold, color: "#000", border: "none", cursor: "pointer", fontSize: 13 }}>+</button>
+                      <button onClick={() => changeQty(item.id, addCourse, 1)} style={{ width: 22, height: 22, borderRadius: "50%", background: T.gold, color: "#fff", border: "none", cursor: "pointer", fontSize: 13 }}>+</button>
                     </div>
                   )}
                 </div>

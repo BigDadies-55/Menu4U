@@ -470,7 +470,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
             flex: 1, padding: "9px 0", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600,
             cursor: "pointer",
             background: tab === t.k ? T.gold : "transparent",
-            color: tab === t.k ? "#000" : T.sub,
+            color: tab === t.k ? "#fff" : T.sub,
           }}>{t.label}</button>
         ))}
       </div>
@@ -486,7 +486,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                   <button key={t} onClick={() => setSendTarget(t)} style={{
                     padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
                     background: sendTarget === t ? T.gold : "transparent",
-                    color: sendTarget === t ? "#000" : T.sub,
+                    color: sendTarget === t ? "#fff" : T.sub,
                   }}>
                     {t === "all" ? `לכולם (${members.length})` : `לנבחרים (${selectedIds.size})`}
                   </button>
@@ -514,7 +514,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               disabled={sending || !sendMsg.trim() || (sendTarget === "selected" && selectedIds.size === 0)}
               style={{
                 marginTop: 12, padding: "9px 24px", borderRadius: 8, border: "none",
-                background: T.gold, color: "#000", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                background: T.gold, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
                 opacity: (sending || !sendMsg.trim()) ? 0.5 : 1,
               }}>
               {sending ? "שולח..." : `📤 שלח ל-${sendTarget === "all" ? members.length : selectedIds.size} חברים`}
@@ -612,7 +612,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
         <div>
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
             <button onClick={() => { setShowForm(true); setEditCamp(null); setForm({ name: "", type: "SCHEDULED", message: "", scheduleConfig: {} }); }}
-              style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: T.gold, color: "#000", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               + קמפיין חדש
             </button>
           </div>
@@ -651,7 +651,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button onClick={handleSaveCampaign} disabled={formSaving || !form.name.trim() || !form.message.trim()}
-                    style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: T.gold, color: "#000", fontWeight: 700, cursor: "pointer", opacity: formSaving ? 0.6 : 1 }}>
+                    style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 700, cursor: "pointer", opacity: formSaving ? 0.6 : 1 }}>
                     {formSaving ? "שומר..." : "שמור"}
                   </button>
                   <button onClick={() => { setShowForm(false); setEditCamp(null); }}
@@ -736,7 +736,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               </div>
               <button
                 onClick={() => fetchStats(statsFrom || undefined, statsTo || undefined)}
-                style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: T.gold, color: "#000", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
                 סנן
               </button>
               {(statsFrom || statsTo) && (

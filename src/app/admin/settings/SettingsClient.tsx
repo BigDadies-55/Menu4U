@@ -903,7 +903,7 @@ function PasswordPolicyTab() {
       {err && <div style={{ color: T.red, fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
       <button onClick={handleSave} disabled={saving}
-        style={{ background: saving ? T.muted : T.gold, color: "#000", border: "none", padding: "12px 32px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", minWidth: 160 }}>
+        style={{ background: saving ? T.muted : T.gold, color: "#fff", border: "none", padding: "12px 32px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", minWidth: 160 }}>
         {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור מדיניות"}
       </button>
     </div>

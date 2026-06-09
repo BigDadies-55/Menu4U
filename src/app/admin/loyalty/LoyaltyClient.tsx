@@ -168,14 +168,13 @@ const DARK_INPUT: React.CSSProperties = {
 
 const BTN_PRIMARY: React.CSSProperties = {
   background: T.gold,
-  color: "#000",
+  color: "#fff",
   border: "none",
   borderRadius: 8,
   padding: "8px 18px",
   fontWeight: 600,
   fontSize: 14,
   cursor: "pointer",
-  boxShadow: "0 2px 8px rgba(201,168,76,0.35)",
 };
 
 const BTN_SECONDARY: React.CSSProperties = {
