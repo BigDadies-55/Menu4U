@@ -657,7 +657,6 @@ export default function Sidebar({
                   marginBottom: 10,
                 }}
               >
-                <span style={{ opacity: 0.7 }}><Ic.Dashboard /></span>
                 {STANDALONE.label}
               </Link>
             )}
@@ -754,15 +753,6 @@ export default function Sidebar({
                                 transition: "all 0.12s",
                               }}
                             >
-                              <span style={{
-                                width: 24, height: 24, borderRadius: 6,
-                                background: active ? T.goldSub : T.panel,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                flexShrink: 0,
-                                color: active ? T.gold : T.muted,
-                              }}>
-                                <item.I />
-                              </span>
                               {item.label}
                             </Link>
 
