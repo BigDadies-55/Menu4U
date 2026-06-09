@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { T } from "@/lib/ui";
+import { T, ADMIN_PALETTES, ADMIN_PALETTE_LABELS } from "@/lib/ui";
 
 const DARK_INPUT: React.CSSProperties = {
   background:   T.overlay,
@@ -26,7 +26,7 @@ type Config = {
   adminTopBarBg: string | null; adminTopBarTextColor: string;
 };
 
-type TopTab = "settings" | "security" | "advanced";
+type TopTab = "settings" | "security" | "advanced" | "appearance";
 type AdvTab = "backup" | "restore" | "clear";
 
 /* ─── BackupJSON type ────────────────────────────────────── */
@@ -950,9 +950,10 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
   /* ─ tab helpers ─ */
   const TOP_TABS: { id: TopTab; label: string }[] = [
-    { id: "settings", label: "⚙️ הגדרות" },
-    { id: "security", label: "🔐 אבטחה" },
-    { id: "advanced", label: "🔧 מתקדם" },
+    { id: "settings",   label: "⚙️ הגדרות" },
+    { id: "appearance", label: "🎨 מראה" },
+    { id: "security",   label: "🔐 אבטחה" },
+    { id: "advanced",   label: "🔧 מתקדם" },
   ];
   const ADV_TABS: { id: AdvTab; label: string }[] = [
     { id: "backup",  label: "💾 גיבוי" },
@@ -1136,6 +1137,71 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               )}
             </div>
           </>
+        )}
+
+        {/* ════ TAB: מראה ════ */}
+        {topTab === "appearance" && (
+          <div style={{ padding: "28px 28px 32px", direction: "rtl" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.gold, marginBottom: 4 }}>פלטת צבעים — ממשק SUPER ADMIN</div>
+            <div style={{ fontSize: 13, color: T.sub, marginBottom: 24 }}>הפלטה שנבחר תופיע עבורך בלבד (Super Admin). כל מסעדה בוחרת פלטה משלה.</div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 28 }}>
+              {Object.keys(ADMIN_PALETTES).map(p => {
+                const vars = ADMIN_PALETTES[p];
+                const isActive = (form.adminPalette || "dark") === p;
+                const bg      = vars["--c-bg"];
+                const surface = vars["--c-surface"];
+                const accent  = vars["--c-gold"];
+                const text    = vars["--c-text"];
+                const muted   = vars["--c-muted"];
+                const sidebarFrom = vars["--c-sidebar-from"];
+                const sidebarTo   = vars["--c-sidebar-to"];
+                const sidebarBg   = sidebarFrom === sidebarTo
+                  ? sidebarFrom
+                  : `linear-gradient(180deg,${sidebarFrom} 0%,${vars["--c-sidebar-mid"]} 55%,${sidebarTo} 100%)`;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => update("adminPalette", p)}
+                    style={{
+                      padding: 0, cursor: "pointer", textAlign: "right",
+                      border: isActive ? `2px solid ${T.gold}` : `1px solid ${T.border}`,
+                      borderRadius: 12, overflow: "hidden",
+                      background: "transparent",
+                      boxShadow: isActive ? `0 0 0 3px ${accent}28` : "none",
+                      transition: "border-color 0.15s, box-shadow 0.15s",
+                    }}
+                  >
+                    {/* Mini preview */}
+                    <div style={{ display: "flex", height: 90, overflow: "hidden" }}>
+                      <div style={{ width: 30, background: sidebarBg, flexShrink: 0, paddingTop: 8, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} style={{ width: 16, height: i === 1 ? 6 : 4, borderRadius: 2, background: i === 1 ? accent : muted + "55" }} />
+                        ))}
+                      </div>
+                      <div style={{ flex: 1, background: bg, padding: "7px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
+                        <div style={{ height: 13, background: surface, borderRadius: 3, display: "flex", alignItems: "center", paddingRight: 5 }}>
+                          <div style={{ width: 22, height: 3, borderRadius: 2, background: accent }} />
+                        </div>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} style={{ flex: 1, height: 28, background: i === 0 ? accent + "22" : surface, border: `1px solid ${i === 0 ? accent + "55" : muted + "33"}`, borderRadius: 3 }} />
+                          ))}
+                        </div>
+                        <div style={{ height: 4, borderRadius: 2, background: text, opacity: 0.35, width: "55%" }} />
+                      </div>
+                    </div>
+                    <div style={{ padding: "8px 10px", background: isActive ? accent + "10" : "transparent", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{ADMIN_PALETTE_LABELS[p] ?? p}</span>
+                      {isActive && <span style={{ fontSize: 10, fontWeight: 700, color: T.gold, background: accent + "15", padding: "2px 7px", borderRadius: 99 }}>פעיל ✓</span>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ fontSize: 12, color: T.muted }}>השינוי ייכנס לתוקף בפעם הבאה שתיכנס לממשק — לחץ "שמור" בתחתית הדף כדי לשמור.</div>
+          </div>
         )}
 
         {/* ════ TAB: אבטחה ════ */}

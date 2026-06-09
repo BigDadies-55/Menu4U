@@ -14,7 +14,7 @@ interface Props {
 }
 
 const PALETTE_PREVIEWS: Record<string, {
-  bg: string; surface: string; sidebar: string; accent: string; text: string;
+  bg: string; surface: string; sidebar: string; accent: string; text: string; muted: string;
 }> = {
   dark: {
     bg:      "#0c0c0c",
@@ -22,13 +22,23 @@ const PALETTE_PREVIEWS: Record<string, {
     sidebar: "linear-gradient(180deg,#050505 0%,#161616 55%,#26200e 100%)",
     accent:  "#c9890a",
     text:    "#f0ece6",
+    muted:   "#7a7268",
   },
   "warm-light": {
     bg:      "#eeeae2",
     surface: "#f8f5ef",
-    sidebar: "linear-gradient(180deg,#c8c0b2 0%,#d4ccc0 55%,#e0dace 100%)",
+    sidebar: "linear-gradient(180deg,#d8d2c6 0%,#dfd8cc 55%,#ece6da 100%)",
     accent:  "#4a7c8c",
     text:    "#1c1710",
+    muted:   "#a09484",
+  },
+  "earth-life": {
+    bg:      "#f6f0e6",
+    surface: "#ffffff",
+    sidebar: "#fdf8f0",
+    accent:  "#8c6820",
+    text:    "#2c1f0e",
+    muted:   "#b09878",
   },
   earthy: {
     bg:      "#f5ede0",
@@ -36,6 +46,7 @@ const PALETTE_PREVIEWS: Record<string, {
     sidebar: "linear-gradient(180deg,#1a0a06 0%,#2d1010 55%,#4a1020 100%)",
     accent:  "#65011b",
     text:    "#1e0e08",
+    muted:   "#9a7050",
   },
 };
 
@@ -144,37 +155,48 @@ export default function AppearanceClient({ restaurants, canSave }: Props) {
               }}
             >
               {/* Mini preview */}
-              <div style={{ display: "flex", height: 100, overflow: "hidden" }}>
+              <div style={{ display: "flex", height: 110, overflow: "hidden" }}>
+                {/* Sidebar strip */}
                 <div style={{
-                  width: 32, background: prev?.sidebar ?? "#111", flexShrink: 0,
-                  display: "flex", flexDirection: "column", alignItems: "center",
-                  paddingTop: 8, gap: 6,
+                  width: 36, background: prev?.sidebar ?? "#111", flexShrink: 0,
+                  display: "flex", flexDirection: "column",
+                  paddingTop: 10, gap: 5, paddingRight: 8,
                 }}>
-                  {[...Array(4)].map((_, i) => (
+                  {[...Array(5)].map((_, i) => (
                     <div key={i} style={{
-                      width: 18, height: 3, borderRadius: 2,
-                      background: i === 0 ? prev?.accent ?? "#c9890a" : "rgba(255,255,255,0.2)",
+                      height: i === 1 ? 8 : 5, borderRadius: 3,
+                      marginRight: 4,
+                      background: i === 1
+                        ? prev?.accent ?? "#c9890a"
+                        : (prev?.muted ?? "rgba(128,128,128,0.35)") + (p === "dark" ? "" : "88"),
+                      opacity: i === 1 ? 1 : 0.55,
                     }} />
                   ))}
                 </div>
+                {/* Main area */}
                 <div style={{
                   flex: 1, background: prev?.bg ?? "#0c0c0c",
-                  padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6,
+                  padding: "8px 8px", display: "flex", flexDirection: "column", gap: 5,
                 }}>
+                  {/* Top bar */}
                   <div style={{
-                    height: 16, background: prev?.surface ?? "#161616", borderRadius: 4,
-                    display: "flex", alignItems: "center", padding: "0 6px", gap: 4,
+                    height: 14, background: prev?.surface ?? "#161616", borderRadius: 3,
+                    display: "flex", alignItems: "center", padding: "0 5px",
                   }}>
-                    <div style={{ width: 30, height: 4, borderRadius: 2, background: prev?.accent ?? "#c9890a" }} />
+                    <div style={{ width: 24, height: 3, borderRadius: 2, background: prev?.accent ?? "#c9890a" }} />
                   </div>
-                  <div style={{ display: "flex", gap: 5 }}>
+                  {/* Stat cards */}
+                  <div style={{ display: "flex", gap: 4 }}>
                     {[...Array(3)].map((_, i) => (
                       <div key={i} style={{
-                        flex: 1, height: 36,
-                        background: i === 0 ? (prev?.accent ?? "#c9890a") + "22" : prev?.surface ?? "#161616",
-                        border: `1px solid ${i === 0 ? (prev?.accent ?? "#c9890a") + "44" : "rgba(128,128,128,0.15)"}`,
+                        flex: 1, height: 30,
+                        background: i === 0 ? prev?.accent + "22" : prev?.surface ?? "#161616",
+                        border: `1px solid ${i === 0 ? prev?.accent + "55" : (prev?.muted ?? "#999") + "33"}`,
                         borderRadius: 4,
-                      }} />
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {i === 0 && <div style={{ width: 14, height: 3, borderRadius: 2, background: prev?.accent }} />}
+                      </div>
                     ))}
                   </div>
                   <div style={{ height: 4, borderRadius: 2, background: prev?.text ?? "#f0ece6", opacity: 0.4, width: "60%" }} />
