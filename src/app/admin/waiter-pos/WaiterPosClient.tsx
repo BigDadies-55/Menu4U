@@ -98,6 +98,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [layout, setLayout]                   = useState<LayoutV2 | null>(null);
   const [roomIdx, setRoomIdx]                 = useState(0);
   const [refreshing, setRefreshing]           = useState(false);
+  const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
+  const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
 
   const floorRef = useRef<HTMLDivElement>(null);
   const [floorSize, setFloorSize] = useState({ w: 600, h: 400 });
@@ -254,14 +256,46 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const overlayTable   = tables.find(t => t.tableNum === tableOverlay) ?? null;
   const overlayInsights = insights.filter(i => i.tableNum === tableOverlay);
 
-  // ── Floor map scale
+  // ── Status filter
+  const filteredTables = useMemo(() =>
+    statusFilter.size === 0 ? tables : tables.filter(t => statusFilter.has(t.availStatus)),
+  [tables, statusFilter]);
+
+  function toggleFilter(s: string) {
+    setStatusFilter(prev => {
+      const n = new Set(prev);
+      n.has(s) ? n.delete(s) : n.add(s);
+      return n;
+    });
+  }
+
+  // ── Floor map scale + rotation
   const activeRoom = layout?.rooms[roomIdx];
+
+  const rotatedFloor = useMemo(() => {
+    if (!activeRoom?.tables.length) return { tables: [], maxX: 0, maxY: 0 };
+    const origMaxY = Math.max(...activeRoom.tables.map(t => t.y + t.h));
+    const origMaxX = Math.max(...activeRoom.tables.map(t => t.x + t.w));
+    if (layoutRotation === 0) {
+      return { tables: activeRoom.tables, maxX: origMaxX + 20, maxY: origMaxY + 20 };
+    }
+    // 90° clockwise: x' = origMaxY - (y+h), y' = x, w' = h, h' = w
+    const rotated = activeRoom.tables.map(lt => ({
+      ...lt,
+      x: origMaxY - (lt.y + lt.h),
+      y: lt.x,
+      w: lt.h,
+      h: lt.w,
+    }));
+    const newMaxX = Math.max(...rotated.map(t => t.x + t.w)) + 20;
+    const newMaxY = Math.max(...rotated.map(t => t.y + t.h)) + 20;
+    return { tables: rotated, maxX: newMaxX, maxY: newMaxY };
+  }, [activeRoom, layoutRotation]);
+
   const floorScale = useMemo(() => {
-    if (!activeRoom?.tables.length) return 1;
-    const maxX = Math.max(...activeRoom.tables.map(t => t.x + t.w)) + 20;
-    const maxY = Math.max(...activeRoom.tables.map(t => t.y + t.h)) + 20;
-    return Math.min(floorSize.w / maxX, floorSize.h / maxY, 1.4);
-  }, [activeRoom, floorSize]);
+    if (!rotatedFloor.maxX || !rotatedFloor.maxY) return 1;
+    return Math.min(floorSize.w / rotatedFloor.maxX, floorSize.h / rotatedFloor.maxY, 1.6);
+  }, [rotatedFloor, floorSize]);
 
   void tick;
 
@@ -297,21 +331,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* View toggle */}
-          <div style={{ display: "flex", background: "#f0f2f5", borderRadius: 8, border: "1px solid #dde1e8", overflow: "hidden" }}>
-            {(["grid", "floor"] as const).map(m => (
-              <button key={m} onClick={() => setViewMode(m)} style={{
-                padding: "5px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                border: "none", background: viewMode === m ? "#fff" : "transparent",
-                color: viewMode === m ? "#111" : "#888",
-                boxShadow: viewMode === m ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-                transition: "all 0.15s",
-              }}>
-                {m === "grid" ? "📋 כרטיסים" : "🗺️ לייאוט"}
-              </button>
-            ))}
-          </div>
-
           <button onClick={() => setAllInsightsOpen(true)} style={{
             background: "linear-gradient(135deg,#6c3fc5,#9b59e8)",
             color: "#fff", border: "none", borderRadius: 10,
@@ -367,6 +386,89 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         </div>
       )}
 
+      {/* ══ FILTER + VIEW BAR ══ */}
+      <div style={{
+        background: "#fff", borderBottom: "1px solid #dde1e8",
+        padding: "6px 14px", display: "flex", alignItems: "center",
+        gap: 8, flexShrink: 0, flexWrap: "wrap",
+        position: "sticky", top: 56, zIndex: 99,
+      }}>
+        {/* View toggle */}
+        <div style={{ display: "flex", background: "#f0f2f5", borderRadius: 8, border: "1px solid #dde1e8", overflow: "hidden", flexShrink: 0 }}>
+          {(["grid", "floor"] as const).map(m => (
+            <button key={m} onClick={() => setViewMode(m)} style={{
+              padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              border: "none", background: viewMode === m ? "#111" : "transparent",
+              color: viewMode === m ? "#fff" : "#888",
+              transition: "all 0.15s",
+            }}>
+              {m === "grid" ? "📋 כרטיסים" : "🗺️ לייאוט"}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ width: 1, height: 22, background: "#dde1e8", flexShrink: 0 }} />
+
+        {/* Status filter pills */}
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          {(["occupied","reserved","free","inactive"] as const).map(s => {
+            const active = statusFilter.has(s);
+            return (
+              <button key={s} onClick={() => toggleFilter(s)} style={{
+                padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                cursor: "pointer", border: `2px solid ${STATUS_BORDER[s]}`,
+                background: active ? STATUS_BORDER[s] : "transparent",
+                color: active ? "#fff" : STATUS_BORDER[s],
+                transition: "all 0.15s",
+              }}>
+                {STATUS_LABEL[s]}
+              </button>
+            );
+          })}
+          {statusFilter.size > 0 && (
+            <button onClick={() => setStatusFilter(new Set())} style={{
+              padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+              cursor: "pointer", border: "1px solid #dde1e8",
+              background: "transparent", color: "#888",
+            }}>✕ הכל</button>
+          )}
+        </div>
+
+        {/* Rotate button — floor only */}
+        {viewMode === "floor" && (
+          <>
+            <div style={{ width: 1, height: 22, background: "#dde1e8", flexShrink: 0 }} />
+            <button onClick={() => setLayoutRotation(r => r === 0 ? 90 : 0)} title="סובב לייאוט 90°" style={{
+              padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+              cursor: "pointer", border: "1px solid #dde1e8",
+              background: layoutRotation !== 0 ? "#111" : "#f5f5f7",
+              color: layoutRotation !== 0 ? "#fff" : "#555",
+              display: "flex", alignItems: "center", gap: 4,
+              transition: "all 0.15s",
+            }}>
+              🔄 {layoutRotation === 0 ? "סובב" : "אנכי"}
+            </button>
+          </>
+        )}
+
+        {/* Room tabs — floor only */}
+        {viewMode === "floor" && layout && layout.rooms.length > 1 && (
+          <>
+            <div style={{ width: 1, height: 22, background: "#dde1e8", flexShrink: 0 }} />
+            {layout.rooms.map((room, i) => (
+              <button key={room.id} onClick={() => setRoomIdx(i)} style={{
+                padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                cursor: "pointer", border: "1px solid #dde1e8",
+                background: roomIdx === i ? "#333" : "#f5f5f7",
+                color: roomIdx === i ? "#fff" : "#555",
+              }}>
+                {room.name}
+              </button>
+            ))}
+          </>
+        )}
+      </div>
+
       {/* ══ GRID VIEW ══ */}
       {viewMode === "grid" && (
         <div style={{ flex: 1, overflowY: "auto" }}>
@@ -377,9 +479,11 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           }}>
             {loadingTables ? (
               <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 40 }}>טוען שולחנות...</div>
-            ) : tables.length === 0 ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 40 }}>אין פריסת שולחנות — הגדר פריסה בבונה הפריסה תחילה.</div>
-            ) : tables.map(t => {
+            ) : filteredTables.length === 0 ? (
+              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 40 }}>
+                {tables.length === 0 ? "אין פריסת שולחנות — הגדר פריסה בבונה הפריסה תחילה." : "אין שולחנות בסינון זה"}
+              </div>
+            ) : filteredTables.map(t => {
               const borderColor    = STATUS_BORDER[t.availStatus] ?? "#9ca3af";
               const tableInsights  = insights.filter(i => i.tableNum === t.tableNum);
               const isWarn         = t.availStatus === "occupied" && t.minutesSitting > 20;
@@ -455,81 +559,96 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       {/* ══ FLOOR VIEW ══ */}
       {viewMode === "floor" && (
         <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          {/* Room tabs */}
-          {layout && layout.rooms.length > 1 && (
-            <div style={{ display: "flex", gap: 4, padding: "8px 12px 0", flexShrink: 0 }}>
-              {layout.rooms.map((room, i) => (
-                <button key={room.id} onClick={() => setRoomIdx(i)} style={{
-                  padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-                  cursor: "pointer", border: "none",
-                  background: roomIdx === i ? "#111" : "#e5e7eb",
-                  color: roomIdx === i ? "#fff" : "#555",
-                }}>
-                  {room.name}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", margin: 8, borderRadius: 12, background: "#e8eaf0" }}>
             {!layout ? (
               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: 14 }}>
                 אין פריסת שולחנות — הגדר פריסה בבונה הפריסה
               </div>
-            ) : (
-              activeRoom?.tables.map(lt => {
-                const tNum   = String(lt.num);
-                const tData  = tables.find(t => t.tableNum === tNum);
-                const status = tData?.availStatus ?? "free";
-                const color  = STATUS_BORDER[status];
-                const isRound = lt.shape === "round" || lt.shape === "oval";
-                const tInsights = insights.filter(i => i.tableNum === tNum);
-                const topIns = tInsights[0];
+            ) : rotatedFloor.tables.map(lt => {
+              const tNum      = String(lt.num);
+              const tData     = tables.find(t => t.tableNum === tNum);
+              const status    = tData?.availStatus ?? "free";
+              // apply status filter
+              if (statusFilter.size > 0 && !statusFilter.has(status)) return null;
+              const color     = STATUS_BORDER[status];
+              const isRound   = lt.shape === "round" || lt.shape === "oval";
+              const tInsights = insights.filter(i => i.tableNum === tNum);
+              const topIns    = tInsights[0];
+              const isWarn    = status === "occupied" && (tData?.minutesSitting ?? 0) > 20;
 
-                return (
-                  <div key={lt.num} onClick={() => setTableOverlay(tNum)}
-                    style={{
-                      position: "absolute",
-                      left: lt.x * floorScale, top: lt.y * floorScale,
-                      width: lt.w * floorScale, height: lt.h * floorScale,
-                      borderRadius: isRound ? "50%" : lt.shape === "banquet" ? 12 : 6,
-                      transform: lt.rot ? `rotate(${lt.rot}deg)` : undefined,
-                      background: color + "22",
-                      border: `2.5px solid ${color}`,
-                      cursor: "pointer",
-                      display: "flex", flexDirection: "column",
-                      alignItems: "center", justifyContent: "center",
-                      transition: "transform 0.1s",
-                      overflow: "hidden",
-                    }}
-                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.transform = "scale(1.05)"}
-                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.transform = lt.rot ? `rotate(${lt.rot}deg)` : ""}
-                  >
-                    <span style={{ fontSize: Math.max(9, lt.h * floorScale * 0.28), fontWeight: 800, color: "#111", lineHeight: 1 }}>{tNum}</span>
-                    {tData && tData.availStatus === "occupied" && (
-                      <span style={{ fontSize: Math.max(7, lt.h * floorScale * 0.17), color: "#555", marginTop: 1 }}>
-                        {fmtTimer(tData.sittingStart)}
-                      </span>
-                    )}
-                    {topIns && (
-                      <span style={{ fontSize: 10, marginTop: 2 }}>
-                        {topIns.type === "alert" ? "⚠️" : topIns.type === "tip" ? "💡" : "ℹ️"}
-                      </span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
+              const W = lt.w * floorScale;
+              const H = lt.h * floorScale;
+              const numFs   = Math.max(10, Math.min(H * 0.3, 24));
+              const infoFs  = Math.max(8, Math.min(H * 0.16, 12));
+              const badgeFs = Math.max(7, Math.min(H * 0.14, 11));
+              const showInfo  = W > 58 && H > 52;
+              const showBadge = W > 68 && H > 64;
 
-          {/* Floor legend */}
-          <div style={{ display: "flex", gap: 12, padding: "4px 14px 4px", flexShrink: 0, flexWrap: "wrap" }}>
-            {(["occupied","reserved","free","inactive"] as const).map(s => (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#555" }}>
-                <div style={{ width: 10, height: 10, borderRadius: 3, background: STATUS_BORDER[s] }} />
-                {STATUS_LABEL[s]}
-              </div>
-            ))}
+              const statusBadgeBg   = ORDER_STATUS_COLOR[tData?.orderStatus ?? ""] ?? STATUS_BADGE_BG[status];
+              const statusBadgeText = status === "occupied"
+                ? (ORDER_STATUS_HE[tData?.orderStatus ?? ""] ?? STATUS_LABEL[status])
+                : STATUS_LABEL[status];
+
+              return (
+                <div key={`${lt.num}-${layoutRotation}`} onClick={() => setTableOverlay(tNum)}
+                  style={{
+                    position: "absolute",
+                    left: lt.x * floorScale, top: lt.y * floorScale,
+                    width: W, height: H,
+                    borderRadius: isRound ? "50%" : lt.shape === "banquet" ? 12 : 6,
+                    background: status === "occupied" ? color + "18" : color + "12",
+                    border: `2.5px solid ${color}`,
+                    cursor: "pointer",
+                    display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center",
+                    padding: "3px 4px",
+                    gap: 1,
+                    overflow: "hidden",
+                    boxSizing: "border-box",
+                    transition: "box-shadow 0.12s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 18px ${color}55`}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = ""}
+                >
+                  {/* Table number */}
+                  <span style={{ fontSize: numFs, fontWeight: 800, color: "#111", lineHeight: 1 }}>{tNum}</span>
+
+                  {/* Timer + guests */}
+                  {showInfo && status === "occupied" && tData && (
+                    <span style={{ fontSize: infoFs, fontWeight: 500, color: isWarn ? "#ef4444" : "#555", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                      {fmtTimer(tData.sittingStart)}
+                    </span>
+                  )}
+                  {showInfo && status === "occupied" && tData && tData.guests > 0 && (
+                    <span style={{ fontSize: infoFs, color: "#666", lineHeight: 1 }}>👤{tData.guests}</span>
+                  )}
+                  {showInfo && status !== "occupied" && (
+                    <span style={{ fontSize: infoFs, color: "#888", lineHeight: 1 }}>
+                      {lt.seats ?? tData?.seats ?? ""}מק'
+                    </span>
+                  )}
+
+                  {/* Status / order badge */}
+                  {showBadge && (
+                    <span style={{
+                      background: statusBadgeBg, color: "#fff",
+                      borderRadius: 4, padding: "1px 5px",
+                      fontSize: badgeFs, fontWeight: 700, lineHeight: 1.3,
+                      maxWidth: "90%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {statusBadgeText}
+                    </span>
+                  )}
+
+                  {/* Insight icon */}
+                  {topIns && (
+                    <span style={{ fontSize: Math.max(9, infoFs), lineHeight: 1 }}>
+                      {topIns.type === "alert" ? "⚠️" : topIns.type === "tip" ? "💡" : "ℹ️"}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
