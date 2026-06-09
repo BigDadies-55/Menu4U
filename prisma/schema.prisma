@@ -268,6 +268,9 @@ model Order {
   loyaltyDiscountType  String?  // POINTS | COUPON
   loyaltyDiscountAmount Float?
   loyaltyCouponId      String?
+  // Waiter tracking
+  createdByUserId String?   // who placed the order (waiter)
+  closedByUserId  String?   // who collected payment
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -308,6 +311,7 @@ model OrderItem {
   servedAt        DateTime?                 // מתי המנה הוגשה לשולחן בפועל
   isComped        Boolean   @default(false) // פריט ניתן כפיצוי/חינם — לא יחויב
   compReason      String?
+  servedByUserId  String?                   // who physically delivered the dish
 
   order     Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
   item      Item                @relation(fields: [itemId], references: [id])

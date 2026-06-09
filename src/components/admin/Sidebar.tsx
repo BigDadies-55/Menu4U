@@ -117,9 +117,8 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
       { href: "/admin/cashier",        label: "קאשייר",             I: Ic.Cashier,   displayHide: true },
-      { href: "/admin/waiter-floor",   label: "רצפת שירות 🗺️",     I: Ic.Layout,    displayHide: true },
+      { href: "/admin/waiter-pos",      label: "מלצר POS 🍽️",        I: Ic.Orders,    displayHide: true },
       { href: "/admin/shift-manager",   label: "מנהל משמרת 🎛️",     I: Ic.Stats,     displayHide: true, waiterHide: true },
-      { href: "/admin/waiter",          label: "הזמנת מלצר 🍽️",     I: Ic.Orders,    displayHide: true },
       { href: "/admin/table-timeline",  label: "ציר זמן שולחנות 🗂️", I: Ic.TableView, displayHide: true, waiterHide: true, ownerOnly: true },
       { href: "/admin/orders/stats",    label: "סטטיסטיקות",         I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },

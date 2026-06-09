@@ -63,7 +63,10 @@ export async function PATCH(
     const servedAt = serve ? new Date() : null;
     await prisma.orderItem.update({
       where: { id: itemId },
-      data: { servedAt },
+      data: {
+        servedAt,
+        servedByUserId: serve ? session.user.id : null,
+      },
     });
     sseNotify(order.restaurantId);
     return NextResponse.json({ servedAt: servedAt?.toISOString() ?? null });

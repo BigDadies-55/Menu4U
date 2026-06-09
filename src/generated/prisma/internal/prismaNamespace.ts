@@ -2842,6 +2842,8 @@ export const OrderScalarFieldEnum = {
   loyaltyDiscountType: 'loyaltyDiscountType',
   loyaltyDiscountAmount: 'loyaltyDiscountAmount',
   loyaltyCouponId: 'loyaltyCouponId',
+  createdByUserId: 'createdByUserId',
+  closedByUserId: 'closedByUserId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2883,7 +2885,8 @@ export const OrderItemScalarFieldEnum = {
   doneAt: 'doneAt',
   servedAt: 'servedAt',
   isComped: 'isComped',
-  compReason: 'compReason'
+  compReason: 'compReason',
+  servedByUserId: 'servedByUserId'
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]

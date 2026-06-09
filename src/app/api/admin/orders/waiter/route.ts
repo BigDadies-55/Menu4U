@@ -86,8 +86,9 @@ export async function POST(req: Request) {
       coversCount:  coversCount ? Number(coversCount) : null,
       totalAmount,
       orderNumber,
-      status:       "CONFIRMED",
-      orderSource:  "WAITER",
+      status:          "CONFIRMED",
+      orderSource:     "WAITER",
+      createdByUserId: session.user.id,
       items: {
         create: validItems.map(i => {
           const course      = i.course ?? 1;
