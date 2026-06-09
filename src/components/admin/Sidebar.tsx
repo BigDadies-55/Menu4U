@@ -119,6 +119,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/cashier",        label: "קאשייר",             I: Ic.Cashier,   displayHide: true },
       { href: "/admin/waiter-pos",      label: "מלצר POS 🍽️",        I: Ic.Orders,    displayHide: true },
       { href: "/admin/shift-manager",   label: "מנהל משמרת 🎛️",     I: Ic.Stats,     displayHide: true, waiterHide: true },
+      { href: "/admin/live-floor",       label: "מפת שולחנות חיה 🗺️",  I: Ic.Layout,    displayHide: true, waiterHide: true, ownerOnly: true },
       { href: "/admin/table-timeline",  label: "ציר זמן שולחנות 🗂️", I: Ic.TableView, displayHide: true, waiterHide: true, ownerOnly: true },
       { href: "/admin/orders/stats",    label: "סטטיסטיקות",         I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
