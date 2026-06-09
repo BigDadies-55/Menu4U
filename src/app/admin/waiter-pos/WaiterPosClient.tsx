@@ -35,13 +35,13 @@ type LayoutV2 = { version: 2; rooms: LayoutRoom[] };
 
 // ── Color maps ───────────────────────────────────────────────────────
 const STATUS_BORDER: Record<string, string> = {
-  occupied: "#ef4444", reserved: "#7c3aed", free: "#22c55e", inactive: "#9ca3af",
+  occupied: "#ef4444", reserved: "#3b82f6", free: "#22c55e", inactive: "#9ca3af",
 };
 const STATUS_LABEL: Record<string, string> = {
-  occupied: "תפוס", reserved: "שמור", free: "פנוי", inactive: "לא פעיל",
+  occupied: "תפוס", reserved: "מוזמן", free: "פנוי", inactive: "לא פעיל",
 };
 const STATUS_BADGE_BG: Record<string, string> = {
-  occupied: "#ef4444", reserved: "#7c3aed", free: "#22c55e", inactive: "#9ca3af",
+  occupied: "#ef4444", reserved: "#3b82f6", free: "#22c55e", inactive: "#9ca3af",
 };
 const ORDER_STATUS_HE: Record<string, string> = {
   PENDING: "ממתין", CONFIRMED: "הזמנה נלקחה", PREPARING: "מכין",
@@ -549,6 +549,28 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     </div>
                   </div>
 
+                  {/* Reserve quick-toggle — free or reserved tables only */}
+                  {(t.availStatus === "free" || t.availStatus === "reserved") && (
+                    <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
+                      <button
+                        onClick={e => { e.stopPropagation(); patchStatus(t.tableNum, t.availStatus === "reserved" ? "free" : "reserved"); }}
+                        style={{
+                          background: t.availStatus === "reserved" ? "#eff6ff" : "none",
+                          border: `1px solid ${t.availStatus === "reserved" ? "#3b82f6" : "#dde1e8"}`,
+                          cursor: "pointer", width: "100%",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                          color: t.availStatus === "reserved" ? "#3b82f6" : "#888",
+                          fontSize: 11, fontWeight: 600, padding: "3px 4px", borderRadius: 6,
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "#eff6ff")}
+                        onMouseLeave={e => (e.currentTarget.style.background = t.availStatus === "reserved" ? "#eff6ff" : "none")}
+                      >
+                        🔵 {t.availStatus === "reserved" ? "בטל הזמנה" : "סמן כמוזמן"}
+                      </button>
+                    </div>
+                  )}
+
+
                   {/* AI row — only if there are insights for this table */}
                   {tableInsights.length > 0 && (
                     <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
@@ -752,7 +774,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         {/* Segment bar */}
         <div style={{ display: "flex", height: 3, overflow: "hidden" }}>
           <div style={{ flex: occupiedCount,                   background: "#ef4444", transition: "flex 0.4s" }} />
-          <div style={{ flex: reservedCount,                   background: "#7c3aed", transition: "flex 0.4s" }} />
+          <div style={{ flex: reservedCount,                   background: "#3b82f6", transition: "flex 0.4s" }} />
           <div style={{ flex: freeCount,                       background: "#22c55e", transition: "flex 0.4s" }} />
           <div style={{ flex: Math.max(inactiveCount, 0.01),   background: "#e5e7eb", transition: "flex 0.4s" }} />
         </div>
@@ -764,7 +786,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           overflowX: "auto",
         }}>
           <KpiCard label="תפוס"    value={occupiedCount} color="#ef4444" bg="#fef2f2" small={isMobile} />
-          <KpiCard label="שמור"    value={reservedCount} color="#7c3aed" bg="#f5f0ff" small={isMobile} />
+          <KpiCard label="מוזמן"   value={reservedCount} color="#3b82f6" bg="#eff6ff" small={isMobile} />
           <KpiCard label="פנוי"    value={freeCount}     color="#22c55e" bg="#f0fdf4" small={isMobile} />
           <KpiCard label="לא פעיל" value={inactiveCount} color="#9ca3af" bg="#f9fafb" small={isMobile} />
           <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />

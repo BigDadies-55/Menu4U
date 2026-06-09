@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import ShiftManagerWrapper from "./ShiftManagerWrapper";
-
 export const dynamic = "force-dynamic";
 
 export default async function ShiftManagerPage() {

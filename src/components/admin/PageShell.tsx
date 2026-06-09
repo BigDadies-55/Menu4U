@@ -1,9 +1,5 @@
-import { T } from "@/lib/ui";
+import React from "react";
 
 export default function PageShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ padding: 24, color: T.text }} dir="rtl">
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }
