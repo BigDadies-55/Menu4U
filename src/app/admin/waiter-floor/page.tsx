@@ -1,9 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import dynamic from "next/dynamic";
-
-const WaiterFloorClient = dynamic(() => import("./WaiterFloorClient"), { ssr: false });
+import WaiterFloorWrapper from "./WaiterFloorWrapper";
+export const dynamic = "force-dynamic";
 
 export default async function WaiterFloorPage() {
   const session = await auth();
@@ -22,9 +21,10 @@ export default async function WaiterFloorPage() {
   if (restaurants.length === 0) redirect("/admin");
 
   return (
-    <WaiterFloorClient
+    <WaiterFloorWrapper
       restaurants={restaurants}
       waiterName={session.user.name ?? session.user.email ?? "מלצר"}
+      waiterId={session.user.id}
     />
   );
 }
