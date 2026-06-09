@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390,initial-scale=1">
+<title>אופציה 3 — Urgent-First List</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0c0c; color: #f0ece6; font-family: Arial, Helvetica, sans-serif;
+         max-width: 390px; margin: 0 auto; height: 100vh; overflow: hidden;
+         display: flex; flex-direction: column; }
+
+  /* ── Compact top bar ── */
+  .topbar {
+    height: 52px; background: #0c0c0c; border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; padding: 0 14px; gap: 10px; flex-shrink: 0;
+  }
+  .logo { font-size: 22px; }
+  .waiter-info { flex: 1; }
+  .waiter-name { font-size: 13px; font-weight: 800; color: #f0ece6; }
+  .rest-name   { font-size: 11px; color: #7a7268; }
+  .topbar-right { display: flex; gap: 6px; align-items: center; }
+  .icon-circle {
+    width: 34px; height: 34px; border-radius: 50%; background: #1e1e1e;
+    border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center;
+    justify-content: center; font-size: 15px; cursor: pointer; position: relative;
+  }
+  .notif-count {
+    position: absolute; top: -2px; right: -2px; background: #ef4444;
+    color: #fff; font-size: 9px; font-weight: 900; border-radius: 999px;
+    min-width: 16px; height: 16px; display: flex; align-items: center;
+    justify-content: center; padding: 0 3px; border: 2px solid #0c0c0c;
+  }
+
+  /* ── Horizontal scroll cards for AI alerts ── */
+  .alert-strip {
+    padding: 8px 14px; display: flex; gap: 8px; overflow-x: auto; flex-shrink: 0;
+    background: #0c0c0c;
+  }
+  .alert-strip::-webkit-scrollbar { display: none; }
+  .alert-card {
+    flex-shrink: 0; background: #161616; border-radius: 10px; padding: 8px 12px;
+    border: 1px solid; display: flex; align-items: center; gap: 8px; min-width: 160px;
+    cursor: pointer;
+  }
+  .ac-red    { border-color: #ef444440; }
+  .ac-blue   { border-color: #3b82f640; }
+  .ac-purple { border-color: #a855f740; }
+  .ac-icon   { font-size: 18px; }
+  .ac-body   { }
+  .ac-title  { font-size: 12px; font-weight: 700; }
+  .ac-sub    { font-size: 10px; color: #7a7268; margin-top: 1px; }
+  .ac-red    .ac-title { color: #ef4444; }
+  .ac-blue   .ac-title { color: #3b82f6; }
+  .ac-purple .ac-title { color: #a855f7; }
+
+  /* ── Section label ── */
+  .section-lbl {
+    padding: 6px 14px 4px; font-size: 10px; font-weight: 700; color: #7a7268;
+    letter-spacing: 0.06em; background: #0c0c0c; flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  /* ── Main scroll ── */
+  .scroll { flex: 1; overflow-y: auto; }
+
+  /* ── Big table cards ── */
+  .tcard {
+    margin: 6px 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden; cursor: pointer;
+  }
+  .tcard-top {
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .tcard-top.urgent { background: #ef444410; }
+  .tcard-top.warn   { background: #f9731610; }
+  .tcard-top.normal { background: #161616; }
+
+  .tnum {
+    width: 44px; height: 44px; border-radius: 12px; font-size: 20px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .tn-urgent { background: #ef444420; color: #ef4444; }
+  .tn-warn   { background: #f9731620; color: #f97316; }
+  .tn-normal { background: #22c55e18; color: #22c55e; }
+  .tn-new    { background: #a855f718; color: #a855f7; }
+
+  .tinfo { flex: 1; }
+  .tinfo-row1 { display: flex; align-items: center; justify-content: space-between; }
+  .tinfo-name  { font-size: 15px; font-weight: 800; }
+  .tinfo-timer { font-size: 14px; font-weight: 700; color: #facc15; font-family: monospace; }
+  .tinfo-timer.red { color: #ef4444; }
+  .tinfo-row2 { font-size: 11px; color: #7a7268; margin-top: 2px; display: flex; justify-content: space-between; align-items: center; }
+  .tinfo-total { font-size: 13px; font-weight: 700; color: #c9890a; }
+
+  /* items preview bar */
+  .items-bar {
+    padding: 8px 14px; display: flex; gap: 6px; overflow-x: auto;
+    background: #161616; border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .items-bar::-webkit-scrollbar { display: none; }
+  .item-chip {
+    white-space: nowrap; padding: 3px 9px; border-radius: 999px; font-size: 11px;
+    font-weight: 600; border: 1px solid transparent;
+  }
+  .ic-done { background: #22c55e18; color: #22c55e; border-color: #22c55e33; }
+  .ic-prep { background: #f9731618; color: #f97316; border-color: #f9731633; }
+  .ic-new  { background: #3b82f618; color: #3b82f6; border-color: #3b82f633; }
+  .ic-held { background: #7a726820; color: #7a7268; border-color: #7a726833; }
+
+  /* action row */
+  .tcard-actions {
+    display: flex; border-top: 1px solid rgba(255,255,255,0.06); background: #161616;
+  }
+  .ta-btn {
+    flex: 1; padding: 9px 0; text-align: center; font-size: 12px; font-weight: 700;
+    cursor: pointer; border: none; background: transparent;
+  }
+  .ta-btn + .ta-btn { border-right: 1px solid rgba(255,255,255,0.06); }
+  .ta-add  { color: #c9890a; }
+  .ta-fire { color: #22c55e; }
+  .ta-bill { color: #ef4444; }
+
+  /* free tables small row */
+  .free-row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;
+  }
+  .free-num {
+    width: 32px; height: 32px; border-radius: 8px; background: #22c55e12;
+    color: #22c55e; font-size: 13px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .free-name { flex: 1; font-size: 13px; color: #c8bfb0; }
+  .free-seats { font-size: 11px; color: #7a7268; }
+  .start-btn {
+    background: #22c55e18; color: #22c55e; border: 1px solid #22c55e33;
+    border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ── Tabbar ── */
+  .tabbar {
+    height: 54px; background: #161616; border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex; flex-shrink: 0;
+  }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center;
+         justify-content: center; gap: 2px; cursor: pointer; }
+  .tab-i  { font-size: 20px; }
+  .tab-l  { font-size: 10px; color: #7a7268; }
+  .tab.on .tab-l { color: #c9890a; font-weight: 700; }
+  .tab.on::before { content:''; display:block; position:absolute; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">🍽️</div>
+  <div class="waiter-info">
+    <div class="waiter-name">אמיר כהן</div>
+    <div class="rest-name">רשטורנטה רומא</div>
+  </div>
+  <div class="topbar-right">
+    <div class="icon-circle">🔔<div class="notif-count">5</div></div>
+    <div class="icon-circle" style="font-size:13px;font-weight:800;color:#c9890a">+שולחן</div>
+  </div>
+</div>
+
+<!-- AI Alert strip -->
+<div class="alert-strip">
+  <div class="alert-card ac-red">
+    <div class="ac-icon">⚠️</div>
+    <div class="ac-body">
+      <div class="ac-title">ש׳ 7 ממתין</div>
+      <div class="ac-sub">52 דקות · גבה חשבון</div>
+    </div>
+  </div>
+  <div class="alert-card ac-blue">
+    <div class="ac-icon">🍽️</div>
+    <div class="ac-body">
+      <div class="ac-title">ש׳ 4 — יין מוכן</div>
+      <div class="ac-sub">הגש עכשיו</div>
+    </div>
+  </div>
+  <div class="alert-card ac-purple">
+    <div class="ac-icon">🍷</div>
+    <div class="ac-body">
+      <div class="ac-title">ש׳ 9 — הצע קינוח</div>
+      <div class="ac-sub">עיקריות הוגשו</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-lbl">שולחנות פעילים (7)</div>
+
+<!-- Scroll content -->
+<div class="scroll">
+
+  <!-- Urgent table -->
+  <div class="tcard">
+    <div class="tcard-top urgent">
+      <div class="tnum tn-urgent">7</div>
+      <div class="tinfo">
+        <div class="tinfo-row1">
+          <span class="tinfo-name">שולחן 7 — מרכז</span>
+          <span class="tinfo-timer red">52:10</span>
+        </div>
+        <div class="tinfo-row2">
+          <span>5 סועדים · ממתין לחשבון ⚠️</span>
+          <span class="tinfo-total">₪ 412</span>
+        </div>
+      </div>
+    </div>
+    <div class="tcard-actions">
+      <button class="ta-btn ta-add">+ הוסף</button>
+      <button class="ta-btn ta-bill">💳 חשבון</button>
+    </div>
+  </div>
+
+  <!-- Warning table (bill-requested too long) -->
+  <div class="tcard">
+    <div class="tcard-top urgent">
+      <div class="tnum tn-urgent">1</div>
+      <div class="tinfo">
+        <div class="tinfo-row1">
+          <span class="tinfo-name">שולחן 1 — כניסה</span>
+          <span class="tinfo-timer red">61:22</span>
+        </div>
+        <div class="tinfo-row2">
+          <span>4 סועדים · ממתין לחשבון ⚠️</span>
+          <span class="tinfo-total">₪ 310</span>
+        </div>
+      </div>
+    </div>
+    <div class="tcard-actions">
+      <button class="ta-btn ta-add">+ הוסף</button>
+      <button class="ta-btn ta-bill">💳 חשבון</button>
+    </div>
+  </div>
+
+  <!-- Active table with items ready -->
+  <div class="tcard">
+    <div class="tcard-top warn">
+      <div class="tnum tn-warn">4</div>
+      <div class="tinfo">
+        <div class="tinfo-row1">
+          <span class="tinfo-name">שולחן 4 — חלון</span>
+          <span class="tinfo-timer">18:42</span>
+        </div>
+        <div class="tinfo-row2">
+          <span>3 סועדים · 1 מנה מוכנה</span>
+          <span class="tinfo-total">₪ 210</span>
+        </div>
+      </div>
+    </div>
+    <div class="items-bar">
+      <div class="item-chip ic-done">יין אדום ✓</div>
+      <div class="item-chip ic-prep">אנטריקוט ×2 🔥</div>
+    </div>
+    <div class="tcard-actions">
+      <button class="ta-btn ta-add">+ הוסף</button>
+      <button class="ta-btn ta-fire">🔥 שלח</button>
+      <button class="ta-btn ta-bill">💳 חשבון</button>
+    </div>
+  </div>
+
+  <!-- Upsell table -->
+  <div class="tcard">
+    <div class="tcard-top warn">
+      <div class="tnum tn-warn">9</div>
+      <div class="tinfo">
+        <div class="tinfo-row1">
+          <span class="tinfo-name">שולחן 9 — פנימי</span>
+          <span class="tinfo-timer">34:07</span>
+        </div>
+        <div class="tinfo-row2">
+          <span>2 סועדים · הצע קינוח 🍷</span>
+          <span class="tinfo-total">₪ 228</span>
+        </div>
+      </div>
+    </div>
+    <div class="items-bar">
+      <div class="item-chip ic-done">פילה דג ✓</div>
+      <div class="item-chip ic-done">פסטה ✓</div>
+      <div class="item-chip ic-new">קינוח?</div>
+    </div>
+    <div class="tcard-actions">
+      <button class="ta-btn ta-add">+ הוסף</button>
+      <button class="ta-btn ta-bill">💳 חשבון</button>
+    </div>
+  </div>
+
+  <!-- Normal active table -->
+  <div class="tcard">
+    <div class="tcard-top normal">
+      <div class="tnum tn-normal">11</div>
+      <div class="tinfo">
+        <div class="tinfo-row1">
+          <span class="tinfo-name">שולחן 11 — חצר</span>
+          <span class="tinfo-timer">04:22</span>
+        </div>
+        <div class="tinfo-row2">
+          <span>4 סועדים · רק הזמינו</span>
+          <span class="tinfo-total">₪ 95</span>
+        </div>
+      </div>
+    </div>
+    <div class="items-bar">
+      <div class="item-chip ic-held">סלט קיסר ×2 ⏳</div>
+      <div class="item-chip ic-held">מרק ×2 ⏳</div>
+    </div>
+    <div class="tcard-actions">
+      <button class="ta-btn ta-add">+ הוסף</button>
+      <button class="ta-btn ta-fire">🔥 ירה קורס</button>
+    </div>
+  </div>
+
+  <!-- New table with nothing ordered -->
+  <div class="tcard">
+    <div class="tcard-top normal">
+      <div class="tnum tn-new">5</div>
+      <div class="tinfo">
+        <div class="tinfo-row1">
+          <span class="tinfo-name">שולחן 5 — בר</span>
+          <span class="tinfo-timer" style="color:#a855f7">02:05</span>
+        </div>
+        <div class="tinfo-row2">
+          <span>1 סועד · לא הוזמן עדיין</span>
+          <span class="tinfo-total">₪ 0</span>
+        </div>
+      </div>
+    </div>
+    <div class="tcard-actions">
+      <button class="ta-btn ta-add" style="flex:2">+ הוסף הזמנה ראשונה</button>
+    </div>
+  </div>
+
+  <div class="section-lbl" style="margin-top:4px">שולחנות פנויים</div>
+  <div class="free-row">
+    <div class="free-num">2</div>
+    <div class="free-name">שולחן 2 — קיר</div>
+    <div class="free-seats">4 מקומות</div>
+    <button class="start-btn">התיישב</button>
+  </div>
+  <div class="free-row">
+    <div class="free-num">6</div>
+    <div class="free-name">שולחן 6 — בר</div>
+    <div class="free-seats">2 מקומות</div>
+    <button class="start-btn">התיישב</button>
+  </div>
+  <div class="free-row">
+    <div class="free-num">13</div>
+    <div class="free-name">שולחן 13 — חצר</div>
+    <div class="free-seats">6 מקומות</div>
+    <button class="start-btn">התיישב</button>
+  </div>
+
+  <div style="height:20px"></div>
+</div>
+
+<!-- Tabbar -->
+<div class="tabbar">
+  <div class="tab on">
+    <div class="tab-i">📋</div>
+    <div class="tab-l">רשימה</div>
+  </div>
+  <div class="tab">
+    <div class="tab-i">🗺️</div>
+    <div class="tab-l">מפה</div>
+  </div>
+  <div class="tab">
+    <div class="tab-i">🔔</div>
+    <div class="tab-l">התראות</div>
+  </div>
+</div>
+
+<div style="position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#22c55e;color:#000;font-size:11px;font-weight:900;padding:3px 10px;border-radius:999px;z-index:999;pointer-events:none">
+  אופציה 3 — Urgency-First List
+</div>
+</body>
+</html>

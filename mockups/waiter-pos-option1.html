@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390,initial-scale=1">
+<title>אופציה 1 — Grid + Bottom Sheet</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0c0c; color: #f0ece6; font-family: Arial, Helvetica, sans-serif;
+         max-width: 390px; margin: 0 auto; height: 100vh; overflow: hidden; position: relative; }
+
+  /* ── Top bar ── */
+  .topbar {
+    height: 52px; background: #161616; border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
+  }
+  .topbar-title { font-size: 15px; font-weight: 800; color: #c9890a; }
+  .topbar-rest  { font-size: 11px; color: #7a7268; }
+  .notif-btn    { width: 36px; height: 36px; border-radius: 50%; background: #1e1e1e;
+                  border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center;
+                  justify-content: center; position: relative; cursor: pointer; }
+  .notif-dot    { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px;
+                  border-radius: 50%; background: #ef4444; border: 2px solid #161616; }
+
+  /* ── Status bar ── */
+  .statusbar {
+    height: 36px; background: #161616; display: flex; align-items: center; gap: 6px;
+    padding: 0 12px; overflow-x: auto; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .statusbar::-webkit-scrollbar { display: none; }
+  .sb-chip {
+    white-space: nowrap; padding: 3px 10px; border-radius: 999px; font-size: 11px;
+    font-weight: 700; cursor: pointer; border: 1px solid transparent;
+  }
+  .sb-all    { background: #c9890a22; color: #c9890a; border-color: #c9890a44; }
+  .sb-free   { background: #22c55e18; color: #22c55e; border-color: #22c55e44; }
+  .sb-occ    { background: #f9731618; color: #f97316; border-color: #f9731644; }
+  .sb-bill   { background: #ef444418; color: #ef4444; border-color: #ef444444; }
+
+  /* ── Grid ── */
+  .grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    padding: 10px; overflow-y: auto;
+    height: calc(100vh - 52px - 36px - 58px); /* topbar + statusbar + tabbar */
+  }
+  .tcard {
+    background: #1e1e1e; border-radius: 12px; padding: 10px 8px;
+    border: 1px solid rgba(255,255,255,0.08); cursor: pointer; position: relative;
+    transition: transform 0.12s;
+  }
+  .tcard:active { transform: scale(0.96); }
+  .tcard.occupied { border-color: #f9731633; box-shadow: 0 0 0 1px #f9731622 inset; }
+  .tcard.bill     { border-color: #ef444433; box-shadow: 0 0 0 1px #ef444422 inset; }
+  .tcard.free     { border-color: #22c55e22; }
+
+  .tcard-num   { font-size: 20px; font-weight: 900; text-align: center; line-height: 1; margin-bottom: 4px; }
+  .tcard-num.occupied { color: #f97316; }
+  .tcard-num.bill     { color: #ef4444; }
+  .tcard-num.free     { color: #22c55e; }
+  .tcard-name  { font-size: 10px; color: #7a7268; text-align: center; margin-bottom: 6px; }
+  .tcard-timer { font-size: 11px; font-weight: 700; color: #facc15; text-align: center;
+                 font-family: monospace; }
+  .tcard-guests { font-size: 10px; color: #c8bfb0; text-align: center; }
+  .tcard-total  { font-size: 11px; font-weight: 700; color: #c9890a; text-align: center; margin-top: 2px; }
+  .spark {
+    position: absolute; top: 6px; left: 6px; width: 14px; height: 14px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 8px;
+  }
+  .spark.alert  { background: #ef444430; color: #ef4444; }
+  .spark.upsell { background: #a855f730; color: #a855f7; }
+  .spark.action { background: #3b82f630; color: #3b82f6; }
+
+  /* ── Tab bar ── */
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0; max-width: 390px; margin: 0 auto;
+    height: 58px; background: #161616; border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; cursor: pointer; position: relative;
+  }
+  .tab-icon  { font-size: 20px; }
+  .tab-label { font-size: 10px; color: #7a7268; }
+  .tab.active .tab-icon  { font-size: 20px; }
+  .tab.active .tab-label { color: #c9890a; font-weight: 700; }
+  .tab.active::before {
+    content: ''; position: absolute; top: 0; left: 25%; right: 25%;
+    height: 2px; background: #c9890a; border-radius: 0 0 3px 3px;
+  }
+  .tab-badge {
+    position: absolute; top: 6px; right: 20%; background: #ef4444;
+    color: #fff; font-size: 9px; font-weight: 900; border-radius: 999px;
+    min-width: 16px; height: 16px; display: flex; align-items: center;
+    justify-content: center; padding: 0 4px;
+  }
+
+  /* ── Bottom sheet ── */
+  .sheet-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50;
+    display: flex; align-items: flex-end; max-width: 390px; margin: 0 auto;
+  }
+  .sheet {
+    width: 100%; background: #161616; border-radius: 16px 16px 0 0;
+    border-top: 1px solid rgba(255,255,255,0.1); padding: 0 0 72px 0;
+    max-height: 82vh; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .sheet-handle {
+    width: 40px; height: 4px; background: rgba(255,255,255,0.2);
+    border-radius: 2px; margin: 10px auto 0;
+  }
+  .sheet-header {
+    padding: 12px 16px 10px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .sheet-title { font-size: 18px; font-weight: 900; color: #f97316; }
+  .sheet-sub   { font-size: 12px; color: #7a7268; }
+  .sheet-tabs  {
+    display: flex; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .stab {
+    flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 700;
+    color: #7a7268; cursor: pointer;
+  }
+  .stab.active { color: #c9890a; border-bottom: 2px solid #c9890a; }
+  .sheet-body  { overflow-y: auto; flex: 1; padding: 12px 14px; }
+
+  /* menu categories */
+  .cat-label { font-size: 11px; font-weight: 700; color: #7a7268; margin: 10px 0 6px;
+               text-transform: uppercase; letter-spacing: 0.04em; }
+  .menu-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;
+  }
+  .mi-name  { font-size: 14px; color: #f0ece6; }
+  .mi-desc  { font-size: 11px; color: #7a7268; margin-top: 1px; }
+  .mi-price { font-size: 13px; font-weight: 700; color: #c9890a; }
+  .mi-add   {
+    width: 28px; height: 28px; border-radius: 8px; background: #c9890a22;
+    border: 1px solid #c9890a44; color: #c9890a; font-size: 18px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .cart-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .cr-qty   { width: 28px; height: 28px; background: #c9890a; color: #fff; border-radius: 6px;
+              font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .cr-name  { flex: 1; font-size: 14px; }
+  .cr-price { font-size: 13px; font-weight: 700; color: #c9890a; }
+  .fire-btn {
+    width: calc(100% - 28px); margin: 12px 14px 0; padding: 14px; border-radius: 12px;
+    background: #22c55e; color: #000; font-size: 15px; font-weight: 900;
+    border: none; cursor: pointer; text-align: center;
+  }
+
+  .label-tag { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 700; }
+  .tag-done   { background: #22c55e20; color: #22c55e; }
+  .tag-prep   { background: #f9731620; color: #f97316; }
+  .tag-held   { background: #7a726830; color: #7a7268; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">מלצר POS</div>
+    <div class="topbar-rest">רשטורנטה רומא ↓</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:12px;color:#7a7268">אמיר כ.</span>
+    <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+  </div>
+</div>
+
+<!-- Status filter chips -->
+<div class="statusbar">
+  <div class="sb-chip sb-all">הכל (12)</div>
+  <div class="sb-chip sb-occ">תפוסים (7)</div>
+  <div class="sb-chip sb-bill">חשבון (2)</div>
+  <div class="sb-chip sb-free">פנויים (3)</div>
+</div>
+
+<!-- Table grid -->
+<div class="grid">
+
+  <div class="tcard occupied" onclick="openSheet()">
+    <div class="spark action">●</div>
+    <div class="tcard-num occupied">4</div>
+    <div class="tcard-name">חלון</div>
+    <div class="tcard-timer">18:42</div>
+    <div class="tcard-guests">👥 3</div>
+    <div class="tcard-total">₪ 186</div>
+  </div>
+
+  <div class="tcard bill" onclick="openSheet()">
+    <div class="spark alert">!</div>
+    <div class="tcard-num bill">7</div>
+    <div class="tcard-name">מרכז</div>
+    <div class="tcard-timer">52:10</div>
+    <div class="tcard-guests">👥 5</div>
+    <div class="tcard-total">₪ 412</div>
+  </div>
+
+  <div class="tcard free">
+    <div class="tcard-num free">2</div>
+    <div class="tcard-name">קיר</div>
+    <div style="font-size:18px;text-align:center;margin:6px 0">🪑</div>
+    <div class="tcard-guests">4 מקומות</div>
+  </div>
+
+  <div class="tcard occupied" onclick="openSheet()">
+    <div class="spark upsell">✦</div>
+    <div class="tcard-num occupied">9</div>
+    <div class="tcard-name">פנימי</div>
+    <div class="tcard-timer">34:07</div>
+    <div class="tcard-guests">👥 2</div>
+    <div class="tcard-total">₪ 228</div>
+  </div>
+
+  <div class="tcard occupied" onclick="openSheet()">
+    <div class="tcard-num occupied">11</div>
+    <div class="tcard-name">חצר</div>
+    <div class="tcard-timer">12:35</div>
+    <div class="tcard-guests">👥 4</div>
+    <div class="tcard-total">₪ 95</div>
+  </div>
+
+  <div class="tcard free">
+    <div class="tcard-num free">13</div>
+    <div class="tcard-name">חצר</div>
+    <div style="font-size:18px;text-align:center;margin:6px 0">🪑</div>
+    <div class="tcard-guests">6 מקומות</div>
+  </div>
+
+  <div class="tcard bill" onclick="openSheet()">
+    <div class="spark alert">!</div>
+    <div class="tcard-num bill">1</div>
+    <div class="tcard-name">כניסה</div>
+    <div class="tcard-timer">61:22</div>
+    <div class="tcard-guests">👥 4</div>
+    <div class="tcard-total">₪ 310</div>
+  </div>
+
+  <div class="tcard occupied" onclick="openSheet()">
+    <div class="tcard-num occupied">5</div>
+    <div class="tcard-name">בר</div>
+    <div class="tcard-timer">08:11</div>
+    <div class="tcard-guests">👥 1</div>
+    <div class="tcard-total">₪ 42</div>
+  </div>
+
+  <div class="tcard free">
+    <div class="tcard-num free">6</div>
+    <div class="tcard-name">בר</div>
+    <div style="font-size:18px;text-align:center;margin:6px 0">🪑</div>
+    <div class="tcard-guests">2 מקומות</div>
+  </div>
+
+</div>
+
+<!-- Tab bar -->
+<div class="tabbar">
+  <div class="tab active">
+    <span class="tab-icon">🗺️</span>
+    <span class="tab-label">שולחנות</span>
+  </div>
+  <div class="tab">
+    <span class="tab-icon">📋</span>
+    <span class="tab-label">הזמנות</span>
+    <div class="tab-badge">3</div>
+  </div>
+  <div class="tab">
+    <span class="tab-icon">🔔</span>
+    <span class="tab-label">התראות</span>
+    <div class="tab-badge">5</div>
+  </div>
+</div>
+
+<!-- Bottom sheet (table detail) -->
+<div class="sheet-bg" id="sheet" style="display:none" onclick="handleBgClick(event)">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title">שולחן 4 🟠</div>
+        <div class="sheet-sub">3 סועדים · 18 דקות · חלון</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="background:#ef444420;color:#ef4444;border:1px solid #ef444440;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">חשבון</div>
+        <div style="background:#161616;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer" onclick="closeSheet()">✕</div>
+      </div>
+    </div>
+
+    <div class="sheet-tabs">
+      <div class="stab active" id="tab-order" onclick="switchTab('order')">🍽️ הזמנה</div>
+      <div class="stab" id="tab-bill" onclick="switchTab('bill')">🧾 חשבון</div>
+      <div class="stab" id="tab-ai" onclick="switchTab('ai')">✨ AI</div>
+    </div>
+
+    <div class="sheet-body" id="body-order">
+      <!-- existing items -->
+      <div class="cat-label">הוזמן</div>
+      <div class="cart-row">
+        <div class="cr-qty">2</div>
+        <div style="flex:1"><div class="cr-name">אנטריקוט 300 גר'</div><div style="font-size:11px;color:#7a7268">ללא בצל · מדיום</div></div>
+        <div class="label-tag tag-prep">מכין</div>
+        <div class="cr-price">₪ 172</div>
+      </div>
+      <div class="cart-row">
+        <div class="cr-qty">1</div>
+        <div style="flex:1"><div class="cr-name">יין אדום (כוס)</div></div>
+        <div class="label-tag tag-done">מוכן</div>
+        <div class="cr-price">₪ 38</div>
+      </div>
+
+      <!-- add items -->
+      <div class="cat-label" style="margin-top:16px">הוסף מנה</div>
+
+      <div class="cat-label">ראשונות</div>
+      <div class="menu-item">
+        <div><div class="mi-name">סלט קיסר</div><div class="mi-desc">חסה, עוף, פרמזן</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><div class="mi-price">₪ 54</div><div class="mi-add">+</div></div>
+      </div>
+      <div class="menu-item">
+        <div><div class="mi-name">קרפצ'יו</div><div class="mi-desc">בקר, שמן זית, לימון</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><div class="mi-price">₪ 68</div><div class="mi-add">+</div></div>
+      </div>
+
+      <div class="cat-label">עיקריות</div>
+      <div class="menu-item">
+        <div><div class="mi-name">פילה דג ים</div><div class="mi-desc">עם פירה ורוטב חמאה</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><div class="mi-price">₪ 118</div><div class="mi-add">+</div></div>
+      </div>
+      <div class="menu-item">
+        <div><div class="mi-name">פסטה פסטו</div><div class="mi-desc">ריגטוני, בזיליקום</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><div class="mi-price">₪ 72</div><div class="mi-add">+</div></div>
+      </div>
+
+      <button class="fire-btn">🔥 שלח למטבח (2 מנות)</button>
+    </div>
+
+    <div class="sheet-body" id="body-bill" style="display:none">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:#c8bfb0">2× אנטריקוט</span><span style="color:#f0ece6;font-weight:700">₪ 172</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:#c8bfb0">1× יין אדום</span><span style="color:#f0ece6;font-weight:700">₪ 38</span></div>
+      <div style="display:flex;justify-content:space-between;padding:12px 0;margin-top:4px"><span style="font-size:16px;font-weight:900;color:#f0ece6">סה"כ</span><span style="font-size:18px;font-weight:900;color:#c9890a">₪ 210</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:#7a7268">
+        <span>טיפ מומלץ 15%</span><span style="color:#22c55e">₪ 31</span>
+      </div>
+      <button style="width:100%;margin-top:16px;padding:14px;border-radius:12px;background:#ef4444;color:#fff;font-size:15px;font-weight:900;border:none;cursor:pointer">💳 סגור שולחן</button>
+    </div>
+
+    <div class="sheet-body" id="body-ai" style="display:none">
+      <div style="background:#3b82f618;border:1px solid #3b82f640;border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:16px">🍽️</span><span style="color:#3b82f6;font-size:13px;font-weight:700">יין אדום מוכן להגשה</span></div>
+        <div style="font-size:12px;color:#c8bfb0">מוכן כבר 4 דקות — הגש כעת</div>
+      </div>
+      <div style="background:#a855f718;border:1px solid #a855f740;border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:16px">🍷</span><span style="color:#a855f7;font-size:13px;font-weight:700">הצע עוד יין</span></div>
+        <div style="font-size:12px;color:#c8bfb0">שולחן עם בשר ורק כוס אחת — פוטנציאל למכירה</div>
+      </div>
+      <div style="background:#22c55e18;border:1px solid #22c55e40;border-radius:10px;padding:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:16px">✅</span><span style="color:#22c55e;font-size:13px;font-weight:700">אנטריקוט מכין — עוד ~5 דק'</span></div>
+        <div style="font-size:12px;color:#c8bfb0">הכן סכין וקרש לשולחן</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Label -->
+<div style="position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#c9890a;color:#000;font-size:11px;font-weight:900;padding:3px 10px;border-radius:999px;z-index:999;pointer-events:none">
+  אופציה 1 — Grid Cards + Bottom Sheet
+</div>
+
+<script>
+function openSheet() {
+  document.getElementById('sheet').style.display = 'flex';
+}
+function closeSheet() {
+  document.getElementById('sheet').style.display = 'none';
+}
+function handleBgClick(e) {
+  if (e.target === document.getElementById('sheet')) closeSheet();
+}
+function switchTab(t) {
+  ['order','bill','ai'].forEach(id => {
+    document.getElementById('body-'+id).style.display = id===t ? 'block' : 'none';
+    document.getElementById('tab-'+id).classList.toggle('active', id===t);
+  });
+}
+</script>
+</body>
+</html>
