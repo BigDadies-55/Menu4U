@@ -25,6 +25,7 @@ export default async function WaiterFloorPage() {
     <WaiterFloorWrapper
       restaurants={restaurants}
       waiterName={session.user.name ?? session.user.email ?? "מלצר"}
+      waiterId={session.user.id}
     />
   );
 }
