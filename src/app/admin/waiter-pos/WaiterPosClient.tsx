@@ -277,7 +277,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     const origMaxY = Math.max(...activeRoom.tables.map(t => t.y + t.h));
     const origMaxX = Math.max(...activeRoom.tables.map(t => t.x + t.w));
     if (layoutRotation === 0) {
-      return { tables: activeRoom.tables, maxX: origMaxX + 20, maxY: origMaxY + 20 };
+      return { tables: activeRoom.tables, maxX: origMaxX, maxY: origMaxY };
     }
     // 90° clockwise: x' = origMaxY - (y+h), y' = x, w' = h, h' = w
     const rotated = activeRoom.tables.map(lt => ({
@@ -287,14 +287,19 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       w: lt.h,
       h: lt.w,
     }));
-    const newMaxX = Math.max(...rotated.map(t => t.x + t.w)) + 20;
-    const newMaxY = Math.max(...rotated.map(t => t.y + t.h)) + 20;
+    const newMaxX = Math.max(...rotated.map(t => t.x + t.w));
+    const newMaxY = Math.max(...rotated.map(t => t.y + t.h));
     return { tables: rotated, maxX: newMaxX, maxY: newMaxY };
   }, [activeRoom, layoutRotation]);
 
-  const floorScale = useMemo(() => {
-    if (!rotatedFloor.maxX || !rotatedFloor.maxY) return 1;
-    return Math.min(floorSize.w / rotatedFloor.maxX, floorSize.h / rotatedFloor.maxY, 1.6);
+  const { floorScale, floorOffsetX, floorOffsetY } = useMemo(() => {
+    if (!rotatedFloor.maxX || !rotatedFloor.maxY || !floorSize.w || !floorSize.h)
+      return { floorScale: 1, floorOffsetX: 0, floorOffsetY: 0 };
+    const scale = Math.min(floorSize.w / rotatedFloor.maxX, floorSize.h / rotatedFloor.maxY);
+    // center the layout in the canvas
+    const offsetX = Math.max(0, (floorSize.w - rotatedFloor.maxX * scale) / 2);
+    const offsetY = Math.max(0, (floorSize.h - rotatedFloor.maxY * scale) / 2);
+    return { floorScale: scale, floorOffsetX: offsetX, floorOffsetY: offsetY };
   }, [rotatedFloor, floorSize]);
 
   void tick;
@@ -559,7 +564,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       {/* ══ FLOOR VIEW ══ */}
       {viewMode === "floor" && (
         <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", margin: 8, borderRadius: 12, background: "#e8eaf0" }}>
+          <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", background: "#e8eaf0" }}>
             {!layout ? (
               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: 14 }}>
                 אין פריסת שולחנות — הגדר פריסה בבונה הפריסה
@@ -593,7 +598,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                 <div key={`${lt.num}-${layoutRotation}`} onClick={() => setTableOverlay(tNum)}
                   style={{
                     position: "absolute",
-                    left: lt.x * floorScale, top: lt.y * floorScale,
+                    left: lt.x * floorScale + floorOffsetX,
+                    top:  lt.y * floorScale + floorOffsetY,
                     width: W, height: H,
                     borderRadius: isRound ? "50%" : lt.shape === "banquet" ? 12 : 6,
                     background: status === "occupied" ? color + "18" : color + "12",
