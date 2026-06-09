@@ -21,12 +21,14 @@ const FAV_KEY = "menu4u_favorites";
 
 /* ─── Admin palettes ─────────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
-  dark:   { bg: "var(--c-panel)", accent: T.gold,    accentMuted: T.goldSub,              accentText: T.gold   },
+  dark:         { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
+  "warm-light": { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
+  earthy:       { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
   purple: { bg: "#120b1e",        accent: T.purple,  accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
   blue:   { bg: "#080f1e",        accent: T.blue,    accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
   green:  { bg: "#071510",        accent: T.green,   accentMuted: "rgba(34,197,94,0.15)",  accentText: "#86efac" },
   rose:   { bg: "#150a0e",        accent: "#f43f5e", accentMuted: "rgba(244,63,94,0.15)",  accentText: "#fda4af" },
-  custom: { bg: "var(--c-panel)", accent: T.gold,    accentMuted: T.goldSub,              accentText: T.gold   },
+  custom: { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
 };
 
 /* ─── Icons ──────────────────────────────────────────────────── */
@@ -109,6 +111,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/logs",        label: "לוגים",         I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,   adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,   waiterHide: true, displayHide: true },
+      { href: "/admin/appearance",  label: "מראה 🎨",        I: Ic.Settings,   ownerOnly: true,  waiterHide: true, displayHide: true },
     ],
   },
   {
@@ -241,7 +244,7 @@ export default function Sidebar({
     if (l.displayHide && isDisplay) return false;
     if (l.superAdmin  && user.role !== "SUPER_ADMIN") return false;
     if (l.adminOnly   && !["SUPER_ADMIN","ADMIN"].includes(user.role)) return false;
-    if (l.ownerOnly   && (isEditor || isViewer || isWaiter || isDisplay || isShiftMgr)) return false;
+    if (l.ownerOnly   && (isEditor || isViewer || isWaiter || isDisplay)) return false;
     return true;
   }
 
@@ -400,7 +403,7 @@ export default function Sidebar({
   // Gradient D: dark vertical gradient (gold edge added as a child element below)
   const useDefaultDrawer = sidebarBg === "var(--c-panel)" || !adminSidebarBg;
   const drawerBg = useDefaultDrawer
-    ? "linear-gradient(180deg,#1c1c1c 0%,#161412 55%,#100f0d 100%)"
+    ? "linear-gradient(180deg,var(--c-sidebar-from) 0%,var(--c-sidebar-mid) 55%,var(--c-sidebar-to) 100%)"
     : sidebarBg;
 
   return (
