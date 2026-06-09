@@ -549,23 +549,21 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     </div>
                   </div>
 
-                  {/* Reserve quick-toggle — free or reserved tables only */}
-                  {(t.availStatus === "free" || t.availStatus === "reserved") && (
+                  {/* Cancel reservation button — reserved tables only */}
+                  {t.availStatus === "reserved" && (
                     <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
                       <button
-                        onClick={e => { e.stopPropagation(); patchStatus(t.tableNum, t.availStatus === "reserved" ? "free" : "reserved"); }}
+                        onClick={e => { e.stopPropagation(); patchStatus(t.tableNum, "free"); }}
                         style={{
-                          background: t.availStatus === "reserved" ? "#eff6ff" : "none",
-                          border: `1px solid ${t.availStatus === "reserved" ? "#3b82f6" : "#dde1e8"}`,
+                          background: "#eff6ff", border: "1px solid #3b82f6",
                           cursor: "pointer", width: "100%",
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                          color: t.availStatus === "reserved" ? "#3b82f6" : "#888",
-                          fontSize: 11, fontWeight: 600, padding: "3px 4px", borderRadius: 6,
+                          color: "#3b82f6", fontSize: 11, fontWeight: 600, padding: "3px 4px", borderRadius: 6,
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "#eff6ff")}
-                        onMouseLeave={e => (e.currentTarget.style.background = t.availStatus === "reserved" ? "#eff6ff" : "none")}
+                        onMouseEnter={e => (e.currentTarget.style.background = "#dbeafe")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "#eff6ff")}
                       >
-                        🔵 {t.availStatus === "reserved" ? "בטל הזמנה" : "סמן כמוזמן"}
+                        🔵 בטל הזמנה
                       </button>
                     </div>
                   )}
