@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string };
@@ -116,12 +117,35 @@ export default function WaiterPosClient({
 
   const lastInsightFetch = useRef(0);
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    function check() { setIsMobile(window.innerWidth < 640); }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFsBanner, setShowFsBanner] = useState(false);
 
   useEffect(() => {
-    function onFsChange() { setIsFullscreen(!!document.fullscreenElement); }
+    function onFsChange() {
+      setIsFullscreen(!!document.fullscreenElement);
+      if (document.fullscreenElement) setShowFsBanner(false);
+    }
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  // Auto-enter fullscreen on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {
+          setShowFsBanner(true); // browser blocked — show manual prompt
+        });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
   }, []);
 
   function toggleFullscreen() {
@@ -248,7 +272,7 @@ export default function WaiterPosClient({
 
   return (
     <div dir="rtl" style={{
-      position: "fixed", inset: 0, zIndex: 50,
+      position: "fixed", inset: 0, zIndex: 400,
       background: "#f0f2f5", color: "#111", fontFamily: "inherit",
       overflowY: "auto", paddingBottom: 100,
     }}>
@@ -317,24 +341,59 @@ export default function WaiterPosClient({
           </button>
 
           <button
-            onClick={() => router.push("/admin")}
+            onClick={() => signOut({ callbackUrl: "/login" })}
             style={{
-              background: "#f5f5f7", border: "1px solid #e0e0e0",
+              background: "#fef2f2", border: "1px solid #fecaca",
               borderRadius: 8, padding: "6px 14px",
-              fontSize: 13, fontWeight: 600, color: "#555",
+              fontSize: 13, fontWeight: 600, color: "#dc2626",
               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
             }}
           >
-            ← יציאה
+            ⬅ יציאה
           </button>
         </div>
       </div>
 
+      {/* ══ FULLSCREEN BANNER (shown if browser blocked auto-fullscreen) ══ */}
+      {showFsBanner && (
+        <div style={{
+          background: "#1d4ed8", color: "#fff",
+          padding: "10px 20px", display: "flex", alignItems: "center",
+          justifyContent: "space-between", direction: "rtl", gap: 12,
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>
+            💡 למיטב החוויה — כנס למסך מלא
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => { toggleFullscreen(); setShowFsBanner(false); }}
+              style={{
+                background: "#fff", color: "#1d4ed8", border: "none",
+                borderRadius: 8, padding: "6px 16px", fontSize: 13,
+                fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              מסך מלא
+            </button>
+            <button
+              onClick={() => setShowFsBanner(false)}
+              style={{
+                background: "transparent", color: "rgba(255,255,255,0.7)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer",
+              }}
+            >
+              לא עכשיו
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ══ TABLE GRID ══ */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-        gap: 16, padding: 20, direction: "rtl",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+        gap: 10, padding: 14, direction: "rtl",
       }}>
         {loadingTables ? (
           <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 40, fontSize: 15 }}>
@@ -376,64 +435,64 @@ export default function WaiterPosClient({
               }}
             >
               {/* ── Card top ── */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 14px 6px", direction: "rtl" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "8px 10px 4px", direction: "rtl" }}>
                 {/* Right: table info */}
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, fontWeight: 500, color: "#888" }}>שולחן</div>
-                  <div style={{ fontSize: 38, fontWeight: 800, color: "#111", lineHeight: 1 }}>{t.tableNum}</div>
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>
+                  <div style={{ fontSize: 10, fontWeight: 500, color: "#888" }}>שולחן</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#111", lineHeight: 1 }}>{t.tableNum}</div>
+                  <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
                     👤 {t.availStatus === "occupied" && t.guests > 0 ? `${t.guests} סועדים` : `${t.seats} מקומות`}
                   </div>
                 </div>
                 {/* Left: timer */}
                 <div style={{ textAlign: "left", direction: "ltr" }}>
                   <div style={{
-                    fontSize: 16, fontWeight: 400, color: isWarn ? "#ef4444" : "#111",
+                    fontSize: 13, fontWeight: 400, color: isWarn ? "#ef4444" : "#111",
                     fontVariantNumeric: "tabular-nums",
                   }}>
                     {t.availStatus === "occupied" ? fmtTimer(t.sittingStart) : "--:--"}
                   </div>
-                  <div style={{ fontSize: 10, color: "#aaa", marginTop: 1 }}>זמן ישיבה</div>
+                  <div style={{ fontSize: 9, color: "#aaa", marginTop: 1 }}>זמן ישיבה</div>
                 </div>
               </div>
 
               {/* ── Divider ── */}
-              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 10px" }} />
+              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 8px" }} />
 
               {/* ── Status row ── */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", direction: "rtl" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: statusBadgeBg, flexShrink: 0, display: "inline-block" }} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", direction: "rtl" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: statusBadgeBg, flexShrink: 0, display: "inline-block" }} />
                   <span style={{
                     background: statusBadgeBg, color: "#fff", border: "none",
-                    borderRadius: 6, padding: "4px 9px", fontSize: 11, fontWeight: 700,
+                    borderRadius: 5, padding: "3px 7px", fontSize: 10, fontWeight: 700,
                   }}>{statusBadgeText}</span>
                 </div>
-                <div style={{ fontSize: 12, color: "#888" }}>
+                <div style={{ fontSize: 10, color: "#888" }}>
                   {t.availStatus === "occupied" && t.minutesSitting > 0 ? fmtAgo(t.minutesSitting) : "—"}
                 </div>
               </div>
 
               {/* ── Divider ── */}
-              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 10px" }} />
+              <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 8px" }} />
 
               {/* ── AI row ── */}
-              <div style={{ padding: "6px 14px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
+              <div style={{ padding: "4px 10px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
                 <button
                   onClick={e => { e.stopPropagation(); setTableOverlay(t.tableNum); }}
                   style={{
                     background: "none", border: "none", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 5,
-                    color: "#9b59e8", fontSize: 13, fontWeight: 600,
-                    padding: "3px 5px", borderRadius: 7,
+                    display: "flex", alignItems: "center", gap: 4,
+                    color: "#9b59e8", fontSize: 11, fontWeight: 600,
+                    padding: "2px 4px", borderRadius: 6,
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#f3eeff")}
                   onMouseLeave={e => (e.currentTarget.style.background = "none")}
                 >
-                  <span style={{ fontSize: 18 }}>✨</span>
-                  {tableInsights.length > 0 ? `${tableInsights.length} תובנות` : "תובנות AI"}
+                  <span style={{ fontSize: 14 }}>✨</span>
+                  {tableInsights.length > 0 ? `${tableInsights.length} תובנות` : "AI"}
                 </button>
-                <span style={{ fontSize: 11, color: "#bbb" }}>לחץ לפרטים</span>
+                <span style={{ fontSize: 10, color: "#bbb" }}>לחץ לפרטים</span>
               </div>
             </div>
           );
@@ -565,57 +624,67 @@ export default function WaiterPosClient({
       )}
 
       {/* ══ BOTTOM KPI BAR ══ */}
-      <div style={{ position: "fixed", bottom: 0, right: 0, left: 0, background: "#fff", borderTop: "1px solid #dde1e8", zIndex: 100, direction: "rtl" }}>
+      <div style={{ position: "fixed", bottom: 0, right: 0, left: 0, background: "#fff", borderTop: "1px solid #dde1e8", zIndex: 450, direction: "rtl" }}>
+
+        {/* ── Insight strip — always visible above KPI row ── */}
+        <div style={{
+          background: "linear-gradient(135deg, #5b2fa8 0%, #8b44e0 100%)",
+          padding: isMobile ? "7px 12px" : "8px 20px",
+          display: "flex", alignItems: "center", gap: 8,
+          minHeight: 36,
+          opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
+        }}>
+          {currentInsight ? (
+            <>
+              <span style={{ fontSize: isMobile ? 14 : 16, flexShrink: 0 }}>
+                {INSIGHT_ICON[currentInsight.type] ?? "⚠️"}
+              </span>
+              <span style={{
+                fontSize: isMobile ? 12 : 13, fontWeight: 700,
+                color: "#e8d5ff", whiteSpace: "nowrap", flexShrink: 0,
+              }}>
+                שולחן {currentInsight.tableNum}:
+              </span>
+              <span style={{
+                fontSize: isMobile ? 12 : 13, color: "#f5eeff", fontWeight: 500,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
+              }}>
+                {currentInsight.text}
+              </span>
+              {insights.length > 1 && (
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", flexShrink: 0 }}>
+                  {insightIdx + 1}/{insights.length}
+                </span>
+              )}
+            </>
+          ) : (
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+              {insightLoading ? "✨ מנתח תובנות AI..." : "✨ אין תובנות כרגע"}
+            </span>
+          )}
+        </div>
+
         {/* Segment bar */}
         <div style={{ display: "flex", height: 3, overflow: "hidden" }}>
-          <div style={{ flex: occupiedCount,  background: "#ef4444", transition: "flex 0.4s" }} />
-          <div style={{ flex: reservedCount,  background: "#7c3aed", transition: "flex 0.4s" }} />
-          <div style={{ flex: freeCount,      background: "#22c55e", transition: "flex 0.4s" }} />
+          <div style={{ flex: occupiedCount,                  background: "#ef4444", transition: "flex 0.4s" }} />
+          <div style={{ flex: reservedCount,                  background: "#7c3aed", transition: "flex 0.4s" }} />
+          <div style={{ flex: freeCount,                      background: "#22c55e", transition: "flex 0.4s" }} />
           <div style={{ flex: Math.max(inactiveCount, 0.01), background: "#e5e7eb", transition: "flex 0.4s" }} />
         </div>
 
         {/* KPI row */}
-        <div style={{ display: "flex", gap: 8, alignItems: "stretch", padding: "10px 16px", overflowX: "auto" }}>
-          <KpiCard label="תפוס"  value={occupiedCount} color="#ef4444" bg="#fef2f2" />
-          <KpiCard label="שמור"  value={reservedCount} color="#7c3aed" bg="#f5f0ff" />
-          <KpiCard label="פנוי"  value={freeCount}     color="#22c55e" bg="#f0fdf4" />
-          <KpiCard label="לא פעיל" value={inactiveCount} color="#9ca3af" bg="#f9fafb" />
+        <div style={{
+          display: "flex", gap: isMobile ? 5 : 8, alignItems: "stretch",
+          padding: isMobile ? "5px 10px" : "10px 16px",
+          overflowX: "auto",
+        }}>
+          <KpiCard label="תפוס"    value={occupiedCount} color="#ef4444" bg="#fef2f2" small={isMobile} />
+          <KpiCard label="שמור"    value={reservedCount} color="#7c3aed" bg="#f5f0ff" small={isMobile} />
+          <KpiCard label="פנוי"    value={freeCount}     color="#22c55e" bg="#f0fdf4" small={isMobile} />
+          <KpiCard label="לא פעיל" value={inactiveCount} color="#9ca3af" bg="#f9fafb" small={isMobile} />
           <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />
-          <KpiCard label="סועדים" value={totalDiners} color="#3b82f6" bg="#eff6ff" />
-          <KpiCard label="דורשים תשומת לב" value={alertsCount} color="#f59e0b" bg="#fffbeb" />
-          <div style={{ width: 1, background: "#e5e7eb", flexShrink: 0, alignSelf: "stretch", margin: "2px 4px" }} />
-
-          {/* Critical insight rotator */}
-          {currentInsight && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px 0 12px", flex: 1, minWidth: 0 }}>
-              <div style={{
-                background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6,
-                padding: "3px 10px", fontSize: 17, fontWeight: 700, color: "#dc2626",
-                whiteSpace: "nowrap", flexShrink: 0,
-                opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
-              }}>
-                {INSIGHT_ICON[currentInsight.type] ?? "⚠️"} שולחן {currentInsight.tableNum}
-              </div>
-              <div style={{
-                fontSize: 17, color: "#374151", fontWeight: 500, lineHeight: 1.35,
-                overflow: "hidden", display: "-webkit-box",
-                WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
-                opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
-              }}>
-                {currentInsight.text}
-              </div>
-            </div>
-          )}
-          {!currentInsight && insightLoading && (
-            <div style={{ display: "flex", alignItems: "center", padding: "0 12px", color: "#aaa", fontSize: 13 }}>
-              מנתח תובנות AI...
-            </div>
-          )}
-          {!currentInsight && !insightLoading && tables.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", padding: "0 12px", color: "#ccc", fontSize: 13 }}>
-              אין תובנות כרגע
-            </div>
-          )}
+          <KpiCard label="סועדים"           value={totalDiners} color="#3b82f6" bg="#eff6ff" small={isMobile} />
+          <KpiCard label="דורשים תשומת לב"  value={alertsCount} color="#f59e0b" bg="#fffbeb" small={isMobile} />
         </div>
       </div>
 
@@ -638,15 +707,17 @@ export default function WaiterPosClient({
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────
-function KpiCard({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+function KpiCard({ label, value, color, bg, small }: { label: string; value: number; color: string; bg: string; small?: boolean }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      borderRadius: 10, padding: "8px 14px", minWidth: 64,
-      background: bg, borderTop: `3px solid ${color}`,
+      borderRadius: small ? 8 : 10,
+      padding: small ? "4px 8px" : "8px 14px",
+      minWidth: small ? 44 : 64,
+      background: bg, borderTop: `${small ? 2 : 3}px solid ${color}`,
     }}>
-      <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color, marginBottom: 2 }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 600, color: "#888", whiteSpace: "nowrap" }}>{label}</div>
+      <div style={{ fontSize: small ? 16 : 22, fontWeight: 800, lineHeight: 1, color, marginBottom: 2 }}>{value}</div>
+      <div style={{ fontSize: small ? 9 : 10, fontWeight: 600, color: "#888", whiteSpace: "nowrap" }}>{label}</div>
     </div>
   );
 }
