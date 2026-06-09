@@ -116,6 +116,21 @@ export default function WaiterPosClient({
 
   const lastInsightFetch = useRef(0);
   const router = useRouter();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    function onFsChange() { setIsFullscreen(!!document.fullscreenElement); }
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
 
   // Persist restaurant
   useEffect(() => {
@@ -282,6 +297,24 @@ export default function WaiterPosClient({
             background: "#f5f5f7", border: "1px solid #e0e0e0",
             borderRadius: 8, padding: "5px 11px",
           }}>{clock}</div>
+
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"}
+            style={{
+              background: "#f5f5f7", border: "1px solid #e0e0e0",
+              borderRadius: 8, padding: "6px 10px",
+              fontSize: 15, cursor: "pointer", color: "#555",
+              display: "flex", alignItems: "center",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+              {isFullscreen
+                ? <><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></>
+                : <><path d="M3 7V3h4"/><path d="M21 7V3h-4"/><path d="M3 17v4h4"/><path d="M21 17v4h-4"/></>
+              }
+            </svg>
+          </button>
 
           <button
             onClick={() => router.push("/admin")}
