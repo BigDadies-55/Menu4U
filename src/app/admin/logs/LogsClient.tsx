@@ -252,7 +252,7 @@ export default function LogsClient() {
                 placeholder="אימייל / שם ישות..."
                 style={{ ...DARK_INPUT, flex: 1 }}
               />
-              <button onClick={applySearch} style={{ background: T.gold, color: "#000", border: "none", padding: "0 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+              <button onClick={applySearch} style={{ background: T.gold, color: "#fff", border: "none", padding: "0 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
                 חפש
               </button>
             </div>

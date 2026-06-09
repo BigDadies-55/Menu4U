@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390,initial-scale=1">
+<title>אופציה 4 — Big Number Tiles</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0c0c0c; color: #f0ece6;
+    font-family: Arial, Helvetica, sans-serif;
+    max-width: 390px; margin: 0 auto; height: 100vh;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+
+  /* ── Header strip (minimal) ── */
+  .strip {
+    height: 46px; background: #0c0c0c;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px; flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .strip-left  { font-size: 13px; font-weight: 700; color: #f0ece6; }
+  .strip-left span { color: #7a7268; font-size: 11px; font-weight: 400; }
+  .strip-right { display: flex; gap: 8px; align-items: center; }
+  .pill {
+    padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    cursor: pointer;
+  }
+  .pill-all    { background: #1e1e1e; color: #c8bfb0; border: 1px solid rgba(255,255,255,0.1); }
+  .pill-active { background: #f9731618; color: #f97316; border: 1px solid #f9731633; }
+  .pill.sel    { background: #c9890a; color: #000; border-color: #c9890a; }
+  .notif-ico {
+    width: 32px; height: 32px; border-radius: 50%; background: #1e1e1e;
+    border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center;
+    justify-content: center; font-size: 14px; position: relative; cursor: pointer;
+  }
+  .nd { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px;
+        background: #ef4444; border-radius: 50%; border: 2px solid #0c0c0c; }
+
+  /* ── Big tile grid ── */
+  .grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 10px; padding: 10px;
+    overflow-y: auto; flex: 1;
+    padding-bottom: 70px;
+  }
+
+  .tile {
+    border-radius: 16px; cursor: pointer; overflow: hidden;
+    border: 1.5px solid rgba(255,255,255,0.08);
+    transition: transform 0.1s;
+    position: relative;
+  }
+  .tile:active { transform: scale(0.97); }
+
+  /* color variants */
+  .tile.free     { background: #0f1f0f; border-color: #22c55e25; }
+  .tile.occupied { background: #1a1008; border-color: #f9731625; }
+  .tile.bill     { background: #1a0808; border-color: #ef444425; }
+  .tile.new      { background: #0f0f1f; border-color: #a855f725; }
+
+  .tile-top { padding: 14px 14px 6px; }
+  .tile-num {
+    font-size: 48px; font-weight: 900; line-height: 1;
+    letter-spacing: -2px;
+  }
+  .tile.free     .tile-num { color: #22c55e; }
+  .tile.occupied .tile-num { color: #f97316; }
+  .tile.bill     .tile-num { color: #ef4444; }
+  .tile.new      .tile-num { color: #a855f7; }
+
+  .tile-location { font-size: 11px; color: #7a7268; margin-top: 2px; }
+  .tile-timer {
+    font-size: 13px; font-weight: 700; font-family: monospace;
+    margin-top: 4px;
+  }
+  .tile.bill .tile-timer { color: #ef4444; }
+  .tile.occupied .tile-timer { color: #facc15; }
+
+  .tile-guests { font-size: 11px; color: #7a7268; margin-top: 2px; }
+
+  /* items preview inside tile */
+  .tile-items {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 6px 10px;
+  }
+  .ti { font-size: 10px; padding: 2px 6px; border-radius: 999px; font-weight: 600; }
+  .ti-done { background: #22c55e18; color: #22c55e; }
+  .ti-prep { background: #f9731618; color: #f97316; }
+  .ti-held { background: #7a726818; color: #7a7268; }
+
+  /* total + ai indicator at bottom of tile */
+  .tile-bottom {
+    padding: 6px 12px 10px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .tile-total { font-size: 13px; font-weight: 800; color: #c9890a; }
+  .ai-spark   { width: 22px; height: 22px; border-radius: 50%; display: flex;
+                align-items: center; justify-content: center; font-size: 11px; }
+  .ai-alert  { background: #ef444420; color: #ef4444; }
+  .ai-upsell { background: #a855f720; color: #a855f7; }
+  .ai-action { background: #3b82f620; color: #3b82f6; }
+
+  /* free tile variant (minimal) */
+  .tile-free-content { padding: 14px; }
+  .tile-free-num { font-size: 48px; font-weight: 900; color: #22c55e; letter-spacing: -2px; }
+  .tile-free-loc { font-size: 11px; color: #7a7268; margin-top: 2px; }
+  .tile-free-seats { font-size: 12px; color: #22c55e; margin-top: 8px; opacity: 0.7; }
+  .tile-free-cta {
+    margin: 6px 10px 10px; padding: 8px; border-radius: 10px;
+    background: #22c55e18; border: 1px solid #22c55e30;
+    color: #22c55e; font-size: 12px; font-weight: 700;
+    text-align: center; cursor: pointer;
+  }
+
+  /* ── Modal overlay ── */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100;
+    display: flex; align-items: flex-end; max-width: 390px; margin: 0 auto;
+  }
+  .modal {
+    width: 100%; max-height: 78vh; background: #161616;
+    border-radius: 20px 20px 0 0; border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex; flex-direction: column;
+  }
+  .modal-handle {
+    width: 36px; height: 4px; background: rgba(255,255,255,0.2);
+    border-radius: 2px; margin: 10px auto 0;
+  }
+  .modal-head {
+    padding: 12px 16px 10px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .mh-num   { font-size: 32px; font-weight: 900; color: #f97316; margin-left: 8px; }
+  .mh-info  { flex: 1; }
+  .mh-title { font-size: 15px; font-weight: 800; }
+  .mh-sub   { font-size: 11px; color: #7a7268; margin-top: 2px; }
+  .mh-close { width: 32px; height: 32px; border-radius: 8px; background: #1e1e1e;
+              border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center;
+              justify-content: center; font-size: 14px; cursor: pointer; }
+
+  .modal-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .mtab { flex: 1; padding: 10px 0; text-align: center; font-size: 12px;
+          font-weight: 700; color: #7a7268; cursor: pointer; }
+  .mtab.on { color: #c9890a; border-bottom: 2px solid #c9890a; }
+
+  .modal-body { flex: 1; overflow-y: auto; padding: 12px 14px; }
+
+  .order-item-row {
+    display: flex; align-items: center; gap: 8px; padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .oi-qty { width: 28px; height: 28px; background: #c9890a; color: #000;
+            border-radius: 8px; font-size: 13px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center; }
+  .oi-name { flex: 1; font-size: 14px; }
+  .oi-sub  { font-size: 11px; color: #7a7268; }
+  .oi-status { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 700; }
+  .os-done { background: #22c55e18; color: #22c55e; }
+  .os-prep { background: #f9731618; color: #f97316; }
+  .oi-price { font-size: 13px; font-weight: 700; color: #c9890a; }
+
+  .menu-item-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .mi-add-btn {
+    width: 32px; height: 32px; border-radius: 8px; background: #c9890a20;
+    border: 1px solid #c9890a44; color: #c9890a; font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+  }
+  .mi-text { flex: 1; }
+  .mi-name { font-size: 14px; }
+  .mi-desc { font-size: 11px; color: #7a7268; }
+  .mi-price{ font-size: 13px; font-weight: 700; color: #c9890a; }
+
+  .modal-foot {
+    padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; gap: 8px;
+  }
+  .mf-btn {
+    flex: 1; padding: 12px 0; border-radius: 12px; border: none;
+    font-size: 14px; font-weight: 800; cursor: pointer;
+  }
+  .mf-fire { background: #22c55e; color: #000; }
+  .mf-bill { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
+
+  /* Tab bar */
+  .tabbar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 390px; height: 58px; background: #161616;
+    border-top: 1px solid rgba(255,255,255,0.08); display: flex; z-index: 10;
+  }
+  .tb { flex: 1; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 3px; cursor: pointer; }
+  .tb-i { font-size: 20px; }
+  .tb-l { font-size: 10px; color: #7a7268; }
+  .tb.on::before { content:''; position:absolute; top:0; width:40%; height:2px; background:#c9890a; border-radius:0 0 3px 3px; }
+  .tb.on .tb-l { color: #c9890a; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- Strip -->
+<div class="strip">
+  <div class="strip-left">מלצר POS <span>· רומא</span></div>
+  <div class="strip-right">
+    <div class="pill pill-all sel">הכל</div>
+    <div class="pill pill-active">פעילים</div>
+    <div class="notif-ico">🔔<div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- Big tile grid -->
+<div class="grid">
+
+  <!-- BILL table (urgent - top-left) -->
+  <div class="tile bill" onclick="openModal()">
+    <div class="tile-top">
+      <div class="tile-num">7</div>
+      <div class="tile-location">מרכז</div>
+      <div class="tile-timer">52:10 ⚠️</div>
+      <div class="tile-guests">👥 5</div>
+    </div>
+    <div class="tile-items">
+      <div class="ti ti-done">הכל הוגש</div>
+    </div>
+    <div class="tile-bottom">
+      <div class="tile-total">₪ 412</div>
+      <div class="ai-spark ai-alert">!</div>
+    </div>
+  </div>
+
+  <!-- OCCUPIED with ready items -->
+  <div class="tile occupied" onclick="openModal()">
+    <div class="tile-top">
+      <div class="tile-num">4</div>
+      <div class="tile-location">חלון</div>
+      <div class="tile-timer">18:42</div>
+      <div class="tile-guests">👥 3</div>
+    </div>
+    <div class="tile-items">
+      <div class="ti ti-done">יין ✓</div>
+      <div class="ti ti-prep">אנטריקוט</div>
+    </div>
+    <div class="tile-bottom">
+      <div class="tile-total">₪ 210</div>
+      <div class="ai-spark ai-action">●</div>
+    </div>
+  </div>
+
+  <!-- OCCUPIED with upsell -->
+  <div class="tile occupied" onclick="openModal()">
+    <div class="tile-top">
+      <div class="tile-num">9</div>
+      <div class="tile-location">פנימי</div>
+      <div class="tile-timer">34:07</div>
+      <div class="tile-guests">👥 2</div>
+    </div>
+    <div class="tile-items">
+      <div class="ti ti-done">פילה ✓</div>
+      <div class="ti ti-done">פסטה ✓</div>
+    </div>
+    <div class="tile-bottom">
+      <div class="tile-total">₪ 228</div>
+      <div class="ai-spark ai-upsell">✦</div>
+    </div>
+  </div>
+
+  <!-- BILL urgent -->
+  <div class="tile bill" onclick="openModal()">
+    <div class="tile-top">
+      <div class="tile-num">1</div>
+      <div class="tile-location">כניסה</div>
+      <div class="tile-timer">61:22 ⚠️</div>
+      <div class="tile-guests">👥 4</div>
+    </div>
+    <div class="tile-items">
+      <div class="ti ti-done">הכל הוגש</div>
+    </div>
+    <div class="tile-bottom">
+      <div class="tile-total">₪ 310</div>
+      <div class="ai-spark ai-alert">!</div>
+    </div>
+  </div>
+
+  <!-- new table -->
+  <div class="tile new" onclick="openModal()">
+    <div class="tile-top">
+      <div class="tile-num">11</div>
+      <div class="tile-location">חצר</div>
+      <div class="tile-timer" style="color:#a855f7">04:22</div>
+      <div class="tile-guests">👥 4</div>
+    </div>
+    <div class="tile-items">
+      <div class="ti ti-held">ממתין להזמנה</div>
+    </div>
+    <div class="tile-bottom">
+      <div class="tile-total">₪ 0</div>
+      <div style="font-size:11px;color:#7a7268">חדש</div>
+    </div>
+  </div>
+
+  <!-- occupied small -->
+  <div class="tile occupied" onclick="openModal()">
+    <div class="tile-top">
+      <div class="tile-num">5</div>
+      <div class="tile-location">בר</div>
+      <div class="tile-timer">08:11</div>
+      <div class="tile-guests">👥 1</div>
+    </div>
+    <div class="tile-items">
+      <div class="ti ti-prep">בורגר</div>
+    </div>
+    <div class="tile-bottom">
+      <div class="tile-total">₪ 62</div>
+    </div>
+  </div>
+
+  <!-- FREE tables -->
+  <div class="tile free">
+    <div class="tile-free-content">
+      <div class="tile-free-num">2</div>
+      <div class="tile-free-loc">קיר</div>
+      <div class="tile-free-seats">🪑 4 מקומות</div>
+    </div>
+    <div class="tile-free-cta">+ התיישב</div>
+  </div>
+
+  <div class="tile free">
+    <div class="tile-free-content">
+      <div class="tile-free-num">6</div>
+      <div class="tile-free-loc">בר</div>
+      <div class="tile-free-seats">🪑 2 מקומות</div>
+    </div>
+    <div class="tile-free-cta">+ התיישב</div>
+  </div>
+
+</div>
+
+<!-- Tab bar -->
+<div class="tabbar">
+  <div class="tb on" style="position:relative">
+    <div class="tb-i">⬛</div>
+    <div class="tb-l">שולחנות</div>
+    <div style="position:absolute;top:0;width:40%;height:2px;background:#c9890a;border-radius:0 0 3px 3px"></div>
+  </div>
+  <div class="tb">
+    <div class="tb-i">📋</div>
+    <div class="tb-l">הזמנות</div>
+  </div>
+  <div class="tb" style="position:relative">
+    <div class="tb-i">🔔</div>
+    <div class="tb-l">התראות</div>
+    <div style="position:absolute;top:6px;right:24%;background:#ef4444;color:#fff;font-size:9px;font-weight:900;border-radius:999px;min-width:14px;height:14px;display:flex;align-items:center;justify-content:center;padding:0 3px">5</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="mh-num">4</div>
+      <div class="mh-info">
+        <div class="mh-title">שולחן 4 — חלון</div>
+        <div class="mh-sub">3 סועדים · 18 דקות · ₪ 210</div>
+      </div>
+      <div class="mh-close" onclick="closeModal()">✕</div>
+    </div>
+
+    <div class="modal-tabs">
+      <div class="mtab on" id="mt-order" onclick="swTab('order')">🍽️ הזמנה</div>
+      <div class="mtab" id="mt-add" onclick="swTab('add')">+ הוסף</div>
+      <div class="mtab" id="mt-bill" onclick="swTab('bill')">🧾 חשבון</div>
+      <div class="mtab" id="mt-ai" onclick="swTab('ai')">✨ AI</div>
+    </div>
+
+    <div class="modal-body" id="mb-order">
+      <div class="order-item-row">
+        <div class="oi-qty">2</div>
+        <div style="flex:1"><div class="oi-name">אנטריקוט 300 גר'</div><div class="oi-sub">ללא בצל · מדיום</div></div>
+        <div class="oi-status os-prep">מכין 🔥</div>
+        <div class="oi-price">₪172</div>
+      </div>
+      <div class="order-item-row">
+        <div class="oi-qty">1</div>
+        <div style="flex:1"><div class="oi-name">יין אדום (כוס)</div></div>
+        <div class="oi-status os-done">מוכן ✓</div>
+        <div class="oi-price">₪38</div>
+      </div>
+      <div style="padding:10px 0;display:flex;justify-content:space-between;font-size:15px;font-weight:900;border-top:1px solid rgba(255,255,255,0.08);margin-top:4px">
+        <span>סה"כ</span><span style="color:#c9890a">₪ 210</span>
+      </div>
+    </div>
+
+    <div class="modal-body" id="mb-add" style="display:none">
+      <div style="font-size:11px;color:#7a7268;font-weight:700;margin-bottom:8px">קינוחים</div>
+      <div class="menu-item-row"><div class="mi-add-btn">+</div><div class="mi-text"><div class="mi-name">פנה קוטה</div></div><div class="mi-price">₪42</div></div>
+      <div class="menu-item-row"><div class="mi-add-btn">+</div><div class="mi-text"><div class="mi-name">טירמיסו</div></div><div class="mi-price">₪48</div></div>
+      <div style="font-size:11px;color:#7a7268;font-weight:700;margin:10px 0 8px">משקאות</div>
+      <div class="menu-item-row"><div class="mi-add-btn">+</div><div class="mi-text"><div class="mi-name">יין אדום (כוס)</div></div><div class="mi-price">₪38</div></div>
+      <div class="menu-item-row"><div class="mi-add-btn">+</div><div class="mi-text"><div class="mi-name">מים מינרל</div></div><div class="mi-price">₪18</div></div>
+    </div>
+
+    <div class="modal-body" id="mb-bill" style="display:none">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:#c8bfb0">2× אנטריקוט</span><span style="font-weight:700">₪172</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:#c8bfb0">1× יין אדום</span><span style="font-weight:700">₪38</span></div>
+      <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:16px;font-weight:900"><span>סה"כ</span><span style="color:#c9890a">₪210</span></div>
+    </div>
+
+    <div class="modal-body" id="mb-ai" style="display:none">
+      <div style="background:#3b82f618;border:1px solid #3b82f640;border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="color:#3b82f6;font-size:13px;font-weight:700;margin-bottom:3px">🍽️ יין אדום מוכן להגשה</div>
+        <div style="font-size:12px;color:#c8bfb0">מוכן כבר 4 דקות — הגש כעת</div>
+      </div>
+      <div style="background:#a855f718;border:1px solid #a855f740;border-radius:10px;padding:12px">
+        <div style="color:#a855f7;font-size:13px;font-weight:700;margin-bottom:3px">🍷 הצע עוד יין</div>
+        <div style="font-size:12px;color:#c8bfb0">שולחן עם בשר — פוטנציאל מכירה</div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="mf-btn mf-fire" onclick="closeModal()">🔥 שלח למטבח</button>
+      <button class="mf-btn mf-bill" onclick="swTab('bill')">💳 חשבון</button>
+    </div>
+  </div>
+</div>
+
+<div style="position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#a855f7;color:#fff;font-size:11px;font-weight:900;padding:3px 10px;border-radius:999px;z-index:999;pointer-events:none">
+  אופציה 4 — Big Number Tiles
+</div>
+
+<script>
+function openModal()  { document.getElementById('modal').style.display='flex'; }
+function closeModal() { document.getElementById('modal').style.display='none'; }
+function swTab(t) {
+  ['order','add','bill','ai'].forEach(id => {
+    document.getElementById('mb-'+id).style.display = id===t ? 'block' : 'none';
+    document.getElementById('mt-'+id).classList.toggle('on', id===t);
+  });
+}
+</script>
+</body>
+</html>

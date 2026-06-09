@@ -43,6 +43,7 @@ export type RestaurantMinAggregateOutputType = {
   ordersEnabled: boolean | null
   tableLayoutJson: string | null
   kdsView: string | null
+  adminPalette: string | null
   customDomain: string | null
   copyright: string | null
   language: string | null
@@ -81,6 +82,7 @@ export type RestaurantMaxAggregateOutputType = {
   ordersEnabled: boolean | null
   tableLayoutJson: string | null
   kdsView: string | null
+  adminPalette: string | null
   customDomain: string | null
   copyright: string | null
   language: string | null
@@ -119,6 +121,7 @@ export type RestaurantCountAggregateOutputType = {
   ordersEnabled: number
   tableLayoutJson: number
   kdsView: number
+  adminPalette: number
   customDomain: number
   copyright: number
   language: number
@@ -159,6 +162,7 @@ export type RestaurantMinAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -197,6 +201,7 @@ export type RestaurantMaxAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -235,6 +240,7 @@ export type RestaurantCountAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -346,6 +352,7 @@ export type RestaurantGroupByOutputType = {
   ordersEnabled: boolean
   tableLayoutJson: string | null
   kdsView: string
+  adminPalette: string
   customDomain: string | null
   copyright: string | null
   language: string
@@ -405,6 +412,7 @@ export type RestaurantWhereInput = {
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -454,6 +462,7 @@ export type RestaurantOrderByWithRelationInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrderInput | Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -506,6 +515,7 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -555,6 +565,7 @@ export type RestaurantOrderByWithAggregationInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrderInput | Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -599,6 +610,7 @@ export type RestaurantScalarWhereWithAggregatesInput = {
   ordersEnabled?: Prisma.BoolWithAggregatesFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   language?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
@@ -637,6 +649,7 @@ export type RestaurantCreateInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -685,6 +698,7 @@ export type RestaurantUncheckedCreateInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -733,6 +747,7 @@ export type RestaurantUpdateInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -781,6 +796,7 @@ export type RestaurantUncheckedUpdateInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -829,6 +845,7 @@ export type RestaurantCreateManyInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -867,6 +884,7 @@ export type RestaurantUpdateManyMutationInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -904,6 +922,7 @@ export type RestaurantUncheckedUpdateManyInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -952,6 +971,7 @@ export type RestaurantCountOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -990,6 +1010,7 @@ export type RestaurantMaxOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -1028,6 +1049,7 @@ export type RestaurantMinOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -1253,6 +1275,7 @@ export type RestaurantCreateWithoutGroupInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1300,6 +1323,7 @@ export type RestaurantUncheckedCreateWithoutGroupInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1376,6 +1400,7 @@ export type RestaurantScalarWhereInput = {
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -1414,6 +1439,7 @@ export type RestaurantCreateWithoutRestaurantUsersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1461,6 +1487,7 @@ export type RestaurantUncheckedCreateWithoutRestaurantUsersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1524,6 +1551,7 @@ export type RestaurantUpdateWithoutRestaurantUsersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1571,6 +1599,7 @@ export type RestaurantUncheckedUpdateWithoutRestaurantUsersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1618,6 +1647,7 @@ export type RestaurantCreateWithoutMenusInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1665,6 +1695,7 @@ export type RestaurantUncheckedCreateWithoutMenusInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1728,6 +1759,7 @@ export type RestaurantUpdateWithoutMenusInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1775,6 +1807,7 @@ export type RestaurantUncheckedUpdateWithoutMenusInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1822,6 +1855,7 @@ export type RestaurantCreateWithoutOrdersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1869,6 +1903,7 @@ export type RestaurantUncheckedCreateWithoutOrdersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1932,6 +1967,7 @@ export type RestaurantUpdateWithoutOrdersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1979,6 +2015,7 @@ export type RestaurantUncheckedUpdateWithoutOrdersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2026,6 +2063,7 @@ export type RestaurantCreateWithoutOrderCounterInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2073,6 +2111,7 @@ export type RestaurantUncheckedCreateWithoutOrderCounterInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2136,6 +2175,7 @@ export type RestaurantUpdateWithoutOrderCounterInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2183,6 +2223,7 @@ export type RestaurantUncheckedUpdateWithoutOrderCounterInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2230,6 +2271,7 @@ export type RestaurantCreateWithoutMenuViewsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2277,6 +2319,7 @@ export type RestaurantUncheckedCreateWithoutMenuViewsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2340,6 +2383,7 @@ export type RestaurantUpdateWithoutMenuViewsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2387,6 +2431,7 @@ export type RestaurantUncheckedUpdateWithoutMenuViewsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2434,6 +2479,7 @@ export type RestaurantCreateWithoutTableSessionsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2481,6 +2527,7 @@ export type RestaurantUncheckedCreateWithoutTableSessionsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2544,6 +2591,7 @@ export type RestaurantUpdateWithoutTableSessionsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2591,6 +2639,7 @@ export type RestaurantUncheckedUpdateWithoutTableSessionsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2638,6 +2687,7 @@ export type RestaurantCreateWithoutCustomersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2685,6 +2735,7 @@ export type RestaurantUncheckedCreateWithoutCustomersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2748,6 +2799,7 @@ export type RestaurantUpdateWithoutCustomersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2795,6 +2847,7 @@ export type RestaurantUncheckedUpdateWithoutCustomersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2842,6 +2895,7 @@ export type RestaurantCreateWithoutLoyaltyMembersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2889,6 +2943,7 @@ export type RestaurantUncheckedCreateWithoutLoyaltyMembersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2952,6 +3007,7 @@ export type RestaurantUpdateWithoutLoyaltyMembersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2999,6 +3055,7 @@ export type RestaurantUncheckedUpdateWithoutLoyaltyMembersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3046,6 +3103,7 @@ export type RestaurantCreateWithoutWaiterStationsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3093,6 +3151,7 @@ export type RestaurantUncheckedCreateWithoutWaiterStationsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3156,6 +3215,7 @@ export type RestaurantUpdateWithoutWaiterStationsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3203,6 +3263,7 @@ export type RestaurantUncheckedUpdateWithoutWaiterStationsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3250,6 +3311,7 @@ export type RestaurantCreateWithoutLoyaltySettingsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3297,6 +3359,7 @@ export type RestaurantUncheckedCreateWithoutLoyaltySettingsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3360,6 +3423,7 @@ export type RestaurantUpdateWithoutLoyaltySettingsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3407,6 +3471,7 @@ export type RestaurantUncheckedUpdateWithoutLoyaltySettingsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3454,6 +3519,7 @@ export type RestaurantCreateManyGroupInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3491,6 +3557,7 @@ export type RestaurantUpdateWithoutGroupInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3538,6 +3605,7 @@ export type RestaurantUncheckedUpdateWithoutGroupInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3585,6 +3653,7 @@ export type RestaurantUncheckedUpdateManyWithoutGroupInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3716,6 +3785,7 @@ export type RestaurantSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3766,6 +3836,7 @@ export type RestaurantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3805,6 +3876,7 @@ export type RestaurantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3844,6 +3916,7 @@ export type RestaurantSelectScalar = {
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3863,7 +3936,7 @@ export type RestaurantSelectScalar = {
   updatedAt?: boolean
 }
 
-export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "instagram" | "facebook" | "whatsapp" | "tripadvisor" | "googleReview" | "showPhonePublic" | "showAddressPublic" | "groupId" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
+export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "adminPalette" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "instagram" | "facebook" | "whatsapp" | "tripadvisor" | "googleReview" | "showPhonePublic" | "showAddressPublic" | "groupId" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
 export type RestaurantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   group?: boolean | Prisma.Restaurant$groupArgs<ExtArgs>
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
@@ -3919,6 +3992,7 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     ordersEnabled: boolean
     tableLayoutJson: string | null
     kdsView: string
+    adminPalette: string
     customDomain: string | null
     copyright: string | null
     language: string
@@ -4388,6 +4462,7 @@ export interface RestaurantFieldRefs {
   readonly ordersEnabled: Prisma.FieldRef<"Restaurant", 'Boolean'>
   readonly tableLayoutJson: Prisma.FieldRef<"Restaurant", 'String'>
   readonly kdsView: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly adminPalette: Prisma.FieldRef<"Restaurant", 'String'>
   readonly customDomain: Prisma.FieldRef<"Restaurant", 'String'>
   readonly copyright: Prisma.FieldRef<"Restaurant", 'String'>
   readonly language: Prisma.FieldRef<"Restaurant", 'String'>

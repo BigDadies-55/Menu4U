@@ -277,7 +277,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
         <button
           onClick={() => setShowForm(true)}
-          style={{ background: T.gold, color: "#000", border: "none", padding: "10px 20px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          style={{ background: T.gold, color: "#fff", border: "none", padding: "10px 20px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
         >
           + הוסף משתמש
         </button>
@@ -522,7 +522,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
               {error && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{error}</p>}
               <div className="flex gap-3" style={{ marginTop: 4 }}>
-                <button type="submit" disabled={loading} style={{ flex: 1, background: T.gold, color: "#000", border: "none", padding: "11px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
+                <button type="submit" disabled={loading} style={{ flex: 1, background: T.gold, color: "#fff", border: "none", padding: "11px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
                   {loading ? "יוצר..." : "✉️ צור משתמש ושלח הזמנה"}
                 </button>
                 <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]); }} style={{ flex: 1, background: T.overlay, color: T.sub, border: `1px solid ${T.border}`, padding: "11px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
@@ -572,7 +572,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     {unassignedRestaurants.map((r) => <option key={r.id} value={r.id} style={{ background: T.surface }}>{r.name}</option>)}
                   </select>
                   <button onClick={handleAddRestaurant} disabled={!addRestaurantId || restLoading}
-                    style={{ background: T.gold, color: "#000", border: "none", padding: "0 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!addRestaurantId || restLoading) ? 0.4 : 1 }}>
+                    style={{ background: T.gold, color: "#fff", border: "none", padding: "0 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!addRestaurantId || restLoading) ? 0.4 : 1 }}>
                     הוסף
                   </button>
                 </div>
@@ -613,7 +613,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             <p style={{ fontSize: 11, color: T.muted, marginBottom: 20, textAlign: "right" }}>
               ⏱ הקישור תקף ל-72 שעות. לאחר מכן יש לשלוח הזמנה חדשה.
             </p>
-            <button onClick={() => setPendingInviteLink(null)} style={{ width: "100%", background: T.gold, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            <button onClick={() => setPendingInviteLink(null)} style={{ width: "100%", background: T.gold, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               הבנתי
             </button>
           </div>
@@ -661,7 +661,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <input required type="password" minLength={6} value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} style={DARK_INPUT} placeholder="מינימום 6 תווים" /></div>
               {resetError && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{resetError}</p>}
               <div className="flex gap-3" style={{ marginTop: 4 }}>
-                <button type="submit" disabled={resetLoading} style={{ flex: 1, background: T.gold, color: "#000", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: resetLoading ? 0.6 : 1 }}>
+                <button type="submit" disabled={resetLoading} style={{ flex: 1, background: T.gold, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: resetLoading ? 0.6 : 1 }}>
                   {resetLoading ? "מאפס..." : "אפס סיסמה"}
                 </button>
                 <button type="button" onClick={() => setResetTarget(null)} style={{ flex: 1, background: T.overlay, color: T.sub, border: `1px solid ${T.border}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>

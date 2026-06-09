@@ -323,7 +323,7 @@ export default function WaiterClient({ restaurants, waiterName }: {
                         userSelect: "none",
                       }}>
                         {inOrder && (
-                          <div style={{ position: "absolute", top: 7, left: 7, background: T.gold, color: "#000",
+                          <div style={{ position: "absolute", top: 7, left: 7, background: T.gold, color: "#fff",
                             borderRadius: T.rFull, minWidth: 20, height: 20, padding: "0 5px",
                             display: "flex", alignItems: "center", justifyContent: "center", fontSize: T.fxs, fontWeight: 800 }}>
                             ×{inOrder.qty}

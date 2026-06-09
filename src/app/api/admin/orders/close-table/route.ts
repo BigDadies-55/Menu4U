@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   // ── CRITICAL: mark orders PAID (standalone update — not bundled with optional logging) ──
   await prisma.order.updateMany({
     where: { id: { in: openOrders.map(o => o.id) } },
-    data: { status: "PAID" },
+    data: { status: "PAID", closedByUserId: session.user.id },
   });
 
   // ── BEST-EFFORT: status log (failure here must NOT roll back the PAID update) ──

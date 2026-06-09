@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu4U — 4 פלטות צבע</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', Arial, sans-serif; background: #111; color: #fff; padding: 32px 24px; }
+  h1 { font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 8px; }
+  .subtitle { font-size: 13px; color: #888; text-align: center; margin-bottom: 32px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1300px; margin: 0 auto; }
+
+  .theme-label {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+    text-align: center; margin-bottom: 10px; padding: 4px 0;
+  }
+
+  /* ══════════════════════════════════════
+     PREVIEW CARD — shared structure
+  ══════════════════════════════════════ */
+  .preview {
+    border-radius: 16px; overflow: hidden; border: 2px solid transparent;
+    transition: border-color 0.2s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  /* topbar */
+  .topbar { height: 50px; display: flex; align-items: center; padding: 0 18px; gap: 12px; }
+  .topbar-logo { font-size: 15px; font-weight: 900; }
+  .topbar-spacer { flex: 1; }
+  .topbar-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+
+  /* body layout */
+  .body-layout { display: flex; min-height: 460px; }
+
+  /* sidebar */
+  .sidebar { width: 180px; flex-shrink: 0; padding: 14px 0; }
+  .sidebar-section { font-size: 9px; font-weight: 800; letter-spacing: 0.07em; padding: 14px 16px 6px; text-transform: uppercase; }
+  .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 8px; margin: 0 6px 1px; }
+  .sidebar-item.active { font-weight: 800; }
+  .sidebar-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* main content */
+  .main { flex: 1; padding: 18px 20px; overflow: hidden; }
+
+  /* page title */
+  .page-title { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+  .page-sub { font-size: 11px; margin-bottom: 16px; }
+
+  /* stat cards row */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+  .stat-card { border-radius: 12px; padding: 12px 14px; border: 1px solid; }
+  .stat-val { font-size: 22px; font-weight: 900; line-height: 1; }
+  .stat-lbl { font-size: 10px; font-weight: 600; margin-top: 4px; }
+
+  /* table */
+  .table-wrap { border-radius: 10px; border: 1px solid; overflow: hidden; }
+  .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 8px 14px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; }
+  .table-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 9px 14px; font-size: 11px; font-weight: 600; border-top: 1px solid; }
+  .badge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; }
+
+  /* floor cards */
+  .floor-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+  .floor-card { border-radius: 10px; padding: 8px 10px; border: 1px solid; position: relative; overflow: hidden; min-height: 56px; }
+  .floor-stripe { position: absolute; top: 0; right: 0; width: 4px; height: 100%; border-radius: 0 8px 8px 0; }
+  .floor-num { font-size: 18px; font-weight: 900; line-height: 1; }
+  .floor-meta { font-size: 9px; margin-top: 2px; }
+
+  /* buttons row */
+  .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; border: none; font-family: 'Heebo', sans-serif; }
+
+  /* insight strip */
+  .insight-strip { border-radius: 10px; padding: 10px 14px; border: 1px solid; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .insight-icon { font-size: 16px; }
+  .insight-text { font-size: 11px; font-weight: 700; }
+  .insight-body { font-size: 10px; margin-top: 2px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<h1>Menu4U — 3 פלטות צבע</h1>
+<p class="subtitle">כל פלטה מציגה את אותו מסך — בחרו את הסגנון המועדף</p>
+
+<div class="grid">
+
+  <!-- ══════════════════════════════════════
+       PALETTE 1 — DARK (קיים)
+  ══════════════════════════════════════ -->
+  <div>
+    <div class="theme-label" style="color:#c9890a">1 — DARK PROFESSIONAL · קיים</div>
+    <div class="preview" style="background:#0c0c0c; border-color:#333;">
+
+      <div class="topbar" style="background:#161616; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <span class="topbar-logo" style="color:#c9890a">Menu4U</span>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-avatar" style="background:#c9890a22; color:#c9890a;">AM</div>
+      </div>
+
+      <div class="body-layout">
+        <div class="sidebar" style="background: linear-gradient(180deg, #050505 0%, #161616 50%, #26200e 100%); border-left: 1px solid rgba(255,255,255,0.06);">
+          <div class="sidebar-section" style="color:#7a7268">ניהול</div>
+          <div class="sidebar-item" style="color:#c8bfb0"><div class="sidebar-dot" style="background:#7a7268"></div>לוח בקרה</div>
+          <div class="sidebar-item active" style="color:#f0ece6; background:rgba(201,137,10,0.15); border-radius:8px;"><div class="sidebar-dot" style="background:#c9890a"></div>מפת שולחנות</div>
+          <div class="sidebar-item" style="color:#c8bfb0"><div class="sidebar-dot" style="background:#7a7268"></div>הזמנות</div>
+          <div class="sidebar-section" style="color:#7a7268; margin-top:6px">דוחות</div>
+          <div class="sidebar-item" style="color:#c8bfb0"><div class="sidebar-dot" style="background:#7a7268"></div>סטטיסטיקות</div>
+          <div class="sidebar-item" style="color:#c8bfb0"><div class="sidebar-dot" style="background:#7a7268"></div>מכירות</div>
+        </div>
+
+        <div class="main" style="background:#0c0c0c;">
+          <div class="page-title" style="color:#f0ece6">מפת שולחנות חיה</div>
+          <div class="page-sub" style="color:#7a7268">שירות · מנהל משמרת</div>
+
+          <!-- insight -->
+          <div class="insight-strip" style="background:#ef444412; border-color:#ef444440;">
+            <div class="insight-icon">⚠️</div>
+            <div>
+              <div class="insight-text" style="color:#ef4444">שולחן 07 — עיכוב הכנה</div>
+              <div class="insight-body" style="color:#c8bfb0">2 מנות על הגריל מעל 15 דקות</div>
+            </div>
+          </div>
+
+          <!-- floor -->
+          <div class="floor-row">
+            <div class="floor-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="floor-stripe" style="background:#22c55e"></div>
+              <div class="floor-num" style="color:#22c55e">03</div>
+              <div class="floor-meta" style="color:#7a7268">2 קאב׳ · 12 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#161616; border-color:rgba(255,255,255,0.15); box-shadow:0 0 0 2px rgba(255,255,255,0.15);">
+              <div class="floor-stripe" style="background:#ef4444"></div>
+              <div class="floor-num" style="color:#ef4444">07</div>
+              <div class="floor-meta" style="color:#7a7268">4 קאב׳ · 38 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="floor-stripe" style="background:#a855f7"></div>
+              <div class="floor-num" style="color:#a855f7">11</div>
+              <div class="floor-meta" style="color:#7a7268">3 קאב׳ · 55 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="floor-stripe" style="background:#22c55e"></div>
+              <div class="floor-num" style="color:#22c55e">14</div>
+              <div class="floor-meta" style="color:#7a7268">6 קאב׳ · 8 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="floor-stripe" style="background:#22c55e"></div>
+              <div class="floor-num" style="color:#22c55e">18</div>
+              <div class="floor-meta" style="color:#7a7268">5 קאב׳ · 22 דק׳</div>
+            </div>
+          </div>
+
+          <!-- stats -->
+          <div class="stat-row">
+            <div class="stat-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="stat-val" style="color:#22c55e">12</div>
+              <div class="stat-lbl" style="color:#7a7268">שולחנות פעילים</div>
+            </div>
+            <div class="stat-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="stat-val" style="color:#c9890a">₪8,420</div>
+              <div class="stat-lbl" style="color:#7a7268">מכירות היום</div>
+            </div>
+            <div class="stat-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="stat-val" style="color:#3b82f6">47</div>
+              <div class="stat-lbl" style="color:#7a7268">הזמנות</div>
+            </div>
+            <div class="stat-card" style="background:#161616; border-color:rgba(255,255,255,0.08);">
+              <div class="stat-val" style="color:#f97316">2</div>
+              <div class="stat-lbl" style="color:#7a7268">עיכובים</div>
+            </div>
+          </div>
+
+          <!-- buttons -->
+          <div class="btn-row">
+            <button class="btn" style="background:#c9890a; color:#fff;">אשר הזמנה</button>
+            <button class="btn" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid #ef444440;">בטל</button>
+            <button class="btn" style="background:rgba(255,255,255,0.06); color:#c8bfb0; border:1px solid rgba(255,255,255,0.12);">רענן</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PALETTE 2 — WARM LIGHT (מחודש)
+  ══════════════════════════════════════ -->
+  <div>
+    <div class="theme-label" style="color:#4a7c8c">2 — WARM LIGHT · בהיר נעים לעין</div>
+    <div class="preview" style="background:#eeeae2; border-color:#d4cec4;">
+
+      <div class="topbar" style="background:#f8f5ef; border-bottom: 1px solid rgba(60,45,20,0.10);">
+        <span class="topbar-logo" style="color:#4a7c8c">Menu4U</span>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-avatar" style="background:rgba(74,124,140,0.14); color:#4a7c8c;">AM</div>
+      </div>
+
+      <div class="body-layout">
+        <div class="sidebar" style="background: linear-gradient(180deg, #d8d2c6 0%, #dfd8cc 50%, #ece6da 100%); border-left: 1px solid rgba(60,45,20,0.09);">
+          <div class="sidebar-section" style="color:#a09484">ניהול</div>
+          <div class="sidebar-item" style="color:#5a5048"><div class="sidebar-dot" style="background:#b8b0a4"></div>לוח בקרה</div>
+          <div class="sidebar-item active" style="color:#2d5c6a; background:rgba(74,124,140,0.13); border-radius:8px; font-weight:800;"><div class="sidebar-dot" style="background:#4a7c8c"></div>מפת שולחנות</div>
+          <div class="sidebar-item" style="color:#5a5048"><div class="sidebar-dot" style="background:#b8b0a4"></div>הזמנות</div>
+          <div class="sidebar-section" style="color:#a09484; margin-top:6px">דוחות</div>
+          <div class="sidebar-item" style="color:#5a5048"><div class="sidebar-dot" style="background:#b8b0a4"></div>סטטיסטיקות</div>
+          <div class="sidebar-item" style="color:#5a5048"><div class="sidebar-dot" style="background:#b8b0a4"></div>מכירות</div>
+        </div>
+
+        <div class="main" style="background:#eeeae2;">
+          <div class="page-title" style="color:#1c1710">מפת שולחנות חיה</div>
+          <div class="page-sub" style="color:#a09484">שירות · מנהל משמרת</div>
+
+          <!-- insight -->
+          <div class="insight-strip" style="background:#f9e8e6; border-color:#dba89e;">
+            <div class="insight-icon">⚠️</div>
+            <div>
+              <div class="insight-text" style="color:#a03428">שולחן 07 — עיכוב הכנה</div>
+              <div class="insight-body" style="color:#6e6255">2 מנות על הגריל מעל 15 דקות</div>
+            </div>
+          </div>
+
+          <!-- floor -->
+          <div class="floor-row">
+            <div class="floor-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="floor-stripe" style="background:#3d7850"></div>
+              <div class="floor-num" style="color:#3d7850">03</div>
+              <div class="floor-meta" style="color:#a09484">2 קאב׳ · 12 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#f8f5ef; border-color:#4a7c8c; box-shadow:0 0 0 1.5px rgba(74,124,140,0.3);">
+              <div class="floor-stripe" style="background:#a03428"></div>
+              <div class="floor-num" style="color:#a03428">07</div>
+              <div class="floor-meta" style="color:#a09484">4 קאב׳ · 38 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="floor-stripe" style="background:#7a5c9c"></div>
+              <div class="floor-num" style="color:#7a5c9c">11</div>
+              <div class="floor-meta" style="color:#a09484">3 קאב׳ · 55 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="floor-stripe" style="background:#3d7850"></div>
+              <div class="floor-num" style="color:#3d7850">14</div>
+              <div class="floor-meta" style="color:#a09484">6 קאב׳ · 8 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="floor-stripe" style="background:#3d7850"></div>
+              <div class="floor-num" style="color:#3d7850">18</div>
+              <div class="floor-meta" style="color:#a09484">5 קאב׳ · 22 דק׳</div>
+            </div>
+          </div>
+
+          <!-- stats -->
+          <div class="stat-row">
+            <div class="stat-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="stat-val" style="color:#3d7850">12</div>
+              <div class="stat-lbl" style="color:#a09484">שולחנות פעילים</div>
+            </div>
+            <div class="stat-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="stat-val" style="color:#4a7c8c">₪8,420</div>
+              <div class="stat-lbl" style="color:#a09484">מכירות היום</div>
+            </div>
+            <div class="stat-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="stat-val" style="color:#6a8cb0">47</div>
+              <div class="stat-lbl" style="color:#a09484">הזמנות</div>
+            </div>
+            <div class="stat-card" style="background:#f8f5ef; border-color:#d4cec4;">
+              <div class="stat-val" style="color:#c06828">2</div>
+              <div class="stat-lbl" style="color:#a09484">עיכובים</div>
+            </div>
+          </div>
+
+          <!-- buttons -->
+          <div class="btn-row">
+            <button class="btn" style="background:#4a7c8c; color:#fff;">אשר הזמנה</button>
+            <button class="btn" style="background:#f9e8e6; color:#a03428; border:1px solid #dba89e;">בטל</button>
+            <button class="btn" style="background:#e8e4dc; color:#6e6255; border:1px solid #d4cec4;">רענן</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PALETTE 3 — EARTH & LIFE (refined)
+  ══════════════════════════════════════ -->
+  <div>
+    <div class="theme-label" style="color:#8c6820">3 — EARTH & LIFE · צבעי אדמה עדינים</div>
+    <div class="preview" style="background:#f6f0e6; border-color:#d9cbb8;">
+
+      <div class="topbar" style="background:#ffffff; border-bottom: 1px solid rgba(120,80,30,0.12);">
+        <span class="topbar-logo" style="color:#8c6820">Menu4U</span>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-avatar" style="background:rgba(140,104,32,0.14); color:#8c6820;">AM</div>
+      </div>
+
+      <div class="body-layout">
+        <div class="sidebar" style="background:#fdf8f0; border-left: 1px solid rgba(120,80,30,0.1);">
+          <div class="sidebar-section" style="color:#b09878">ניהול</div>
+          <div class="sidebar-item" style="color:#7a6245"><div class="sidebar-dot" style="background:#c8b898"></div>לוח בקרה</div>
+          <div class="sidebar-item active" style="color:#5a3e10; background:rgba(140,104,32,0.12)"><div class="sidebar-dot" style="background:#8c6820"></div>מפת שולחנות</div>
+          <div class="sidebar-item" style="color:#7a6245"><div class="sidebar-dot" style="background:#c8b898"></div>הזמנות</div>
+          <div class="sidebar-section" style="color:#b09878; margin-top:6px">דוחות</div>
+          <div class="sidebar-item" style="color:#7a6245"><div class="sidebar-dot" style="background:#c8b898"></div>סטטיסטיקות</div>
+          <div class="sidebar-item" style="color:#7a6245"><div class="sidebar-dot" style="background:#c8b898"></div>מכירות</div>
+        </div>
+
+        <div class="main" style="background:#f6f0e6;">
+          <div class="page-title" style="color:#2c1f0e">מפת שולחנות חיה</div>
+          <div class="page-sub" style="color:#b09878">שירות · מנהל משמרת</div>
+
+          <!-- insight -->
+          <div class="insight-strip" style="background:#fce8e4; border-color:#e8a898;">
+            <div class="insight-icon">⚠️</div>
+            <div>
+              <div class="insight-text" style="color:#a03020">שולחן 07 — עיכוב הכנה</div>
+              <div class="insight-body" style="color:#7a6245">2 מנות על הגריל מעל 15 דקות</div>
+            </div>
+          </div>
+
+          <!-- floor -->
+          <div class="floor-row">
+            <div class="floor-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="floor-stripe" style="background:#4a7a30"></div>
+              <div class="floor-num" style="color:#4a7a30">03</div>
+              <div class="floor-meta" style="color:#b09878">2 קאב׳ · 12 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fff; border-color:#8c6820; box-shadow:0 0 0 1.5px rgba(140,104,32,0.3);">
+              <div class="floor-stripe" style="background:#a03020"></div>
+              <div class="floor-num" style="color:#a03020">07</div>
+              <div class="floor-meta" style="color:#b09878">4 קאב׳ · 38 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="floor-stripe" style="background:#8060a0"></div>
+              <div class="floor-num" style="color:#8060a0">11</div>
+              <div class="floor-meta" style="color:#b09878">3 קאב׳ · 55 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="floor-stripe" style="background:#4a7a30"></div>
+              <div class="floor-num" style="color:#4a7a30">14</div>
+              <div class="floor-meta" style="color:#b09878">6 קאב׳ · 8 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="floor-stripe" style="background:#4a7a30"></div>
+              <div class="floor-num" style="color:#4a7a30">18</div>
+              <div class="floor-meta" style="color:#b09878">5 קאב׳ · 22 דק׳</div>
+            </div>
+          </div>
+
+          <!-- stats -->
+          <div class="stat-row">
+            <div class="stat-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="stat-val" style="color:#4a7a30">12</div>
+              <div class="stat-lbl" style="color:#b09878">שולחנות פעילים</div>
+            </div>
+            <div class="stat-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="stat-val" style="color:#8c6820">₪8,420</div>
+              <div class="stat-lbl" style="color:#b09878">מכירות היום</div>
+            </div>
+            <div class="stat-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="stat-val" style="color:#3a6898">47</div>
+              <div class="stat-lbl" style="color:#b09878">הזמנות</div>
+            </div>
+            <div class="stat-card" style="background:#fff; border-color:#e0d4c0;">
+              <div class="stat-val" style="color:#a03020">2</div>
+              <div class="stat-lbl" style="color:#b09878">עיכובים</div>
+            </div>
+          </div>
+
+          <!-- buttons -->
+          <div class="btn-row">
+            <button class="btn" style="background:#8c6820; color:#fff;">אשר הזמנה</button>
+            <button class="btn" style="background:#fce8e4; color:#a03020; border:1px solid #e8a898;">בטל</button>
+            <button class="btn" style="background:#f0e8d8; color:#7a6245; border:1px solid #d9cbb8;">רענן</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PALETTE 3 — THE PREMIUM EARTHY
+  ══════════════════════════════════════ -->
+  <div>
+    <div class="theme-label" style="color:#c8903a">3 — THE PREMIUM EARTHY · הקלאסיקה האורגנית</div>
+    <div class="preview" style="background:#f5ede0; border-color:#d4c0a8; box-shadow:0 8px 40px rgba(40,10,5,0.25); display:flex; flex-direction:column;">
+
+      <!-- topbar — same cream as main, clean -->
+      <div class="topbar" style="background:#f5ede0; border-bottom:1px solid rgba(100,55,20,0.12);">
+        <span class="topbar-logo" style="color:#1e0e08; font-weight:900; font-size:16px; letter-spacing:0.2px;">Menu4U</span>
+        <span class="topbar-spacer"></span>
+        <button style="background:#65011b; color:#fff; border:none; padding:5px 14px; border-radius:6px; font-size:11px; font-weight:700; font-family:'Heebo',sans-serif; cursor:pointer;">צור דוח</button>
+        <div class="topbar-avatar" style="background:#65011b; color:#fff; font-weight:800; margin-right:8px;">AM</div>
+      </div>
+
+      <div class="body-layout" style="flex:1;">
+        <!-- sidebar — gradient from deep espresso to rich burgundy -->
+        <div class="sidebar" style="background: linear-gradient(180deg, #1a0a06 0%, #2d1010 40%, #4a1020 100%); border-left:none; display:flex; flex-direction:column;">
+          <div style="padding:14px 16px 10px; font-size:14px; font-weight:900; color:#f0e4d0; letter-spacing:0.2px;">מסעדות</div>
+          <div style="height:1px; background:rgba(255,200,160,0.12); margin:0 12px 8px;"></div>
+          <div class="sidebar-section" style="color:#8a5a48;">ניהול</div>
+          <div class="sidebar-item" style="color:#d4a888;"><div class="sidebar-dot" style="background:rgba(255,180,120,0.2);"></div>לוח בקרה</div>
+          <div class="sidebar-item active" style="color:#fff8f0; background:rgba(255,200,150,0.13); border-radius:8px; font-weight:800; border:1px solid rgba(200,144,58,0.3);"><div class="sidebar-dot" style="background:#c8903a;"></div>מפת שולחנות</div>
+          <div class="sidebar-item" style="color:#d4a888;"><div class="sidebar-dot" style="background:rgba(255,180,120,0.2);"></div>קולינרי</div>
+          <div class="sidebar-item" style="color:#d4a888;"><div class="sidebar-dot" style="background:rgba(255,180,120,0.2);"></div>ניהול צוות</div>
+          <div class="sidebar-item" style="color:#d4a888;"><div class="sidebar-dot" style="background:rgba(255,180,120,0.2);"></div>תרשימים</div>
+          <div class="sidebar-item" style="color:#d4a888;"><div class="sidebar-dot" style="background:rgba(255,180,120,0.2);"></div>הגדרות</div>
+          <div style="margin-top:auto; padding:12px 16px; border-top:1px solid rgba(255,200,160,0.1);">
+            <div style="font-size:10px; color:#8a5a48; font-weight:700;">סטטוס שולחנות: 10%</div>
+            <div style="font-size:10px; color:#8a5a48; margin-top:2px;">עדכון אחרון: 33%</div>
+          </div>
+        </div>
+
+        <!-- main — warm cream -->
+        <div class="main" style="background:#f5ede0;">
+          <div class="page-title" style="color:#1e0e08; font-weight:900; font-size:22px; letter-spacing:-0.3px;">מפת שולחנות חיה</div>
+          <div class="page-sub" style="color:#9a7050; margin-bottom:14px;">The Premium Earthy</div>
+
+          <!-- stat cards — BURGUNDY filled, white text -->
+          <div class="stat-row" style="margin-bottom:14px;">
+            <div class="stat-card" style="background:#65011b; border-color:#65011b;">
+              <div class="stat-val" style="color:#fff; font-size:18px;">12</div>
+              <div class="stat-lbl" style="color:rgba(255,220,200,0.75);">שולחנות פעילים</div>
+            </div>
+            <div class="stat-card" style="background:#65011b; border-color:#65011b;">
+              <div class="stat-val" style="color:#fff; font-size:18px;">₪8,420</div>
+              <div class="stat-lbl" style="color:rgba(255,220,200,0.75);">מכירות היום</div>
+            </div>
+            <div class="stat-card" style="background:#65011b; border-color:#65011b;">
+              <div class="stat-val" style="color:#fff; font-size:18px;">₪274</div>
+              <div class="stat-lbl" style="color:rgba(255,220,200,0.75);">ממוצע לשולחן</div>
+            </div>
+            <div class="stat-card" style="background:#65011b; border-color:#65011b;">
+              <div class="stat-val" style="color:#fff; font-size:18px;">47</div>
+              <div class="stat-lbl" style="color:rgba(255,220,200,0.75);">הזמנות</div>
+            </div>
+          </div>
+
+          <!-- insight strip -->
+          <div class="insight-strip" style="background:rgba(101,1,27,0.09); border-color:rgba(101,1,27,0.30); margin-bottom:12px;">
+            <div class="insight-icon">⚠️</div>
+            <div>
+              <div class="insight-text" style="color:#65011b; font-weight:800;">שולחן 07 — עיכוב הכנה</div>
+              <div class="insight-body" style="color:#6b4a30;">2 מנות על הגריל מעל 15 דקות</div>
+            </div>
+          </div>
+
+          <!-- floor cards — parchment surface, dark espresso numbers -->
+          <div class="floor-row">
+            <div class="floor-card" style="background:#fdf8f0; border-color:#ddd0bc;">
+              <div class="floor-stripe" style="background:#4a6830;"></div>
+              <div class="floor-num" style="color:#1e0e08; font-weight:900;">03</div>
+              <div class="floor-meta" style="color:#9a7050;">2 קאב׳ · 12 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fdf8f0; border-color:#65011b; box-shadow:0 0 0 1.5px rgba(101,1,27,0.3);">
+              <div class="floor-stripe" style="background:#65011b;"></div>
+              <div class="floor-num" style="color:#65011b; font-weight:900;">07</div>
+              <div class="floor-meta" style="color:#9a7050;">4 קאב׳ · 38 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fdf8f0; border-color:#ddd0bc;">
+              <div class="floor-stripe" style="background:#c8903a;"></div>
+              <div class="floor-num" style="color:#1e0e08; font-weight:900;">11</div>
+              <div class="floor-meta" style="color:#9a7050;">3 קאב׳ · 55 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fdf8f0; border-color:#ddd0bc;">
+              <div class="floor-stripe" style="background:#4a6830;"></div>
+              <div class="floor-num" style="color:#1e0e08; font-weight:900;">14</div>
+              <div class="floor-meta" style="color:#9a7050;">6 קאב׳ · 8 דק׳</div>
+            </div>
+            <div class="floor-card" style="background:#fdf8f0; border-color:#ddd0bc;">
+              <div class="floor-stripe" style="background:#4a6830;"></div>
+              <div class="floor-num" style="color:#1e0e08; font-weight:900;">18</div>
+              <div class="floor-meta" style="color:#9a7050;">5 קאב׳ · 22 דק׳</div>
+            </div>
+          </div>
+
+          <!-- buttons -->
+          <div class="btn-row" style="margin-top:4px;">
+            <button class="btn" style="background:#65011b; color:#fff; font-weight:800;">אשר הזמנה</button>
+            <button class="btn" style="background:#fdf8f0; color:#65011b; border:1px solid rgba(101,1,27,0.35); font-weight:700;">בטל</button>
+            <button class="btn" style="background:#f0e8d8; color:#6b4a30; border:1px solid #ddd0bc; font-weight:600;">רענן</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- token comparison table -->
+<div style="max-width:1200px; margin:40px auto 0; background:#1a1a1a; border-radius:16px; padding:24px; border:1px solid #333;">
+  <h2 style="font-size:16px; font-weight:800; margin-bottom:16px; color:#fff">השוואת טוקנים</h2>
+  <table style="width:100%; border-collapse:collapse; font-size:12px;">
+    <thead>
+      <tr style="border-bottom:1px solid #333;">
+        <th style="text-align:right; padding:8px 12px; color:#888; font-weight:700;">טוקן</th>
+        <th style="text-align:center; padding:8px 12px; color:#c9890a; font-weight:700;">1 · Dark</th>
+        <th style="text-align:center; padding:8px 12px; color:#4a7c8c; font-weight:700;">2 · Warm Light</th>
+        <th style="text-align:center; padding:8px 12px; color:#b5541c; font-weight:700;">3 · Premium Earthy</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #222;">
+        <td style="padding:7px 12px; color:#aaa;">bg</td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#0c0c0c;border:1px solid #444;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#0c0c0c</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#eeeae2;color:#1c1710;border:1px solid #d4cec4;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#eeeae2</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#f5ede0;color:#1e0e08;border:1px solid #d4c0a8;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#f5ede0 קרם</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid #222;">
+        <td style="padding:7px 12px; color:#aaa;">surface</td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#161616;border:1px solid #444;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#161616</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#f8f5ef;color:#1c1710;border:1px solid #d4cec4;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#f8f5ef</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#fdf8f0;color:#1e0e08;border:1px solid #d4c0a8;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#fdf8f0 פרגמנט</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid #222;">
+        <td style="padding:7px 12px; color:#aaa;">text</td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#333;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;color:#f0ece6;">#f0ece6</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#eeeae2;color:#1c1710;border:1px solid #d4cec4;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#1c1710</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#f5ede0;color:#1e0e08;border:1px solid #d4c0a8;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#1e0e08 אספרסו</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid #222;">
+        <td style="padding:7px 12px; color:#aaa;">accent</td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#c9890a;color:#fff;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#c9890a</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#4a7c8c;color:#fff;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#4a7c8c</span></td>
+        <td style="padding:7px 12px; text-align:center;"><span style="background:#65011b;color:#fff;padding:2px 10px;border-radius:6px;font-size:10px;font-family:monospace;">#65011b בורדו</span> <span style="background:#c8903a;color:#fff;padding:2px 6px;border-radius:6px;font-size:10px;font-family:monospace;">#c8903a נחושת</span></td>
+      </tr>
+      <tr>
+        <td style="padding:7px 12px; color:#aaa;">green / red / purple</td>
+        <td style="padding:7px 12px; text-align:center; font-size:10px;"><span style="color:#22c55e">●</span> <span style="color:#ef4444">●</span> <span style="color:#a855f7">●</span></td>
+        <td style="padding:7px 12px; text-align:center; font-size:10px;"><span style="color:#3d7850">●</span> <span style="color:#a03428">●</span> <span style="color:#7a5c9c">●</span></td>
+        <td style="padding:7px 12px; text-align:center; font-size:13px;"><span style="color:#4a6830" title="ירוק יער">●</span> <span style="color:#65011b" title="בורדו">●</span> <span style="color:#c8903a" title="נחושת">●</span>
+          <div style="font-size:9px;color:#9a7050;margin-top:3px;">ירוק יער · בורדו · נחושת</div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p style="text-align:center; font-size:12px; color:#555; margin-top:20px; margin-bottom:0;">כל שינוי פלטה מתבצע אוטומטית בכל המסכים דרך src/lib/ui.ts</p>
+
+</body>
+</html>

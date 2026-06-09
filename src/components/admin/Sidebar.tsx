@@ -21,12 +21,14 @@ const FAV_KEY = "menu4u_favorites";
 
 /* ─── Admin palettes ─────────────────────────────────────────── */
 export const ADMIN_PALETTE_MAP: Record<string, { bg: string; accent: string; accentMuted: string; accentText: string }> = {
-  dark:   { bg: "var(--c-panel)", accent: T.gold,    accentMuted: T.goldSub,              accentText: T.gold   },
+  dark:         { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
+  "warm-light": { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
+  earthy:       { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
   purple: { bg: "#120b1e",        accent: T.purple,  accentMuted: "rgba(147,51,234,0.15)", accentText: "#c084fc" },
   blue:   { bg: "#080f1e",        accent: T.blue,    accentMuted: "rgba(59,130,246,0.15)", accentText: "#93c5fd" },
   green:  { bg: "#071510",        accent: T.green,   accentMuted: "rgba(34,197,94,0.15)",  accentText: "#86efac" },
   rose:   { bg: "#150a0e",        accent: "#f43f5e", accentMuted: "rgba(244,63,94,0.15)",  accentText: "#fda4af" },
-  custom: { bg: "var(--c-panel)", accent: T.gold,    accentMuted: T.goldSub,              accentText: T.gold   },
+  custom: { bg: "var(--c-panel)", accent: "var(--c-gold)", accentMuted: "var(--c-gold-sub)", accentText: "var(--c-gold)" },
 };
 
 /* ─── Icons ──────────────────────────────────────────────────── */
@@ -104,12 +106,13 @@ const GROUPS: NavGroup[] = [
     waiterHide: true, displayHide: true,
     items: [
       { href: "/admin/restaurants", label: "מסעדות",       I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
-      { href: "/admin/groups",      label: "רשתות 🏢",      I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
+      { href: "/admin/groups",      label: "רשתות",         I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
       { href: "/admin/menus",       label: "תפריטים",      I: Ic.Menus,      waiterHide: true, displayHide: true },
       { href: "/admin/users",       label: "משתמשים",      I: Ic.Users,      adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/logs",        label: "לוגים",         I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,   adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,   waiterHide: true, displayHide: true },
+      { href: "/admin/appearance",  label: "מראה",           I: Ic.Settings,   ownerOnly: true,  waiterHide: true, displayHide: true },
     ],
   },
   {
@@ -118,14 +121,16 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
       { href: "/admin/cashier",        label: "קאשייר",             I: Ic.Cashier,   displayHide: true },
-      { href: "/admin/waiter-floor",   label: "רצפת שירות 🗺️",     I: Ic.Layout,       displayHide: true },
-      { href: "/admin/waiter-pos",    label: "מלצר חכם",            I: Ic.SmartWaiter,  displayHide: true, waiterHide: false },
-      { href: "/admin/shift-manager",  label: "מנהל משמרת 🎛️",     I: Ic.Stats,     displayHide: true, waiterHide: true },
-      { href: "/admin/waiter",         label: "הזמנת מלצר 🍽️",     I: Ic.Orders,    displayHide: true },
-      { href: "/admin/orders/stats", label: "סטטיסטיקות",      I: Ic.Stats,     waiterHide: true, displayHide: true, ownerOnly: true },
+      { href: "/admin/waiter-floor",    label: "רצפת שירות 🗺️",    I: Ic.Layout,       displayHide: true },
+      { href: "/admin/waiter-pos",     label: "מלצר חכם",           I: Ic.SmartWaiter,  displayHide: true, waiterHide: false },
+      { href: "/admin/shift-manager",  label: "מנהל משמרת",         I: Ic.Stats,        displayHide: true, waiterHide: true },
+      { href: "/admin/live-floor",     label: "מפת שולחנות חיה",   I: Ic.Layout,       displayHide: true, waiterHide: true, ownerOnly: true },
+      { href: "/admin/table-timeline", label: "ציר זמן שולחנות",   I: Ic.TableView,    displayHide: true, waiterHide: true, ownerOnly: true },
+      { href: "/admin/waiter",         label: "הזמנת מלצר 🍽️",    I: Ic.Orders,       displayHide: true },
+      { href: "/admin/orders/stats",   label: "סטטיסטיקות",         I: Ic.Stats,        waiterHide: true, displayHide: true, ownerOnly: true },
       { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
-      { href: "/admin/loyalty",        label: "מועדון לקוחות ⭐", I: Ic.Loyalty,   displayHide: true },
-      { href: "/admin/crm",            label: "קשרי לקוחות 📱",   I: Ic.Customers, displayHide: true },
+      { href: "/admin/loyalty",        label: "מועדון לקוחות",    I: Ic.Loyalty,   displayHide: true },
+      { href: "/admin/crm",            label: "קשרי לקוחות",      I: Ic.Customers, displayHide: true },
     ],
   },
   {
@@ -202,11 +207,14 @@ export default function Sidebar({
   /* ── Floating panels ── */
   const [favPanelOpen,    setFavPanelOpen]    = useState(false);
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+  const [userPanelOpen,   setUserPanelOpen]   = useState(false);
   const [favBtnFromBottom,    setFavBtnFromBottom]    = useState(0);
   const [searchBtnFromBottom, setSearchBtnFromBottom] = useState(0);
+  const [userBtnFromBottom,   setUserBtnFromBottom]   = useState(0);
 
   const favBtnRef      = useRef<HTMLButtonElement>(null);
   const searchBtnRef   = useRef<HTMLButtonElement>(null);
+  const userBtnRef     = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Accordion groups (all start collapsed) ── */
@@ -242,7 +250,7 @@ export default function Sidebar({
     if (l.displayHide && isDisplay) return false;
     if (l.superAdmin  && user.role !== "SUPER_ADMIN") return false;
     if (l.adminOnly   && !["SUPER_ADMIN","ADMIN"].includes(user.role)) return false;
-    if (l.ownerOnly   && (isEditor || isViewer || isWaiter || isDisplay || isShiftMgr)) return false;
+    if (l.ownerOnly   && (isEditor || isViewer || isWaiter || isDisplay)) return false;
     return true;
   }
 
@@ -374,10 +382,24 @@ export default function Sidebar({
   function closeSearchPanel() { setSearchPanelOpen(false); }
   function toggleSearchPanel() { searchPanelOpen ? closeSearchPanel() : openSearchPanel(); }
 
+  function openUserPanel() {
+    setDrawerOpen(false);
+    setFavPanelOpen(false);
+    setSearchPanelOpen(false);
+    if (userBtnRef.current) {
+      const rect = userBtnRef.current.getBoundingClientRect();
+      setUserBtnFromBottom(window.innerHeight - rect.bottom);
+    }
+    setUserPanelOpen(true);
+  }
+  function closeUserPanel() { setUserPanelOpen(false); }
+  function toggleUserPanel() { userPanelOpen ? closeUserPanel() : openUserPanel(); }
+
   function closeAll() {
     setDrawerOpen(false);
     setFavPanelOpen(false);
     setSearchPanelOpen(false);
+    setUserPanelOpen(false);
   }
 
   function navigateSearch(href: string) {
@@ -391,7 +413,7 @@ export default function Sidebar({
     setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));
   }
 
-  const overlayOpen     = drawerOpen || favPanelOpen || searchPanelOpen;
+  const overlayOpen     = drawerOpen || favPanelOpen || searchPanelOpen || userPanelOpen;
   const drawerTranslate = drawerOpen ? "translateX(0)" : `translateX(${drawerW + 60}px)`;
 
   const favSet       = new Set(favorites.map(f => f.href));
@@ -401,7 +423,7 @@ export default function Sidebar({
   // Gradient D: dark vertical gradient (gold edge added as a child element below)
   const useDefaultDrawer = sidebarBg === "var(--c-panel)" || !adminSidebarBg;
   const drawerBg = useDefaultDrawer
-    ? "linear-gradient(180deg,#1c1c1c 0%,#161412 55%,#100f0d 100%)"
+    ? "linear-gradient(180deg,var(--c-sidebar-from) 0%,var(--c-sidebar-mid) 55%,var(--c-sidebar-to) 100%)"
     : sidebarBg;
 
   return (
@@ -531,20 +553,21 @@ export default function Sidebar({
 
           {/* User */}
           <button
-            onClick={() => onChangePassword?.()}
+            ref={userBtnRef}
+            onClick={toggleUserPanel}
             title={`${user.name ?? user.email ?? ""} · ${ROLE_LABELS[user.role]}`}
             style={{
-              width: 40, height: 40, borderRadius: 8,
+              width: 40, height: 40, borderRadius: "50%",
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", border: "none",
-              color: T.sub,
-              background: "transparent",
-              transition: "background 0.15s, color 0.15s",
+              cursor: "pointer",
+              border: `1px solid ${T.border}`,
+              background: userPanelOpen ? T.goldSub : "transparent",
+              color: userPanelOpen ? T.gold : T.sub,
+              fontSize: 12, fontWeight: 700, letterSpacing: "0.03em",
+              transition: "background 0.15s, color 0.15s, border-color 0.15s",
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
+            {userInitials}
           </button>
         </div>
       </aside>
@@ -1072,6 +1095,74 @@ export default function Sidebar({
               </button>
             ))
           )}
+        </div>
+      </div>
+
+      {/* ══════════ USER PANEL ══════════ */}
+      <div
+        style={{
+          position: "fixed",
+          right: 52,
+          bottom: userBtnFromBottom,
+          width: 220,
+          background: T.surface,
+          border: `1px solid ${T.border}`,
+          borderRadius: "12px 0 0 12px",
+          zIndex: 360,
+          display: "flex", flexDirection: "column",
+          transform: userPanelOpen ? "translateX(0)" : "translateX(240px)",
+          transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+          boxShadow: "-6px 4px 24px rgba(0,0,0,0.4)",
+          overflow: "hidden",
+          pointerEvents: userPanelOpen ? "auto" : "none",
+          visibility: userPanelOpen ? "visible" : "hidden",
+          direction: "rtl",
+        }}
+      >
+        {/* User info header */}
+        <div style={{
+          padding: "12px 14px 10px",
+          borderBottom: `1px solid ${T.border}`,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {user.name ?? user.email ?? ""}
+          </div>
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+            {ROLE_LABELS[user.role]}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ padding: "6px 8px" }}>
+          {onChangePassword && (
+            <button
+              onClick={() => { closeUserPanel(); onChangePassword(); }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 8px", borderRadius: 7,
+                fontSize: 13, color: T.sub,
+                background: "transparent", border: "none",
+                cursor: "pointer", textAlign: "right" as const,
+                transition: "all 0.12s",
+              }}
+              className="nav-item-link"
+            >
+              🔑 שינוי סיסמה
+            </button>
+          )}
+          <button
+            onClick={() => { closeUserPanel(); signOut({ callbackUrl: "/login" }); }}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", gap: 8,
+              padding: "8px 8px", borderRadius: 7,
+              fontSize: 13, color: T.red,
+              background: "transparent", border: "none",
+              cursor: "pointer", textAlign: "right" as const,
+              transition: "all 0.12s",
+            }}
+          >
+            ⬅ יציאה
+          </button>
         </div>
       </div>
     </>

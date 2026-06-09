@@ -86,7 +86,7 @@ export default function AdminShell({
       />
 
       <main
-        className="overflow-auto flex flex-col min-h-screen"
+        className="overflow-x-hidden overflow-y-auto flex flex-col min-h-screen"
         style={{
           marginRight: "var(--sidebar-w, 52px)",
           color: adminContentTextColor,
