@@ -17,6 +17,9 @@ export async function GET(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Ensure allergens column exists (may be missing on older DBs)
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "allergens" TEXT[] NOT NULL DEFAULT '{}'`);
+
   try {
     const menus = await prisma.menu.findMany({
       where: { restaurantId, isActive: true },

@@ -10,6 +10,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ orderId
   const { orderId } = await params;
   const { items, tableAllergens } = await req.json();
 
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tableAllergens" TEXT[] NOT NULL DEFAULT '{}'`);
+
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
