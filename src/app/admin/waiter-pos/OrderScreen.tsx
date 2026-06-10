@@ -30,6 +30,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   const [activeCat, setActiveCat]       = useState<string>("");
   const [search, setSearch]             = useState("");
   const [activeCourse, setActiveCourse] = useState(1);
+  const [minCourse] = useState(3);
   const [cart, setCart]                 = useState<CartItem[]>([]);
   const [submitting, setSubmitting]     = useState(false);
   const [order, setOrder]               = useState<OrderDetail | null>(existingOrder);
@@ -69,7 +70,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   }, [orderId]);
 
   // Derived: max course in existing order
-  const maxCourse = Math.max(1, ...(order?.items ?? []).map(i => i.course), activeCourse);
+  const maxCourse = Math.max(minCourse, ...(order?.items ?? []).map(i => i.course), activeCourse);
   const toRoman = (n: number) => (["I","II","III","IV","V","VI","VII","VIII","IX","X"][n-1] ?? String(n));
 
   // Cart helpers
