@@ -35,21 +35,28 @@ type LayoutV2 = { version: 2; rooms: LayoutRoom[] };
 
 // ── Color maps ───────────────────────────────────────────────────────
 const STATUS_BORDER: Record<string, string> = {
-  occupied: "#ef4444", reserved: "#3b82f6", free: "#22c55e", inactive: "#9ca3af",
+  occupied: "#f87171", reserved: "#93c5fd", free: "#6ee7b7", inactive: "#d1d5db",
 };
 const STATUS_LABEL: Record<string, string> = {
   occupied: "תפוס", reserved: "מוזמן", free: "פנוי", inactive: "לא פעיל",
 };
 const STATUS_BADGE_BG: Record<string, string> = {
-  occupied: "#ef4444", reserved: "#3b82f6", free: "#22c55e", inactive: "#9ca3af",
+  occupied: "#fca5a5", reserved: "#bfdbfe", free: "#a7f3d0", inactive: "#e5e7eb",
+};
+const STATUS_BADGE_TEXT: Record<string, string> = {
+  occupied: "#b91c1c", reserved: "#1d4ed8", free: "#065f46", inactive: "#6b7280",
 };
 const ORDER_STATUS_HE: Record<string, string> = {
   PENDING: "ממתין", CONFIRMED: "הזמנה נלקחה", PREPARING: "מכין",
   READY: "מוכן!", DELIVERED: "הוגש", PAID: "שולם", CANCELLED: "בוטל",
 };
 const ORDER_STATUS_COLOR: Record<string, string> = {
-  PENDING: "#22c55e", CONFIRMED: "#ef4444", PREPARING: "#3b82f6",
-  READY: "#3b82f6", DELIVERED: "#f59e0b", PAID: "#9ca3af", CANCELLED: "#9ca3af",
+  PENDING: "#a7f3d0", CONFIRMED: "#fca5a5", PREPARING: "#bfdbfe",
+  READY: "#bfdbfe", DELIVERED: "#fde68a", PAID: "#e5e7eb", CANCELLED: "#e5e7eb",
+};
+const ORDER_STATUS_TEXT_COLOR: Record<string, string> = {
+  PENDING: "#065f46", CONFIRMED: "#b91c1c", PREPARING: "#1d4ed8",
+  READY: "#1d4ed8", DELIVERED: "#92400e", PAID: "#6b7280", CANCELLED: "#6b7280",
 };
 const INSIGHT_TYPE_COLOR: Record<string, string> = {
   alert: "#ff4444", tip: "#fbbf24", info: "#22d3ee",
@@ -506,6 +513,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               const tableInsights  = insights.filter(i => i.tableNum === t.tableNum);
               const isWarn         = t.availStatus === "occupied" && t.minutesSitting > 20;
               const statusBadgeBg  = ORDER_STATUS_COLOR[t.orderStatus ?? ""] ?? STATUS_BADGE_BG[t.availStatus];
+              const statusBadgeFg  = t.orderStatus ? (ORDER_STATUS_TEXT_COLOR[t.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[t.availStatus] ?? "#374151");
               const statusBadgeText = t.availStatus === "occupied"
                 ? (ORDER_STATUS_HE[t.orderStatus ?? ""] ?? STATUS_LABEL[t.availStatus])
                 : STATUS_LABEL[t.availStatus];
@@ -542,7 +550,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                   {/* Status row — no dot, no HR */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 10px 6px" }}>
                     <span style={{
-                      background: statusBadgeBg, color: "#fff",
+                      background: statusBadgeBg, color: statusBadgeFg,
                       borderRadius: 5, padding: "3px 8px", fontSize: 10, fontWeight: 700,
                     }}>{statusBadgeText}</span>
                     <div style={{ fontSize: 10, color: "#888" }}>
@@ -624,6 +632,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               const showBadge = W > 68 && H > 64;
 
               const statusBadgeBg   = ORDER_STATUS_COLOR[tData?.orderStatus ?? ""] ?? STATUS_BADGE_BG[status];
+              const statusBadgeFg   = tData?.orderStatus ? (ORDER_STATUS_TEXT_COLOR[tData.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[status] ?? "#374151");
               const statusBadgeText = status === "occupied"
                 ? (ORDER_STATUS_HE[tData?.orderStatus ?? ""] ?? STATUS_LABEL[status])
                 : STATUS_LABEL[status];
@@ -672,7 +681,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                   {/* Status / order badge */}
                   {showBadge && (
                     <span style={{
-                      background: statusBadgeBg, color: "#fff",
+                      background: statusBadgeBg, color: statusBadgeFg,
                       borderRadius: 4, padding: "1px 5px",
                       fontSize: badgeFs, fontWeight: 700, lineHeight: 1.3,
                       maxWidth: "90%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -730,7 +739,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", borderRadius: "20px 20px 0 0", zIndex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 22, fontWeight: 800 }}>שולחן {overlayTable.tableNum}</span>
-                <span style={{ background: STATUS_BADGE_BG[overlayTable.availStatus], color: "#fff", borderRadius: 8, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>
+                <span style={{ background: STATUS_BADGE_BG[overlayTable.availStatus], color: STATUS_BADGE_TEXT[overlayTable.availStatus] ?? "#374151", borderRadius: 8, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>
                   {STATUS_LABEL[overlayTable.availStatus]}
                 </span>
               </div>
@@ -856,7 +865,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes insightPulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
-          50%       { box-shadow: 0 0 0 5px rgba(124,58,237,0.18); }
+          50%       { box-shadow: 0 0 0 8px rgba(124,58,237,0.35); }
         }
       `}</style>
 
