@@ -255,10 +255,11 @@ model Item {
 model Order {
   id            String      @id @default(cuid())
   restaurantId  String
-  tableNumber   String?
-  customerName  String?
-  customerPhone String?
-  status        OrderStatus @default(PENDING)
+  tableNumber    String?
+  customerName   String?
+  customerPhone  String?
+  tableAllergens String[] @default([])
+  status         OrderStatus @default(PENDING)
   orderNumber   Int?
   totalAmount   Float
   notes         String?

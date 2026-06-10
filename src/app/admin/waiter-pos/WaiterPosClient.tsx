@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { signOut } from "next-auth/react";
+import { TableOverlay, type OrderDetail } from "./TableOverlay";
+import { OrderScreen } from "./OrderScreen";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string };
@@ -110,6 +112,15 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [refreshing, setRefreshing]           = useState(false);
   const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
   const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
+
+  // Order flow state
+  const [orderScreenData, setOrderScreenData] = useState<{
+    orderId: string | null;
+    tableNum: string;
+    allergens: string[];
+    guestCount: number;
+    existingOrder: OrderDetail | null;
+  } | null>(null);
 
   const floorRef = useRef<HTMLDivElement>(null);
   const [floorSize, setFloorSize] = useState({ w: 600, h: 400 });
@@ -728,53 +739,48 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       )}
 
       {/* ══ TABLE OVERLAY ══ */}
-      {tableOverlay && overlayTable && (
-        <div onClick={() => setTableOverlay(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: "#fff", borderRadius: 20, width: "90%", maxWidth: 480,
-            maxHeight: "88vh", overflowY: "auto", direction: "rtl",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-          }}>
-            <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", borderRadius: "20px 20px 0 0", zIndex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 22, fontWeight: 800 }}>שולחן {overlayTable.tableNum}</span>
-                <span style={{ background: STATUS_BADGE_BG[overlayTable.availStatus], color: STATUS_BADGE_TEXT[overlayTable.availStatus] ?? "#374151", borderRadius: 8, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>
-                  {STATUS_LABEL[overlayTable.availStatus]}
-                </span>
-              </div>
-              <button onClick={() => setTableOverlay(null)} style={{ background: "#f0f2f5", border: "none", borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#555" }}>✕</button>
-            </div>
-            <div style={{ padding: "16px 22px 22px" }}>
-              <div style={{ fontSize: 13, color: "#666", display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-                <span>👤 {overlayTable.guests > 0 ? `${overlayTable.guests} סועדים` : `${overlayTable.seats} מקומות`}</span>
-                {overlayTable.minutesSitting > 0 && <span>⏱ {fmtAgo(overlayTable.minutesSitting)} ישיבה</span>}
-                {overlayTable.orderStatus && <span>📋 {ORDER_STATUS_HE[overlayTable.orderStatus] ?? overlayTable.orderStatus}</span>}
-              </div>
-              {overlayInsights.length > 0 && (
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed", marginBottom: 8 }}>✨ תובנות AI</div>
-                  {overlayInsights.map((ins, i) => <InsightCard key={i} insight={ins} />)}
-                </div>
-              )}
-              {overlayInsights.length === 0 && (
-                <div style={{ fontSize: 13, color: "#aaa", marginBottom: 16 }}>אין תובנות לשולחן זה כרגע.</div>
-              )}
-              <div style={{ fontSize: 12, color: "#666", fontWeight: 700, marginBottom: 8 }}>שנה סטטוס:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {(["free", "reserved", "inactive"] as const).map(s => (
-                  <button key={s} onClick={() => patchStatus(overlayTable.tableNum, s)} style={{
-                    padding: "7px 16px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600,
-                    border: `2px solid ${STATUS_BORDER[s]}`,
-                    background: overlayTable.availStatus === s ? STATUS_BORDER[s] : "#fff",
-                    color: overlayTable.availStatus === s ? "#fff" : STATUS_BORDER[s],
-                    transition: "all 0.12s",
-                  }}>{STATUS_LABEL[s]}</button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      {tableOverlay && overlayTable && !orderScreenData && (
+        <TableOverlay
+          tableNum={overlayTable.tableNum}
+          seats={overlayTable.seats}
+          availStatus={overlayTable.availStatus}
+          guests={overlayTable.guests}
+          minutesSitting={overlayTable.minutesSitting}
+          sittingStart={overlayTable.sittingStart}
+          activeOrderIds={overlayTable.activeOrderIds}
+          totalAmount={overlayTable.totalAmount}
+          orderStatus={overlayTable.orderStatus}
+          insights={overlayInsights}
+          isMobile={isMobile}
+          onClose={() => setTableOverlay(null)}
+          onAddItems={(order) => {
+            setOrderScreenData({ orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });
+            setTableOverlay(null);
+          }}
+          onNewOrder={(guestCount, allergens) => {
+            setOrderScreenData({ orderId: null, tableNum: overlayTable.tableNum, allergens, guestCount, existingOrder: null });
+            setTableOverlay(null);
+          }}
+          onStatusChange={(status) => patchStatus(overlayTable.tableNum, status)}
+        />
+      )}
+
+      {/* ══ ORDER SCREEN ══ */}
+      {orderScreenData && (
+        <OrderScreen
+          tableNum={orderScreenData.tableNum}
+          orderId={orderScreenData.orderId}
+          guestCount={orderScreenData.guestCount}
+          tableAllergens={orderScreenData.allergens}
+          restaurantId={restaurantId}
+          existingOrder={orderScreenData.existingOrder}
+          onClose={() => setOrderScreenData(null)}
+          onSuccess={() => {
+            setOrderScreenData(null);
+            showToast("ההזמנה עודכנה בהצלחה ✓");
+            fetchAll(true);
+          }}
+        />
       )}
 
       {/* ══ BOTTOM KPI BAR ══ */}
