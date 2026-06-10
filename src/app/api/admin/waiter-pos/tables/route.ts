@@ -6,6 +6,10 @@ async function ensureColumn() {
   await prisma.$executeRawUnsafe(
     `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "tableStatusOverridesJson" TEXT DEFAULT '{}'`
   );
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "isComped" BOOLEAN NOT NULL DEFAULT false`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidedAt" TIMESTAMP(3)`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidReason" TEXT`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "compReason" TEXT`);
 }
 
 async function checkAccess(userId: string, role: string, restaurantId: string): Promise<boolean> {
