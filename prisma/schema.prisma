@@ -48,6 +48,11 @@ model User {
   termsAcceptedIp        String?
   termsAcceptedUserAgent String?
 
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  totpSecret           String?
+  totpEnabled          Boolean   @default(false)
+  managerPin           String?   // bcrypt hash of 4-digit PIN for void/comp authorization
   accounts         Account[]
   sessions         Session[]
   restaurantUsers  RestaurantUser[]
@@ -298,6 +303,11 @@ model OrderItem {
   firedAt         DateTime?                 // מתי הפריט "הוצת" למטבח
   doneAt          DateTime?                 // מתי הפריט הושלם
   servedAt        DateTime?                 // מתי המנה הוגשה לשולחן בפועל
+  isComped        Boolean   @default(false) // פריט ניתן כפיצוי/חינם — לא יחויב
+  compReason      String?
+  voidedAt        DateTime?                 // מתי הפריט בוטל לאחר שנשלח למטבח
+  voidReason      String?
+  servedByUserId  String?                   // who physically delivered the dish
 
   order     Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
   item      Item                @relation(fields: [itemId], references: [id])
