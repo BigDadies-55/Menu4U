@@ -12,7 +12,7 @@ type CatTranslationsMap  = { en?: { name?: string }; ru?: { name?: string }; fr?
 type Item = {
   id: string; name: string; description: string | null; price: number;
   image: string | null; isActive: boolean; isVegetarian: boolean;
-  isVegan: boolean; isGlutenFree: boolean; tags: string[]; prepTime: number | null; sortOrder: number;
+  isVegan: boolean; isGlutenFree: boolean; tags: string[]; allergens: string[]; prepTime: number | null; sortOrder: number;
   translations?: ItemTranslationsMap | null;
 };
 
@@ -48,7 +48,24 @@ const emptyScheduleForm = { isPrimary: false, scheduleDays: [] as string[], sche
 
 const emptyItemTr  = (): ItemTranslationsMap => ({ en: { name: "", description: "" }, ru: { name: "", description: "" }, fr: { name: "", description: "" } });
 const emptyCatTr   = (): CatTranslationsMap  => ({ en: { name: "" }, ru: { name: "" }, fr: { name: "" } });
-const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[], prepTime: "", translations: emptyItemTr() };
+const ALLERGEN_LIST = [
+  { key: "GLUTEN",      label: "גלוטן" },
+  { key: "MILK",        label: "חלב" },
+  { key: "EGGS",        label: "ביצים" },
+  { key: "FISH",        label: "דגים" },
+  { key: "PEANUTS",     label: "בוטנים" },
+  { key: "SOYBEANS",    label: "סויה" },
+  { key: "NUTS",        label: "אגוזים" },
+  { key: "SESAME",      label: "שומשום" },
+  { key: "CRUSTACEANS", label: "סרטנים" },
+  { key: "MOLLUSCS",    label: "רכיכות" },
+  { key: "CELERY",      label: "סלרי" },
+  { key: "MUSTARD",     label: "חרדל" },
+  { key: "SULPHITES",   label: "גופרית" },
+  { key: "LUPIN",       label: "לופין" },
+] as const;
+
+const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[], allergens: [] as string[], prepTime: "", translations: emptyItemTr() };
 const emptyCategoryForm = { name: "", description: "", image: "", translations: emptyCatTr() };
 
 type ModOption = { id?: string; label: string; priceAdd: number; order: number };
@@ -560,6 +577,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             isVegan: item.isVegan,
             isGlutenFree: item.isGlutenFree,
             tags: item.tags ?? [],
+            allergens: item.allergens ?? [],
             prepTime: item.prepTime ?? null,
             sortOrder: item.sortOrder,
           })),
@@ -952,6 +970,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       isVegan: item.isVegan,
       isGlutenFree: item.isGlutenFree,
       tags: item.tags ?? [],
+      allergens: item.allergens ?? [],
       prepTime: item.prepTime != null ? String(item.prepTime) : "",
       translations: {
         en: { name: existingTr.en?.name ?? "", description: existingTr.en?.description ?? "" },
@@ -1442,6 +1461,30 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                     {label}
                   </label>
                 ))}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: T.sub }}>אלרגנים ⚠️</label>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {ALLERGEN_LIST.map(({ key, label }) => {
+                    const checked = itemForm.allergens.includes(key);
+                    return (
+                      <label key={key} className="flex items-center gap-1.5 text-sm cursor-pointer" style={{ color: checked ? "#f87171" : T.sub }}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setItemForm({
+                            ...itemForm,
+                            allergens: checked
+                              ? itemForm.allergens.filter(a => a !== key)
+                              : [...itemForm.allergens, key],
+                          })}
+                          className="rounded"
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>תגיות נוספות</label>

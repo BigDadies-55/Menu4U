@@ -240,6 +240,7 @@ model Item {
   isVegan      Boolean  @default(false)
   isGlutenFree Boolean  @default(false)
   tags         String[]
+  allergens    String[] @default([])
   prepTime     Int?
   sortOrder    Int      @default(0)
   translations Json?
