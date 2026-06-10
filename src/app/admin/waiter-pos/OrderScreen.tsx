@@ -208,7 +208,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           </div>
 
           {/* Items grid */}
-          <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 9, alignContent: "start" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 9, alignContent: "start", alignItems: "start" }}>
             {loadingMenu ? (
               <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 30, fontSize: 13 }}>טוען תפריט...</div>
             ) : menuError ? (
@@ -217,7 +217,6 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                 <div style={{ fontSize: 11, color: "#888" }}>restaurantId: {restaurantId}</div>
               </div>
             ) : filteredItems.map(item => {
-              if (typeof window !== "undefined") console.log("[item]", item.id, item.name, "price=", item.price, typeof item.price);
               const qty    = cartQtyForItem(item.id);
               const warn   = hasAllergy(item);
               const wLabel = allergyLabel(item);
@@ -241,7 +240,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1612", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
                     {item.description && <div style={{ fontSize: 9, color: "#8a8480", marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      {Number(item.price) > 0 && <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{Number(item.price).toFixed(0)}</span>}
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{Number(item.price).toFixed(0)}</span>
                       {warn && <span style={{ fontSize: 9, fontWeight: 800, color: "#8b2e22", background: "#fdf2f0", borderRadius: 5, padding: "1px 5px" }}>{wLabel}</span>}
                     </div>
                   </div>
