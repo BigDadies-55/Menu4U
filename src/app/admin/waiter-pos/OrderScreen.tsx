@@ -76,7 +76,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   // Cart helpers
   function addItem(item: MenuItem) {
     const key = `${item.id}-c${activeCourse}-${Date.now()}`;
-    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: item.price, quantity: 1, course: activeCourse, notes: "", allergens: item.allergens ?? [] }]);
+    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: Number(item.price), quantity: 1, course: activeCourse, notes: "", allergens: item.allergens ?? [] }]);
   }
 
   function changeQty(key: string, qty: number) {
@@ -240,7 +240,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1612", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
                     {item.description && <div style={{ fontSize: 9, color: "#8a8480", marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      {(item.price ?? 0) > 0 && <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{item.price.toFixed(0)}</span>}
+                      {Number(item.price) > 0 && <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{Number(item.price).toFixed(0)}</span>}
                       {warn && <span style={{ fontSize: 9, fontWeight: 800, color: "#8b2e22", background: "#fdf2f0", borderRadius: 5, padding: "1px 5px" }}>{wLabel}</span>}
                     </div>
                   </div>

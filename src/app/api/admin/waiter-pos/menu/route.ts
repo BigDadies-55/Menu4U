@@ -52,7 +52,7 @@ export async function GET(req: Request) {
     // Normalize: ensure allergens is always an array (old rows may have null)
     const normalized = categories.map(c => ({
       ...c,
-      items: c.items.map(i => ({ ...i, allergens: i.allergens ?? [], price: i.price ?? 0 })),
+      items: c.items.map(i => ({ ...i, allergens: i.allergens ?? [], price: Number(i.price ?? 0) })),
     }));
     return NextResponse.json({ categories: normalized });
   } catch (e) {
