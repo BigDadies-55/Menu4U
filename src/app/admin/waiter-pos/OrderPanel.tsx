@@ -142,7 +142,7 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
             </svg>
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-            <button onClick={() => onQtyChange(item.key, item.quantity - 1)} style={{ width: 22, height: 22, borderRadius: 7, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>−</button>
+            <button onClick={() => onQtyChange(item.key, item.quantity - 1)} style={{ width: 22, height: 22, borderRadius: 7, border: "1.5px solid #e8e2da", background: item.quantity === 1 ? "#fdf2f0" : "#f4f1ed", fontSize: item.quantity === 1 ? 11 : 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: item.quantity === 1 ? "#c0392b" : "#1a1612", fontFamily: "inherit" }}>{item.quantity === 1 ? "🗑" : "−"}</button>
             <span style={{ fontSize: 13, fontWeight: 800, minWidth: 16, textAlign: "center" }}>{item.quantity}</span>
             <button onClick={() => onQtyChange(item.key, item.quantity + 1)} style={{ width: 22, height: 22, borderRadius: 7, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>+</button>
           </div>
