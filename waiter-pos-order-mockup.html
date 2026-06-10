@@ -631,7 +631,7 @@ body {
 <!-- ══ GRID ══ -->
 <div class="grid">
 
-  <div class="tcard occupied pulse" onclick="open('occupied')">
+  <div class="tcard occupied pulse" onclick="openTable('occupied')">
     <div class="tcard-body">
       <div class="tcard-row">
         <div>
@@ -652,7 +652,7 @@ body {
     </div>
   </div>
 
-  <div class="tcard free" onclick="open('free')">
+  <div class="tcard free" onclick="openTable('free')">
     <div class="tcard-body">
       <div class="tcard-row">
         <div>
@@ -1063,7 +1063,7 @@ body {
 </div>
 
 <script>
-function open(type) {
+function openTable(type) {
   document.getElementById(type==='occupied' ? 'ovOccupied' : 'ovFree').classList.add('open');
 }
 function closeAll() {
