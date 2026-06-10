@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מוקאפ — זרימת הזמנה | מלצר חכם</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f2f5; color: #111; direction: rtl; }
+
+/* ── nav ── */
+.demo-nav {
+  position: fixed; top: 0; right: 0; left: 0; z-index: 9999;
+  background: #1a1a2e; color: #fff; padding: 8px 16px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  border-bottom: 2px solid #4ade80;
+}
+.demo-nav span { font-size: 11px; color: #aaa; }
+.step-btn {
+  padding: 5px 14px; border-radius: 20px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 700; transition: all 0.15s;
+}
+.step-btn.active { background: #4ade80; color: #000; }
+.step-btn.inactive { background: #2a2a3e; color: #888; }
+.new-pill {
+  font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+  background: rgba(74,222,128,0.2); color: #4ade80; margin-right: 3px;
+}
+.exist-pill {
+  font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+  background: rgba(156,163,175,0.2); color: #9ca3af; margin-right: 3px;
+}
+
+/* ── screens ── */
+.screen { display: none; padding-top: 48px; min-height: 100vh; }
+.screen.active { display: block; }
+
+/* ── topbar (exact clone) ── */
+.topbar {
+  background: #fff; border-bottom: 1px solid #dde1e8;
+  padding: 0 16px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 48px; z-index: 100;
+}
+.topbar-title { font-size: 17px; font-weight: 700; }
+.topbar-badge { background: #f0f2f5; border: 1px solid #dde1e8; border-radius: 20px; font-size: 12px; font-weight: 600; color: #555; padding: 2px 10px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.insight-btn { background: linear-gradient(135deg,#6c3fc5,#9b59e8); color: #fff; border: none; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.clock-box { font-size: 14px; font-weight: 600; color: #333; background: #f5f5f7; border: 1px solid #e0e0e0; border-radius: 8px; padding: 5px 10px; }
+.exit-btn { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: #dc2626; cursor: pointer; }
+
+/* ── filter bar ── */
+.filter-bar {
+  background: #fff; border-bottom: 1px solid #dde1e8;
+  padding: 6px 14px; display: flex; align-items: center; gap: 8px;
+  position: sticky; top: 104px; z-index: 99; flex-wrap: wrap;
+}
+.view-toggle { display: flex; background: #f0f2f5; border-radius: 8px; border: 1px solid #dde1e8; overflow: hidden; }
+.view-btn { padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+.view-btn.active { background: #111; color: #fff; }
+.view-btn.inactive { background: transparent; color: #888; }
+.filter-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; border: 2px solid; background: transparent; }
+
+/* ── grid ── */
+.tables-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px; padding: 12px;
+}
+.table-card {
+  background: #fff; border: 1.5px solid #e5e7eb; border-radius: 18px;
+  overflow: hidden; cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.table-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.12); transform: translateY(-1px); }
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 10px 6px; }
+.table-num-label { font-size: 10px; font-weight: 500; color: #888; }
+.table-num { font-size: 28px; font-weight: 800; line-height: 1; }
+.table-seats { font-size: 11px; color: #555; margin-top: 2px; }
+.timer { font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.timer-label { font-size: 9px; color: #aaa; margin-top: 1px; }
+.status-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 10px 6px; }
+.status-badge { border-radius: 5px; padding: 3px 8px; font-size: 10px; font-weight: 700; }
+.ai-row { padding: 4px 10px 7px; border-top: 1px solid #f0f2f5; }
+.ai-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px; color: #9b59e8; font-size: 11px; font-weight: 600; padding: 2px 4px; border-radius: 6px; }
+/* pulse */
+@keyframes insightPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+  50%      { box-shadow: 0 0 0 8px rgba(124,58,237,0.35); }
+}
+.has-insight { animation: insightPulse 2.5s ease-in-out infinite; }
+
+/* ── bottom bar ── */
+.bottom-bar {
+  position: fixed; bottom: 0; right: 0; left: 0;
+  background: #fff; border-top: 1px solid #dde1e8; z-index: 450;
+}
+.segment-bar { display: flex; height: 3px; }
+.kpi-row { display: flex; gap: 8px; padding: 8px 14px; overflow-x: auto; align-items: stretch; }
+.kpi-card { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; padding: 6px 12px; min-width: 62px; border-top: 3px solid; }
+.kpi-val { font-size: 20px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+.kpi-label { font-size: 10px; font-weight: 600; color: #888; white-space: nowrap; }
+.insight-ticker {
+  background: #0d0d0d; padding: 10px 20px;
+  display: flex; align-items: center; gap: 8px; min-height: 52px;
+}
+
+/* ══════════════════════════════════════════════════════
+   OVERLAY BASE
+══════════════════════════════════════════════════════ */
+.overlay-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 500; display: flex; align-items: center; justify-content: center;
+}
+.overlay-panel {
+  background: #fff; border-radius: 20px; width: 90%; max-width: 500px;
+  max-height: 90vh; overflow-y: auto; direction: rtl;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.overlay-header {
+  padding: 18px 22px 14px; border-bottom: 1px solid #e5e7eb;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; background: #fff; border-radius: 20px 20px 0 0; z-index: 1;
+}
+.overlay-close { background: #f0f2f5; border: none; border-radius: 8px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; color: #555; }
+.overlay-body { padding: 16px 22px 22px; }
+
+/* ── action buttons ── */
+.action-btn {
+  width: 100%; padding: 12px; border-radius: 12px; border: none;
+  font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary { background: #111; color: #fff; }
+.btn-secondary { background: #f0f2f5; color: #333; border: 1px solid #dde1e8; }
+.btn-danger  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.btn-green   { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+/* ── guest stepper ── */
+.stepper-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.stepper-label { font-size: 13px; font-weight: 600; color: #555; }
+.stepper-ctrl { display: flex; align-items: center; gap: 8px; background: #f5f5f7; border-radius: 10px; padding: 4px 10px; border: 1px solid #e0e0e0; }
+.s-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: #e0e0e0; cursor: pointer; font-size: 16px; font-weight: 700; }
+.s-val { font-size: 16px; font-weight: 800; min-width: 24px; text-align: center; }
+
+/* ── allergy chips ── */
+.allergy-section { margin-bottom: 16px; }
+.allergy-title { font-size: 12px; font-weight: 700; color: #555; margin-bottom: 8px; }
+.allergy-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.allergy-chip {
+  padding: 5px 12px; border-radius: 20px; border: 1.5px solid #e5e7eb;
+  font-size: 12px; font-weight: 600; cursor: pointer; background: #f9fafb; color: #555;
+  transition: all 0.12s;
+}
+.allergy-chip.selected { border-color: #f87171; background: #fef2f2; color: #b91c1c; }
+
+/* ── order summary (existing table) ── */
+.order-summary { background: #f9fafb; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+.order-summary-title { font-size: 11px; font-weight: 700; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .04em; }
+.order-line { display: flex; justify-content: space-between; font-size: 13px; color: #333; margin-bottom: 4px; }
+.order-total { display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; border-top: 1px solid #e5e7eb; margin-top: 8px; padding-top: 8px; }
+
+/* ── course fire section ── */
+.course-section { margin-bottom: 14px; }
+.course-header { font-size: 12px; font-weight: 700; color: #555; margin-bottom: 8px; }
+.course-row { display: flex; align-items: center; justify-content: space-between; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; }
+.course-info { font-size: 13px; font-weight: 600; }
+.course-meta { font-size: 11px; color: #888; margin-top: 2px; }
+.fire-btn { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.fire-btn.fired { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; cursor: default; }
+
+/* ══════════════════════════════════════════════════════
+   MENU SCREEN (full screen ordering)
+══════════════════════════════════════════════════════ */
+.menu-screen-wrap {
+  display: none; position: fixed; inset: 0; z-index: 600;
+  background: #f0f2f5; flex-direction: column;
+}
+.menu-screen-wrap.open { display: flex; }
+
+/* menu topbar */
+.menu-topbar {
+  background: #fff; border-bottom: 1px solid #dde1e8;
+  padding: 0 14px; height: 56px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 10px;
+}
+.menu-back { background: #f0f2f5; border: 1px solid #dde1e8; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.menu-title { font-weight: 800; font-size: 15px; }
+.menu-allergy-bar { display: flex; gap: 5px; flex: 1; flex-wrap: wrap; }
+.active-allergy-tag { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 20px; font-size: 11px; font-weight: 700; padding: 3px 8px; }
+
+/* menu body split */
+.menu-body { flex: 1; display: flex; overflow: hidden; }
+
+/* left: items */
+.menu-left { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.search-bar { padding: 10px 14px; border-bottom: 1px solid #dde1e8; background: #fff; flex-shrink: 0; }
+.search-bar input { width: 100%; background: #f5f5f7; border: 1px solid #e0e0e0; border-radius: 8px; padding: 7px 12px; font-size: 13px; outline: none; }
+.cat-tabs { display: flex; gap: 6px; padding: 8px 14px; overflow-x: auto; flex-shrink: 0; background: #fff; border-bottom: 1px solid #dde1e8; }
+.cat-tab { padding: 6px 14px; border-radius: 20px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.cat-tab.active { background: #111; color: #fff; }
+.cat-tab.inactive { background: #f0f2f5; color: #888; }
+.items-grid { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 8px; align-content: start; }
+.item-card { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 10px; cursor: pointer; position: relative; transition: border-color 0.12s; }
+.item-card:hover { border-color: #9ca3af; }
+.item-card.selected { background: rgba(17,17,17,0.04); border-color: #111; }
+.item-qty-badge { position: absolute; top: 6px; left: 6px; background: #111; color: #fff; border-radius: 20px; min-width: 20px; height: 20px; padding: 0 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+.item-emoji-box { width: 100%; height: 60px; border-radius: 8px; margin-bottom: 7px; background: #f5f5f7; display: flex; align-items: center; justify-content: center; font-size: 24px; position: relative; }
+.allergen-warn { position: absolute; top: 4px; right: 4px; font-size: 14px; }
+.item-name { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 2px; line-height: 1.3; }
+.item-desc { font-size: 10px; color: #888; margin-bottom: 5px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.item-price { font-size: 13px; font-weight: 800; color: #111; }
+/* course selector on item card */
+.course-selector { display: flex; gap: 3px; margin-top: 5px; }
+.course-chip { flex: 1; padding: 3px 0; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 10px; font-weight: 700; cursor: pointer; text-align: center; background: #f9fafb; color: #888; }
+.course-chip.active { background: #111; color: #fff; border-color: #111; }
+
+/* right: cart */
+.menu-cart { width: 290px; background: #fff; border-right: 1px solid #dde1e8; display: flex; flex-direction: column; flex-shrink: 0; }
+.cart-header { padding: 12px 16px; border-bottom: 1px solid #dde1e8; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.cart-title { font-weight: 800; font-size: 14px; }
+.cart-clear { font-size: 11px; color: #dc2626; background: transparent; border: none; cursor: pointer; }
+/* course tabs in cart */
+.cart-course-tabs { display: flex; gap: 4px; padding: 7px 10px; border-bottom: 1px solid #dde1e8; flex-shrink: 0; }
+.cart-course-tab { flex: 1; padding: 5px 0; border-radius: 8px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; }
+.cart-course-tab.active { background: #111; color: #fff; }
+.cart-course-tab.inactive { background: #f0f2f5; color: #888; }
+.cart-items { flex: 1; overflow-y: auto; }
+.cart-item { padding: 10px 14px; border-bottom: 1px solid #f0f2f5; }
+.cart-item-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+.cart-item-info { flex: 1; }
+.cart-item-name { font-size: 13px; font-weight: 600; color: #111; line-height: 1.3; }
+.cart-item-price { font-size: 12px; color: #555; font-weight: 600; margin-top: 1px; }
+.cart-item-course { font-size: 10px; color: #9b59e8; font-weight: 700; margin-top: 1px; }
+.qty-ctrl { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.qty-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #e5e7eb; background: #f9fafb; cursor: pointer; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.qty-val { font-size: 13px; font-weight: 700; min-width: 18px; text-align: center; }
+.item-note-inp { width: 100%; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; color: #888; font-size: 11px; padding: 4px 8px; outline: none; }
+.cart-footer { padding: 12px 14px; border-top: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0; }
+.cart-note-ta { width: 100%; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; color: #333; font-size: 12px; padding: 6px 10px; resize: none; font-family: inherit; margin-bottom: 10px; outline: none; }
+.cart-summary { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.cart-meta { font-size: 12px; color: #888; }
+.cart-total { font-size: 18px; font-weight: 800; }
+.cart-send-btn { width: 100%; padding: 12px 0; border-radius: 10px; border: none; background: #111; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; }
+
+/* ── new: course divider in cart ── */
+.cart-course-divider { font-size: 10px; color: #9b59e8; background: rgba(155,89,232,0.06); border-top: 1px solid rgba(155,89,232,0.15); padding: 4px 14px; font-weight: 700; }
+
+/* annotation */
+.ann { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; vertical-align: middle; margin-right: 3px; }
+.ann-new  { background: rgba(74,222,128,0.15); color: #16a34a; }
+.ann-exist { background: rgba(156,163,175,0.15); color: #6b7280; }
+</style>
+</head>
+<body>
+
+<!-- ══ DEMO NAV ══ -->
+<div class="demo-nav">
+  <span style="font-weight:800;font-size:13px;color:#4ade80">מוקאפ</span>
+  <span>|</span>
+  <button class="step-btn active" onclick="showScreen(1,this)">① מסך ראשי</button>
+  <button class="step-btn inactive" onclick="showScreen(2,this)">② לחיצה על שולחן תפוס</button>
+  <button class="step-btn inactive" onclick="showScreen(3,this)">③ לחיצה על שולחן פנוי</button>
+  <button class="step-btn inactive" onclick="showScreen(4,this)">④ מסך הזמנה (תפריט)</button>
+  <span style="margin-right:auto"></span>
+  <span style="color:#4ade80;font-size:11px">לחץ על שולחן לראות overlay</span>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 1 — main (existing)
+══════════════════════════════════ -->
+<div id="screen1" class="screen active">
+  <!-- topbar -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="topbar-title">🍽️ מלצר חכם</span>
+      <span class="topbar-badge">יוסי כהן</span>
+    </div>
+    <div class="topbar-right">
+      <button class="insight-btn">✨ תובנות</button>
+      <div class="clock-box">20:14</div>
+      <button class="exit-btn">⬅ יציאה</button>
+    </div>
+  </div>
+  <!-- filter bar -->
+  <div class="filter-bar">
+    <div class="view-toggle">
+      <button class="view-btn active">📋 כרטיסים</button>
+      <button class="view-btn inactive">🗺️ לייאוט</button>
+    </div>
+    <div style="width:1px;height:22px;background:#dde1e8"></div>
+    <button class="filter-pill" style="border-color:#f87171;color:#f87171">תפוס</button>
+    <button class="filter-pill" style="border-color:#93c5fd;color:#93c5fd">מוזמן</button>
+    <button class="filter-pill" style="border-color:#6ee7b7;color:#6ee7b7">פנוי</button>
+    <button class="filter-pill" style="border-color:#d1d5db;color:#d1d5db">לא פעיל</button>
+  </div>
+
+  <!-- tables grid -->
+  <div class="tables-grid" style="padding-bottom:130px">
+
+    <!-- occupied with insights — pulses -->
+    <div class="table-card has-insight" style="border-right:7px solid #f87171" onclick="showScreen(2,document.querySelectorAll('.step-btn')[1])">
+      <div class="card-top">
+        <div><div class="table-num-label">שולחן</div><div class="table-num" style="color:#111">7</div><div class="table-seats">👤 3 סועדים</div></div>
+        <div style="text-align:left"><div class="timer" style="color:#ef4444">00:34</div><div class="timer-label">זמן ישיבה</div></div>
+      </div>
+      <div class="status-row">
+        <span class="status-badge" style="background:#fca5a5;color:#b91c1c">הזמנה נלקחה</span>
+        <div style="font-size:10px;color:#888">34 דק'</div>
+      </div>
+      <div class="ai-row"><button class="ai-btn">✨ 2 תובנות</button></div>
+    </div>
+
+    <!-- free table -->
+    <div class="table-card" style="border-right:7px solid #6ee7b7" onclick="showScreen(3,document.querySelectorAll('.step-btn')[2])">
+      <div class="card-top">
+        <div><div class="table-num-label">שולחן</div><div class="table-num">3</div><div class="table-seats">👤 4 מקומות</div></div>
+        <div style="text-align:left"><div class="timer" style="color:#aaa">--:--</div><div class="timer-label">זמן ישיבה</div></div>
+      </div>
+      <div class="status-row"><span class="status-badge" style="background:#a7f3d0;color:#065f46">פנוי</span></div>
+    </div>
+
+    <!-- occupied, preparing -->
+    <div class="table-card" style="border-right:7px solid #f87171">
+      <div class="card-top">
+        <div><div class="table-num-label">שולחן</div><div class="table-num">5</div><div class="table-seats">👤 2 סועדים</div></div>
+        <div style="text-align:left"><div class="timer">00:18</div><div class="timer-label">זמן ישיבה</div></div>
+      </div>
+      <div class="status-row"><span class="status-badge" style="background:#bfdbfe;color:#1d4ed8">מכין</span></div>
+    </div>
+
+    <!-- reserved -->
+    <div class="table-card" style="border-right:7px solid #93c5fd">
+      <div class="card-top">
+        <div><div class="table-num-label">שולחן</div><div class="table-num">9</div><div class="table-seats">👤 6 מקומות</div></div>
+        <div style="text-align:left"><div class="timer" style="color:#aaa">--:--</div><div class="timer-label">זמן ישיבה</div></div>
+      </div>
+      <div class="status-row"><span class="status-badge" style="background:#bfdbfe;color:#1d4ed8">מוזמן</span></div>
+    </div>
+
+    <!-- occupied, insights pulse -->
+    <div class="table-card has-insight" style="border-right:7px solid #f87171">
+      <div class="card-top">
+        <div><div class="table-num-label">שולחן</div><div class="table-num">12</div><div class="table-seats">👤 5 סועדים</div></div>
+        <div style="text-align:left"><div class="timer" style="color:#ef4444">01:12</div><div class="timer-label">זמן ישיבה</div></div>
+      </div>
+      <div class="status-row"><span class="status-badge" style="background:#fca5a5;color:#b91c1c">תפוס</span><div style="font-size:10px;color:#888">72 דק'</div></div>
+      <div class="ai-row"><button class="ai-btn">✨ 1 תובנה</button></div>
+    </div>
+
+    <!-- free -->
+    <div class="table-card" style="border-right:7px solid #6ee7b7">
+      <div class="card-top">
+        <div><div class="table-num-label">שולחן</div><div class="table-num">2</div><div class="table-seats">👤 2 מקומות</div></div>
+        <div style="text-align:left"><div class="timer" style="color:#aaa">--:--</div></div>
+      </div>
+      <div class="status-row"><span class="status-badge" style="background:#a7f3d0;color:#065f46">פנוי</span></div>
+    </div>
+
+  </div>
+
+  <!-- bottom bar -->
+  <div class="bottom-bar">
+    <div class="segment-bar">
+      <div style="flex:3;background:#f87171"></div>
+      <div style="flex:1;background:#93c5fd"></div>
+      <div style="flex:2;background:#6ee7b7"></div>
+      <div style="flex:1;background:#e5e7eb"></div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card" style="background:#fef2f2;border-color:#f87171"><div class="kpi-val" style="color:#f87171">3</div><div class="kpi-label">תפוס</div></div>
+      <div class="kpi-card" style="background:#eff6ff;border-color:#93c5fd"><div class="kpi-val" style="color:#93c5fd">1</div><div class="kpi-label">מוזמן</div></div>
+      <div class="kpi-card" style="background:#f0fdf4;border-color:#6ee7b7"><div class="kpi-val" style="color:#6ee7b7">2</div><div class="kpi-label">פנוי</div></div>
+      <div class="kpi-card" style="background:#f9fafb;border-color:#d1d5db"><div class="kpi-val" style="color:#d1d5db">0</div><div class="kpi-label">לא פעיל</div></div>
+      <div style="width:1px;background:#e5e7eb;align-self:stretch;margin:2px 4px"></div>
+      <div class="kpi-card" style="background:#eff6ff;border-color:#93c5fd"><div class="kpi-val" style="color:#93c5fd">10</div><div class="kpi-label">סועדים</div></div>
+      <div class="kpi-card" style="background:#fffbeb;border-color:#f59e0b"><div class="kpi-val" style="color:#f59e0b">2</div><div class="kpi-label">דורשים תשומת לב</div></div>
+      <div class="kpi-card" style="background:#eef2ff;border-color:#6366f1"><div class="kpi-val" style="color:#6366f1;font-size:14px">38 דק'</div><div class="kpi-label">זמן ממוצע</div></div>
+      <div class="kpi-card" style="background:#ecfdf5;border-color:#059669"><div class="kpi-val" style="color:#059669;font-size:14px">₪210</div><div class="kpi-label">עלות ממוצעת</div></div>
+    </div>
+    <div class="insight-ticker">
+      <span style="font-size:22px">⚠️</span>
+      <span style="font-size:18px;font-weight:800;color:#ff4444;white-space:nowrap">שולחן 12:</span>
+      <span style="font-size:17px;font-weight:600;color:#ff9999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">יושבים מעל שעה — שקול להציע קינוח או קפה</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — occupied table overlay
+══════════════════════════════════ -->
+<div id="screen2" class="screen">
+  <!-- same bg as screen1 dimmed -->
+  <div style="position:fixed;inset:48px 0 0 0;background:rgba(240,242,245,1)">
+    <!-- ghost of grid -->
+    <div style="padding:80px 12px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;opacity:.35;pointer-events:none">
+      <div class="table-card" style="border-right:7px solid #f87171"><div class="card-top"><div><div class="table-num">7</div></div></div></div>
+      <div class="table-card" style="border-right:7px solid #6ee7b7"><div class="card-top"><div><div class="table-num">3</div></div></div></div>
+      <div class="table-card" style="border-right:7px solid #f87171"><div class="card-top"><div><div class="table-num">5</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- overlay -->
+  <div class="overlay-bg" style="top:48px">
+    <div class="overlay-panel">
+      <div class="overlay-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px;font-weight:800">שולחן 7</span>
+          <span class="status-badge" style="background:#fca5a5;color:#b91c1c;font-size:12px;border-radius:8px;padding:3px 10px">תפוס</span>
+          <span style="font-size:12px;color:#888">⏱ 34 דק'</span>
+        </div>
+        <button class="overlay-close" onclick="showScreen(1,document.querySelectorAll('.step-btn')[0])">✕</button>
+      </div>
+      <div class="overlay-body">
+
+        <!-- AI insights -->
+        <div style="background:#f5f0ff;border:1.5px solid #ddd6fe;border-radius:12px;padding:10px 14px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:6px">✨ תובנות AI</div>
+          <div style="font-size:13px;color:#4c1d95;margin-bottom:5px">💡 שולחן 7 — ישיבה מעל 30 דק', שקול להציע משקה</div>
+          <div style="font-size:13px;color:#4c1d95">ℹ️ לאחת הסועדות אלרגיה לחלב — בדוק לפני הגשה</div>
+        </div>
+
+        <!-- existing order summary -->
+        <div class="order-summary">
+          <div class="order-summary-title">הזמנה #42 <span class="ann ann-exist">קיים</span></div>
+          <div class="order-line"><span>סטייק אנטריקוט × 2</span><span>₪296</span></div>
+          <div class="order-line"><span>סלט קיסר × 1</span><span style="color:#888;font-size:11px">⚠️ חלב</span><span>₪48</span></div>
+          <div class="order-line"><span>קולה × 2</span><span>₪24</span></div>
+          <div class="order-total"><span>סה"כ</span><span>₪368</span></div>
+        </div>
+
+        <!-- courses fire — NEW -->
+        <div class="course-section">
+          <div class="course-header">🔥 קורסים <span class="ann ann-new">חדש</span></div>
+          <div class="course-row">
+            <div>
+              <div class="course-info">קורס 1 — 3 פריטים</div>
+              <div class="course-meta" style="color:#15803d">✓ יצא למטבח</div>
+            </div>
+            <span class="fire-btn fired">יצא ✓</span>
+          </div>
+          <div class="course-row">
+            <div>
+              <div class="course-info">קורס 2 — 2 פריטים</div>
+              <div class="course-meta">ממתין — לחץ לשחרר למטבח</div>
+            </div>
+            <button class="fire-btn" onclick="fireIt(this)">🔥 שחרר</button>
+          </div>
+        </div>
+
+        <!-- actions -->
+        <div style="border-top:1px solid #e5e7eb;padding-top:14px">
+          <button class="action-btn btn-primary" onclick="openMenu()">➕ הוסף מנות <span class="ann ann-new" style="margin-right:0">חדש</span></button>
+          <button class="action-btn btn-secondary" onclick="showScreen(1,document.querySelectorAll('.step-btn')[0])">🔄 שנה סטטוס</button>
+          <button class="action-btn btn-danger" onclick="showScreen(1,document.querySelectorAll('.step-btn')[0])">💳 סגור חשבון (בהמשך)</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — free table overlay
+══════════════════════════════════ -->
+<div id="screen3" class="screen">
+  <div style="position:fixed;inset:48px 0 0 0;background:rgba(240,242,245,1)">
+    <div style="padding:80px 12px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;opacity:.35;pointer-events:none">
+      <div class="table-card" style="border-right:7px solid #f87171"><div class="card-top"><div><div class="table-num">7</div></div></div></div>
+      <div class="table-card" style="border-right:7px solid #6ee7b7"><div class="card-top"><div><div class="table-num">3</div></div></div></div>
+    </div>
+  </div>
+
+  <div class="overlay-bg" style="top:48px">
+    <div class="overlay-panel">
+      <div class="overlay-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px;font-weight:800">שולחן 3</span>
+          <span class="status-badge" style="background:#a7f3d0;color:#065f46;font-size:12px;border-radius:8px;padding:3px 10px">פנוי</span>
+        </div>
+        <button class="overlay-close" onclick="showScreen(1,document.querySelectorAll('.step-btn')[0])">✕</button>
+      </div>
+      <div class="overlay-body">
+
+        <!-- guest count — NEW -->
+        <div class="stepper-row">
+          <span class="stepper-label">כמה סועדים? <span class="ann ann-new">חדש</span></span>
+          <div class="stepper-ctrl">
+            <button class="s-btn" onclick="changeGuests(-1)">−</button>
+            <span class="s-val" id="guests-val">2</span>
+            <button class="s-btn" onclick="changeGuests(1)">+</button>
+          </div>
+        </div>
+
+        <!-- allergies — NEW -->
+        <div class="allergy-section">
+          <div class="allergy-title">אלרגיות בשולחן? <span class="ann ann-new">חדש</span></div>
+          <div class="allergy-grid">
+            <div class="allergy-chip" onclick="toggleAllergy(this)">גלוטן</div>
+            <div class="allergy-chip selected" onclick="toggleAllergy(this)">חלב</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">ביצים</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">דגים</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">בוטנים</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">סויה</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">אגוזים</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">שומשום</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">סרטנים</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">חרדל</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">גופרית</div>
+            <div class="allergy-chip" onclick="toggleAllergy(this)">סלרי</div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #e5e7eb;padding-top:14px">
+          <button class="action-btn btn-primary" onclick="openMenu()">🍽️ פתח שולחן והזמן <span class="ann ann-new" style="margin-right:0">חדש</span></button>
+          <button class="action-btn btn-secondary" onclick="showScreen(1,document.querySelectorAll('.step-btn')[0])">🔵 סמן כמוזמן</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — placeholder for nav
+══════════════════════════════════ -->
+<div id="screen4" class="screen">
+  <div style="padding:80px 20px;text-align:center;color:#888">לחץ על שולחן ואז "הוסף מנות" / "פתח שולחן" לראות מסך ההזמנה</div>
+</div>
+
+<!-- ══════════════════════════════════
+     MENU FULL SCREEN — ordering
+══════════════════════════════════ -->
+<div id="menuScreen" class="menu-screen-wrap">
+
+  <!-- menu topbar -->
+  <div class="menu-topbar">
+    <button class="menu-back" onclick="closeMenu()">← חזור</button>
+    <div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="menu-title">שולחן 7 — הוספת מנות <span class="ann ann-new">חדש</span></span>
+      <!-- active allergy tags -->
+      <div class="menu-allergy-bar">
+        <span class="active-allergy-tag">⚠️ חלב</span>
+      </div>
+    </div>
+    <!-- course selector for new items -->
+    <div style="display:flex;gap:4px;background:#f0f2f5;border-radius:8px;padding:3px;border:1px solid #dde1e8">
+      <button style="padding:4px 10px;border-radius:6px;border:none;font-size:11px;font-weight:700;background:#111;color:#fff;cursor:pointer">קורס 1</button>
+      <button style="padding:4px 10px;border-radius:6px;border:none;font-size:11px;font-weight:700;background:transparent;color:#888;cursor:pointer">קורס 2</button>
+      <button style="padding:4px 10px;border-radius:6px;border:none;font-size:11px;font-weight:700;background:transparent;color:#888;cursor:pointer">+ קורס</button>
+    </div>
+  </div>
+
+  <!-- menu body -->
+  <div class="menu-body">
+
+    <!-- LEFT: items -->
+    <div class="menu-left">
+      <div class="search-bar"><input placeholder="🔍 חיפוש מנה..."></div>
+      <div class="cat-tabs">
+        <button class="cat-tab active">ראשונות</button>
+        <button class="cat-tab inactive">עיקריות</button>
+        <button class="cat-tab inactive">קינוחים</button>
+        <button class="cat-tab inactive">משקאות</button>
+      </div>
+      <div class="items-grid">
+
+        <!-- item with allergen warning — NEW -->
+        <div class="item-card">
+          <div class="item-emoji-box">
+            🥗
+            <span class="allergen-warn" title="מכיל חלב">⚠️</span>
+          </div>
+          <div class="item-name">סלט קיסר</div>
+          <div class="item-desc">חסה, פרמזן, קרוטונים</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="item-price">₪48</span>
+            <span style="font-size:10px;color:#dc2626;font-weight:700">חלב ⚠️ <span class="ann ann-new">חדש</span></span>
+          </div>
+        </div>
+
+        <!-- regular item, selected -->
+        <div class="item-card selected">
+          <div class="item-qty-badge">×2</div>
+          <div class="item-emoji-box">🥩</div>
+          <div class="item-name">סטייק אנטריקוט</div>
+          <div class="item-desc">300 גר', צלוי על גריל</div>
+          <div class="item-price">₪148</div>
+        </div>
+
+        <!-- regular -->
+        <div class="item-card">
+          <div class="item-emoji-box">🍗</div>
+          <div class="item-name">פרגית בגריל</div>
+          <div class="item-desc">עם תוספת לבחירה</div>
+          <div class="item-price">₪92</div>
+        </div>
+
+        <!-- allergy warning -->
+        <div class="item-card">
+          <div class="item-emoji-box">🍝<span class="allergen-warn">⚠️</span></div>
+          <div class="item-name">פסטה ארביאטה</div>
+          <div class="item-desc">עגבניות, שום, חרדל</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="item-price">₪72</span>
+            <span style="font-size:10px;color:#dc2626;font-weight:700">גלוטן ⚠️</span>
+          </div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-emoji-box">🐟</div>
+          <div class="item-name">פילה סלמון</div>
+          <div class="item-desc">עם ירקות מוקפצים</div>
+          <div class="item-price">₪118</div>
+        </div>
+
+        <div class="item-card">
+          <div class="item-emoji-box">🥦</div>
+          <div class="item-name">ירקות מוקפצים</div>
+          <div class="item-desc">בחמאה ושום</div>
+          <div class="item-price">₪38</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: cart -->
+    <div class="menu-cart">
+      <div class="cart-header">
+        <span class="cart-title">🛒 שולחן 7</span>
+        <button class="cart-clear">נקה</button>
+      </div>
+
+      <!-- course tabs — NEW -->
+      <div class="cart-course-tabs">
+        <button class="cart-course-tab active">קורס 1</button>
+        <button class="cart-course-tab inactive">קורס 2 <span style="color:#9b59e8">●</span></button>
+        <button style="width:28px;height:28px;border-radius:8px;border:1px dashed #e5e7eb;background:transparent;color:#aaa;font-size:16px;cursor:pointer;flex-shrink:0">+</button>
+      </div>
+
+      <div class="cart-items">
+
+        <!-- existing items (greyed, from current order) -->
+        <div style="font-size:10px;color:#aaa;padding:6px 14px;background:#f9fafb;font-weight:600">קיים בהזמנה #42</div>
+        <div class="cart-item" style="opacity:.55">
+          <div class="cart-item-row">
+            <div class="cart-item-info">
+              <div class="cart-item-name">סטייק אנטריקוט</div>
+              <div class="cart-item-price">₪296</div>
+            </div>
+            <div class="qty-ctrl"><span class="qty-val" style="color:#aaa">×2</span></div>
+          </div>
+        </div>
+        <div class="cart-item" style="opacity:.55">
+          <div class="cart-item-row">
+            <div class="cart-item-info">
+              <div class="cart-item-name">קולה</div>
+              <div class="cart-item-price">₪24</div>
+            </div>
+            <div class="qty-ctrl"><span class="qty-val" style="color:#aaa">×2</span></div>
+          </div>
+        </div>
+
+        <!-- divider -->
+        <div class="cart-course-divider">+ מנות חדשות — קורס 1 <span class="ann ann-new">חדש</span></div>
+
+        <!-- new item being added -->
+        <div class="cart-item">
+          <div class="cart-item-row">
+            <div class="cart-item-info">
+              <div class="cart-item-name">פרגית בגריל</div>
+              <div class="cart-item-price">₪92 × 1</div>
+              <div class="cart-item-course">קורס 1</div>
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn">−</button>
+              <span class="qty-val">1</span>
+              <button class="qty-btn">+</button>
+            </div>
+          </div>
+          <input class="item-note-inp" placeholder="הערה (ללא בצל...)">
+        </div>
+
+        <!-- course 2 divider -->
+        <div class="cart-course-divider">קורס 2 — ממתין לשחרור 🔥 <span class="ann ann-new">חדש</span></div>
+
+        <div class="cart-item" style="opacity:.8">
+          <div class="cart-item-row">
+            <div class="cart-item-info">
+              <div class="cart-item-name">סלמון צלוי</div>
+              <div class="cart-item-price">₪118 × 2</div>
+              <div class="cart-item-course">קורס 2 — 🔥 ממתין</div>
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn">−</button>
+              <span class="qty-val">2</span>
+              <button class="qty-btn">+</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="cart-footer">
+        <textarea class="cart-note-ta" rows="2" placeholder="הערה לשולחן..."></textarea>
+        <div class="cart-summary">
+          <span class="cart-meta">1 פריט חדש · קורס 1</span>
+          <span class="cart-total">₪92</span>
+        </div>
+        <button class="cart-send-btn">📤 הוסף להזמנה #42</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ SCRIPTS ══ -->
+<script>
+function showScreen(n, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.step-btn').forEach(b => { b.classList.remove('active'); b.classList.add('inactive'); });
+  document.getElementById('screen'+n).classList.add('active');
+  if (btn) { btn.classList.add('active'); btn.classList.remove('inactive'); }
+  document.getElementById('menuScreen').classList.remove('open');
+}
+function openMenu() {
+  document.getElementById('menuScreen').classList.add('open');
+  document.querySelectorAll('.step-btn').forEach((b,i) => {
+    b.classList.toggle('active', i===3);
+    b.classList.toggle('inactive', i!==3);
+  });
+}
+function closeMenu() {
+  document.getElementById('menuScreen').classList.remove('open');
+  showScreen(2, document.querySelectorAll('.step-btn')[1]);
+}
+function changeGuests(d) {
+  const el = document.getElementById('guests-val');
+  el.textContent = Math.max(1, parseInt(el.textContent)+d);
+}
+function toggleAllergy(el) { el.classList.toggle('selected'); }
+function fireIt(btn) {
+  btn.textContent = 'יצא ✓';
+  btn.classList.add('fired');
+}
+</script>
+</body>
+</html>
