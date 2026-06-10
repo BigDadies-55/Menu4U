@@ -124,6 +124,7 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
 
   function NewRow({ item }: { item: CartItem }) {
     const warn = item.allergens.some(a => tableAllergens.includes(a));
+    const [notesOpen, setNotesOpen] = useState(!!item.notes);
     return (
       <div style={{ padding: "10px 14px", borderBottom: "1px solid #ebe7f8", background: "#faf8ff" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -135,6 +136,11 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
             </div>
             <div style={{ fontSize: 10, color: "#8878c0", marginTop: 1 }}>קורס {item.course}</div>
           </div>
+          <button onClick={() => setNotesOpen(o => !o)} title="הוסף הערה" style={{ width: 26, height: 26, borderRadius: 7, border: `1.5px solid ${notesOpen ? "#8878c0" : "#e8e2da"}`, background: notesOpen ? "#e8e4f8" : "#f4f1ed", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .12s" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={notesOpen ? "#5a4a9e" : "#8a8480"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </button>
           <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
             <button onClick={() => onQtyChange(item.key, item.quantity - 1)} style={{ width: 22, height: 22, borderRadius: 7, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>−</button>
             <span style={{ fontSize: 13, fontWeight: 800, minWidth: 16, textAlign: "center" }}>{item.quantity}</span>
@@ -142,7 +148,9 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
           </div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#3d3070", flexShrink: 0 }}>₪{(item.price * item.quantity).toFixed(0)}</div>
         </div>
-        <input value={item.notes} onChange={e => onNotesChange(item.key, e.target.value)} placeholder="הערה..." style={{ marginTop: 5, width: "100%", background: "#f0ecfc", border: "1px solid #d0c8f0", borderRadius: 6, fontSize: 11, padding: "4px 9px", outline: "none", color: "#3d3070", fontFamily: "inherit" }} />
+        {notesOpen && (
+          <input autoFocus value={item.notes} onChange={e => onNotesChange(item.key, e.target.value)} placeholder="הערה למטבח..." style={{ marginTop: 7, width: "100%", background: "#f0ecfc", border: "1.5px solid #8878c0", borderRadius: 8, fontSize: 12, padding: "6px 10px", outline: "none", color: "#3d3070", fontFamily: "inherit", boxSizing: "border-box" }} />
+        )}
       </div>
     );
   }
