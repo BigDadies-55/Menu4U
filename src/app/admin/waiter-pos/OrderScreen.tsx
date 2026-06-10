@@ -70,6 +70,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
 
   // Derived: max course in existing order
   const maxCourse = Math.max(1, ...(order?.items ?? []).map(i => i.course), activeCourse);
+  const toRoman = (n: number) => (["I","II","III","IV","V","VI","VII","VIII","IX","X"][n-1] ?? String(n));
 
   // Cart helpers
   function addItem(item: MenuItem) {
@@ -197,8 +198,8 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
             <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8480" }}>קורס:</span>
               {Array.from({ length: maxCourse }, (_, i) => i + 1).map(c => (
-                <button key={c} onClick={() => setActiveCourse(c)} style={{ width: 28, height: 28, borderRadius: 8, border: "1.5px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: activeCourse === c ? "#1a1612" : "#f4f1ed", color: activeCourse === c ? "#fff" : "#4a4540", borderColor: activeCourse === c ? "#1a1612" : "#e8e2da", transition: "all .12s" }}>
-                  {c}
+                <button key={c} onClick={() => setActiveCourse(c)} style={{ minWidth: 28, height: 28, padding: "0 7px", borderRadius: 8, border: "1.5px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: activeCourse === c ? "#1a1612" : "#f4f1ed", color: activeCourse === c ? "#fff" : "#4a4540", borderColor: activeCourse === c ? "#1a1612" : "#e8e2da", transition: "all .12s" }}>
+                  {toRoman(c)}
                 </button>
               ))}
               <button onClick={() => setActiveCourse(maxCourse + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: "1.5px dashed #e8e2da", fontSize: 14, fontWeight: 700, cursor: "pointer", background: "transparent", color: "#8a8480", fontFamily: "inherit" }}>+</button>
