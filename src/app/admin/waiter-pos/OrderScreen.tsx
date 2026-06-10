@@ -176,25 +176,13 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
         )}
       </div>
 
-      {/* Category bar + course selector */}
+      {/* Category bar */}
       <div style={{ background: "#fff", borderBottom: "1px solid #e8e2da", padding: "8px 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 7, overflowX: "auto" }}>
         {categories.map(c => (
           <button key={c.id} onClick={() => setActiveCat(c.id)} style={{ padding: "6px 16px", borderRadius: 99, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit", background: activeCat === c.id ? "#1a1612" : "#f4f1ed", color: activeCat === c.id ? "#fff" : "#4a4540", transition: "all .12s" }}>
             {c.name}
           </button>
         ))}
-        {/* Spacer */}
-        <div style={{ flex: 1, minWidth: 12 }} />
-        {/* Course selector */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, borderRight: "1px solid #e8e2da", paddingRight: 12 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#8a8480" }}>קורס:</span>
-          {Array.from({ length: maxCourse }, (_, i) => i + 1).map(c => (
-            <button key={c} onClick={() => setActiveCourse(c)} style={{ padding: "5px 14px", borderRadius: 99, border: "1.5px solid #e8e2da", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: activeCourse === c ? "#1a1612" : "#f4f1ed", color: activeCourse === c ? "#fff" : "#4a4540", borderColor: activeCourse === c ? "#1a1612" : "#e8e2da", transition: "all .12s" }}>
-              {c}
-            </button>
-          ))}
-          <button onClick={() => setActiveCourse(maxCourse + 1)} style={{ padding: "5px 11px", borderRadius: 99, border: "1.5px dashed #e8e2da", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "transparent", color: "#8a8480", fontFamily: "inherit" }}>+</button>
-        </div>
       </div>
 
       {/* Body */}
@@ -202,9 +190,19 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
 
         {/* Menu column */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Search */}
-          <div style={{ padding: "9px 12px", borderBottom: "1px solid #e8e2da", background: "#fff", flexShrink: 0 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ width: "100%", background: "#f4f1ed", border: "1.5px solid #e8e2da", borderRadius: 99, padding: "8px 14px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#1a1612" }} />
+          {/* Search + course selector */}
+          <div style={{ padding: "9px 12px", borderBottom: "1px solid #e8e2da", background: "#fff", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ flex: 1, background: "#f4f1ed", border: "1.5px solid #e8e2da", borderRadius: 99, padding: "8px 14px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#1a1612" }} />
+            {/* Course selector */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8480" }}>קורס:</span>
+              {Array.from({ length: maxCourse }, (_, i) => i + 1).map(c => (
+                <button key={c} onClick={() => setActiveCourse(c)} style={{ width: 28, height: 28, borderRadius: 8, border: "1.5px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: activeCourse === c ? "#1a1612" : "#f4f1ed", color: activeCourse === c ? "#fff" : "#4a4540", borderColor: activeCourse === c ? "#1a1612" : "#e8e2da", transition: "all .12s" }}>
+                  {c}
+                </button>
+              ))}
+              <button onClick={() => setActiveCourse(maxCourse + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: "1.5px dashed #e8e2da", fontSize: 14, fontWeight: 700, cursor: "pointer", background: "transparent", color: "#8a8480", fontFamily: "inherit" }}>+</button>
+            </div>
           </div>
 
           {/* Items grid */}
