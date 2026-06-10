@@ -192,7 +192,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {/* Search + course selector */}
           <div style={{ padding: "9px 12px", borderBottom: "1px solid #e8e2da", background: "#fff", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ flex: 1, background: "#f4f1ed", border: "1.5px solid #e8e2da", borderRadius: 99, padding: "8px 14px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#1a1612" }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ width: "60%", flexShrink: 0, background: "#f4f1ed", border: "1.5px solid #e8e2da", borderRadius: 99, padding: "8px 14px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#1a1612" }} />
             {/* Course selector */}
             <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8480" }}>קורס:</span>
