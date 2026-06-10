@@ -517,6 +517,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     borderRight: `7px solid ${borderColor}`,
                     borderRadius: 18, overflow: "hidden", cursor: "pointer",
                     transition: "box-shadow 0.15s, transform 0.1s",
+                    animation: tableInsights.length > 0 ? "insightPulse 2.5s ease-in-out infinite" : undefined,
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 6px 24px rgba(0,0,0,0.12)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ""; (e.currentTarget as HTMLDivElement).style.transform = ""; }}
@@ -637,6 +638,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     borderRadius: isRound ? "50%" : lt.shape === "banquet" ? 12 : 6,
                     background: status === "occupied" ? color + "18" : color + "12",
                     border: `2.5px solid ${color}`,
+                    animation: tInsights.length > 0 ? "insightPulse 2.5s ease-in-out infinite" : undefined,
                     cursor: "pointer",
                     display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center",
@@ -850,7 +852,13 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       </div>
 
       {/* Spin keyframe */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes insightPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+          50%       { box-shadow: 0 0 0 5px rgba(124,58,237,0.18); }
+        }
+      `}</style>
 
       {/* Toast */}
       {toastMsg && (
