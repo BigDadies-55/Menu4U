@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import PageShell from "@/components/admin/PageShell";
 
 type Restaurant = { id: string; name: string };
 type Customer = {
@@ -110,7 +111,7 @@ export default function CustomersClient({
   }
 
   return (
-    <div className="p-4 md:p-8" dir="rtl">
+    <PageShell>
       {/* Header */}
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
@@ -310,6 +311,6 @@ export default function CustomersClient({
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

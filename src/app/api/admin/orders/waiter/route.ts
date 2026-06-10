@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { restaurantId, tableNumber, notes, coversCount, items } = body;
+  const { restaurantId, tableNumber, notes, coversCount, tableAllergens, items } = body;
 
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
   if (!tableNumber)  return NextResponse.json({ error: "tableNumber required" }, { status: 400 });
@@ -46,6 +46,7 @@ export async function POST(req: Request) {
   // Ensure order counter table + column exist (same as customer API)
   await Promise.allSettled([
     prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "orderNumber" INTEGER`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tableAllergens" TEXT[] NOT NULL DEFAULT '{}'`),
     prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "OrderCounter" ("restaurantId" TEXT PRIMARY KEY, "counter" INTEGER NOT NULL DEFAULT 0)`),
   ]);
 
@@ -82,12 +83,14 @@ export async function POST(req: Request) {
     data: {
       restaurantId,
       tableNumber,
-      notes:        notes ?? null,
-      coversCount:  coversCount ? Number(coversCount) : null,
+      notes:          notes ?? null,
+      coversCount:    coversCount ? Number(coversCount) : null,
+      tableAllergens: Array.isArray(tableAllergens) ? tableAllergens : [],
       totalAmount,
       orderNumber,
-      status:       "CONFIRMED",
-      orderSource:  "WAITER",
+      status:          "CONFIRMED",
+      orderSource:     "WAITER",
+      createdByUserId: session.user.id,
       items: {
         create: validItems.map(i => {
           const course      = i.course ?? 1;

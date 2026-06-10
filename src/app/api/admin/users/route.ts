@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     data: { identifier: email, token: hashedToken, expires },
   });
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const inviteLink = `${baseUrl}/accept-invite?token=${rawToken}`;
 
   await logAudit({

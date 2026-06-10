@@ -50,7 +50,7 @@ export default async function KitchenPage() {
     <KitchenClient
       restaurants={restaurants}
       defaultRestaurantId={defaultRestaurantId}
-      canUpdate={["SUPER_ADMIN", "ADMIN", "OWNER", "WAITER", "DISPLAY"].includes(role)}
+      canUpdate={["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "WAITER", "DISPLAY"].includes(role)}
     />
   );
 }

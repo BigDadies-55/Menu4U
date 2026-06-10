@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulk } from "@/lib/sms";
+import { sendSmsBulkPersonalized, SmsConfigError } from "@/lib/sms";
+import { getScopeRestaurantIds } from "@/lib/loyalty-scope";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -10,8 +11,8 @@ export async function POST(req: Request) {
   const { restaurantId, message, memberIds } = await req.json();
   if (!restaurantId || !message?.trim())
     return NextResponse.json({ error: "missing fields" }, { status: 400 });
-  if (message.trim().length > 70)
-    return NextResponse.json({ error: "message too long (max 70)" }, { status: 400 });
+  if (message.trim().length > 160)
+    return NextResponse.json({ error: "message too long (max 160)" }, { status: 400 });
 
   if (session.user.role !== "SUPER_ADMIN") {
     const access = await prisma.restaurantUser.findUnique({
@@ -20,21 +21,46 @@ export async function POST(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  type MemberRow = { phone: string };
+  // Chain scope — a grouped restaurant shares its member pool with sibling branches
+  const scopeIds = await getScopeRestaurantIds(restaurantId);
+
+  type MemberRow = { phone: string; name: string; points: number; memberNumber: string };
   const isFiltered = Array.isArray(memberIds) && memberIds.length > 0;
   const members: MemberRow[] = isFiltered
     ? await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
-        restaurantId, memberIds
+        `SELECT "phone", "name", "points", "memberNumber" FROM "LoyaltyMember" WHERE "restaurantId" = ANY($1::text[]) AND "id" = ANY($2::text[])`,
+        scopeIds, memberIds
       )
     : await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
-        restaurantId
+        `SELECT "phone", "name", "points", "memberNumber" FROM "LoyaltyMember" WHERE "restaurantId" = ANY($1::text[])`,
+        scopeIds
       );
 
   if (members.length === 0) return NextResponse.json({ sent: 0, failed: 0 });
 
-  const { sent, failed } = await sendSmsBulk(members.map(m => m.phone), message.trim());
+  // Build personalized recipients — tokens [#Name#] [#FirstName#] [#Points#] [#MemberNumber#]
+  const recipients = members.map(m => ({
+    phone: m.phone,
+    fields: {
+      Name: m.name,
+      FirstName: (m.name ?? "").trim().split(/\s+/)[0] ?? "",
+      Points: m.points,
+      MemberNumber: m.memberNumber,
+    },
+  }));
+
+  let sent: number, failed: number;
+  try {
+    ({ sent, failed } = await sendSmsBulkPersonalized(recipients, message.trim()));
+  } catch (e) {
+    if (e instanceof SmsConfigError) {
+      return NextResponse.json(
+        { error: "שירות ה-SMS אינו מוגדר בשרת (חסרים פרטי INFORU_USERNAME / INFORU_API_TOKEN)" },
+        { status: 503 }
+      );
+    }
+    throw e;
+  }
 
   await prisma.$executeRawUnsafe(
     `INSERT INTO "SmsLog" ("id","restaurantId","message","sentCount","failedCount","sentAt")

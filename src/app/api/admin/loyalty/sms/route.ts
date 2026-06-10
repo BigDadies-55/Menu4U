@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulk } from "@/lib/sms";
+import { sendSmsBulkPersonalized, SmsConfigError } from "@/lib/sms";
+import { getScopeRestaurantIds, checkLoyaltyPermission } from "@/lib/loyalty-scope";
+import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -11,38 +13,75 @@ export async function POST(req: Request) {
   if (!restaurantId || !message?.trim()) {
     return NextResponse.json({ error: "restaurantId and message required" }, { status: 400 });
   }
-  if (message.trim().length > 70) {
-    return NextResponse.json({ error: "message too long (max 70 chars)" }, { status: 400 });
+  if (message.trim().length > 160) {
+    return NextResponse.json({ error: "message too long (max 160 chars)" }, { status: 400 });
   }
 
-  // Verify access
-  if (session.user.role !== "SUPER_ADMIN") {
-    const access = await prisma.restaurantUser.findUnique({
-      where: { userId_restaurantId: { userId: session.user.id, restaurantId } },
-    });
-    if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // Permission check with role-based guard
+  const perm = await checkLoyaltyPermission(session.user.id, session.user.role, restaurantId, "sendSms");
+  if (!perm.allowed) return NextResponse.json({ error: perm.reason }, { status: 403 });
 
-  // Fetch members — specific list or all
-  type MemberRow = { phone: string };
+  const scopeIds = await getScopeRestaurantIds(restaurantId);
+
+  type MemberRow = { id: string; phone: string; name: string; points: number; memberNumber: string };
+  const cols = `"id", "phone", "name", "points", "memberNumber"`;
   const isFiltered = Array.isArray(memberIds) && memberIds.length > 0;
   const members: MemberRow[] = isFiltered
     ? await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember"
-         WHERE "restaurantId" = $1 AND "id" = ANY($2::text[])`,
-        restaurantId, memberIds
+        `SELECT ${cols} FROM "LoyaltyMember"
+         WHERE "restaurantId" = ANY($1::text[]) AND "id" = ANY($2::text[])`,
+        scopeIds, memberIds
       )
     : await prisma.$queryRawUnsafe<MemberRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`,
-        restaurantId
+        `SELECT ${cols} FROM "LoyaltyMember" WHERE "restaurantId" = ANY($1::text[])`,
+        scopeIds
       );
 
   if (members.length === 0) {
     return NextResponse.json({ sent: 0, failed: 0, total: 0 });
   }
 
-  const phones = members.map(m => m.phone);
-  const result = await sendSmsBulk(phones, message.trim());
+  const recipients = members.map(m => ({
+    phone: m.phone,
+    fields: {
+      Name: m.name,
+      FirstName: (m.name ?? "").trim().split(/\s+/)[0] ?? "",
+      Points: m.points,
+      MemberNumber: m.memberNumber,
+    },
+  }));
 
-  return NextResponse.json({ ...result, total: phones.length });
+  let result: { sent: number; failed: number };
+  try {
+    result = await sendSmsBulkPersonalized(recipients, message.trim());
+  } catch (e) {
+    if (e instanceof SmsConfigError) {
+      return NextResponse.json(
+        { error: "שירות ה-SMS אינו מוגדר בשרת (חסרים פרטי INFORU_USERNAME / INFORU_API_TOKEN)" },
+        { status: 503 }
+      );
+    }
+    throw e;
+  }
+
+  // Stamp lastSmsSentAt on every recipient member
+  await prisma.loyaltyMember.updateMany({
+    where: { id: { in: members.map(m => m.id) } },
+    data:  { lastSmsSentAt: new Date() },
+  });
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "LOYALTY_SEND_SMS", entity: "Restaurant", entityId: restaurantId, ip: getIp(req),
+    meta: {
+      message: message.trim(),
+      phones: members.map(m => m.phone),
+      memberIds: members.map(m => m.id),
+      sent: result.sent,
+      failed: result.failed,
+      total: members.length,
+    },
+  });
+
+  return NextResponse.json({ ...result, total: recipients.length });
 }

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { T, ADMIN_PALETTES } from "@/lib/ui";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if ((session.user as { requires2fa?: boolean }).requires2fa) redirect("/verify-2fa");
   if (session.user.mustChangePassword) redirect("/change-password");
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
@@ -27,15 +29,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     if (!user?.termsAccepted) redirect("/terms");
   }
 
-  // Determine which KDS views this user can see
+  // Determine which KDS views this user can see + per-restaurant palette
   let kdsView = "ALL";
+  let restaurantPalette = "dark";
   if (!isSuperAdmin) {
     try {
       const link = await prisma.restaurantUser.findFirst({
         where: { userId: session.user.id },
-        include: { restaurant: { select: { kdsView: true } } },
+        include: { restaurant: { select: { kdsView: true, adminPalette: true } } },
       });
-      kdsView = link?.restaurant?.kdsView ?? "STATION_DARK";
+      kdsView           = link?.restaurant?.kdsView      ?? "STATION_DARK";
+      restaurantPalette = (link?.restaurant as { adminPalette?: string })?.adminPalette ?? "dark";
     } catch {
       kdsView = "STATION_DARK";
     }
@@ -43,16 +47,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Load site config — try with newest columns first, degrade gracefully
   let adminPalette  = "dark";
-  let adminBg       = "#1a1d23";
+  let adminBg: string       = "var(--c-bg)";
   let adminBgImage: string | null = null;
   let siteLogo: string | null = null;
   let siteName = "Menu4U";
   let adminSidebarBg: string | null = null;
   let adminSidebarAccent: string | null = null;
-  let adminSidebarTextColor = "#9ca3af";
-  let adminContentTextColor = "#e9ecef";
+  let adminSidebarTextColor: string = T.muted;
+  let adminContentTextColor: string = T.text;
   let adminTopBarBg: string | null = null;
-  let adminTopBarTextColor = "#374151";
+  let adminTopBarTextColor: string = T.panel;
   try {
     // Full query (all columns including recently added ones)
     type FullRow = {
@@ -82,20 +86,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       return /^#[0-6]/i.test(t);
     }
 
+    // Old system-default backgrounds that predate the T token system.
+    // If DB still holds one of these, we treat it as "no custom override" and use T instead.
+    const LEGACY_SYSTEM_BGS = new Set([
+      "#0d0f18","#120b1e","#080f1e","#071510","#150a0e", // old ADMIN_PALETTE_MAP bgs
+      "#1a1d23","#0a0402","#160805","#1a0c06",           // old inline defaults
+    ]);
+
     if (rows[0]) {
       adminPalette           = rows[0].adminPalette           ?? "dark";
-      const rawBg            = rows[0].adminBg                ?? "#1a1d23";
-      adminBg                = isLightBg(rawBg) ? "#1a1d23" : rawBg;
+      const rawBg            = rows[0].adminBg                ?? "";
+      // Use T.bg unless the user explicitly set a CUSTOM (non-system-default) background
+      const isCustomBg = rawBg && !LEGACY_SYSTEM_BGS.has(rawBg) && !isLightBg(rawBg);
+      adminBg                = isCustomBg ? rawBg : "var(--c-bg)";
       adminBgImage           = rows[0].adminBgImage           ?? null;
       siteLogo               = rows[0].logo                   ?? null;
       siteName               = rows[0].siteName               ?? "Menu4U";
       adminSidebarBg         = rows[0].adminSidebarBg         ?? null;
       adminSidebarAccent     = rows[0].adminSidebarAccent     ?? null;
-      adminSidebarTextColor  = rows[0].adminSidebarTextColor  ?? "#9ca3af";
-      const rawText          = rows[0].adminContentTextColor  ?? "#e9ecef";
-      adminContentTextColor  = isLightText(rawText) ? "#e9ecef" : rawText;
+      adminSidebarTextColor  = rows[0].adminSidebarTextColor  ?? T.muted;
+      const rawText          = rows[0].adminContentTextColor  ?? T.text;
+      adminContentTextColor  = isLightText(rawText) ? T.text : rawText;
       adminTopBarBg          = rows[0].adminTopBarBg          ?? null;
-      adminTopBarTextColor   = rows[0].adminTopBarTextColor   ?? "#adb5bd";
+      adminTopBarTextColor   = rows[0].adminTopBarTextColor   ?? T.sub;
     }
   } catch {
     // Newer columns may not exist — fall back to base columns only
@@ -115,23 +128,30 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
   }
 
+  const effectivePalette = isSuperAdmin ? adminPalette : restaurantPalette;
+  const paletteVars = ADMIN_PALETTES[effectivePalette] ?? ADMIN_PALETTES["dark"];
+  const cssVars = Object.entries(paletteVars).map(([k, v]) => `${k}:${v}`).join(";");
+
   return (
-    <AdminShell
-      user={session.user}
-      kdsView={kdsView}
-      adminPalette={adminPalette}
-      adminBg={adminBg}
-      adminBgImage={adminBgImage}
-      siteLogo={siteLogo}
-      siteName={siteName}
-      adminSidebarBg={adminSidebarBg}
-      adminSidebarAccent={adminSidebarAccent}
-      adminSidebarTextColor={adminSidebarTextColor}
-      adminContentTextColor={adminContentTextColor}
-      adminTopBarBg={adminTopBarBg}
-      adminTopBarTextColor={adminTopBarTextColor}
-    >
-      {children}
-    </AdminShell>
+    <>
+      <style>{`:root{${cssVars}}`}</style>
+      <AdminShell
+        user={session.user}
+        kdsView={kdsView}
+        adminPalette={effectivePalette}
+        adminBg={adminBg}
+        adminBgImage={adminBgImage}
+        siteLogo={siteLogo}
+        siteName={siteName}
+        adminSidebarBg={adminSidebarBg}
+        adminSidebarAccent={adminSidebarAccent}
+        adminSidebarTextColor={adminSidebarTextColor}
+        adminContentTextColor={adminContentTextColor}
+        adminTopBarBg={adminTopBarBg}
+        adminTopBarTextColor={adminTopBarTextColor}
+      >
+        {children}
+      </AdminShell>
+    </>
   );
 }

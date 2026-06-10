@@ -65,7 +65,7 @@ export async function GET(req: Request) {
       restaurant: { select: { id: true, name: true } },
       items: {
         include: {
-          item: { select: { name: true, prepTime: true, category: { select: { name: true, autoReady: true } } } },
+          item: { select: { id: true, name: true, prepTime: true, isActive: true, category: { select: { name: true, autoReady: true } } } },
           modifiers: { select: { groupName: true, label: true, priceAdd: true } },
         },
         orderBy: [{ course: "asc" }, { id: "asc" }],

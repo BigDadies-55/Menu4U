@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { T } from "@/lib/ui";
 
 type Restaurant = { id: string; name: string };
 
@@ -25,7 +26,18 @@ type StatsData = {
   totals: { sent: number; failed: number; sends: number };
 };
 
-type Member = { id: string; name: string; phone: string; points: number };
+type ActivityStatus = "new" | "active" | "at_risk" | "inactive";
+type Member = {
+  id: string; name: string; phone: string; points: number;
+  analytics?: { status: ActivityStatus; lastVisitAt: string | null };
+};
+
+const STATUS_META: Record<ActivityStatus, { label: string; color: string }> = {
+  active:   { label: "פעיל",   color: T.green },
+  at_risk:  { label: "בסיכון", color: T.gold },
+  inactive: { label: "רדום",   color: T.red },
+  new:      { label: "חדש",    color: T.blue },
+};
 
 const CAMPAIGN_TYPES = [
   { value: "SCHEDULED",        label: "📅 חד פעמי",           desc: "שלח פעם אחת בתאריך ושעה מוגדרים" },
@@ -39,29 +51,25 @@ const CAMPAIGN_TYPES = [
 
 const DAYS_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
-const SMS_MAX = 70;
+const SMS_MAX = 160;
+const SMS_SEGMENT = 70; // one Hebrew SMS segment; beyond this costs extra
 
-const D = {
-  bg: "#161a1f", card: "#1e2228", border: "#2a2f38",
-  text: "#e9ecef", sub: "#868e96", muted: "#495057",
-  amber: "#c9a84c", green: "#4ade80", red: "#f87171",
-  input: { background: "#252a32", border: "1px solid #2a2f38", color: "#e9ecef", borderRadius: 8, padding: "8px 12px", fontSize: 13 },
-};
+const D_INPUT = { background: T.overlay, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "8px 12px", fontSize: 13 };
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "20px 24px", ...style }}>{children}</div>;
+  return <div style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: 12, padding: "20px 24px", ...style }}>{children}</div>;
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 11, fontWeight: 700, color: D.sub, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>{children}</div>;
+  return <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>{children}</div>;
 }
 
 function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} style={{ ...D.input, width: "100%", boxSizing: "border-box", ...props.style }} />;
+  return <input {...props} style={{ ...D_INPUT, width: "100%", boxSizing: "border-box", ...props.style }} />;
 }
 
 function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} style={{ ...D.input, width: "100%", boxSizing: "border-box", ...props.style }} />;
+  return <select {...props} style={{ ...D_INPUT, width: "100%", boxSizing: "border-box", ...props.style }} />;
 }
 
 function SmsTextarea({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -70,21 +78,86 @@ function SmsTextarea({ value, onChange }: { value: string; onChange: (v: string)
       <textarea
         value={value}
         onChange={e => onChange(e.target.value.slice(0, SMS_MAX))}
-        placeholder="תוכן ההודעה... (עד 70 תווים)"
+        placeholder="תוכן ההודעה..."
         rows={3}
         style={{
-          ...D.input, width: "100%", boxSizing: "border-box",
+          ...D_INPUT, width: "100%", boxSizing: "border-box",
           resize: "none", fontFamily: "inherit", lineHeight: 1.5,
           paddingBottom: 26,
-          border: `1px solid ${value.length === SMS_MAX ? D.red : value.length > 55 ? "#f59e0b" : "#2a2f38"}`,
+          border: `1px solid ${value.length >= SMS_MAX ? T.red : value.length > SMS_SEGMENT ? T.orange : T.border}`,
         }}
       />
       <span style={{
         position: "absolute", bottom: 8, left: 10, fontSize: 11, fontWeight: 700,
-        color: value.length === SMS_MAX ? D.red : value.length > 55 ? "#f59e0b" : D.sub,
+        color: value.length >= SMS_MAX ? T.red : value.length > SMS_SEGMENT ? T.orange : T.sub,
       }}>
         {value.length} / {SMS_MAX}
       </span>
+    </div>
+  );
+}
+
+/* ── Personalization token chips (insert [#Name#] etc. into a message) ── */
+const PERSONALIZATION_TOKENS = [
+  { token: "[#Name#]", label: "שם" },
+  { token: "[#FirstName#]", label: "שם פרטי" },
+  { token: "[#Points#]", label: "נקודות" },
+  { token: "[#MemberNumber#]", label: "מס' חבר" },
+];
+
+/* ── Ready-made message templates ── */
+const MESSAGE_TEMPLATES: { label: string; text: string }[] = [
+  { label: "יתרת נקודות",      text: "היי [#FirstName#], יש לך [#Points#] נקודות במועדון! 🎁" },
+  { label: "מבצע מיוחד",       text: "[#FirstName#] יקר/ה, מבצע מיוחד היום רק לחברי מועדון! בואו לבקר 🍽️" },
+  { label: "ברוכים הבאים",     text: "ברוך הבא למועדון [#FirstName#]! קיבלת נקודות פתיחה במתנה 🎉" },
+  { label: "יום הולדת",        text: "מזל טוב [#FirstName#]! 🎂 חוגגים איתך עם הטבה מיוחדת במועדון" },
+  { label: "התגעגענו",         text: "[#FirstName#], מזמן לא ראינו אותך! חכה לך מבצע מתוק 😍" },
+  { label: "מימוש נקודות",     text: "[#FirstName#], צברת [#Points#] נקודות! בוא לממש אותן להטבה 🤑" },
+  { label: "סוף שבוע",         text: "[#FirstName#], סופ\"ש מושלם מתחיל אצלנו! מצפים לך 🥳" },
+  { label: "תזכורת קופון",     text: "[#FirstName#], אל תשכח לממש את הקופון שלך לפני שיפוג! ⏳" },
+  { label: "תפריט חדש",        text: "[#FirstName#], השקנו תפריט חדש 🤩 בוא לטעום ראשון!" },
+  { label: "תודה",             text: "תודה [#FirstName#] שאתה חלק מהמשפחה שלנו ❤️ נתראה בקרוב!" },
+];
+
+/* ── Template picker: fills the message box from a preset ── */
+function TemplatePicker({ onPick }: { onPick: (text: string) => void }) {
+  return (
+    <div style={{ marginTop: 8 }}>
+      <Select
+        defaultValue=""
+        onChange={e => {
+          const t = MESSAGE_TEMPLATES.find(m => m.label === e.target.value);
+          if (t) onPick(t.text);
+          e.target.value = "";
+        }}
+        style={{ fontSize: 12 }}
+      >
+        <option value="" disabled>📝 בחר תבנית הודעה מוכנה...</option>
+        {MESSAGE_TEMPLATES.map(t => (
+          <option key={t.label} value={t.label}>{t.label} — {t.text}</option>
+        ))}
+      </Select>
+    </div>
+  );
+}
+
+function TokenChips({ onInsert }: { onInsert: (token: string) => void }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, alignItems: "center" }}>
+      <span style={{ fontSize: 11, color: T.muted }}>הוסף שדה אישי:</span>
+      {PERSONALIZATION_TOKENS.map(t => (
+        <button
+          key={t.token}
+          type="button"
+          onClick={() => onInsert(t.token)}
+          style={{
+            fontSize: 11, padding: "3px 9px", borderRadius: 14, cursor: "pointer",
+            background: T.goldSub, color: T.gold, border: `1px solid ${T.border}`,
+          }}
+        >
+          + {t.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -219,6 +292,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ActivityStatus>("all");
 
   /* ── campaigns ── */
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -296,6 +370,11 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
       body: JSON.stringify({ restaurantId: rid, message: sendMsg.trim(), memberIds: targets }),
     });
     const d = await res.json();
+    if (!res.ok) {
+      alert(d.error ?? "שגיאה בשליחת SMS");
+      setSending(false);
+      return;
+    }
     setSendResult({ sent: d.sent ?? 0, failed: d.failed ?? 0 });
     if (d.sent > 0) { setSendMsg(""); setSelectedIds(new Set()); setSendTarget("all"); }
     setSending(false);
@@ -339,19 +418,27 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
     fetchCampaigns();
   }
 
-  const filtered = members.filter(m =>
-    !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.phone.includes(search)
-  );
+  const filtered = members.filter(m => {
+    const matchesSearch = !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.phone.includes(search);
+    const matchesStatus = statusFilter === "all" || m.analytics?.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
   const allSelected = filtered.length > 0 && filtered.every(m => selectedIds.has(m.id));
+
+  const statusCounts = members.reduce((acc, m) => {
+    const s = m.analytics?.status ?? "new";
+    acc[s] = (acc[s] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   /* ══ RENDER ══════════════════════════════════════════════════ */
   return (
-    <div style={{ padding: "32px 24px", maxWidth: 900, margin: "0 auto", direction: "rtl", color: D.text }}>
+    <div style={{ padding: "32px 24px", maxWidth: 900, margin: "0 auto", direction: "rtl", color: T.text }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>📱 קשרי לקוחות — SMS</h1>
-          <p style={{ color: D.sub, fontSize: 13, marginTop: 4 }}>שליחה מיידית, תזמון קמפיינים, היסטוריה</p>
+          <p style={{ color: T.sub, fontSize: 13, marginTop: 4 }}>שליחה מיידית, תזמון קמפיינים, היסטוריה</p>
         </div>
         {(isSuperAdmin || restaurants.length > 1) && (
           <Select value={rid} onChange={e => setRid(e.target.value)} style={{ width: "auto", minWidth: 180 }}>
@@ -362,7 +449,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
 
       {/* Cron hint */}
       {tab === "campaigns" && (
-        <div style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 10, padding: "10px 16px", marginBottom: 20, fontSize: 12, color: "#c9a84c" }}>
+        <div style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 10, padding: "10px 16px", marginBottom: 20, fontSize: 12, color: T.gold }}>
           ⏰ כדי שהקמפיינים יופעלו אוטומטית — הגדר ב-<strong>cron-job.org</strong> שיקרא כל שעה לכתובת:
           {" "}<code style={{ background: "rgba(0,0,0,0.3)", padding: "1px 6px", borderRadius: 4 }}>
             {typeof window !== "undefined" ? window.location.origin : ""}/api/admin/crm/cron?secret=CRON_SECRET
@@ -372,7 +459,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
       )}
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, background: D.card, borderRadius: 10, padding: 4, border: `1px solid ${D.border}` }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 24, background: T.raised, borderRadius: 10, padding: 4, border: `1px solid ${T.border}` }}>
         {([
           { k: "send", label: "📤 שליחה מיידית" },
           { k: "campaigns", label: "⏰ קמפיינים" },
@@ -382,8 +469,8 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
           <button key={t.k} onClick={() => setTab(t.k)} style={{
             flex: 1, padding: "9px 0", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600,
             cursor: "pointer",
-            background: tab === t.k ? D.amber : "transparent",
-            color: tab === t.k ? "#000" : D.sub,
+            background: tab === t.k ? T.gold : "transparent",
+            color: tab === t.k ? "#fff" : T.sub,
           }}>{t.label}</button>
         ))}
       </div>
@@ -394,12 +481,12 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
           <Card>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
               <div style={{ fontWeight: 700, fontSize: 15 }}>הודעה</div>
-              <div style={{ display: "flex", background: D.bg, borderRadius: 8, padding: 3, gap: 2 }}>
+              <div style={{ display: "flex", background: T.bg, borderRadius: 8, padding: 3, gap: 2 }}>
                 {(["all", "selected"] as const).map(t => (
                   <button key={t} onClick={() => setSendTarget(t)} style={{
                     padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                    background: sendTarget === t ? D.amber : "transparent",
-                    color: sendTarget === t ? "#000" : D.sub,
+                    background: sendTarget === t ? T.gold : "transparent",
+                    color: sendTarget === t ? "#fff" : T.sub,
                   }}>
                     {t === "all" ? `לכולם (${members.length})` : `לנבחרים (${selectedIds.size})`}
                   </button>
@@ -407,15 +494,17 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               </div>
             </div>
             {sendTarget === "selected" && selectedIds.size === 0 && (
-              <div style={{ color: "#f59e0b", fontSize: 12, marginBottom: 10 }}>⚠️ בחר חברים מהרשימה למטה</div>
+              <div style={{ color: T.orange, fontSize: 12, marginBottom: 10 }}>⚠️ בחר חברים מהרשימה למטה</div>
             )}
             <SmsTextarea value={sendMsg} onChange={setSendMsg} />
+            <TemplatePicker onPick={text => setSendMsg(text.slice(0, SMS_MAX))} />
+            <TokenChips onInsert={tok => setSendMsg(m => (m + tok).slice(0, SMS_MAX))} />
             {sendResult && (
               <div style={{
                 marginTop: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13,
                 background: sendResult.sent > 0 ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.08)",
                 border: `1px solid ${sendResult.sent > 0 ? "rgba(74,222,128,0.2)" : "rgba(239,68,68,0.2)"}`,
-                color: sendResult.sent > 0 ? D.green : D.red,
+                color: sendResult.sent > 0 ? T.green : T.red,
               }}>
                 {sendResult.sent > 0 && `✓ נשלח ל-${sendResult.sent} חברים`}
                 {sendResult.failed > 0 && ` · ${sendResult.failed} נכשלו`}
@@ -425,7 +514,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               disabled={sending || !sendMsg.trim() || (sendTarget === "selected" && selectedIds.size === 0)}
               style={{
                 marginTop: 12, padding: "9px 24px", borderRadius: 8, border: "none",
-                background: D.amber, color: "#000", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                background: T.gold, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
                 opacity: (sending || !sendMsg.trim()) ? 0.5 : 1,
               }}>
               {sending ? "שולח..." : `📤 שלח ל-${sendTarget === "all" ? members.length : selectedIds.size} חברים`}
@@ -434,7 +523,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
 
           {/* Members list */}
           <Card style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${D.border}`, display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 10, alignItems: "center" }}>
               <input type="checkbox" checked={allSelected}
                 onChange={e => {
                   const next = new Set(selectedIds);
@@ -445,17 +534,43 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                 style={{ width: 15, height: 15, cursor: "pointer" }}
               />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש לפי שם / טלפון..."
-                style={{ ...D.input, flex: 1 }} />
-              <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>{filtered.length} חברים</span>
+                style={{ ...D_INPUT, flex: 1 }} />
+              <span style={{ fontSize: 12, color: T.sub, whiteSpace: "nowrap" }}>{filtered.length} חברים</span>
+            </div>
+
+            {/* Activity status filter — segment the audience (e.g. send only to "רדום") */}
+            <div style={{ padding: "10px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {([
+                { v: "all", label: `הכל (${members.length})`, color: T.sub },
+                ...(["active", "at_risk", "inactive", "new"] as const).map(s => ({
+                  v: s, label: `${STATUS_META[s].label} (${statusCounts[s] ?? 0})`, color: STATUS_META[s].color,
+                })),
+              ] as const).map(opt => {
+                const active = statusFilter === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    onClick={() => setStatusFilter(opt.v as typeof statusFilter)}
+                    style={{
+                      padding: "4px 11px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      border: `1px solid ${active ? opt.color : T.border}`,
+                      background: active ? `${opt.color}22` : "transparent",
+                      color: active ? opt.color : T.muted,
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
             {membersLoading ? (
-              <div style={{ padding: 32, textAlign: "center", color: D.sub }}>טוען...</div>
+              <div style={{ padding: 32, textAlign: "center", color: T.sub }}>טוען...</div>
             ) : (
               <div style={{ maxHeight: 360, overflowY: "auto" }}>
                 {filtered.map((m, i) => (
                   <div key={m.id} style={{
                     display: "flex", alignItems: "center", gap: 12, padding: "10px 18px",
-                    borderBottom: `1px solid ${D.border}`,
+                    borderBottom: `1px solid ${T.border}`,
                     background: selectedIds.has(m.id) ? "rgba(201,168,76,0.06)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                     cursor: "pointer",
                   }} onClick={() => {
@@ -467,14 +582,22 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                     <input type="checkbox" checked={selectedIds.has(m.id)} onChange={() => {}}
                       style={{ width: 15, height: 15, cursor: "pointer", pointerEvents: "none" }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: D.text }}>{m.name}</div>
-                      <div style={{ fontSize: 12, color: D.sub, direction: "ltr", textAlign: "right" }}>{m.phone}</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: T.text }}>{m.name}</div>
+                      <div style={{ fontSize: 12, color: T.sub, direction: "ltr", textAlign: "right" }}>{m.phone}</div>
                     </div>
-                    <span style={{ fontSize: 12, color: D.amber, fontWeight: 600 }}>{m.points} ⭐</span>
+                    {m.analytics && (() => {
+                      const meta = STATUS_META[m.analytics.status];
+                      return (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: meta.color, background: `${meta.color}1a`, padding: "2px 8px", borderRadius: 10 }}>
+                          {meta.label}
+                        </span>
+                      );
+                    })()}
+                    <span style={{ fontSize: 12, color: T.gold, fontWeight: 600 }}>{m.points} ⭐</span>
                   </div>
                 ))}
                 {filtered.length === 0 && (
-                  <div style={{ padding: 32, textAlign: "center", color: D.sub, fontSize: 13 }}>
+                  <div style={{ padding: 32, textAlign: "center", color: T.sub, fontSize: 13 }}>
                     {search ? "לא נמצאו חברים" : "אין חברי מועדון עדיין"}
                   </div>
                 )}
@@ -489,14 +612,14 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
         <div>
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
             <button onClick={() => { setShowForm(true); setEditCamp(null); setForm({ name: "", type: "SCHEDULED", message: "", scheduleConfig: {} }); }}
-              style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: D.amber, color: "#000", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               + קמפיין חדש
             </button>
           </div>
 
           {/* Campaign form */}
           {showForm && (
-            <Card style={{ marginBottom: 20, border: `1px solid ${D.amber}40` }}>
+            <Card style={{ marginBottom: 20, border: `1px solid ${T.gold}40` }}>
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
                 {editCamp ? "✏️ עריכת קמפיין" : "➕ קמפיין חדש"}
               </div>
@@ -523,14 +646,16 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                 <div>
                   <Label>הודעה</Label>
                   <SmsTextarea value={form.message} onChange={v => setForm(f => ({ ...f, message: v }))} />
+                  <TemplatePicker onPick={text => setForm(f => ({ ...f, message: text.slice(0, SMS_MAX) }))} />
+                  <TokenChips onInsert={tok => setForm(f => ({ ...f, message: (f.message + tok).slice(0, SMS_MAX) }))} />
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button onClick={handleSaveCampaign} disabled={formSaving || !form.name.trim() || !form.message.trim()}
-                    style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: D.amber, color: "#000", fontWeight: 700, cursor: "pointer", opacity: formSaving ? 0.6 : 1 }}>
+                    style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 700, cursor: "pointer", opacity: formSaving ? 0.6 : 1 }}>
                     {formSaving ? "שומר..." : "שמור"}
                   </button>
                   <button onClick={() => { setShowForm(false); setEditCamp(null); }}
-                    style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${D.border}`, background: "transparent", color: D.sub, cursor: "pointer" }}>
+                    style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${T.border}`, background: "transparent", color: T.sub, cursor: "pointer" }}>
                     ביטול
                   </button>
                 </div>
@@ -540,10 +665,10 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
 
           {/* Campaigns list */}
           {campLoading ? (
-            <div style={{ padding: 40, textAlign: "center", color: D.sub }}>טוען...</div>
+            <div style={{ padding: 40, textAlign: "center", color: T.sub }}>טוען...</div>
           ) : campaigns.length === 0 ? (
             <Card>
-              <div style={{ textAlign: "center", color: D.sub, padding: 32 }}>אין קמפיינים עדיין</div>
+              <div style={{ textAlign: "center", color: T.sub, padding: 32 }}>אין קמפיינים עדיין</div>
             </Card>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -554,35 +679,35 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                       <div style={{ flex: 1, minWidth: 200 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                          <span style={{ fontWeight: 700, fontSize: 14, color: D.text }}>{c.name}</span>
+                          <span style={{ fontWeight: 700, fontSize: 14, color: T.text }}>{c.name}</span>
                           <span style={{
                             fontSize: 11, padding: "2px 8px", borderRadius: 10, fontWeight: 600,
                             background: c.isActive ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.05)",
-                            color: c.isActive ? D.green : D.muted,
+                            color: c.isActive ? T.green : T.muted,
                           }}>
                             {c.isActive ? "● פעיל" : "● מושהה"}
                           </span>
                         </div>
-                        <div style={{ fontSize: 12, color: D.sub }}>
+                        <div style={{ fontSize: 12, color: T.sub }}>
                           {typeInfo?.label} · {c.message.slice(0, 40)}{c.message.length > 40 ? "..." : ""}
                         </div>
                         {c.lastRunAt && (
-                          <div style={{ fontSize: 11, color: D.muted, marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
                             הפעלה אחרונה: {new Date(c.lastRunAt).toLocaleString("he-IL")}
                           </div>
                         )}
                       </div>
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                         <button onClick={() => { setEditCamp(c); setForm({ name: c.name, type: c.type, message: c.message, scheduleConfig: c.scheduleConfig }); setShowForm(true); }}
-                          style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${D.border}`, background: "transparent", color: D.sub, fontSize: 12, cursor: "pointer" }}>
+                          style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${T.border}`, background: "transparent", color: T.sub, fontSize: 12, cursor: "pointer" }}>
                           ✏️
                         </button>
                         <button onClick={() => toggleCampaign(c)}
-                          style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${c.isActive ? D.amber : D.border}`, background: "transparent", color: c.isActive ? D.amber : D.sub, fontSize: 12, cursor: "pointer" }}>
+                          style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${c.isActive ? T.gold : T.border}`, background: "transparent", color: c.isActive ? T.gold : T.sub, fontSize: 12, cursor: "pointer" }}>
                           {c.isActive ? "השהה" : "הפעל"}
                         </button>
                         <button onClick={() => deleteCampaign(c.id)}
-                          style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)", background: "transparent", color: D.red, fontSize: 12, cursor: "pointer" }}>
+                          style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)", background: "transparent", color: T.red, fontSize: 12, cursor: "pointer" }}>
                           מחק
                         </button>
                       </div>
@@ -611,18 +736,18 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
               </div>
               <button
                 onClick={() => fetchStats(statsFrom || undefined, statsTo || undefined)}
-                style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: D.amber, color: "#000", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
                 סנן
               </button>
               {(statsFrom || statsTo) && (
                 <button
                   onClick={() => { setStatsFrom(""); setStatsTo(""); fetchStats(); }}
-                  style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${D.border}`, background: "transparent", color: D.sub, fontSize: 13, cursor: "pointer" }}>
+                  style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${T.border}`, background: "transparent", color: T.sub, fontSize: 13, cursor: "pointer" }}>
                   נקה
                 </button>
               )}
               {(statsFrom || statsTo) && (
-                <span style={{ fontSize: 12, color: D.amber, alignSelf: "center" }}>
+                <span style={{ fontSize: 12, color: T.gold, alignSelf: "center" }}>
                   {statsFrom && statsTo ? `${statsFrom} — ${statsTo}` : statsFrom ? `מ-${statsFrom}` : `עד ${statsTo}`}
                 </span>
               )}
@@ -630,18 +755,18 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
           </Card>
 
           {statsLoading ? (
-            <div style={{ padding: 60, textAlign: "center", color: D.sub }}>טוען...</div>
+            <div style={{ padding: 60, textAlign: "center", color: T.sub }}>טוען...</div>
           ) : !stats ? null : (
             <>
               {/* Summary row */}
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {[
-                  { label: "סה\"כ SMS שנשלחו", value: stats.totals.sent.toLocaleString(), color: D.green, icon: "📤" },
-                  { label: "נכשלו", value: stats.totals.failed.toLocaleString(), color: stats.totals.failed > 0 ? D.red : D.sub, icon: "❌" },
-                  { label: "אירועי שליחה", value: stats.totals.sends.toLocaleString(), color: D.amber, icon: "📋" },
+                  { label: "סה\"כ SMS שנשלחו", value: stats.totals.sent.toLocaleString(), color: T.green, icon: "📤" },
+                  { label: "נכשלו", value: stats.totals.failed.toLocaleString(), color: stats.totals.failed > 0 ? T.red : T.sub, icon: "❌" },
+                  { label: "אירועי שליחה", value: stats.totals.sends.toLocaleString(), color: T.gold, icon: "📋" },
                 ].map(s => (
                   <Card key={s.label} style={{ flex: 1, minWidth: 140, padding: "18px 20px", margin: 0 }}>
-                    <div style={{ fontSize: 11, color: D.sub, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: T.sub, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>
                       {s.icon} {s.label}
                     </div>
                     <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -651,17 +776,17 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
 
               {/* Per-restaurant table */}
               <Card style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ padding: "14px 18px", borderBottom: `1px solid ${D.border}`, fontWeight: 700, fontSize: 14 }}>
+                <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, fontWeight: 700, fontSize: 14 }}>
                   {isSuperAdmin ? "פירוט לפי מסעדה" : "פירוט שליחות"}
                 </div>
                 {stats.restaurants.length === 0 ? (
-                  <div style={{ padding: 40, textAlign: "center", color: D.sub, fontSize: 13 }}>אין נתונים עדיין</div>
+                  <div style={{ padding: 40, textAlign: "center", color: T.sub, fontSize: 13 }}>אין נתונים עדיין</div>
                 ) : (
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                      <tr style={{ background: D.bg }}>
+                      <tr style={{ background: T.bg }}>
                         {(isSuperAdmin ? ["מסעדה", "SMS שנשלחו", "נכשלו", "אירועי שליחה"] : ["SMS שנשלחו", "נכשלו", "אירועי שליחה"]).map(h => (
-                          <th key={h} style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: D.sub, textTransform: "uppercase", letterSpacing: ".05em" }}>{h}</th>
+                          <th key={h} style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: ".05em" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -670,32 +795,32 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
                         .sort((a, b) => b.totalSent - a.totalSent)
                         .map((r, i) => (
                           <tr key={r.restaurantId} style={{
-                            borderBottom: `1px solid ${D.border}`,
+                            borderBottom: `1px solid ${T.border}`,
                             background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                           }}>
                             {isSuperAdmin && (
-                              <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 600, color: D.text }}>{r.name}</td>
+                              <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 600, color: T.text }}>{r.name}</td>
                             )}
-                            <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 15, color: r.totalSent > 0 ? D.green : D.muted }}>
+                            <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 15, color: r.totalSent > 0 ? T.green : T.muted }}>
                               {r.totalSent.toLocaleString()}
                             </td>
-                            <td style={{ padding: "12px 16px", fontWeight: r.totalFailed > 0 ? 700 : 400, color: r.totalFailed > 0 ? D.red : D.muted }}>
+                            <td style={{ padding: "12px 16px", fontWeight: r.totalFailed > 0 ? 700 : 400, color: r.totalFailed > 0 ? T.red : T.muted }}>
                               {r.totalFailed > 0 ? r.totalFailed.toLocaleString() : "—"}
                             </td>
-                            <td style={{ padding: "12px 16px", color: D.sub, fontSize: 13 }}>
+                            <td style={{ padding: "12px 16px", color: T.sub, fontSize: 13 }}>
                               {r.sendCount.toLocaleString()}
                             </td>
                           </tr>
                         ))}
                       {/* Totals footer */}
                       {isSuperAdmin && stats.restaurants.length > 1 && (
-                        <tr style={{ background: "rgba(201,168,76,0.06)", borderTop: `2px solid ${D.border}` }}>
-                          <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 13, color: D.amber }}>סה&quot;כ</td>
-                          <td style={{ padding: "12px 16px", fontWeight: 800, fontSize: 15, color: D.green }}>{stats.totals.sent.toLocaleString()}</td>
-                          <td style={{ padding: "12px 16px", fontWeight: stats.totals.failed > 0 ? 800 : 400, color: stats.totals.failed > 0 ? D.red : D.muted }}>
+                        <tr style={{ background: "rgba(201,168,76,0.06)", borderTop: `2px solid ${T.border}` }}>
+                          <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 13, color: T.gold }}>סה&quot;כ</td>
+                          <td style={{ padding: "12px 16px", fontWeight: 800, fontSize: 15, color: T.green }}>{stats.totals.sent.toLocaleString()}</td>
+                          <td style={{ padding: "12px 16px", fontWeight: stats.totals.failed > 0 ? 800 : 400, color: stats.totals.failed > 0 ? T.red : T.muted }}>
                             {stats.totals.failed > 0 ? stats.totals.failed.toLocaleString() : "—"}
                           </td>
-                          <td style={{ padding: "12px 16px", fontWeight: 700, color: D.sub }}>{stats.totals.sends.toLocaleString()}</td>
+                          <td style={{ padding: "12px 16px", fontWeight: 700, color: T.sub }}>{stats.totals.sends.toLocaleString()}</td>
                         </tr>
                       )}
                     </tbody>
@@ -710,36 +835,36 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
       {/* ──────── TAB: HISTORY ──────── */}
       {tab === "history" && (
         <Card style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "14px 18px", borderBottom: `1px solid ${D.border}`, fontWeight: 700, fontSize: 14 }}>
+          <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, fontWeight: 700, fontSize: 14 }}>
             היסטוריית שליחות
           </div>
           {histLoading ? (
-            <div style={{ padding: 40, textAlign: "center", color: D.sub }}>טוען...</div>
+            <div style={{ padding: 40, textAlign: "center", color: T.sub }}>טוען...</div>
           ) : history.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: D.sub, fontSize: 13 }}>אין היסטוריה עדיין</div>
+            <div style={{ padding: 40, textAlign: "center", color: T.sub, fontSize: 13 }}>אין היסטוריה עדיין</div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: D.bg }}>
+                <tr style={{ background: T.bg }}>
                   {["תאריך", "קמפיין", "הודעה", "נשלח", "נכשל"].map(h => (
-                    <th key={h} style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: D.sub, textTransform: "uppercase", letterSpacing: ".05em" }}>{h}</th>
+                    <th key={h} style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: ".05em" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {history.map((l, i) => (
-                  <tr key={l.id} style={{ borderBottom: `1px solid ${D.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                    <td style={{ padding: "10px 16px", fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>
+                  <tr key={l.id} style={{ borderBottom: `1px solid ${T.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                    <td style={{ padding: "10px 16px", fontSize: 12, color: T.sub, whiteSpace: "nowrap" }}>
                       {new Date(l.sentAt).toLocaleString("he-IL")}
                     </td>
-                    <td style={{ padding: "10px 16px", fontSize: 13, color: D.sub }}>
+                    <td style={{ padding: "10px 16px", fontSize: 13, color: T.sub }}>
                       {l.campaignName ?? "מיידית"}
                     </td>
-                    <td style={{ padding: "10px 16px", fontSize: 13, color: D.text, maxWidth: 240 }}>
+                    <td style={{ padding: "10px 16px", fontSize: 13, color: T.text, maxWidth: 240 }}>
                       <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</div>
                     </td>
-                    <td style={{ padding: "10px 16px", fontWeight: 700, color: D.green }}>{l.sentCount}</td>
-                    <td style={{ padding: "10px 16px", fontWeight: l.failedCount > 0 ? 700 : 400, color: l.failedCount > 0 ? D.red : D.muted }}>
+                    <td style={{ padding: "10px 16px", fontWeight: 700, color: T.green }}>{l.sentCount}</td>
+                    <td style={{ padding: "10px 16px", fontWeight: l.failedCount > 0 ? 700 : 400, color: l.failedCount > 0 ? T.red : T.muted }}>
                       {l.failedCount || "—"}
                     </td>
                   </tr>

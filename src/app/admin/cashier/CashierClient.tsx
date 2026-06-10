@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
@@ -112,23 +113,23 @@ function TableCard({
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
-            background: "#c9a84c", color: "#fff",
+            background: T.gold, color: "#fff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontWeight: 900, fontSize: 15, flexShrink: 0,
           }}>
             {tableNumber === "–" ? "?" : tableNumber}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
               {tableNumber === "–" ? "ללא שולחן" : `שולחן ${tableNumber}`}
             </div>
-            <div style={{ fontSize: 12, color: "#92400e", display: "flex", gap: 6, marginTop: 1 }}>
+            <div style={{ fontSize: 12, color: T.gold, display: "flex", gap: 6, marginTop: 1 }}>
               <span>⏱ {timeSince(oldest.createdAt)}</span>
               <span>·</span>
               <span>{allItems.length} מנות</span>
             </div>
           </div>
-          <div style={{ fontWeight: 900, fontSize: 22, color: "#111827", flexShrink: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 22, color: T.text, flexShrink: 0 }}>
             ₪{total.toFixed(0)}
           </div>
         </div>
@@ -143,17 +144,17 @@ function TableCard({
             padding: "3px 0",
             borderBottom: idx < shownItems.length - 1 ? "1px solid #f9fafb" : "none",
           }}>
-            <span style={{ fontSize: 13, color: "#374151", flex: 1, minWidth: 0 }}>
-              <span style={{ fontWeight: 700, color: "#6b7280" }}>{item.quantity}×</span>
+            <span style={{ fontSize: 13, color: T.sub, flex: 1, minWidth: 0 }}>
+              <span style={{ fontWeight: 700, color: T.muted }}>{item.quantity}×</span>
               {" "}{item.item.name}
             </span>
-            <span style={{ fontSize: 13, color: "#6b7280", flexShrink: 0 }}>
+            <span style={{ fontSize: 13, color: T.muted, flexShrink: 0 }}>
               ₪{(item.price * item.quantity).toFixed(0)}
             </span>
           </div>
         ))}
         {extraCount > 0 && (
-          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
             ...ועוד {extraCount} מנות
           </div>
         )}
@@ -166,7 +167,7 @@ function TableCard({
           onClick={() => onShowBill(tableNumber)}
           style={{
             width: "100%", padding: "10px 0",
-            background: "#c9a84c", color: "#fff",
+            background: T.gold, color: "#fff",
             border: "none", borderRadius: 12,
             fontWeight: 800, fontSize: 14,
             cursor: "pointer",
@@ -196,6 +197,11 @@ function BillModal({
   onClose: () => void;
   onOrdersRefresh: () => Promise<void>;
 }) {
+  // Receipt is always paper — fixed, theme-independent
+  const INK = "#1a1208";
+  const INK_SUB = "#6b5040";
+  const PAPER = "#fffdf5";
+
   const [tipPct, setTipPct] = useState<number>(0);
   const [customTip, setCustomTip] = useState("");
   const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
@@ -203,14 +209,19 @@ function BillModal({
 
   // Loyalty club flow
   type ClubStep = "idle" | "phone" | "searching" | "found" | "not_found" | "redeeming" | "done";
-  type LoyaltyMember = { id: string; name: string; points: number };
+  type LoyaltyCoupon = { id: string; code: string; type: string; value: number; description: string | null; expiresAt: string | null };
+  type LoyaltyMember = { id: string; name: string; points: number; coupons?: LoyaltyCoupon[] };
   type LoyaltySettings = { shekelPerPoint: number; minRedeemPoints: number };
+  // "points" | "coupon" — which redemption mode the cashier has selected
+  type RedeemMode = "points" | "coupon";
   const [clubStep, setClubStep] = useState<ClubStep>("idle");
   const [clubPhone, setClubPhone] = useState("");
   const [clubMember, setClubMember] = useState<LoyaltyMember | null>(null);
   const [clubSettings, setClubSettings] = useState<LoyaltySettings>({ shekelPerPoint: 0.1, minRedeemPoints: 100 });
   const [clubPoints, setClubPoints] = useState<number>(0);
   const [clubError, setClubError] = useState<string | null>(null);
+  const [redeemMode, setRedeemMode] = useState<RedeemMode>("points");
+  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
@@ -233,6 +244,10 @@ function BillModal({
         setClubMember(member);
         if (settings) setClubSettings({ shekelPerPoint: settings.shekelPerPoint ?? 0.1, minRedeemPoints: settings.minRedeemPoints ?? 100 });
         setClubPoints(Math.min(member.points, settings?.minRedeemPoints ?? 100));
+        // Default to coupon mode if member has active coupons, else points
+        const activeCoupons = (member.coupons ?? []).filter((c: LoyaltyCoupon) => !c.expiresAt || new Date(c.expiresAt) > new Date());
+        setRedeemMode(activeCoupons.length > 0 ? "coupon" : "points");
+        setSelectedCouponId(activeCoupons[0]?.id ?? null);
         setClubStep("found");
       } else {
         setClubStep("not_found");
@@ -242,26 +257,30 @@ function BillModal({
     }
   }
 
-  async function redeemPoints() {
-    if (!clubMember || clubPoints <= 0) return;
+  async function redeem() {
+    if (!clubMember) return;
     const targetOrder = validOrders[0];
     if (!targetOrder) return;
+    if (redeemMode === "coupon" && !selectedCouponId) return;
+    if (redeemMode === "points" && clubPoints <= 0) return;
     setClubStep("redeeming");
     setClubError(null);
     try {
+      const body = redeemMode === "coupon"
+        ? { orderId: targetOrder.id, memberId: clubMember.id, type: "COUPON", couponId: selectedCouponId }
+        : { orderId: targetOrder.id, memberId: clubMember.id, type: "POINTS", pointsToRedeem: clubPoints };
       const res = await fetch(`/api/loyalty/${restaurantId}/redeem`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: targetOrder.id,
-          memberId: clubMember.id,
-          type: "POINTS",
-          pointsToRedeem: clubPoints,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
-        setClubError(data.error === "already_redeemed" ? "הזמנה זו כבר מומשה" : data.error ?? "שגיאה");
+        const msg = data.error === "already_redeemed" ? "הזמנה זו כבר מומשה"
+          : data.error === "coupon_invalid" ? "הקופון אינו תקף"
+          : data.error === "coupon_expired" ? "הקופון פג תוקף"
+          : data.error ?? "שגיאה";
+        setClubError(msg);
         setClubStep("found");
         return;
       }
@@ -403,7 +422,7 @@ function BillModal({
         {/* Modal header */}
         <div style={{
           padding: "14px 20px",
-          background: "#c9a84c",
+          background: T.gold,
           display: "flex", justifyContent: "space-between", alignItems: "center",
           flexShrink: 0,
         }}>
@@ -437,7 +456,7 @@ function BillModal({
             flex: "1 1 280px", minWidth: 260,
             padding: "20px 20px",
             borderLeft: "1px solid #f1f5f9",
-            background: "#fafafa",
+            background: PAPER,
           }}>
             <div style={{
               background: "#fff",
@@ -447,16 +466,16 @@ function BillModal({
               fontFamily: "'Courier New', monospace",
               fontSize: 13,
               lineHeight: 1.6,
-              color: "#111827",
+              color: INK,
             }}>
               {/* Restaurant name */}
-              <div style={{ textAlign: "center", fontWeight: 900, fontSize: 16, marginBottom: 2, color: "#111827" }}>
+              <div style={{ textAlign: "center", fontWeight: 900, fontSize: 16, marginBottom: 2, color: INK }}>
                 {restaurantName}
               </div>
-              <div style={{ textAlign: "center", color: "#374151", marginBottom: 8 }}>חשבון</div>
+              <div style={{ textAlign: "center", color: INK_SUB, marginBottom: 8 }}>חשבון</div>
               <div style={{ borderTop: "1px dashed #9ca3af", margin: "6px 0" }} />
               {/* Table + date */}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#111827" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: INK }}>
                 <span>שולחן: {tableNumber}</span>
                 <span style={{ direction: "ltr" }}>{dateStr}</span>
               </div>
@@ -465,17 +484,17 @@ function BillModal({
               {/* Items */}
               {allItems.map((item, idx) => (
                 <div key={idx}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: "#111827" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: INK }}>
                     <span style={{ flex: 1 }}>{item.quantity}× {item.item.name}</span>
                     <span style={{ flexShrink: 0, direction: "ltr" }}>₪{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                   {item.modifiers && item.modifiers.map((m, mi) => (
-                    <div key={mi} style={{ paddingRight: 12, fontSize: 11, color: "#374151" }}>
+                    <div key={mi} style={{ paddingRight: 12, fontSize: 11, color: INK_SUB }}>
                       {m.label}{m.priceAdd > 0 ? ` +₪${m.priceAdd}` : ""}
                     </div>
                   ))}
                   {item.notes && (
-                    <div style={{ paddingRight: 12, fontSize: 11, color: "#4b5563", fontStyle: "italic" }}>
+                    <div style={{ paddingRight: 12, fontSize: 11, color: INK_SUB, fontStyle: "italic" }}>
                       💬 {item.notes}
                     </div>
                   )}
@@ -486,23 +505,23 @@ function BillModal({
 
               {/* Subtotal / discount lines */}
               {loyaltyDiscount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#374151" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK_SUB }}>
                   <span>סה&quot;כ לפני הנחה</span>
                   <span style={{ direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
                 </div>
               )}
               {loyaltyDiscount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#15803d", fontWeight: 700 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.green, fontWeight: 700 }}>
                   <span>⭐ הנחת מועדון{loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames.join(", ")})` : ""}</span>
                   <span style={{ direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#111827" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK }}>
                 <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סה\"כ"}</span>
                 <span style={{ direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#111827" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK }}>
                   <span>טיפ {tipPct === -1 ? "" : `${tipPct}%`}</span>
                   <span style={{ direction: "ltr" }}>₪{tipAmount.toFixed(2)}</span>
                 </div>
@@ -513,26 +532,26 @@ function BillModal({
               {/* Grand total */}
               <div style={{
                 display: "flex", justifyContent: "space-between",
-                fontWeight: 900, fontSize: 17, color: "#111827",
+                fontWeight: 900, fontSize: 17, color: INK,
               }}>
                 <span>סה&quot;כ לתשלום</span>
-                <span style={{ color: "#c9a84c", direction: "ltr" }}>₪{total.toFixed(2)}</span>
+                <span style={{ color: T.gold, direction: "ltr" }}>₪{total.toFixed(2)}</span>
               </div>
 
               {/* VAT included */}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#6b7280", marginTop: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: T.muted, marginTop: 4 }}>
                 <span>מתוכם מע&quot;מ 18%</span>
                 <span style={{ direction: "ltr" }}>₪{vatAmount.toFixed(2)}</span>
               </div>
 
               <div style={{ borderTop: "1px dashed #9ca3af", margin: "8px 0" }} />
 
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6b7280" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.muted }}>
                 <span>אמצעי תשלום</span>
                 <span>{PAY_METHOD_LABEL[payMethod]}</span>
               </div>
 
-              <div style={{ textAlign: "center", marginTop: 12, fontSize: 13, color: "#6b7280" }}>
+              <div style={{ textAlign: "center", marginTop: 12, fontSize: 13, color: T.muted }}>
                 תודה על ביקורכם! 🙏
               </div>
             </div>
@@ -542,7 +561,7 @@ function BillModal({
           <div style={{ flex: "1 1 260px", minWidth: 240, padding: "20px 20px" }}>
             {/* Tip selector */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 8 }}>טיפ</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>טיפ</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {TIP_OPTS.map(opt => (
                   <button
@@ -551,9 +570,9 @@ function BillModal({
                     onClick={() => { setTipPct(opt.pct); if (opt.pct !== -1) setCustomTip(""); }}
                     style={{
                       padding: "7px 16px", borderRadius: 22, fontSize: 13, fontWeight: 600,
-                      border: `2px solid ${tipPct === opt.pct ? "#c9a84c" : "#e5e7eb"}`,
-                      background: tipPct === opt.pct ? "#fdf8ec" : "#fff",
-                      color: tipPct === opt.pct ? "#8B6914" : "#6b7280",
+                      border: `2px solid ${tipPct === opt.pct ? T.gold : T.sub}`,
+                      background: tipPct === opt.pct ? T.goldSub : "#fff",
+                      color: tipPct === opt.pct ? T.gold : T.muted,
                       cursor: "pointer",
                     }}
                   >
@@ -563,7 +582,7 @@ function BillModal({
               </div>
               {tipPct === -1 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
-                  <span style={{ fontSize: 13, color: "#6b7280" }}>₪</span>
+                  <span style={{ fontSize: 13, color: T.muted }}>₪</span>
                   <input
                     type="number" min="0" step="1"
                     value={customTip} onChange={e => setCustomTip(e.target.value)}
@@ -579,41 +598,41 @@ function BillModal({
 
             {/* Summary box */}
             <div style={{
-              background: "#f9fafb", borderRadius: 14, padding: "14px 16px", marginBottom: 20,
+              background: T.raised, borderRadius: 14, padding: "14px 16px", marginBottom: 20,
             }}>
               {loyaltyDiscount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.muted, marginBottom: 6 }}>
                   <span>סכום לפני הנחה</span>
-                  <span style={{ fontWeight: 700, color: "#111827", direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
+                  <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{(subtotal + loyaltyDiscount).toFixed(2)}</span>
                 </div>
               )}
               {loyaltyDiscount > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6, alignItems: "center" }}>
-                  <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                  <span style={{ color: T.green, fontWeight: 600 }}>
                     ⭐ הנחת מועדון{loyaltyMemberNames.length > 0 ? ` (${loyaltyMemberNames.join(", ")})` : ""}
                   </span>
-                  <span style={{ fontWeight: 700, color: "#16a34a", direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
+                  <span style={{ fontWeight: 700, color: T.green, direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", marginBottom: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.muted, marginBottom: 6 }}>
                 <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סכום"}</span>
-                <span style={{ fontWeight: 700, color: "#111827", direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
+                <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.muted, marginBottom: 6 }}>
                   <span>טיפ</span>
-                  <span style={{ fontWeight: 700, color: "#111827", direction: "ltr" }}>₪{tipAmount.toFixed(2)}</span>
+                  <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{tipAmount.toFixed(2)}</span>
                 </div>
               )}
               <div style={{
                 display: "flex", justifyContent: "space-between",
-                fontSize: 20, fontWeight: 900, color: "#111827",
-                borderTop: "1px solid #e5e7eb", paddingTop: 10, marginTop: 4,
+                fontSize: 20, fontWeight: 900, color: T.text,
+                borderTop: `1px solid ${T.border}`, paddingTop: 10, marginTop: 4,
               }}>
                 <span>סה&quot;כ</span>
-                <span style={{ color: "#c9a84c", direction: "ltr" }}>₪{total.toFixed(2)}</span>
+                <span style={{ color: T.gold, direction: "ltr" }}>₪{total.toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.muted, marginTop: 4 }}>
                 <span>מתוכם מע&quot;מ 18%</span>
                 <span style={{ direction: "ltr" }}>₪{vatAmount.toFixed(2)}</span>
               </div>
@@ -621,7 +640,7 @@ function BillModal({
 
             {/* Payment method */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 8 }}>אמצעי תשלום</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>אמצעי תשלום</div>
               <div style={{ display: "flex", gap: 8 }}>
                 {PAY_METHODS.map(m => (
                   <button
@@ -630,9 +649,9 @@ function BillModal({
                     onClick={() => setPayMethod(m.value)}
                     style={{
                       flex: 1, padding: "9px 0", borderRadius: 12, fontSize: 13, fontWeight: 600,
-                      border: `2px solid ${payMethod === m.value ? "#c9a84c" : "#e5e7eb"}`,
-                      background: payMethod === m.value ? "#fdf8ec" : "#fff",
-                      color: payMethod === m.value ? "#8B6914" : "#6b7280",
+                      border: `2px solid ${payMethod === m.value ? T.gold : T.sub}`,
+                      background: payMethod === m.value ? T.goldSub : "#fff",
+                      color: payMethod === m.value ? T.gold : T.muted,
                       cursor: "pointer",
                     }}
                   >
@@ -644,7 +663,7 @@ function BillModal({
 
             {/* Loyalty club panel */}
             {loyaltyDiscount === 0 && clubStep !== "idle" && clubStep !== "done" && (
-              <div style={{ marginBottom: 16, background: "#fdf8ec", borderRadius: 10, padding: "12px 14px", border: "1px solid #fde68a" }}>
+              <div style={{ marginBottom: 16, background: T.raised, borderRadius: 10, padding: "12px 14px", border: "1px solid #fde68a" }}>
                 {/* Phone search */}
                 {(clubStep === "phone" || clubStep === "searching") && (
                   <>
@@ -658,16 +677,16 @@ function BillModal({
                         style={{
                           flex: 1, padding: "7px 10px", borderRadius: 7,
                           border: "1px solid #fde68a", background: "#fff",
-                          fontSize: 13, color: "#111827", outline: "none",
+                          fontSize: 13, color: T.text, outline: "none",
                         }}
                       />
                       <button type="button" onClick={searchMember} disabled={clubStep === "searching"}
-                        style={{ padding: "7px 12px", borderRadius: 7, border: "none", background: "#c9a84c", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                        style={{ padding: "7px 12px", borderRadius: 7, border: "none", background: T.gold, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
                         {clubStep === "searching" ? "..." : "חפש"}
                       </button>
                     </div>
                     <button type="button" onClick={() => { setClubStep("idle"); setClubPhone(""); }}
-                      style={{ fontSize: 11, color: "#9ca3af", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      style={{ fontSize: 11, color: T.muted, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
                       ביטול
                     </button>
                   </>
@@ -676,70 +695,144 @@ function BillModal({
                 {/* Not found */}
                 {clubStep === "not_found" && (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "#ef4444", fontSize: 12 }}>לא נמצא חבר מועדון</span>
+                    <span style={{ color: T.red, fontSize: 12 }}>לא נמצא חבר מועדון</span>
                     <button type="button" onClick={() => { setClubPhone(""); setClubStep("phone"); }}
-                      style={{ fontSize: 11, color: "#8B6914", background: "none", border: "none", cursor: "pointer" }}>נסה שוב</button>
+                      style={{ fontSize: 11, color: T.gold, background: "none", border: "none", cursor: "pointer" }}>נסה שוב</button>
                   </div>
                 )}
 
                 {/* Member found */}
-                {(clubStep === "found" || clubStep === "redeeming") && clubMember && (
-                  <>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                      <div>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>{clubMember.name}</span>
-                        <span style={{ fontSize: 12, color: "#8B6914", marginRight: 8 }}>{clubMember.points} נקודות</span>
-                      </div>
-                      <button type="button" onClick={() => setClubStep("idle")}
-                        style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
-                    </div>
-                    {clubMember.points >= clubSettings.minRedeemPoints ? (
-                      <>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <input
-                            type="number"
-                            min={clubSettings.minRedeemPoints}
-                            max={clubMember.points}
-                            value={clubPoints}
-                            onChange={e => {
-                              const v = Math.min(Math.max(Number(e.target.value) || 0, 0), clubMember.points);
-                              setClubPoints(v);
-                            }}
-                            style={{
-                              width: 90, padding: "6px 10px", borderRadius: 7,
-                              border: "1px solid #fde68a", background: "#fff",
-                              fontSize: 13, color: "#111827", outline: "none",
-                            }}
-                          />
-                          <span style={{ fontSize: 12, color: "#374151" }}>נקודות</span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#15803d", marginRight: "auto" }}>
-                            = ₪{(clubPoints * clubSettings.shekelPerPoint).toFixed(2)} הנחה
-                          </span>
+                {(clubStep === "found" || clubStep === "redeeming") && clubMember && (() => {
+                  const activeCoupons = (clubMember.coupons ?? []).filter(c => !c.expiresAt || new Date(c.expiresAt) > new Date());
+                  const hasCoupons = activeCoupons.length > 0;
+                  const hasPoints = clubMember.points >= clubSettings.minRedeemPoints;
+                  const selectedCoupon = activeCoupons.find(c => c.id === selectedCouponId) ?? null;
+                  const couponDiscount = selectedCoupon
+                    ? selectedCoupon.type === "DISCOUNT_PERCENT"
+                      ? subtotal * selectedCoupon.value / 100
+                      : selectedCoupon.value
+                    : 0;
+                  const canRedeem = redeemMode === "coupon" ? !!selectedCouponId : hasPoints && clubPoints >= clubSettings.minRedeemPoints;
+                  return (
+                    <>
+                      {/* Member header */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                        <div>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: T.text }}>{clubMember.name}</span>
+                          <span style={{ fontSize: 12, color: T.gold, marginRight: 8 }}>{clubMember.points} ⭐</span>
+                          {hasCoupons && <span style={{ fontSize: 12, color: T.green, marginRight: 4 }}>· {activeCoupons.length} קופונים</span>}
                         </div>
-                        {clubError && <div style={{ color: "#ef4444", fontSize: 11, marginBottom: 6 }}>{clubError}</div>}
-                        <button type="button" onClick={redeemPoints}
-                          disabled={clubStep === "redeeming" || clubPoints < clubSettings.minRedeemPoints}
-                          style={{
-                            width: "100%", padding: "8px 0", borderRadius: 7, border: "none",
-                            background: (clubStep === "redeeming" || clubPoints < clubSettings.minRedeemPoints) ? "#d4b96a" : "#c9a84c",
-                            color: "#fff", fontWeight: 700, fontSize: 13,
-                            cursor: (clubStep === "redeeming" || clubPoints < clubSettings.minRedeemPoints) ? "not-allowed" : "pointer",
-                          }}>
-                          {clubStep === "redeeming" ? "מממש..." : "✓ ממש נקודות"}
-                        </button>
-                      </>
-                    ) : (
-                      <div style={{ fontSize: 12, color: "#9ca3af" }}>אין מספיק נקודות (מינימום {clubSettings.minRedeemPoints})</div>
-                    )}
-                  </>
-                )}
+                        <button type="button" onClick={() => setClubStep("idle")}
+                          style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
+                      </div>
+
+                      {/* Mode toggle — only if both options available */}
+                      {hasCoupons && hasPoints && (
+                        <div style={{ display: "flex", background: "#f1f5f9", borderRadius: 8, padding: 3, gap: 2, marginBottom: 10 }}>
+                          {([
+                            { v: "coupon" as RedeemMode, label: "🎟 קופון" },
+                            { v: "points" as RedeemMode, label: "⭐ נקודות" },
+                          ]).map(opt => (
+                            <button key={opt.v} type="button" onClick={() => setRedeemMode(opt.v)}
+                              style={{
+                                flex: 1, padding: "5px 0", borderRadius: 6, border: "none",
+                                background: redeemMode === opt.v ? T.gold : "transparent",
+                                color: redeemMode === opt.v ? "#fff" : T.muted,
+                                fontWeight: 700, fontSize: 12, cursor: "pointer",
+                              }}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Coupon mode */}
+                      {redeemMode === "coupon" && (
+                        hasCoupons ? (
+                          <div style={{ marginBottom: 8 }}>
+                            {activeCoupons.map(c => {
+                              const val = c.type === "DISCOUNT_PERCENT"
+                                ? `${c.value}% הנחה (≈ ₪${(subtotal * c.value / 100).toFixed(0)})`
+                                : `₪${c.value} הנחה`;
+                              return (
+                                <div
+                                  key={c.id}
+                                  onClick={() => setSelectedCouponId(c.id)}
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 8,
+                                    padding: "7px 10px", borderRadius: 7, marginBottom: 5,
+                                    border: `2px solid ${selectedCouponId === c.id ? T.gold : "#e5e7eb"}`,
+                                    background: selectedCouponId === c.id ? T.goldSub : "#fff",
+                                    cursor: "pointer",
+                                  }}>
+                                  <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: T.gold, flexShrink: 0 }}>{c.code}</span>
+                                  <span style={{ fontSize: 12, color: T.sub, flex: 1 }}>{val}{c.description ? ` · ${c.description}` : ""}</span>
+                                  {selectedCouponId === c.id && <span style={{ fontSize: 14, color: T.gold }}>✓</span>}
+                                </div>
+                              );
+                            })}
+                            {selectedCoupon && (
+                              <div style={{ fontSize: 12, color: T.green, fontWeight: 700, textAlign: "center", marginTop: 2 }}>
+                                הנחה: ₪{couponDiscount.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>אין קופונים פעילים</div>
+                        )
+                      )}
+
+                      {/* Points mode */}
+                      {redeemMode === "points" && (
+                        hasPoints ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <input
+                              type="number"
+                              min={clubSettings.minRedeemPoints}
+                              max={clubMember.points}
+                              value={clubPoints}
+                              onChange={e => {
+                                const v = Math.min(Math.max(Number(e.target.value) || 0, 0), clubMember!.points);
+                                setClubPoints(v);
+                              }}
+                              style={{
+                                width: 90, padding: "6px 10px", borderRadius: 7,
+                                border: "1px solid #fde68a", background: "#fff",
+                                fontSize: 13, color: T.text, outline: "none",
+                              }}
+                            />
+                            <span style={{ fontSize: 12, color: T.sub }}>נקודות</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: T.green, marginRight: "auto" }}>
+                              = ₪{(clubPoints * clubSettings.shekelPerPoint).toFixed(2)} הנחה
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>אין מספיק נקודות (מינימום {clubSettings.minRedeemPoints})</div>
+                        )
+                      )}
+
+                      {clubError && <div style={{ color: T.red, fontSize: 11, marginBottom: 6 }}>{clubError}</div>}
+
+                      <button type="button" onClick={redeem}
+                        disabled={clubStep === "redeeming" || !canRedeem}
+                        style={{
+                          width: "100%", padding: "8px 0", borderRadius: 7, border: "none",
+                          background: T.gold, color: "#fff", fontWeight: 700, fontSize: 13,
+                          cursor: (clubStep === "redeeming" || !canRedeem) ? "not-allowed" : "pointer",
+                          opacity: (clubStep === "redeeming" || !canRedeem) ? 0.55 : 1,
+                        }}>
+                        {clubStep === "redeeming" ? "מממש..." : redeemMode === "coupon" ? "✓ ממש קופון" : "✓ ממש נקודות"}
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
             {clubStep === "done" && (
-              <div style={{ marginBottom: 12, background: "#f0fdf4", borderRadius: 8, padding: "8px 12px", border: "1px solid #86efac", display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ marginBottom: 12, background: T.raised, borderRadius: 8, padding: "8px 12px", border: "1px solid #86efac", display: "flex", alignItems: "center", gap: 6 }}>
                 <span>✅</span>
-                <span style={{ fontWeight: 600, color: "#15803d", fontSize: 12 }}>הנחת מועדון הוחלה</span>
+                <span style={{ fontWeight: 600, color: T.green, fontSize: 12 }}>הנחת מועדון הוחלה</span>
               </div>
             )}
 
@@ -751,7 +844,7 @@ function BillModal({
                 style={{
                   width: "100%", padding: "10px 0", borderRadius: 12,
                   border: "2px solid #e5e7eb", background: "#fff",
-                  color: "#374151", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                  color: T.text, fontWeight: 700, fontSize: 14, cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 }}
               >
@@ -764,8 +857,8 @@ function BillModal({
                     onClick={() => { setClubStep("phone"); setClubPhone(""); setClubError(null); }}
                     style={{
                       width: 46, height: 46, flexShrink: 0, borderRadius: 12,
-                      border: "2px solid #fde68a", background: "#fdf8ec",
-                      color: "#8B6914", fontSize: 18, cursor: "pointer",
+                      border: "2px solid #fde68a", background: T.raised,
+                      color: T.gold, fontSize: 18, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}
                     title="הנחת מועדון לקוחות"
@@ -780,7 +873,7 @@ function BillModal({
                   style={{
                     flex: 1, padding: "13px 0", borderRadius: 12,
                     border: "none",
-                    background: paying ? "#d4b96a" : "#c9a84c",
+                    background: paying ? T.gold : T.gold,
                     color: "#fff", fontWeight: 900, fontSize: 16,
                     cursor: paying ? "wait" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -954,7 +1047,7 @@ export default function CashierClient({
     <div
       style={isFullscreen ? {
         position: "fixed", inset: 0, zIndex: 999,
-        background: "#f8fafc", overflowY: "auto",
+        background: T.bg, overflowY: "auto",
         padding: "12px 16px",
       } : { padding: "16px 20px" }}
       dir="rtl"
@@ -963,7 +1056,7 @@ export default function CashierClient({
       {errorMsg && (
         <div style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 500,
-          background: "#ef4444", color: "#fff",
+          background: T.red, color: "#fff",
           padding: "14px 20px", borderRadius: 14,
           fontWeight: 700, fontSize: 14,
           boxShadow: "0 8px 32px rgba(239,68,68,0.35)",
@@ -1070,8 +1163,8 @@ export default function CashierClient({
 
         {/* Title + count */}
         <div style={{ marginRight: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 20, fontWeight: 900, color: "#111827" }}>💳 קאשייר</span>
-          <span style={{ fontSize: 13, color: "#6b7280" }}>
+          <span style={{ fontSize: 20, fontWeight: 900, color: T.text }}>💳 קאשייר</span>
+          <span style={{ fontSize: 13, color: T.muted }}>
             · {tableEntries.length} שולחנות ממתינים
           </span>
         </div>
@@ -1082,10 +1175,10 @@ export default function CashierClient({
         <div style={{
           background: "#fff", borderRadius: 20,
           border: "1px solid #f1f5f9",
-          padding: "64px 24px", textAlign: "center", color: "#9ca3af",
+          padding: "64px 24px", textAlign: "center", color: T.muted,
         }}>
           <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
-          <div style={{ fontWeight: 700, fontSize: 18, color: "#374151", marginBottom: 4 }}>
+          <div style={{ fontWeight: 700, fontSize: 18, color: T.sub, marginBottom: 4 }}>
             אין שולחנות ממתינים לתשלום
           </div>
           <div style={{ fontSize: 14 }}>כל השולחנות מסולקים</div>

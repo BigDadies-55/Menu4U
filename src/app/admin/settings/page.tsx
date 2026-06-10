@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { T } from "@/lib/ui";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import SettingsClient from "./SettingsClient";
@@ -11,8 +12,8 @@ const DEFAULTS = {
   domain: null as string | null, copyright: null as string | null,
   adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null as string | null,
   adminSidebarBg: null as string | null, adminSidebarAccent: null as string | null,
-  adminSidebarTextColor: "#9ca3af", adminContentTextColor: "#111827",
-  adminTopBarBg: null as string | null, adminTopBarTextColor: "#374151",
+  adminSidebarTextColor: T.muted, adminContentTextColor: T.bg,
+  adminTopBarBg: null as string | null, adminTopBarTextColor: T.panel,
 };
 
 export default async function SettingsPage() {

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drawer Gradient Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --surface:#161616; --panel:#1e1e1e; --raised:#2a2826;
+    --text:#f0ece6; --sub:#c8bfb0; --muted:#7a7268;
+    --gold:#c9890a; --border:rgba(255,255,255,0.08);
+    --goldSub:rgba(201,137,10,0.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:#0c0c0c;color:var(--text);min-height:100vh;direction:rtl;padding:30px;display:flex;gap:26px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .opt-label{font-size:13px;color:var(--gold);font-weight:700}
+  .opt-sub{font-size:11px;color:var(--muted);max-width:260px;text-align:center;line-height:1.5}
+
+  /* ── Drawer base ── */
+  .drawer{
+    width:280px;height:620px;border-left:1px solid var(--border);
+    border-radius:14px;overflow:hidden;display:flex;flex-direction:column;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);position:relative;
+  }
+  .GOLD_GRAD{background-image:linear-gradient(110deg,#7a4e04 0%,#c9890a 50%,#e8b84b 100%)}
+
+  .logo-wrap{padding:18px 22px 14px;border-bottom:1px solid var(--border)}
+  .logo{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;letter-spacing:1px;
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+  .logo-sub{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:2px;text-transform:uppercase}
+
+  .nav{padding:14px 22px;flex:1;overflow:hidden}
+  .dash{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;font-weight:600;color:var(--gold);border-bottom:1px solid var(--border);margin-bottom:12px}
+
+  .group-head{display:flex;align-items:center;gap:8px;padding:10px 0 9px;font-size:14px;font-weight:800;position:relative;border-bottom:1px solid var(--border);margin-bottom:6px}
+  .group-bullet,.group-label{-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .group-bullet{font-size:16px}
+  .group-line{flex:1;height:1px;background:linear-gradient(to left,transparent,rgba(201,137,10,.4))}
+  .chev{font-size:9px;color:var(--gold)}
+
+  .item{display:flex;align-items:center;gap:9px;padding:7px 8px;font-size:13px;border-radius:7px;margin:2px 0;color:var(--sub);cursor:pointer;transition:all .12s}
+  .item:hover{background:var(--goldSub);color:var(--gold)}
+  .item.active{background:var(--goldSub);color:var(--gold);font-weight:600}
+  .item-ic{width:24px;height:24px;border-radius:6px;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+  .item.active .item-ic{background:var(--goldSub)}
+
+  .footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#c9890a,#7a3c04);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+  .uname{font-size:13px;font-weight:700;color:var(--text)}
+  .urole{font-size:10px;color:var(--muted)}
+
+  /* ════ OPTION A — Vertical dark gradient surface ════ */
+  .A{background:linear-gradient(180deg,#1c1c1c 0%,#141414 50%,#0e0e0e 100%)}
+
+  /* ════ OPTION B — Gold-tinted top glow ════ */
+  .B{background:
+      radial-gradient(120% 50% at 100% 0%, rgba(201,137,10,.14) 0%, transparent 55%),
+      linear-gradient(180deg,#1a1715 0%,#151311 100%)}
+
+  /* ════ OPTION C — Diagonal warm gradient ════ */
+  .C{background:linear-gradient(150deg,#221d16 0%,#161412 45%,#100f0d 100%)}
+
+  /* ════ OPTION D — Gold left edge accent + dark ════ */
+  .D{background:
+      linear-gradient(to left, transparent 0%, transparent 92%, rgba(201,137,10,.10) 100%),
+      linear-gradient(180deg,#181818,#121212)}
+  .D::before{content:"";position:absolute;top:0;right:0;width:3px;height:100%;
+      background:linear-gradient(180deg,#7a4e04,#c9890a 50%,#e8b84b);opacity:.7}
+</style>
+</head>
+<body>
+
+<!-- helper to build a drawer -->
+<script>
+function drawer(cls,logoGrad){
+  return `
+  <div class="drawer ${cls}">
+    <div class="logo-wrap">
+      <div class="logo" style="background-image:${logoGrad}">Menu4U</div>
+      <div class="logo-sub">Restaurant OS</div>
+    </div>
+    <div class="nav">
+      <div class="dash">▦ דשבורד</div>
+
+      <div class="group-head">
+        <span class="group-bullet" style="background-image:${logoGrad}">•</span>
+        <span class="group-label" style="background-image:${logoGrad}">ניהול</span>
+        <span class="group-line"></span><span class="chev">▾</span>
+      </div>
+      <div class="item active"><span class="item-ic">🏪</span>מסעדות</div>
+      <div class="item"><span class="item-ic">📋</span>תפריטים</div>
+      <div class="item"><span class="item-ic">👥</span>משתמשים</div>
+
+      <div class="group-head" style="margin-top:8px">
+        <span class="group-bullet" style="background-image:${logoGrad}">•</span>
+        <span class="group-label" style="background-image:${logoGrad}">שירות</span>
+        <span class="group-line"></span><span class="chev">▾</span>
+      </div>
+      <div class="item"><span class="item-ic">🛒</span>הזמנות</div>
+      <div class="item"><span class="item-ic">💳</span>קאשייר</div>
+    </div>
+    <div class="footer">
+      <div class="avatar">אה</div>
+      <div style="flex:1"><div class="uname">אהרוני</div><div class="urole">מנהל מערכת</div></div>
+    </div>
+  </div>`;
+}
+const GOLD = "linear-gradient(110deg,#7a4e04 0%,#c9890a 50%,#e8b84b 100%)";
+
+document.body.insertAdjacentHTML('beforeend',
+ `<div class="col"><div class="opt-label">A · ורטיקלי כהה</div><div class="opt-sub">דהייה אנכית עדינה משחור-אפור לשחור עמוק</div>${drawer('A',GOLD)}</div>`+
+ `<div class="col"><div class="opt-label">B · זוהר זהב עליון</div><div class="opt-sub">הילה זהובה רכה בפינה העליונה על רקע חם כהה</div>${drawer('B',GOLD)}</div>`+
+ `<div class="col"><div class="opt-label">C · דיאגונלי חם</div><div class="opt-sub">גרדיאנט אלכסוני בגווני חום-שחור</div>${drawer('C',GOLD)}</div>`+
+ `<div class="col"><div class="opt-label">D · פס זהב בקצה</div><div class="opt-sub">רקע כהה + פס זהב מבריק בקצה הימני</div>${drawer('D',GOLD)}</div>`
+);
+</script>
+
+</body>
+</html>

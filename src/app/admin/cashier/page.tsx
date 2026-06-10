@@ -12,6 +12,32 @@ export default async function CashierPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
 
+  // Ensure all columns exist (some were added without formal migrations)
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "course" INTEGER NOT NULL DEFAULT 1`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "heldUntilFired" BOOLEAN NOT NULL DEFAULT false`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "firedAt" TIMESTAMP(3)`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "doneAt" TIMESTAMP(3)`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedAt" TIMESTAMP(3)`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "isComped" BOOLEAN NOT NULL DEFAULT false`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "compReason" TEXT`);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "OrderItemModifier" (
+        "id"          TEXT NOT NULL PRIMARY KEY,
+        "orderItemId" TEXT NOT NULL,
+        "groupName"   TEXT NOT NULL,
+        "label"       TEXT NOT NULL,
+        "priceAdd"    DOUBLE PRECISION NOT NULL DEFAULT 0,
+        CONSTRAINT "OrderItemModifier_orderItemId_fkey"
+          FOREIGN KEY ("orderItemId") REFERENCES "OrderItem"("id") ON DELETE CASCADE
+      )
+    `);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyMemberId" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyMemberName" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyDiscountType" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyDiscountAmount" DOUBLE PRECISION`);
+  } catch { /* ignore */ }
+
   const role = session.user.role;
   const userId = session.user.id;
   const isSuperAdmin = role === "SUPER_ADMIN";

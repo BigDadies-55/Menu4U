@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Menu4U — דיאגרמת תהליך מלאה</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f5f0e8;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1a1208;
+      padding: 32px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: #c9890a;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #9a8060;
+      margin-bottom: 32px;
+    }
+    .diagram-wrap {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 32px rgba(180,140,60,0.15);
+      overflow-x: auto;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #5a4020;
+    }
+    .dot {
+      width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Menu4U</h1>
+  <p class="subtitle">דיאגרמת תהליך מלאה — מהגדרה ראשונית ועד תשלום</p>
+
+  <div class="diagram-wrap">
+    <div class="mermaid">
+%%{init: {"theme": "base", "themeVariables": {"primaryColor":"#f0ece3","primaryTextColor":"#1a1208","primaryBorderColor":"#c9890a","lineColor":"#9a8060","secondaryColor":"#fff9f0","tertiaryColor":"#fdf6e3","edgeLabelBackground":"#fffdf5","fontSize":"15px"}, "flowchart":{"curve":"basis","padding":20}} }%%
+flowchart TD
+
+  %% ══════════════════════════════════════════════════
+  %% SETUP
+  %% ══════════════════════════════════════════════════
+  subgraph SETUP["🔧 הגדרה ראשונית — SUPER ADMIN / ADMIN"]
+    direction TB
+    S1["יצירת מסעדה\n(Groups / Restaurants)"]
+    S2["הוספת משתמשים\nוהרשאות"]
+    S3["בניית תפריט\n(קטגוריות • פריטים • תוספות)"]
+    S4["בניית פריסת רצפה\n(Layout Builder)\nחדרים + שולחנות"]
+    S5["הגדרת תוכנית נאמנות\n(Loyalty Settings)"]
+    S1 --> S2 --> S3 --> S4 --> S5
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% SHIFT OPEN
+  %% ══════════════════════════════════════════════════
+  subgraph SHIFT["🕐 פתיחת משמרת"]
+    direction TB
+    SH1["מנהל משמרת\nפותח משמרת"]
+    SH2["שיוך מלצרים\nלתחנות / שולחנות"]
+    SH1 --> SH2
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% CUSTOMER
+  %% ══════════════════════════════════════════════════
+  subgraph CUSTOMER["📱 לקוח"]
+    direction TB
+    C1["סריקת QR\nעל השולחן"]
+    C2["תפריט דיגיטלי\n/menu/restaurantId\n(עיצוב אלגנטי / ניאון)"]
+    C3["בחירת פריטים\n+ תוספות / הערות"]
+    C4["שליחת הזמנה"]
+    C1 --> C2 --> C3 --> C4
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% WAITER
+  %% ══════════════════════════════════════════════════
+  subgraph WAITER["🍽 מלצר"]
+    direction TB
+    W1["קבלת הזמנה\n(Waiter App)"]
+    W2["אישור הזמנה\nושליחה למטבח"]
+    W3["מעקב שולחנות\n(Waiter Floor)"]
+    W4["הגשת מנות\nלשולחן"]
+    W5["לחצן בקשת חשבון"]
+    W1 --> W2 --> W3 --> W4 --> W5
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% KITCHEN
+  %% ══════════════════════════════════════════════════
+  subgraph KITCHEN["👨‍🍳 מטבח — KDS"]
+    direction TB
+    K1["קבלת הזמנה\nבמסך KDS"]
+    K2{{"תצוגה נבחרת"}}
+    K3["Kitchen\n(רשימה)"]
+    K4["Kanban\n(ערוצים)"]
+    K5["Tickets\n(כרטיסים)"]
+    K6["Table KDS\n(לפי שולחן)"]
+    K7["סימון פריטים\nכ'מוכן'"]
+    K8["כל הפריטים\nמוכנים ✓"]
+    K1 --> K2
+    K2 --> K3 & K4 & K5 & K6
+    K3 & K4 & K5 & K6 --> K7 --> K8
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% CASHIER
+  %% ══════════════════════════════════════════════════
+  subgraph CASHIER["💳 קופאי — POS"]
+    direction TB
+    P1["פתיחת POS\nלשולחן / הזמנה"]
+    P2{"חבר מועדון?"}
+    P3["חיפוש חבר\n+ הנחה אוטומטית"]
+    P4["הגדרת טיפ\n(% / סכום)"]
+    P5["בחירת אמצעי תשלום\n(מזומן / כרטיס / אחר)"]
+    P6["חישוב עודף\n(מזומן)"]
+    P7["סגירת הזמנה\nPAID ✓"]
+    P8["קבלה על המסך\n+ הדפסה"]
+    P1 --> P2
+    P2 -- כן --> P3 --> P4
+    P2 -- לא --> P4
+    P4 --> P5 --> P6 --> P7 --> P8
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% LOYALTY
+  %% ══════════════════════════════════════════════════
+  subgraph LOYALTY["⭐ נאמנות"]
+    direction TB
+    L1["צבירת נקודות\nלפי סכום קנייה"]
+    L2["הנפקת קופון\n/ הנחה"]
+    L3["מעקב היסטוריה\n(CRM Customers)"]
+    L1 --> L2 --> L3
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% MANAGEMENT
+  %% ══════════════════════════════════════════════════
+  subgraph MGMT["📊 ניהול ובקרה"]
+    direction TB
+    M1["Dashboard\nKPIs בזמן אמת"]
+    M2["Shift Manager\nמבט כולל על הרצפה"]
+    M3["Logs\nרשומות ביקורת"]
+    M4["סיכום משמרת\n+ סגירה"]
+  end
+
+  %% ══════════════════════════════════════════════════
+  %% CONNECTIONS BETWEEN SUBGRAPHS
+  %% ══════════════════════════════════════════════════
+  SETUP --> SHIFT
+  SHIFT --> CUSTOMER
+  SHIFT --> MGMT
+
+  C4 --> W1
+  W2 --> K1
+  K8 --> W4
+  W5 --> P1
+
+  P7 --> L1
+  P7 --> M1
+
+  M2 -.->|"מעקב חי"| WAITER
+  M2 -.->|"מעקב חי"| KITCHEN
+  M4 -.->|"סגירת משמרת"| M3
+
+  %% ══════════════════════════════════════════════════
+  %% STYLES
+  %% ══════════════════════════════════════════════════
+  classDef setup    fill:#e8f4f8,stroke:#4a9aba,color:#1a3a4a,rx:8
+  classDef shift    fill:#f0ece3,stroke:#c9890a,color:#5a4020,rx:8
+  classDef customer fill:#e8f8e8,stroke:#4a9a5a,color:#1a4020,rx:8
+  classDef waiter   fill:#fff3e0,stroke:#e07a10,color:#4a2a00,rx:8
+  classDef kitchen  fill:#fce8e8,stroke:#cc4444,color:#4a1010,rx:8
+  classDef cashier  fill:#f3e8ff,stroke:#8844cc,color:#2a1040,rx:8
+  classDef loyalty  fill:#fffde8,stroke:#c9890a,color:#5a4020,rx:8
+  classDef mgmt     fill:#e8eef8,stroke:#4455aa,color:#1a2040,rx:8
+  classDef decision fill:#fffdf5,stroke:#c9890a,color:#5a4020,rx:20
+
+  class S1,S2,S3,S4,S5 setup
+  class SH1,SH2 shift
+  class C1,C2,C3,C4 customer
+  class W1,W2,W3,W4,W5 waiter
+  class K1,K3,K4,K5,K6,K7,K8 kitchen
+  class P1,P3,P4,P5,P6,P7,P8 cashier
+  class L1,L2,L3 loyalty
+  class M1,M2,M3,M4 mgmt
+  class K2,P2 decision
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="dot" style="background:#4a9aba"></div> הגדרה ראשונית</div>
+    <div class="legend-item"><div class="dot" style="background:#c9890a"></div> משמרת</div>
+    <div class="legend-item"><div class="dot" style="background:#4a9a5a"></div> לקוח</div>
+    <div class="legend-item"><div class="dot" style="background:#e07a10"></div> מלצר</div>
+    <div class="legend-item"><div class="dot" style="background:#cc4444"></div> מטבח</div>
+    <div class="legend-item"><div class="dot" style="background:#8844cc"></div> קופאי / POS</div>
+    <div class="legend-item"><div class="dot" style="background:#c9890a; opacity:0.7"></div> נאמנות</div>
+    <div class="legend-item"><div class="dot" style="background:#4455aa"></div> ניהול ובקרה</div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      flowchart: { useMaxWidth: false, htmlLabels: true }
+    });
+  </script>
+</body>
+</html>

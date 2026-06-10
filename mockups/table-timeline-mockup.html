@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280,initial-scale=1">
+<title>מפת שולחנות חיה — מוקאפ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Heebo', Arial, sans-serif;
+  background: #f7f5f2;
+  color: #1a1a1a;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════ HEADER ══════ */
+.page-header {
+  padding: 20px 32px 0;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.page-title { font-size: 26px; font-weight: 900; }
+.legend { display: flex; gap: 16px; align-items: center; }
+.leg { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #555; }
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+.ld-green  { background: #22c55e; }
+.ld-red    { background: #ef4444; }
+.ld-purple { background: #a855f7; }
+.page-divider { height: 1px; background: #e5e0d8; margin: 14px 32px 0; flex-shrink: 0; }
+
+/* ══════ FLOOR GRID ══════ */
+.floor-section { padding: 14px 32px 0; flex-shrink: 0; }
+.floor-label {
+  font-size: 11px; font-weight: 700; color: #aaa;
+  letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 10px;
+}
+
+/* 8 columns, all visible, no scroll */
+.floor-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+}
+
+.ft-card {
+  border-radius: 12px;
+  border: 1.5px solid #e5e0d8;
+  background: #fff;
+  padding: 10px 10px 10px 10px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.12s;
+  position: relative;
+  user-select: none;
+  overflow: hidden;
+  min-height: 88px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+/* colored stripe RIGHT */
+.ft-card::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 4px; height: 100%;
+  border-radius: 0 10px 10px 0;
+}
+.ft-free::after   { background: #d4d0c8; }
+.ft-green::after  { background: #22c55e; }
+.ft-red::after    { background: #ef4444; }
+.ft-purple::after { background: #a855f7; }
+
+.ft-card:active { transform: scale(0.95); }
+.ft-card.selected {
+  box-shadow: 0 0 0 2.5px #1a1a1a;
+  transform: translateY(-1px);
+}
+
+.ft-num { font-size: 20px; font-weight: 900; line-height: 1; }
+.ft-green  .ft-num { color: #16a34a; }
+.ft-red    .ft-num { color: #dc2626; }
+.ft-purple .ft-num { color: #9333ea; }
+.ft-free   .ft-num { color: #bbb; }
+
+.ft-meta { font-size: 10px; color: #999; margin-top: 3px; line-height: 1.3; }
+
+.ft-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-top: 6px; padding: 2px 7px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; width: fit-content;
+}
+.tag-green  { background: #dcfce7; color: #16a34a; }
+.tag-red    { background: #fee2e2; color: #dc2626; }
+.tag-purple { background: #f3e8ff; color: #9333ea; }
+.tag-muted  { background: #f1ede8; color: #bbb; }
+
+/* ══════ EXPANDABLE DETAIL ROW (below floor, above panels) ══════ */
+.detail-row {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  opacity: 0;
+  flex-shrink: 0;
+}
+.detail-row.open {
+  max-height: 180px;
+  opacity: 1;
+}
+.detail-row-inner {
+  margin: 10px 32px 0;
+  background: #fff;
+  border: 1.5px solid #e5e0d8;
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+/* arrow from card pointing down */
+.detail-arrow {
+  display: none;
+  position: absolute;
+  bottom: -8px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #1a1a1a;
+  z-index: 2;
+}
+.ft-card.selected .detail-arrow { display: block; }
+
+.dr-num {
+  font-size: 40px; font-weight: 900; flex-shrink: 0; line-height: 1;
+}
+.dr-green  { color: #16a34a; }
+.dr-red    { color: #dc2626; }
+.dr-purple { color: #9333ea; }
+
+.dr-info { flex: 1; border-right: 1.5px solid #f0ebe3; padding-right: 20px; }
+.dr-title { font-size: 15px; font-weight: 800; }
+.dr-meta  { font-size: 12px; color: #888; margin-top: 3px; }
+.dr-tag   { margin-top: 8px; }
+
+.dr-stats {
+  display: flex; gap: 20px; flex-shrink: 0;
+}
+.dr-stat { text-align: center; }
+.dr-stat-val  { font-size: 20px; font-weight: 900; }
+.dr-stat-lbl  { font-size: 11px; color: #888; margin-top: 2px; }
+
+.dr-action {
+  flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.dr-btn {
+  padding: 8px 16px; border-radius: 8px; font-size: 12px;
+  font-weight: 700; cursor: pointer; border: none; white-space: nowrap;
+}
+.db-view  { background: #1a1a1a; color: #fff; }
+.db-close { background: #f1ede8; color: #888; }
+
+/* ══════ MAIN PANELS AREA ══════ */
+.main-area {
+  display: flex; gap: 16px;
+  padding: 12px 32px 24px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ══════ DETAIL PANEL (layer 2) ══════ */
+.detail-panel {
+  flex: 1; background: #fff; border-radius: 16px;
+  border: 1.5px solid #e5e0d8;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.dp-header {
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid #f0ebe3;
+  flex-shrink: 0;
+}
+.dp-title { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.dp-sub   { font-size: 12px; color: #888; margin-top: 2px; }
+
+.matrix-legend {
+  display: flex; gap: 10px; padding: 8px 18px 6px;
+  border-bottom: 1px solid #f7f4f0; flex-shrink: 0;
+}
+.ml { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #888; font-weight: 600; }
+.ml-bar { width: 10px; height: 10px; border-radius: 2px; }
+
+.dp-body { overflow-y: auto; flex: 1; }
+.dp-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 1px solid #f7f4f0;
+  cursor: pointer; transition: background 0.1s;
+}
+.dp-item:last-child { border-bottom: none; }
+.dp-item:hover { background: #faf8f5; }
+.dp-item.active { background: #f0f4ff; }
+
+.dp-color-bar { width: 4px; height: 34px; border-radius: 2px; flex-shrink: 0; }
+.cb-yellow { background: #fbbf24; }
+.cb-blue   { background: #60a5fa; }
+.cb-red    { background: #f87171; }
+.cb-gray   { background: #d1cdc7; }
+
+.dp-item-info { flex: 1; }
+.dp-item-name { font-size: 13px; font-weight: 700; }
+.dp-item-meta { font-size: 11px; color: #888; margin-top: 1px; }
+.dp-item-time {
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-radius: 6px; flex-shrink: 0;
+}
+.dt-fast { background: #dcfce7; color: #16a34a; }
+.dt-slow { background: #fee2e2; color: #dc2626; }
+.dt-warn { background: #fef9c3; color: #a16207; }
+.dp-arrow { color: #ccc; font-size: 13px; flex-shrink: 0; }
+
+/* ══════ TIMELINE PANEL (layer 3) ══════ */
+.timeline-panel {
+  width: 400px; flex-shrink: 0; background: #fff; border-radius: 16px;
+  border: 1.5px solid #e5e0d8;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.tp-head {
+  padding: 14px 18px 10px; border-bottom: 1px solid #f0ebe3; flex-shrink: 0;
+}
+.tp-head-title { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.tp-head-sub   { font-size: 12px; color: #888; margin-top: 2px; }
+
+.tl-body { flex: 1; overflow-y: auto; padding: 4px 0 16px; }
+
+.tl-node {
+  display: flex; gap: 12px; padding: 9px 18px;
+  position: relative;
+}
+.tl-node::before {
+  content: ''; position: absolute;
+  top: 28px; right: 28px;
+  width: 2px; height: calc(100% - 10px);
+  background: #ede8e0;
+}
+.tl-node:last-child::before { display: none; }
+.tl-node.mini { padding: 5px 18px; }
+.tl-node.mini::before { top: 22px; right: 27px; }
+
+.tl-dot {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  margin-top: 3px; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 900; position: relative; z-index: 1;
+}
+.tl-node.mini .tl-dot { width: 12px; height: 12px; margin-top: 4px; font-size: 7px; }
+
+.td-green  { background: #dcfce7; border: 2px solid #86efac; color: #16a34a; }
+.td-red    { background: #fee2e2; border: 2px solid #fca5a5; color: #dc2626; }
+.td-gray   { background: #f1ede8; border: 2px solid #d9d2c8; color: #aaa; }
+
+.tl-content { flex: 1; }
+.tl-time    { font-size: 10px; color: #aaa; font-weight: 700; font-family: monospace; }
+.tl-title   { font-size: 13px; font-weight: 800; margin-top: 1px; }
+.tl-node.mini .tl-title { font-size: 12px; font-weight: 600; color: #555; }
+.tl-txt     { font-size: 11px; color: #666; margin-top: 3px; line-height: 1.5; }
+
+.tl-dur {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 18px 0 44px; margin: -3px 0; position: relative; z-index: 1;
+}
+.tl-node.mini + .tl-dur { padding-right: 18px; padding-left: 38px; }
+.dur-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 7px;
+  border-radius: 999px; border: 1px solid; white-space: nowrap;
+}
+.dur-ok   { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.dur-warn { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+.dur-bad  { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.dur-line { flex: 1; height: 1px; background: #ede8e0; }
+</style>
+</head>
+<body>
+
+<!-- ══════ HEADER ══════ -->
+<div class="page-header">
+  <div class="page-title">מפת שולחנות חיה</div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot ld-green"></div> תקין</div>
+    <div class="leg"><div class="leg-dot ld-red"></div> עיכוב שירות</div>
+    <div class="leg"><div class="leg-dot ld-purple"></div> פעולת AI</div>
+  </div>
+</div>
+<div class="page-divider"></div>
+
+<!-- ══════ LAYER 1: FLOOR GRID ══════ -->
+<div class="floor-section">
+  <div class="floor-label">מצב המסעדה עכשיו</div>
+  <div class="floor-grid">
+
+    <div class="ft-card ft-free" onclick="selectTable(this, null)">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">01</div>
+      <div class="ft-meta">פנוי להושבה</div>
+      <div class="ft-tag tag-muted">—</div>
+    </div>
+
+    <div class="ft-card ft-red" id="ft-04" onclick="selectTable(this, 'red')">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">04</div>
+      <div class="ft-meta">4 קאברים<br>מלצר: רועי</div>
+      <div class="ft-tag tag-red">⏱ עיכוב 6 דק׳</div>
+    </div>
+
+    <div class="ft-card ft-green" onclick="selectTable(this, 'green')">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">02</div>
+      <div class="ft-meta">2 קאברים<br>מלצרית: מיה</div>
+      <div class="ft-tag tag-green">✓ תקין</div>
+    </div>
+
+    <div class="ft-card ft-purple" onclick="selectTable(this, 'purple')">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">09</div>
+      <div class="ft-meta">5 קאברים<br>מלצר: דני</div>
+      <div class="ft-tag tag-purple">✦ Pacing</div>
+    </div>
+
+    <div class="ft-card ft-green" onclick="selectTable(this, 'green')">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">07</div>
+      <div class="ft-meta">3 קאברים<br>מלצר: עומר</div>
+      <div class="ft-tag tag-green">✓ תקין</div>
+    </div>
+
+    <div class="ft-card ft-purple" onclick="selectTable(this, 'purple')">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">11</div>
+      <div class="ft-meta">6 קאברים<br>מלצרית: ליאת</div>
+      <div class="ft-tag tag-purple">✦ Upsell</div>
+    </div>
+
+    <div class="ft-card ft-free" onclick="selectTable(this, null)">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">12</div>
+      <div class="ft-meta">פנוי</div>
+      <div class="ft-tag tag-muted">—</div>
+    </div>
+
+    <div class="ft-card ft-red" onclick="selectTable(this, 'red2')">
+      <div class="detail-arrow"></div>
+      <div class="ft-num">05</div>
+      <div class="ft-meta">2 קאברים<br>מלצר: רועי</div>
+      <div class="ft-tag tag-red">⏱ עיכוב 3 דק׳</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════ EXPAND PANEL (slides open under floor) ══════ -->
+<div class="detail-row" id="detail-row">
+  <div class="detail-row-inner">
+    <div class="dr-num" id="dr-num">04</div>
+    <div class="dr-info">
+      <div class="dr-title" id="dr-title">שולחן 04 (נבחר)</div>
+      <div class="dr-meta" id="dr-meta">4 קאברים · מלצר: רועי · 38 דקות פעיל</div>
+      <div class="dr-tag"><span class="ft-tag tag-red" style="margin-top:4px" id="dr-tag">⏱ עיכוב של 6 דק׳ בפס</span></div>
+    </div>
+    <div class="dr-stats">
+      <div class="dr-stat">
+        <div class="dr-stat-val" id="dr-items">5</div>
+        <div class="dr-stat-lbl">מנות</div>
+      </div>
+      <div class="dr-stat">
+        <div class="dr-stat-val" id="dr-time">38</div>
+        <div class="dr-stat-lbl">דקות</div>
+      </div>
+      <div class="dr-stat">
+        <div class="dr-stat-val" id="dr-total">₪248</div>
+        <div class="dr-stat-lbl">סה״כ</div>
+      </div>
+    </div>
+    <div class="dr-action">
+      <button class="dr-btn db-view" onclick="loadTable()">פתח פירוט ▾</button>
+      <button class="dr-btn db-close" onclick="closeDetail()">✕ סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ LAYERS 2+3 ══════ -->
+<div class="main-area">
+
+  <!-- LAYER 2: Orders -->
+  <div class="detail-panel">
+    <div class="dp-header">
+      <div class="dp-title">📋 פירוט הזמנות שולחן <span id="panel-table-num">04</span></div>
+      <div class="dp-sub">מנות מסומנות לפי הנדסת תפריט:</div>
+    </div>
+    <div class="matrix-legend">
+      <div class="ml"><div class="ml-bar" style="background:#fbbf24"></div> כוכב</div>
+      <div class="ml"><div class="ml-bar" style="background:#60a5fa"></div> סוס עבודה</div>
+      <div class="ml"><div class="ml-bar" style="background:#f87171"></div> 86 / אזל</div>
+    </div>
+    <div class="dp-body">
+      <div class="dp-item active" id="item-burger" onclick="selectItem('burger')">
+        <div class="dp-color-bar cb-yellow"></div>
+        <div class="dp-item-info">
+          <div class="dp-item-name">המבורגר קראפט שף</div>
+          <div class="dp-item-meta">מנת כוכב · רווח גבוהה + ביקוש גבוה</div>
+        </div>
+        <div class="dp-item-time dt-slow">21 דק׳</div>
+        <div class="dp-arrow">›</div>
+      </div>
+      <div class="dp-item" id="item-fries" onclick="selectItem('fries')">
+        <div class="dp-color-bar cb-blue"></div>
+        <div class="dp-item-info">
+          <div class="dp-item-name">צ׳יפס פרימיום גדול</div>
+          <div class="dp-item-meta">סוס עבודה · ביקוש גבוה</div>
+        </div>
+        <div class="dp-item-time dt-fast">4 דק׳</div>
+        <div class="dp-arrow">›</div>
+      </div>
+      <div class="dp-item" onclick="selectItem('salad')">
+        <div class="dp-color-bar cb-yellow"></div>
+        <div class="dp-item-info">
+          <div class="dp-item-name">סלט קיסר פרמיום</div>
+          <div class="dp-item-meta">מנת כוכב</div>
+        </div>
+        <div class="dp-item-time dt-warn">11 דק׳</div>
+        <div class="dp-arrow">›</div>
+      </div>
+      <div class="dp-item" onclick="selectItem('wine')">
+        <div class="dp-color-bar cb-blue"></div>
+        <div class="dp-item-info">
+          <div class="dp-item-name">יין אדום — כוס</div>
+          <div class="dp-item-meta">סוס עבודה</div>
+        </div>
+        <div class="dp-item-time dt-fast">2 דק׳</div>
+        <div class="dp-arrow">›</div>
+      </div>
+      <div class="dp-item" onclick="selectItem('tiramisu')">
+        <div class="dp-color-bar cb-gray"></div>
+        <div class="dp-item-info">
+          <div class="dp-item-name">טירמיסו</div>
+          <div class="dp-item-meta">ממתין להזמנה</div>
+        </div>
+        <div class="dp-item-time" style="background:#f1ede8;color:#bbb">—</div>
+        <div class="dp-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYER 3: Timeline -->
+  <div class="timeline-panel">
+    <div class="tp-head">
+      <div class="tp-head-title">⏱ ציר זמן ומעקב ייצור</div>
+      <div class="tp-head-sub" id="tl-sub">המבורגר קראפט שף — שולחן 04</div>
+    </div>
+    <div class="tl-body" id="tl-body">
+
+      <div class="tl-node">
+        <div class="tl-dot td-green">✓</div>
+        <div class="tl-content">
+          <div class="tl-time">14:12</div>
+          <div class="tl-title">הזמנה ישירה מהשולחן</div>
+          <div class="tl-txt">הסועד שלח דרך QR — סנכרון מיידי לקופה ולמטבח.</div>
+        </div>
+      </div>
+
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">1 דק׳</div><div class="dur-line"></div></div>
+
+      <div class="tl-node">
+        <div class="tl-dot td-green">✓</div>
+        <div class="tl-content">
+          <div class="tl-time">14:13</div>
+          <div class="tl-title">כניסה לעבודה במטבח</div>
+          <div class="tl-txt">הוצג ב-KDS תחנת הגריל.</div>
+        </div>
+      </div>
+
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-bad">19 דק׳ ⚠</div><div class="dur-line"></div></div>
+
+      <div class="tl-node">
+        <div class="tl-dot td-red">!</div>
+        <div class="tl-content">
+          <div class="tl-time">14:32</div>
+          <div class="tl-title" style="color:#dc2626">עיכוב חריג — חריגה מהתקן</div>
+          <div class="tl-txt">AI זיהה 5 דק׳ מעבר לתקן. נשלחה התראה אוטומטית למלצר רועי.</div>
+        </div>
+      </div>
+
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">2 דק׳</div><div class="dur-line"></div></div>
+
+      <div class="tl-node">
+        <div class="tl-dot td-green">✓</div>
+        <div class="tl-content">
+          <div class="tl-time">14:34</div>
+          <div class="tl-title">סיום הכנה במטבח</div>
+          <div class="tl-txt">טבח סימן Bump ב-KDS. הונח בחלון ההגשה.</div>
+        </div>
+      </div>
+
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">3 דק׳</div><div class="dur-line"></div></div>
+
+      <div class="tl-node mini">
+        <div class="tl-dot td-green">✓</div>
+        <div class="tl-content">
+          <div class="tl-time">14:37</div>
+          <div class="tl-title">הגשה לשולחן 04</div>
+        </div>
+      </div>
+
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">8 דק׳</div><div class="dur-line"></div></div>
+
+      <div class="tl-node mini">
+        <div class="tl-dot td-gray">●</div>
+        <div class="tl-content">
+          <div class="tl-time">14:45</div>
+          <div class="tl-title">סיום אכילה — מנה הושלמה</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- bottom label -->
+<div style="position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:11px;font-weight:800;padding:6px 16px;border-radius:999px;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.25)">
+  מוקאפ — ממתין לאישורך לפני העלאה
+</div>
+
+<script>
+let selectedCard = null;
+
+const TABLE_DATA = {
+  red:    { num:'04', title:'שולחן 04 (נבחר)', meta:'4 קאברים · מלצר: רועי · 38 דקות פעיל', tag:'⏱ עיכוב של 6 דק׳ בפס', tagClass:'tag-red', items:'5', time:'38', total:'₪248', color:'dr-red' },
+  red2:   { num:'05', title:'שולחן 05', meta:'2 קאברים · מלצר: רועי · 12 דקות פעיל', tag:'⏱ עיכוב 3 דק׳', tagClass:'tag-red', items:'2', time:'12', total:'₪86', color:'dr-red' },
+  green:  { num:'02', title:'שולחן 02', meta:'2 קאברים · מלצרית: מיה · 22 דקות פעיל', tag:'✓ זרימה תקינה', tagClass:'tag-green', items:'3', time:'22', total:'₪164', color:'dr-green' },
+  purple: { num:'09', title:'שולחן 09', meta:'5 קאברים · מלצר: דני · 45 דקות פעיל', tag:'✦ ויסות עומס (Pacing)', tagClass:'tag-purple', items:'8', time:'45', total:'₪520', color:'dr-purple' },
+};
+
+function selectTable(card, type) {
+  if (selectedCard === card) { closeDetail(); return; }
+  document.querySelectorAll('.ft-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedCard = card;
+
+  const row = document.getElementById('detail-row');
+  if (!type) { row.classList.remove('open'); return; }
+
+  const d = TABLE_DATA[type] || TABLE_DATA['red'];
+  document.getElementById('dr-num').textContent   = d.num;
+  document.getElementById('dr-num').className     = 'dr-num ' + d.color;
+  document.getElementById('dr-title').textContent = d.title;
+  document.getElementById('dr-meta').textContent  = d.meta;
+  const tag = document.getElementById('dr-tag');
+  tag.textContent = d.tag;
+  tag.className   = 'ft-tag ' + d.tagClass;
+  document.getElementById('dr-items').textContent = d.items;
+  document.getElementById('dr-time').textContent  = d.time;
+  document.getElementById('dr-total').textContent = d.total;
+
+  row.classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-row').classList.remove('open');
+  document.querySelectorAll('.ft-card').forEach(c => c.classList.remove('selected'));
+  selectedCard = null;
+}
+
+function loadTable() {
+  const num = document.getElementById('dr-num').textContent;
+  document.getElementById('panel-table-num').textContent = num;
+}
+
+function selectItem(item) {
+  document.querySelectorAll('.dp-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('item-' + item)?.classList.add('active');
+
+  if (item === 'fries') {
+    document.getElementById('tl-sub').textContent = 'צ׳יפס פרימיום — ייצור מהיר';
+    document.getElementById('tl-body').innerHTML = `
+      <div class="tl-node"><div class="tl-dot td-green">✓</div><div class="tl-content"><div class="tl-time">14:12</div><div class="tl-title">הזמנה נקלטה</div><div class="tl-txt">הועבר לתחנת הפריטורה.</div></div></div>
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">3 דק׳</div><div class="dur-line"></div></div>
+      <div class="tl-node mini"><div class="tl-dot td-green">✓</div><div class="tl-content"><div class="tl-time">14:15</div><div class="tl-title">הכנה הושלמה בפריטורה</div></div></div>
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">1 דק׳</div><div class="dur-line"></div></div>
+      <div class="tl-node mini"><div class="tl-dot td-gray">●</div><div class="tl-content"><div class="tl-time">14:16</div><div class="tl-title">ממתין בחלון — יוגש עם ההמבורגר</div></div></div>`;
+  } else if (item === 'burger') {
+    document.getElementById('tl-sub').textContent = 'המבורגר קראפט שף — שולחן 04';
+    document.getElementById('tl-body').innerHTML = `
+      <div class="tl-node"><div class="tl-dot td-green">✓</div><div class="tl-content"><div class="tl-time">14:12</div><div class="tl-title">הזמנה ישירה מהשולחן</div><div class="tl-txt">הסועד שלח דרך QR — סנכרון מיידי לקופה ולמטבח.</div></div></div>
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">1 דק׳</div><div class="dur-line"></div></div>
+      <div class="tl-node"><div class="tl-dot td-green">✓</div><div class="tl-content"><div class="tl-time">14:13</div><div class="tl-title">כניסה לעבודה במטבח</div><div class="tl-txt">הוצג ב-KDS תחנת הגריל.</div></div></div>
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-bad">19 דק׳ ⚠</div><div class="dur-line"></div></div>
+      <div class="tl-node"><div class="tl-dot td-red">!</div><div class="tl-content"><div class="tl-time">14:32</div><div class="tl-title" style="color:#dc2626">עיכוב חריג — חריגה מהתקן</div><div class="tl-txt">AI שלח התראה למלצר רועי.</div></div></div>
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">2 דק׳</div><div class="dur-line"></div></div>
+      <div class="tl-node mini"><div class="tl-dot td-green">✓</div><div class="tl-content"><div class="tl-time">14:34</div><div class="tl-title">סיום הכנה במטבח</div></div></div>
+      <div class="tl-dur"><div class="dur-line"></div><div class="dur-badge dur-ok">3 דק׳</div><div class="dur-line"></div></div>
+      <div class="tl-node mini"><div class="tl-dot td-green">✓</div><div class="tl-content"><div class="tl-time">14:37</div><div class="tl-title">הגשה לשולחן 04</div></div></div>`;
+  }
+}
+</script>
+</body>
+</html>

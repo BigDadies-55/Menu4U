@@ -411,6 +411,7 @@ export const ModelName = {
   LoyaltyMember: 'LoyaltyMember',
   LoyaltyTransaction: 'LoyaltyTransaction',
   LoyaltyCoupon: 'LoyaltyCoupon',
+  WaiterStation: 'WaiterStation',
   LoyaltySettings: 'LoyaltySettings'
 } as const
 
@@ -427,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "passwordHistory" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "loyaltySettings"
+    modelProps: "user" | "passwordHistory" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "waiterStation" | "loyaltySettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2429,6 +2430,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    WaiterStation: {
+      payload: Prisma.$WaiterStationPayload<ExtArgs>
+      fields: Prisma.WaiterStationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WaiterStationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WaiterStationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>
+        }
+        findFirst: {
+          args: Prisma.WaiterStationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WaiterStationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>
+        }
+        findMany: {
+          args: Prisma.WaiterStationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>[]
+        }
+        create: {
+          args: Prisma.WaiterStationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>
+        }
+        createMany: {
+          args: Prisma.WaiterStationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WaiterStationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>[]
+        }
+        delete: {
+          args: Prisma.WaiterStationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>
+        }
+        update: {
+          args: Prisma.WaiterStationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>
+        }
+        deleteMany: {
+          args: Prisma.WaiterStationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WaiterStationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WaiterStationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>[]
+        }
+        upsert: {
+          args: Prisma.WaiterStationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WaiterStationPayload>
+        }
+        aggregate: {
+          args: Prisma.WaiterStationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWaiterStation>
+        }
+        groupBy: {
+          args: Prisma.WaiterStationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WaiterStationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WaiterStationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WaiterStationCountAggregateOutputType> | number
+        }
+      }
+    }
     LoyaltySettings: {
       payload: Prisma.$LoyaltySettingsPayload<ExtArgs>
       fields: Prisma.LoyaltySettingsFieldRefs
@@ -2559,7 +2634,11 @@ export const UserScalarFieldEnum = {
   termsAccepted: 'termsAccepted',
   termsAcceptedAt: 'termsAcceptedAt',
   termsAcceptedIp: 'termsAcceptedIp',
-  termsAcceptedUserAgent: 'termsAcceptedUserAgent'
+  termsAcceptedUserAgent: 'termsAcceptedUserAgent',
+  failedLoginAttempts: 'failedLoginAttempts',
+  lockedUntil: 'lockedUntil',
+  totpSecret: 'totpSecret',
+  totpEnabled: 'totpEnabled'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -2656,6 +2735,7 @@ export const RestaurantScalarFieldEnum = {
   ordersEnabled: 'ordersEnabled',
   tableLayoutJson: 'tableLayoutJson',
   kdsView: 'kdsView',
+  adminPalette: 'adminPalette',
   customDomain: 'customDomain',
   copyright: 'copyright',
   language: 'language',
@@ -2763,6 +2843,8 @@ export const OrderScalarFieldEnum = {
   loyaltyDiscountType: 'loyaltyDiscountType',
   loyaltyDiscountAmount: 'loyaltyDiscountAmount',
   loyaltyCouponId: 'loyaltyCouponId',
+  createdByUserId: 'createdByUserId',
+  closedByUserId: 'closedByUserId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2802,7 +2884,10 @@ export const OrderItemScalarFieldEnum = {
   heldUntilFired: 'heldUntilFired',
   firedAt: 'firedAt',
   doneAt: 'doneAt',
-  servedAt: 'servedAt'
+  servedAt: 'servedAt',
+  isComped: 'isComped',
+  compReason: 'compReason',
+  servedByUserId: 'servedByUserId'
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
@@ -2921,6 +3006,8 @@ export const LoyaltyMemberScalarFieldEnum = {
   memberNumber: 'memberNumber',
   points: 'points',
   totalSpent: 'totalSpent',
+  lastSmsSentAt: 'lastSmsSentAt',
+  lastVisitAt: 'lastVisitAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2959,6 +3046,19 @@ export const LoyaltyCouponScalarFieldEnum = {
 export type LoyaltyCouponScalarFieldEnum = (typeof LoyaltyCouponScalarFieldEnum)[keyof typeof LoyaltyCouponScalarFieldEnum]
 
 
+export const WaiterStationScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  userId: 'userId',
+  tableNumbers: 'tableNumbers',
+  label: 'label',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WaiterStationScalarFieldEnum = (typeof WaiterStationScalarFieldEnum)[keyof typeof WaiterStationScalarFieldEnum]
+
+
 export const LoyaltySettingsScalarFieldEnum = {
   restaurantId: 'restaurantId',
   pointsPerShekel: 'pointsPerShekel',
@@ -2966,7 +3066,13 @@ export const LoyaltySettingsScalarFieldEnum = {
   minRedeemPoints: 'minRedeemPoints',
   welcomeBonus: 'welcomeBonus',
   birthdayBonus: 'birthdayBonus',
-  isActive: 'isActive'
+  isActive: 'isActive',
+  minRoleAdjustPoints: 'minRoleAdjustPoints',
+  minRoleIssueCoupon: 'minRoleIssueCoupon',
+  minRoleRedeemCoupon: 'minRoleRedeemCoupon',
+  minRoleUpdateMember: 'minRoleUpdateMember',
+  minRoleSendSms: 'minRoleSendSms',
+  maxDailyPointsAdjust: 'maxDailyPointsAdjust'
 } as const
 
 export type LoyaltySettingsScalarFieldEnum = (typeof LoyaltySettingsScalarFieldEnum)[keyof typeof LoyaltySettingsScalarFieldEnum]
@@ -3260,6 +3366,7 @@ export type GlobalOmitConfig = {
   loyaltyMember?: Prisma.LoyaltyMemberOmit
   loyaltyTransaction?: Prisma.LoyaltyTransactionOmit
   loyaltyCoupon?: Prisma.LoyaltyCouponOmit
+  waiterStation?: Prisma.WaiterStationOmit
   loyaltySettings?: Prisma.LoyaltySettingsOmit
 }
 

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3 אופציות — מלצר חכם</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Heebo', sans-serif; background: #1a1a1a; color: #fff; min-height: 100dvh; padding: 20px 12px 40px; }
+
+h1 { text-align: center; font-size: 15px; font-weight: 600; color: #888; margin-bottom: 24px; letter-spacing: .04em; }
+
+/* tab switcher */
+.tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 28px; flex-wrap: wrap; }
+.tab {
+  padding: 10px 22px; border-radius: 99px; border: 1.5px solid #333;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  background: #222; color: #666; font-family: 'Heebo', sans-serif;
+  transition: all .15s;
+}
+.tab.on { background: #fff; color: #111; border-color: #fff; }
+
+/* phone frame */
+.frame {
+  width: 340px; margin: 0 auto;
+  border-radius: 40px; overflow: hidden;
+  border: 6px solid #333;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  position: relative;
+}
+.screen { display: none; flex-direction: column; height: 680px; overflow: hidden; }
+.screen.on { display: flex; }
+
+/* label badge */
+.opt-label {
+  position: absolute; top: -1px; right: 20px;
+  background: #fff; color: #111;
+  font-size: 10px; font-weight: 800; padding: 3px 12px;
+  border-radius: 0 0 8px 8px; letter-spacing: .06em;
+  text-transform: uppercase; z-index: 99;
+}
+
+/* ═══════════════════════════════
+   OPTION A — "פעולה ראשונה"
+   Action-first: huge CTA on top,
+   info secondary & minimal
+═══════════════════════════════ */
+.a-screen {
+  background: #f5f2ee;
+}
+.a-hero {
+  background: #1a1612; padding: 20px 20px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.a-hero-left { display: flex; flex-direction: column; gap: 3px; }
+.a-hero-num { font-size: 42px; font-weight: 900; color: #fff; line-height: 1; }
+.a-hero-sub { font-size: 12px; color: #888; }
+.a-hero-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.a-timer { font-size: 22px; font-weight: 800; color: #e07060; font-variant-numeric: tabular-nums; }
+.a-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: rgba(224,112,96,.18); color: #e07060; }
+
+.a-actions { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.a-main-btn {
+  width: 100%; padding: 18px; border-radius: 16px; border: none;
+  background: #1a1612; color: #fff;
+  font-size: 17px; font-weight: 900; font-family: 'Heebo', sans-serif;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.a-row2 { display: flex; gap: 8px; }
+.a-sm-btn {
+  flex: 1; padding: 14px 8px; border-radius: 12px; border: 1.5px solid #e0dbd4;
+  background: #fff; font-size: 12px; font-weight: 700; font-family: 'Heebo', sans-serif;
+  cursor: pointer; color: #1a1612;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.a-sm-btn span { font-size: 18px; }
+.a-sm-btn.warn { border-color: #f5c4bc; background: #fdf2f0; color: #8b2e22; }
+
+.a-summary {
+  margin: 0 16px; background: #fff; border-radius: 14px;
+  border: 1.5px solid #e0dbd4; overflow: hidden;
+}
+.a-sum-head {
+  padding: 10px 14px; border-bottom: 1px solid #f0ebe4;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.a-sum-head-l { font-size: 11px; font-weight: 700; color: #8a8480; }
+.a-sum-head-r { font-size: 15px; font-weight: 900; color: #1a1612; }
+.a-sum-item {
+  padding: 9px 14px; border-bottom: 1px solid #f8f5f2;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px;
+}
+.a-sum-item:last-child { border-bottom: none; }
+.a-sum-name { font-weight: 500; color: #1a1612; display: flex; align-items: center; gap: 5px; }
+.a-sum-price { font-weight: 700; color: #4a4540; }
+.a-warn-tag { font-size: 9px; font-weight: 800; background: #fdf2f0; color: #8b2e22; border-radius: 5px; padding: 1px 5px; }
+
+.a-ai {
+  margin: 12px 16px 0; background: #f5f3fb; border: 1.5px solid #d0c8f0;
+  border-radius: 12px; padding: 10px 14px;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.a-ai-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.a-ai-text { font-size: 12px; color: #3d3070; font-weight: 500; line-height: 1.5; }
+
+/* ═══════════════════════════════
+   OPTION B — "כרטיס חכם"
+   Single glanceable card:
+   status strip + 3 action icons
+═══════════════════════════════ */
+.b-screen { background: #f0ede9; }
+
+.b-head {
+  background: #fff; padding: 14px 18px;
+  border-bottom: 1px solid #e8e2da;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.b-head-l { display: flex; align-items: baseline; gap: 8px; }
+.b-tnum { font-size: 28px; font-weight: 900; color: #1a1612; }
+.b-tsub { font-size: 12px; color: #8a8480; font-weight: 500; }
+.b-close { width: 32px; height: 32px; border-radius: 99px; border: 1.5px solid #e8e2da; background: #f4f1ed; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #4a4540; }
+
+/* status pills row */
+.b-pills { display: flex; gap: 6px; padding: 12px 18px; background: #fff; border-bottom: 1px solid #e8e2da; overflow-x: auto; }
+.b-pills::-webkit-scrollbar { display: none; }
+.b-pill {
+  padding: 6px 14px; border-radius: 99px; white-space: nowrap;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+
+/* BIG 3-icon action row */
+.b-acts { display: flex; gap: 10px; padding: 14px 18px; }
+.b-act {
+  flex: 1; background: #fff; border-radius: 16px; border: 1.5px solid #e0dbd4;
+  padding: 14px 8px; display: flex; flex-direction: column; align-items: center;
+  gap: 5px; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(26,22,18,.06);
+}
+.b-act.primary { background: #1a1612; border-color: #1a1612; }
+.b-act-icon { font-size: 24px; }
+.b-act-label { font-size: 11px; font-weight: 800; color: #4a4540; text-align: center; line-height: 1.3; }
+.b-act.primary .b-act-label { color: #fff; }
+
+/* course progress */
+.b-progress { margin: 0 18px 14px; }
+.b-prog-title { font-size: 10px; font-weight: 700; color: #8a8480; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.b-prog-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.b-prog-dot { width: 28px; height: 28px; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.b-prog-dot.done { background: #b3d9c4; color: #1f5c3a; }
+.b-prog-dot.wait { background: #fdf7ed; border: 1.5px solid #e8cc90; color: #92400e; }
+.b-prog-info { flex: 1; }
+.b-prog-name { font-size: 12px; font-weight: 700; color: #1a1612; }
+.b-prog-items { font-size: 11px; color: #8a8480; }
+.b-fire-btn {
+  padding: 6px 14px; border-radius: 99px; border: none;
+  font-size: 11px; font-weight: 800; cursor: pointer; font-family: 'Heebo', sans-serif;
+}
+.b-fire-btn.ready { background: #fde68a; color: #92400e; }
+.b-fire-btn.done  { background: #b3d9c4; color: #1f5c3a; cursor: default; }
+
+/* order items strip */
+.b-items-title { font-size: 10px; font-weight: 700; color: #8a8480; text-transform: uppercase; letter-spacing: .05em; padding: 0 18px; margin-bottom: 8px; }
+.b-items-scroll { display: flex; gap: 8px; padding: 0 18px 14px; overflow-x: auto; }
+.b-items-scroll::-webkit-scrollbar { display: none; }
+.b-item-chip {
+  background: #fff; border: 1.5px solid #e0dbd4; border-radius: 10px;
+  padding: 8px 12px; flex-shrink: 0; min-width: 90px;
+}
+.b-item-name { font-size: 12px; font-weight: 700; color: #1a1612; margin-bottom: 2px; }
+.b-item-price { font-size: 11px; color: #8a8480; }
+.b-item-warn { font-size: 10px; font-weight: 700; color: #8b2e22; background: #fdf2f0; border-radius: 4px; padding: 1px 4px; display: inline-block; margin-top: 3px; }
+
+.b-ai {
+  margin: 0 18px; background: #f5f3fb; border: 1.5px solid #d0c8f0;
+  border-radius: 12px; padding: 10px 14px;
+  font-size: 12px; color: #3d3070; font-weight: 500; line-height: 1.5;
+  display: flex; gap: 7px;
+}
+
+/* ═══════════════════════════════
+   OPTION C — "רצועת זמן"
+   Horizontal timeline at top,
+   full-width fire + add buttons
+═══════════════════════════════ */
+.c-screen { background: #fff; }
+
+.c-top {
+  background: #1a1612; padding: 16px 18px 14px;
+}
+.c-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.c-tnum { font-size: 36px; font-weight: 900; color: #fff; line-height: 1; }
+.c-info { text-align: left; }
+.c-timer { font-size: 18px; font-weight: 800; color: #e07060; font-variant-numeric: tabular-nums; }
+.c-guests { font-size: 11px; color: #888; }
+.c-allergy { display: flex; gap: 5px; flex-wrap: wrap; }
+.c-atag { font-size: 10px; font-weight: 700; background: rgba(224,112,96,.2); color: #e07060; border-radius: 99px; padding: 3px 9px; }
+
+/* timeline */
+.c-timeline {
+  display: flex; gap: 0; overflow-x: auto; padding: 14px 18px;
+  border-bottom: 1px solid #f0ece8; background: #faf8f5;
+}
+.c-timeline::-webkit-scrollbar { display: none; }
+.c-step { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.c-step-dot {
+  width: 32px; height: 32px; border-radius: 99px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; position: relative; z-index: 1;
+}
+.c-step-dot.done { background: #b3d9c4; color: #1f5c3a; }
+.c-step-dot.active { background: #1a1612; color: #fff; }
+.c-step-dot.pending { background: #f0ece8; color: #8a8480; border: 1.5px dashed #ccc; }
+.c-step-line { width: 36px; height: 2px; background: #e0dbd4; margin-top: -17px; flex-shrink: 0; align-self: flex-start; margin-top: 15px; }
+.c-step-line.done { background: #5a9e7a; }
+.c-step-label { font-size: 9px; font-weight: 700; color: #8a8480; margin-top: 5px; text-align: center; white-space: nowrap; }
+.c-step-label.done { color: #1f5c3a; }
+.c-step-label.active { color: #1a1612; }
+
+/* items list */
+.c-list { flex: 1; overflow-y: auto; }
+.c-list::-webkit-scrollbar { display: none; }
+.c-list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px; border-bottom: 1px solid #f8f5f2;
+}
+.c-item-l { display: flex; align-items: center; gap: 10px; }
+.c-item-dot { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+.c-item-name { font-size: 14px; font-weight: 700; color: #1a1612; }
+.c-item-meta { font-size: 11px; color: #8a8480; margin-top: 2px; }
+.c-item-r { text-align: left; }
+.c-item-price { font-size: 13px; font-weight: 800; color: #1a1612; }
+.c-item-warn { font-size: 10px; font-weight: 700; color: #8b2e22; background: #fdf2f0; border-radius: 4px; padding: 1px 5px; display: block; margin-top: 3px; text-align: center; }
+
+.c-divider {
+  padding: 6px 18px; background: #f5f3fb;
+  font-size: 10px; font-weight: 800; color: #6040a0;
+  text-transform: uppercase; letter-spacing: .05em;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.c-fire-inline {
+  padding: 4px 12px; border-radius: 99px; border: none;
+  font-size: 10px; font-weight: 800; background: #fde68a; color: #92400e;
+  cursor: pointer; font-family: 'Heebo', sans-serif;
+}
+
+.c-bottom {
+  border-top: 1px solid #f0ece8; padding: 12px 18px;
+  display: flex; gap: 8px; background: #fff; flex-shrink: 0;
+}
+.c-bot-btn {
+  flex: 1; padding: 16px; border-radius: 14px; border: none;
+  font-size: 14px; font-weight: 900; font-family: 'Heebo', sans-serif;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.c-bot-btn.prim { background: #1a1612; color: #fff; }
+.c-bot-btn.sec  { background: #f0ece8; color: #1a1612; border: 1.5px solid #e0dbd4; }
+.c-bot-total { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; padding: 0 4px; }
+.c-bot-total-v { font-size: 18px; font-weight: 900; color: #1a1612; }
+.c-bot-total-l { font-size: 9px; color: #8a8480; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>לחץ על אופציה לצפייה</h1>
+
+<div class="tabs">
+  <button class="tab on" onclick="showOpt('a')">A — פעולה ראשונה</button>
+  <button class="tab" onclick="showOpt('b')">B — כרטיס חכם</button>
+  <button class="tab" onclick="showOpt('c')">C — רצועת זמן</button>
+</div>
+
+<div class="frame">
+  <div class="opt-label" id="optLabel">A</div>
+
+  <!-- ══ OPTION A ══ -->
+  <div class="screen a-screen on" id="scA">
+    <div class="a-hero">
+      <div class="a-hero-left">
+        <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.04em">שולחן</div>
+        <div class="a-hero-num">7</div>
+        <div class="a-hero-sub">👤 3 סועדים</div>
+      </div>
+      <div class="a-hero-right">
+        <div class="a-timer">00:34</div>
+        <div class="a-badge">תפוס</div>
+      </div>
+    </div>
+
+    <div class="a-actions">
+      <button class="a-main-btn">➕ הוסף מנות</button>
+      <div class="a-row2">
+        <button class="a-sm-btn warn"><span>⚠️</span>אלרגיות<br><span style="font-size:10px;font-weight:700">חלב</span></button>
+        <button class="a-sm-btn"><span>🔥</span>שחרר קורס 2</button>
+        <button class="a-sm-btn"><span>💳</span>סגור חשבון</button>
+      </div>
+    </div>
+
+    <div class="a-ai">
+      <div class="a-ai-icon">✨</div>
+      <div class="a-ai-text">ישיבה מעל 30 דק' — שקול להציע קפה</div>
+    </div>
+
+    <div class="a-summary" style="margin-top:12px">
+      <div class="a-sum-head">
+        <span class="a-sum-head-l">הזמנה #42</span>
+        <span class="a-sum-head-r">₪368</span>
+      </div>
+      <div class="a-sum-item">
+        <span class="a-sum-name">סטייק × 2</span>
+        <span class="a-sum-price">₪296</span>
+      </div>
+      <div class="a-sum-item">
+        <span class="a-sum-name">סלט קיסר × 1 <span class="a-warn-tag">⚠️ חלב</span></span>
+        <span class="a-sum-price">₪48</span>
+      </div>
+      <div class="a-sum-item">
+        <span class="a-sum-name">קולה × 2</span>
+        <span class="a-sum-price">₪24</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ OPTION B ══ -->
+  <div class="screen b-screen" id="scB">
+    <div class="b-head">
+      <div class="b-head-l">
+        <span class="b-tnum">שולחן 7</span>
+        <span class="b-tsub">👤 3 · ⏱ 34 דק'</span>
+      </div>
+      <button class="b-close">✕</button>
+    </div>
+
+    <div class="b-pills">
+      <span class="b-pill" style="background:#fdf2f0;color:#8b2e22">⚠️ חלב</span>
+      <span class="b-pill" style="background:#f0f7f3;color:#1f5c3a">קורס 1 ✓</span>
+      <span class="b-pill" style="background:#fdf7ed;color:#92400e">🔥 קורס 2 ממתין</span>
+      <span class="b-pill" style="background:#f0f4fa;color:#1e3a5f">₪368</span>
+    </div>
+
+    <div class="b-acts">
+      <div class="b-act primary">
+        <div class="b-act-icon">➕</div>
+        <div class="b-act-label">הוסף<br>מנות</div>
+      </div>
+      <div class="b-act">
+        <div class="b-act-icon">🔥</div>
+        <div class="b-act-label">שחרר<br>קורס 2</div>
+      </div>
+      <div class="b-act">
+        <div class="b-act-icon">⚠️</div>
+        <div class="b-act-label">ערוך<br>אלרגיות</div>
+      </div>
+      <div class="b-act">
+        <div class="b-act-icon">💳</div>
+        <div class="b-act-label">סגור<br>חשבון</div>
+      </div>
+    </div>
+
+    <div class="b-items-title">מנות בהזמנה</div>
+    <div class="b-items-scroll">
+      <div class="b-item-chip">
+        <div class="b-item-name">סטייק × 2</div>
+        <div class="b-item-price">₪296</div>
+      </div>
+      <div class="b-item-chip" style="border-color:#f5c4bc">
+        <div class="b-item-name">סלט קיסר</div>
+        <div class="b-item-price">₪48</div>
+        <span class="b-item-warn">⚠️ חלב</span>
+      </div>
+      <div class="b-item-chip">
+        <div class="b-item-name">קולה × 2</div>
+        <div class="b-item-price">₪24</div>
+      </div>
+    </div>
+
+    <div class="b-ai">
+      <span style="font-size:14px;flex-shrink:0">✨</span>
+      <span>ישיבה מעל 30 דק' — שקול להציע קפה או קינוח</span>
+    </div>
+  </div>
+
+  <!-- ══ OPTION C ══ -->
+  <div class="screen c-screen" id="scC">
+    <div class="c-top">
+      <div class="c-top-row">
+        <div>
+          <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.04em;margin-bottom:2px">שולחן</div>
+          <div class="c-tnum">7</div>
+        </div>
+        <div class="c-info">
+          <div class="c-timer">00:34</div>
+          <div class="c-guests">👤 3 סועדים</div>
+        </div>
+      </div>
+      <div class="c-allergy">
+        <span class="c-atag">⚠️ חלב</span>
+        <span style="font-size:10px;color:#666;align-self:center">+ לחץ לעריכה</span>
+      </div>
+    </div>
+
+    <div class="c-timeline">
+      <div class="c-step">
+        <div class="c-step-dot done">✓</div>
+        <div class="c-step-label done">הוזמן</div>
+      </div>
+      <div class="c-step-line done"></div>
+      <div class="c-step">
+        <div class="c-step-dot done">✓</div>
+        <div class="c-step-label done">קורס 1<br>יצא</div>
+      </div>
+      <div class="c-step-line done"></div>
+      <div class="c-step">
+        <div class="c-step-dot active">🔥</div>
+        <div class="c-step-label active">קורס 2<br>ממתין</div>
+      </div>
+      <div class="c-step-line"></div>
+      <div class="c-step">
+        <div class="c-step-dot pending">3</div>
+        <div class="c-step-label">קינוח</div>
+      </div>
+      <div class="c-step-line"></div>
+      <div class="c-step">
+        <div class="c-step-dot pending">💳</div>
+        <div class="c-step-label">תשלום</div>
+      </div>
+    </div>
+
+    <div class="c-list">
+      <div class="c-list-item">
+        <div class="c-item-l">
+          <div class="c-item-dot" style="background:#5a9e7a"></div>
+          <div>
+            <div class="c-item-name">סטייק אנטריקוט × 2</div>
+            <div class="c-item-meta">קורס 1 · הוגש ✓</div>
+          </div>
+        </div>
+        <div class="c-item-r"><div class="c-item-price">₪296</div></div>
+      </div>
+
+      <div class="c-divider">
+        קורס 2 — ממתין לשחרור
+        <button class="c-fire-inline" onclick="this.textContent='✓ יצא';this.style.background='#b3d9c4';this.style.color='#1f5c3a'">🔥 שחרר</button>
+      </div>
+
+      <div class="c-list-item">
+        <div class="c-item-l">
+          <div class="c-item-dot" style="background:#c89440"></div>
+          <div>
+            <div class="c-item-name">סלט קיסר</div>
+            <div class="c-item-meta">קורס 2 · ממתין</div>
+          </div>
+        </div>
+        <div class="c-item-r">
+          <div class="c-item-price">₪48</div>
+          <span class="c-item-warn">⚠️ חלב</span>
+        </div>
+      </div>
+      <div class="c-list-item">
+        <div class="c-item-l">
+          <div class="c-item-dot" style="background:#c89440"></div>
+          <div>
+            <div class="c-item-name">קולה × 2</div>
+            <div class="c-item-meta">קורס 2 · ממתין</div>
+          </div>
+        </div>
+        <div class="c-item-r"><div class="c-item-price">₪24</div></div>
+      </div>
+    </div>
+
+    <div class="c-bottom">
+      <button class="c-bot-btn prim">➕ הוסף</button>
+      <button class="c-bot-btn sec">💳 חשבון</button>
+      <div class="c-bot-total">
+        <div class="c-bot-total-v">₪368</div>
+        <div class="c-bot-total-l">סה״כ</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showOpt(o) {
+  ['a','b','c'].forEach(x => {
+    document.getElementById('sc'+x.toUpperCase()).classList.toggle('on', x===o);
+  });
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('on', ['a','b','c'][i]===o));
+  document.getElementById('optLabel').textContent = o.toUpperCase();
+}
+</script>
+</body>
+</html>

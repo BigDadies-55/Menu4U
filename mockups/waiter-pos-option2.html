@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390,initial-scale=1">
+<title>אופציה 2 — Split Screen</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0c0c; color: #f0ece6; font-family: Arial, Helvetica, sans-serif;
+         max-width: 390px; margin: 0 auto; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* ── Top bar ── */
+  .topbar {
+    height: 48px; background: #161616; border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; padding: 0 12px; gap: 10px; flex-shrink: 0;
+  }
+  .waiter-avatar {
+    width: 30px; height: 30px; border-radius: 50%; background: #c9890a22;
+    border: 1.5px solid #c9890a55; display: flex; align-items: center;
+    justify-content: center; font-size: 13px; font-weight: 800; color: #c9890a;
+  }
+  .rest-pill {
+    background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #c8bfb0;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .topbar-actions { margin-right: auto; display: flex; gap: 8px; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 8px; background: #1e1e1e;
+    border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center;
+    justify-content: center; font-size: 15px; cursor: pointer; position: relative;
+  }
+  .badge-dot {
+    position: absolute; top: 4px; right: 4px; width: 8px; height: 8px;
+    background: #ef4444; border-radius: 50%; border: 2px solid #161616;
+  }
+
+  /* ── MAIN: upper half = table list, lower half = order panel ── */
+  .upper {
+    flex: 0 0 42vh; overflow-y: auto; border-bottom: 2px solid rgba(255,255,255,0.1);
+    background: #0c0c0c;
+  }
+  .lower { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #161616; }
+
+  /* ── Table rows (compact horizontal list) ── */
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; font-size: 11px; font-weight: 700;
+    color: #7a7268; letter-spacing: 0.04em;
+    position: sticky; top: 0; background: #0c0c0c; z-index: 2;
+  }
+  .trow {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;
+    transition: background 0.1s;
+  }
+  .trow:active { background: rgba(255,255,255,0.04); }
+  .trow.selected { background: #c9890a12; border-right: 3px solid #c9890a; }
+
+  .trow-num {
+    width: 36px; height: 36px; border-radius: 10px; font-size: 16px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .trow-num.occupied { background: #f9731618; color: #f97316; border: 1px solid #f9731633; }
+  .trow-num.bill     { background: #ef444418; color: #ef4444; border: 1px solid #ef444433; }
+  .trow-num.free     { background: #22c55e12; color: #22c55e; border: 1px solid #22c55e22; }
+
+  .trow-info { flex: 1; }
+  .trow-name  { font-size: 13px; font-weight: 700; color: #f0ece6; }
+  .trow-meta  { font-size: 11px; color: #7a7268; margin-top: 1px; }
+  .trow-right { text-align: left; }
+  .trow-timer { font-size: 12px; font-weight: 700; color: #facc15; font-family: monospace; }
+  .trow-total { font-size: 12px; color: #c9890a; font-weight: 700; }
+  .trow-ai    { font-size: 13px; }
+
+  /* ── Lower order panel ── */
+  .order-header {
+    padding: 10px 14px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .order-title  { font-size: 15px; font-weight: 900; color: #f97316; }
+  .order-meta   { font-size: 11px; color: #7a7268; }
+  .order-tabs   { display: flex; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+  .otab {
+    flex: 1; padding: 8px 0; text-align: center; font-size: 12px;
+    font-weight: 700; color: #7a7268; cursor: pointer;
+  }
+  .otab.active { color: #c9890a; border-bottom: 2px solid #c9890a; }
+  .order-body   { flex: 1; overflow-y: auto; padding: 10px 14px; }
+
+  .irow {
+    display: flex; align-items: center; gap: 8px; padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .irow-qty  { width: 24px; height: 24px; background: #c9890a; color: #000;
+               border-radius: 6px; font-size: 12px; font-weight: 900;
+               display: flex; align-items: center; justify-content: center; }
+  .irow-name { flex: 1; font-size: 13px; }
+  .st-tag    { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 700; }
+  .st-done   { background: #22c55e20; color: #22c55e; }
+  .st-prep   { background: #f9731620; color: #f97316; }
+  .st-new    { background: #3b82f620; color: #3b82f6; }
+  .irow-price{ font-size: 12px; color: #c9890a; font-weight: 700; }
+
+  .menu-add-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;
+  }
+  .add-plus {
+    width: 24px; height: 24px; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #c9890a;
+  }
+  .mar-name  { flex: 1; font-size: 13px; color: #c8bfb0; }
+  .mar-price { font-size: 12px; color: #c9890a; }
+
+  .bottom-actions {
+    padding: 8px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; gap: 8px; flex-shrink: 0;
+  }
+  .act-btn {
+    flex: 1; padding: 11px 0; border-radius: 10px; border: none;
+    font-size: 13px; font-weight: 800; cursor: pointer;
+  }
+  .act-fire { background: #22c55e; color: #000; }
+  .act-bill { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="waiter-avatar">א</div>
+  <div class="rest-pill">🏠 רומא ↓</div>
+  <div class="topbar-actions">
+    <div class="icon-btn">🔔<div class="badge-dot"></div></div>
+    <div class="icon-btn" style="font-size:12px;font-weight:700;color:#7a7268">⚙</div>
+  </div>
+</div>
+
+<!-- Upper: table list -->
+<div class="upper">
+  <div class="section-head">
+    <span>שולחנות פעילים</span>
+    <span style="background:#f9731618;color:#f97316;border-radius:999px;padding:1px 8px">7 פעילים</span>
+  </div>
+
+  <div class="trow selected" onclick="selectTable(this)">
+    <div class="trow-num occupied">4</div>
+    <div class="trow-info">
+      <div class="trow-name">שולחן 4 — חלון</div>
+      <div class="trow-meta">3 סועדים · אנטריקוט ×2 + יין ×1</div>
+    </div>
+    <div class="trow-right">
+      <div class="trow-timer">18:42</div>
+      <div class="trow-total">₪ 210</div>
+    </div>
+    <div class="trow-ai">🔵</div>
+  </div>
+
+  <div class="trow" onclick="selectTable(this)">
+    <div class="trow-num bill">7</div>
+    <div class="trow-info">
+      <div class="trow-name">שולחן 7 — מרכז</div>
+      <div class="trow-meta">5 סועדים · ממתין לחשבון</div>
+    </div>
+    <div class="trow-right">
+      <div class="trow-timer" style="color:#ef4444">52:10</div>
+      <div class="trow-total">₪ 412</div>
+    </div>
+    <div class="trow-ai">🔴</div>
+  </div>
+
+  <div class="trow" onclick="selectTable(this)">
+    <div class="trow-num occupied">9</div>
+    <div class="trow-info">
+      <div class="trow-name">שולחן 9 — פנימי</div>
+      <div class="trow-meta">2 סועדים · עיקריות בהכנה</div>
+    </div>
+    <div class="trow-right">
+      <div class="trow-timer">34:07</div>
+      <div class="trow-total">₪ 228</div>
+    </div>
+    <div class="trow-ai">🟣</div>
+  </div>
+
+  <div class="trow" onclick="selectTable(this)">
+    <div class="trow-num occupied">11</div>
+    <div class="trow-info">
+      <div class="trow-name">שולחן 11 — חצר</div>
+      <div class="trow-meta">4 סועדים · רק התיישבו</div>
+    </div>
+    <div class="trow-right">
+      <div class="trow-timer">04:22</div>
+      <div class="trow-total">₪ 0</div>
+    </div>
+    <div class="trow-ai">⬜</div>
+  </div>
+
+  <div class="trow" onclick="selectTable(this)">
+    <div class="trow-num bill">1</div>
+    <div class="trow-info">
+      <div class="trow-name">שולחן 1 — כניסה</div>
+      <div class="trow-meta">4 סועדים · ממתין לחשבון</div>
+    </div>
+    <div class="trow-right">
+      <div class="trow-timer" style="color:#ef4444">61:22</div>
+      <div class="trow-total">₪ 310</div>
+    </div>
+    <div class="trow-ai">🔴</div>
+  </div>
+
+  <div class="section-head" style="margin-top:4px">שולחנות פנויים</div>
+
+  <div class="trow">
+    <div class="trow-num free">2</div>
+    <div class="trow-info"><div class="trow-name">שולחן 2 — קיר</div><div class="trow-meta">4 מקומות · פנוי</div></div>
+    <div class="trow-right" style="font-size:11px;color:#22c55e">פנוי</div>
+  </div>
+  <div class="trow">
+    <div class="trow-num free">6</div>
+    <div class="trow-info"><div class="trow-name">שולחן 6 — בר</div><div class="trow-meta">2 מקומות · פנוי</div></div>
+    <div class="trow-right" style="font-size:11px;color:#22c55e">פנוי</div>
+  </div>
+</div>
+
+<!-- Lower: order panel -->
+<div class="lower">
+  <div class="order-header">
+    <div>
+      <div class="order-title">שולחן 4 🟠</div>
+      <div class="order-meta">3 סועדים · 18 דקות · חלון</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <div style="background:#22c55e18;color:#22c55e;border:1px solid #22c55e33;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700">🔥 שלח</div>
+    </div>
+  </div>
+
+  <div class="order-tabs">
+    <div class="otab active" id="ot-order" onclick="switchOTab('order')">הזמנה</div>
+    <div class="otab" id="ot-add" onclick="switchOTab('add')">+ הוסף</div>
+    <div class="otab" id="ot-bill" onclick="switchOTab('bill')">חשבון</div>
+  </div>
+
+  <div class="order-body" id="ob-order">
+    <div class="irow">
+      <div class="irow-qty">2</div>
+      <div class="irow-name">אנטריקוט 300 גר'<div style="font-size:10px;color:#7a7268">ללא בצל · מדיום</div></div>
+      <div class="st-tag st-prep">מכין</div>
+      <div class="irow-price">₪172</div>
+    </div>
+    <div class="irow">
+      <div class="irow-qty">1</div>
+      <div class="irow-name">יין אדום (כוס)</div>
+      <div class="st-tag st-done">מוכן ✓</div>
+      <div class="irow-price">₪38</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;font-size:13px">
+      <span style="color:#7a7268">סה"כ</span>
+      <span style="font-weight:900;color:#c9890a">₪ 210</span>
+    </div>
+  </div>
+
+  <div class="order-body" id="ob-add" style="display:none">
+    <div style="font-size:11px;font-weight:700;color:#7a7268;margin-bottom:8px">קינוחים</div>
+    <div class="menu-add-row"><div class="add-plus">+</div><div class="mar-name">פנה קוטה</div><div class="mar-price">₪42</div></div>
+    <div class="menu-add-row"><div class="add-plus">+</div><div class="mar-name">טירמיסו</div><div class="mar-price">₪48</div></div>
+    <div style="font-size:11px;font-weight:700;color:#7a7268;margin:10px 0 8px">משקאות</div>
+    <div class="menu-add-row"><div class="add-plus">+</div><div class="mar-name">יין אדום (כוס)</div><div class="mar-price">₪38</div></div>
+    <div class="menu-add-row"><div class="add-plus">+</div><div class="mar-name">מים מינרל</div><div class="mar-price">₪18</div></div>
+    <div class="menu-add-row"><div class="add-plus">+</div><div class="mar-name">קפה שחור</div><div class="mar-price">₪14</div></div>
+  </div>
+
+  <div class="order-body" id="ob-bill" style="display:none">
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:#c8bfb0">2× אנטריקוט</span><span style="font-weight:700">₪172</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:#c8bfb0">1× יין אדום</span><span style="font-weight:700">₪38</span></div>
+    <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:16px;font-weight:900"><span>סה"כ</span><span style="color:#c9890a">₪ 210</span></div>
+  </div>
+
+  <div class="bottom-actions">
+    <button class="act-btn act-fire" onclick="switchOTab('add')">+ הוסף מנה</button>
+    <button class="act-btn act-bill" onclick="switchOTab('bill')">💳 חשבון</button>
+  </div>
+</div>
+
+<div style="position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#3b82f6;color:#fff;font-size:11px;font-weight:900;padding:3px 10px;border-radius:999px;z-index:999;pointer-events:none">
+  אופציה 2 — Split Screen (רשימה + פאנל)
+</div>
+
+<script>
+function selectTable(el) {
+  document.querySelectorAll('.trow').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function switchOTab(t) {
+  ['order','add','bill'].forEach(id => {
+    document.getElementById('ob-'+id).style.display = id===t ? 'block' : 'none';
+    document.getElementById('ot-'+id).classList.toggle('active', id===t);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+-- Add granular loyalty permission fields to LoyaltySettings
+ALTER TABLE "LoyaltySettings" ADD COLUMN IF NOT EXISTS "minRoleAdjustPoints"  TEXT NOT NULL DEFAULT 'SHIFT_MANAGER';
+ALTER TABLE "LoyaltySettings" ADD COLUMN IF NOT EXISTS "minRoleIssueCoupon"   TEXT NOT NULL DEFAULT 'OWNER';
+ALTER TABLE "LoyaltySettings" ADD COLUMN IF NOT EXISTS "minRoleRedeemCoupon"  TEXT NOT NULL DEFAULT 'SHIFT_MANAGER';
+ALTER TABLE "LoyaltySettings" ADD COLUMN IF NOT EXISTS "minRoleUpdateMember"  TEXT NOT NULL DEFAULT 'SHIFT_MANAGER';
+ALTER TABLE "LoyaltySettings" ADD COLUMN IF NOT EXISTS "minRoleSendSms"       TEXT NOT NULL DEFAULT 'OWNER';
+ALTER TABLE "LoyaltySettings" ADD COLUMN IF NOT EXISTS "maxDailyPointsAdjust" INTEGER NOT NULL DEFAULT 0;

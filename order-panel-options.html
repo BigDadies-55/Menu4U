@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אופציות פאנל הזמנה</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Heebo', sans-serif; background: #1a1a1a; padding: 20px 12px 40px; color: #1a1612; }
+
+h1 { text-align: center; font-size: 14px; color: #666; margin-bottom: 20px; font-weight: 600; letter-spacing: .04em; }
+
+.tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+.tab { padding: 9px 20px; border-radius: 99px; border: 1.5px solid #333; font-size: 13px; font-weight: 700; cursor: pointer; background: #222; color: #666; font-family: 'Heebo', sans-serif; transition: all .15s; }
+.tab.on { background: #fff; color: #111; border-color: #fff; }
+
+/* phone wrapper */
+.phone { width: 320px; margin: 0 auto; background: #fff; border-radius: 32px; border: 5px solid #333; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.panel { display: none; flex-direction: column; height: 620px; overflow: hidden; }
+.panel.on { display: flex; }
+
+/* ── shared tokens ── */
+:root {
+  --ink:      #1a1612;
+  --ink2:     #4a4540;
+  --ink3:     #8a8480;
+  --bg:       #f4f1ed;
+  --border:   #e8e2da;
+  --borderL:  #f0ebe4;
+  --white:    #fff;
+
+  --green:    #5a9e7a; --green-bg: #f0f7f3; --green-mid: #b3d9c4; --green-tx: #1f5c3a;
+  --amber:    #c89440; --amber-bg: #fdf7ed; --amber-mid: #e8cc90; --amber-tx: #92400e;
+  --red:      #e07060; --red-bg:   #fdf2f0; --red-mid:   #f5c4bc; --red-tx:   #8b2e22;
+  --blue:     #6090c0; --blue-bg:  #f0f4fa; --blue-mid:  #b8cfe8; --blue-tx:  #1e3a5f;
+  --purple:   #8878c0; --purple-bg:#f5f3fb; --purple-mid:#d0c8f0; --purple-tx:#3d3070;
+}
+
+/* panel header */
+.ph {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+  flex-shrink: 0;
+}
+.ph-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.ph-title { font-size: 14px; font-weight: 900; }
+.ph-total { font-size: 16px; font-weight: 900; }
+.ph-meta { font-size: 11px; color: var(--ink3); }
+
+/* scroll body */
+.pb { flex: 1; overflow-y: auto; }
+.pb::-webkit-scrollbar { display: none; }
+
+/* send button */
+.send-btn {
+  margin: 12px; border-radius: 12px; border: none;
+  background: var(--ink); color: #fff;
+  font-size: 14px; font-weight: 900; font-family: 'Heebo', sans-serif;
+  padding: 14px; cursor: pointer; width: calc(100% - 24px);
+}
+
+
+/* ════════════════════════════
+   OPTION A — Section blocks
+   ════════════════════════════ */
+.sec-head {
+  padding: 6px 14px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  display: flex; align-items: center; gap: 6px;
+  position: sticky; top: 0; z-index: 2;
+}
+.sec-dot { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+
+.item-row {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--borderL);
+  display: flex; align-items: center; gap: 8px;
+}
+.item-row.dim { opacity: .45; }
+.ir-status { width: 20px; height: 20px; border-radius: 99px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+.ir-info { flex: 1; min-width: 0; }
+.ir-name { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ir-sub { font-size: 10px; color: var(--ink3); margin-top: 1px; }
+.ir-price { font-size: 12px; font-weight: 800; color: var(--ink2); flex-shrink: 0; }
+.fire-pill {
+  padding: 4px 10px; border-radius: 99px; border: none;
+  font-size: 10px; font-weight: 800; cursor: pointer; font-family: 'Heebo', sans-serif;
+  flex-shrink: 0;
+}
+.fp-wait { background: var(--amber-bg); color: var(--amber-tx); border: 1px solid var(--amber-mid); }
+.fp-done { background: var(--green-bg); color: var(--green-tx); border: 1px solid var(--green-mid); cursor: default; }
+
+/* new item row */
+.new-row {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--borderL);
+  display: flex; align-items: center; gap: 8px;
+}
+.nr-dot { width: 20px; height: 20px; border-radius: 99px; background: var(--purple-bg); border: 1.5px solid var(--purple-mid); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--purple-tx); font-weight: 800; }
+.nr-info { flex: 1; }
+.nr-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+.nr-note { font-size: 10px; color: var(--ink3); }
+.qty-ctrl { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.qb { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--border); background: var(--bg); font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink); font-family: 'Heebo', sans-serif; }
+.qv { font-size: 13px; font-weight: 800; min-width: 16px; text-align: center; }
+
+/* course label strip */
+.course-strip {
+  padding: 4px 14px;
+  background: var(--purple-bg);
+  border-top: 1px solid var(--purple-mid);
+  border-bottom: 1px solid var(--purple-mid);
+  font-size: 10px; font-weight: 800; color: var(--purple-tx);
+  text-transform: uppercase; letter-spacing: .04em;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cs-fire {
+  padding: 2px 8px; border-radius: 99px; border: none;
+  font-size: 10px; font-weight: 800;
+  background: var(--amber-bg); color: var(--amber-tx); border: 1px solid var(--amber-mid);
+  cursor: pointer; font-family: 'Heebo', sans-serif;
+}
+
+
+/* ════════════════════════════
+   OPTION B — Timeline left rail
+   ════════════════════════════ */
+.tl-item {
+  display: flex; gap: 0; padding: 0 14px;
+  border-bottom: 1px solid var(--borderL);
+}
+.tl-rail { display: flex; flex-direction: column; align-items: center; padding: 10px 10px 10px 0; flex-shrink: 0; }
+.tl-dot { width: 22px; height: 22px; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; z-index: 1; }
+.tl-line { width: 2px; flex: 1; min-height: 6px; margin-top: 2px; }
+.tl-body { flex: 1; padding: 10px 0 10px 8px; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tl-info { flex: 1; min-width: 0; }
+.tl-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-sub { font-size: 10px; color: var(--ink3); margin-top: 1px; }
+.tl-price { font-size: 12px; font-weight: 800; color: var(--ink2); flex-shrink: 0; }
+
+.tl-section-label {
+  padding: 5px 14px 3px 14px;
+  font-size: 9px; font-weight: 800; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: .06em;
+  background: var(--bg);
+}
+
+/* ════════════════════════════
+   OPTION C — Kanban swimlane
+   ════════════════════════════ */
+.kn-lane {
+  border-bottom: 2px solid var(--border);
+  overflow: hidden;
+}
+.kn-lane-head {
+  padding: 7px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+}
+.kn-lane-title { font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.kn-count { font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 99px; }
+.kn-toggle { font-size: 12px; color: var(--ink3); transition: transform .15s; }
+.kn-toggle.open { transform: rotate(180deg); }
+
+.kn-items { background: var(--white); }
+.kn-row {
+  padding: 8px 14px 8px 22px;
+  border-top: 1px solid var(--borderL);
+  display: flex; align-items: center; gap: 8px;
+}
+.kn-name { font-size: 12px; font-weight: 700; flex: 1; color: var(--ink); }
+.kn-meta { font-size: 10px; color: var(--ink3); }
+.kn-price { font-size: 12px; font-weight: 800; color: var(--ink2); }
+
+</style>
+</head>
+<body>
+
+<h1>פאנל הזמנה — 3 אופציות</h1>
+
+<div class="tabs">
+  <button class="tab on" onclick="show('A')">A — מקטעים</button>
+  <button class="tab"    onclick="show('B')">B — ציר זמן</button>
+  <button class="tab"    onclick="show('C')">C — שכבות</button>
+</div>
+
+<div class="phone">
+
+<!-- ══════════ OPTION A ══════════ -->
+<div class="panel on" id="pA">
+  <div class="ph">
+    <div class="ph-top">
+      <span class="ph-title">🛒 שולחן 7</span>
+      <span class="ph-total">₪460</span>
+    </div>
+    <div class="ph-meta">הזמנה #42 · 3 סועדים · ⚠️ חלב</div>
+  </div>
+
+  <div class="pb">
+
+    <!-- SENT ✓ -->
+    <div class="sec-head" style="background:var(--green-bg);color:var(--green-tx)">
+      <div class="sec-dot" style="background:var(--green)"></div>
+      יצא למטבח ✓
+    </div>
+    <div class="item-row dim">
+      <div class="ir-status" style="background:var(--green-bg);color:var(--green-tx)">✓</div>
+      <div class="ir-info"><div class="ir-name">סטייק אנטריקוט</div><div class="ir-sub">קורס 1 · ×2</div></div>
+      <div class="ir-price">₪296</div>
+    </div>
+
+    <!-- PREPARING 🍳 -->
+    <div class="sec-head" style="background:var(--blue-bg);color:var(--blue-tx)">
+      <div class="sec-dot" style="background:var(--blue)"></div>
+      בהכנה 🍳
+    </div>
+    <div class="item-row">
+      <div class="ir-status" style="background:var(--blue-bg);color:var(--blue-tx)">🍳</div>
+      <div class="ir-info"><div class="ir-name">סלט קיסר ⚠️</div><div class="ir-sub">קורס 1 · ×1</div></div>
+      <div class="ir-price">₪48</div>
+    </div>
+    <div class="item-row">
+      <div class="ir-status" style="background:var(--blue-bg);color:var(--blue-tx)">🍳</div>
+      <div class="ir-info"><div class="ir-name">קולה</div><div class="ir-sub">קורס 1 · ×2</div></div>
+      <div class="ir-price">₪24</div>
+    </div>
+
+    <!-- HOLDING 🔥 -->
+    <div class="sec-head" style="background:var(--amber-bg);color:var(--amber-tx)">
+      <div class="sec-dot" style="background:var(--amber)"></div>
+      ממתין לשחרור 🔥
+    </div>
+    <div class="course-strip">
+      קורס 2
+      <button class="cs-fire" onclick="fireAll(this)">🔥 שחרר הכל</button>
+    </div>
+    <div class="item-row">
+      <div class="ir-status" style="background:var(--amber-bg);color:var(--amber-tx)">⏸</div>
+      <div class="ir-info"><div class="ir-name">פרגית צלויה</div><div class="ir-sub">קורס 2 · ×1</div></div>
+      <div class="ir-price">₪92</div>
+      <button class="fire-pill fp-wait" onclick="fireItem(this)">🔥</button>
+    </div>
+    <div class="item-row">
+      <div class="ir-status" style="background:var(--amber-bg);color:var(--amber-tx)">⏸</div>
+      <div class="ir-info"><div class="ir-name">סלמון צלוי</div><div class="ir-sub">קורס 2 · ×2</div></div>
+      <div class="ir-price">₪236</div>
+      <button class="fire-pill fp-wait" onclick="fireItem(this)">🔥</button>
+    </div>
+
+    <!-- NEW ➕ -->
+    <div class="sec-head" style="background:var(--purple-bg);color:var(--purple-tx)">
+      <div class="sec-dot" style="background:var(--purple)"></div>
+      מוסיף עכשיו ➕
+    </div>
+    <div class="course-strip" style="background:var(--purple-bg);border-color:var(--purple-mid);color:var(--purple-tx)">
+      קורס 1
+    </div>
+    <div class="new-row">
+      <div class="nr-dot">+</div>
+      <div class="nr-info"><div class="nr-name">ירקות מוקפצים</div><div class="nr-note">ללא חמאה</div></div>
+      <div class="qty-ctrl">
+        <button class="qb">−</button><span class="qv">1</span><button class="qb">+</button>
+      </div>
+    </div>
+
+  </div>
+  <button class="send-btn">📤 שלח להזמנה #42</button>
+</div>
+
+
+<!-- ══════════ OPTION B ══════════ -->
+<div class="panel" id="pB">
+  <div class="ph">
+    <div class="ph-top">
+      <span class="ph-title">🛒 שולחן 7</span>
+      <span class="ph-total">₪460</span>
+    </div>
+    <div class="ph-meta">הזמנה #42 · 3 סועדים · ⚠️ חלב</div>
+  </div>
+
+  <div class="pb">
+    <div class="tl-section-label">יצא למטבח</div>
+    <div class="tl-item">
+      <div class="tl-rail">
+        <div class="tl-dot" style="background:var(--green-bg);color:var(--green-tx)">✓</div>
+        <div class="tl-line" style="background:var(--green-mid)"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-info"><div class="tl-name" style="opacity:.5">סטייק × 2</div><div class="tl-sub">קורס 1</div></div>
+        <div class="tl-price" style="opacity:.5">₪296</div>
+      </div>
+    </div>
+
+    <div class="tl-section-label">בהכנה</div>
+    <div class="tl-item">
+      <div class="tl-rail">
+        <div class="tl-dot" style="background:var(--blue-bg);color:var(--blue-tx)">🍳</div>
+        <div class="tl-line" style="background:var(--blue-mid)"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-info"><div class="tl-name">סלט קיסר ⚠️</div><div class="tl-sub">קורס 1</div></div>
+        <div class="tl-price">₪48</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-rail">
+        <div class="tl-dot" style="background:var(--blue-bg);color:var(--blue-tx)">🍳</div>
+        <div class="tl-line" style="background:var(--blue-mid)"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-info"><div class="tl-name">קולה × 2</div><div class="tl-sub">קורס 1</div></div>
+        <div class="tl-price">₪24</div>
+      </div>
+    </div>
+
+    <div class="tl-section-label">ממתין לשחרור</div>
+    <div class="tl-item">
+      <div class="tl-rail">
+        <div class="tl-dot" style="background:var(--amber-bg);color:var(--amber-tx)">⏸</div>
+        <div class="tl-line" style="background:var(--amber-mid)"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-info"><div class="tl-name">פרגית צלויה</div><div class="tl-sub">קורס 2</div></div>
+        <button class="fire-pill fp-wait" onclick="fireItem(this)" style="font-size:11px;padding:5px 12px">🔥 שחרר</button>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-rail">
+        <div class="tl-dot" style="background:var(--amber-bg);color:var(--amber-tx)">⏸</div>
+        <div class="tl-line" style="background:var(--amber-mid)"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-info"><div class="tl-name">סלמון × 2</div><div class="tl-sub">קורס 2</div></div>
+        <button class="fire-pill fp-wait" onclick="fireItem(this)" style="font-size:11px;padding:5px 12px">🔥 שחרר</button>
+      </div>
+    </div>
+
+    <div class="tl-section-label" style="color:var(--purple-tx);background:var(--purple-bg)">מוסיף עכשיו</div>
+    <div class="tl-item" style="background:var(--purple-bg)">
+      <div class="tl-rail">
+        <div class="tl-dot" style="background:var(--purple-mid);color:var(--purple-tx)">+</div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-info"><div class="tl-name" style="color:var(--purple-tx)">ירקות מוקפצים</div></div>
+        <div class="qty-ctrl"><button class="qb">−</button><span class="qv">1</span><button class="qb">+</button></div>
+      </div>
+    </div>
+  </div>
+  <button class="send-btn">📤 שלח להזמנה #42</button>
+</div>
+
+
+<!-- ══════════ OPTION C ══════════ -->
+<div class="panel" id="pC">
+  <div class="ph">
+    <div class="ph-top">
+      <span class="ph-title">🛒 שולחן 7</span>
+      <span class="ph-total">₪460</span>
+    </div>
+    <div class="ph-meta">הזמנה #42 · 3 סועדים · ⚠️ חלב</div>
+  </div>
+
+  <div class="pb">
+
+    <!-- Lane: sent -->
+    <div class="kn-lane">
+      <div class="kn-lane-head" style="background:var(--green-bg)" onclick="tog('c1','t1')">
+        <div class="kn-lane-title" style="color:var(--green-tx)">
+          <span>✅ יצא למטבח</span>
+          <span class="kn-count" style="background:var(--green-mid);color:var(--green-tx)">1</span>
+        </div>
+        <span class="kn-toggle" id="t1">▾</span>
+      </div>
+      <div class="kn-items" id="c1" style="display:none">
+        <div class="kn-row">
+          <div class="kn-name" style="opacity:.5">סטייק × 2</div>
+          <div class="kn-meta">קורס 1</div>
+          <div class="kn-price" style="opacity:.5">₪296</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane: preparing -->
+    <div class="kn-lane">
+      <div class="kn-lane-head" style="background:var(--blue-bg)" onclick="tog('c2','t2')">
+        <div class="kn-lane-title" style="color:var(--blue-tx)">
+          <span>🍳 בהכנה</span>
+          <span class="kn-count" style="background:var(--blue-mid);color:var(--blue-tx)">2</span>
+        </div>
+        <span class="kn-toggle open" id="t2">▾</span>
+      </div>
+      <div class="kn-items" id="c2">
+        <div class="kn-row">
+          <div class="kn-name">סלט קיסר ⚠️</div>
+          <div class="kn-meta">קורס 1</div>
+          <div class="kn-price">₪48</div>
+        </div>
+        <div class="kn-row">
+          <div class="kn-name">קולה × 2</div>
+          <div class="kn-meta">קורס 1</div>
+          <div class="kn-price">₪24</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane: holding -->
+    <div class="kn-lane">
+      <div class="kn-lane-head" style="background:var(--amber-bg)" onclick="tog('c3','t3')">
+        <div class="kn-lane-title" style="color:var(--amber-tx)">
+          <span>🔥 ממתין לשחרור</span>
+          <span class="kn-count" style="background:var(--amber-mid);color:var(--amber-tx)">2</span>
+        </div>
+        <span class="kn-toggle open" id="t3">▾</span>
+      </div>
+      <div class="kn-items" id="c3">
+        <div class="kn-row" style="justify-content:space-between">
+          <div class="kn-name">פרגית צלויה</div>
+          <button class="fire-pill fp-wait" onclick="fireItem(this)">🔥 שחרר</button>
+        </div>
+        <div class="kn-row" style="justify-content:space-between">
+          <div class="kn-name">סלמון × 2</div>
+          <button class="fire-pill fp-wait" onclick="fireItem(this)">🔥 שחרר</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane: new -->
+    <div class="kn-lane" style="border-bottom:none">
+      <div class="kn-lane-head" style="background:var(--purple-bg)" onclick="tog('c4','t4')">
+        <div class="kn-lane-title" style="color:var(--purple-tx)">
+          <span>➕ מוסיף עכשיו</span>
+          <span class="kn-count" style="background:var(--purple-mid);color:var(--purple-tx)">1</span>
+        </div>
+        <span class="kn-toggle open" id="t4">▾</span>
+      </div>
+      <div class="kn-items" id="c4" style="background:var(--purple-bg)">
+        <div class="kn-row" style="background:var(--purple-bg)">
+          <div class="kn-name" style="color:var(--purple-tx)">ירקות מוקפצים</div>
+          <div class="qty-ctrl"><button class="qb">−</button><span class="qv">1</span><button class="qb">+</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <button class="send-btn">📤 שלח להזמנה #42</button>
+</div>
+
+</div><!-- /phone -->
+
+<script>
+function show(x) {
+  ['A','B','C'].forEach(o => document.getElementById('p'+o).classList.toggle('on', o===x));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('on', ['A','B','C'][i]===x));
+}
+function fireItem(btn) {
+  btn.textContent = '✓ יצא'; btn.className = 'fire-pill fp-done';
+}
+function fireAll(btn) {
+  btn.closest('.pb').querySelectorAll('.fire-pill.fp-wait').forEach(b => { b.textContent='✓'; b.className='fire-pill fp-done'; });
+  btn.textContent='✓ שוחרר'; btn.className='fire-pill fp-done';
+}
+function tog(id, tid) {
+  const el = document.getElementById(id);
+  const t  = document.getElementById(tid);
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  t.classList.toggle('open', !open);
+}
+</script>
+</body>
+</html>

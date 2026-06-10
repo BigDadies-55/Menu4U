@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Menu4U — Right Sidebar Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@300;400;500;600;700;800&family=Frank+Ruhl+Libre:wght@700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: #f5f0e8; color: #1a1208; overflow-x: hidden;
+    }
+
+    /* ══════════ FONTS ══════════ */
+    .strip, .drawer, .favs-panel { font-family: "Heebo", "Rubik", sans-serif; }
+    .group-header, .group-label, .group-dot { font-family: "Rubik", "Heebo", sans-serif; }
+    .sub-item, .nav-standalone, .fav-item { font-family: "Heebo", sans-serif; }
+
+    /* ══════════ STRIP ══════════ */
+    .strip {
+      position: fixed; top: 0; right: 0;
+      width: 52px; height: 100vh;
+      background: #ffffff;
+      border-left: 1px solid rgba(180,140,60,0.18);
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 200;
+    }
+    .strip-burger {
+      width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; background: transparent; flex-shrink: 0;
+      border-bottom: 1px solid rgba(180,140,60,0.15); transition: background 0.15s;
+    }
+    .strip-burger:hover { background: rgba(201,137,10,0.07); }
+    .strip-burger svg { width: 20px; height: 20px; }
+    .strip-spacer { flex: 1; }
+    .strip-icons {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 2px; padding-bottom: 16px;
+    }
+    .strip-icon {
+      width: 40px; height: 40px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #5a4020;
+      transition: background 0.15s, color 0.15s;
+      border: none; background: transparent;
+    }
+    .strip-icon:hover { background: rgba(201,137,10,0.1); color: #c9890a; }
+    .strip-icon.active { color: #c9890a; background: rgba(201,137,10,0.08); }
+
+    /* ══════════ OVERLAY ══════════ */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0);
+      z-index: 290; pointer-events: none; transition: background 0.35s;
+    }
+    .overlay.open { background: rgba(0,0,0,0.25); pointer-events: auto; }
+
+    /* ══════════ DRAWER ══════════ */
+    .drawer {
+      position: fixed; top: 0; right: 52px;
+      width: var(--drawer-w, 320px); height: 100vh;
+      background: #ffffff;
+      border-left: 1px solid rgba(180,140,60,0.15);
+      z-index: 300; display: flex; flex-direction: column;
+      transform: translateX(calc(var(--drawer-w, 320px) + 60px));
+      transition: transform 0.36s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    .drawer.open { transform: translateX(0); }
+
+    /* resize handle on left edge of drawer */
+    .drawer-resize-handle {
+      position: absolute; top: 0; left: 0;
+      width: 5px; height: 100%;
+      cursor: ew-resize; z-index: 10;
+      background: transparent; transition: background 0.15s;
+    }
+    .drawer-resize-handle:hover,
+    .drawer-resize-handle.dragging { background: rgba(201,137,10,0.22); }
+
+    .drawer-close {
+      position: absolute; top: 10px; left: 10px;
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1px solid rgba(180,140,60,0.25); background: transparent;
+      color: #5a4020; font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .drawer-close:hover { background: #f0ece3; }
+
+    .drawer-content { padding: 16px 24px 20px; display: flex; flex-direction: column; }
+
+    /* Dashboard */
+    .nav-standalone {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 0; font-size: 13px; font-weight: 600; color: #c9890a;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(180,140,60,0.12);
+      margin-bottom: 10px;
+    }
+
+    /* ══ GROUP HEADER ══ */
+    .group-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 0 9px;
+      font-size: 14px; font-weight: 800;
+      cursor: pointer; background: none; border: none;
+      width: 100%; text-align: right;
+      font-family: "Rubik", "Heebo", sans-serif;
+      user-select: none; position: relative;
+    }
+    .group-header::after {
+      content: "";
+      position: absolute; bottom: 0; right: 0; left: 0;
+      height: 1px; background: rgba(180,140,60,0.1);
+    }
+
+    /* bullet dot */
+    .group-dot {
+      font-size: 16px; line-height: 1; flex-shrink: 0;
+      background: linear-gradient(135deg, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* label gradient */
+    .group-label {
+      flex-shrink: 0;
+      background: linear-gradient(110deg, #7a4e04 0%, #c9890a 50%, #e8b84b 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: opacity 0.15s;
+    }
+    .group-header:hover .group-label { opacity: 0.75; }
+
+    /* decorative line */
+    .group-line {
+      flex: 1; height: 1px; margin: 0 2px;
+      background: linear-gradient(to left, transparent 0%, rgba(201,137,10,0.35) 100%);
+    }
+
+    /* chevron */
+    .group-chevron {
+      font-size: 9px; color: #c9890a; opacity: 0.55;
+      transition: transform 0.22s, opacity 0.15s; flex-shrink: 0;
+    }
+    .group-header.open .group-chevron { transform: rotate(180deg); opacity: 1; }
+
+    /* Sub items */
+    .group-items { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .group-items.open { max-height: 600px; }
+    .group-padding { padding: 4px 0 3px; }
+
+    .sub-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 8px; font-size: 13px; color: #5a4020;
+      text-decoration: none; border-radius: 7px;
+      transition: all 0.12s; cursor: pointer; margin: 1px 0;
+    }
+    .sub-item:hover { background: rgba(201,137,10,0.07); color: #1a1208; }
+    .sub-item.active { background: rgba(201,137,10,0.1); color: #c9890a; font-weight: 600; }
+    .sub-icon {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: rgba(201,137,10,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+    }
+    .sub-item.active .sub-icon { background: rgba(201,137,10,0.18); }
+
+    .fav-star-btn {
+      margin-right: auto; opacity: 0; font-size: 12px; color: #c0a060;
+      cursor: pointer; padding: 0 3px; transition: opacity 0.15s, color 0.15s;
+      background: none; border: none; flex-shrink: 0; line-height: 1;
+    }
+    .sub-item:hover .fav-star-btn { opacity: 1; }
+    .fav-star-btn.starred { opacity: 1 !important; color: #c9890a; }
+    .fav-star-btn:hover { color: #c9890a; }
+
+    /* ══════════ FAVORITES PANEL ══════════ */
+    .favs-panel {
+      position: fixed;
+      right: 52px;
+      width: 240px;
+      max-height: 400px;
+      background: #ffffff;
+      border: 1px solid rgba(180,140,60,0.22);
+      border-radius: 12px 0 0 12px;
+      z-index: 250; /* below drawer (300) so drawer covers it */
+      display: flex; flex-direction: column;
+      transform: translateX(260px);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: -6px 4px 24px rgba(0,0,0,0.1);
+      overflow: hidden;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .favs-panel.open { transform: translateX(0); pointer-events: auto; visibility: visible; }
+
+    .favs-panel-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 14px 10px;
+      border-bottom: 1px solid rgba(180,140,60,0.12);
+      flex-shrink: 0;
+    }
+    .favs-panel-title {
+      font-size: 12px; font-weight: 800; letter-spacing: 0.4px;
+      background: linear-gradient(110deg, #7a4e04, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; flex: 1;
+    }
+    .favs-panel-close {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1px solid rgba(180,140,60,0.2); background: transparent;
+      color: #9a8060; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .favs-panel-close:hover { background: #f0ece3; color: #5a4020; }
+
+    .favs-panel-list { overflow-y: auto; padding: 8px; }
+    .favs-panel-empty {
+      font-size: 11px; color: #c0a878; padding: 10px 8px;
+      font-style: italic; text-align: center;
+    }
+    .fav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 8px; border-radius: 7px;
+      font-size: 13px; color: #5a4020; text-decoration: none;
+      transition: all 0.12s; cursor: pointer;
+    }
+    .fav-item:hover { background: rgba(201,137,10,0.07); color: #1a1208; }
+    .fav-icon-badge {
+      width: 24px; height: 24px; border-radius: 5px;
+      background: rgba(201,137,10,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+    }
+    .fav-remove-btn {
+      margin-right: auto; opacity: 0; font-size: 11px;
+      color: #9a8060; cursor: pointer;
+      background: none; border: none; transition: opacity 0.15s, color 0.15s;
+      padding: 0 2px;
+    }
+    .fav-item:hover .fav-remove-btn { opacity: 1; }
+    .fav-remove-btn:hover { color: #e05252; }
+
+    /* ══════════ SEARCH PANEL ══════════ */
+    .search-panel {
+      position: fixed;
+      right: 52px;
+      width: 260px;
+      background: #ffffff;
+      border: 1px solid rgba(180,140,60,0.22);
+      border-radius: 12px 0 0 12px;
+      z-index: 250;
+      display: flex; flex-direction: column;
+      transform: translateX(280px);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: -6px 4px 24px rgba(0,0,0,0.1);
+      overflow: hidden;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .search-panel.open { transform: translateX(0); pointer-events: auto; visibility: visible; }
+
+    .search-panel-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 14px 10px;
+      border-bottom: 1px solid rgba(180,140,60,0.12);
+      flex-shrink: 0;
+    }
+    .search-panel-title {
+      font-size: 12px; font-weight: 800; letter-spacing: 0.4px;
+      background: linear-gradient(110deg, #7a4e04, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; flex: 1;
+    }
+    .search-panel-close {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1px solid rgba(180,140,60,0.2); background: transparent;
+      color: #9a8060; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .search-panel-close:hover { background: #f0ece3; color: #5a4020; }
+
+    .search-input-wrap {
+      padding: 10px 12px 8px; border-bottom: 1px solid rgba(180,140,60,0.1);
+      flex-shrink: 0;
+    }
+    .search-input {
+      width: 100%; padding: 7px 10px;
+      border: 1px solid rgba(180,140,60,0.25); border-radius: 8px;
+      font-size: 13px; font-family: "Heebo", sans-serif;
+      color: #1a1208; background: #faf8f4;
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+      text-align: right;
+    }
+    .search-input:focus {
+      border-color: #c9890a;
+      box-shadow: 0 0 0 3px rgba(201,137,10,0.1);
+    }
+    .search-input::placeholder { color: #c0a878; }
+
+    .search-results { overflow-y: auto; padding: 6px; max-height: 320px; }
+    .search-empty {
+      font-size: 11px; color: #c0a878; padding: 10px 8px;
+      font-style: italic; text-align: center;
+    }
+    .search-result-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 8px; border-radius: 7px;
+      font-size: 13px; color: #5a4020; text-decoration: none;
+      transition: all 0.12s; cursor: pointer;
+    }
+    .search-result-item:hover { background: rgba(201,137,10,0.07); color: #1a1208; }
+    .search-result-icon {
+      width: 24px; height: 24px; border-radius: 5px;
+      background: rgba(201,137,10,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+    }
+    .search-result-group {
+      font-size: 10px; color: #c0a878; margin-right: auto; flex-shrink: 0;
+    }
+
+    /* ══════════ USER ══════════ */
+    .drawer-user {
+      margin-top: auto; padding: 14px 18px;
+      border-top: 1px solid rgba(180,140,60,0.15);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg,#c9890a,#7a5a0e);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .user-info { flex: 1; }
+    .user-name { font-size: 13px; font-weight: 700; color: #1a1208; }
+    .user-role { font-size: 10px; color: #9a8060; }
+    .user-actions { display: flex; gap: 4px; }
+    .user-action-btn {
+      padding: 3px 8px; border-radius: 20px;
+      border: 1px solid rgba(180,140,60,0.25); background: transparent;
+      color: #5a4020; font-size: 11px; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .user-action-btn:hover { background: rgba(201,137,10,0.1); border-color: #c9890a; color: #c9890a; }
+
+    /* ══════════ PAGE ══════════ */
+    .page { margin-right: 52px; min-height: 100vh; }
+    .page-hero {
+      background: linear-gradient(135deg,#f0ece3,#e8dcc8);
+      padding: 18px 32px 16px;
+      border-bottom: 1px solid rgba(180,140,60,0.15);
+    }
+    .page-hero-title {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 4px;
+    }
+    .page-hero-bar {
+      flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 4px;
+      justify-content: center; margin-left: 6px;
+    }
+    .page-hero-bar span {
+      display: block; height: 2px; border-radius: 2px;
+    }
+    .page-hero-bar span:nth-child(1) {
+      width: 28px;
+      background: linear-gradient(to left, transparent, #e8b84b);
+    }
+    .page-hero-bar span:nth-child(2) {
+      width: 18px;
+      background: linear-gradient(to left, transparent, #c9890a);
+    }
+    .page-hero-dot {
+      font-size: 20px; line-height: 1; flex-shrink: 0;
+      background: linear-gradient(135deg, #c9890a, #e8b84b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-hero-text {
+      font-family: 'Frank Ruhl Libre', serif;
+      font-size: 30px; font-weight: 900; letter-spacing: 0.3px;
+      background: linear-gradient(110deg, #7a4e04 0%, #c9890a 45%, #e8b84b 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; flex-shrink: 0;
+    }
+    .page-hero-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(to right, rgba(201,137,10,0.4) 0%, transparent 100%);
+    }
+    .page-hero p { color: #9a8060; font-size: 12px; }
+    .page-body { padding: 24px 32px; display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    .card { background: #fff; border: 1px solid rgba(180,140,60,0.18); border-radius: 14px; padding: 20px; }
+    .card h3 { font-size: 12px; color: #9a8060; margin-bottom: 5px; }
+    .card .val { font-size: 28px; font-weight: 900; color: #c9890a; }
+
+    .hint {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #1a1208; color: #fff; padding: 8px 18px;
+      border-radius: 50px; font-size: 12px; z-index: 500;
+      pointer-events: none; white-space: nowrap; transition: opacity 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- STRIP -->
+  <aside class="strip">
+    <button class="strip-burger" id="burgerBtn" onclick="toggleDrawer()">
+      <svg id="burgerIcon" viewBox="0 0 24 24" fill="none" stroke="#5a4020" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="strip-spacer"></div>
+    <div class="strip-icons">
+      <button class="strip-icon" id="favStripBtn" title="מועדפים" onclick="toggleFavsPanel()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </button>
+      <button class="strip-icon" id="searchStripBtn" title="חיפוש" onclick="toggleSearchPanel()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
+      <button class="strip-icon" title="הגדרות">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <button class="strip-icon" title="משתמש">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- OVERLAY (click outside) -->
+  <div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+  <!-- SEARCH PANEL (floating, anchored to search icon) -->
+  <div class="search-panel" id="searchPanel">
+    <div class="search-panel-header">
+      <span class="search-panel-title">🔍 חיפוש</span>
+      <button class="search-panel-close" onclick="closeSearchPanel()">✕</button>
+    </div>
+    <div class="search-input-wrap">
+      <input class="search-input" id="searchInput" type="text" placeholder="חפש פריט בתפריט..." oninput="handleSearch(this.value)" />
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-empty" id="searchEmpty">התחל להקליד לחיפוש</div>
+    </div>
+  </div>
+
+  <!-- FAVORITES PANEL (floating, anchored to star icon) -->
+  <div class="favs-panel" id="favsPanel">
+    <div class="favs-panel-header">
+      <span class="favs-panel-title">★ מועדפים</span>
+      <button class="favs-panel-close" onclick="closeFavsPanel()">✕</button>
+    </div>
+    <div class="favs-panel-list" id="favsPanelList">
+      <div class="favs-panel-empty" id="favsPanelEmpty">לחץ ★ ליד פריט בתפריט</div>
+    </div>
+  </div>
+
+  <!-- DRAWER -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-resize-handle" id="resizeHandle"></div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    <div class="drawer-content">
+
+      <!-- Logo at top of drawer -->
+      <div style="padding: 0 0 18px; border-bottom: 1px solid rgba(180,140,60,0.15); margin-bottom: 14px;">
+        <div style="font-family:'Playfair Display',serif; font-size:32px; font-weight:900; letter-spacing:1px; background:linear-gradient(110deg,#7a4e04,#c9890a,#e8b84b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1.1;">Menu4U</div>
+        <div style="font-size:10px; color:#9a8060; margin-top:4px; font-family:'Heebo',sans-serif; letter-spacing:2px; text-transform:uppercase;">Restaurant OS</div>
+      </div>
+
+      <a class="nav-standalone" href="#">▪ דשבורד</a>
+
+      <!-- ניהול -->
+      <button class="group-header" onclick="toggleGroup(this)">
+        <span class="group-dot">•</span>
+        <span class="group-label">ניהול</span>
+        <span class="group-line"></span>
+        <span class="group-chevron">▾</span>
+      </button>
+      <div class="group-items">
+        <div class="group-padding">
+          <a class="sub-item" href="#"><span class="sub-icon">🍴</span> מסעדות<button class="fav-star-btn" onclick="toggleFav(event,'מסעדות','🍴')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🏢</span> רשתות<button class="fav-star-btn" onclick="toggleFav(event,'רשתות','🏢')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📋</span> תפריטים<button class="fav-star-btn" onclick="toggleFav(event,'תפריטים','📋')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">👥</span> משתמשים<button class="fav-star-btn" onclick="toggleFav(event,'משתמשים','👥')">★</button></a>
+          <a class="sub-item active" href="#"><span class="sub-icon">⚙️</span> הגדרות<button class="fav-star-btn" onclick="toggleFav(event,'הגדרות','⚙️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📊</span> לוגים<button class="fav-star-btn" onclick="toggleFav(event,'לוגים','📊')">★</button></a>
+        </div>
+      </div>
+
+      <!-- שירות -->
+      <button class="group-header" onclick="toggleGroup(this)">
+        <span class="group-dot">•</span>
+        <span class="group-label">שירות</span>
+        <span class="group-line"></span>
+        <span class="group-chevron">▾</span>
+      </button>
+      <div class="group-items">
+        <div class="group-padding">
+          <a class="sub-item" href="#"><span class="sub-icon">📦</span> הזמנות<button class="fav-star-btn" onclick="toggleFav(event,'הזמנות','📦')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">💳</span> קאשייר<button class="fav-star-btn" onclick="toggleFav(event,'קאשייר','💳')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🗺️</span> רצפת שירות<button class="fav-star-btn" onclick="toggleFav(event,'רצפת שירות','🗺️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🎛️</span> מנהל משמרת<button class="fav-star-btn" onclick="toggleFav(event,'מנהל משמרת','🎛️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🍽️</span> הזמנת מלצר<button class="fav-star-btn" onclick="toggleFav(event,'הזמנת מלצר','🍽️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📐</span> פריסת שולחנות<button class="fav-star-btn" onclick="toggleFav(event,'פריסת שולחנות','📐')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📈</span> סטטיסטיקות<button class="fav-star-btn" onclick="toggleFav(event,'סטטיסטיקות','📈')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">⭐</span> מועדון לקוחות<button class="fav-star-btn" onclick="toggleFav(event,'מועדון לקוחות','⭐')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📱</span> קשרי לקוחות<button class="fav-star-btn" onclick="toggleFav(event,'קשרי לקוחות','📱')">★</button></a>
+        </div>
+      </div>
+
+      <!-- מטבח -->
+      <button class="group-header" onclick="toggleGroup(this)">
+        <span class="group-dot">•</span>
+        <span class="group-label">מטבח — KDS</span>
+        <span class="group-line"></span>
+        <span class="group-chevron">▾</span>
+      </button>
+      <div class="group-items">
+        <div class="group-padding">
+          <a class="sub-item" href="#"><span class="sub-icon">🖥️</span> תצוגת שולחן<button class="fav-star-btn" onclick="toggleFav(event,'תצוגת שולחן','🖥️')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🌑</span> Station Dark<button class="fav-star-btn" onclick="toggleFav(event,'Station Dark','🌑')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">📋</span> Kanban<button class="fav-star-btn" onclick="toggleFav(event,'Kanban','📋')">★</button></a>
+          <a class="sub-item" href="#"><span class="sub-icon">🎫</span> Ticket Board<button class="fav-star-btn" onclick="toggleFav(event,'Ticket Board','🎫')">★</button></a>
+        </div>
+      </div>
+
+    </div>
+    <div class="drawer-user">
+      <div class="user-avatar">A</div>
+      <div class="user-info">
+        <div class="user-name">Admin</div>
+        <div class="user-role">SUPER ADMIN</div>
+      </div>
+      <div class="user-actions">
+        <button class="user-action-btn">🔑 סיסמה</button>
+        <button class="user-action-btn">יציאה</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE -->
+  <div class="page">
+    <div class="page-hero">
+      <div class="page-hero-title">
+        <div class="page-hero-bar"><span></span><span></span></div>
+        <span class="page-hero-text">דשבורד</span>
+      </div>
+      <p>ברוך הבא — menu4u restaurant OS</p>
+    </div>
+    <div class="page-body">
+      <div class="card"><h3>הזמנות פתוחות</h3><div class="val">12</div></div>
+      <div class="card"><h3>שולחנות תפוסים</h3><div class="val">7/10</div></div>
+      <div class="card"><h3>מחזור היום</h3><div class="val">₪4,820</div></div>
+      <div class="card"><h3>לקוחות היום</h3><div class="val">43</div></div>
+      <div class="card"><h3>ממוצע שולחן</h3><div class="val">₪112</div></div>
+      <div class="card"><h3>SLA ממוצע</h3><div class="val">18 דק'</div></div>
+    </div>
+  </div>
+
+  <div class="hint" id="hint">לחץ ☰ לתפריט • ★ למועדפים</div>
+
+  <script>
+    let drawerOpen = false;
+    let favsPanelOpen = false;
+    let favs = {};
+
+    /* ── Resize drawer ── */
+    (function() {
+      const handle = document.getElementById('resizeHandle');
+      const drawer = document.getElementById('drawer');
+      const STRIP_W = 52;
+      let resizing = false;
+
+      handle.addEventListener('mousedown', function(e) {
+        resizing = true;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!resizing) return;
+        const newW = Math.min(Math.max((window.innerWidth - STRIP_W) - e.clientX, 220), 520);
+        document.documentElement.style.setProperty('--drawer-w', newW + 'px');
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (!resizing) return;
+        resizing = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      });
+    })();
+
+    /* ── position favs panel at the star icon ── */
+    function positionFavsPanel() {
+      const btn = document.getElementById('favStripBtn');
+      const panel = document.getElementById('favsPanel');
+      const rect = btn.getBoundingClientRect();
+      panel.style.top = rect.top + 'px';
+    }
+
+    function toggleDrawer() { drawerOpen ? closeDrawer() : openDrawer(); }
+
+    function openDrawer() {
+      closeFavsPanel();
+      drawerOpen = true;
+      document.getElementById('drawer').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+      document.getElementById('burgerIcon').innerHTML = `
+        <line x1="4" y1="4" x2="20" y2="20"/>
+        <line x1="20" y1="4" x2="4" y2="20"/>`;
+      document.getElementById('hint').style.opacity = '0';
+    }
+
+    function closeDrawer() {
+      drawerOpen = false;
+      document.getElementById('drawer').classList.remove('open');
+      if (!favsPanelOpen) document.getElementById('overlay').classList.remove('open');
+      document.getElementById('burgerIcon').innerHTML = `
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>`;
+      if (!favsPanelOpen) document.getElementById('hint').style.opacity = '1';
+    }
+
+    function toggleFavsPanel() { favsPanelOpen ? closeFavsPanel() : openFavsPanel(); }
+
+    function openFavsPanel() {
+      closeDrawer();
+      positionFavsPanel();
+      favsPanelOpen = true;
+      document.getElementById('favsPanel').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+      document.getElementById('favStripBtn').classList.add('active');
+      document.getElementById('hint').style.opacity = '0';
+    }
+
+    function closeFavsPanel() {
+      favsPanelOpen = false;
+      document.getElementById('favsPanel').classList.remove('open');
+      if (!drawerOpen) document.getElementById('overlay').classList.remove('open');
+      document.getElementById('favStripBtn').classList.remove('active');
+      if (!drawerOpen) document.getElementById('hint').style.opacity = '1';
+    }
+
+    function closeAll() { closeDrawer(); closeFavsPanel(); closeSearchPanel(); }
+
+    /* ── Search panel ── */
+    const ALL_ITEMS = [
+      { label:'מסעדות', icon:'🍴', group:'ניהול' },
+      { label:'רשתות', icon:'🏢', group:'ניהול' },
+      { label:'תפריטים', icon:'📋', group:'ניהול' },
+      { label:'משתמשים', icon:'👥', group:'ניהול' },
+      { label:'הגדרות', icon:'⚙️', group:'ניהול' },
+      { label:'לוגים', icon:'📊', group:'ניהול' },
+      { label:'הזמנות', icon:'📦', group:'שירות' },
+      { label:'קאשייר', icon:'💳', group:'שירות' },
+      { label:'רצפת שירות', icon:'🗺️', group:'שירות' },
+      { label:'מנהל משמרת', icon:'🎛️', group:'שירות' },
+      { label:'הזמנת מלצר', icon:'🍽️', group:'שירות' },
+      { label:'פריסת שולחנות', icon:'📐', group:'שירות' },
+      { label:'סטטיסטיקות', icon:'📈', group:'שירות' },
+      { label:'מועדון לקוחות', icon:'⭐', group:'שירות' },
+      { label:'קשרי לקוחות', icon:'📱', group:'שירות' },
+      { label:'תצוגת שולחן', icon:'🖥️', group:'מטבח' },
+      { label:'Station Dark', icon:'🌑', group:'מטבח' },
+      { label:'Kanban', icon:'📋', group:'מטבח' },
+      { label:'Ticket Board', icon:'🎫', group:'מטבח' },
+    ];
+
+    let searchPanelOpen = false;
+
+    function positionSearchPanel() {
+      const btn = document.getElementById('searchStripBtn');
+      const panel = document.getElementById('searchPanel');
+      const rect = btn.getBoundingClientRect();
+      panel.style.top = rect.top + 'px';
+    }
+
+    function toggleSearchPanel() { searchPanelOpen ? closeSearchPanel() : openSearchPanel(); }
+
+    function openSearchPanel() {
+      closeDrawer(); closeFavsPanel();
+      positionSearchPanel();
+      searchPanelOpen = true;
+      document.getElementById('searchPanel').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+      document.getElementById('searchStripBtn').classList.add('active');
+      document.getElementById('hint').style.opacity = '0';
+      setTimeout(() => document.getElementById('searchInput').focus(), 320);
+    }
+
+    function closeSearchPanel() {
+      searchPanelOpen = false;
+      document.getElementById('searchPanel').classList.remove('open');
+      document.getElementById('searchStripBtn').classList.remove('active');
+      document.getElementById('searchInput').value = '';
+      renderSearchResults('');
+      if (!drawerOpen && !favsPanelOpen) {
+        document.getElementById('overlay').classList.remove('open');
+        document.getElementById('hint').style.opacity = '1';
+      }
+    }
+
+    function handleSearch(q) {
+      renderSearchResults(q);
+      positionSearchPanel();
+    }
+
+    function renderSearchResults(q) {
+      const results = document.getElementById('searchResults');
+      const empty = document.getElementById('searchEmpty');
+      results.querySelectorAll('.search-result-item').forEach(el => el.remove());
+      if (!q.trim()) {
+        empty.style.display = 'block';
+        empty.textContent = 'התחל להקליד לחיפוש';
+        return;
+      }
+      const matches = ALL_ITEMS.filter(i => i.label.includes(q) || i.group.includes(q));
+      if (!matches.length) {
+        empty.style.display = 'block';
+        empty.textContent = 'לא נמצאו תוצאות';
+        return;
+      }
+      empty.style.display = 'none';
+      matches.forEach(item => {
+        const a = document.createElement('a');
+        a.className = 'search-result-item'; a.href = '#';
+        a.innerHTML = `<span class="search-result-icon">${item.icon}</span>${item.label}<span class="search-result-group">${item.group}</span>`;
+        results.appendChild(a);
+      });
+      positionSearchPanel();
+    }
+
+    function toggleGroup(btn) {
+      const items = btn.nextElementSibling;
+      const open = btn.classList.contains('open');
+      btn.classList.toggle('open', !open);
+      items.classList.toggle('open', !open);
+    }
+
+    function toggleFav(e, label, icon) {
+      e.preventDefault(); e.stopPropagation();
+      const btn = e.currentTarget;
+      if (favs[label]) { delete favs[label]; btn.classList.remove('starred'); }
+      else { favs[label] = icon; btn.classList.add('starred'); }
+      renderFavsPanel();
+      /* re-anchor panel if open */
+      if (favsPanelOpen) positionFavsPanel();
+    }
+
+    function removeFav(label) {
+      delete favs[label];
+      document.querySelectorAll('.fav-star-btn').forEach(b => {
+        if (b.getAttribute('onclick')?.includes(`'${label}'`)) b.classList.remove('starred');
+      });
+      renderFavsPanel();
+    }
+
+    function renderFavsPanel() {
+      const list = document.getElementById('favsPanelList');
+      const empty = document.getElementById('favsPanelEmpty');
+      list.querySelectorAll('.fav-item').forEach(el => el.remove());
+      const keys = Object.keys(favs);
+      empty.style.display = keys.length ? 'none' : 'block';
+      keys.forEach(label => {
+        const a = document.createElement('a');
+        a.className = 'fav-item'; a.href = '#';
+        a.innerHTML = `<span class="fav-icon-badge">${favs[label]}</span>${label}<button class="fav-remove-btn" onclick="event.preventDefault();event.stopPropagation();removeFav('${label}')">✕</button>`;
+        list.appendChild(a);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -228,6 +228,34 @@ export async function GET(req: Request) {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "doneAt" TIMESTAMP(3);
     `);
+    // OrderItem: comp support
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedAt" TIMESTAMP(3);
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "isComped" BOOLEAN NOT NULL DEFAULT false;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "compReason" TEXT;
+    `);
+    // WaiterStation: station assignment
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "WaiterStation" (
+        "id"           TEXT NOT NULL,
+        "restaurantId" TEXT NOT NULL,
+        "userId"       TEXT NOT NULL,
+        "tableNumbers" TEXT[] DEFAULT '{}',
+        "label"        TEXT,
+        "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "WaiterStation_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "WaiterStation_restaurantId_fkey" FOREIGN KEY ("restaurantId")
+          REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT "WaiterStation_userId_fkey" FOREIGN KEY ("userId")
+          REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT "WaiterStation_restaurantId_userId_key" UNIQUE ("restaurantId", "userId")
+      );
+    `);
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

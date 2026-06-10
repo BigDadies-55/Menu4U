@@ -1,6 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulk } from "@/lib/sms";
+import { sendSmsBulkPersonalized, isSmsConfigured, type SmsRecipient } from "@/lib/sms";
 import { NextResponse } from "next/server";
+
+/** Map a loyalty member row to a personalized recipient. */
+function toRecipient(m: { phone: string; name: string; points: number; memberNumber: string }): SmsRecipient {
+  return {
+    phone: m.phone,
+    fields: {
+      Name: m.name,
+      FirstName: (m.name ?? "").trim().split(/\s+/)[0] ?? "",
+      Points: m.points,
+      MemberNumber: m.memberNumber,
+    },
+  };
+}
 
 // Called by cron-job.org every hour
 // Authorization: Bearer <CRON_SECRET>
@@ -21,6 +34,13 @@ export async function GET(req: Request) {
     `SELECT * FROM "SmsCampaign" WHERE "isActive" = true`
   );
 
+  if (!isSmsConfigured()) {
+    return NextResponse.json(
+      { error: "SMS gateway not configured (INFORU_USERNAME / INFORU_API_TOKEN missing)", ran: 0 },
+      { status: 503 }
+    );
+  }
+
   const now = new Date();
   const results: { id: string; name: string; sent: number; skipped?: boolean }[] = [];
 
@@ -32,10 +52,10 @@ export async function GET(req: Request) {
     if (!shouldRun) { results.push({ id: c.id, name: c.name, sent: 0, skipped: true }); continue; }
 
     // Build member query based on type
-    const phones = await getTargetPhones(c.restaurantId, c.type, config, now);
-    if (phones.length === 0) { results.push({ id: c.id, name: c.name, sent: 0 }); continue; }
+    const recipients = await getTargetRecipients(c.restaurantId, c.type, config, now);
+    if (recipients.length === 0) { results.push({ id: c.id, name: c.name, sent: 0 }); continue; }
 
-    const { sent, failed } = await sendSmsBulk(phones, c.message);
+    const { sent, failed } = await sendSmsBulkPersonalized(recipients, c.message);
 
     await prisma.$executeRawUnsafe(
       `UPDATE "SmsCampaign" SET "lastRunAt" = NOW(), "updatedAt" = NOW(),
@@ -114,39 +134,49 @@ function checkShouldRun(
   }
 }
 
-async function getTargetPhones(
+async function getTargetRecipients(
   restaurantId: string,
   type: string,
   config: Record<string, unknown>,
   now: Date
-): Promise<string[]> {
-  type PhoneRow = { phone: string };
+): Promise<SmsRecipient[]> {
+  type MemberRow = { phone: string; name: string; points: number; memberNumber: string };
+  const COLS = `"phone", "name", "points", "memberNumber"`;
+
+  // Single-member one-off (e.g. a scheduled coupon for one member)
+  if (config.memberId) {
+    const rows = await prisma.$queryRawUnsafe<MemberRow[]>(
+      `SELECT ${COLS} FROM "LoyaltyMember" WHERE "restaurantId" = $1 AND "id" = $2`,
+      restaurantId, config.memberId as string
+    );
+    return rows.map(toRecipient);
+  }
 
   switch (type) {
     case "SCHEDULED":
     case "WEEKLY":
     case "MONTHLY":
-      return (await prisma.$queryRawUnsafe<PhoneRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember" WHERE "restaurantId" = $1`, restaurantId
-      )).map(r => r.phone);
+      return (await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT ${COLS} FROM "LoyaltyMember" WHERE "restaurantId" = $1`, restaurantId
+      )).map(toRecipient);
 
     case "BIRTHDAY": {
       const month = now.getMonth() + 1;
       const day = now.getDate();
-      return (await prisma.$queryRawUnsafe<PhoneRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember"
+      return (await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT ${COLS} FROM "LoyaltyMember"
          WHERE "restaurantId" = $1
            AND EXTRACT(MONTH FROM "birthDate") = $2
            AND EXTRACT(DAY FROM "birthDate") = $3`,
         restaurantId, month, day
-      )).map(r => r.phone);
+      )).map(toRecipient);
     }
 
     case "INACTIVE": {
       const days = (config.inactiveDays as number) ?? 30;
       const cutoff = new Date(now.getTime() - days * 86400000).toISOString();
-      return (await prisma.$queryRawUnsafe<PhoneRow[]>(
-        `SELECT lm."phone" FROM "LoyaltyMember" lm
+      return (await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT lm."phone", lm."name", lm."points", lm."memberNumber" FROM "LoyaltyMember" lm
          WHERE lm."restaurantId" = $1
            AND NOT EXISTS (
              SELECT 1 FROM "Order" o
@@ -155,32 +185,31 @@ async function getTargetPhones(
                AND o."createdAt" > $2
            )`,
         restaurantId, cutoff
-      )).map(r => r.phone);
+      )).map(toRecipient);
     }
 
     case "POINTS_MILESTONE": {
       const threshold = (config.pointsThreshold as number) ?? 100;
-      return (await prisma.$queryRawUnsafe<PhoneRow[]>(
-        `SELECT "phone" FROM "LoyaltyMember"
+      return (await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT ${COLS} FROM "LoyaltyMember"
          WHERE "restaurantId" = $1 AND "points" >= $2`,
         restaurantId, threshold
-      )).map(r => r.phone);
+      )).map(toRecipient);
     }
 
     case "COUPON_EXPIRY": {
       const days = (config.daysBeforeExpiry as number) ?? 3;
       const from = now.toISOString();
       const to = new Date(now.getTime() + days * 86400000).toISOString();
-      type CouponPhoneRow = { phone: string };
-      return (await prisma.$queryRawUnsafe<CouponPhoneRow[]>(
-        `SELECT DISTINCT lm."phone"
+      return (await prisma.$queryRawUnsafe<MemberRow[]>(
+        `SELECT DISTINCT lm."phone", lm."name", lm."points", lm."memberNumber"
          FROM "LoyaltyMember" lm
          JOIN "LoyaltyCoupon" lc ON lc."memberId" = lm."id"
          WHERE lm."restaurantId" = $1
            AND lc."usedAt" IS NULL
            AND lc."expiresAt" BETWEEN $2 AND $3`,
         restaurantId, from, to
-      )).map(r => r.phone);
+      )).map(toRecipient);
     }
 
     default:

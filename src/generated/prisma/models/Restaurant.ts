@@ -43,6 +43,7 @@ export type RestaurantMinAggregateOutputType = {
   ordersEnabled: boolean | null
   tableLayoutJson: string | null
   kdsView: string | null
+  adminPalette: string | null
   customDomain: string | null
   copyright: string | null
   language: string | null
@@ -81,6 +82,7 @@ export type RestaurantMaxAggregateOutputType = {
   ordersEnabled: boolean | null
   tableLayoutJson: string | null
   kdsView: string | null
+  adminPalette: string | null
   customDomain: string | null
   copyright: string | null
   language: string | null
@@ -119,6 +121,7 @@ export type RestaurantCountAggregateOutputType = {
   ordersEnabled: number
   tableLayoutJson: number
   kdsView: number
+  adminPalette: number
   customDomain: number
   copyright: number
   language: number
@@ -159,6 +162,7 @@ export type RestaurantMinAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -197,6 +201,7 @@ export type RestaurantMaxAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -235,6 +240,7 @@ export type RestaurantCountAggregateInputType = {
   ordersEnabled?: true
   tableLayoutJson?: true
   kdsView?: true
+  adminPalette?: true
   customDomain?: true
   copyright?: true
   language?: true
@@ -346,6 +352,7 @@ export type RestaurantGroupByOutputType = {
   ordersEnabled: boolean
   tableLayoutJson: string | null
   kdsView: string
+  adminPalette: string
   customDomain: string | null
   copyright: string | null
   language: string
@@ -405,6 +412,7 @@ export type RestaurantWhereInput = {
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -432,6 +440,7 @@ export type RestaurantWhereInput = {
   orderCounter?: Prisma.XOR<Prisma.OrderCounterNullableScalarRelationFilter, Prisma.OrderCounterWhereInput> | null
   loyaltyMembers?: Prisma.LoyaltyMemberListRelationFilter
   loyaltySettings?: Prisma.XOR<Prisma.LoyaltySettingsNullableScalarRelationFilter, Prisma.LoyaltySettingsWhereInput> | null
+  waiterStations?: Prisma.WaiterStationListRelationFilter
 }
 
 export type RestaurantOrderByWithRelationInput = {
@@ -453,6 +462,7 @@ export type RestaurantOrderByWithRelationInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrderInput | Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -480,6 +490,7 @@ export type RestaurantOrderByWithRelationInput = {
   orderCounter?: Prisma.OrderCounterOrderByWithRelationInput
   loyaltyMembers?: Prisma.LoyaltyMemberOrderByRelationAggregateInput
   loyaltySettings?: Prisma.LoyaltySettingsOrderByWithRelationInput
+  waiterStations?: Prisma.WaiterStationOrderByRelationAggregateInput
 }
 
 export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
@@ -504,6 +515,7 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -531,6 +543,7 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   orderCounter?: Prisma.XOR<Prisma.OrderCounterNullableScalarRelationFilter, Prisma.OrderCounterWhereInput> | null
   loyaltyMembers?: Prisma.LoyaltyMemberListRelationFilter
   loyaltySettings?: Prisma.XOR<Prisma.LoyaltySettingsNullableScalarRelationFilter, Prisma.LoyaltySettingsWhereInput> | null
+  waiterStations?: Prisma.WaiterStationListRelationFilter
 }, "id">
 
 export type RestaurantOrderByWithAggregationInput = {
@@ -552,6 +565,7 @@ export type RestaurantOrderByWithAggregationInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrderInput | Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
   copyright?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -596,6 +610,7 @@ export type RestaurantScalarWhereWithAggregatesInput = {
   ordersEnabled?: Prisma.BoolWithAggregatesFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   language?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
@@ -634,6 +649,7 @@ export type RestaurantCreateInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -660,6 +676,7 @@ export type RestaurantCreateInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateInput = {
@@ -681,6 +698,7 @@ export type RestaurantUncheckedCreateInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -707,6 +725,7 @@ export type RestaurantUncheckedCreateInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUpdateInput = {
@@ -728,6 +747,7 @@ export type RestaurantUpdateInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -754,6 +774,7 @@ export type RestaurantUpdateInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateInput = {
@@ -775,6 +796,7 @@ export type RestaurantUncheckedUpdateInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -801,6 +823,7 @@ export type RestaurantUncheckedUpdateInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateManyInput = {
@@ -822,6 +845,7 @@ export type RestaurantCreateManyInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -860,6 +884,7 @@ export type RestaurantUpdateManyMutationInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -897,6 +922,7 @@ export type RestaurantUncheckedUpdateManyInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -945,6 +971,7 @@ export type RestaurantCountOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -983,6 +1010,7 @@ export type RestaurantMaxOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -1021,6 +1049,7 @@ export type RestaurantMinOrderByAggregateInput = {
   ordersEnabled?: Prisma.SortOrder
   tableLayoutJson?: Prisma.SortOrder
   kdsView?: Prisma.SortOrder
+  adminPalette?: Prisma.SortOrder
   customDomain?: Prisma.SortOrder
   copyright?: Prisma.SortOrder
   language?: Prisma.SortOrder
@@ -1199,6 +1228,20 @@ export type RestaurantUpdateOneRequiredWithoutLoyaltyMembersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RestaurantUpdateToOneWithWhereWithoutLoyaltyMembersInput, Prisma.RestaurantUpdateWithoutLoyaltyMembersInput>, Prisma.RestaurantUncheckedUpdateWithoutLoyaltyMembersInput>
 }
 
+export type RestaurantCreateNestedOneWithoutWaiterStationsInput = {
+  create?: Prisma.XOR<Prisma.RestaurantCreateWithoutWaiterStationsInput, Prisma.RestaurantUncheckedCreateWithoutWaiterStationsInput>
+  connectOrCreate?: Prisma.RestaurantCreateOrConnectWithoutWaiterStationsInput
+  connect?: Prisma.RestaurantWhereUniqueInput
+}
+
+export type RestaurantUpdateOneRequiredWithoutWaiterStationsNestedInput = {
+  create?: Prisma.XOR<Prisma.RestaurantCreateWithoutWaiterStationsInput, Prisma.RestaurantUncheckedCreateWithoutWaiterStationsInput>
+  connectOrCreate?: Prisma.RestaurantCreateOrConnectWithoutWaiterStationsInput
+  upsert?: Prisma.RestaurantUpsertWithoutWaiterStationsInput
+  connect?: Prisma.RestaurantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RestaurantUpdateToOneWithWhereWithoutWaiterStationsInput, Prisma.RestaurantUpdateWithoutWaiterStationsInput>, Prisma.RestaurantUncheckedUpdateWithoutWaiterStationsInput>
+}
+
 export type RestaurantCreateNestedOneWithoutLoyaltySettingsInput = {
   create?: Prisma.XOR<Prisma.RestaurantCreateWithoutLoyaltySettingsInput, Prisma.RestaurantUncheckedCreateWithoutLoyaltySettingsInput>
   connectOrCreate?: Prisma.RestaurantCreateOrConnectWithoutLoyaltySettingsInput
@@ -1232,6 +1275,7 @@ export type RestaurantCreateWithoutGroupInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1257,6 +1301,7 @@ export type RestaurantCreateWithoutGroupInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutGroupInput = {
@@ -1278,6 +1323,7 @@ export type RestaurantUncheckedCreateWithoutGroupInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1303,6 +1349,7 @@ export type RestaurantUncheckedCreateWithoutGroupInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutGroupInput = {
@@ -1353,6 +1400,7 @@ export type RestaurantScalarWhereInput = {
   ordersEnabled?: Prisma.BoolFilter<"Restaurant"> | boolean
   tableLayoutJson?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   kdsView?: Prisma.StringFilter<"Restaurant"> | string
+  adminPalette?: Prisma.StringFilter<"Restaurant"> | string
   customDomain?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   copyright?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   language?: Prisma.StringFilter<"Restaurant"> | string
@@ -1391,6 +1439,7 @@ export type RestaurantCreateWithoutRestaurantUsersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1416,6 +1465,7 @@ export type RestaurantCreateWithoutRestaurantUsersInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutRestaurantUsersInput = {
@@ -1437,6 +1487,7 @@ export type RestaurantUncheckedCreateWithoutRestaurantUsersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1462,6 +1513,7 @@ export type RestaurantUncheckedCreateWithoutRestaurantUsersInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutRestaurantUsersInput = {
@@ -1499,6 +1551,7 @@ export type RestaurantUpdateWithoutRestaurantUsersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1524,6 +1577,7 @@ export type RestaurantUpdateWithoutRestaurantUsersInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutRestaurantUsersInput = {
@@ -1545,6 +1599,7 @@ export type RestaurantUncheckedUpdateWithoutRestaurantUsersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1570,6 +1625,7 @@ export type RestaurantUncheckedUpdateWithoutRestaurantUsersInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateWithoutMenusInput = {
@@ -1591,6 +1647,7 @@ export type RestaurantCreateWithoutMenusInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1616,6 +1673,7 @@ export type RestaurantCreateWithoutMenusInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutMenusInput = {
@@ -1637,6 +1695,7 @@ export type RestaurantUncheckedCreateWithoutMenusInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1662,6 +1721,7 @@ export type RestaurantUncheckedCreateWithoutMenusInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutMenusInput = {
@@ -1699,6 +1759,7 @@ export type RestaurantUpdateWithoutMenusInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1724,6 +1785,7 @@ export type RestaurantUpdateWithoutMenusInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutMenusInput = {
@@ -1745,6 +1807,7 @@ export type RestaurantUncheckedUpdateWithoutMenusInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1770,6 +1833,7 @@ export type RestaurantUncheckedUpdateWithoutMenusInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateWithoutOrdersInput = {
@@ -1791,6 +1855,7 @@ export type RestaurantCreateWithoutOrdersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1816,6 +1881,7 @@ export type RestaurantCreateWithoutOrdersInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutOrdersInput = {
@@ -1837,6 +1903,7 @@ export type RestaurantUncheckedCreateWithoutOrdersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -1862,6 +1929,7 @@ export type RestaurantUncheckedCreateWithoutOrdersInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutOrdersInput = {
@@ -1899,6 +1967,7 @@ export type RestaurantUpdateWithoutOrdersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1924,6 +1993,7 @@ export type RestaurantUpdateWithoutOrdersInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutOrdersInput = {
@@ -1945,6 +2015,7 @@ export type RestaurantUncheckedUpdateWithoutOrdersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1970,6 +2041,7 @@ export type RestaurantUncheckedUpdateWithoutOrdersInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateWithoutOrderCounterInput = {
@@ -1991,6 +2063,7 @@ export type RestaurantCreateWithoutOrderCounterInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2016,6 +2089,7 @@ export type RestaurantCreateWithoutOrderCounterInput = {
   customers?: Prisma.CustomerCreateNestedManyWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutOrderCounterInput = {
@@ -2037,6 +2111,7 @@ export type RestaurantUncheckedCreateWithoutOrderCounterInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2062,6 +2137,7 @@ export type RestaurantUncheckedCreateWithoutOrderCounterInput = {
   customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutOrderCounterInput = {
@@ -2099,6 +2175,7 @@ export type RestaurantUpdateWithoutOrderCounterInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2124,6 +2201,7 @@ export type RestaurantUpdateWithoutOrderCounterInput = {
   customers?: Prisma.CustomerUpdateManyWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutOrderCounterInput = {
@@ -2145,6 +2223,7 @@ export type RestaurantUncheckedUpdateWithoutOrderCounterInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2170,6 +2249,7 @@ export type RestaurantUncheckedUpdateWithoutOrderCounterInput = {
   customers?: Prisma.CustomerUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateWithoutMenuViewsInput = {
@@ -2191,6 +2271,7 @@ export type RestaurantCreateWithoutMenuViewsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2216,6 +2297,7 @@ export type RestaurantCreateWithoutMenuViewsInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutMenuViewsInput = {
@@ -2237,6 +2319,7 @@ export type RestaurantUncheckedCreateWithoutMenuViewsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2262,6 +2345,7 @@ export type RestaurantUncheckedCreateWithoutMenuViewsInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutMenuViewsInput = {
@@ -2299,6 +2383,7 @@ export type RestaurantUpdateWithoutMenuViewsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2324,6 +2409,7 @@ export type RestaurantUpdateWithoutMenuViewsInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutMenuViewsInput = {
@@ -2345,6 +2431,7 @@ export type RestaurantUncheckedUpdateWithoutMenuViewsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2370,6 +2457,7 @@ export type RestaurantUncheckedUpdateWithoutMenuViewsInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateWithoutTableSessionsInput = {
@@ -2391,6 +2479,7 @@ export type RestaurantCreateWithoutTableSessionsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2416,6 +2505,7 @@ export type RestaurantCreateWithoutTableSessionsInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutTableSessionsInput = {
@@ -2437,6 +2527,7 @@ export type RestaurantUncheckedCreateWithoutTableSessionsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2462,6 +2553,7 @@ export type RestaurantUncheckedCreateWithoutTableSessionsInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutTableSessionsInput = {
@@ -2499,6 +2591,7 @@ export type RestaurantUpdateWithoutTableSessionsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2524,6 +2617,7 @@ export type RestaurantUpdateWithoutTableSessionsInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutTableSessionsInput = {
@@ -2545,6 +2639,7 @@ export type RestaurantUncheckedUpdateWithoutTableSessionsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2570,6 +2665,7 @@ export type RestaurantUncheckedUpdateWithoutTableSessionsInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateWithoutCustomersInput = {
@@ -2591,6 +2687,7 @@ export type RestaurantCreateWithoutCustomersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2616,6 +2713,7 @@ export type RestaurantCreateWithoutCustomersInput = {
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutCustomersInput = {
@@ -2637,6 +2735,7 @@ export type RestaurantUncheckedCreateWithoutCustomersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2662,6 +2761,7 @@ export type RestaurantUncheckedCreateWithoutCustomersInput = {
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutCustomersInput = {
@@ -2699,6 +2799,7 @@ export type RestaurantUpdateWithoutCustomersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2724,6 +2825,7 @@ export type RestaurantUpdateWithoutCustomersInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutCustomersInput = {
@@ -2745,6 +2847,7 @@ export type RestaurantUncheckedUpdateWithoutCustomersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2770,6 +2873,7 @@ export type RestaurantUncheckedUpdateWithoutCustomersInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateWithoutLoyaltyMembersInput = {
@@ -2791,6 +2895,7 @@ export type RestaurantCreateWithoutLoyaltyMembersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2816,6 +2921,7 @@ export type RestaurantCreateWithoutLoyaltyMembersInput = {
   customers?: Prisma.CustomerCreateNestedManyWithoutRestaurantInput
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantUncheckedCreateWithoutLoyaltyMembersInput = {
@@ -2837,6 +2943,7 @@ export type RestaurantUncheckedCreateWithoutLoyaltyMembersInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -2862,6 +2969,7 @@ export type RestaurantUncheckedCreateWithoutLoyaltyMembersInput = {
   customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutRestaurantInput
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutLoyaltyMembersInput = {
@@ -2899,6 +3007,7 @@ export type RestaurantUpdateWithoutLoyaltyMembersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2924,6 +3033,7 @@ export type RestaurantUpdateWithoutLoyaltyMembersInput = {
   customers?: Prisma.CustomerUpdateManyWithoutRestaurantNestedInput
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutLoyaltyMembersInput = {
@@ -2945,6 +3055,7 @@ export type RestaurantUncheckedUpdateWithoutLoyaltyMembersInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2970,9 +3081,10 @@ export type RestaurantUncheckedUpdateWithoutLoyaltyMembersInput = {
   customers?: Prisma.CustomerUncheckedUpdateManyWithoutRestaurantNestedInput
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
-export type RestaurantCreateWithoutLoyaltySettingsInput = {
+export type RestaurantCreateWithoutWaiterStationsInput = {
   id?: string
   name: string
   description?: string | null
@@ -2991,6 +3103,7 @@ export type RestaurantCreateWithoutLoyaltySettingsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3016,9 +3129,10 @@ export type RestaurantCreateWithoutLoyaltySettingsInput = {
   customers?: Prisma.CustomerCreateNestedManyWithoutRestaurantInput
   orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
+  loyaltySettings?: Prisma.LoyaltySettingsCreateNestedOneWithoutRestaurantInput
 }
 
-export type RestaurantUncheckedCreateWithoutLoyaltySettingsInput = {
+export type RestaurantUncheckedCreateWithoutWaiterStationsInput = {
   id?: string
   name: string
   description?: string | null
@@ -3037,6 +3151,7 @@ export type RestaurantUncheckedCreateWithoutLoyaltySettingsInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3062,6 +3177,215 @@ export type RestaurantUncheckedCreateWithoutLoyaltySettingsInput = {
   customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutRestaurantInput
   orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
+  loyaltySettings?: Prisma.LoyaltySettingsUncheckedCreateNestedOneWithoutRestaurantInput
+}
+
+export type RestaurantCreateOrConnectWithoutWaiterStationsInput = {
+  where: Prisma.RestaurantWhereUniqueInput
+  create: Prisma.XOR<Prisma.RestaurantCreateWithoutWaiterStationsInput, Prisma.RestaurantUncheckedCreateWithoutWaiterStationsInput>
+}
+
+export type RestaurantUpsertWithoutWaiterStationsInput = {
+  update: Prisma.XOR<Prisma.RestaurantUpdateWithoutWaiterStationsInput, Prisma.RestaurantUncheckedUpdateWithoutWaiterStationsInput>
+  create: Prisma.XOR<Prisma.RestaurantCreateWithoutWaiterStationsInput, Prisma.RestaurantUncheckedCreateWithoutWaiterStationsInput>
+  where?: Prisma.RestaurantWhereInput
+}
+
+export type RestaurantUpdateToOneWithWhereWithoutWaiterStationsInput = {
+  where?: Prisma.RestaurantWhereInput
+  data: Prisma.XOR<Prisma.RestaurantUpdateWithoutWaiterStationsInput, Prisma.RestaurantUncheckedUpdateWithoutWaiterStationsInput>
+}
+
+export type RestaurantUpdateWithoutWaiterStationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
+  menuPalette?: Prisma.StringFieldUpdateOperationsInput | string
+  menuPaletteData?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  group?: Prisma.RestaurantGroupUpdateOneWithoutRestaurantsNestedInput
+  restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutRestaurantNestedInput
+  menus?: Prisma.MenuUpdateManyWithoutRestaurantNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutRestaurantNestedInput
+  menuViews?: Prisma.MenuViewUpdateManyWithoutRestaurantNestedInput
+  tableSessions?: Prisma.TableSessionUpdateManyWithoutRestaurantNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutRestaurantNestedInput
+  orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
+  loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
+  loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+}
+
+export type RestaurantUncheckedUpdateWithoutWaiterStationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  locationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  menuTheme?: Prisma.StringFieldUpdateOperationsInput | string
+  menuPalette?: Prisma.StringFieldUpdateOperationsInput | string
+  menuPaletteData?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  welcomeText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splashImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subscriptionFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  subscriptionTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instagram?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  facebook?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsapp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tripadvisor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleReview?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  showPhonePublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showAddressPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutRestaurantNestedInput
+  menus?: Prisma.MenuUncheckedUpdateManyWithoutRestaurantNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutRestaurantNestedInput
+  menuViews?: Prisma.MenuViewUncheckedUpdateManyWithoutRestaurantNestedInput
+  tableSessions?: Prisma.TableSessionUncheckedUpdateManyWithoutRestaurantNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutRestaurantNestedInput
+  orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
+  loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
+  loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+}
+
+export type RestaurantCreateWithoutLoyaltySettingsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  logo?: string | null
+  address?: string | null
+  phone?: string | null
+  phone2?: string | null
+  orderPhone?: string | null
+  email?: string | null
+  website?: string | null
+  locationUrl?: string | null
+  isActive?: boolean
+  menuTheme?: string
+  menuPalette?: string
+  menuPaletteData?: string | null
+  ordersEnabled?: boolean
+  tableLayoutJson?: string | null
+  kdsView?: string
+  adminPalette?: string
+  customDomain?: string | null
+  copyright?: string | null
+  language?: string
+  welcomeText?: string | null
+  splashImage?: string | null
+  subscriptionFrom?: Date | string | null
+  subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  group?: Prisma.RestaurantGroupCreateNestedOneWithoutRestaurantsInput
+  restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutRestaurantInput
+  menus?: Prisma.MenuCreateNestedManyWithoutRestaurantInput
+  orders?: Prisma.OrderCreateNestedManyWithoutRestaurantInput
+  menuViews?: Prisma.MenuViewCreateNestedManyWithoutRestaurantInput
+  tableSessions?: Prisma.TableSessionCreateNestedManyWithoutRestaurantInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutRestaurantInput
+  orderCounter?: Prisma.OrderCounterCreateNestedOneWithoutRestaurantInput
+  loyaltyMembers?: Prisma.LoyaltyMemberCreateNestedManyWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutRestaurantInput
+}
+
+export type RestaurantUncheckedCreateWithoutLoyaltySettingsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  logo?: string | null
+  address?: string | null
+  phone?: string | null
+  phone2?: string | null
+  orderPhone?: string | null
+  email?: string | null
+  website?: string | null
+  locationUrl?: string | null
+  isActive?: boolean
+  menuTheme?: string
+  menuPalette?: string
+  menuPaletteData?: string | null
+  ordersEnabled?: boolean
+  tableLayoutJson?: string | null
+  kdsView?: string
+  adminPalette?: string
+  customDomain?: string | null
+  copyright?: string | null
+  language?: string
+  welcomeText?: string | null
+  splashImage?: string | null
+  subscriptionFrom?: Date | string | null
+  subscriptionTo?: Date | string | null
+  instagram?: string | null
+  facebook?: string | null
+  whatsapp?: string | null
+  tripadvisor?: string | null
+  googleReview?: string | null
+  showPhonePublic?: boolean
+  showAddressPublic?: boolean
+  groupId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutRestaurantInput
+  menus?: Prisma.MenuUncheckedCreateNestedManyWithoutRestaurantInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutRestaurantInput
+  menuViews?: Prisma.MenuViewUncheckedCreateNestedManyWithoutRestaurantInput
+  tableSessions?: Prisma.TableSessionUncheckedCreateNestedManyWithoutRestaurantInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutRestaurantInput
+  orderCounter?: Prisma.OrderCounterUncheckedCreateNestedOneWithoutRestaurantInput
+  loyaltyMembers?: Prisma.LoyaltyMemberUncheckedCreateNestedManyWithoutRestaurantInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutRestaurantInput
 }
 
 export type RestaurantCreateOrConnectWithoutLoyaltySettingsInput = {
@@ -3099,6 +3423,7 @@ export type RestaurantUpdateWithoutLoyaltySettingsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3124,6 +3449,7 @@ export type RestaurantUpdateWithoutLoyaltySettingsInput = {
   customers?: Prisma.CustomerUpdateManyWithoutRestaurantNestedInput
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutLoyaltySettingsInput = {
@@ -3145,6 +3471,7 @@ export type RestaurantUncheckedUpdateWithoutLoyaltySettingsInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3170,6 +3497,7 @@ export type RestaurantUncheckedUpdateWithoutLoyaltySettingsInput = {
   customers?: Prisma.CustomerUncheckedUpdateManyWithoutRestaurantNestedInput
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantCreateManyGroupInput = {
@@ -3191,6 +3519,7 @@ export type RestaurantCreateManyGroupInput = {
   ordersEnabled?: boolean
   tableLayoutJson?: string | null
   kdsView?: string
+  adminPalette?: string
   customDomain?: string | null
   copyright?: string | null
   language?: string
@@ -3228,6 +3557,7 @@ export type RestaurantUpdateWithoutGroupInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3253,6 +3583,7 @@ export type RestaurantUpdateWithoutGroupInput = {
   orderCounter?: Prisma.OrderCounterUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateWithoutGroupInput = {
@@ -3274,6 +3605,7 @@ export type RestaurantUncheckedUpdateWithoutGroupInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3299,6 +3631,7 @@ export type RestaurantUncheckedUpdateWithoutGroupInput = {
   orderCounter?: Prisma.OrderCounterUncheckedUpdateOneWithoutRestaurantNestedInput
   loyaltyMembers?: Prisma.LoyaltyMemberUncheckedUpdateManyWithoutRestaurantNestedInput
   loyaltySettings?: Prisma.LoyaltySettingsUncheckedUpdateOneWithoutRestaurantNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutRestaurantNestedInput
 }
 
 export type RestaurantUncheckedUpdateManyWithoutGroupInput = {
@@ -3320,6 +3653,7 @@ export type RestaurantUncheckedUpdateManyWithoutGroupInput = {
   ordersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   tableLayoutJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kdsView?: Prisma.StringFieldUpdateOperationsInput | string
+  adminPalette?: Prisma.StringFieldUpdateOperationsInput | string
   customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyright?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3351,6 +3685,7 @@ export type RestaurantCountOutputType = {
   tableSessions: number
   customers: number
   loyaltyMembers: number
+  waiterStations: number
 }
 
 export type RestaurantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3361,6 +3696,7 @@ export type RestaurantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extens
   tableSessions?: boolean | RestaurantCountOutputTypeCountTableSessionsArgs
   customers?: boolean | RestaurantCountOutputTypeCountCustomersArgs
   loyaltyMembers?: boolean | RestaurantCountOutputTypeCountLoyaltyMembersArgs
+  waiterStations?: boolean | RestaurantCountOutputTypeCountWaiterStationsArgs
 }
 
 /**
@@ -3422,6 +3758,13 @@ export type RestaurantCountOutputTypeCountLoyaltyMembersArgs<ExtArgs extends run
   where?: Prisma.LoyaltyMemberWhereInput
 }
 
+/**
+ * RestaurantCountOutputType without action
+ */
+export type RestaurantCountOutputTypeCountWaiterStationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WaiterStationWhereInput
+}
+
 
 export type RestaurantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -3442,6 +3785,7 @@ export type RestaurantSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3469,6 +3813,7 @@ export type RestaurantSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   orderCounter?: boolean | Prisma.Restaurant$orderCounterArgs<ExtArgs>
   loyaltyMembers?: boolean | Prisma.Restaurant$loyaltyMembersArgs<ExtArgs>
   loyaltySettings?: boolean | Prisma.Restaurant$loyaltySettingsArgs<ExtArgs>
+  waiterStations?: boolean | Prisma.Restaurant$waiterStationsArgs<ExtArgs>
   _count?: boolean | Prisma.RestaurantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["restaurant"]>
 
@@ -3491,6 +3836,7 @@ export type RestaurantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3530,6 +3876,7 @@ export type RestaurantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3569,6 +3916,7 @@ export type RestaurantSelectScalar = {
   ordersEnabled?: boolean
   tableLayoutJson?: boolean
   kdsView?: boolean
+  adminPalette?: boolean
   customDomain?: boolean
   copyright?: boolean
   language?: boolean
@@ -3588,7 +3936,7 @@ export type RestaurantSelectScalar = {
   updatedAt?: boolean
 }
 
-export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "instagram" | "facebook" | "whatsapp" | "tripadvisor" | "googleReview" | "showPhonePublic" | "showAddressPublic" | "groupId" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
+export type RestaurantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "address" | "phone" | "phone2" | "orderPhone" | "email" | "website" | "locationUrl" | "isActive" | "menuTheme" | "menuPalette" | "menuPaletteData" | "ordersEnabled" | "tableLayoutJson" | "kdsView" | "adminPalette" | "customDomain" | "copyright" | "language" | "welcomeText" | "splashImage" | "subscriptionFrom" | "subscriptionTo" | "instagram" | "facebook" | "whatsapp" | "tripadvisor" | "googleReview" | "showPhonePublic" | "showAddressPublic" | "groupId" | "createdAt" | "updatedAt", ExtArgs["result"]["restaurant"]>
 export type RestaurantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   group?: boolean | Prisma.Restaurant$groupArgs<ExtArgs>
   restaurantUsers?: boolean | Prisma.Restaurant$restaurantUsersArgs<ExtArgs>
@@ -3600,6 +3948,7 @@ export type RestaurantInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   orderCounter?: boolean | Prisma.Restaurant$orderCounterArgs<ExtArgs>
   loyaltyMembers?: boolean | Prisma.Restaurant$loyaltyMembersArgs<ExtArgs>
   loyaltySettings?: boolean | Prisma.Restaurant$loyaltySettingsArgs<ExtArgs>
+  waiterStations?: boolean | Prisma.Restaurant$waiterStationsArgs<ExtArgs>
   _count?: boolean | Prisma.RestaurantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RestaurantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3622,6 +3971,7 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     orderCounter: Prisma.$OrderCounterPayload<ExtArgs> | null
     loyaltyMembers: Prisma.$LoyaltyMemberPayload<ExtArgs>[]
     loyaltySettings: Prisma.$LoyaltySettingsPayload<ExtArgs> | null
+    waiterStations: Prisma.$WaiterStationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3642,6 +3992,7 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     ordersEnabled: boolean
     tableLayoutJson: string | null
     kdsView: string
+    adminPalette: string
     customDomain: string | null
     copyright: string | null
     language: string
@@ -4063,6 +4414,7 @@ export interface Prisma__RestaurantClient<T, Null = never, ExtArgs extends runti
   orderCounter<T extends Prisma.Restaurant$orderCounterArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Restaurant$orderCounterArgs<ExtArgs>>): Prisma.Prisma__OrderCounterClient<runtime.Types.Result.GetResult<Prisma.$OrderCounterPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   loyaltyMembers<T extends Prisma.Restaurant$loyaltyMembersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Restaurant$loyaltyMembersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LoyaltyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   loyaltySettings<T extends Prisma.Restaurant$loyaltySettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Restaurant$loyaltySettingsArgs<ExtArgs>>): Prisma.Prisma__LoyaltySettingsClient<runtime.Types.Result.GetResult<Prisma.$LoyaltySettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  waiterStations<T extends Prisma.Restaurant$waiterStationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Restaurant$waiterStationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WaiterStationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4110,6 +4462,7 @@ export interface RestaurantFieldRefs {
   readonly ordersEnabled: Prisma.FieldRef<"Restaurant", 'Boolean'>
   readonly tableLayoutJson: Prisma.FieldRef<"Restaurant", 'String'>
   readonly kdsView: Prisma.FieldRef<"Restaurant", 'String'>
+  readonly adminPalette: Prisma.FieldRef<"Restaurant", 'String'>
   readonly customDomain: Prisma.FieldRef<"Restaurant", 'String'>
   readonly copyright: Prisma.FieldRef<"Restaurant", 'String'>
   readonly language: Prisma.FieldRef<"Restaurant", 'String'>
@@ -4750,6 +5103,30 @@ export type Restaurant$loyaltySettingsArgs<ExtArgs extends runtime.Types.Extensi
    */
   include?: Prisma.LoyaltySettingsInclude<ExtArgs> | null
   where?: Prisma.LoyaltySettingsWhereInput
+}
+
+/**
+ * Restaurant.waiterStations
+ */
+export type Restaurant$waiterStationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WaiterStation
+   */
+  select?: Prisma.WaiterStationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WaiterStation
+   */
+  omit?: Prisma.WaiterStationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WaiterStationInclude<ExtArgs> | null
+  where?: Prisma.WaiterStationWhereInput
+  orderBy?: Prisma.WaiterStationOrderByWithRelationInput | Prisma.WaiterStationOrderByWithRelationInput[]
+  cursor?: Prisma.WaiterStationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WaiterStationScalarFieldEnum | Prisma.WaiterStationScalarFieldEnum[]
 }
 
 /**

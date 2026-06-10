@@ -32,6 +32,7 @@ export type LoyaltySettingsAvgAggregateOutputType = {
   minRedeemPoints: number | null
   welcomeBonus: number | null
   birthdayBonus: number | null
+  maxDailyPointsAdjust: number | null
 }
 
 export type LoyaltySettingsSumAggregateOutputType = {
@@ -40,6 +41,7 @@ export type LoyaltySettingsSumAggregateOutputType = {
   minRedeemPoints: number | null
   welcomeBonus: number | null
   birthdayBonus: number | null
+  maxDailyPointsAdjust: number | null
 }
 
 export type LoyaltySettingsMinAggregateOutputType = {
@@ -50,6 +52,12 @@ export type LoyaltySettingsMinAggregateOutputType = {
   welcomeBonus: number | null
   birthdayBonus: number | null
   isActive: boolean | null
+  minRoleAdjustPoints: string | null
+  minRoleIssueCoupon: string | null
+  minRoleRedeemCoupon: string | null
+  minRoleUpdateMember: string | null
+  minRoleSendSms: string | null
+  maxDailyPointsAdjust: number | null
 }
 
 export type LoyaltySettingsMaxAggregateOutputType = {
@@ -60,6 +68,12 @@ export type LoyaltySettingsMaxAggregateOutputType = {
   welcomeBonus: number | null
   birthdayBonus: number | null
   isActive: boolean | null
+  minRoleAdjustPoints: string | null
+  minRoleIssueCoupon: string | null
+  minRoleRedeemCoupon: string | null
+  minRoleUpdateMember: string | null
+  minRoleSendSms: string | null
+  maxDailyPointsAdjust: number | null
 }
 
 export type LoyaltySettingsCountAggregateOutputType = {
@@ -70,6 +84,12 @@ export type LoyaltySettingsCountAggregateOutputType = {
   welcomeBonus: number
   birthdayBonus: number
   isActive: number
+  minRoleAdjustPoints: number
+  minRoleIssueCoupon: number
+  minRoleRedeemCoupon: number
+  minRoleUpdateMember: number
+  minRoleSendSms: number
+  maxDailyPointsAdjust: number
   _all: number
 }
 
@@ -80,6 +100,7 @@ export type LoyaltySettingsAvgAggregateInputType = {
   minRedeemPoints?: true
   welcomeBonus?: true
   birthdayBonus?: true
+  maxDailyPointsAdjust?: true
 }
 
 export type LoyaltySettingsSumAggregateInputType = {
@@ -88,6 +109,7 @@ export type LoyaltySettingsSumAggregateInputType = {
   minRedeemPoints?: true
   welcomeBonus?: true
   birthdayBonus?: true
+  maxDailyPointsAdjust?: true
 }
 
 export type LoyaltySettingsMinAggregateInputType = {
@@ -98,6 +120,12 @@ export type LoyaltySettingsMinAggregateInputType = {
   welcomeBonus?: true
   birthdayBonus?: true
   isActive?: true
+  minRoleAdjustPoints?: true
+  minRoleIssueCoupon?: true
+  minRoleRedeemCoupon?: true
+  minRoleUpdateMember?: true
+  minRoleSendSms?: true
+  maxDailyPointsAdjust?: true
 }
 
 export type LoyaltySettingsMaxAggregateInputType = {
@@ -108,6 +136,12 @@ export type LoyaltySettingsMaxAggregateInputType = {
   welcomeBonus?: true
   birthdayBonus?: true
   isActive?: true
+  minRoleAdjustPoints?: true
+  minRoleIssueCoupon?: true
+  minRoleRedeemCoupon?: true
+  minRoleUpdateMember?: true
+  minRoleSendSms?: true
+  maxDailyPointsAdjust?: true
 }
 
 export type LoyaltySettingsCountAggregateInputType = {
@@ -118,6 +152,12 @@ export type LoyaltySettingsCountAggregateInputType = {
   welcomeBonus?: true
   birthdayBonus?: true
   isActive?: true
+  minRoleAdjustPoints?: true
+  minRoleIssueCoupon?: true
+  minRoleRedeemCoupon?: true
+  minRoleUpdateMember?: true
+  minRoleSendSms?: true
+  maxDailyPointsAdjust?: true
   _all?: true
 }
 
@@ -215,6 +255,12 @@ export type LoyaltySettingsGroupByOutputType = {
   welcomeBonus: number
   birthdayBonus: number
   isActive: boolean
+  minRoleAdjustPoints: string
+  minRoleIssueCoupon: string
+  minRoleRedeemCoupon: string
+  minRoleUpdateMember: string
+  minRoleSendSms: string
+  maxDailyPointsAdjust: number
   _count: LoyaltySettingsCountAggregateOutputType | null
   _avg: LoyaltySettingsAvgAggregateOutputType | null
   _sum: LoyaltySettingsSumAggregateOutputType | null
@@ -248,6 +294,12 @@ export type LoyaltySettingsWhereInput = {
   welcomeBonus?: Prisma.IntFilter<"LoyaltySettings"> | number
   birthdayBonus?: Prisma.IntFilter<"LoyaltySettings"> | number
   isActive?: Prisma.BoolFilter<"LoyaltySettings"> | boolean
+  minRoleAdjustPoints?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleIssueCoupon?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleRedeemCoupon?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleUpdateMember?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleSendSms?: Prisma.StringFilter<"LoyaltySettings"> | string
+  maxDailyPointsAdjust?: Prisma.IntFilter<"LoyaltySettings"> | number
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
 }
 
@@ -259,6 +311,12 @@ export type LoyaltySettingsOrderByWithRelationInput = {
   welcomeBonus?: Prisma.SortOrder
   birthdayBonus?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  minRoleAdjustPoints?: Prisma.SortOrder
+  minRoleIssueCoupon?: Prisma.SortOrder
+  minRoleRedeemCoupon?: Prisma.SortOrder
+  minRoleUpdateMember?: Prisma.SortOrder
+  minRoleSendSms?: Prisma.SortOrder
+  maxDailyPointsAdjust?: Prisma.SortOrder
   restaurant?: Prisma.RestaurantOrderByWithRelationInput
 }
 
@@ -273,6 +331,12 @@ export type LoyaltySettingsWhereUniqueInput = Prisma.AtLeast<{
   welcomeBonus?: Prisma.IntFilter<"LoyaltySettings"> | number
   birthdayBonus?: Prisma.IntFilter<"LoyaltySettings"> | number
   isActive?: Prisma.BoolFilter<"LoyaltySettings"> | boolean
+  minRoleAdjustPoints?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleIssueCoupon?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleRedeemCoupon?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleUpdateMember?: Prisma.StringFilter<"LoyaltySettings"> | string
+  minRoleSendSms?: Prisma.StringFilter<"LoyaltySettings"> | string
+  maxDailyPointsAdjust?: Prisma.IntFilter<"LoyaltySettings"> | number
   restaurant?: Prisma.XOR<Prisma.RestaurantScalarRelationFilter, Prisma.RestaurantWhereInput>
 }, "restaurantId">
 
@@ -284,6 +348,12 @@ export type LoyaltySettingsOrderByWithAggregationInput = {
   welcomeBonus?: Prisma.SortOrder
   birthdayBonus?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  minRoleAdjustPoints?: Prisma.SortOrder
+  minRoleIssueCoupon?: Prisma.SortOrder
+  minRoleRedeemCoupon?: Prisma.SortOrder
+  minRoleUpdateMember?: Prisma.SortOrder
+  minRoleSendSms?: Prisma.SortOrder
+  maxDailyPointsAdjust?: Prisma.SortOrder
   _count?: Prisma.LoyaltySettingsCountOrderByAggregateInput
   _avg?: Prisma.LoyaltySettingsAvgOrderByAggregateInput
   _max?: Prisma.LoyaltySettingsMaxOrderByAggregateInput
@@ -302,6 +372,12 @@ export type LoyaltySettingsScalarWhereWithAggregatesInput = {
   welcomeBonus?: Prisma.IntWithAggregatesFilter<"LoyaltySettings"> | number
   birthdayBonus?: Prisma.IntWithAggregatesFilter<"LoyaltySettings"> | number
   isActive?: Prisma.BoolWithAggregatesFilter<"LoyaltySettings"> | boolean
+  minRoleAdjustPoints?: Prisma.StringWithAggregatesFilter<"LoyaltySettings"> | string
+  minRoleIssueCoupon?: Prisma.StringWithAggregatesFilter<"LoyaltySettings"> | string
+  minRoleRedeemCoupon?: Prisma.StringWithAggregatesFilter<"LoyaltySettings"> | string
+  minRoleUpdateMember?: Prisma.StringWithAggregatesFilter<"LoyaltySettings"> | string
+  minRoleSendSms?: Prisma.StringWithAggregatesFilter<"LoyaltySettings"> | string
+  maxDailyPointsAdjust?: Prisma.IntWithAggregatesFilter<"LoyaltySettings"> | number
 }
 
 export type LoyaltySettingsCreateInput = {
@@ -311,6 +387,12 @@ export type LoyaltySettingsCreateInput = {
   welcomeBonus?: number
   birthdayBonus?: number
   isActive?: boolean
+  minRoleAdjustPoints?: string
+  minRoleIssueCoupon?: string
+  minRoleRedeemCoupon?: string
+  minRoleUpdateMember?: string
+  minRoleSendSms?: string
+  maxDailyPointsAdjust?: number
   restaurant: Prisma.RestaurantCreateNestedOneWithoutLoyaltySettingsInput
 }
 
@@ -322,6 +404,12 @@ export type LoyaltySettingsUncheckedCreateInput = {
   welcomeBonus?: number
   birthdayBonus?: number
   isActive?: boolean
+  minRoleAdjustPoints?: string
+  minRoleIssueCoupon?: string
+  minRoleRedeemCoupon?: string
+  minRoleUpdateMember?: string
+  minRoleSendSms?: string
+  maxDailyPointsAdjust?: number
 }
 
 export type LoyaltySettingsUpdateInput = {
@@ -331,6 +419,12 @@ export type LoyaltySettingsUpdateInput = {
   welcomeBonus?: Prisma.IntFieldUpdateOperationsInput | number
   birthdayBonus?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minRoleAdjustPoints?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleIssueCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleRedeemCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleUpdateMember?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleSendSms?: Prisma.StringFieldUpdateOperationsInput | string
+  maxDailyPointsAdjust?: Prisma.IntFieldUpdateOperationsInput | number
   restaurant?: Prisma.RestaurantUpdateOneRequiredWithoutLoyaltySettingsNestedInput
 }
 
@@ -342,6 +436,12 @@ export type LoyaltySettingsUncheckedUpdateInput = {
   welcomeBonus?: Prisma.IntFieldUpdateOperationsInput | number
   birthdayBonus?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minRoleAdjustPoints?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleIssueCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleRedeemCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleUpdateMember?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleSendSms?: Prisma.StringFieldUpdateOperationsInput | string
+  maxDailyPointsAdjust?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type LoyaltySettingsCreateManyInput = {
@@ -352,6 +452,12 @@ export type LoyaltySettingsCreateManyInput = {
   welcomeBonus?: number
   birthdayBonus?: number
   isActive?: boolean
+  minRoleAdjustPoints?: string
+  minRoleIssueCoupon?: string
+  minRoleRedeemCoupon?: string
+  minRoleUpdateMember?: string
+  minRoleSendSms?: string
+  maxDailyPointsAdjust?: number
 }
 
 export type LoyaltySettingsUpdateManyMutationInput = {
@@ -361,6 +467,12 @@ export type LoyaltySettingsUpdateManyMutationInput = {
   welcomeBonus?: Prisma.IntFieldUpdateOperationsInput | number
   birthdayBonus?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minRoleAdjustPoints?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleIssueCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleRedeemCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleUpdateMember?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleSendSms?: Prisma.StringFieldUpdateOperationsInput | string
+  maxDailyPointsAdjust?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type LoyaltySettingsUncheckedUpdateManyInput = {
@@ -371,6 +483,12 @@ export type LoyaltySettingsUncheckedUpdateManyInput = {
   welcomeBonus?: Prisma.IntFieldUpdateOperationsInput | number
   birthdayBonus?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minRoleAdjustPoints?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleIssueCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleRedeemCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleUpdateMember?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleSendSms?: Prisma.StringFieldUpdateOperationsInput | string
+  maxDailyPointsAdjust?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type LoyaltySettingsNullableScalarRelationFilter = {
@@ -386,6 +504,12 @@ export type LoyaltySettingsCountOrderByAggregateInput = {
   welcomeBonus?: Prisma.SortOrder
   birthdayBonus?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  minRoleAdjustPoints?: Prisma.SortOrder
+  minRoleIssueCoupon?: Prisma.SortOrder
+  minRoleRedeemCoupon?: Prisma.SortOrder
+  minRoleUpdateMember?: Prisma.SortOrder
+  minRoleSendSms?: Prisma.SortOrder
+  maxDailyPointsAdjust?: Prisma.SortOrder
 }
 
 export type LoyaltySettingsAvgOrderByAggregateInput = {
@@ -394,6 +518,7 @@ export type LoyaltySettingsAvgOrderByAggregateInput = {
   minRedeemPoints?: Prisma.SortOrder
   welcomeBonus?: Prisma.SortOrder
   birthdayBonus?: Prisma.SortOrder
+  maxDailyPointsAdjust?: Prisma.SortOrder
 }
 
 export type LoyaltySettingsMaxOrderByAggregateInput = {
@@ -404,6 +529,12 @@ export type LoyaltySettingsMaxOrderByAggregateInput = {
   welcomeBonus?: Prisma.SortOrder
   birthdayBonus?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  minRoleAdjustPoints?: Prisma.SortOrder
+  minRoleIssueCoupon?: Prisma.SortOrder
+  minRoleRedeemCoupon?: Prisma.SortOrder
+  minRoleUpdateMember?: Prisma.SortOrder
+  minRoleSendSms?: Prisma.SortOrder
+  maxDailyPointsAdjust?: Prisma.SortOrder
 }
 
 export type LoyaltySettingsMinOrderByAggregateInput = {
@@ -414,6 +545,12 @@ export type LoyaltySettingsMinOrderByAggregateInput = {
   welcomeBonus?: Prisma.SortOrder
   birthdayBonus?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  minRoleAdjustPoints?: Prisma.SortOrder
+  minRoleIssueCoupon?: Prisma.SortOrder
+  minRoleRedeemCoupon?: Prisma.SortOrder
+  minRoleUpdateMember?: Prisma.SortOrder
+  minRoleSendSms?: Prisma.SortOrder
+  maxDailyPointsAdjust?: Prisma.SortOrder
 }
 
 export type LoyaltySettingsSumOrderByAggregateInput = {
@@ -422,6 +559,7 @@ export type LoyaltySettingsSumOrderByAggregateInput = {
   minRedeemPoints?: Prisma.SortOrder
   welcomeBonus?: Prisma.SortOrder
   birthdayBonus?: Prisma.SortOrder
+  maxDailyPointsAdjust?: Prisma.SortOrder
 }
 
 export type LoyaltySettingsCreateNestedOneWithoutRestaurantInput = {
@@ -463,6 +601,12 @@ export type LoyaltySettingsCreateWithoutRestaurantInput = {
   welcomeBonus?: number
   birthdayBonus?: number
   isActive?: boolean
+  minRoleAdjustPoints?: string
+  minRoleIssueCoupon?: string
+  minRoleRedeemCoupon?: string
+  minRoleUpdateMember?: string
+  minRoleSendSms?: string
+  maxDailyPointsAdjust?: number
 }
 
 export type LoyaltySettingsUncheckedCreateWithoutRestaurantInput = {
@@ -472,6 +616,12 @@ export type LoyaltySettingsUncheckedCreateWithoutRestaurantInput = {
   welcomeBonus?: number
   birthdayBonus?: number
   isActive?: boolean
+  minRoleAdjustPoints?: string
+  minRoleIssueCoupon?: string
+  minRoleRedeemCoupon?: string
+  minRoleUpdateMember?: string
+  minRoleSendSms?: string
+  maxDailyPointsAdjust?: number
 }
 
 export type LoyaltySettingsCreateOrConnectWithoutRestaurantInput = {
@@ -497,6 +647,12 @@ export type LoyaltySettingsUpdateWithoutRestaurantInput = {
   welcomeBonus?: Prisma.IntFieldUpdateOperationsInput | number
   birthdayBonus?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minRoleAdjustPoints?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleIssueCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleRedeemCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleUpdateMember?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleSendSms?: Prisma.StringFieldUpdateOperationsInput | string
+  maxDailyPointsAdjust?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type LoyaltySettingsUncheckedUpdateWithoutRestaurantInput = {
@@ -506,6 +662,12 @@ export type LoyaltySettingsUncheckedUpdateWithoutRestaurantInput = {
   welcomeBonus?: Prisma.IntFieldUpdateOperationsInput | number
   birthdayBonus?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minRoleAdjustPoints?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleIssueCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleRedeemCoupon?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleUpdateMember?: Prisma.StringFieldUpdateOperationsInput | string
+  minRoleSendSms?: Prisma.StringFieldUpdateOperationsInput | string
+  maxDailyPointsAdjust?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 
@@ -518,6 +680,12 @@ export type LoyaltySettingsSelect<ExtArgs extends runtime.Types.Extensions.Inter
   welcomeBonus?: boolean
   birthdayBonus?: boolean
   isActive?: boolean
+  minRoleAdjustPoints?: boolean
+  minRoleIssueCoupon?: boolean
+  minRoleRedeemCoupon?: boolean
+  minRoleUpdateMember?: boolean
+  minRoleSendSms?: boolean
+  maxDailyPointsAdjust?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["loyaltySettings"]>
 
@@ -529,6 +697,12 @@ export type LoyaltySettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   welcomeBonus?: boolean
   birthdayBonus?: boolean
   isActive?: boolean
+  minRoleAdjustPoints?: boolean
+  minRoleIssueCoupon?: boolean
+  minRoleRedeemCoupon?: boolean
+  minRoleUpdateMember?: boolean
+  minRoleSendSms?: boolean
+  maxDailyPointsAdjust?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["loyaltySettings"]>
 
@@ -540,6 +714,12 @@ export type LoyaltySettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   welcomeBonus?: boolean
   birthdayBonus?: boolean
   isActive?: boolean
+  minRoleAdjustPoints?: boolean
+  minRoleIssueCoupon?: boolean
+  minRoleRedeemCoupon?: boolean
+  minRoleUpdateMember?: boolean
+  minRoleSendSms?: boolean
+  maxDailyPointsAdjust?: boolean
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["loyaltySettings"]>
 
@@ -551,9 +731,15 @@ export type LoyaltySettingsSelectScalar = {
   welcomeBonus?: boolean
   birthdayBonus?: boolean
   isActive?: boolean
+  minRoleAdjustPoints?: boolean
+  minRoleIssueCoupon?: boolean
+  minRoleRedeemCoupon?: boolean
+  minRoleUpdateMember?: boolean
+  minRoleSendSms?: boolean
+  maxDailyPointsAdjust?: boolean
 }
 
-export type LoyaltySettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"restaurantId" | "pointsPerShekel" | "shekelPerPoint" | "minRedeemPoints" | "welcomeBonus" | "birthdayBonus" | "isActive", ExtArgs["result"]["loyaltySettings"]>
+export type LoyaltySettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"restaurantId" | "pointsPerShekel" | "shekelPerPoint" | "minRedeemPoints" | "welcomeBonus" | "birthdayBonus" | "isActive" | "minRoleAdjustPoints" | "minRoleIssueCoupon" | "minRoleRedeemCoupon" | "minRoleUpdateMember" | "minRoleSendSms" | "maxDailyPointsAdjust", ExtArgs["result"]["loyaltySettings"]>
 export type LoyaltySettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
 }
@@ -577,6 +763,12 @@ export type $LoyaltySettingsPayload<ExtArgs extends runtime.Types.Extensions.Int
     welcomeBonus: number
     birthdayBonus: number
     isActive: boolean
+    minRoleAdjustPoints: string
+    minRoleIssueCoupon: string
+    minRoleRedeemCoupon: string
+    minRoleUpdateMember: string
+    minRoleSendSms: string
+    maxDailyPointsAdjust: number
   }, ExtArgs["result"]["loyaltySettings"]>
   composites: {}
 }
@@ -1008,6 +1200,12 @@ export interface LoyaltySettingsFieldRefs {
   readonly welcomeBonus: Prisma.FieldRef<"LoyaltySettings", 'Int'>
   readonly birthdayBonus: Prisma.FieldRef<"LoyaltySettings", 'Int'>
   readonly isActive: Prisma.FieldRef<"LoyaltySettings", 'Boolean'>
+  readonly minRoleAdjustPoints: Prisma.FieldRef<"LoyaltySettings", 'String'>
+  readonly minRoleIssueCoupon: Prisma.FieldRef<"LoyaltySettings", 'String'>
+  readonly minRoleRedeemCoupon: Prisma.FieldRef<"LoyaltySettings", 'String'>
+  readonly minRoleUpdateMember: Prisma.FieldRef<"LoyaltySettings", 'String'>
+  readonly minRoleSendSms: Prisma.FieldRef<"LoyaltySettings", 'String'>
+  readonly maxDailyPointsAdjust: Prisma.FieldRef<"LoyaltySettings", 'Int'>
 }
     
 

@@ -20,8 +20,18 @@ export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayloa
 
 export type AggregateUser = {
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
+}
+
+export type UserAvgAggregateOutputType = {
+  failedLoginAttempts: number | null
+}
+
+export type UserSumAggregateOutputType = {
+  failedLoginAttempts: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -42,6 +52,10 @@ export type UserMinAggregateOutputType = {
   termsAcceptedAt: Date | null
   termsAcceptedIp: string | null
   termsAcceptedUserAgent: string | null
+  failedLoginAttempts: number | null
+  lockedUntil: Date | null
+  totpSecret: string | null
+  totpEnabled: boolean | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -62,6 +76,10 @@ export type UserMaxAggregateOutputType = {
   termsAcceptedAt: Date | null
   termsAcceptedIp: string | null
   termsAcceptedUserAgent: string | null
+  failedLoginAttempts: number | null
+  lockedUntil: Date | null
+  totpSecret: string | null
+  totpEnabled: boolean | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -82,9 +100,21 @@ export type UserCountAggregateOutputType = {
   termsAcceptedAt: number
   termsAcceptedIp: number
   termsAcceptedUserAgent: number
+  failedLoginAttempts: number
+  lockedUntil: number
+  totpSecret: number
+  totpEnabled: number
   _all: number
 }
 
+
+export type UserAvgAggregateInputType = {
+  failedLoginAttempts?: true
+}
+
+export type UserSumAggregateInputType = {
+  failedLoginAttempts?: true
+}
 
 export type UserMinAggregateInputType = {
   id?: true
@@ -104,6 +134,10 @@ export type UserMinAggregateInputType = {
   termsAcceptedAt?: true
   termsAcceptedIp?: true
   termsAcceptedUserAgent?: true
+  failedLoginAttempts?: true
+  lockedUntil?: true
+  totpSecret?: true
+  totpEnabled?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -124,6 +158,10 @@ export type UserMaxAggregateInputType = {
   termsAcceptedAt?: true
   termsAcceptedIp?: true
   termsAcceptedUserAgent?: true
+  failedLoginAttempts?: true
+  lockedUntil?: true
+  totpSecret?: true
+  totpEnabled?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -144,6 +182,10 @@ export type UserCountAggregateInputType = {
   termsAcceptedAt?: true
   termsAcceptedIp?: true
   termsAcceptedUserAgent?: true
+  failedLoginAttempts?: true
+  lockedUntil?: true
+  totpSecret?: true
+  totpEnabled?: true
   _all?: true
 }
 
@@ -185,6 +227,18 @@ export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: UserAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: UserSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: UserMinAggregateInputType
@@ -215,6 +269,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: UserCountAggregateInputType | true
+  _avg?: UserAvgAggregateInputType
+  _sum?: UserSumAggregateInputType
   _min?: UserMinAggregateInputType
   _max?: UserMaxAggregateInputType
 }
@@ -237,7 +293,13 @@ export type UserGroupByOutputType = {
   termsAcceptedAt: Date | null
   termsAcceptedIp: string | null
   termsAcceptedUserAgent: string | null
+  failedLoginAttempts: number
+  lockedUntil: Date | null
+  totpSecret: string | null
+  totpEnabled: boolean
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
 }
@@ -278,10 +340,15 @@ export type UserWhereInput = {
   termsAcceptedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   termsAcceptedIp?: Prisma.StringNullableFilter<"User"> | string | null
   termsAcceptedUserAgent?: Prisma.StringNullableFilter<"User"> | string | null
+  failedLoginAttempts?: Prisma.IntFilter<"User"> | number
+  lockedUntil?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  totpSecret?: Prisma.StringNullableFilter<"User"> | string | null
+  totpEnabled?: Prisma.BoolFilter<"User"> | boolean
   accounts?: Prisma.AccountListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
   passwordHistory?: Prisma.PasswordHistoryListRelationFilter
+  waiterStations?: Prisma.WaiterStationListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -302,10 +369,15 @@ export type UserOrderByWithRelationInput = {
   termsAcceptedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   termsAcceptedIp?: Prisma.SortOrderInput | Prisma.SortOrder
   termsAcceptedUserAgent?: Prisma.SortOrderInput | Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockedUntil?: Prisma.SortOrderInput | Prisma.SortOrder
+  totpSecret?: Prisma.SortOrderInput | Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
   accounts?: Prisma.AccountOrderByRelationAggregateInput
   sessions?: Prisma.SessionOrderByRelationAggregateInput
   restaurantUsers?: Prisma.RestaurantUserOrderByRelationAggregateInput
   passwordHistory?: Prisma.PasswordHistoryOrderByRelationAggregateInput
+  waiterStations?: Prisma.WaiterStationOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -329,10 +401,15 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   termsAcceptedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   termsAcceptedIp?: Prisma.StringNullableFilter<"User"> | string | null
   termsAcceptedUserAgent?: Prisma.StringNullableFilter<"User"> | string | null
+  failedLoginAttempts?: Prisma.IntFilter<"User"> | number
+  lockedUntil?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  totpSecret?: Prisma.StringNullableFilter<"User"> | string | null
+  totpEnabled?: Prisma.BoolFilter<"User"> | boolean
   accounts?: Prisma.AccountListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
   passwordHistory?: Prisma.PasswordHistoryListRelationFilter
+  waiterStations?: Prisma.WaiterStationListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -353,9 +430,15 @@ export type UserOrderByWithAggregationInput = {
   termsAcceptedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   termsAcceptedIp?: Prisma.SortOrderInput | Prisma.SortOrder
   termsAcceptedUserAgent?: Prisma.SortOrderInput | Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockedUntil?: Prisma.SortOrderInput | Prisma.SortOrder
+  totpSecret?: Prisma.SortOrderInput | Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
+  _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
+  _sum?: Prisma.UserSumOrderByAggregateInput
 }
 
 export type UserScalarWhereWithAggregatesInput = {
@@ -379,6 +462,10 @@ export type UserScalarWhereWithAggregatesInput = {
   termsAcceptedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   termsAcceptedIp?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   termsAcceptedUserAgent?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  failedLoginAttempts?: Prisma.IntWithAggregatesFilter<"User"> | number
+  lockedUntil?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  totpSecret?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  totpEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
 }
 
 export type UserCreateInput = {
@@ -399,10 +486,15 @@ export type UserCreateInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -423,10 +515,15 @@ export type UserUncheckedCreateInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -447,10 +544,15 @@ export type UserUpdateInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -471,10 +573,15 @@ export type UserUncheckedUpdateInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -495,6 +602,10 @@ export type UserCreateManyInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
 }
 
 export type UserUpdateManyMutationInput = {
@@ -515,6 +626,10 @@ export type UserUpdateManyMutationInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -535,6 +650,10 @@ export type UserUncheckedUpdateManyInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserCountOrderByAggregateInput = {
@@ -555,6 +674,14 @@ export type UserCountOrderByAggregateInput = {
   termsAcceptedAt?: Prisma.SortOrder
   termsAcceptedIp?: Prisma.SortOrder
   termsAcceptedUserAgent?: Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockedUntil?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
+}
+
+export type UserAvgOrderByAggregateInput = {
+  failedLoginAttempts?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -575,6 +702,10 @@ export type UserMaxOrderByAggregateInput = {
   termsAcceptedAt?: Prisma.SortOrder
   termsAcceptedIp?: Prisma.SortOrder
   termsAcceptedUserAgent?: Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockedUntil?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -595,6 +726,14 @@ export type UserMinOrderByAggregateInput = {
   termsAcceptedAt?: Prisma.SortOrder
   termsAcceptedIp?: Prisma.SortOrder
   termsAcceptedUserAgent?: Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockedUntil?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
+}
+
+export type UserSumOrderByAggregateInput = {
+  failedLoginAttempts?: Prisma.SortOrder
 }
 
 export type UserScalarRelationFilter = {
@@ -624,6 +763,14 @@ export type DateTimeFieldUpdateOperationsInput = {
 
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type UserCreateNestedOneWithoutPasswordHistoryInput = {
@@ -682,6 +829,20 @@ export type UserUpdateOneRequiredWithoutRestaurantUsersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRestaurantUsersInput, Prisma.UserUpdateWithoutRestaurantUsersInput>, Prisma.UserUncheckedUpdateWithoutRestaurantUsersInput>
 }
 
+export type UserCreateNestedOneWithoutWaiterStationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWaiterStationsInput, Prisma.UserUncheckedCreateWithoutWaiterStationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWaiterStationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutWaiterStationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWaiterStationsInput, Prisma.UserUncheckedCreateWithoutWaiterStationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWaiterStationsInput
+  upsert?: Prisma.UserUpsertWithoutWaiterStationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWaiterStationsInput, Prisma.UserUpdateWithoutWaiterStationsInput>, Prisma.UserUncheckedUpdateWithoutWaiterStationsInput>
+}
+
 export type UserCreateWithoutPasswordHistoryInput = {
   id?: string
   name?: string | null
@@ -700,9 +861,14 @@ export type UserCreateWithoutPasswordHistoryInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPasswordHistoryInput = {
@@ -723,9 +889,14 @@ export type UserUncheckedCreateWithoutPasswordHistoryInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPasswordHistoryInput = {
@@ -762,9 +933,14 @@ export type UserUpdateWithoutPasswordHistoryInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPasswordHistoryInput = {
@@ -785,9 +961,14 @@ export type UserUncheckedUpdateWithoutPasswordHistoryInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAccountsInput = {
@@ -808,9 +989,14 @@ export type UserCreateWithoutAccountsInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -831,9 +1017,14 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -870,9 +1061,14 @@ export type UserUpdateWithoutAccountsInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -893,9 +1089,14 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -916,9 +1117,14 @@ export type UserCreateWithoutSessionsInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -939,9 +1145,14 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -978,9 +1189,14 @@ export type UserUpdateWithoutSessionsInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1001,9 +1217,14 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRestaurantUsersInput = {
@@ -1024,9 +1245,14 @@ export type UserCreateWithoutRestaurantUsersInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRestaurantUsersInput = {
@@ -1047,9 +1273,14 @@ export type UserUncheckedCreateWithoutRestaurantUsersInput = {
   termsAcceptedAt?: Date | string | null
   termsAcceptedIp?: string | null
   termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRestaurantUsersInput = {
@@ -1086,9 +1317,14 @@ export type UserUpdateWithoutRestaurantUsersInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRestaurantUsersInput = {
@@ -1109,8 +1345,141 @@ export type UserUncheckedUpdateWithoutRestaurantUsersInput = {
   termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutWaiterStationsInput = {
+  id?: string
+  name?: string | null
+  email: string
+  emailVerified?: Date | string | null
+  image?: string | null
+  password?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  mustChangePassword?: boolean
+  passwordChangedAt?: Date | string | null
+  lastActivityAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  termsAccepted?: boolean
+  termsAcceptedAt?: Date | string | null
+  termsAcceptedIp?: string | null
+  termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
+  passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutWaiterStationsInput = {
+  id?: string
+  name?: string | null
+  email: string
+  emailVerified?: Date | string | null
+  image?: string | null
+  password?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  mustChangePassword?: boolean
+  passwordChangedAt?: Date | string | null
+  lastActivityAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  termsAccepted?: boolean
+  termsAcceptedAt?: Date | string | null
+  termsAcceptedIp?: string | null
+  termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
+  passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutWaiterStationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutWaiterStationsInput, Prisma.UserUncheckedCreateWithoutWaiterStationsInput>
+}
+
+export type UserUpsertWithoutWaiterStationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutWaiterStationsInput, Prisma.UserUncheckedUpdateWithoutWaiterStationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutWaiterStationsInput, Prisma.UserUncheckedCreateWithoutWaiterStationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutWaiterStationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutWaiterStationsInput, Prisma.UserUncheckedUpdateWithoutWaiterStationsInput>
+}
+
+export type UserUpdateWithoutWaiterStationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastActivityAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
+  passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutWaiterStationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastActivityAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1124,6 +1493,7 @@ export type UserCountOutputType = {
   sessions: number
   restaurantUsers: number
   passwordHistory: number
+  waiterStations: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1131,6 +1501,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   sessions?: boolean | UserCountOutputTypeCountSessionsArgs
   restaurantUsers?: boolean | UserCountOutputTypeCountRestaurantUsersArgs
   passwordHistory?: boolean | UserCountOutputTypeCountPasswordHistoryArgs
+  waiterStations?: boolean | UserCountOutputTypeCountWaiterStationsArgs
 }
 
 /**
@@ -1171,6 +1542,13 @@ export type UserCountOutputTypeCountPasswordHistoryArgs<ExtArgs extends runtime.
   where?: Prisma.PasswordHistoryWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountWaiterStationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WaiterStationWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1190,10 +1568,15 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   termsAcceptedAt?: boolean
   termsAcceptedIp?: boolean
   termsAcceptedUserAgent?: boolean
+  failedLoginAttempts?: boolean
+  lockedUntil?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   restaurantUsers?: boolean | Prisma.User$restaurantUsersArgs<ExtArgs>
   passwordHistory?: boolean | Prisma.User$passwordHistoryArgs<ExtArgs>
+  waiterStations?: boolean | Prisma.User$waiterStationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1215,6 +1598,10 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   termsAcceptedAt?: boolean
   termsAcceptedIp?: boolean
   termsAcceptedUserAgent?: boolean
+  failedLoginAttempts?: boolean
+  lockedUntil?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1235,6 +1622,10 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   termsAcceptedAt?: boolean
   termsAcceptedIp?: boolean
   termsAcceptedUserAgent?: boolean
+  failedLoginAttempts?: boolean
+  lockedUntil?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
@@ -1255,14 +1646,19 @@ export type UserSelectScalar = {
   termsAcceptedAt?: boolean
   termsAcceptedIp?: boolean
   termsAcceptedUserAgent?: boolean
+  failedLoginAttempts?: boolean
+  lockedUntil?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "role" | "createdAt" | "updatedAt" | "mustChangePassword" | "passwordChangedAt" | "lastActivityAt" | "lastLoginAt" | "termsAccepted" | "termsAcceptedAt" | "termsAcceptedIp" | "termsAcceptedUserAgent", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "role" | "createdAt" | "updatedAt" | "mustChangePassword" | "passwordChangedAt" | "lastActivityAt" | "lastLoginAt" | "termsAccepted" | "termsAcceptedAt" | "termsAcceptedIp" | "termsAcceptedUserAgent" | "failedLoginAttempts" | "lockedUntil" | "totpSecret" | "totpEnabled", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   restaurantUsers?: boolean | Prisma.User$restaurantUsersArgs<ExtArgs>
   passwordHistory?: boolean | Prisma.User$passwordHistoryArgs<ExtArgs>
+  waiterStations?: boolean | Prisma.User$waiterStationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1275,6 +1671,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     sessions: Prisma.$SessionPayload<ExtArgs>[]
     restaurantUsers: Prisma.$RestaurantUserPayload<ExtArgs>[]
     passwordHistory: Prisma.$PasswordHistoryPayload<ExtArgs>[]
+    waiterStations: Prisma.$WaiterStationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1294,6 +1691,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     termsAcceptedAt: Date | null
     termsAcceptedIp: string | null
     termsAcceptedUserAgent: string | null
+    failedLoginAttempts: number
+    lockedUntil: Date | null
+    totpSecret: string | null
+    totpEnabled: boolean
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -1692,6 +2093,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   restaurantUsers<T extends Prisma.User$restaurantUsersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$restaurantUsersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RestaurantUserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   passwordHistory<T extends Prisma.User$passwordHistoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passwordHistoryArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordHistoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  waiterStations<T extends Prisma.User$waiterStationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$waiterStationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WaiterStationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1738,6 +2140,10 @@ export interface UserFieldRefs {
   readonly termsAcceptedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly termsAcceptedIp: Prisma.FieldRef<"User", 'String'>
   readonly termsAcceptedUserAgent: Prisma.FieldRef<"User", 'String'>
+  readonly failedLoginAttempts: Prisma.FieldRef<"User", 'Int'>
+  readonly lockedUntil: Prisma.FieldRef<"User", 'DateTime'>
+  readonly totpSecret: Prisma.FieldRef<"User", 'String'>
+  readonly totpEnabled: Prisma.FieldRef<"User", 'Boolean'>
 }
     
 
@@ -2224,6 +2630,30 @@ export type User$passwordHistoryArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.PasswordHistoryScalarFieldEnum | Prisma.PasswordHistoryScalarFieldEnum[]
+}
+
+/**
+ * User.waiterStations
+ */
+export type User$waiterStationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WaiterStation
+   */
+  select?: Prisma.WaiterStationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WaiterStation
+   */
+  omit?: Prisma.WaiterStationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WaiterStationInclude<ExtArgs> | null
+  where?: Prisma.WaiterStationWhereInput
+  orderBy?: Prisma.WaiterStationOrderByWithRelationInput | Prisma.WaiterStationOrderByWithRelationInput[]
+  cursor?: Prisma.WaiterStationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WaiterStationScalarFieldEnum | Prisma.WaiterStationScalarFieldEnum[]
 }
 
 /**

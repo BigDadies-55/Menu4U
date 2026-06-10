@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
+import { getGroupId, scopeWhere } from "@/lib/loyalty-scope";
 import { NextResponse } from "next/server";
 
 // Ensure loyalty-related columns on Order exist
@@ -18,6 +20,11 @@ export async function POST(
   { params }: { params: Promise<{ restaurantId: string }> }
 ) {
   const { restaurantId } = await params;
+
+  // Must be an authenticated staff member (cashier / manager)
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   await ensureColumns();
 
   // Rate limit: 10 redeem attempts per IP per 5 min
@@ -31,9 +38,10 @@ export async function POST(
     return NextResponse.json({ error: "missing_params" }, { status: 400 });
   }
 
-  // Validate member belongs to this restaurant
+  // Validate member belongs to this restaurant or its chain (shared wallet)
+  const scopeGroupId = await getGroupId(restaurantId);
   const member = await prisma.loyaltyMember.findFirst({
-    where: { id: memberId, restaurantId },
+    where: { id: memberId, ...scopeWhere(restaurantId, scopeGroupId) },
   });
   if (!member) return NextResponse.json({ error: "member_not_found" }, { status: 404 });
 

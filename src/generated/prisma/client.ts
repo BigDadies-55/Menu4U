@@ -177,6 +177,11 @@ export type LoyaltyTransaction = Prisma.LoyaltyTransactionModel
  */
 export type LoyaltyCoupon = Prisma.LoyaltyCouponModel
 /**
+ * Model WaiterStation
+ * 
+ */
+export type WaiterStation = Prisma.WaiterStationModel
+/**
  * Model LoyaltySettings
  * 
  */

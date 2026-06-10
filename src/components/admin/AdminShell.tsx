@@ -1,10 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { T } from "@/lib/ui";
+import { useState } from "react";
 import Sidebar, { useFavorites } from "./Sidebar";
-import TopBar from "./TopBar";
+import PageTitle from "./PageTitle";
 import type { Role } from "@/generated/prisma/client";
-
-const SIDEBAR_PINNED = 256; // default; actual value driven by --sidebar-w CSS var
 
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
@@ -23,28 +22,20 @@ interface Props {
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, kdsView, adminPalette = "dark", adminBg = "#1a1d23", adminBgImage, siteLogo, siteName = "Menu4U", adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = "#9ca3af", adminContentTextColor = "#e9ecef", adminTopBarBg, adminTopBarTextColor = "#adb5bd", children }: Props) {
-  const [sidebarOpen,       setSidebarOpen]       = useState(false);
-  const [pinned,            setPinned]             = useState(false);
+export default function AdminShell({
+  user, kdsView,
+  adminPalette = "dark", adminBg = T.surface, adminBgImage,
+  siteLogo, siteName = "Menu4U",
+  adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = T.muted,
+  adminContentTextColor = T.text,
+  children,
+}: Props) {
   const [favorites, toggleFavorite] = useFavorites();
-  const [showPasswordModal, setShowPasswordModal]  = useState(false);
-  const [pwForm,   setPwForm]   = useState({ current: "", next: "" });
-  const [pwLoading,setPwLoading]= useState(false);
-  const [pwError,  setPwError]  = useState("");
-  const [pwSuccess,setPwSuccess]= useState(false);
-
-  // Restore pin preference from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("menu4u_sidebar_pinned");
-    if (saved === "1") setPinned(true);
-  }, []);
-
-  function togglePin() {
-    setPinned(v => {
-      localStorage.setItem("menu4u_sidebar_pinned", v ? "0" : "1");
-      return !v;
-    });
-  }
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [pwForm,    setPwForm]    = useState({ current: "", next: "" });
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError,   setPwError]   = useState("");
+  const [pwSuccess, setPwSuccess] = useState(false);
 
   function openPasswordModal() {
     setShowPasswordModal(true);
@@ -71,61 +62,42 @@ export default function AdminShell({ user, kdsView, adminPalette = "dark", admin
     setPwLoading(false);
   }
 
+  const isWaiter = user.role === "WAITER";
+
   return (
     <div
       className="min-h-screen"
       style={{
-        // adminBg can be a hex color OR a CSS gradient string
         background: adminBgImage
           ? `url(${adminBgImage}) center/cover no-repeat fixed`
           : adminBg,
       }}
       dir="rtl"
     >
-
-      <Sidebar
-        user={user} kdsView={kdsView}
-        pinned={pinned} onTogglePin={togglePin}
-        isOpen={sidebarOpen}
-        onOpen={() => setSidebarOpen(true)}
-        onClose={() => setSidebarOpen(false)}
-        onChangePassword={openPasswordModal}
-        adminPalette={adminPalette}
-        siteLogo={siteLogo}
-        siteName={siteName}
-        adminSidebarBg={adminSidebarBg}
-        adminSidebarAccent={adminSidebarAccent}
-        adminSidebarTextColor={adminSidebarTextColor}
-        favorites={favorites}
-        onToggleFavorite={toggleFavorite}
-      />
-
-      {/* Main — offset right so content is never under the sidebar */}
-      <main
-        className="overflow-auto flex flex-col min-h-screen"
-        style={{
-          marginRight: `var(--sidebar-w, ${SIDEBAR_PINNED}px)`,
-          color: adminContentTextColor,
-        }}
-      >
-        {/* On mobile: no right margin */}
-        <style>{`
-          @media (max-width: 767px) { main { margin-right: 0 !important; } }
-          aside .resize-handle:hover > div { background: rgba(255,255,255,0.18) !important; }
-        `}</style>
-
-        {/* Top bar — sticky, full width of main */}
-        <TopBar
-          user={user}
+      {!isWaiter && (
+        <Sidebar
+          user={user} kdsView={kdsView}
           onChangePassword={openPasswordModal}
-          onOpenMobileSidebar={() => setSidebarOpen(v => !v)}
-          adminTopBarBg={adminTopBarBg}
-          adminTopBarTextColor={adminTopBarTextColor}
+          adminPalette={adminPalette}
+          siteLogo={siteLogo}
+          siteName={siteName}
+          adminSidebarBg={adminSidebarBg}
+          adminSidebarAccent={adminSidebarAccent}
+          adminSidebarTextColor={adminSidebarTextColor}
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
         />
+      )}
 
-        {/* Page content */}
+      <main
+        className="overflow-x-hidden overflow-y-auto flex flex-col min-h-screen"
+        style={{
+          marginRight: isWaiter ? 0 : "var(--sidebar-w, 52px)",
+          color: adminContentTextColor,
+        }}
+      >
+        <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
+
         <div className="flex-1">
           {children}
         </div>

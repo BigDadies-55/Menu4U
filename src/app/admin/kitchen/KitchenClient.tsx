@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 /* ── Types ── */
@@ -29,16 +30,16 @@ function fmtElapsed(m: number) {
   return `${Math.floor(m / 60)}ש' ${m % 60}דק'`;
 }
 function timerColor(mins: number) {
-  if (mins < 10) return "#22c55e";
-  if (mins < 20) return "#f59e0b";
-  return "#ef4444";
+  if (mins < 10) return T.green;
+  if (mins < 20) return T.orange;
+  return T.red;
 }
 
 /* ── Status config ── */
 const STATUS_DOT: Record<string, string> = {
-  PREPARING: "#38bdf8",
-  DONE:      "#22c55e",
-  CANCELLED: "#4b5563",
+  PREPARING: T.cyan,
+  DONE:      T.green,
+  CANCELLED: T.overlay,
 };
 const STATUS_LABEL: Record<string, string> = {
   PREPARING: "בהכנה",
@@ -103,8 +104,8 @@ function TableCard({
 
   return (
     <div style={{
-      background: allDone ? "#030f03" : "#0f172a",
-      border: `2px solid ${allDone ? "#16a34a" : isUrgent ? "#ef4444" : "#1e3a5f"}`,
+      background: allDone ? T.bg : T.bg,
+      border: `2px solid ${allDone ? T.green : isUrgent ? T.red : T.bg}`,
       borderRadius: 20,
       display: "flex", flexDirection: "column",
       overflow: "hidden",
@@ -116,14 +117,14 @@ function TableCard({
     }}>
       {/* ── Header ── */}
       <div style={{
-        background: allDone ? "#052e16" : "#1e293b",
+        background: allDone ? T.bg : T.surface,
         padding: "14px 24px 12px",
-        borderBottom: `1px solid ${allDone ? "#166534" : "#1e3a5f"}`,
+        borderBottom: `1px solid ${allDone ? T.green : T.bg}`,
         display: "flex", alignItems: "center", gap: 16,
       }}>
         {/* Table number badge */}
         <div style={{
-          background: allDone ? "#22c55e" : isUrgent ? "#ef4444" : "#facc15",
+          background: allDone ? T.green : isUrgent ? T.red : T.yellow,
           color: "#000",
           borderRadius: 12,
           minWidth: 64, height: 64,
@@ -136,11 +137,11 @@ function TableCard({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-            <span style={{ color: allDone ? "#86efac" : "#f1f5f9", fontWeight: 700, fontSize: 15 }}>
+            <span style={{ color: allDone ? T.green : T.text, fontWeight: 700, fontSize: 15 }}>
               שולחן {tableNumber}
             </span>
             <span style={{
-              color: allDone ? "#22c55e" : tColor, fontWeight: 800, fontSize: 17,
+              color: allDone ? T.green : tColor, fontWeight: 800, fontSize: 17,
               animation: isUrgent ? "pulse 1s infinite" : undefined,
             }}>
               ⏱ {fmtElapsed(mins)}
@@ -148,15 +149,15 @@ function TableCard({
           </div>
           {/* Progress bar */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ flex: 1, height: 8, borderRadius: 4, background: "#0f172a", overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 8, borderRadius: 4, background: T.bg, overflow: "hidden" }}>
               <div style={{
                 height: "100%", borderRadius: 4,
                 width: `${pct}%`,
-                background: pct === 100 ? "#22c55e" : "#38bdf8",
+                background: pct === 100 ? T.green : T.cyan,
                 transition: "width 0.4s ease",
               }}/>
             </div>
-            <span style={{ color: "#94a3b8", fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
+            <span style={{ color: T.sub, fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
               {doneCount}/{totalCount}
             </span>
           </div>
@@ -165,7 +166,7 @@ function TableCard({
         {/* All done badge */}
         {allDone && (
           <div style={{
-            background: "#22c55e", color: "#000",
+            background: T.green, color: "#000",
             borderRadius: 10, padding: "6px 14px",
             fontWeight: 900, fontSize: 13, flexShrink: 0,
           }}>✓ מוכן!</div>
@@ -218,12 +219,12 @@ function TableCard({
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "6px 20px",
-                  background: isDelivered ? "#052e16" : "#111827",
+                  background: isDelivered ? T.bg : T.bg,
                   borderBottom: "1px solid #1e293b",
                 }}>
                   <span style={{
                     fontSize: 11, fontWeight: 700,
-                    color: isDelivered ? "#4ade80" : "#64748b",
+                    color: isDelivered ? T.green : T.muted,
                   }}>
                     {isDelivered ? "✅ הושלם" : `הזמנה ${oidx + 1}`}
                     {order.notes ? ` · 💬 ${order.notes}` : ""}
@@ -240,7 +241,7 @@ function TableCard({
                 // Apply station filter
                 if (!itemMatchesStation({ id: iid, quantity, notes, itemStatus, item, modifiers, course, heldUntilFired, firedAt, doneAt })) return null;
 
-                const dot       = STATUS_DOT[itemStatus]   ?? "#64748b";
+                const dot       = STATUS_DOT[itemStatus]   ?? T.muted;
                 const isDone    = itemStatus === "DONE" || isDelivered;
                 const isCancelled = itemStatus === "CANCELLED";
                 const nextLabel = !isDelivered && !isCancelled ? NEXT_LABEL[itemStatus] : undefined;
@@ -254,8 +255,8 @@ function TableCard({
                       display: "flex", alignItems: "center", gap: 12,
                       padding: "12px 20px",
                       background: isDone && !isDelivered
-                        ? "#052e16"
-                        : isCancelled ? "#1a0000" : "transparent",
+                        ? T.bg
+                        : isCancelled ? T.bg : "transparent",
                       borderBottom: "1px solid #1e293b",
                       opacity: isCancelled ? 0.5 : 1,
                     }}
@@ -263,15 +264,15 @@ function TableCard({
                     {/* Status dot */}
                     <div style={{
                       width: 14, height: 14, borderRadius: "50%",
-                      background: isDelivered ? "#22c55e" : dot,
+                      background: isDelivered ? T.green : dot,
                       flexShrink: 0,
-                      boxShadow: `0 0 6px ${isDelivered ? "#22c55e" : dot}88`,
+                      boxShadow: `0 0 6px ${isDelivered ? T.green : dot}88`,
                     }}/>
 
                     {/* Qty badge */}
                     <span style={{
-                      background: (isDelivered ? "#22c55e" : dot) + "25",
-                      color: isDelivered ? "#22c55e" : dot,
+                      background: (isDelivered ? T.green : dot) + "25",
+                      color: isDelivered ? T.green : dot,
                       borderRadius: 8, padding: "3px 8px",
                       fontWeight: 800, fontSize: 14, flexShrink: 0,
                     }}>×{quantity}</span>
@@ -279,7 +280,7 @@ function TableCard({
                     {/* Name + modifiers */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        color: isCancelled ? "#4b5563" : isDelivered ? "#94a3b8" : "#f1f5f9",
+                        color: isCancelled ? T.overlay : isDelivered ? T.sub : T.text,
                         fontWeight: 600, fontSize: 15,
                         textDecoration: isCancelled ? "line-through" : undefined,
                         lineHeight: 1.3,
@@ -290,24 +291,24 @@ function TableCard({
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
                         {course > 1 && (
                           <span style={{
-                            background: course === 2 ? "#7c3aed22" : "#d97706", color: course === 2 ? "#a78bfa" : "#000",
+                            background: course === 2 ? "#7c3aed22" : T.orange, color: course === 2 ? T.purple : "#000",
                             fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 20,
                           }}>
                             {course === 2 ? "🍖 עיקרי" : "🍮 קינוח"}
                           </span>
                         )}
                         {item.category?.name && (
-                          <span style={{ color: "#475569", fontSize: 10, fontWeight: 600 }}>
+                          <span style={{ color: T.sub, fontSize: 10, fontWeight: 600 }}>
                             {item.category.name}
                           </span>
                         )}
                         {firedAt && doneAt && (
-                          <span style={{ color: "#22c55e", fontSize: 10 }}>
+                          <span style={{ color: T.green, fontSize: 10 }}>
                             ⏱ {Math.round((new Date(doneAt).getTime() - new Date(firedAt).getTime()) / 60000)} דק'
                           </span>
                         )}
                         {firedAt && !doneAt && (
-                          <span style={{ color: "#38bdf8", fontSize: 10 }}>
+                          <span style={{ color: T.cyan, fontSize: 10 }}>
                             🔥 {Math.round((Date.now() - new Date(firedAt).getTime()) / 60000)} דק' בהכנה
                           </span>
                         )}
@@ -317,7 +318,7 @@ function TableCard({
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 3 }}>
                           {modifiers.map((m, i) => (
                             <span key={i} style={{
-                              background: "#1e3a2e", color: "#4ade80",
+                              background: T.bg, color: T.green,
                               fontSize: 11, padding: "1px 6px", borderRadius: 20,
                             }}>
                               {m.label}
@@ -326,7 +327,7 @@ function TableCard({
                         </div>
                       )}
                       {notes && (
-                        <div style={{ color: "#64748b", fontSize: 11, fontStyle: "italic", marginTop: 2 }}>
+                        <div style={{ color: T.muted, fontSize: 11, fontStyle: "italic", marginTop: 2 }}>
                           💬 {notes}
                         </div>
                       )}
@@ -351,7 +352,7 @@ function TableCard({
                         onClick={() => back(order.id, iid)}
                         disabled={busy.has(iid + "-b")}
                         style={{
-                          background: "#1e293b", color: "#64748b",
+                          background: T.surface, color: T.muted,
                           border: "1px solid #334155",
                           borderRadius: 8, width: 32, height: 32,
                           fontSize: 14, cursor: "pointer", flexShrink: 0,
@@ -366,7 +367,7 @@ function TableCard({
                         onClick={() => adv(order.id, iid)}
                         disabled={busyAdv}
                         style={{
-                          background: itemStatus === "PREPARING" ? "#16a34a" : "#0284c7",
+                          background: itemStatus === "PREPARING" ? T.green : T.blue,
                           color: "#fff", border: "none",
                           borderRadius: 10,
                           padding: "10px 16px",
@@ -577,14 +578,14 @@ export default function KitchenClient({
   return (
     <div ref={containerRef} style={{
       minHeight: "100vh",
-      background: "#030712",
+      background: T.bg,
       display: "flex", flexDirection: "column",
       fontFamily: "'Heebo', 'Segoe UI', sans-serif",
       direction: "rtl",
     }}>
       {/* ── Top bar ── */}
       <div style={{
-        background: "#0a0f1e",
+        background: T.bg,
         borderBottom: "1px solid #1e293b",
         padding: "10px 20px",
         display: "flex", alignItems: "center", gap: 16,
@@ -598,9 +599,9 @@ export default function KitchenClient({
             display: "flex", alignItems: "center", justifyContent: "center",
             fontWeight: 900, fontSize: 16, color: "#fff",
           }}>M</div>
-          <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 15 }}>
+          <span style={{ color: T.text, fontWeight: 700, fontSize: 15 }}>
             🍳 תצוגת מטבח
-            {restName && <span style={{ color: "#64748b", fontWeight: 400 }}> · {restName}</span>}
+            {restName && <span style={{ color: T.muted, fontWeight: 400 }}> · {restName}</span>}
           </span>
         </div>
 
@@ -610,7 +611,7 @@ export default function KitchenClient({
             value={restaurantId}
             onChange={e => setRestaurantId(e.target.value)}
             style={{
-              background: "#1e293b", color: "#f1f5f9",
+              background: T.surface, color: T.text,
               border: "1px solid #334155", borderRadius: 8,
               padding: "6px 12px", fontSize: 13, cursor: "pointer",
             }}
@@ -621,14 +622,14 @@ export default function KitchenClient({
 
         {/* Station filter */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: "#64748b", fontSize: 12 }}>🔧 עמדה:</span>
+          <span style={{ color: T.muted, fontSize: 12 }}>🔧 עמדה:</span>
           <input
             type="text"
             value={stationFilter}
             onChange={e => saveStationFilter(e.target.value)}
             placeholder="סנן לפי קטגוריה..."
             style={{
-              background: "#1e293b", color: "#f1f5f9",
+              background: T.surface, color: T.text,
               border: stationFilter ? "1px solid #c9a84c" : "1px solid #334155",
               borderRadius: 8, padding: "4px 10px", fontSize: 12,
               width: 160, outline: "none",
@@ -636,7 +637,7 @@ export default function KitchenClient({
           />
           {stationFilter && (
             <button onClick={() => saveStationFilter("")}
-              style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>
+              style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>
               ×
             </button>
           )}
@@ -648,7 +649,7 @@ export default function KitchenClient({
         {/* All ready alert */}
         {allReadyAlert && (
           <div style={{
-            background: "#22c55e", color: "#000",
+            background: T.green, color: "#000",
             padding: "6px 16px", borderRadius: 20,
             fontWeight: 900, fontSize: 13,
             animation: "pulse 1s infinite",
@@ -658,7 +659,7 @@ export default function KitchenClient({
         {/* New order alert */}
         {newAlert && (
           <div style={{
-            background: "#facc15", color: "#000",
+            background: T.yellow, color: "#000",
             padding: "6px 14px", borderRadius: 20,
             fontWeight: 800, fontSize: 13,
             animation: "pulse 0.5s infinite",
@@ -668,9 +669,9 @@ export default function KitchenClient({
         {/* Stats */}
         <div style={{
           display: "flex", gap: 16, alignItems: "center",
-          color: "#64748b", fontSize: 12,
+          color: T.muted, fontSize: 12,
         }}>
-          <span style={{ color: "#38bdf8", fontWeight: 700 }}>{byTable.size} שולחנות</span>
+          <span style={{ color: T.cyan, fontWeight: 700 }}>{byTable.size} שולחנות</span>
           <span>{now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>
           <span>↻ {countdown}s</span>
         </div>
@@ -680,7 +681,7 @@ export default function KitchenClient({
           onClick={fetchOrders}
           title="רענן (R)"
           style={{
-            background: "#1e293b", color: "#94a3b8",
+            background: T.surface, color: T.sub,
             border: "1px solid #334155", borderRadius: 8,
             padding: "6px 12px", fontSize: 12, cursor: "pointer",
           }}
@@ -689,7 +690,7 @@ export default function KitchenClient({
           onClick={toggleFullscreen}
           title="מסך מלא (F)"
           style={{
-            background: "#1e293b", color: "#94a3b8",
+            background: T.surface, color: T.sub,
             border: "1px solid #334155", borderRadius: 8,
             padding: "6px 12px", fontSize: 12, cursor: "pointer",
           }}
@@ -711,13 +712,13 @@ export default function KitchenClient({
             gridColumn: "1 / -1",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
-            minHeight: 300, gap: 16, color: "#1e293b",
+            minHeight: 300, gap: 16, color: T.text,
           }}>
             <div style={{ fontSize: 72 }}>✅</div>
-            <div style={{ color: "#334155", fontWeight: 700, fontSize: 20 }}>
+            <div style={{ color: T.muted, fontWeight: 700, fontSize: 20 }}>
               {stationFilter ? `אין פריטים לעמדה "${stationFilter}"` : "אין הזמנות פעילות"}
             </div>
-            <div style={{ color: "#1e3a5f", fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
+            <div style={{ color: T.muted, fontSize: 14 }}>המטבח פנוי · {now.toLocaleTimeString("he-IL")}</div>
           </div>
         ) : (
           Array.from(byTable.entries()).map(([tableNumber, tableOrders]) => (

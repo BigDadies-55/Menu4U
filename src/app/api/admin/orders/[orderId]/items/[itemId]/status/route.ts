@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sseNotify } from "@/lib/sse";
+import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 const ITEM_NEXT: Record<string, string> = {
@@ -26,17 +27,21 @@ export async function PATCH(
   let goBack = false;
   let serve  = false;
   let unserve = false;
+  let comp    = false;
+  let compReason: string | null = null;
   try {
     const body = await req.json();
-    cancel  = !!body?.cancel;
-    goBack  = !!body?.goBack;
-    serve   = !!body?.serve;
-    unserve = !!body?.unserve;
+    cancel     = !!body?.cancel;
+    goBack     = !!body?.goBack;
+    serve      = !!body?.serve;
+    unserve    = !!body?.unserve;
+    comp       = !!body?.comp;
+    compReason = body?.compReason ?? null;
   } catch { /* no body — forward advance */ }
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: true },
+    include: { items: { include: { item: { select: { name: true } } } } },
   });
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -58,7 +63,10 @@ export async function PATCH(
     const servedAt = serve ? new Date() : null;
     await prisma.orderItem.update({
       where: { id: itemId },
-      data: { servedAt },
+      data: {
+        servedAt,
+        servedByUserId: serve ? session.user.id : null,
+      },
     });
     sseNotify(order.restaurantId);
     return NextResponse.json({ servedAt: servedAt?.toISOString() ?? null });
@@ -73,12 +81,47 @@ export async function PATCH(
       where: { id: itemId },
       data: { itemStatus: "CANCELLED" },
     });
-    // Recalculate order total (exclude cancelled items)
-    const remaining = order.items.filter(i => i.id !== itemId && i.itemStatus !== "CANCELLED");
+    // Recalculate order total (exclude cancelled + comped items)
+    const remaining = order.items.filter(i => i.id !== itemId && i.itemStatus !== "CANCELLED" && !i.isComped);
     const newTotal = remaining.reduce((s, i) => s + i.price * i.quantity, 0);
     await prisma.order.update({ where: { id: orderId }, data: { totalAmount: newTotal } });
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "CANCEL_ORDER_ITEM", entity: "OrderItem", entityId: itemId,
+      entityName: `${orderItem.item.name} ×${orderItem.quantity}`,
+      meta: { orderId, tableNumber: order.tableNumber, newTotal },
+      ip: getIp(req),
+    });
     sseNotify(order.restaurantId);
     return NextResponse.json({ itemStatus: "CANCELLED", orderDelivered: false, newTotal });
+  }
+
+  /* ── Comp a single item (give for free) ── */
+  if (comp) {
+    if (orderItem.itemStatus === "CANCELLED") {
+      return NextResponse.json({ error: "Item is cancelled" }, { status: 400 });
+    }
+    await prisma.orderItem.update({
+      where: { id: itemId },
+      data: { isComped: !orderItem.isComped, compReason: !orderItem.isComped ? (compReason ?? null) : null },
+    });
+    const toggling = !orderItem.isComped;
+    // Recalculate total: exclude cancelled and comped items
+    const allItems = order.items.map(i => i.id === itemId ? { ...i, isComped: toggling } : i);
+    const newTotal = allItems
+      .filter(i => i.itemStatus !== "CANCELLED" && !i.isComped)
+      .reduce((s, i) => s + i.price * i.quantity, 0);
+    await prisma.order.update({ where: { id: orderId }, data: { totalAmount: newTotal } });
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: toggling ? "COMP_ORDER_ITEM" : "UNCOMP_ORDER_ITEM",
+      entity: "OrderItem", entityId: itemId,
+      entityName: `${orderItem.item.name} ×${orderItem.quantity}`,
+      meta: { orderId, tableNumber: order.tableNumber, reason: compReason, newTotal },
+      ip: getIp(req),
+    });
+    sseNotify(order.restaurantId);
+    return NextResponse.json({ isComped: toggling, newTotal });
   }
 
   /* ── Go backwards ── */

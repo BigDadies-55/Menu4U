@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Menu4U — TopNav Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: #f5f0e8;
+      color: #1a1208;
+    }
+
+    /* ══════════════════════ TOPNAV ══════════════════════ */
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #ffffff;
+      border-bottom: 1px solid rgba(180,140,60,0.2);
+      box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    }
+
+    .topnav-inner {
+      display: flex;
+      align-items: center;
+      height: 62px;
+      padding: 0 28px;
+      gap: 0;
+    }
+
+    /* ── Brand ── */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      flex-shrink: 0;
+      margin-left: 32px;   /* RTL: margin-left = gap after brand towards left */
+    }
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #7a5a0e, #c9890a);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; color: #fff;
+    }
+    .brand-name {
+      font-size: 20px;
+      font-weight: 900;
+      color: #1a1208;
+      letter-spacing: 0.5px;
+    }
+    .brand-name span { color: #c9890a; }
+
+    /* ── Nav items ── */
+    .nav-items {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .nav-item {
+      position: relative;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #5a4020;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+    }
+    .nav-link:hover,
+    .nav-item:hover .nav-link {
+      background: rgba(201,137,10,0.08);
+      color: #1a1208;
+    }
+    .nav-link.active {
+      color: #c9890a;
+      font-weight: 600;
+    }
+    .nav-link.active::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      right: 14px;
+      left: 14px;
+      height: 2px;
+      background: #c9890a;
+      border-radius: 2px 2px 0 0;
+    }
+    .nav-link .chevron {
+      font-size: 10px;
+      opacity: 0.55;
+      transition: transform 0.2s;
+    }
+    .nav-item:hover .chevron {
+      transform: rotate(180deg);
+      opacity: 0.9;
+    }
+
+    /* ── Dropdown ── */
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 210px;
+      background: #ffffff;
+      border: 1px solid rgba(180,140,60,0.18);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      padding: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-6px);
+      transition: opacity 0.18s, transform 0.18s;
+    }
+    .nav-item:hover .dropdown {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-size: 13.5px;
+      color: #5a4020;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .dropdown-item:hover {
+      background: rgba(201,137,10,0.08);
+      color: #1a1208;
+    }
+    .dropdown-item.active {
+      background: rgba(201,137,10,0.12);
+      color: #c9890a;
+      font-weight: 600;
+    }
+    .dropdown-icon {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      background: rgba(201,137,10,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .dropdown-item.active .dropdown-icon {
+      background: rgba(201,137,10,0.18);
+    }
+    .dropdown-sep {
+      height: 1px;
+      background: rgba(180,140,60,0.12);
+      margin: 5px 4px;
+    }
+    .dropdown-section-label {
+      padding: 6px 12px 3px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #9a8060;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* ── Right actions ── */
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-right: 16px;
+    }
+
+    .nav-btn-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: 50px;
+      border: 1.5px solid #1a1208;
+      background: transparent;
+      color: #1a1208;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .nav-btn-pill:hover {
+      background: #1a1208;
+      color: #fff;
+    }
+
+    .nav-btn-gold {
+      border-color: #c9890a;
+      color: #c9890a;
+    }
+    .nav-btn-gold:hover {
+      background: #c9890a;
+      color: #fff;
+    }
+
+    .nav-icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: #5a4020;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      transition: background 0.15s;
+    }
+    .nav-icon-btn:hover {
+      background: rgba(201,137,10,0.1);
+      color: #1a1208;
+    }
+
+    /* User avatar pill */
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px 4px 6px;
+      border-radius: 50px;
+      border: 1px solid rgba(180,140,60,0.25);
+      background: rgba(201,137,10,0.05);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .user-pill:hover {
+      background: rgba(201,137,10,0.1);
+      border-color: rgba(180,140,60,0.4);
+    }
+    .user-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c9890a, #7a5a0e);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1208;
+    }
+    .user-role {
+      font-size: 10px;
+      color: #9a8060;
+    }
+
+    /* ══════════════════════ PAGE CONTENT (mock) ══════════════════════ */
+    .page-hero {
+      background: linear-gradient(135deg, #f0ece3 0%, #e8dcc8 100%);
+      padding: 48px 40px;
+      border-bottom: 1px solid rgba(180,140,60,0.15);
+    }
+    .page-hero h1 {
+      font-size: 28px; font-weight: 900; color: #1a1208; margin-bottom: 6px;
+    }
+    .page-hero p { color: #9a8060; font-size: 14px; }
+    .page-body {
+      padding: 32px 40px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid rgba(180,140,60,0.18);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .card h3 { font-size: 13px; color: #9a8060; margin-bottom: 6px; }
+    .card .val { font-size: 32px; font-weight: 900; color: #c9890a; }
+
+    /* ══════════════════════ VARIANT LABEL ══════════════════════ */
+    .variant-label {
+      text-align: center;
+      padding: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #9a8060;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: #f0ece3;
+      border-bottom: 1px solid rgba(180,140,60,0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════ VARIANT A: White bar ═══════════════════ -->
+  <div class="variant-label">גרסה A — רקע לבן (כמו Maytronics)</div>
+
+  <nav class="topnav" style="background:#ffffff;">
+    <div class="topnav-inner">
+
+      <!-- Brand (RTL: rightmost) -->
+      <a class="brand" href="#">
+        <div class="brand-icon">🍽</div>
+        <div class="brand-name">Menu<span>4U</span></div>
+      </a>
+
+      <!-- Nav Items -->
+      <div class="nav-items">
+
+        <!-- Dashboard -->
+        <div class="nav-item">
+          <a class="nav-link active" href="#">דשבורד</a>
+        </div>
+
+        <!-- ניהול dropdown -->
+        <div class="nav-item">
+          <button class="nav-link">
+            ניהול <span class="chevron">▾</span>
+          </button>
+          <div class="dropdown">
+            <div class="dropdown-section-label">מסעדה</div>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🍴</div> מסעדות
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🏢</div> רשתות
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">📋</div> תפריטים
+            </a>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-section-label">מערכת</div>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">👥</div> משתמשים
+            </a>
+            <a class="dropdown-item active" href="#">
+              <div class="dropdown-icon">⚙️</div> הגדרות
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">📊</div> לוגים
+            </a>
+          </div>
+        </div>
+
+        <!-- שירות dropdown -->
+        <div class="nav-item">
+          <button class="nav-link">
+            שירות <span class="chevron">▾</span>
+          </button>
+          <div class="dropdown" style="min-width:230px;">
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">📦</div> הזמנות
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">💳</div> קאשייר
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🗺️</div> רצפת שירות
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🎛️</div> מנהל משמרת
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🍽️</div> הזמנת מלצר
+            </a>
+            <div class="dropdown-sep"></div>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">📐</div> פריסת שולחנות
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">📈</div> סטטיסטיקות
+            </a>
+            <div class="dropdown-sep"></div>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">⭐</div> מועדון לקוחות
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">📱</div> קשרי לקוחות
+            </a>
+          </div>
+        </div>
+
+        <!-- KDS dropdown -->
+        <div class="nav-item">
+          <button class="nav-link">
+            KDS <span class="chevron">▾</span>
+          </button>
+          <div class="dropdown">
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🖥️</div> תצוגת שולחן
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🌑</div> Station Dark
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">📋</div> Kanban
+            </a>
+            <a class="dropdown-item" href="#">
+              <div class="dropdown-icon">🎫</div> Ticket Board
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /nav-items -->
+
+      <!-- Right Actions -->
+      <div class="nav-actions">
+        <button class="nav-icon-btn" title="חיפוש">🔍</button>
+
+        <!-- User pill -->
+        <div class="user-pill">
+          <div class="user-avatar">A</div>
+          <div>
+            <div class="user-name">Admin</div>
+            <div class="user-role">SUPER ADMIN</div>
+          </div>
+        </div>
+
+        <!-- Hamburger for mobile (hidden on desktop) -->
+        <button class="nav-icon-btn" title="תפריט">☰</button>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- Mock page content -->
+  <div class="page-hero">
+    <h1>דשבורד</h1>
+    <p>ברוך הבא — menu4u restaurant OS</p>
+  </div>
+  <div class="page-body">
+    <div class="card"><h3>הזמנות פתוחות</h3><div class="val">12</div></div>
+    <div class="card"><h3>שולחנות תפוסים</h3><div class="val">7/10</div></div>
+    <div class="card"><h3>מחזור היום</h3><div class="val">₪4,820</div></div>
+  </div>
+
+  <hr style="border:none; border-top: 2px dashed rgba(180,140,60,0.3); margin: 40px 0;" />
+
+  <!-- ═══════════════════ VARIANT B: Panel/Beige bar ═══════════════════ -->
+  <div class="variant-label">גרסה B — רקע בז' (T.panel = #f0ece3, מותאם לפלטה הנוכחית)</div>
+
+  <nav class="topnav" style="background:#f0ece3; border-bottom-color: rgba(180,140,60,0.3);">
+    <div class="topnav-inner">
+
+      <a class="brand" href="#">
+        <div class="brand-icon">🍽</div>
+        <div class="brand-name">Menu<span>4U</span></div>
+      </a>
+
+      <div class="nav-items">
+        <div class="nav-item">
+          <a class="nav-link active" href="#" style="color:#c9890a; font-weight:600;">דשבורד</a>
+        </div>
+
+        <div class="nav-item">
+          <button class="nav-link">ניהול <span class="chevron">▾</span></button>
+          <div class="dropdown">
+            <div class="dropdown-section-label">מסעדה</div>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🍴</div> מסעדות</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🏢</div> רשתות</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">📋</div> תפריטים</a>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-section-label">מערכת</div>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">👥</div> משתמשים</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">⚙️</div> הגדרות</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">📊</div> לוגים</a>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <button class="nav-link">שירות <span class="chevron">▾</span></button>
+          <div class="dropdown" style="min-width:230px;">
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">📦</div> הזמנות</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">💳</div> קאשייר</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🗺️</div> רצפת שירות</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🎛️</div> מנהל משמרת</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🍽️</div> הזמנת מלצר</a>
+            <div class="dropdown-sep"></div>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">📐</div> פריסת שולחנות</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">📈</div> סטטיסטיקות</a>
+            <div class="dropdown-sep"></div>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">⭐</div> מועדון לקוחות</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">📱</div> קשרי לקוחות</a>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <button class="nav-link">KDS <span class="chevron">▾</span></button>
+          <div class="dropdown">
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🖥️</div> תצוגת שולחן</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🌑</div> Station Dark</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">📋</div> Kanban</a>
+            <a class="dropdown-item" href="#"><div class="dropdown-icon">🎫</div> Ticket Board</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a class="nav-btn-pill nav-btn-gold" href="#">📲 תפריט לקוח</a>
+        <button class="nav-icon-btn">🔍</button>
+        <div class="user-pill" style="background:rgba(201,137,10,0.08); border-color:rgba(180,140,60,0.3);">
+          <div class="user-avatar">A</div>
+          <div>
+            <div class="user-name">Admin</div>
+            <div class="user-role">SUPER ADMIN</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-hero" style="background:linear-gradient(135deg,#f5f0e8,#ece4d2);">
+    <h1>דשבורד</h1>
+    <p>ברוך הבא — menu4u restaurant OS</p>
+  </div>
+  <div class="page-body">
+    <div class="card"><h3>הזמנות פתוחות</h3><div class="val">12</div></div>
+    <div class="card"><h3>שולחנות תפוסים</h3><div class="val">7/10</div></div>
+    <div class="card"><h3>מחזור היום</h3><div class="val">₪4,820</div></div>
+  </div>
+
+</body>
+</html>

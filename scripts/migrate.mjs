@@ -9,6 +9,11 @@ const sqls = [
       ALTER TYPE "Role" ADD VALUE 'OWNER';
     END IF;
   END $$;`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'SHIFT_MANAGER' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'Role')) THEN
+      ALTER TYPE "Role" ADD VALUE 'SHIFT_MANAGER';
+    END IF;
+  END $$;`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "phone2" TEXT;`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "orderPhone" TEXT;`,
   `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "tags" TEXT[] DEFAULT '{}';`,
@@ -129,6 +134,16 @@ const sqls = [
       REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
   );`,
   `CREATE INDEX IF NOT EXISTS "PasswordHistory_userId_idx" ON "PasswordHistory"("userId");`,
+  // Auth security: account lockout + TOTP
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockedUntil" TIMESTAMP(3);`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totpSecret" TEXT;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totpEnabled" BOOLEAN NOT NULL DEFAULT false;`,
+  `ALTER TABLE "LoyaltyMember" ADD COLUMN IF NOT EXISTS "lastSmsSentAt" TIMESTAMP(3);`,
+  // Waiter tracking fields for per-table timeline
+  `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "createdByUserId" TEXT;`,
+  `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "closedByUserId" TEXT;`,
+  `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedByUserId" TEXT;`,
 ];
 
 async function run() {
