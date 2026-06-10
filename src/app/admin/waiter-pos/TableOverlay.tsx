@@ -46,6 +46,8 @@ type Props = {
   orderStatus: string | null;
   insights: Insight[];
   isMobile: boolean;
+  freeTables: string[];
+  restaurantId: string;
   onClose: () => void;
   onAddItems: (order: OrderDetail) => void;
   onNewOrder: (guestCount: number, allergens: string[]) => void;
@@ -73,7 +75,7 @@ const STATUS_TX: Record<string, string> = {
 // ── Component ────────────────────────────────────────────────────────
 export function TableOverlay({
   tableNum, seats, availStatus, guests, minutesSitting, sittingStart,
-  activeOrderIds, totalAmount, insights, isMobile,
+  activeOrderIds, totalAmount, insights, isMobile, freeTables, restaurantId,
   onClose, onAddItems, onNewOrder, onStatusChange,
 }: Props) {
   const isOccupied = availStatus === "occupied";
@@ -84,8 +86,13 @@ export function TableOverlay({
   const [allergyEditOpen, setAllergyEditOpen] = useState(false);
   const [allergens, setAllergens] = useState<string[]>([]);
   const [savingAllergens, setSavingAllergens] = useState(false);
-  const [guestCount, setGuestCount] = useState(Math.max(guests, 2));
+  const [guestCount, setGuestCount]   = useState(Math.max(guests, 2));
   const [firingCourse, setFiringCourse] = useState<number | null>(null);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferring, setTransferring] = useState(false);
+  const [billOpen, setBillOpen] = useState(false);
+  const [payConfirm, setPayConfirm] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
@@ -118,6 +125,33 @@ export function TableOverlay({
     const r = await fetch(`/api/admin/orders/${orderId}`);
     if (r.ok) setOrder(await r.json());
     setFiringCourse(null);
+  }
+
+  async function transferTable(toTable: string) {
+    if (!orderId) return;
+    setTransferring(true);
+    await fetch(`/api/admin/orders/${orderId}/transfer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ toTable }),
+    });
+    setTransferring(false);
+    setTransferOpen(false);
+    onStatusChange("free"); // refresh table list
+    onClose();
+  }
+
+  async function closeBill(payMethod: "cash" | "card" | "other" = "card") {
+    setClosing(true);
+    await fetch("/api/admin/orders/close-table", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restaurantId, tableNumber: tableNum, payMethod }),
+    });
+    setClosing(false);
+    setPayConfirm(false);
+    onStatusChange("free");
+    onClose();
   }
 
   async function saveAllergens() {
@@ -324,7 +358,9 @@ export function TableOverlay({
 
         {/* ── Footer CTAs ── */}
         <div style={{ borderTop: "1px solid #e8e2da", padding: "14px 16px", background: "#fff", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-          {isOccupied && order && (
+
+          {/* ── Occupied + order loaded ── */}
+          {isOccupied && order && !billOpen && !payConfirm && (
             <>
               <button onClick={() => onAddItems(order)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 ➕ הוסף מנות
@@ -333,15 +369,99 @@ export function TableOverlay({
                 <button onClick={() => setAllergyEditOpen(o => !o)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#1a1612", fontFamily: "inherit" }}>
                   ⚠️ אלרגיות
                 </button>
-                <button onClick={onClose} style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#8b2e22", fontFamily: "inherit" }}>
-                  💳 סגור חשבון
+                <button onClick={() => setTransferOpen(o => !o)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${transferOpen ? "#93c5fd" : "#e8e2da"}`, background: transferOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: transferOpen ? "#1d4ed8" : "#1a1612", fontFamily: "inherit" }}>
+                  🔄 העבר
+                </button>
+                <button onClick={() => { setBillOpen(true); setTransferOpen(false); setAllergyEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #d9a840", background: "#fdf7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#92400e", fontFamily: "inherit" }}>
+                  🧾 חשבון
                 </button>
               </div>
+              {transferOpen && (
+                <div style={{ background: "#f4f1ed", borderRadius: 12, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 8 }}>בחר שולחן יעד (פנויים)</div>
+                  {freeTables.length === 0 ? (
+                    <div style={{ fontSize: 12, color: "#8a8480" }}>אין שולחנות פנויים</div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {freeTables.map(t => (
+                        <button key={t} onClick={() => transferTable(t)} disabled={transferring} style={{ padding: "6px 16px", borderRadius: 99, border: "1.5px solid #93c5fd", background: "#eff6ff", color: "#1d4ed8", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                          {transferring ? "…" : `שולחן ${t}`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
-          {isOccupied && !order && !loadingOrder && (
-            <button onClick={onClose} style={{ padding: 14, borderRadius: 12, border: "none", background: "#f4f1ed", color: "#1a1612", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>סגור</button>
+
+          {/* ── Bill summary view ── */}
+          {isOccupied && order && billOpen && !payConfirm && (
+            <>
+              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, overflow: "hidden", marginBottom: 4 }}>
+                <div style={{ padding: "10px 14px", background: "#1a1612", color: "#fff" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", marginBottom: 2 }}>חשבון שולחן {tableNum} · הזמנה #{order.orderNumber}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900 }}>₪{order.totalAmount.toFixed(2)}</div>
+                </div>
+                {order.items.filter(i => !(i as OrderItemDetail & { voidedAt?: string }).voidedAt && !i.isComped && i.itemStatus !== "CANCELLED").map((oi, idx, arr) => (
+                  <div key={oi.id} style={{ padding: "8px 14px", borderBottom: idx < arr.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                    <span style={{ color: "#1a1612", fontWeight: 600 }}>{oi.itemName} ×{oi.quantity}</span>
+                    <span style={{ fontWeight: 800, color: "#4a4540" }}>₪{(oi.price * oi.quantity).toFixed(0)}</span>
+                  </div>
+                ))}
+                {order.items.some(i => i.isComped) && (
+                  <div style={{ padding: "6px 14px", background: "#f0fdf4", fontSize: 11, color: "#166534", fontWeight: 700 }}>
+                    🎁 {order.items.filter(i => i.isComped).length} פריטים על חשבון הבית
+                  </div>
+                )}
+                <div style={{ padding: "10px 14px", background: "#f4f1ed", display: "flex", justifyContent: "space-between", fontWeight: 900, fontSize: 15 }}>
+                  <span>סה"כ לתשלום</span>
+                  <span>₪{order.totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+              <button onClick={() => setPayConfirm(true)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1f5c3a", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+                ✓ סמן כשולם
+              </button>
+              <button onClick={() => setBillOpen(false)} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                ← חזור
+              </button>
+            </>
           )}
+
+          {/* ── Payment confirmation ── */}
+          {isOccupied && payConfirm && (
+            <>
+              <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 12, padding: "14px 16px", textAlign: "center" }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#14532d", marginBottom: 4 }}>אישור תשלום — שולחן {tableNum}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#1f5c3a", marginBottom: 6 }}>₪{(order?.totalAmount ?? totalAmount).toFixed(2)}</div>
+                <div style={{ fontSize: 11, color: "#166534" }}>בחר אמצעי תשלום:</div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {(["card", "cash", "other"] as const).map(m => (
+                  <button key={m} onClick={() => closeBill(m)} disabled={closing} style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #86efac", background: "#f0fdf4", fontSize: 12, fontWeight: 800, cursor: closing ? "default" : "pointer", color: "#1f5c3a", fontFamily: "inherit" }}>
+                    {closing ? "…" : { card: "💳 כרטיס", cash: "💵 מזומן", other: "📱 אחר" }[m]}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setPayConfirm(false)} disabled={closing} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                ← חזור
+              </button>
+            </>
+          )}
+
+          {/* ── Occupied but no order (edge case) ── */}
+          {isOccupied && !order && !loadingOrder && (
+            <>
+              <button onClick={() => onNewOrder(guestCount, allergens)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+                🍽️ פתח הזמנה חדשה
+              </button>
+              <button onClick={() => onStatusChange("free")} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                🟢 סמן כפנוי
+              </button>
+            </>
+          )}
+
+          {/* ── Free / reserved / inactive ── */}
           {!isOccupied && (
             <>
               <button onClick={() => onNewOrder(guestCount, allergens)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>

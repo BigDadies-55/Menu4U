@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import type { OrderItemDetail } from "./TableOverlay";
 import { ALLERGEN_LIST } from "@/lib/allergens";
+import { ManagerPinModal } from "./ManagerPinModal";
 
 export type CartItem = {
   key: string;
@@ -16,6 +17,8 @@ export type CartItem = {
 };
 
 type Props = {
+  orderId: string | null;
+  restaurantId: string;
   existingItems: OrderItemDetail[];
   cartItems: CartItem[];
   tableAllergens: string[];
@@ -24,6 +27,7 @@ type Props = {
   onNotesChange: (key: string, notes: string) => void;
   onFireItem: (orderItemId: string) => void;
   onFireCourse: (course: number) => void;
+  onItemActioned?: () => void;
 };
 
 const LS_VIEW_KEY = "menu4u_order_panel_view";
@@ -38,7 +42,7 @@ const ITEM_STATUS_TX: Record<string, string> = {
   PENDING: "#92400e", PREPARING: "#1e3a5f", DONE: "#1f5c3a", CANCELLED: "#6b7280",
 };
 
-export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumber, onQtyChange, onNotesChange, onFireItem, onFireCourse }: Props) {
+export function OrderPanel({ orderId, restaurantId, existingItems, cartItems, tableAllergens, orderNumber, onQtyChange, onNotesChange, onFireItem, onFireCourse, onItemActioned }: Props) {
   const [view, setView] = useState<"B" | "C">(() => {
     if (typeof window !== "undefined") {
       const s = localStorage.getItem(LS_VIEW_KEY);
@@ -47,8 +51,12 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
     return "B";
   });
   const [openLanes, setOpenLanes] = useState<Record<string, boolean>>({ sent: false, preparing: true, holding: true, new: true });
-  const [firingItem, setFiringItem] = useState<string | null>(null);
+  const [firingItem, setFiringItem]   = useState<string | null>(null);
   const [firingCourse, setFiringCourse] = useState<number | null>(null);
+  type PinAction = { type: "void" | "comp"; itemId: string; itemName: string };
+  const [pinAction, setPinAction]     = useState<PinAction | null>(null);
+  const [reasonInput, setReasonInput] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(LS_VIEW_KEY, view);
@@ -80,6 +88,22 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
     setFiringCourse(null);
   }
 
+  async function doVoidOrComp(token: string, managerName: string) {
+    if (!pinAction || !orderId) return;
+    setActionLoading(true);
+    const url = `/api/admin/orders/${orderId}/items/${pinAction.itemId}/${pinAction.type}`;
+    await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ managerToken: token, reason: reasonInput || null }),
+    });
+    setActionLoading(false);
+    setPinAction(null);
+    setReasonInput("");
+    onItemActioned?.();
+    void managerName;
+  }
+
   // categorize existing items
   const sentItems      = existingItems.filter(i => !i.heldUntilFired && (i.itemStatus === "DONE" || i.doneAt));
   const preparingItems = existingItems.filter(i => !i.heldUntilFired && i.itemStatus !== "DONE" && !i.doneAt && i.itemStatus !== "CANCELLED");
@@ -100,24 +124,36 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
   // ── shared row for existing items ──
   function ExistingRow({ item, dim }: { item: OrderItemDetail; dim?: boolean }) {
     const warn = allergyWarn(item.itemAllergens);
+    const isVoided = !!(item as OrderItemDetail & { voidedAt?: string }).voidedAt;
+    const canAct = !isVoided && !item.isComped && item.itemStatus !== "CANCELLED";
     return (
-      <div style={{ padding: "9px 14px", borderBottom: "1px solid #f0ebe4", display: "flex", alignItems: "center", gap: 8, opacity: dim ? .45 : 1 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1612", display: "flex", alignItems: "center", gap: 5 }}>
-            {item.itemName}
-            {warn && <span style={{ fontSize: 9, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 5, padding: "1px 5px" }}>⚠️ {allergyLabel(item.itemAllergens)}</span>}
+      <div style={{ padding: "9px 14px", borderBottom: "1px solid #f0ebe4", background: isVoided || item.isComped ? "#fafafa" : undefined, opacity: dim || isVoided ? .45 : 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1612", display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+              {item.itemName}
+              {warn && <span style={{ fontSize: 9, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 5, padding: "1px 5px" }}>⚠️ {allergyLabel(item.itemAllergens)}</span>}
+              {item.isComped && <span style={{ fontSize: 9, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 5, padding: "1px 5px" }}>🎁 חינם</span>}
+              {isVoided && <span style={{ fontSize: 9, fontWeight: 800, background: "#fef2f2", color: "#991b1b", borderRadius: 5, padding: "1px 5px" }}>✕ בוטל</span>}
+            </div>
+            <div style={{ fontSize: 10, color: "#8a8480", marginTop: 1 }}>קורס {item.course} · ×{item.quantity}</div>
           </div>
-          <div style={{ fontSize: 10, color: "#8a8480", marginTop: 1 }}>קורס {item.course} · ×{item.quantity}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 99, background: item.heldUntilFired ? "#fdf7ed" : (ITEM_STATUS_BG[item.itemStatus] ?? "#f9fafb"), color: item.heldUntilFired ? "#92400e" : (ITEM_STATUS_TX[item.itemStatus] ?? "#666") }}>
+            {item.heldUntilFired ? "🔥 ממתין" : (ITEM_STATUS_HE[item.itemStatus] ?? item.itemStatus)}
+          </div>
+          {item.heldUntilFired && (
+            <button onClick={() => handleFireItem(item.id)} disabled={firingItem === item.id} style={{ padding: "4px 9px", borderRadius: 99, border: "1px solid #e8cc90", background: "#fdf7ed", color: "#92400e", fontSize: 10, fontWeight: 800, cursor: firingItem === item.id ? "default" : "pointer", fontFamily: "inherit" }}>
+              {firingItem === item.id ? "…" : "🔥"}
+            </button>
+          )}
+          {canAct && orderId && (
+            <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+              <button onClick={() => { setReasonInput(""); setPinAction({ type: "comp", itemId: item.id, itemName: item.itemName }); }} title="על חשבון הבית" style={{ width: 24, height: 24, borderRadius: 6, border: "1.5px solid #bbf7d0", background: "#f0fdf4", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>🎁</button>
+              <button onClick={() => { setReasonInput(""); setPinAction({ type: "void", itemId: item.id, itemName: item.itemName }); }} title="בטל מנה" style={{ width: 24, height: 24, borderRadius: 6, border: "1.5px solid #fecaca", background: "#fef2f2", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            </div>
+          )}
+          <div style={{ fontSize: 11, fontWeight: 800, color: item.isComped || isVoided ? "#9ca3af" : "#4a4540", flexShrink: 0, textDecoration: item.isComped || isVoided ? "line-through" : "none" }}>₪{(item.price * item.quantity).toFixed(0)}</div>
         </div>
-        <div style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 99, background: item.heldUntilFired ? "#fdf7ed" : (ITEM_STATUS_BG[item.itemStatus] ?? "#f9fafb"), color: item.heldUntilFired ? "#92400e" : (ITEM_STATUS_TX[item.itemStatus] ?? "#666") }}>
-          {item.heldUntilFired ? "🔥 ממתין" : (ITEM_STATUS_HE[item.itemStatus] ?? item.itemStatus)}
-        </div>
-        {item.heldUntilFired && (
-          <button onClick={() => handleFireItem(item.id)} disabled={firingItem === item.id} style={{ padding: "4px 9px", borderRadius: 99, border: "1px solid #e8cc90", background: "#fdf7ed", color: "#92400e", fontSize: 10, fontWeight: 800, cursor: firingItem === item.id ? "default" : "pointer", fontFamily: "inherit" }}>
-            {firingItem === item.id ? "…" : "🔥"}
-          </button>
-        )}
-        <div style={{ fontSize: 11, fontWeight: 800, color: "#4a4540", flexShrink: 0 }}>₪{(item.price * item.quantity).toFixed(0)}</div>
       </div>
     );
   }
@@ -181,7 +217,7 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
   const panelTotal      = existingTotal + newTotal;
 
   return (
-    <div style={{ width: 340, background: "#fff", borderRight: "1px solid #e8e2da", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div style={{ width: "100%", minWidth: 0, background: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
       {/* Header */}
       <div style={{ padding: "10px 14px", borderBottom: "1px solid #e8e2da", display: "flex", flexDirection: "column", gap: 7, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -276,6 +312,50 @@ export function OrderPanel({ existingItems, cartItems, tableAllergens, orderNumb
           <span style={{ fontSize: 18, fontWeight: 900 }}>₪{panelTotal.toFixed(0)}</span>
         </div>
       </div>
+
+      {/* ── PIN modal for void/comp ── */}
+      {pinAction && (
+        <>
+          {/* Reason input step */}
+          <div style={{ position: "fixed", inset: 0, zIndex: 590, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+            <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: "24px 20px 32px", width: "100%", maxWidth: 420, direction: "rtl" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>
+                {pinAction.type === "void" ? "✕ ביטול מנה" : "🎁 על חשבון הבית"} — {pinAction.itemName}
+              </div>
+              <input
+                autoFocus
+                value={reasonInput}
+                onChange={e => setReasonInput(e.target.value)}
+                placeholder={pinAction.type === "void" ? "סיבת הביטול (אופציונלי)..." : "סיבה (אופציונלי)..."}
+                style={{ width: "100%", background: "#f4f1ed", border: "1.5px solid #e8e2da", borderRadius: 10, padding: "10px 14px", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 14 }}
+                onKeyDown={e => { if (e.key === "Enter") { setPinAction(p => p ? { ...p, _showPin: true } as never : p); } }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setPinAction(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
+                <button
+                  onClick={() => setPinAction(p => p ? { ...p, _showPin: true } as never : p)}
+                  style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: pinAction.type === "void" ? "#e53e3e" : "#166534", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                  המשך — הכנס PIN מנהל
+                </button>
+              </div>
+            </div>
+          </div>
+          {(pinAction as never as { _showPin?: boolean })._showPin && (
+            <ManagerPinModal
+              restaurantId={restaurantId}
+              title={pinAction.type === "void" ? "אישור ביטול מנה" : "אישור — על חשבון הבית"}
+              description={`${pinAction.itemName}${reasonInput ? ` · ${reasonInput}` : ""}`}
+              onApproved={doVoidOrComp}
+              onCancel={() => setPinAction(null)}
+            />
+          )}
+        </>
+      )}
+      {actionLoading && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 610, background: "rgba(0,0,0,.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: "20px 32px", fontSize: 14, fontWeight: 700 }}>מבצע...</div>
+        </div>
+      )}
     </div>
   );
 }

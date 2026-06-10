@@ -45,6 +45,24 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  const POPULAR_CAT_ID = "__popular__";
+
+  // Load popular items + inject as first category
+  useEffect(() => {
+    fetch(`/api/admin/waiter-pos/popular?restaurantId=${restaurantId}`)
+      .then(r => r.ok ? r.json() : { items: [] })
+      .then(d => {
+        if ((d.items ?? []).length > 0) {
+          setCategories(prev => {
+            const alreadyHas = prev.some(c => c.id === POPULAR_CAT_ID);
+            if (alreadyHas) return prev;
+            const popularCat: MenuCategory = { id: POPULAR_CAT_ID, name: "⭐ פופולרי", items: d.items };
+            return [popularCat, ...prev];
+          });
+        }
+      });
+  }, [restaurantId]);
+
   // Load menu
   useEffect(() => {
     fetch(`/api/admin/waiter-pos/menu?restaurantId=${restaurantId}`)
@@ -289,8 +307,10 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                 <div style={{ padding: "12px 0 4px", display: "flex", justifyContent: "center", flexShrink: 0 }}>
                   <div style={{ width: 40, height: 4, borderRadius: 99, background: "#e8e2da" }} />
                 </div>
-                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", width: "100%" }}>
                   <OrderPanel
+                    orderId={orderId}
+                    restaurantId={restaurantId}
                     existingItems={order?.items ?? []}
                     cartItems={cart}
                     tableAllergens={tableAllergens}
@@ -299,6 +319,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                     onNotesChange={changeNotes}
                     onFireItem={fireItem}
                     onFireCourse={fireCourse}
+                    onItemActioned={refreshOrder}
                   />
                 </div>
                 <div style={{ padding: "12px 16px 28px", borderTop: "1px solid #e8e2da", flexShrink: 0 }}>

@@ -16,6 +16,8 @@ export async function runBackupAndEmail(trigger: "manual" | "cron", triggeredBy?
     restaurants, restaurantUsers, users, menus, categories, items,
     modifierGroups, modifiers, orders, orderItems, orderItemModifiers,
     orderStatusLogs, customers, tableSessions, auditLogs, menuViews,
+    loyaltySettings, loyaltyMembers, loyaltyTransactions, loyaltyCoupons,
+    orderCounters,
   ] = await Promise.all([
     prisma.restaurant.findMany({ where: { id: { in: allowedIds } } }),
     prisma.restaurantUser.findMany({ where: { restaurantId: { in: allowedIds } } }),
@@ -36,6 +38,11 @@ export async function runBackupAndEmail(trigger: "manual" | "cron", triggeredBy?
     prisma.tableSession.findMany({ where: { restaurantId: { in: allowedIds } }, orderBy: { closedAt: "asc" } }),
     prisma.auditLog.findMany({ orderBy: { createdAt: "asc" }, take: 10000 }).catch(() => []),
     prisma.menuView.findMany({ where: { restaurantId: { in: allowedIds } } }).catch(() => []),
+    prisma.loyaltySettings.findMany({ where: { restaurantId: { in: allowedIds } } }),
+    prisma.loyaltyMember.findMany({ where: { restaurantId: { in: allowedIds } }, orderBy: { createdAt: "asc" } }),
+    prisma.loyaltyTransaction.findMany({ where: { member: { restaurantId: { in: allowedIds } } }, orderBy: { createdAt: "asc" } }),
+    prisma.loyaltyCoupon.findMany({ where: { restaurantId: { in: allowedIds } }, orderBy: { createdAt: "asc" } }),
+    prisma.orderCounter.findMany({ where: { restaurantId: { in: allowedIds } } }),
   ]);
 
   const counts = {
@@ -44,13 +51,17 @@ export async function runBackupAndEmail(trigger: "manual" | "cron", triggeredBy?
     modifiers: modifiers.length, orders: orders.length, orderItems: orderItems.length,
     customers: customers.length, auditLogs: auditLogs.length,
     tableSessions: tableSessions.length, menuViews: menuViews.length,
+    loyaltyMembers: loyaltyMembers.length, loyaltyTransactions: loyaltyTransactions.length,
+    loyaltyCoupons: loyaltyCoupons.length,
   };
 
   const backup = {
-    _meta: { version: 2, exportedAt: new Date().toISOString(), exportedBy: triggeredBy ?? trigger, restaurantIds: allowedIds, counts },
+    _meta: { version: 3, exportedAt: new Date().toISOString(), exportedBy: triggeredBy ?? trigger, restaurantIds: allowedIds, counts },
     restaurants, restaurantUsers, users, menus, categories, items,
     modifierGroups, modifiers, orders, orderItems, orderItemModifiers,
     orderStatusLogs, customers, tableSessions, auditLogs, menuViews,
+    loyaltySettings, loyaltyMembers, loyaltyTransactions, loyaltyCoupons,
+    orderCounters,
   };
 
   const json    = JSON.stringify(backup, null, 2);
@@ -89,7 +100,8 @@ export async function runBackupAndEmail(trigger: "manual" | "cron", triggeredBy?
       <tr><td style="padding:16px 20px;">
         <div style="font-size:13px;font-weight:700;color:#8B6914;margin-bottom:8px;">סטטיסטיקות גיבוי</div>
         <div style="font-size:13px;color:#555;">מסעדות: ${counts.restaurants} | תפריטים: ${counts.menus} | הזמנות: ${counts.orders}</div>
-        <div style="font-size:13px;color:#555;margin-top:4px;">פריטים: ${counts.items} | לקוחות: ${counts.customers} | לוגים: ${counts.auditLogs}</div>
+        <div style="font-size:13px;color:#555;margin-top:4px;">פריטים: ${counts.items} | לקוחות: ${counts.customers} | נאמנות: ${counts.loyaltyMembers} חברים</div>
+        <div style="font-size:13px;color:#555;margin-top:4px;">לוגים: ${counts.auditLogs}</div>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#999;margin:20px 0 0;">קובץ הגיבוי מצורף למייל זה.</p>

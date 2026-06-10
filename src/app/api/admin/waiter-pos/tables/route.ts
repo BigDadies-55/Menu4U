@@ -75,6 +75,7 @@ export async function GET(req: Request) {
       updatedAt: true,
       coversCount: true,
       totalAmount: true,
+      items: { select: { itemStatus: true, voidedAt: true } },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -140,6 +141,8 @@ export async function GET(req: Request) {
       totalAmount,
       orderCount,
       minutesSinceLastOrder,
+      readyItemCount: activeOrders.reduce((sum, o) =>
+        sum + o.items.filter(i => i.itemStatus === "DONE" && !i.voidedAt).length, 0),
     };
   });
 

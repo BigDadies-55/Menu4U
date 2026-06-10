@@ -20,6 +20,7 @@ type TableData = {
   totalAmount: number;
   orderCount: number;
   minutesSinceLastOrder: number;
+  readyItemCount?: number;
 };
 
 type Insight = {
@@ -589,6 +590,15 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                   )}
 
 
+                  {/* Ready badge */}
+                  {(t.readyItemCount ?? 0) > 0 && (
+                    <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
+                      <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "3px 8px", fontSize: 10, fontWeight: 800, color: "#166534", display: "flex", alignItems: "center", gap: 4 }}>
+                        ✅ {t.readyItemCount} מנות מוכנות להגשה
+                      </div>
+                    </div>
+                  )}
+
                   {/* AI row — only if there are insights for this table */}
                   {tableInsights.length > 0 && (
                     <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
@@ -752,6 +762,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           orderStatus={overlayTable.orderStatus}
           insights={overlayInsights}
           isMobile={isMobile}
+          freeTables={tables.filter(t => t.availStatus === "free").map(t => t.tableNum)}
+          restaurantId={restaurantId}
           onClose={() => setTableOverlay(null)}
           onAddItems={(order) => {
             setOrderScreenData({ orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });
