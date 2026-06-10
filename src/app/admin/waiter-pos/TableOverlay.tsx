@@ -19,6 +19,7 @@ export type OrderItemDetail = {
   doneAt: string | null;
   servedAt: string | null;
   isComped: boolean;
+  voidedAt?: string | null;
 };
 
 export type OrderDetail = {
@@ -54,74 +55,53 @@ type Props = {
   onStatusChange: (status: "free" | "reserved" | "inactive") => void;
 };
 
-// ── Helpers ─────────────────────────────────────────────────────────
-function fmtTimer(sittingStart: string | null): string {
-  if (!sittingStart) return "00:00";
-  const s = Math.max(0, Math.floor((Date.now() - new Date(sittingStart).getTime()) / 1000));
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+function fmtMins(sittingStart: string | null): string {
+  if (!sittingStart) return "0";
+  return String(Math.floor((Date.now() - new Date(sittingStart).getTime()) / 60000));
 }
-
-const ITEM_STATUS_HE: Record<string, string> = {
-  PENDING: "ממתין", PREPARING: "מכין", DONE: "מוכן", CANCELLED: "בוטל",
-};
-
-const STATUS_BG: Record<string, string> = {
-  PENDING: "#fdf7ed", PREPARING: "#f0f4fa", DONE: "#f0f7f3", CANCELLED: "#f9fafb",
-};
-const STATUS_TX: Record<string, string> = {
-  PENDING: "#92400e", PREPARING: "#1e3a5f", DONE: "#1f5c3a", CANCELLED: "#6b7280",
-};
 
 // ── Component ────────────────────────────────────────────────────────
 export function TableOverlay({
-  tableNum, seats, availStatus, guests, minutesSitting, sittingStart,
+  tableNum, seats, availStatus, guests, sittingStart,
   activeOrderIds, totalAmount, insights, isMobile, freeTables, restaurantId,
   onClose, onAddItems, onNewOrder, onStatusChange,
 }: Props) {
   const isOccupied = availStatus === "occupied";
   const orderId = activeOrderIds[0] ?? null;
 
-  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [order, setOrder]               = useState<OrderDetail | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [allergyEditOpen, setAllergyEditOpen] = useState(false);
-  const [allergens, setAllergens] = useState<string[]>([]);
+  const [statusEditOpen, setStatusEditOpen]   = useState(false);
+  const [allergens, setAllergens]       = useState<string[]>([]);
   const [savingAllergens, setSavingAllergens] = useState(false);
-  const [guestCount, setGuestCount]   = useState(Math.max(guests, 2));
+  const [guestCount, setGuestCount]     = useState(Math.max(guests, 2));
   const [firingCourse, setFiringCourse] = useState<number | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferring, setTransferring] = useState(false);
-  const [billOpen, setBillOpen] = useState(false);
-  const [payConfirm, setPayConfirm] = useState(false);
-  const [closing, setClosing] = useState(false);
+  const [billOpen, setBillOpen]         = useState(false);
+  const [payConfirm, setPayConfirm]     = useState(false);
+  const [closing, setClosing]           = useState(false);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
     setLoadingOrder(true);
     fetch(`/api/admin/orders/${orderId}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d) {
-          setOrder(d);
-          setAllergens(d.tableAllergens ?? []);
-        }
-      })
+      .then(d => { if (d) { setOrder(d); setAllergens(d.tableAllergens ?? []); } })
       .finally(() => setLoadingOrder(false));
   }, [orderId, isOccupied]);
 
-  // derived: courses that are held
-  const heldCourses = Array.from(
-    new Set((order?.items ?? []).filter(i => i.heldUntilFired).map(i => i.course))
-  ).sort();
+  // Courses derived from order items
+  const courseNums = Array.from(new Set((order?.items ?? []).map(i => i.course))).sort();
 
   async function fireCourse(course: number) {
     if (!orderId) return;
     setFiringCourse(course);
     await fetch(`/api/admin/orders/${orderId}/fire-course`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ course }),
     });
-    // refresh order
     const r = await fetch(`/api/admin/orders/${orderId}`);
     if (r.ok) setOrder(await r.json());
     setFiringCourse(null);
@@ -131,21 +111,18 @@ export function TableOverlay({
     if (!orderId) return;
     setTransferring(true);
     await fetch(`/api/admin/orders/${orderId}/transfer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ toTable }),
     });
     setTransferring(false);
-    setTransferOpen(false);
-    onStatusChange("free"); // refresh table list
+    onStatusChange("free");
     onClose();
   }
 
   async function closeBill(payMethod: "cash" | "card" | "other" = "card") {
     setClosing(true);
     await fetch("/api/admin/orders/close-table", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restaurantId, tableNumber: tableNum, payMethod }),
     });
     setClosing(false);
@@ -158,298 +135,320 @@ export function TableOverlay({
     if (!orderId) return;
     setSavingAllergens(true);
     await fetch(`/api/admin/orders/${orderId}/add-items`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items: [], tableAllergens: allergens }),
     });
     setSavingAllergens(false);
     setAllergyEditOpen(false);
+    setOrder(o => o ? { ...o, tableAllergens: allergens } : o);
   }
 
   function toggleAllergen(key: string) {
-    setAllergens(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
+    setAllergens(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   }
 
-  // ── Inline styles ─────────────────────────────────────────────────
-  const panelStyle: React.CSSProperties = isMobile
-    ? { position: "fixed", inset: 0, background: "#faf8f5", display: "flex", flexDirection: "column", zIndex: 501, overflowY: "auto" }
-    : { background: "#faf8f5", borderRadius: 24, width: 440, maxHeight: "88dvh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 12px 50px rgba(26,22,18,.18)" };
+  const activeItems  = (order?.items ?? []).filter(i => !i.voidedAt && i.itemStatus !== "CANCELLED");
+  const billTotal    = order?.totalAmount ?? totalAmount;
+  const allergyHits  = (order?.tableAllergens ?? []);
 
+  // ── Overlay wrappers ─────────────────────────────────────────────
   const bgStyle: React.CSSProperties = isMobile
     ? { position: "fixed", inset: 0, zIndex: 500 }
-    : { position: "fixed", inset: 0, background: "rgba(26,22,18,.4)", backdropFilter: "blur(3px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" };
+    : { position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" };
+
+  const panelStyle: React.CSSProperties = isMobile
+    ? { position: "fixed", inset: 0, background: "#f5f3ef", display: "flex", flexDirection: "column", zIndex: 501, overflowY: "auto" }
+    : { background: "#f5f3ef", borderRadius: 28, width: 460, maxHeight: "90dvh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
 
   return (
     <div style={bgStyle} onClick={isMobile ? undefined : onClose}>
       <div style={panelStyle} onClick={e => e.stopPropagation()}>
 
-        {/* ── Dark hero header ── */}
-        <div style={{ background: "#1a1612", padding: "20px 20px 18px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 10, color: "#888", fontWeight: 600, letterSpacing: ".04em", marginBottom: 2 }}>שולחן</div>
-            <div style={{ fontSize: 46, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{tableNum}</div>
-            <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>
-              👤 {isOccupied && guests > 0 ? `${guests} סועדים` : `${seats} מקומות`}
+        {/* ── Header ── */}
+        <div style={{ background: "#fff", padding: "16px 20px 14px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ede9e3" }}>
+          {/* X button */}
+          <button onClick={onClose} style={{ width: 42, height: 42, borderRadius: 99, border: "none", background: "#f0ede8", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", color: "#555", flexShrink: 0, fontFamily: "inherit" }}>✕</button>
+
+          {/* Middle info */}
+          {isOccupied ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#e07060", fontVariantNumeric: "tabular-nums" }}>⏱ {fmtMins(sittingStart)} דק&apos;</span>
+                <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 12px", borderRadius: 99, background: "#fdf2f0", color: "#c0392b", border: "1.5px solid #f5c4bc" }}>תפוס</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#888" }}>👤 {guests > 0 ? `${guests} סועדים` : `${seats} מקומות`}</div>
             </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-            <button onClick={onClose} style={{ background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.15)", borderRadius: 99, width: 34, height: 34, fontSize: 16, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-            {isOccupied && (
-              <>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#e07060", fontVariantNumeric: "tabular-nums" }}>{fmtTimer(sittingStart)}</div>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(224,112,96,.18)", color: "#e07060" }}>תפוס</span>
-              </>
-            )}
-            {!isOccupied && (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "rgba(90,158,122,.18)", color: "#5a9e7a" }}>פנוי</span>
-            )}
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 12px", borderRadius: 99, background: "#f0f7f3", color: "#1f5c3a", border: "1.5px solid #b3d9c4" }}>פנוי</span>
+              <div style={{ fontSize: 12, color: "#888" }}>👤 {seats} מקומות</div>
+            </div>
+          )}
+
+          {/* Table number */}
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, letterSpacing: ".05em" }}>שולחן</div>
+            <div style={{ fontSize: 46, fontWeight: 900, color: "#1a1612", lineHeight: 1 }}>{tableNum}</div>
           </div>
         </div>
 
         {/* ── Scrollable body ── */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
 
-          {/* ════════ OCCUPIED TABLE ════════ */}
+          {/* AI insights */}
+          {insights.length > 0 && (
+            <div style={{ background: "#f0eeff", border: "1.5px solid #d0c8f0", borderRadius: 16, padding: "12px 16px", marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#5a4a9e", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>✨ תובנות AI</div>
+              {insights.map((ins, i) => (
+                <div key={i} style={{ fontSize: 13, color: "#3d3070", lineHeight: 1.5, marginBottom: i < insights.length - 1 ? 5 : 0, display: "flex", alignItems: "flex-start", gap: 6 }}>
+                  <span style={{ flexShrink: 0 }}>{ins.type === "alert" ? "⚠️" : ins.type === "tip" ? "💡" : "ℹ️"}</span>
+                  {ins.text}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ════ OCCUPIED ════ */}
           {isOccupied && (
             <>
-              {/* AI insights */}
-              {insights.length > 0 && (
-                <div style={{ background: "#f5f3fb", border: "1.5px solid #d0c8f0", borderRadius: 14, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 8 }}>
-                  <span style={{ fontSize: 15, flexShrink: 0 }}>✨</span>
-                  <div>
-                    {insights.map((ins, i) => (
-                      <div key={i} style={{ fontSize: 12, color: "#3d3070", fontWeight: 500, lineHeight: 1.5, marginBottom: i < insights.length - 1 ? 4 : 0 }}>{ins.text}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {loadingOrder && <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: 20 }}>טוען הזמנה...</div>}
 
-              {/* Order summary */}
-              {loadingOrder && <div style={{ fontSize: 12, color: "#888", textAlign: "center", padding: 20 }}>טוען הזמנה...</div>}
-
-              {order && (
+              {order && !billOpen && !payConfirm && (
                 <>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#8a8480", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 8 }}>
-                    הזמנה #{order.orderNumber} · ₪{order.totalAmount.toFixed(0)}
-                    {order.tableAllergens.length > 0 && (
-                      <span style={{ marginRight: 8, color: "#8b2e22", background: "#fdf2f0", padding: "1px 8px", borderRadius: 99, fontWeight: 700 }}>
-                        ⚠️ {order.tableAllergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}
-                      </span>
-                    )}
-                  </div>
+                  {/* Order label */}
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", textAlign: "left", marginBottom: 8 }}>הזמנה #{order.orderNumber}</div>
 
-                  <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, marginBottom: 14, overflow: "hidden" }}>
-                    {order.items.map((oi, i) => (
-                      <div key={oi.id} style={{ padding: "9px 14px", borderBottom: i < order.items.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1612" }}>
-                            {oi.itemName}
-                            {oi.itemAllergens.some(a => allergens.includes(a)) && <span style={{ marginRight: 4, fontSize: 10, fontWeight: 800, color: "#8b2e22", background: "#fdf2f0", padding: "1px 5px", borderRadius: 5 }}>⚠️</span>}
+                  {/* Items card */}
+                  <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
+                    {activeItems.map((oi, i) => {
+                      const allergyHit = oi.itemAllergens.some(a => allergyHits.includes(a));
+                      const allergyLabel = oi.itemAllergens.filter(a => allergyHits.includes(a))
+                        .map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
+                      return (
+                        <div key={oi.id} style={{ padding: "10px 16px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            {allergyHit && (
+                              <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 8px", border: "1px solid #f5c4bc" }}>⚠️ {allergyLabel}</span>
+                            )}
+                            {oi.isComped && <span style={{ fontSize: 10, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 99, padding: "2px 8px" }}>🎁 חינם</span>}
+                            <span style={{ fontSize: 13, color: "#1a1612" }}>{oi.itemName} × {oi.quantity}</span>
                           </div>
-                          <div style={{ fontSize: 10, color: "#8a8480", marginTop: 2 }}>קורס {oi.course} · ×{oi.quantity}</div>
                         </div>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: STATUS_BG[oi.itemStatus] ?? "#f9fafb", color: STATUS_TX[oi.itemStatus] ?? "#666" }}>
-                          {oi.heldUntilFired ? "ממתין 🔥" : (ITEM_STATUS_HE[oi.itemStatus] ?? oi.itemStatus)}
-                        </span>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: "#4a4540", flexShrink: 0 }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
+                    {/* Total row */}
+                    <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontSize: 15, fontWeight: 900, color: "#1a1612" }}>₪{billTotal.toFixed(0)}</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1612" }}>סה&quot;כ</div>
+                    </div>
                   </div>
 
-                  {/* Held courses fire buttons */}
-                  {heldCourses.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: "#92400e", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 8 }}>🔥 קורסים ממתינים לשחרור</div>
-                      {heldCourses.map(c => (
-                        <div key={c} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fdf7ed", border: "1.5px solid #e8cc90", borderRadius: 12, padding: "10px 14px", marginBottom: 6 }}>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1612" }}>קורס {c}</div>
-                            <div style={{ fontSize: 11, color: "#8a8480", marginTop: 2 }}>
-                              {order.items.filter(i => i.course === c && i.heldUntilFired).length} פריטים ממתינים
+                  {/* Course management */}
+                  {courseNums.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#c07020", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>🔥 ניהול קורסים</div>
+                      {courseNums.map(c => {
+                        const courseItems = (order.items ?? []).filter(i => i.course === c && !i.voidedAt && i.itemStatus !== "CANCELLED");
+                        const hasFired    = courseItems.some(i => i.firedAt || !i.heldUntilFired);
+                        const allHeld     = courseItems.every(i => i.heldUntilFired);
+                        return (
+                          <div key={c} style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, padding: "12px 16px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1612" }}>קורס {c} – {courseItems.length} פריטים</div>
+                              <div style={{ fontSize: 11, color: "#8a8480", marginTop: 2 }}>
+                                {allHeld ? "ממתין לשחרור" : hasFired ? "✓ יצא למטבח" : "בהכנה"}
+                              </div>
                             </div>
+                            {allHeld ? (
+                              <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "7px 18px", borderRadius: 99, border: "1.5px solid #d4a840", background: "#fdf7ed", color: "#92400e", fontSize: 12, fontWeight: 800, cursor: firingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
+                                {firingCourse === c ? "…" : "🔥 שחרר"}
+                              </button>
+                            ) : (
+                              <div style={{ padding: "7px 18px", borderRadius: 99, background: "#f0f7f3", color: "#1f5c3a", fontSize: 12, fontWeight: 800, border: "1.5px solid #b3d9c4" }}>✓ יצא</div>
+                            )}
                           </div>
-                          <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "8px 18px", borderRadius: 99, border: "none", background: firingCourse === c ? "#e8cc90" : "#c89440", color: "#fff", fontSize: 12, fontWeight: 800, cursor: firingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
-                            {firingCourse === c ? "שולח..." : "🔥 שחרר"}
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* Allergy edit */}
+                  {allergyEditOpen && (
+                    <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, padding: "14px 16px", marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: "#8a8480", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>עדכון אלרגיות בשולחן</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
+                        <button onClick={() => setAllergens([])} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.length === 0 ? "#5a9e7a" : "#e8e2da"}`, background: allergens.length === 0 ? "#f0f7f3" : "#f4f1ed", color: allergens.length === 0 ? "#1f5c3a" : "#4a4540", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>ללא</button>
+                        {ALLERGEN_LIST.map(a => (
+                          <button key={a.key} onClick={() => toggleAllergen(a.key)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.includes(a.key) ? "#e07060" : "#e8e2da"}`, background: allergens.includes(a.key) ? "#fdf2f0" : "#f4f1ed", color: allergens.includes(a.key) ? "#8b2e22" : "#4a4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{a.label}</button>
+                        ))}
+                      </div>
+                      <button onClick={saveAllergens} disabled={savingAllergens} style={{ width: "100%", padding: 11, borderRadius: 10, border: "none", background: "#1a1612", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                        {savingAllergens ? "שומר..." : "✓ שמור"}
+                      </button>
                     </div>
                   )}
 
-                  {/* Allergy edit panel */}
-                  {allergyEditOpen && (
-                    <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, padding: "14px 16px", marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: "#8a8480", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>עדכון אלרגיות בשולחן</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
-                        {ALLERGEN_LIST.map(a => (
-                          <button key={a.key} onClick={() => toggleAllergen(a.key)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.includes(a.key) ? "#e07060" : "#e8e2da"}`, background: allergens.includes(a.key) ? "#fdf2f0" : "#f4f1ed", color: allergens.includes(a.key) ? "#8b2e22" : "#4a4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                            {a.label}
+                  {/* Status edit */}
+                  {statusEditOpen && (
+                    <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, padding: "12px 16px", marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 10 }}>שינוי סטטוס שולחן</div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                        {(["reserved", "inactive", "free"] as const).map(s => (
+                          <button key={s} onClick={() => { onStatusChange(s); setStatusEditOpen(false); }} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                            {{ reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
                           </button>
                         ))}
                       </div>
-                      <button onClick={saveAllergens} disabled={savingAllergens} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#1a1612", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                        {savingAllergens ? "שומר..." : "✓ שמור"}
+                      <button onClick={() => setTransferOpen(o => !o)} style={{ width: "100%", padding: 10, borderRadius: 10, border: `1.5px solid ${transferOpen ? "#93c5fd" : "#e8e2da"}`, background: transferOpen ? "#eff6ff" : "#f4f1ed", fontSize: 12, fontWeight: 700, cursor: "pointer", color: transferOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
+                        🔄 העבר לשולחן אחר
                       </button>
+                      {transferOpen && (
+                        <div style={{ marginTop: 10 }}>
+                          <div style={{ fontSize: 11, color: "#8a8480", marginBottom: 7 }}>בחר שולחן יעד (פנויים)</div>
+                          {freeTables.length === 0 ? (
+                            <div style={{ fontSize: 12, color: "#aaa" }}>אין שולחנות פנויים</div>
+                          ) : (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                              {freeTables.map(t => (
+                                <button key={t} onClick={() => transferTable(t)} disabled={transferring} style={{ padding: "6px 16px", borderRadius: 99, border: "1.5px solid #93c5fd", background: "#eff6ff", color: "#1d4ed8", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                  {transferring ? "…" : `שולחן ${t}`}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
               )}
 
-              {/* Total summary if no order loaded yet but we have amount */}
-              {!loadingOrder && !order && totalAmount > 0 && (
-                <div style={{ fontSize: 13, color: "#888", textAlign: "center", padding: 8 }}>₪{totalAmount.toFixed(0)} סה״כ</div>
+              {/* ── Bill summary ── */}
+              {order && billOpen && !payConfirm && (
+                <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ padding: "12px 16px", background: "#1a1612", color: "#fff" }}>
+                    <div style={{ fontSize: 11, color: "#aaa", marginBottom: 2 }}>חשבון שולחן {tableNum} · הזמנה #{order.orderNumber}</div>
+                    <div style={{ fontSize: 24, fontWeight: 900 }}>₪{billTotal.toFixed(2)}</div>
+                  </div>
+                  {activeItems.map((oi, i, arr) => (
+                    <div key={oi.id} style={{ padding: "9px 16px", borderBottom: i < arr.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ fontWeight: 800 }}>₪{(oi.price * oi.quantity).toFixed(0)}</span>
+                      <span style={{ color: "#1a1612" }}>{oi.itemName} ×{oi.quantity}</span>
+                    </div>
+                  ))}
+                  <div style={{ padding: "11px 16px", background: "#f4f1ed", display: "flex", justifyContent: "space-between", fontWeight: 900, fontSize: 15 }}>
+                    <span>₪{billTotal.toFixed(2)}</span>
+                    <span>סה&quot;כ לתשלום</span>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Payment method selection ── */}
+              {payConfirm && (
+                <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 14, padding: "16px", marginBottom: 8, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#14532d", marginBottom: 4 }}>אישור תשלום — שולחן {tableNum}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: "#1f5c3a", marginBottom: 8 }}>₪{billTotal.toFixed(2)}</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {(["card", "cash", "other"] as const).map(m => (
+                      <button key={m} onClick={() => closeBill(m)} disabled={closing} style={{ flex: 1, padding: 12, borderRadius: 10, border: "1.5px solid #86efac", background: "#f0fdf4", fontSize: 12, fontWeight: 800, cursor: closing ? "default" : "pointer", color: "#1f5c3a", fontFamily: "inherit" }}>
+                        {closing ? "…" : { card: "💳 כרטיס", cash: "💵 מזומן", other: "📱 אחר" }[m]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback: no order loaded */}
+              {!loadingOrder && !order && (
+                <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: 12 }}>₪{totalAmount.toFixed(0)} סה&quot;כ</div>
               )}
             </>
           )}
 
-          {/* ════════ FREE TABLE ════════ */}
+          {/* ════ FREE / RESERVED / INACTIVE ════ */}
           {!isOccupied && (
             <>
-              {/* Guest count stepper */}
-              <div style={{ background: guestCount > seats ? "#fffbf0" : "#fff", border: `1.5px solid ${guestCount > seats ? "#f5c842" : "#e8e2da"}`, borderRadius: 16, padding: "14px 18px", marginBottom: 14 }}>
+              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, padding: "14px 18px", marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1612" }}>כמה סועדים?</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f4f1ed", borderRadius: 99, padding: "6px 16px", border: "1.5px solid #e8e2da" }}>
-                    <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>−</button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f4f1ed", borderRadius: 99, padding: "6px 16px" }}>
+                    <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>−</button>
                     <span style={{ fontSize: 20, fontWeight: 900, minWidth: 28, textAlign: "center" }}>{guestCount}</span>
-                    <button onClick={() => setGuestCount(g => g + 1)} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>+</button>
+                    <button onClick={() => setGuestCount(g => g + 1)} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
                   </div>
                 </div>
                 {guestCount > seats && (
-                  <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#92620a", display: "flex", alignItems: "center", gap: 5 }}>
-                    ⚠️ שולחן מוגדר ל־{seats} מקומות
-                  </div>
+                  <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#92620a" }}>⚠️ שולחן מוגדר ל־{seats} מקומות</div>
                 )}
               </div>
-
-              {/* Allergy chips */}
               <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, padding: "14px 18px", marginBottom: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: "#8a8480", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>אלרגיות בשולחן?</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                  <button onClick={() => setAllergens([])} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.length === 0 ? "#5a9e7a" : "#e8e2da"}`, background: allergens.length === 0 ? "#f0f7f3" : "#f4f1ed", color: allergens.length === 0 ? "#1f5c3a" : "#4a4540", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                    ללא
-                  </button>
+                  <button onClick={() => setAllergens([])} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.length === 0 ? "#5a9e7a" : "#e8e2da"}`, background: allergens.length === 0 ? "#f0f7f3" : "#f4f1ed", color: allergens.length === 0 ? "#1f5c3a" : "#4a4540", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>ללא</button>
                   {ALLERGEN_LIST.map(a => (
-                    <button key={a.key} onClick={() => toggleAllergen(a.key)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.includes(a.key) ? "#e07060" : "#e8e2da"}`, background: allergens.includes(a.key) ? "#fdf2f0" : "#f4f1ed", color: allergens.includes(a.key) ? "#8b2e22" : "#4a4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                      {a.label}
+                    <button key={a.key} onClick={() => toggleAllergen(a.key)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.includes(a.key) ? "#e07060" : "#e8e2da"}`, background: allergens.includes(a.key) ? "#fdf2f0" : "#f4f1ed", color: allergens.includes(a.key) ? "#8b2e22" : "#4a4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{a.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 8 }}>שינוי סטטוס:</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {(["reserved", "inactive", "free"] as const).map(s => (
+                    <button key={s} onClick={() => onStatusChange(s)} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                      {{ reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
                     </button>
                   ))}
                 </div>
               </div>
             </>
           )}
-
-          {/* Status change (non-occupied tables) */}
-          {!isOccupied && (
-            <div style={{ marginTop: 4 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 8 }}>שינוי סטטוס:</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {(["reserved", "inactive", "free"] as const).map(s => (
-                  <button key={s} onClick={() => onStatusChange(s)} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-                    {{ reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* ── Footer CTAs ── */}
-        <div style={{ borderTop: "1px solid #e8e2da", padding: "14px 16px", background: "#fff", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* ── Footer ── */}
+        <div style={{ background: "#fff", borderTop: "1px solid #ede9e3", padding: "14px 16px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
 
-          {/* ── Occupied + order loaded ── */}
-          {isOccupied && order && !billOpen && !payConfirm && (
+          {/* Occupied + order loaded */}
+          {isOccupied && order && !payConfirm && (
             <>
-              <button onClick={() => onAddItems(order)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                ➕ הוסף מנות
-              </button>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setAllergyEditOpen(o => !o)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#1a1612", fontFamily: "inherit" }}>
-                  ⚠️ אלרגיות
-                </button>
-                <button onClick={() => setTransferOpen(o => !o)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${transferOpen ? "#93c5fd" : "#e8e2da"}`, background: transferOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: transferOpen ? "#1d4ed8" : "#1a1612", fontFamily: "inherit" }}>
-                  🔄 העבר
-                </button>
-                <button onClick={() => { setBillOpen(true); setTransferOpen(false); setAllergyEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #d9a840", background: "#fdf7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#92400e", fontFamily: "inherit" }}>
-                  🧾 חשבון
-                </button>
-              </div>
-              {transferOpen && (
-                <div style={{ background: "#f4f1ed", borderRadius: 12, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 8 }}>בחר שולחן יעד (פנויים)</div>
-                  {freeTables.length === 0 ? (
-                    <div style={{ fontSize: 12, color: "#8a8480" }}>אין שולחנות פנויים</div>
-                  ) : (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {freeTables.map(t => (
-                        <button key={t} onClick={() => transferTable(t)} disabled={transferring} style={{ padding: "6px 16px", borderRadius: 99, border: "1.5px solid #93c5fd", background: "#eff6ff", color: "#1d4ed8", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                          {transferring ? "…" : `שולחן ${t}`}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {!billOpen ? (
+                <>
+                  <button onClick={() => onAddItems(order)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    ➕ הוסף מנות
+                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setBillOpen(true); setAllergyEditOpen(false); setStatusEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
+                      💳 סגור חשבון
+                    </button>
+                    <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); setBillOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
+                      🔄 שנה סטטוס
+                    </button>
+                    <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); setBillOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
+                      ⚠️ אלרגיות
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setPayConfirm(true)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1f5c3a", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+                    ✓ סמן כשולם
+                  </button>
+                  <button onClick={() => setBillOpen(false)} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                    ← חזור
+                  </button>
+                </>
               )}
             </>
           )}
 
-          {/* ── Bill summary view ── */}
-          {isOccupied && order && billOpen && !payConfirm && (
-            <>
-              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, overflow: "hidden", marginBottom: 4 }}>
-                <div style={{ padding: "10px 14px", background: "#1a1612", color: "#fff" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", marginBottom: 2 }}>חשבון שולחן {tableNum} · הזמנה #{order.orderNumber}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900 }}>₪{order.totalAmount.toFixed(2)}</div>
-                </div>
-                {order.items.filter(i => !(i as OrderItemDetail & { voidedAt?: string }).voidedAt && !i.isComped && i.itemStatus !== "CANCELLED").map((oi, idx, arr) => (
-                  <div key={oi.id} style={{ padding: "8px 14px", borderBottom: idx < arr.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                    <span style={{ color: "#1a1612", fontWeight: 600 }}>{oi.itemName} ×{oi.quantity}</span>
-                    <span style={{ fontWeight: 800, color: "#4a4540" }}>₪{(oi.price * oi.quantity).toFixed(0)}</span>
-                  </div>
-                ))}
-                {order.items.some(i => i.isComped) && (
-                  <div style={{ padding: "6px 14px", background: "#f0fdf4", fontSize: 11, color: "#166534", fontWeight: 700 }}>
-                    🎁 {order.items.filter(i => i.isComped).length} פריטים על חשבון הבית
-                  </div>
-                )}
-                <div style={{ padding: "10px 14px", background: "#f4f1ed", display: "flex", justifyContent: "space-between", fontWeight: 900, fontSize: 15 }}>
-                  <span>סה"כ לתשלום</span>
-                  <span>₪{order.totalAmount.toFixed(2)}</span>
-                </div>
-              </div>
-              <button onClick={() => setPayConfirm(true)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1f5c3a", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
-                ✓ סמן כשולם
-              </button>
-              <button onClick={() => setBillOpen(false)} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-                ← חזור
-              </button>
-            </>
-          )}
-
-          {/* ── Payment confirmation ── */}
+          {/* Occupied, payment confirm */}
           {isOccupied && payConfirm && (
-            <>
-              <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 12, padding: "14px 16px", textAlign: "center" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#14532d", marginBottom: 4 }}>אישור תשלום — שולחן {tableNum}</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#1f5c3a", marginBottom: 6 }}>₪{(order?.totalAmount ?? totalAmount).toFixed(2)}</div>
-                <div style={{ fontSize: 11, color: "#166534" }}>בחר אמצעי תשלום:</div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {(["card", "cash", "other"] as const).map(m => (
-                  <button key={m} onClick={() => closeBill(m)} disabled={closing} style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #86efac", background: "#f0fdf4", fontSize: 12, fontWeight: 800, cursor: closing ? "default" : "pointer", color: "#1f5c3a", fontFamily: "inherit" }}>
-                    {closing ? "…" : { card: "💳 כרטיס", cash: "💵 מזומן", other: "📱 אחר" }[m]}
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => setPayConfirm(false)} disabled={closing} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-                ← חזור
-              </button>
-            </>
+            <button onClick={() => setPayConfirm(false)} disabled={closing} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+              ← חזור
+            </button>
           )}
 
-          {/* ── Occupied but no order (edge case) ── */}
+          {/* Occupied, no order */}
           {isOccupied && !order && !loadingOrder && (
             <>
               <button onClick={() => onNewOrder(guestCount, allergens)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
@@ -461,13 +460,13 @@ export function TableOverlay({
             </>
           )}
 
-          {/* ── Free / reserved / inactive ── */}
+          {/* Free table */}
           {!isOccupied && (
             <>
-              <button onClick={() => onNewOrder(guestCount, allergens)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => onNewOrder(guestCount, allergens)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
                 🍽️ פתח שולחן והזמן
               </button>
-              <button onClick={onClose} style={{ padding: 13, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+              <button onClick={onClose} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
                 ביטול
               </button>
             </>
