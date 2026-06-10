@@ -206,7 +206,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           </div>
 
           {/* Items grid */}
-          <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px,1fr))", gap: 9, alignContent: "start" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 9, alignContent: "start" }}>
             {loadingMenu ? (
               <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 30, fontSize: 13 }}>טוען תפריט...</div>
             ) : menuError ? (
@@ -230,7 +230,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                   {qty > 0 && lastKey && (
                     <div onClick={e => { e.stopPropagation(); changeQty(lastKey, cart.find(i => i.key === lastKey)!.quantity - 1); }} style={{ position: "absolute", top: 6, right: 6, background: "#e53e3e", color: "#fff", borderRadius: 99, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, zIndex: 2, cursor: "pointer", lineHeight: 1 }}>✕</div>
                   )}
-                  <div style={{ height: 68, background: "#f4f1ed", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative" }}>
+                  <div style={{ height: 90, background: "#f4f1ed", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative" }}>
                     {item.image ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🍽️"}
                     {warn && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13 }}>⚠️</span>}
                   </div>
