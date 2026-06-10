@@ -769,28 +769,49 @@ body {
 
 
 <!-- ══════════════════════════════════════════
-     OVERLAY: OCCUPIED TABLE
+     OVERLAY: OCCUPIED TABLE  (Option A)
 ══════════════════════════════════════════ -->
 <div class="overlay-bg" id="ovOccupied">
-  <div class="overlay-panel">
+  <div class="overlay-panel" style="background:var(--surface)">
 
-    <div class="ov-head">
-      <div class="ov-title">
-        שולחן 7
-        <span class="badge" style="background:var(--red-bg);color:var(--red-text)">תפוס</span>
-        <span style="font-size:13px;color:var(--ink-3);font-weight:500">⏱ 34 דק'</span>
+    <!-- dark hero header -->
+    <div style="background:var(--ink);padding:20px 20px 18px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:10px;color:#888;font-weight:600;letter-spacing:.04em;margin-bottom:2px">שולחן</div>
+        <div style="font-size:46px;font-weight:900;color:#fff;line-height:1">7</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">👤 3 סועדים</div>
       </div>
-      <button class="close-btn" onclick="closeAll()">✕</button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <button class="close-btn" onclick="closeAll()" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15);color:#fff">✕</button>
+        <div style="font-size:26px;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums">00:34</div>
+        <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(224,112,96,.18);color:var(--red)">תפוס</span>
+      </div>
     </div>
 
-    <div class="ov-body">
-
-      <div class="ai-block">
-        <div class="ai-block-title">✨ תובנות AI</div>
-        <div class="ai-line">💡 ישיבה מעל 30 דקות — שקול להציע משקה נוסף</div>
-        <div class="ai-line">⚠️ אלרגיית חלב בשולחן — הסלט מכיל פרמזן</div>
+    <!-- quick action buttons -->
+    <div style="padding:16px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;background:var(--surface)">
+      <button class="cta cta-primary" onclick="openOrderScreen()" style="font-size:17px">➕ הוסף מנות</button>
+      <div style="display:flex;gap:8px">
+        <button onclick="toggleAllergyEdit()" style="flex:1;padding:14px 8px;border-radius:12px;border:1.5px solid var(--red-mid);background:var(--red-bg);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;color:var(--red-text);display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:18px">⚠️</span>אלרגיות<br><span style="font-size:10px">חלב</span>
+        </button>
+        <button onclick="fireIt()" style="flex:1;padding:14px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:18px">🔥</span>שחרר<br><span style="font-size:10px">קורס 2</span>
+        </button>
+        <button onclick="closeAll()" style="flex:1;padding:14px 8px;border-radius:12px;border:1.5px solid var(--red-mid);background:var(--red-bg);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;color:var(--red-text);display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:18px">💳</span>סגור<br><span style="font-size:10px">חשבון</span>
+        </button>
       </div>
+    </div>
 
+    <!-- ai insight -->
+    <div style="margin:0 16px 14px;background:var(--purple-bg);border:1.5px solid var(--purple-mid);border-radius:12px;padding:10px 14px;display:flex;gap:8px;align-items:flex-start;flex-shrink:0">
+      <span style="font-size:15px;flex-shrink:0">✨</span>
+      <span style="font-size:12px;color:var(--purple-text);font-weight:500;line-height:1.5">ישיבה מעל 30 דק' — שקול להציע קפה. אלרגיית חלב — הסלט מכיל פרמזן</span>
+    </div>
+
+    <!-- order summary -->
+    <div class="ov-body" style="padding-top:0">
       <div class="sec-title">הזמנה #42</div>
       <div class="order-block">
         <div class="o-row">
@@ -807,41 +828,13 @@ body {
         </div>
         <div class="o-total"><span>סה"כ</span><span>₪368</span></div>
       </div>
-
-      <div class="sec-title">🔥 ניהול קורסים</div>
-      <div class="course-block">
-        <div class="course-row">
-          <div>
-            <div class="course-name">קורס 1 — 3 פריטים</div>
-            <div class="course-meta ok">✓ יצא למטבח</div>
-          </div>
-          <button class="fire-btn done">✓ יצא</button>
-        </div>
-        <div class="course-row">
-          <div>
-            <div class="course-name">קורס 2 — 2 פריטים</div>
-            <div class="course-meta">ממתין — לחץ לשחרר</div>
-          </div>
-          <button class="fire-btn ready" id="fireBtn" onclick="fireIt()">🔥 שחרר</button>
-        </div>
-      </div>
-
     </div>
 
-    <div class="ov-footer">
-      <button class="cta cta-primary" onclick="openOrderScreen()">➕ הוסף מנות</button>
-      <div class="cta-row2">
-        <button class="cta cta-ghost" onclick="toggleAllergyEdit()">⚠️ אלרגיות</button>
-        <button class="cta cta-ghost" onclick="closeAll()">🔄 שנה סטטוס</button>
-        <button class="cta cta-danger" onclick="closeAll()">💳 סגור חשבון</button>
-      </div>
-    </div>
-
-    <!-- allergy edit panel (hidden by default) -->
+    <!-- allergy edit panel -->
     <div id="allergyEditPanel" style="display:none;border-top:1px solid var(--border);background:var(--white);padding:16px 20px;flex-shrink:0;">
       <div class="sec-title" style="margin-bottom:10px">עדכון אלרגיות בשולחן</div>
       <div class="allergy-grid">
-        <div class="chip on" id="chipNoneOcc" onclick="toggleNoneOcc(this)">ללא</div>
+        <div class="chip" id="chipNoneOcc" onclick="toggleNoneOcc(this)">ללא</div>
         <div class="chip" onclick="toggleAllergenOcc(this)">גלוטן</div>
         <div class="chip on" onclick="toggleAllergenOcc(this)">חלב</div>
         <div class="chip" onclick="toggleAllergenOcc(this)">ביצים</div>
@@ -850,7 +843,6 @@ body {
         <div class="chip" onclick="toggleAllergenOcc(this)">סויה</div>
         <div class="chip" onclick="toggleAllergenOcc(this)">אגוזים</div>
         <div class="chip" onclick="toggleAllergenOcc(this)">שומשום</div>
-        <div class="chip" onclick="toggleAllergenOcc(this)">סרטנים</div>
         <div class="chip" onclick="toggleAllergenOcc(this)">חרדל</div>
         <div class="chip" onclick="toggleAllergenOcc(this)">גופרית</div>
         <div class="chip" onclick="toggleAllergenOcc(this)">סלרי</div>
