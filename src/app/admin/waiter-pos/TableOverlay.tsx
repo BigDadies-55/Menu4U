@@ -274,13 +274,20 @@ export function TableOverlay({
           {!isOccupied && (
             <>
               {/* Guest count stepper */}
-              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1612" }}>כמה סועדים?</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f4f1ed", borderRadius: 99, padding: "6px 16px", border: "1.5px solid #e8e2da" }}>
-                  <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>−</button>
-                  <span style={{ fontSize: 20, fontWeight: 900, minWidth: 28, textAlign: "center" }}>{guestCount}</span>
-                  <button onClick={() => setGuestCount(g => g + 1)} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>+</button>
+              <div style={{ background: guestCount > seats ? "#fffbf0" : "#fff", border: `1.5px solid ${guestCount > seats ? "#f5c842" : "#e8e2da"}`, borderRadius: 16, padding: "14px 18px", marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1612" }}>כמה סועדים?</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f4f1ed", borderRadius: 99, padding: "6px 16px", border: "1.5px solid #e8e2da" }}>
+                    <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>−</button>
+                    <span style={{ fontSize: 20, fontWeight: 900, minWidth: 28, textAlign: "center" }}>{guestCount}</span>
+                    <button onClick={() => setGuestCount(g => g + 1)} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1612", fontFamily: "inherit" }}>+</button>
+                  </div>
                 </div>
+                {guestCount > seats && (
+                  <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#92620a", display: "flex", alignItems: "center", gap: 5 }}>
+                    ⚠️ שולחן מוגדר ל־{seats} מקומות
+                  </div>
+                )}
               </div>
 
               {/* Allergy chips */}
