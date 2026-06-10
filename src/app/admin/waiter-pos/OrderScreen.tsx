@@ -76,7 +76,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   // Cart helpers
   function addItem(item: MenuItem) {
     const key = `${item.id}-c${activeCourse}-${Date.now()}`;
-    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: item.price, quantity: 1, course: activeCourse, notes: "", allergens: item.allergens }]);
+    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: item.price, quantity: 1, course: activeCourse, notes: "", allergens: item.allergens ?? [] }]);
   }
 
   function changeQty(key: string, qty: number) {
@@ -160,9 +160,9 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
     }
   }
 
-  const hasAllergy = (item: MenuItem) => item.allergens.some(a => tableAllergens.includes(a));
+  const hasAllergy = (item: MenuItem) => (item.allergens ?? []).some(a => tableAllergens.includes(a));
   const allergyLabel = (item: MenuItem) =>
-    item.allergens.filter(a => tableAllergens.includes(a)).map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
+    (item.allergens ?? []).filter(a => tableAllergens.includes(a)).map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#f4f1ed", display: "flex", flexDirection: "column" }}>

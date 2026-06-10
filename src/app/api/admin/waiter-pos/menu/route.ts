@@ -49,7 +49,12 @@ export async function GET(req: Request) {
       .flatMap(m => m.categories)
       .filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
 
-    return NextResponse.json({ categories });
+    // Normalize: ensure allergens is always an array (old rows may have null)
+    const normalized = categories.map(c => ({
+      ...c,
+      items: c.items.map(i => ({ ...i, allergens: i.allergens ?? [] })),
+    }));
+    return NextResponse.json({ categories: normalized });
   } catch (e) {
     console.error("[waiter-pos/menu]", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
