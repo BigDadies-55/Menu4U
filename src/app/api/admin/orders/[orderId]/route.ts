@@ -2,9 +2,18 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+async function ensureOrderItemColumns() {
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "isComped" BOOLEAN NOT NULL DEFAULT false`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "compReason" TEXT`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidedAt" TIMESTAMP(3)`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidReason" TEXT`);
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  await ensureOrderItemColumns();
 
   const { orderId } = await params;
 
@@ -53,6 +62,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
       doneAt: oi.doneAt,
       servedAt: oi.servedAt,
       isComped: oi.isComped,
+      voidedAt: oi.voidedAt,
       modifiers: oi.modifiers,
     })),
   });
