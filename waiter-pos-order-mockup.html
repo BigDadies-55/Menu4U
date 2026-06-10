@@ -1223,12 +1223,23 @@ function fireIt() {
   b.className = 'fire-btn done';
 }
 function switchView(v) {
+  const isAlreadyC = document.getElementById('viewC').style.display === 'flex';
   document.getElementById('viewB').style.display = v==='B' ? 'flex' : 'none';
   document.getElementById('viewC').style.display = v==='C' ? 'flex' : 'none';
   document.getElementById('vbB').style.background = v==='B' ? 'var(--ink)' : 'transparent';
   document.getElementById('vbB').style.color      = v==='B' ? '#fff' : 'var(--ink-3)';
   document.getElementById('vbC').style.background = v==='C' ? 'var(--ink)' : 'transparent';
   document.getElementById('vbC').style.color      = v==='C' ? '#fff' : 'var(--ink-3)';
+  if (v === 'C' && isAlreadyC) {
+    // already on C — toggle all lanes
+    const lanes = ['lc1','lc2','lc3','lc4'];
+    const arrows = ['la1','la2','la3','la4'];
+    const anyOpen = lanes.some(id => document.getElementById(id).style.display !== 'none');
+    lanes.forEach((id, i) => {
+      document.getElementById(id).style.display = anyOpen ? 'none' : 'block';
+      document.getElementById(arrows[i]).style.transform = anyOpen ? '' : 'rotate(180deg)';
+    });
+  }
 }
 function togLane(id, arrowId) {
   const el = document.getElementById(id);
