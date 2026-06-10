@@ -217,6 +217,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                 <div style={{ fontSize: 11, color: "#888" }}>restaurantId: {restaurantId}</div>
               </div>
             ) : filteredItems.map(item => {
+              if (typeof window !== "undefined") console.log("[item]", item.id, item.name, "price=", item.price, typeof item.price);
               const qty    = cartQtyForItem(item.id);
               const warn   = hasAllergy(item);
               const wLabel = allergyLabel(item);
