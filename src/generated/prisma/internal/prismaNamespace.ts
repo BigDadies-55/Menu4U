@@ -2638,7 +2638,8 @@ export const UserScalarFieldEnum = {
   failedLoginAttempts: 'failedLoginAttempts',
   lockedUntil: 'lockedUntil',
   totpSecret: 'totpSecret',
-  totpEnabled: 'totpEnabled'
+  totpEnabled: 'totpEnabled',
+  managerPin: 'managerPin'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -2816,6 +2817,7 @@ export const ItemScalarFieldEnum = {
   isVegan: 'isVegan',
   isGlutenFree: 'isGlutenFree',
   tags: 'tags',
+  allergens: 'allergens',
   prepTime: 'prepTime',
   sortOrder: 'sortOrder',
   translations: 'translations',
@@ -2832,6 +2834,7 @@ export const OrderScalarFieldEnum = {
   tableNumber: 'tableNumber',
   customerName: 'customerName',
   customerPhone: 'customerPhone',
+  tableAllergens: 'tableAllergens',
   status: 'status',
   orderNumber: 'orderNumber',
   totalAmount: 'totalAmount',
@@ -2887,6 +2890,8 @@ export const OrderItemScalarFieldEnum = {
   servedAt: 'servedAt',
   isComped: 'isComped',
   compReason: 'compReason',
+  voidedAt: 'voidedAt',
+  voidReason: 'voidReason',
   servedByUserId: 'servedByUserId'
 } as const
 

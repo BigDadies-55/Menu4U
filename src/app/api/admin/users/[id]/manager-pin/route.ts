@@ -8,12 +8,12 @@ import bcrypt from "bcryptjs";
 // Body: { pin: string } — 4 digits, or { pin: null } to clear
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { userId } = await params;
+  const { id: userId } = await params;
   const { pin } = await req.json();
 
   const isSelf = session.user.id === userId;
@@ -49,12 +49,12 @@ export async function PUT(
 // GET — check if user has a PIN set (without revealing it)
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { userId } = await params;
+  const { id: userId } = await params;
   const isSelf = session.user.id === userId;
   const isAdmin = ["SUPER_ADMIN", "ADMIN", "OWNER"].includes(session.user.role ?? "");
   if (!isSelf && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

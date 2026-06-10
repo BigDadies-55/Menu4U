@@ -53,6 +53,8 @@ export type OrderItemMinAggregateOutputType = {
   servedAt: Date | null
   isComped: boolean | null
   compReason: string | null
+  voidedAt: Date | null
+  voidReason: string | null
   servedByUserId: string | null
 }
 
@@ -71,6 +73,8 @@ export type OrderItemMaxAggregateOutputType = {
   servedAt: Date | null
   isComped: boolean | null
   compReason: string | null
+  voidedAt: Date | null
+  voidReason: string | null
   servedByUserId: string | null
 }
 
@@ -89,6 +93,8 @@ export type OrderItemCountAggregateOutputType = {
   servedAt: number
   isComped: number
   compReason: number
+  voidedAt: number
+  voidReason: number
   servedByUserId: number
   _all: number
 }
@@ -121,6 +127,8 @@ export type OrderItemMinAggregateInputType = {
   servedAt?: true
   isComped?: true
   compReason?: true
+  voidedAt?: true
+  voidReason?: true
   servedByUserId?: true
 }
 
@@ -139,6 +147,8 @@ export type OrderItemMaxAggregateInputType = {
   servedAt?: true
   isComped?: true
   compReason?: true
+  voidedAt?: true
+  voidReason?: true
   servedByUserId?: true
 }
 
@@ -157,6 +167,8 @@ export type OrderItemCountAggregateInputType = {
   servedAt?: true
   isComped?: true
   compReason?: true
+  voidedAt?: true
+  voidReason?: true
   servedByUserId?: true
   _all?: true
 }
@@ -262,6 +274,8 @@ export type OrderItemGroupByOutputType = {
   servedAt: Date | null
   isComped: boolean
   compReason: string | null
+  voidedAt: Date | null
+  voidReason: string | null
   servedByUserId: string | null
   _count: OrderItemCountAggregateOutputType | null
   _avg: OrderItemAvgAggregateOutputType | null
@@ -303,6 +317,8 @@ export type OrderItemWhereInput = {
   servedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   isComped?: Prisma.BoolFilter<"OrderItem"> | boolean
   compReason?: Prisma.StringNullableFilter<"OrderItem"> | string | null
+  voidedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
+  voidReason?: Prisma.StringNullableFilter<"OrderItem"> | string | null
   servedByUserId?: Prisma.StringNullableFilter<"OrderItem"> | string | null
   order?: Prisma.XOR<Prisma.OrderScalarRelationFilter, Prisma.OrderWhereInput>
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
@@ -324,6 +340,8 @@ export type OrderItemOrderByWithRelationInput = {
   servedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isComped?: Prisma.SortOrder
   compReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  voidedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  voidReason?: Prisma.SortOrderInput | Prisma.SortOrder
   servedByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   order?: Prisma.OrderOrderByWithRelationInput
   item?: Prisma.ItemOrderByWithRelationInput
@@ -348,6 +366,8 @@ export type OrderItemWhereUniqueInput = Prisma.AtLeast<{
   servedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   isComped?: Prisma.BoolFilter<"OrderItem"> | boolean
   compReason?: Prisma.StringNullableFilter<"OrderItem"> | string | null
+  voidedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
+  voidReason?: Prisma.StringNullableFilter<"OrderItem"> | string | null
   servedByUserId?: Prisma.StringNullableFilter<"OrderItem"> | string | null
   order?: Prisma.XOR<Prisma.OrderScalarRelationFilter, Prisma.OrderWhereInput>
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
@@ -369,6 +389,8 @@ export type OrderItemOrderByWithAggregationInput = {
   servedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isComped?: Prisma.SortOrder
   compReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  voidedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  voidReason?: Prisma.SortOrderInput | Prisma.SortOrder
   servedByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.OrderItemCountOrderByAggregateInput
   _avg?: Prisma.OrderItemAvgOrderByAggregateInput
@@ -395,6 +417,8 @@ export type OrderItemScalarWhereWithAggregatesInput = {
   servedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
   isComped?: Prisma.BoolWithAggregatesFilter<"OrderItem"> | boolean
   compReason?: Prisma.StringNullableWithAggregatesFilter<"OrderItem"> | string | null
+  voidedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
+  voidReason?: Prisma.StringNullableWithAggregatesFilter<"OrderItem"> | string | null
   servedByUserId?: Prisma.StringNullableWithAggregatesFilter<"OrderItem"> | string | null
 }
 
@@ -411,6 +435,8 @@ export type OrderItemCreateInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
   order: Prisma.OrderCreateNestedOneWithoutItemsInput
   item: Prisma.ItemCreateNestedOneWithoutOrderItemsInput
@@ -432,6 +458,8 @@ export type OrderItemUncheckedCreateInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
   modifiers?: Prisma.OrderItemModifierUncheckedCreateNestedManyWithoutOrderItemInput
 }
@@ -449,6 +477,8 @@ export type OrderItemUpdateInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   order?: Prisma.OrderUpdateOneRequiredWithoutItemsNestedInput
   item?: Prisma.ItemUpdateOneRequiredWithoutOrderItemsNestedInput
@@ -470,6 +500,8 @@ export type OrderItemUncheckedUpdateInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedUpdateManyWithoutOrderItemNestedInput
 }
@@ -489,6 +521,8 @@ export type OrderItemCreateManyInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
 }
 
@@ -505,6 +539,8 @@ export type OrderItemUpdateManyMutationInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -523,6 +559,8 @@ export type OrderItemUncheckedUpdateManyInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -551,6 +589,8 @@ export type OrderItemCountOrderByAggregateInput = {
   servedAt?: Prisma.SortOrder
   isComped?: Prisma.SortOrder
   compReason?: Prisma.SortOrder
+  voidedAt?: Prisma.SortOrder
+  voidReason?: Prisma.SortOrder
   servedByUserId?: Prisma.SortOrder
 }
 
@@ -575,6 +615,8 @@ export type OrderItemMaxOrderByAggregateInput = {
   servedAt?: Prisma.SortOrder
   isComped?: Prisma.SortOrder
   compReason?: Prisma.SortOrder
+  voidedAt?: Prisma.SortOrder
+  voidReason?: Prisma.SortOrder
   servedByUserId?: Prisma.SortOrder
 }
 
@@ -593,6 +635,8 @@ export type OrderItemMinOrderByAggregateInput = {
   servedAt?: Prisma.SortOrder
   isComped?: Prisma.SortOrder
   compReason?: Prisma.SortOrder
+  voidedAt?: Prisma.SortOrder
+  voidReason?: Prisma.SortOrder
   servedByUserId?: Prisma.SortOrder
 }
 
@@ -718,6 +762,8 @@ export type OrderItemCreateWithoutItemInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
   order: Prisma.OrderCreateNestedOneWithoutItemsInput
   modifiers?: Prisma.OrderItemModifierCreateNestedManyWithoutOrderItemInput
@@ -737,6 +783,8 @@ export type OrderItemUncheckedCreateWithoutItemInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
   modifiers?: Prisma.OrderItemModifierUncheckedCreateNestedManyWithoutOrderItemInput
 }
@@ -785,6 +833,8 @@ export type OrderItemScalarWhereInput = {
   servedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
   isComped?: Prisma.BoolFilter<"OrderItem"> | boolean
   compReason?: Prisma.StringNullableFilter<"OrderItem"> | string | null
+  voidedAt?: Prisma.DateTimeNullableFilter<"OrderItem"> | Date | string | null
+  voidReason?: Prisma.StringNullableFilter<"OrderItem"> | string | null
   servedByUserId?: Prisma.StringNullableFilter<"OrderItem"> | string | null
 }
 
@@ -801,6 +851,8 @@ export type OrderItemCreateWithoutOrderInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
   item: Prisma.ItemCreateNestedOneWithoutOrderItemsInput
   modifiers?: Prisma.OrderItemModifierCreateNestedManyWithoutOrderItemInput
@@ -820,6 +872,8 @@ export type OrderItemUncheckedCreateWithoutOrderInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
   modifiers?: Prisma.OrderItemModifierUncheckedCreateNestedManyWithoutOrderItemInput
 }
@@ -863,6 +917,8 @@ export type OrderItemCreateWithoutModifiersInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
   order: Prisma.OrderCreateNestedOneWithoutItemsInput
   item: Prisma.ItemCreateNestedOneWithoutOrderItemsInput
@@ -883,6 +939,8 @@ export type OrderItemUncheckedCreateWithoutModifiersInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
 }
 
@@ -915,6 +973,8 @@ export type OrderItemUpdateWithoutModifiersInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   order?: Prisma.OrderUpdateOneRequiredWithoutItemsNestedInput
   item?: Prisma.ItemUpdateOneRequiredWithoutOrderItemsNestedInput
@@ -935,6 +995,8 @@ export type OrderItemUncheckedUpdateWithoutModifiersInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -952,6 +1014,8 @@ export type OrderItemCreateManyItemInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
 }
 
@@ -968,6 +1032,8 @@ export type OrderItemUpdateWithoutItemInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   order?: Prisma.OrderUpdateOneRequiredWithoutItemsNestedInput
   modifiers?: Prisma.OrderItemModifierUpdateManyWithoutOrderItemNestedInput
@@ -987,6 +1053,8 @@ export type OrderItemUncheckedUpdateWithoutItemInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedUpdateManyWithoutOrderItemNestedInput
 }
@@ -1005,6 +1073,8 @@ export type OrderItemUncheckedUpdateManyWithoutItemInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -1022,6 +1092,8 @@ export type OrderItemCreateManyOrderInput = {
   servedAt?: Date | string | null
   isComped?: boolean
   compReason?: string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
   servedByUserId?: string | null
 }
 
@@ -1038,6 +1110,8 @@ export type OrderItemUpdateWithoutOrderInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutOrderItemsNestedInput
   modifiers?: Prisma.OrderItemModifierUpdateManyWithoutOrderItemNestedInput
@@ -1057,6 +1131,8 @@ export type OrderItemUncheckedUpdateWithoutOrderInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   modifiers?: Prisma.OrderItemModifierUncheckedUpdateManyWithoutOrderItemNestedInput
 }
@@ -1075,6 +1151,8 @@ export type OrderItemUncheckedUpdateManyWithoutOrderInput = {
   servedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isComped?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   servedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -1124,6 +1202,8 @@ export type OrderItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   servedAt?: boolean
   isComped?: boolean
   compReason?: boolean
+  voidedAt?: boolean
+  voidReason?: boolean
   servedByUserId?: boolean
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
@@ -1146,6 +1226,8 @@ export type OrderItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   servedAt?: boolean
   isComped?: boolean
   compReason?: boolean
+  voidedAt?: boolean
+  voidReason?: boolean
   servedByUserId?: boolean
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
@@ -1166,6 +1248,8 @@ export type OrderItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   servedAt?: boolean
   isComped?: boolean
   compReason?: boolean
+  voidedAt?: boolean
+  voidReason?: boolean
   servedByUserId?: boolean
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
@@ -1186,10 +1270,12 @@ export type OrderItemSelectScalar = {
   servedAt?: boolean
   isComped?: boolean
   compReason?: boolean
+  voidedAt?: boolean
+  voidReason?: boolean
   servedByUserId?: boolean
 }
 
-export type OrderItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "itemId" | "quantity" | "price" | "notes" | "itemStatus" | "course" | "heldUntilFired" | "firedAt" | "doneAt" | "servedAt" | "isComped" | "compReason" | "servedByUserId", ExtArgs["result"]["orderItem"]>
+export type OrderItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "itemId" | "quantity" | "price" | "notes" | "itemStatus" | "course" | "heldUntilFired" | "firedAt" | "doneAt" | "servedAt" | "isComped" | "compReason" | "voidedAt" | "voidReason" | "servedByUserId", ExtArgs["result"]["orderItem"]>
 export type OrderItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   order?: boolean | Prisma.OrderDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
@@ -1227,6 +1313,8 @@ export type $OrderItemPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     servedAt: Date | null
     isComped: boolean
     compReason: string | null
+    voidedAt: Date | null
+    voidReason: string | null
     servedByUserId: string | null
   }, ExtArgs["result"]["orderItem"]>
   composites: {}
@@ -1668,6 +1756,8 @@ export interface OrderItemFieldRefs {
   readonly servedAt: Prisma.FieldRef<"OrderItem", 'DateTime'>
   readonly isComped: Prisma.FieldRef<"OrderItem", 'Boolean'>
   readonly compReason: Prisma.FieldRef<"OrderItem", 'String'>
+  readonly voidedAt: Prisma.FieldRef<"OrderItem", 'DateTime'>
+  readonly voidReason: Prisma.FieldRef<"OrderItem", 'String'>
   readonly servedByUserId: Prisma.FieldRef<"OrderItem", 'String'>
 }
     

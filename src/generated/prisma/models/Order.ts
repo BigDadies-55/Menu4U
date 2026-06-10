@@ -92,6 +92,7 @@ export type OrderCountAggregateOutputType = {
   tableNumber: number
   customerName: number
   customerPhone: number
+  tableAllergens: number
   status: number
   orderNumber: number
   totalAmount: number
@@ -177,6 +178,7 @@ export type OrderCountAggregateInputType = {
   tableNumber?: true
   customerName?: true
   customerPhone?: true
+  tableAllergens?: true
   status?: true
   orderNumber?: true
   totalAmount?: true
@@ -287,6 +289,7 @@ export type OrderGroupByOutputType = {
   tableNumber: string | null
   customerName: string | null
   customerPhone: string | null
+  tableAllergens: string[]
   status: $Enums.OrderStatus
   orderNumber: number | null
   totalAmount: number
@@ -333,6 +336,7 @@ export type OrderWhereInput = {
   tableNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   customerName?: Prisma.StringNullableFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableFilter<"Order"> | string | null
+  tableAllergens?: Prisma.StringNullableListFilter<"Order">
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
   orderNumber?: Prisma.IntNullableFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatFilter<"Order"> | number
@@ -359,6 +363,7 @@ export type OrderOrderByWithRelationInput = {
   tableNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   customerName?: Prisma.SortOrderInput | Prisma.SortOrder
   customerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  tableAllergens?: Prisma.SortOrder
   status?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
@@ -388,6 +393,7 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   tableNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   customerName?: Prisma.StringNullableFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableFilter<"Order"> | string | null
+  tableAllergens?: Prisma.StringNullableListFilter<"Order">
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
   orderNumber?: Prisma.IntNullableFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatFilter<"Order"> | number
@@ -414,6 +420,7 @@ export type OrderOrderByWithAggregationInput = {
   tableNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   customerName?: Prisma.SortOrderInput | Prisma.SortOrder
   customerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  tableAllergens?: Prisma.SortOrder
   status?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
@@ -445,6 +452,7 @@ export type OrderScalarWhereWithAggregatesInput = {
   tableNumber?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   customerName?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  tableAllergens?: Prisma.StringNullableListFilter<"Order">
   status?: Prisma.EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
   orderNumber?: Prisma.IntNullableWithAggregatesFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatWithAggregatesFilter<"Order"> | number
@@ -467,6 +475,7 @@ export type OrderCreateInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -493,6 +502,7 @@ export type OrderUncheckedCreateInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -517,6 +527,7 @@ export type OrderUpdateInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -543,6 +554,7 @@ export type OrderUncheckedUpdateInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -568,6 +580,7 @@ export type OrderCreateManyInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -590,6 +603,7 @@ export type OrderUpdateManyMutationInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -613,6 +627,7 @@ export type OrderUncheckedUpdateManyInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -646,6 +661,7 @@ export type OrderCountOrderByAggregateInput = {
   tableNumber?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
+  tableAllergens?: Prisma.SortOrder
   status?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
@@ -770,6 +786,15 @@ export type OrderUncheckedUpdateManyWithoutRestaurantNestedInput = {
   deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
 }
 
+export type OrderCreatetableAllergensInput = {
+  set: string[]
+}
+
+export type OrderUpdatetableAllergensInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
 export type EnumOrderStatusFieldUpdateOperationsInput = {
   set?: $Enums.OrderStatus
 }
@@ -815,6 +840,7 @@ export type OrderCreateWithoutRestaurantInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -839,6 +865,7 @@ export type OrderUncheckedCreateWithoutRestaurantInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -893,6 +920,7 @@ export type OrderScalarWhereInput = {
   tableNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   customerName?: Prisma.StringNullableFilter<"Order"> | string | null
   customerPhone?: Prisma.StringNullableFilter<"Order"> | string | null
+  tableAllergens?: Prisma.StringNullableListFilter<"Order">
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
   orderNumber?: Prisma.IntNullableFilter<"Order"> | number | null
   totalAmount?: Prisma.FloatFilter<"Order"> | number
@@ -915,6 +943,7 @@ export type OrderCreateWithoutStatusLogsInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -940,6 +969,7 @@ export type OrderUncheckedCreateWithoutStatusLogsInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -979,6 +1009,7 @@ export type OrderUpdateWithoutStatusLogsInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1004,6 +1035,7 @@ export type OrderUncheckedUpdateWithoutStatusLogsInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1027,6 +1059,7 @@ export type OrderCreateWithoutItemsInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -1052,6 +1085,7 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -1091,6 +1125,7 @@ export type OrderUpdateWithoutItemsInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1116,6 +1151,7 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1139,6 +1175,7 @@ export type OrderCreateManyRestaurantInput = {
   tableNumber?: string | null
   customerName?: string | null
   customerPhone?: string | null
+  tableAllergens?: Prisma.OrderCreatetableAllergensInput | string[]
   status?: $Enums.OrderStatus
   orderNumber?: number | null
   totalAmount: number
@@ -1161,6 +1198,7 @@ export type OrderUpdateWithoutRestaurantInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1185,6 +1223,7 @@ export type OrderUncheckedUpdateWithoutRestaurantInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1209,6 +1248,7 @@ export type OrderUncheckedUpdateManyWithoutRestaurantInput = {
   tableNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tableAllergens?: Prisma.OrderUpdatetableAllergensInput | string[]
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
   orderNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1272,6 +1312,7 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   tableNumber?: boolean
   customerName?: boolean
   customerPhone?: boolean
+  tableAllergens?: boolean
   status?: boolean
   orderNumber?: boolean
   totalAmount?: boolean
@@ -1299,6 +1340,7 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   tableNumber?: boolean
   customerName?: boolean
   customerPhone?: boolean
+  tableAllergens?: boolean
   status?: boolean
   orderNumber?: boolean
   totalAmount?: boolean
@@ -1323,6 +1365,7 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   tableNumber?: boolean
   customerName?: boolean
   customerPhone?: boolean
+  tableAllergens?: boolean
   status?: boolean
   orderNumber?: boolean
   totalAmount?: boolean
@@ -1347,6 +1390,7 @@ export type OrderSelectScalar = {
   tableNumber?: boolean
   customerName?: boolean
   customerPhone?: boolean
+  tableAllergens?: boolean
   status?: boolean
   orderNumber?: boolean
   totalAmount?: boolean
@@ -1364,7 +1408,7 @@ export type OrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "status" | "orderNumber" | "totalAmount" | "notes" | "coversCount" | "orderSource" | "loyaltyMemberId" | "loyaltyMemberName" | "loyaltyDiscountType" | "loyaltyDiscountAmount" | "loyaltyCouponId" | "createdByUserId" | "closedByUserId" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "restaurantId" | "tableNumber" | "customerName" | "customerPhone" | "tableAllergens" | "status" | "orderNumber" | "totalAmount" | "notes" | "coversCount" | "orderSource" | "loyaltyMemberId" | "loyaltyMemberName" | "loyaltyDiscountType" | "loyaltyDiscountAmount" | "loyaltyCouponId" | "createdByUserId" | "closedByUserId" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   restaurant?: boolean | Prisma.RestaurantDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
@@ -1391,6 +1435,7 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     tableNumber: string | null
     customerName: string | null
     customerPhone: string | null
+    tableAllergens: string[]
     status: $Enums.OrderStatus
     orderNumber: number | null
     totalAmount: number
@@ -1837,6 +1882,7 @@ export interface OrderFieldRefs {
   readonly tableNumber: Prisma.FieldRef<"Order", 'String'>
   readonly customerName: Prisma.FieldRef<"Order", 'String'>
   readonly customerPhone: Prisma.FieldRef<"Order", 'String'>
+  readonly tableAllergens: Prisma.FieldRef<"Order", 'String[]'>
   readonly status: Prisma.FieldRef<"Order", 'OrderStatus'>
   readonly orderNumber: Prisma.FieldRef<"Order", 'Int'>
   readonly totalAmount: Prisma.FieldRef<"Order", 'Float'>
