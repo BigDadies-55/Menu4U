@@ -3,553 +3,592 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מוקאפ — מלצר חכם (waiter-pos)</title>
+<title>מוקאפ — waiter-pos (על בסיס המסך הקיים)</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #070910; color: #e9ecef; direction: rtl; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: sans-serif;
+  background: #0f111a;
+  color: #e9ecef;
+  direction: rtl;
+  height: 100vh;
+  overflow: hidden;
+}
 
-  /* ── tokens ── */
-  :root {
-    --bg:     #0f111a;
-    --panel:  #161a1f;
-    --card:   #1e2228;
-    --card2:  #22272f;
-    --border: #2a2f38;
-    --text:   #e9ecef;
-    --sub:    #868e96;
-    --muted:  #495057;
-    --amber:  #c9a84c;
-    --green:  #4ade80;
-    --red:    #f87171;
-    --blue:   #60a5fa;
-    --purple: #a78bfa;
-  }
+/* ─── highlight overlay for NEW additions ─── */
+.new-highlight {
+  outline: 2px dashed #4ade80;
+  outline-offset: 2px;
+  position: relative;
+}
+.new-tag {
+  position: absolute;
+  top: -10px; right: 4px;
+  background: #4ade80;
+  color: #000;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  z-index: 99;
+  pointer-events: none;
+  white-space: nowrap;
+}
 
-  /* ── layout ── */
-  .shell { height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+/* ═══ EXACT CLONE OF WaiterClient styles ═══ */
 
-  /* ── topbar ── */
-  .topbar {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    background: var(--panel); border-bottom: 1px solid var(--border);
-    padding: 0 16px; height: 58px; flex-shrink: 0; z-index: 20;
-  }
-  .topbar-title { font-weight: 800; font-size: 15px; color: var(--amber); }
-  .stepper {
-    display: flex; align-items: center; gap: 6px;
-    background: var(--card); border-radius: 10px; padding: 4px 10px;
-    border: 1px solid var(--border); font-size: 13px;
-  }
-  .stepper label { font-size: 12px; color: var(--sub); }
-  .stepper-val { font-weight: 800; font-size: 16px; color: var(--amber); min-width: 28px; text-align: center; }
-  .step-btn {
-    width: 24px; height: 24px; border-radius: 5px; border: none;
-    background: var(--border); color: var(--text); cursor: pointer;
-    font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center;
-  }
-  .badge {
-    font-size: 12px; color: var(--sub);
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 20px; padding: 3px 10px; white-space: nowrap;
-  }
-  .spacer { flex: 1; }
+/* top bar — identical */
+#topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #161a1f;
+  border-bottom: 1px solid #2a2f38;
+  padding: 0 16px;
+  height: 56px;
+  flex-shrink: 0;
+  z-index: 20;
+}
+#topbar .title { font-weight: 800; font-size: 15px; color: #c9a84c; margin-left: 4px; }
+.stepper {
+  display: flex; align-items: center; gap: 6px;
+  background: #1e2228; border-radius: 10px; padding: 4px 10px;
+  border: 1px solid #2a2f38;
+}
+.stepper label { font-size: 12px; color: #868e96; }
+.stepper-val { color: #c9a84c; font-weight: 800; font-size: 16px; width: 32px; text-align: center; }
+.step-btn {
+  width: 24px; height: 24px; border-radius: 5px; border: none;
+  background: #2a2f38; color: #e9ecef; cursor: pointer; font-weight: 700;
+}
+.guests-stepper {
+  display: flex; align-items: center; gap: 5px;
+  background: #1e2228; border-radius: 10px; padding: 4px 8px;
+  border: 1px solid #2a2f38;
+}
+.guests-val { min-width: 16px; text-align: center; font-size: 14px; font-weight: 700; }
+.guests-btn {
+  width: 22px; height: 22px; border-radius: 5px; border: none;
+  background: #2a2f38; color: #e9ecef; cursor: pointer; font-size: 12px; font-weight: 700;
+}
+.spacer { flex: 1; }
+.waiter-badge {
+  font-size: 12px; color: #868e96;
+  background: #1e2228; border: 1px solid #2a2f38;
+  border-radius: 20px; padding: 3px 10px;
+}
+.tab-switcher { display: flex; background: #1e2228; border-radius: 8px; padding: 3px; gap: 2px; }
+.tab-btn {
+  padding: 5px 12px; border-radius: 6px; border: none;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.tab-btn.active   { background: #c9a84c; color: #000; }
+.tab-btn.inactive { background: transparent; color: #868e96; }
 
-  /* ── tab switcher ── */
-  .tabs { display: flex; background: var(--card); border-radius: 8px; padding: 3px; gap: 2px; }
-  .tab {
-    padding: 5px 14px; border-radius: 6px; border: none;
-    font-size: 12px; font-weight: 700; cursor: pointer; transition: all 120ms;
-  }
-  .tab.active { background: var(--amber); color: #000; }
-  .tab.inactive { background: transparent; color: var(--sub); }
+/* body */
+#body { flex: 1; display: flex; overflow: hidden; }
 
-  /* ── body split ── */
-  .body { flex: 1; display: flex; overflow: hidden; }
+/* ══ LEFT: MENU ══ */
+#menu-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-  /* ═══ LEFT: MENU ═══ */
-  .menu-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#search-bar {
+  padding: 10px 14px;
+  border-bottom: 1px solid #2a2f38;
+  background: #161a1f;
+  flex-shrink: 0;
+}
+#search-bar input {
+  width: 100%; box-sizing: border-box;
+  background: #1e2228; border: 1px solid #2a2f38;
+  color: #e9ecef; border-radius: 8px; padding: 7px 12px; font-size: 13px;
+  outline: none;
+}
 
-  .search-bar { padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0; }
-  .search-bar input {
-    width: 100%; background: var(--card); border: 1px solid var(--border);
-    color: var(--text); border-radius: 8px; padding: 7px 12px; font-size: 13px; outline: none;
-  }
+#cat-tabs {
+  display: flex; gap: 6px; padding: 8px 14px;
+  overflow-x: auto; flex-shrink: 0;
+  border-bottom: 1px solid #2a2f38; background: #161a1f;
+}
+.cat-btn {
+  padding: 6px 14px; border-radius: 20px; border: none;
+  font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; flex-shrink: 0;
+}
+.cat-btn.active   { background: #c9a84c; color: #000; }
+.cat-btn.inactive { background: #1e2228; color: #868e96; }
 
-  .cat-tabs {
-    display: flex; gap: 6px; padding: 8px 14px;
-    overflow-x: auto; flex-shrink: 0;
-    border-bottom: 1px solid var(--border); background: var(--panel);
-  }
-  .cat-tab {
-    padding: 6px 14px; border-radius: 20px; border: none;
-    font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
-  }
-  .cat-tab.active { background: var(--amber); color: #000; }
-  .cat-tab.inactive { background: var(--card); color: var(--sub); }
+#items-grid {
+  flex: 1; overflow-y: auto; padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
 
-  .items-grid {
-    flex: 1; overflow-y: auto; padding: 14px;
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px;
-    align-content: start;
-  }
+.item-card {
+  background: #1e2228; border: 1px solid #2a2f38;
+  border-radius: 12px; padding: 12px 10px;
+  cursor: pointer; position: relative;
+  user-select: none;
+}
+.item-card.selected {
+  background: rgba(201,168,76,0.09);
+  border-color: #c9a84c;
+}
+.item-badge {
+  position: absolute; top: 7px; left: 7px;
+  background: #c9a84c; color: #000;
+  border-radius: 20px; min-width: 20px; height: 20px; padding: 0 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+}
+.item-emoji {
+  width: 100%; height: 70px; border-radius: 8px; margin-bottom: 8px;
+  background: #22272f; display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+.item-name  { font-size: 13px; font-weight: 700; color: #e9ecef; margin-bottom: 3px; line-height: 1.3; }
+.item-desc  { font-size: 11px; color: #868e96; margin-bottom: 6px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.item-price { font-size: 14px; font-weight: 800; color: #c9a84c; }
 
-  .item-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px 10px; cursor: pointer; position: relative;
-    transition: border-color 150ms, background 150ms;
-  }
-  .item-card.selected { background: rgba(201,168,76,0.09); border-color: var(--amber); }
-  .item-badge {
-    position: absolute; top: 7px; left: 7px;
-    background: var(--amber); color: #000;
-    border-radius: 20px; min-width: 20px; height: 20px; padding: 0 5px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 800;
-  }
-  .item-img { width: 100%; height: 70px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; background: var(--card2); }
-  .item-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; line-height: 1.3; }
-  .item-desc { font-size: 11px; color: var(--sub); margin-bottom: 6px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .item-price { font-size: 14px; font-weight: 800; color: var(--amber); }
-  .item-tags { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-  .tag { font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 600; }
-  .tag-v { background: rgba(74,222,128,0.15); color: var(--green); }
-  .tag-g { background: rgba(96,165,250,0.15); color: var(--blue); }
+/* ══ RIGHT: ORDER PANEL ══ */
+#order-panel {
+  width: 300px; background: #161a1f; border-right: 1px solid #2a2f38;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
 
-  /* ═══ RIGHT: ORDER ═══ */
-  .order-panel {
-    width: 310px; background: var(--panel); border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; flex-shrink: 0;
-  }
+#order-header {
+  padding: 12px 16px; border-bottom: 1px solid #2a2f38;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+#order-header .title { font-weight: 800; font-size: 14px; }
+.clear-btn { font-size: 11px; color: #f87171; background: transparent; border: none; cursor: pointer; }
 
-  .order-header {
-    padding: 12px 16px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-  }
-  .order-header-title { font-weight: 800; font-size: 14px; }
-  .clear-btn { font-size: 11px; color: var(--red); background: transparent; border: none; cursor: pointer; }
+#order-items { flex: 1; overflow-y: auto; }
 
-  /* course tabs */
-  .course-tabs { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .course-tab {
-    flex: 1; padding: 5px 0; border-radius: 8px; border: none;
-    font-size: 11px; font-weight: 700; cursor: pointer; text-align: center;
-  }
-  .course-tab.active { background: var(--amber); color: #000; }
-  .course-tab.inactive { background: var(--card); color: var(--sub); }
-  .course-add-btn {
-    width: 28px; height: 28px; border-radius: 8px; border: 1px dashed var(--border);
-    background: transparent; color: var(--sub); font-size: 16px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
+.order-item { padding: 10px 14px; border-bottom: 1px solid #2a2f38; }
+.order-item-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.order-item-info { flex: 1; }
+.order-item-name  { font-size: 13px; font-weight: 600; color: #e9ecef; line-height: 1.3; }
+.order-item-price { font-size: 12px; color: #c9a84c; font-weight: 700; margin-top: 2px; }
+.order-item-price span { color: #495057; font-weight: 400; }
+.qty-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.qty-btn {
+  width: 28px; height: 28px; border-radius: 7px; border: 1px solid #2a2f38;
+  background: transparent; color: #e9ecef; cursor: pointer;
+  font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.qty-val { font-size: 14px; font-weight: 700; min-width: 20px; text-align: center; }
+.item-note-input {
+  width: 100%; box-sizing: border-box;
+  background: #22272f; border: 1px solid #2a2f38; border-radius: 6px;
+  color: #868e96; font-size: 11px; padding: 4px 8px; outline: none;
+}
 
-  .order-items { flex: 1; overflow-y: auto; }
-  .order-item { padding: 10px 14px; border-bottom: 1px solid var(--border); }
-  .order-item-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-  .order-item-info { flex: 1; }
-  .order-item-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
-  .order-item-price { font-size: 12px; color: var(--amber); font-weight: 700; margin-top: 2px; }
-  .order-item-price span { color: var(--muted); font-weight: 400; }
-  .qty-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-  .qty-btn {
-    width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border);
-    background: transparent; color: var(--text); cursor: pointer; font-size: 16px;
-    font-weight: 700; display: flex; align-items: center; justify-content: center;
-  }
-  .qty-val { font-size: 14px; font-weight: 700; min-width: 20px; text-align: center; }
-  .item-note {
-    width: 100%; background: var(--card2); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--sub); font-size: 11px; padding: 4px 8px;
-    outline: none;
-  }
+#order-footer {
+  padding: 12px 14px; border-top: 1px solid #2a2f38;
+  background: #1e2228; flex-shrink: 0;
+}
+.order-note-ta {
+  width: 100%; box-sizing: border-box;
+  background: #161a1f; border: 1px solid #2a2f38; border-radius: 8px;
+  color: #e9ecef; font-size: 12px; padding: 6px 10px;
+  resize: none; font-family: inherit; margin-bottom: 10px; outline: none;
+}
+.summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.summary-meta { font-size: 12px; color: #868e96; }
+.summary-total { font-size: 18px; font-weight: 800; }
+.send-btn {
+  width: 100%; padding: 12px 0; border-radius: 10px; border: none;
+  background: #c9a84c; color: #000; font-weight: 800; font-size: 15px; cursor: pointer;
+}
 
-  /* modifier pill */
-  .modifier-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
-  .modifier-pill {
-    font-size: 10px; padding: 2px 8px; border-radius: 10px;
-    background: rgba(167,139,250,0.15); color: var(--purple);
-    border: 1px solid rgba(167,139,250,0.3);
-  }
+/* ═══ NEW: course tabs (added between order-header and order-items) ═══ */
+#course-tabs {
+  display: flex; gap: 4px; padding: 7px 10px;
+  border-bottom: 1px solid #2a2f38; flex-shrink: 0;
+  background: #161a1f;
+}
+.course-tab {
+  flex: 1; padding: 5px 0; border-radius: 8px; border: none;
+  font-size: 11px; font-weight: 700; cursor: pointer; text-align: center;
+}
+.course-tab.active   { background: #c9a84c; color: #000; }
+.course-tab.inactive { background: #1e2228; color: #868e96; }
+.course-add {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px dashed #2a2f38;
+  background: transparent; color: #868e96; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
 
-  /* order footer */
-  .order-footer { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--card); flex-shrink: 0; }
-  .order-note {
-    width: 100%; background: var(--panel); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text); font-size: 12px; padding: 6px 10px;
-    resize: none; font-family: inherit; margin-bottom: 10px; outline: none;
-  }
-  .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .summary-meta { font-size: 12px; color: var(--sub); }
-  .summary-total { font-size: 19px; font-weight: 800; }
-  .send-btn {
-    width: 100%; padding: 12px 0; border-radius: 10px; border: none;
-    background: var(--amber); color: #000; font-weight: 800; font-size: 15px; cursor: pointer;
-  }
-  .send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+/* ═══ NEW: open-tables strip ═══ */
+#tables-strip {
+  display: flex; gap: 6px; padding: 5px 14px; overflow-x: auto;
+  background: #0f111a; border-bottom: 1px solid #2a2f38; align-items: center;
+  flex-shrink: 0;
+}
+.strip-label { font-size: 11px; color: #868e96; white-space: nowrap; flex-shrink: 0; }
+.table-chip {
+  padding: 4px 12px; border-radius: 20px; border: 1px solid #2a2f38;
+  font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  background: #1e2228; color: #e9ecef;
+}
+.table-chip.active { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.08); }
+.table-chip.calling {
+  border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.1);
+  animation: pulse 1s infinite;
+}
+.table-chip.ready { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(248,113,113,0); }
+}
 
-  /* ── NEW: open tables strip ── */
-  .tables-strip {
-    display: flex; gap: 6px; padding: 6px 14px; overflow-x: auto; flex-shrink: 0;
-    background: var(--bg); border-bottom: 1px solid var(--border);
-    align-items: center;
-  }
-  .tables-strip-label { font-size: 11px; color: var(--sub); white-space: nowrap; flex-shrink: 0; }
-  .table-chip {
-    padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
-    font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
-    background: var(--card); color: var(--text);
-    transition: border-color 120ms;
-  }
-  .table-chip.active   { border-color: var(--amber); color: var(--amber); background: rgba(201,168,76,0.08); }
-  .table-chip.calling  { border-color: var(--red);   color: var(--red);   background: rgba(248,113,113,0.1); animation: pulse-red 1s infinite; }
-  .table-chip.ready    { border-color: var(--green);  color: var(--green); background: rgba(74,222,128,0.08); }
+/* ═══ NEW: modifier modal ═══ */
+#modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72); z-index: 200;
+  align-items: center; justify-content: center;
+}
+#modal-bg.open { display: flex; }
+#modal {
+  background: #1e2228; border: 1px solid #2a2f38; border-radius: 16px;
+  padding: 22px; width: 330px; max-height: 90vh; overflow-y: auto;
+}
+.modal-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.modal-base-price { font-size: 13px; color: #c9a84c; font-weight: 700; margin-bottom: 14px; }
+.mod-group-title {
+  font-size: 11px; font-weight: 700; color: #868e96;
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px;
+}
+.mod-opt {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-radius: 8px; border: 1px solid #2a2f38;
+  background: #22272f; margin-bottom: 5px; cursor: pointer;
+}
+.mod-opt.sel { border-color: #c9a84c; background: rgba(201,168,76,0.09); }
+.mod-opt-name  { font-size: 13px; color: #e9ecef; }
+.mod-opt-price { font-size: 12px; color: #c9a84c; font-weight: 700; }
+.mod-opt-price.free { color: #495057; }
+.modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+.modal-cancel  {
+  flex: 1; padding: 10px; border-radius: 8px;
+  border: 1px solid #2a2f38; background: transparent; color: #868e96;
+  font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit;
+}
+.modal-confirm {
+  flex: 2; padding: 10px; border-radius: 8px; border: none;
+  background: #c9a84c; color: #000; font-weight: 800; cursor: pointer;
+  font-size: 14px; font-family: inherit;
+}
 
-  @keyframes pulse-red {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.4); }
-    50%       { box-shadow: 0 0 0 6px rgba(248,113,113,0); }
-  }
+/* course divider in order list */
+.course-divider {
+  font-size: 10px; color: #c9a84c;
+  background: rgba(201,168,76,0.07); border-top: 1px solid rgba(201,168,76,0.2);
+  padding: 4px 14px; font-weight: 700; letter-spacing: .03em;
+}
 
-  /* ── NEW: modifiers modal overlay ── */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    display: flex; align-items: center; justify-content: center; z-index: 100;
-  }
-  .modal {
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 24px; width: 340px; max-height: 90vh; overflow-y: auto;
-  }
-  .modal-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-  .modal-price { font-size: 14px; color: var(--amber); font-weight: 700; margin-bottom: 16px; }
-  .modifier-group { margin-bottom: 16px; }
-  .modifier-group-title { font-size: 12px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
-  .modifier-option {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--card2); margin-bottom: 6px; cursor: pointer;
-  }
-  .modifier-option.selected { border-color: var(--amber); background: rgba(201,168,76,0.09); }
-  .modifier-option-name { font-size: 13px; color: var(--text); }
-  .modifier-option-price { font-size: 12px; color: var(--amber); font-weight: 700; }
-  .modifier-option-price.free { color: var(--sub); }
-  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
-  .modal-cancel { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--sub); font-weight: 700; cursor: pointer; font-size: 14px; }
-  .modal-confirm { flex: 2; padding: 10px; border-radius: 8px; border: none; background: var(--amber); color: #000; font-weight: 800; cursor: pointer; font-size: 14px; }
-
-  /* ── section headers ── */
-  .section-note {
-    font-size: 10px; color: var(--amber); background: rgba(201,168,76,0.08);
-    border: 1px solid rgba(201,168,76,0.2); border-radius: 6px;
-    padding: 3px 8px; margin: 0 14px 4px;
-  }
-
-  /* ── empty cart ── */
-  .empty-cart { padding: 48px 20px; text-align: center; color: var(--sub); }
-  .empty-cart-icon { font-size: 36px; margin-bottom: 10px; }
-  .empty-cart-text { font-size: 13px; }
-
-  /* annotation labels */
-  .new-label {
-    font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px;
-    background: rgba(74,222,128,0.2); color: var(--green); margin-right: 4px;
-    vertical-align: middle; text-transform: uppercase;
-  }
-  .exist-label {
-    font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px;
-    background: rgba(134,142,150,0.2); color: var(--sub); margin-right: 4px;
-    vertical-align: middle; text-transform: uppercase;
-  }
-
-  /* legend */
-  .legend {
-    position: fixed; bottom: 14px; left: 14px;
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 12px 16px; font-size: 11px; color: var(--sub); z-index: 50;
-    min-width: 200px;
-  }
-  .legend-title { font-weight: 800; color: var(--text); margin-bottom: 8px; font-size: 12px; }
-  .legend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+/* legend */
+#legend {
+  position: fixed; bottom: 12px; left: 12px;
+  background: #1e2228; border: 1px solid #2a2f38; border-radius: 10px;
+  padding: 10px 14px; font-size: 11px; color: #868e96; z-index: 300; min-width: 190px;
+}
+#legend b { color: #e9ecef; font-size: 12px; display: block; margin-bottom: 6px; }
+.leg-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 </style>
 </head>
-<body>
+<body style="display:flex;flex-direction:column;height:100vh;">
 
-<div class="shell">
+<!-- ═══ TOP BAR — identical to WaiterClient ═══ -->
+<div id="topbar">
+  <span class="title">🍽️ הזמנה</span>
 
-  <!-- ═══ TOP BAR ═══ -->
-  <div class="topbar">
-    <span class="topbar-title">🍽️ מלצר חכם <span class="exist-label">EXIST</span></span>
+  <!-- table stepper — identical -->
+  <div class="stepper">
+    <label>שולחן</label>
+    <button class="step-btn" onclick="changeTable(-1)">−</button>
+    <span class="stepper-val" id="table-val">7</span>
+    <button class="step-btn" onclick="changeTable(1)">+</button>
+  </div>
 
-    <!-- restaurant selector (exist) -->
-    <select style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 10px;font-size:13px;">
-      <option>🏠 הבשרייה הישראלית</option>
-    </select>
+  <!-- guests — identical -->
+  <div class="guests-stepper">
+    <span style="font-size:13px">👤</span>
+    <button class="guests-btn" onclick="changeGuests(-1)">−</button>
+    <span class="guests-val" id="guests-val">3</span>
+    <button class="guests-btn" onclick="changeGuests(1)">+</button>
+  </div>
 
-    <!-- table stepper (exist) -->
-    <div class="stepper">
-      <label>שולחן</label>
-      <button class="step-btn">−</button>
-      <span class="stepper-val">7</span>
-      <button class="step-btn">+</button>
+  <div class="spacer"></div>
+
+  <span class="waiter-badge">👤 יוסי כהן</span>
+
+  <div class="tab-switcher">
+    <button class="tab-btn active">📋 תפריט</button>
+    <button class="tab-btn inactive">🛒 (3)</button>
+  </div>
+</div>
+
+<!-- ═══ NEW: OPEN TABLES STRIP ═══ -->
+<div id="tables-strip" class="new-highlight" style="position:relative;">
+  <div class="new-tag">חדש — פס שולחנות פתוחים</div>
+  <span class="strip-label">שולחנות:</span>
+  <div class="table-chip active">שולחן 7</div>
+  <div class="table-chip calling" onclick="alert('שולחן 12 קרא למלצר!')">🔔 שולחן 12</div>
+  <div class="table-chip ready">שולחן 3 ✓</div>
+  <div class="table-chip">שולחן 5</div>
+  <div class="table-chip">שולחן 9</div>
+</div>
+
+<!-- ═══ BODY ═══ -->
+<div id="body" style="flex:1;display:flex;overflow:hidden;">
+
+  <!-- ══ LEFT: MENU — identical to WaiterClient ══ -->
+  <div id="menu-panel">
+
+    <div id="search-bar">
+      <input placeholder="🔍 חיפוש מנה...">
     </div>
 
-    <!-- guests (exist) -->
-    <div class="stepper">
-      <span style="font-size:13px">👤</span>
-      <button class="step-btn">−</button>
-      <span class="stepper-val" style="font-size:14px">3</span>
-      <button class="step-btn">+</button>
+    <div id="cat-tabs">
+      <button class="cat-btn active">ראשונות</button>
+      <button class="cat-btn inactive">עיקריות</button>
+      <button class="cat-btn inactive">קינוחים</button>
+      <button class="cat-btn inactive">משקאות</button>
     </div>
 
-    <div class="spacer"></div>
+    <!-- items grid — identical layout, items with modifiers get small dot indicator -->
+    <div id="items-grid">
 
-    <!-- waiter badge (exist) -->
-    <span class="badge">👤 יוסי כהן</span>
+      <div class="item-card" onclick="openModal('סטייק אנטריקוט','₪148')">
+        <div class="item-badge">×2</div>
+        <div class="item-emoji">🥩</div>
+        <div class="item-name">סטייק אנטריקוט</div>
+        <div class="item-desc">300 גר׳, צלוי על גריל</div>
+        <!-- NEW: dot indicating modifiers exist -->
+        <div class="item-price" style="display:flex;align-items:center;gap:5px;">
+          ₪148
+          <span class="new-highlight" style="position:relative;font-size:10px;color:#a78bfa;border-radius:4px;padding:1px 4px;outline-offset:1px;">
+            <span class="new-tag" style="top:-12px;right:0;font-size:8px;">חדש</span>
+            ● תוספות
+          </span>
+        </div>
+      </div>
 
-    <!-- mobile tabs (exist) -->
-    <div class="tabs">
-      <button class="tab active">📋 תפריט</button>
-      <button class="tab inactive">🛒 (4)</button>
+      <div class="item-card">
+        <div class="item-emoji">🥗</div>
+        <div class="item-name">סלט קיסר</div>
+        <div class="item-desc">חסה רומית, פרמזן, קרוטונים</div>
+        <div class="item-price">₪48</div>
+      </div>
+
+      <div class="item-card" onclick="openModal('פרגית בגריל','₪92')">
+        <div class="item-emoji">🍗</div>
+        <div class="item-name">פרגית בגריל</div>
+        <div class="item-desc">עם תוספת לבחירה</div>
+        <div class="item-price" style="display:flex;align-items:center;gap:5px;">
+          ₪92
+          <span class="new-highlight" style="position:relative;font-size:10px;color:#a78bfa;border-radius:4px;padding:1px 4px;outline-offset:1px;">
+            <span class="new-tag" style="top:-12px;right:0;font-size:8px;">חדש</span>
+            ● תוספות
+          </span>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-emoji">🍝</div>
+        <div class="item-name">פסטה ארביאטה</div>
+        <div class="item-desc">עגבניות, שום, צ׳ילי</div>
+        <div class="item-price">₪72</div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-emoji">🐟</div>
+        <div class="item-name">פילה סלמון</div>
+        <div class="item-desc">עם ירקות מוקפצים</div>
+        <div class="item-price">₪118</div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-emoji">🥦</div>
+        <div class="item-name">ירקות מוקפצים</div>
+        <div class="item-desc">בחמאה ושום</div>
+        <div class="item-price">₪38</div>
+      </div>
+
     </div>
   </div>
 
-  <!-- ═══ NEW: OPEN TABLES STRIP ═══ -->
-  <div class="tables-strip">
-    <span class="tables-strip-label">שולחנות פתוחים: <span class="new-label">NEW</span></span>
-    <div class="table-chip active">שולחן 7 <span style="font-size:10px;opacity:.7">₪180</span></div>
-    <div class="table-chip ready">שולחן 3 ✓</div>
-    <div class="table-chip calling">🔔 שולחן 12</div>
-    <div class="table-chip">שולחן 5 <span style="font-size:10px;opacity:.7">₪90</span></div>
-    <div class="table-chip">שולחן 9 <span style="font-size:10px;opacity:.7">₪245</span></div>
-    <button style="padding:4px 10px;border-radius:20px;border:1px dashed var(--border);background:transparent;color:var(--sub);font-size:12px;cursor:pointer;flex-shrink:0">+ שולחן חדש</button>
+  <!-- ══ RIGHT: ORDER PANEL — identical structure ══ -->
+  <div id="order-panel">
+
+    <!-- header — identical -->
+    <div id="order-header">
+      <span class="title">🛒 שולחן 7</span>
+      <button class="clear-btn">נקה הכל</button>
+    </div>
+
+    <!-- NEW: course tabs (added between header and items list) -->
+    <div id="course-tabs" class="new-highlight" style="position:relative;">
+      <div class="new-tag">חדש — ניהול קורסים</div>
+      <button class="course-tab active">קורס 1</button>
+      <button class="course-tab inactive">קורס 2</button>
+      <button class="course-add">+</button>
+    </div>
+
+    <!-- order items — identical markup, added course divider -->
+    <div id="order-items">
+
+      <!-- item 1 — identical -->
+      <div class="order-item">
+        <div class="order-item-row">
+          <div class="order-item-info">
+            <div class="order-item-name">סטייק אנטריקוט</div>
+            <!-- NEW: modifier pills under name -->
+            <div class="new-highlight" style="position:relative;display:flex;gap:4px;flex-wrap:wrap;margin:3px 0;">
+              <div class="new-tag" style="top:-11px;">חדש — מודיפיירים</div>
+              <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(167,139,250,0.15);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);">מדיום</span>
+              <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(167,139,250,0.15);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);">+ פטריות</span>
+            </div>
+            <div class="order-item-price">₪162 <span>(₪162 × 2 = ₪324)</span></div>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn">−</button>
+            <span class="qty-val">2</span>
+            <button class="qty-btn">+</button>
+          </div>
+        </div>
+        <input class="item-note-input" placeholder="הערה (ללא בצל, אלרגיה...)">
+      </div>
+
+      <!-- item 2 — identical -->
+      <div class="order-item">
+        <div class="order-item-row">
+          <div class="order-item-info">
+            <div class="order-item-name">סלט קיסר</div>
+            <div class="order-item-price">₪48 <span>(₪48 × 1)</span></div>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn">−</button>
+            <span class="qty-val">1</span>
+            <button class="qty-btn">+</button>
+          </div>
+        </div>
+        <input class="item-note-input" placeholder="הערה (ללא בצל, אלרגיה...)" value="ללא קרוטונים">
+      </div>
+
+      <!-- NEW: course 2 divider -->
+      <div class="course-divider new-highlight" style="position:relative;">
+        <div class="new-tag">חדש — מחיצת קורס</div>
+        🔥 קורס 2 — ממתין ל-fire
+      </div>
+
+      <!-- item in course 2 — identical markup, just dimmed -->
+      <div class="order-item" style="opacity:.7">
+        <div class="order-item-row">
+          <div class="order-item-info">
+            <div class="order-item-name">פסטה ארביאטה</div>
+            <div class="order-item-price">₪72 <span>(₪72 × 1)</span></div>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn">−</button>
+            <span class="qty-val">1</span>
+            <button class="qty-btn">+</button>
+          </div>
+        </div>
+        <input class="item-note-input" placeholder="הערה (ללא בצל, אלרגיה...)">
+      </div>
+
+    </div>
+
+    <!-- footer — identical -->
+    <div id="order-footer">
+      <textarea class="order-note-ta" rows="2" placeholder="הערה לשולחן..."></textarea>
+      <div class="summary-row">
+        <span class="summary-meta">4 פריטים · 3 סועדים</span>
+        <span class="summary-total">₪444</span>
+      </div>
+      <button class="send-btn">📤 שלח למטבח</button>
+    </div>
+
   </div>
 
-  <!-- ═══ BODY ═══ -->
-  <div class="body">
+  <!-- desktop: always show order panel -->
+  <style>
+    @media (min-width: 700px) {
+      #order-panel { display: flex !important; }
+    }
+  </style>
 
-    <!-- ══ LEFT: MENU ══ -->
-    <div class="menu-panel">
+</div><!-- /body -->
 
-      <!-- search (exist) -->
-      <div class="search-bar">
-        <input placeholder="🔍 חיפוש מנה..." value="">
-      </div>
+<!-- ═══ NEW: MODIFIER MODAL ═══ -->
+<div id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div id="modal" class="new-highlight" style="position:relative;">
+    <div class="new-tag" style="top:-10px;right:10px;">חדש — מודל תוספות</div>
+    <div class="modal-title" id="modal-item-name">סטייק אנטריקוט</div>
+    <div class="modal-base-price" id="modal-item-price">בסיס ₪148</div>
 
-      <!-- category tabs (exist) -->
-      <div class="cat-tabs">
-        <button class="cat-tab active">ראשונות</button>
-        <button class="cat-tab inactive">עיקריות</button>
-        <button class="cat-tab inactive">קינוחים</button>
-        <button class="cat-tab inactive">משקאות</button>
-        <button class="cat-tab inactive">בר</button>
-      </div>
-
-      <!-- items grid (exist + new modifier indicator) -->
-      <div class="items-grid">
-
-        <!-- item without modifiers (exist) -->
-        <div class="item-card">
-          <div class="item-img" style="background:linear-gradient(135deg,#1e2228,#2a2f38);display:flex;align-items:center;justify-content:center;font-size:28px">🥗</div>
-          <div class="item-name">סלט קיסר</div>
-          <div class="item-desc">חסה רומית, פרמזן, קרוטונים, רוטב קיסר</div>
-          <div class="item-price">₪48</div>
-          <div class="item-tags"><span class="tag tag-v">🌿 צמחוני</span></div>
-        </div>
-
-        <!-- item with modifiers — NEW indicator -->
-        <div class="item-card selected">
-          <div class="item-badge">×2</div>
-          <div class="item-img" style="background:linear-gradient(135deg,#1e2228,#2a2f38);display:flex;align-items:center;justify-content:center;font-size:28px">🥩</div>
-          <div class="item-name">סטייק אנטריקוט</div>
-          <div class="item-desc">300 גר׳ — צלוי על הגריל</div>
-          <div class="item-price">₪148 <span style="font-size:10px;color:var(--purple)">● תוספות <span class="new-label">NEW</span></span></div>
-        </div>
-
-        <!-- item -->
-        <div class="item-card">
-          <div class="item-img" style="background:linear-gradient(135deg,#1e2228,#2a2f38);display:flex;align-items:center;justify-content:center;font-size:28px">🍝</div>
-          <div class="item-name">פסטה ארביאטה</div>
-          <div class="item-desc">עגבניות, שום, פלפל צ׳ילי</div>
-          <div class="item-price">₪72</div>
-          <div class="item-tags"><span class="tag tag-v">🌿 צמחוני</span><span class="tag tag-g">🌾 ללא גלוטן</span></div>
-        </div>
-
-        <div class="item-card">
-          <div class="item-img" style="background:linear-gradient(135deg,#1e2228,#2a2f38);display:flex;align-items:center;justify-content:center;font-size:28px">🍗</div>
-          <div class="item-name">פרגית בגריל</div>
-          <div class="item-desc">מתובל בעשבי תיבול, עם תוספת לבחירה</div>
-          <div class="item-price">₪92 <span style="font-size:10px;color:var(--purple)">● תוספות <span class="new-label">NEW</span></span></div>
-        </div>
-
-        <div class="item-card">
-          <div class="item-img" style="background:linear-gradient(135deg,#1e2228,#2a2f38);display:flex;align-items:center;justify-content:center;font-size:28px">🐟</div>
-          <div class="item-name">פילה סלמון</div>
-          <div class="item-desc">עם ירקות מוקפצים ואורז</div>
-          <div class="item-price">₪118</div>
-        </div>
-
-        <div class="item-card">
-          <div class="item-img" style="background:linear-gradient(135deg,#1e2228,#2a2f38);display:flex;align-items:center;justify-content:center;font-size:28px">🥦</div>
-          <div class="item-name">ירקות מוקפצים</div>
-          <div class="item-desc">בחמאה ושום, עונתיים</div>
-          <div class="item-price">₪38</div>
-          <div class="item-tags"><span class="tag tag-v">🌿 צמחוני</span></div>
-        </div>
-
-      </div>
+    <div style="margin-bottom:14px;">
+      <div class="mod-group-title">רמת עשייה (חובה)</div>
+      <div class="mod-opt" onclick="toggleMod(this)"><span class="mod-opt-name">ראו</span><span class="mod-opt-price free">ללא תוספת</span></div>
+      <div class="mod-opt sel" onclick="toggleMod(this)"><span class="mod-opt-name">מדיום</span><span class="mod-opt-price free">ללא תוספת</span></div>
+      <div class="mod-opt" onclick="toggleMod(this)"><span class="mod-opt-name">וולדון</span><span class="mod-opt-price free">ללא תוספת</span></div>
     </div>
 
-    <!-- ══ RIGHT: ORDER ══ -->
-    <div class="order-panel">
-
-      <!-- header (exist) -->
-      <div class="order-header">
-        <span class="order-header-title">🛒 שולחן 7</span>
-        <button class="clear-btn">נקה הכל</button>
-      </div>
-
-      <!-- NEW: course tabs -->
-      <div class="course-tabs">
-        <button class="course-tab active">קורס 1 <span class="new-label">NEW</span></button>
-        <button class="course-tab inactive">קורס 2</button>
-        <button class="course-tab inactive">קורס 3</button>
-        <button class="course-add-btn">+</button>
-      </div>
-
-      <!-- order items -->
-      <div class="order-items">
-
-        <!-- item with modifiers (new) -->
-        <div class="order-item">
-          <div class="order-item-row">
-            <div class="order-item-info">
-              <div class="order-item-name">סטייק אנטריקוט</div>
-              <!-- NEW: modifier pills -->
-              <div class="modifier-row">
-                <span class="modifier-pill">מדיום</span>
-                <span class="modifier-pill">+ פטריות ×2</span>
-              </div>
-              <div class="order-item-price">₪316 <span>(₪158 × 2)</span></div>
-            </div>
-            <div class="qty-controls">
-              <button class="qty-btn">−</button>
-              <span class="qty-val">2</span>
-              <button class="qty-btn">+</button>
-            </div>
-          </div>
-          <input class="item-note" placeholder="הערה (ללא בצל, אלרגיה...)" value="">
-        </div>
-
-        <!-- regular item (exist) -->
-        <div class="order-item">
-          <div class="order-item-row">
-            <div class="order-item-info">
-              <div class="order-item-name">סלט קיסר</div>
-              <div class="order-item-price">₪48 <span>(₪48 × 1)</span></div>
-            </div>
-            <div class="qty-controls">
-              <button class="qty-btn">−</button>
-              <span class="qty-val">1</span>
-              <button class="qty-btn">+</button>
-            </div>
-          </div>
-          <input class="item-note" placeholder="הערה (ללא בצל, אלרגיה...)" value="ללא קרוטונים">
-        </div>
-
-        <!-- item in course 2 — new indicator -->
-        <div style="margin: 4px 14px;">
-          <div class="section-note">🔥 קורס 2 — לא ייצא עד לאישור <span class="new-label">NEW</span></div>
-        </div>
-        <div class="order-item" style="opacity:.75">
-          <div class="order-item-row">
-            <div class="order-item-info">
-              <div class="order-item-name">פסטה ארביאטה</div>
-              <div class="order-item-price">₪72 <span>(₪72 × 1)</span></div>
-            </div>
-            <div class="qty-controls">
-              <button class="qty-btn">−</button>
-              <span class="qty-val">1</span>
-              <button class="qty-btn">+</button>
-            </div>
-          </div>
-          <input class="item-note" placeholder="הערה..." value="">
-        </div>
-
-      </div>
-
-      <!-- footer -->
-      <div class="order-footer">
-        <textarea class="order-note" rows="2" placeholder="הערה לשולחן..."></textarea>
-        <div class="summary-row">
-          <span class="summary-meta">4 פריטים · 3 סועדים <span class="new-label">NEW</span> קורסים: 2</span>
-          <span class="summary-total">₪436</span>
-        </div>
-        <button class="send-btn">📤 שלח למטבח</button>
-      </div>
-    </div>
-
-  </div><!-- /body -->
-</div><!-- /shell -->
-
-<!-- ═══ MODIFIER MODAL (NEW) ═══ -->
-<div class="modal-overlay" style="display:none" id="modModal">
-  <div class="modal">
-    <div class="modal-title">סטייק אנטריקוט <span class="new-label">NEW</span></div>
-    <div class="modal-price">₪148 בסיס</div>
-
-    <div class="modifier-group">
-      <div class="modifier-group-title">רמת עשייה (חובה)</div>
-      <div class="modifier-option"><span class="modifier-option-name">ראו</span><span class="modifier-option-price free">ללא תוספת</span></div>
-      <div class="modifier-option selected"><span class="modifier-option-name">מדיום</span><span class="modifier-option-price free">ללא תוספת</span></div>
-      <div class="modifier-option"><span class="modifier-option-name">וולדון</span><span class="modifier-option-price free">ללא תוספת</span></div>
-    </div>
-
-    <div class="modifier-group">
-      <div class="modifier-group-title">תוספות (בחר עד 3)</div>
-      <div class="modifier-option selected"><span class="modifier-option-name">פטריות מוקפצות</span><span class="modifier-option-price">+₪14</span></div>
-      <div class="modifier-option"><span class="modifier-option-name">בצל מקורמל</span><span class="modifier-option-price">+₪8</span></div>
-      <div class="modifier-option"><span class="modifier-option-name">גבינת גורגונזולה</span><span class="modifier-option-price">+₪18</span></div>
-      <div class="modifier-option"><span class="modifier-option-name">צ׳יפס</span><span class="modifier-option-price">+₪12</span></div>
+    <div>
+      <div class="mod-group-title">תוספות (עד 3)</div>
+      <div class="mod-opt sel" onclick="toggleMod(this)"><span class="mod-opt-name">פטריות מוקפצות</span><span class="mod-opt-price">+₪14</span></div>
+      <div class="mod-opt" onclick="toggleMod(this)"><span class="mod-opt-name">בצל מקורמל</span><span class="mod-opt-price">+₪8</span></div>
+      <div class="mod-opt" onclick="toggleMod(this)"><span class="mod-opt-name">גבינת גורגונזולה</span><span class="mod-opt-price">+₪18</span></div>
+      <div class="mod-opt" onclick="toggleMod(this)"><span class="mod-opt-name">צ׳יפס</span><span class="mod-opt-price">+₪12</span></div>
     </div>
 
     <div class="modal-actions">
-      <button class="modal-cancel">ביטול</button>
-      <button class="modal-confirm">➕ הוסף להזמנה · ₪162</button>
+      <button class="modal-cancel" onclick="closeModal()">ביטול</button>
+      <button class="modal-confirm" onclick="closeModal()">➕ הוסף · ₪162</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ LEGEND ═══ -->
-<div class="legend">
-  <div class="legend-title">מקרא שינויים</div>
-  <div class="legend-row"><span class="dot" style="background:var(--green)"></span> חדש — לא קיים היום</div>
-  <div class="legend-row"><span class="dot" style="background:var(--sub)"></span> קיים — ב-waiter הנוכחי</div>
-  <div style="margin-top:10px;font-size:10px;color:var(--muted)">
-    ✅ שולחנות פתוחים (strip)<br>
-    ✅ ניהול קורסים<br>
-    ✅ תוספות ומודיפיירים<br>
-    ✅ אינדיקטור קריאת מלצר<br>
-    ✅ סה״כ per-course
+<!-- legend -->
+<div id="legend">
+  <b>מקרא</b>
+  <div class="leg-row"><span class="leg-dot" style="background:#4ade80;outline:1.5px dashed #4ade80;outline-offset:2px;"></span> חדש (מוצג עם מסגרת ירוקה)</div>
+  <div class="leg-row"><span class="leg-dot" style="background:#868e96;"></span> קיים — ללא שינוי</div>
+  <div style="margin-top:8px;font-size:10px;color:#495057;line-height:1.6;">
+    ✦ פס שולחנות + 🔔<br>
+    ✦ tabs קורסים<br>
+    ✦ תוספות (modal) לחץ על 🥩 / 🍗<br>
+    ✦ pills מודיפיירים בעגלה
   </div>
 </div>
 
-<!-- show modal on click for demo -->
 <script>
-  document.querySelectorAll('.item-card').forEach(c => {
-    c.addEventListener('click', () => {
-      if (c.querySelector('.item-price')?.textContent?.includes('תוספות')) {
-        document.getElementById('modModal').style.display = 'flex';
-      }
-    });
-  });
-  document.getElementById('modModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('modModal')) document.getElementById('modModal').style.display = 'none';
-  });
-  document.querySelector('.modal-cancel')?.addEventListener('click', () => {
-    document.getElementById('modModal').style.display = 'none';
-  });
-  document.querySelector('.modal-confirm')?.addEventListener('click', () => {
-    document.getElementById('modModal').style.display = 'none';
-  });
-</script>
+let tableNum = 7;
+let guests = 3;
 
+function changeTable(d) {
+  tableNum = Math.max(1, tableNum + d);
+  document.getElementById('table-val').textContent = tableNum;
+}
+function changeGuests(d) {
+  guests = Math.max(1, guests + d);
+  document.getElementById('guests-val').textContent = guests;
+}
+function openModal(name, price) {
+  document.getElementById('modal-item-name').textContent = name;
+  document.getElementById('modal-item-price').textContent = 'בסיס ' + price;
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+function toggleMod(el) {
+  el.classList.toggle('sel');
+}
+</script>
 </body>
 </html>
