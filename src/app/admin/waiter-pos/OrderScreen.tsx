@@ -26,6 +26,7 @@ type Props = {
 export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, restaurantId, existingOrder, onClose, onSuccess }: Props) {
   const [categories, setCategories]     = useState<MenuCategory[]>([]);
   const [loadingMenu, setLoadingMenu]   = useState(true);
+  const [menuError, setMenuError]       = useState<string | null>(null);
   const [activeCat, setActiveCat]       = useState<string>("");
   const [search, setSearch]             = useState("");
   const [activeCourse, setActiveCourse] = useState(1);
@@ -37,12 +38,15 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   // Load menu
   useEffect(() => {
     fetch(`/api/admin/waiter-pos/menu?restaurantId=${restaurantId}`)
-      .then(r => r.ok ? r.json() : { categories: [] })
-      .then(d => {
+      .then(async r => {
+        const d = await r.json();
+        if (!r.ok) { setMenuError(`שגיאה ${r.status}: ${d?.error ?? "לא ידוע"}`); return; }
         const cats: MenuCategory[] = d.categories ?? [];
         setCategories(cats);
         if (cats.length > 0) setActiveCat(cats[0].id);
+        else setMenuError("אין קטגוריות פעילות בתפריט");
       })
+      .catch(e => setMenuError(String(e)))
       .finally(() => setLoadingMenu(false));
   }, [restaurantId]);
 
@@ -196,6 +200,11 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px,1fr))", gap: 9, alignContent: "start" }}>
             {loadingMenu ? (
               <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 30, fontSize: 13 }}>טוען תפריט...</div>
+            ) : menuError ? (
+              <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 30 }}>
+                <div style={{ fontSize: 13, color: "#b91c1c", fontWeight: 700, marginBottom: 8 }}>⚠️ {menuError}</div>
+                <div style={{ fontSize: 11, color: "#888" }}>restaurantId: {restaurantId}</div>
+              </div>
             ) : filteredItems.map(item => {
               const qty     = cartQtyForItem(item.id);
               const warn    = hasAllergy(item);
