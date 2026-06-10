@@ -223,7 +223,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
               // find the last cart entry for this item (to remove one at a time)
               const lastKey = [...cart].reverse().find(i => i.itemId === item.id)?.key;
               return (
-                <div key={item.id} onClick={() => addItem(item)} style={{ background: "#fff", border: `1.5px solid ${qty > 0 ? "#1a1612" : "#e8e2da"}`, borderRadius: 16, cursor: "pointer", position: "relative", transition: "transform .1s, box-shadow .1s", boxShadow: qty > 0 ? "0 2px 10px rgba(26,22,18,.1)" : "0 1px 4px rgba(26,22,18,.05)", display: "flex", flexDirection: "column" }}>
+                <div key={item.id} onClick={() => addItem(item)} style={{ background: "#fff", border: `1.5px solid ${qty > 0 ? "#1a1612" : "#e8e2da"}`, borderRadius: 16, cursor: "pointer", position: "relative", transition: "transform .1s, box-shadow .1s", boxShadow: qty > 0 ? "0 2px 10px rgba(26,22,18,.1)" : "0 1px 4px rgba(26,22,18,.05)" }}>
                   {/* quantity badge (left) */}
                   {qty > 0 && (
                     <div style={{ position: "absolute", top: 6, left: 6, background: "#1a1612", color: "#fff", borderRadius: 99, minWidth: 20, height: 20, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>
