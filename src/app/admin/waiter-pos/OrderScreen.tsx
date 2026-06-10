@@ -39,9 +39,11 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   useEffect(() => {
     fetch(`/api/admin/waiter-pos/menu?restaurantId=${restaurantId}`)
       .then(async r => {
-        const d = await r.json();
-        if (!r.ok) { setMenuError(`שגיאה ${r.status}: ${d?.error ?? "לא ידוע"}`); return; }
-        const cats: MenuCategory[] = d.categories ?? [];
+        const text = await r.text();
+        let d: Record<string, unknown>;
+        try { d = JSON.parse(text); } catch { setMenuError(`שגיאה ${r.status} (לא JSON) — בדוק console`); console.error("[menu fetch]", r.status, text.slice(0, 300)); return; }
+        if (!r.ok) { setMenuError(`שגיאה ${r.status}: ${String(d?.error ?? "לא ידוע")}`); return; }
+        const cats: MenuCategory[] = (d.categories as MenuCategory[]) ?? [];
         setCategories(cats);
         if (cats.length > 0) setActiveCat(cats[0].id);
         else setMenuError("אין קטגוריות פעילות בתפריט");
