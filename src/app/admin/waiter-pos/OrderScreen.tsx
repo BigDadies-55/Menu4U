@@ -215,17 +215,24 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                 <div style={{ fontSize: 11, color: "#888" }}>restaurantId: {restaurantId}</div>
               </div>
             ) : filteredItems.map(item => {
-              const qty     = cartQtyForItem(item.id);
-              const warn    = hasAllergy(item);
-              const wLabel  = allergyLabel(item);
+              const qty    = cartQtyForItem(item.id);
+              const warn   = hasAllergy(item);
+              const wLabel = allergyLabel(item);
+              // find the last cart entry for this item (to remove one at a time)
+              const lastKey = [...cart].reverse().find(i => i.itemId === item.id)?.key;
               return (
                 <div key={item.id} onClick={() => addItem(item)} style={{ background: "#fff", border: `1.5px solid ${qty > 0 ? "#1a1612" : "#e8e2da"}`, borderRadius: 16, overflow: "hidden", cursor: "pointer", position: "relative", transition: "transform .1s, box-shadow .1s", boxShadow: qty > 0 ? "0 2px 10px rgba(26,22,18,.1)" : "0 1px 4px rgba(26,22,18,.05)" }}>
+                  {/* quantity badge (left) */}
                   {qty > 0 && (
-                    <div style={{ position: "absolute", top: 6, left: 6, background: "#1a1612", color: "#fff", borderRadius: 99, minWidth: 20, height: 20, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 1 }}>×{qty}</div>
+                    <div style={{ position: "absolute", top: 6, left: 6, background: "#1a1612", color: "#fff", borderRadius: 99, minWidth: 20, height: 20, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>
+                  )}
+                  {/* remove one — red X (right) */}
+                  {qty > 0 && lastKey && (
+                    <div onClick={e => { e.stopPropagation(); changeQty(lastKey, cart.find(i => i.key === lastKey)!.quantity - 1); }} style={{ position: "absolute", top: 6, right: 6, background: "#e53e3e", color: "#fff", borderRadius: 99, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, zIndex: 2, cursor: "pointer", lineHeight: 1 }}>✕</div>
                   )}
                   <div style={{ height: 68, background: "#f4f1ed", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative" }}>
                     {item.image ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🍽️"}
-                    {warn && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13 }}>⚠️</span>}
+                    {warn && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13 }}>⚠️</span>}
                   </div>
                   <div style={{ padding: "7px 9px 9px" }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1612", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
@@ -241,32 +248,10 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           </div>
         </div>
 
-        {/* Order panel — desktop: side column | mobile: hidden (bottom sheet) */}
-        {!isMobile && (
-          <div style={{ display: "flex", flexShrink: 0, flexDirection: "column" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              <OrderPanel
-                existingItems={order?.items ?? []}
-                cartItems={cart}
-                tableAllergens={tableAllergens}
-                orderNumber={order?.orderNumber}
-                onQtyChange={changeQty}
-                onNotesChange={changeNotes}
-                onFireItem={fireItem}
-                onFireCourse={fireCourse}
-              />
-            </div>
-            <div style={{ padding: "12px 14px 14px", background: "#fff", borderTop: "1px solid #e8e2da" }}>
-              <button onClick={handleSubmit} disabled={cart.length === 0 || submitting} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: cart.length === 0 ? "#e8e2da" : "#1a1612", color: cart.length === 0 ? "#8a8480" : "#fff", fontSize: 14, fontWeight: 900, cursor: cart.length === 0 ? "default" : "pointer", fontFamily: "inherit", transition: "all .12s" }}>
-                {submitting ? "שולח..." : orderId ? `📤 הוסף להזמנה #${order?.orderNumber}` : "📤 צור הזמנה"}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* ── Mobile: floating cart button ── */}
-      {isMobile && (
+      {/* ── Floating cart button (all screen sizes) ── */}
+      {true && (
         <>
           {/* FAB */}
           <button onClick={() => setCartOpen(true)} style={{
