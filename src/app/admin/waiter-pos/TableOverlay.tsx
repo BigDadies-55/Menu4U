@@ -140,11 +140,11 @@ export function TableOverlay({
 
   // ── Inline styles ─────────────────────────────────────────────────
   const panelStyle: React.CSSProperties = isMobile
-    ? { position: "fixed", inset: 0, background: "#faf8f5", display: "flex", flexDirection: "column", zIndex: 201, overflowY: "auto" }
+    ? { position: "fixed", inset: 0, background: "#faf8f5", display: "flex", flexDirection: "column", zIndex: 501, overflowY: "auto" }
     : { background: "#faf8f5", borderRadius: 24, width: 440, maxHeight: "88dvh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 12px 50px rgba(26,22,18,.18)" };
 
   const bgStyle: React.CSSProperties = isMobile
-    ? { position: "fixed", inset: 0, zIndex: 200 }
+    ? { position: "fixed", inset: 0, zIndex: 500 }
     : { position: "fixed", inset: 0, background: "rgba(26,22,18,.4)", backdropFilter: "blur(3px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" };
 
   return (

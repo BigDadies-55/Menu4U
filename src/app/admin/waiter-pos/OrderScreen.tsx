@@ -148,7 +148,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
     item.allergens.filter(a => tableAllergens.includes(a)).map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "#f4f1ed", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#f4f1ed", display: "flex", flexDirection: "column" }}>
 
       {/* Top bar */}
       <div style={{ background: "#fff", borderBottom: "1px solid #e8e2da", height: 56, padding: "0 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 1px 6px rgba(26,22,18,.06)" }}>
