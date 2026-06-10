@@ -238,9 +238,9 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                   </div>
                   <div style={{ padding: "7px 9px 9px" }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1612", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
-                    {item.description && <div style={{ fontSize: 9, color: "#8a8480", marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
+                    {item.description && <div style={{ fontSize: 9, color: "#8a8480", marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{item.price.toFixed(0)}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{(item.price ?? 0).toFixed(0)}</span>
                       {warn && <span style={{ fontSize: 9, fontWeight: 800, color: "#8b2e22", background: "#fdf2f0", borderRadius: 5, padding: "1px 5px" }}>{wLabel}</span>}
                     </div>
                   </div>
