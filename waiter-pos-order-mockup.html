@@ -1016,64 +1016,178 @@ body {
     </div>
 
     <div class="cart-col">
-      <div class="cart-head">
-        <span class="cart-head-title">🛒 שולחן 7</span>
-        <button class="cart-clear-btn">נקה</button>
-      </div>
-
-      <div class="cart-sec-label">קיים בהזמנה #42</div>
-      <div class="cart-row dim">
-        <div class="cr-top">
-          <div class="cr-info"><div class="cr-name">סטייק × 2</div><div class="cr-price">₪296</div></div>
+      <!-- header + view toggle -->
+      <div class="cart-head" style="flex-direction:column;align-items:stretch;gap:8px;padding:10px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="cart-head-title">🛒 שולחן 7 · הזמנה #42</span>
+          <span style="font-size:13px;font-weight:900;color:var(--ink)">₪460</span>
         </div>
-      </div>
-      <div class="cart-row dim">
-        <div class="cr-top">
-          <div class="cr-info"><div class="cr-name">קולה × 2</div><div class="cr-price">₪24</div></div>
+        <div style="display:flex;background:var(--bg);border-radius:8px;border:1px solid var(--border);padding:2px;gap:2px">
+          <button onclick="switchView('B')" id="vbB" style="flex:1;padding:5px;border-radius:6px;border:none;font-size:11px;font-weight:800;cursor:pointer;font-family:var(--font);background:var(--ink);color:#fff">ציר זמן</button>
+          <button onclick="switchView('C')" id="vbC" style="flex:1;padding:5px;border-radius:6px;border:none;font-size:11px;font-weight:800;cursor:pointer;font-family:var(--font);background:transparent;color:var(--ink-3)">שכבות</button>
         </div>
       </div>
 
-      <div class="course-div">
-        <span class="cdiv-text">+ חדש · קורס 1</span>
-      </div>
+      <!-- ── VIEW B: timeline ── -->
+      <div id="viewB" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
 
-      <div class="cart-row">
-        <div class="cr-top">
-          <div class="cr-info">
-            <div class="cr-name">פרגית בגריל</div>
-            <div class="cr-price">₪92</div>
-            <div class="cr-course">קורס 1</div>
+        <div style="padding:4px 14px 2px;font-size:9px;font-weight:800;color:var(--green-text);text-transform:uppercase;letter-spacing:.05em;background:var(--green-bg);border-bottom:1px solid var(--green-mid)">✅ יצא למטבח</div>
+        <div style="display:flex;gap:0;padding:0 14px;border-bottom:1px solid var(--border-light)">
+          <div style="display:flex;flex-direction:column;align-items:center;padding:9px 8px 9px 0;flex-shrink:0">
+            <div style="width:20px;height:20px;border-radius:99px;background:var(--green-bg);color:var(--green-text);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">✓</div>
+            <div style="width:2px;flex:1;min-height:4px;background:var(--green-mid);margin-top:2px"></div>
           </div>
-          <div class="qty-row">
-            <button class="qb">−</button>
-            <span class="qv">1</span>
-            <button class="qb">+</button>
+          <div style="flex:1;padding:9px 0 9px 6px;display:flex;align-items:center;gap:6px;opacity:.45">
+            <div style="flex:1"><div style="font-size:12px;font-weight:700">סטייק אנטריקוט × 2</div><div style="font-size:10px;color:var(--ink-3)">קורס 1</div></div>
+            <div style="font-size:12px;font-weight:800;color:var(--ink-2)">₪296</div>
           </div>
         </div>
-        <input class="cr-note" placeholder="הערה (ללא בצל...)">
-      </div>
 
-      <div class="course-div">
-        <span class="cdiv-text">קורס 2 · ממתין</span>
-        <button class="cdiv-fire">🔥 שחרר</button>
-      </div>
-      <div class="cart-row">
-        <div class="cr-top">
-          <div class="cr-info">
-            <div class="cr-name">סלמון צלוי</div>
-            <div class="cr-price">₪236</div>
-            <div class="cr-course">קורס 2 · 🔥 ממתין</div>
+        <div style="padding:4px 14px 2px;font-size:9px;font-weight:800;color:var(--blue-text);text-transform:uppercase;letter-spacing:.05em;background:var(--blue-bg);border-bottom:1px solid var(--blue-mid)">🍳 בהכנה</div>
+        <div style="display:flex;gap:0;padding:0 14px;border-bottom:1px solid var(--border-light)">
+          <div style="display:flex;flex-direction:column;align-items:center;padding:9px 8px 9px 0;flex-shrink:0">
+            <div style="width:20px;height:20px;border-radius:99px;background:var(--blue-bg);color:var(--blue-text);display:flex;align-items:center;justify-content:center;font-size:10px">🍳</div>
+            <div style="width:2px;flex:1;min-height:4px;background:var(--blue-mid);margin-top:2px"></div>
           </div>
-          <div class="qty-row">
-            <button class="qb">−</button>
-            <span class="qv">2</span>
-            <button class="qb">+</button>
+          <div style="flex:1;padding:9px 0 9px 6px;display:flex;align-items:center;gap:6px">
+            <div style="flex:1"><div style="font-size:12px;font-weight:700">סלט קיסר ⚠️</div><div style="font-size:10px;color:var(--ink-3)">קורס 1</div></div>
+            <div style="font-size:12px;font-weight:800;color:var(--ink-2)">₪48</div>
           </div>
         </div>
+        <div style="display:flex;gap:0;padding:0 14px;border-bottom:1px solid var(--border-light)">
+          <div style="display:flex;flex-direction:column;align-items:center;padding:9px 8px 9px 0;flex-shrink:0">
+            <div style="width:20px;height:20px;border-radius:99px;background:var(--blue-bg);color:var(--blue-text);display:flex;align-items:center;justify-content:center;font-size:10px">🍳</div>
+            <div style="width:2px;flex:1;min-height:4px;background:var(--blue-mid);margin-top:2px"></div>
+          </div>
+          <div style="flex:1;padding:9px 0 9px 6px;display:flex;align-items:center;gap:6px">
+            <div style="flex:1"><div style="font-size:12px;font-weight:700">קולה × 2</div><div style="font-size:10px;color:var(--ink-3)">קורס 1</div></div>
+            <div style="font-size:12px;font-weight:800;color:var(--ink-2)">₪24</div>
+          </div>
+        </div>
+
+        <div style="padding:4px 14px 2px;font-size:9px;font-weight:800;color:var(--amber);text-transform:uppercase;letter-spacing:.05em;background:var(--amber-bg);border-bottom:1px solid var(--amber-mid)">🔥 ממתין לשחרור</div>
+        <div style="display:flex;gap:0;padding:0 14px;border-bottom:1px solid var(--border-light)">
+          <div style="display:flex;flex-direction:column;align-items:center;padding:9px 8px 9px 0;flex-shrink:0">
+            <div style="width:20px;height:20px;border-radius:99px;background:var(--amber-bg);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">⏸</div>
+            <div style="width:2px;flex:1;min-height:4px;background:var(--amber-mid);margin-top:2px"></div>
+          </div>
+          <div style="flex:1;padding:9px 0 9px 6px;display:flex;align-items:center;gap:6px">
+            <div style="flex:1"><div style="font-size:12px;font-weight:700">פרגית צלויה</div><div style="font-size:10px;color:var(--ink-3)">קורס 2</div></div>
+            <button onclick="this.textContent='✓';this.style.background='var(--green-bg)';this.style.color='var(--green-text)';this.style.borderColor='var(--green-mid)'" style="padding:4px 9px;border-radius:99px;border:1px solid var(--amber-mid);background:var(--amber-bg);color:#92400e;font-size:10px;font-weight:800;cursor:pointer;font-family:var(--font)">🔥</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:0;padding:0 14px;border-bottom:1px solid var(--border-light)">
+          <div style="display:flex;flex-direction:column;align-items:center;padding:9px 8px 9px 0;flex-shrink:0">
+            <div style="width:20px;height:20px;border-radius:99px;background:var(--amber-bg);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">⏸</div>
+            <div style="width:2px;flex:1;min-height:4px;background:var(--amber-mid);margin-top:2px"></div>
+          </div>
+          <div style="flex:1;padding:9px 0 9px 6px;display:flex;align-items:center;gap:6px">
+            <div style="flex:1"><div style="font-size:12px;font-weight:700">סלמון × 2</div><div style="font-size:10px;color:var(--ink-3)">קורס 2</div></div>
+            <button onclick="this.textContent='✓';this.style.background='var(--green-bg)';this.style.color='var(--green-text)';this.style.borderColor='var(--green-mid)'" style="padding:4px 9px;border-radius:99px;border:1px solid var(--amber-mid);background:var(--amber-bg);color:#92400e;font-size:10px;font-weight:800;cursor:pointer;font-family:var(--font)">🔥</button>
+          </div>
+        </div>
+
+        <div style="padding:4px 14px 2px;font-size:9px;font-weight:800;color:var(--purple-text);text-transform:uppercase;letter-spacing:.05em;background:var(--purple-bg);border-bottom:1px solid var(--purple-mid)">➕ מוסיף עכשיו</div>
+        <div style="display:flex;gap:0;padding:0 14px;background:var(--purple-bg);border-bottom:1px solid var(--border-light)">
+          <div style="display:flex;flex-direction:column;align-items:center;padding:9px 8px 9px 0;flex-shrink:0">
+            <div style="width:20px;height:20px;border-radius:99px;background:var(--purple-mid);color:var(--purple-text);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">+</div>
+          </div>
+          <div style="flex:1;padding:9px 0 9px 6px;display:flex;align-items:center;gap:6px">
+            <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--purple-text)">פרגית בגריל</div></div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <button class="qb">−</button><span class="qv">1</span><button class="qb">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VIEW C: collapsible lanes ── -->
+      <div id="viewC" style="flex:1;overflow-y:auto;display:none;flex-direction:column">
+
+        <!-- sent -->
+        <div style="border-bottom:2px solid var(--border)">
+          <div onclick="togLane('lc1','la1')" style="padding:8px 14px;background:var(--green-bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+            <div style="font-size:11px;font-weight:800;color:var(--green-text);display:flex;align-items:center;gap:6px">
+              ✅ יצא למטבח
+              <span style="font-size:10px;font-weight:800;background:var(--green-mid);color:var(--green-text);padding:1px 7px;border-radius:99px">1</span>
+            </div>
+            <span id="la1" style="color:var(--ink-3);font-size:12px;transition:transform .15s">▾</span>
+          </div>
+          <div id="lc1" style="display:none">
+            <div style="padding:8px 14px 8px 20px;border-top:1px solid var(--border-light);display:flex;align-items:center;gap:8px;opacity:.5">
+              <div style="flex:1;font-size:12px;font-weight:700">סטייק × 2</div>
+              <div style="font-size:10px;color:var(--ink-3)">קורס 1</div>
+              <div style="font-size:12px;font-weight:800">₪296</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- preparing -->
+        <div style="border-bottom:2px solid var(--border)">
+          <div onclick="togLane('lc2','la2')" style="padding:8px 14px;background:var(--blue-bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+            <div style="font-size:11px;font-weight:800;color:var(--blue-text);display:flex;align-items:center;gap:6px">
+              🍳 בהכנה
+              <span style="font-size:10px;font-weight:800;background:var(--blue-mid);color:var(--blue-text);padding:1px 7px;border-radius:99px">2</span>
+            </div>
+            <span id="la2" style="color:var(--ink-3);font-size:12px;transform:rotate(180deg)">▾</span>
+          </div>
+          <div id="lc2">
+            <div style="padding:8px 14px 8px 20px;border-top:1px solid var(--border-light);display:flex;align-items:center;gap:8px">
+              <div style="flex:1;font-size:12px;font-weight:700">סלט קיסר ⚠️</div>
+              <div style="font-size:10px;color:var(--ink-3)">קורס 1</div>
+              <div style="font-size:12px;font-weight:800">₪48</div>
+            </div>
+            <div style="padding:8px 14px 8px 20px;border-top:1px solid var(--border-light);display:flex;align-items:center;gap:8px">
+              <div style="flex:1;font-size:12px;font-weight:700">קולה × 2</div>
+              <div style="font-size:10px;color:var(--ink-3)">קורס 1</div>
+              <div style="font-size:12px;font-weight:800">₪24</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- holding fire -->
+        <div style="border-bottom:2px solid var(--border)">
+          <div onclick="togLane('lc3','la3')" style="padding:8px 14px;background:var(--amber-bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+            <div style="font-size:11px;font-weight:800;color:#92400e;display:flex;align-items:center;gap:6px">
+              🔥 ממתין לשחרור
+              <span style="font-size:10px;font-weight:800;background:var(--amber-mid);color:#92400e;padding:1px 7px;border-radius:99px">2</span>
+            </div>
+            <span id="la3" style="color:var(--ink-3);font-size:12px;transform:rotate(180deg)">▾</span>
+          </div>
+          <div id="lc3">
+            <div style="padding:8px 14px 8px 20px;border-top:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:12px;font-weight:700">פרגית צלויה</div>
+              <button onclick="this.textContent='✓ יצא';this.style.background='var(--green-bg)';this.style.color='var(--green-text)'" style="padding:4px 10px;border-radius:99px;border:1px solid var(--amber-mid);background:var(--amber-bg);color:#92400e;font-size:10px;font-weight:800;cursor:pointer;font-family:var(--font)">🔥 שחרר</button>
+            </div>
+            <div style="padding:8px 14px 8px 20px;border-top:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:12px;font-weight:700">סלמון × 2</div>
+              <button onclick="this.textContent='✓ יצא';this.style.background='var(--green-bg)';this.style.color='var(--green-text)'" style="padding:4px 10px;border-radius:99px;border:1px solid var(--amber-mid);background:var(--amber-bg);color:#92400e;font-size:10px;font-weight:800;cursor:pointer;font-family:var(--font)">🔥 שחרר</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- new -->
+        <div style="border-bottom:2px solid var(--border)">
+          <div onclick="togLane('lc4','la4')" style="padding:8px 14px;background:var(--purple-bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+            <div style="font-size:11px;font-weight:800;color:var(--purple-text);display:flex;align-items:center;gap:6px">
+              ➕ מוסיף עכשיו
+              <span style="font-size:10px;font-weight:800;background:var(--purple-mid);color:var(--purple-text);padding:1px 7px;border-radius:99px">1</span>
+            </div>
+            <span id="la4" style="color:var(--ink-3);font-size:12px;transform:rotate(180deg)">▾</span>
+          </div>
+          <div id="lc4" style="background:var(--purple-bg)">
+            <div style="padding:8px 14px 8px 20px;border-top:1px solid var(--purple-mid);display:flex;align-items:center;gap:8px">
+              <div style="flex:1;font-size:12px;font-weight:700;color:var(--purple-text)">פרגית בגריל</div>
+              <div style="display:flex;align-items:center;gap:4px">
+                <button class="qb">−</button><span class="qv">1</span><button class="qb">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="cart-foot">
-        <textarea class="cart-ta" rows="2" placeholder="הערה לשולחן..."></textarea>
         <div class="cart-sum">
           <span class="cart-meta">1 מנה חדשה</span>
           <span class="cart-total">₪92</span>
@@ -1107,6 +1221,21 @@ function fireIt() {
   const b = document.getElementById('fireBtn');
   b.textContent = '✓ יצא';
   b.className = 'fire-btn done';
+}
+function switchView(v) {
+  document.getElementById('viewB').style.display = v==='B' ? 'flex' : 'none';
+  document.getElementById('viewC').style.display = v==='C' ? 'flex' : 'none';
+  document.getElementById('vbB').style.background = v==='B' ? 'var(--ink)' : 'transparent';
+  document.getElementById('vbB').style.color      = v==='B' ? '#fff' : 'var(--ink-3)';
+  document.getElementById('vbC').style.background = v==='C' ? 'var(--ink)' : 'transparent';
+  document.getElementById('vbC').style.color      = v==='C' ? '#fff' : 'var(--ink-3)';
+}
+function togLane(id, arrowId) {
+  const el = document.getElementById(id);
+  const ar = document.getElementById(arrowId);
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  ar.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 // Free table — allergy chips
