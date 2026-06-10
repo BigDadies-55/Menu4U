@@ -307,7 +307,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                 <div style={{ padding: "12px 0 4px", display: "flex", justifyContent: "center", flexShrink: 0 }}>
                   <div style={{ width: 40, height: 4, borderRadius: 99, background: "#e8e2da" }} />
                 </div>
-                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", width: "100%" }}>
                   <OrderPanel
                     orderId={orderId}
                     restaurantId={restaurantId}

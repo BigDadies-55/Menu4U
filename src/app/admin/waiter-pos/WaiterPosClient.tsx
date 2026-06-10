@@ -763,6 +763,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           insights={overlayInsights}
           isMobile={isMobile}
           freeTables={tables.filter(t => t.availStatus === "free").map(t => t.tableNum)}
+          restaurantId={restaurantId}
           onClose={() => setTableOverlay(null)}
           onAddItems={(order) => {
             setOrderScreenData({ orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });

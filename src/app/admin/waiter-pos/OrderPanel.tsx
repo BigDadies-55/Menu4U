@@ -217,7 +217,7 @@ export function OrderPanel({ orderId, restaurantId, existingItems, cartItems, ta
   const panelTotal      = existingTotal + newTotal;
 
   return (
-    <div style={{ width: 340, background: "#fff", borderRight: "1px solid #e8e2da", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div style={{ width: "100%", minWidth: 0, background: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
       {/* Header */}
       <div style={{ padding: "10px 14px", borderBottom: "1px solid #e8e2da", display: "flex", flexDirection: "column", gap: 7, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
