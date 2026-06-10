@@ -34,6 +34,15 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   const [submitting, setSubmitting]     = useState(false);
   const [order, setOrder]               = useState<OrderDetail | null>(existingOrder);
   const [firingItem, setFiringItem]     = useState<string | null>(null);
+  const [isMobile, setIsMobile]         = useState(false);
+  const [cartOpen, setCartOpen]         = useState(false);
+
+  useEffect(() => {
+    function check() { setIsMobile(window.innerWidth < 640); }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Load menu
   useEffect(() => {
@@ -234,28 +243,89 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           </div>
         </div>
 
-        {/* Order panel (hidden on mobile) */}
-        <div style={{ display: "flex", flexShrink: 0, flexDirection: "column" }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <OrderPanel
-              existingItems={order?.items ?? []}
-              cartItems={cart}
-              tableAllergens={tableAllergens}
-              orderNumber={order?.orderNumber}
-              onQtyChange={changeQty}
-              onNotesChange={changeNotes}
-              onFireItem={fireItem}
-              onFireCourse={fireCourse}
-            />
+        {/* Order panel — desktop: side column | mobile: hidden (bottom sheet) */}
+        {!isMobile && (
+          <div style={{ display: "flex", flexShrink: 0, flexDirection: "column" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <OrderPanel
+                existingItems={order?.items ?? []}
+                cartItems={cart}
+                tableAllergens={tableAllergens}
+                orderNumber={order?.orderNumber}
+                onQtyChange={changeQty}
+                onNotesChange={changeNotes}
+                onFireItem={fireItem}
+                onFireCourse={fireCourse}
+              />
+            </div>
+            <div style={{ padding: "12px 14px 14px", background: "#fff", borderTop: "1px solid #e8e2da" }}>
+              <button onClick={handleSubmit} disabled={cart.length === 0 || submitting} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: cart.length === 0 ? "#e8e2da" : "#1a1612", color: cart.length === 0 ? "#8a8480" : "#fff", fontSize: 14, fontWeight: 900, cursor: cart.length === 0 ? "default" : "pointer", fontFamily: "inherit", transition: "all .12s" }}>
+                {submitting ? "שולח..." : orderId ? `📤 הוסף להזמנה #${order?.orderNumber}` : "📤 צור הזמנה"}
+              </button>
+            </div>
           </div>
-          {/* Submit button */}
-          <div style={{ padding: "0 14px 14px", background: "#fff", borderTop: "1px solid #e8e2da", paddingTop: 12 }}>
-            <button onClick={handleSubmit} disabled={cart.length === 0 || submitting} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: cart.length === 0 ? "#e8e2da" : "#1a1612", color: cart.length === 0 ? "#8a8480" : "#fff", fontSize: 14, fontWeight: 900, cursor: cart.length === 0 ? "default" : "pointer", fontFamily: "inherit", transition: "all .12s" }}>
-              {submitting ? "שולח..." : orderId ? `📤 הוסף להזמנה #${order?.orderNumber}` : "📤 צור הזמנה"}
-            </button>
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* ── Mobile: floating cart button ── */}
+      {isMobile && (
+        <>
+          {/* FAB */}
+          <button onClick={() => setCartOpen(true)} style={{
+            position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+            zIndex: 510, background: "#1a1612", color: "#fff",
+            border: "none", borderRadius: 99, padding: "14px 28px",
+            fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+            display: "flex", alignItems: "center", gap: 10,
+            boxShadow: "0 4px 20px rgba(26,22,18,.35)",
+            minWidth: 220, justifyContent: "center",
+          }}>
+            🛒 סל
+            {cart.length > 0 && (
+              <span style={{ background: "#e07060", borderRadius: 99, minWidth: 22, height: 22, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>
+                {cart.reduce((s, i) => s + i.quantity, 0)}
+              </span>
+            )}
+            {cart.length > 0 && (
+              <span style={{ fontSize: 13, opacity: .85 }}>
+                · ₪{cart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(0)}
+              </span>
+            )}
+          </button>
+
+          {/* Bottom sheet */}
+          {cartOpen && (
+            <div style={{ position: "fixed", inset: 0, zIndex: 520, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+              {/* Backdrop */}
+              <div onClick={() => setCartOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(26,22,18,.45)" }} />
+              {/* Sheet */}
+              <div style={{ position: "relative", background: "#fff", borderRadius: "20px 20px 0 0", maxHeight: "80dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                {/* Handle */}
+                <div style={{ padding: "12px 0 4px", display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: 40, height: 4, borderRadius: 99, background: "#e8e2da" }} />
+                </div>
+                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  <OrderPanel
+                    existingItems={order?.items ?? []}
+                    cartItems={cart}
+                    tableAllergens={tableAllergens}
+                    orderNumber={order?.orderNumber}
+                    onQtyChange={changeQty}
+                    onNotesChange={changeNotes}
+                    onFireItem={fireItem}
+                    onFireCourse={fireCourse}
+                  />
+                </div>
+                <div style={{ padding: "12px 16px 28px", borderTop: "1px solid #e8e2da", flexShrink: 0 }}>
+                  <button onClick={() => { setCartOpen(false); handleSubmit(); }} disabled={cart.length === 0 || submitting} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: cart.length === 0 ? "#e8e2da" : "#1a1612", color: cart.length === 0 ? "#8a8480" : "#fff", fontSize: 15, fontWeight: 900, cursor: cart.length === 0 ? "default" : "pointer", fontFamily: "inherit" }}>
+                    {submitting ? "שולח..." : orderId ? `📤 הוסף להזמנה #${order?.orderNumber}` : "📤 צור הזמנה"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
