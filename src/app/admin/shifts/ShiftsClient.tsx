@@ -902,8 +902,7 @@ export default function ShiftsClient({
                       style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box" }}
                       title={c}
                     />
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
             ))}
