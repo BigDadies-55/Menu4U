@@ -366,14 +366,14 @@ export function TableOverlay({
                   {/* Course management */}
                   {courseNums.length > 0 && (
                     <>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#c07020", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>🔥 ניהול קורסים</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#c07020", marginBottom: 5, display: "flex", alignItems: "center", gap: 4 }}>🔥 ניהול קורסים</div>
                       {courseNums.map(c => {
                         const courseItems  = (order.items ?? []).filter(i => i.course === c && !i.voidedAt && i.itemStatus !== "CANCELLED");
                         const allHeld      = courseItems.length > 0 && courseItems.every(i => i.heldUntilFired && !i.firedAt);
                         const allServed    = courseItems.length > 0 && courseItems.every(i => i.servedAt || i.itemStatus === "SERVED");
                         const allDone      = courseItems.length > 0 && courseItems.every(i => i.itemStatus === "DONE" || i.itemStatus === "SERVED" || i.servedAt);
                         const anyPreparing = courseItems.some(i => i.itemStatus === "PREPARING");
-                        const hasFired     = courseItems.some(i => i.firedAt || !i.heldUntilFired);
+                        const hasFired     = courseItems.some(i => !!i.firedAt);
 
                         // Derive display status after firing
                         type CourseState = "held" | "pending" | "preparing" | "done" | "served";
@@ -394,23 +394,23 @@ export function TableOverlay({
                         const ss = stateStyle[state];
 
                         return (
-                          <div key={c} style={{ background: ss.bg, border: ss.border, borderRadius: 14, padding: "12px 16px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div key={c} style={{ background: ss.bg, border: ss.border, borderRadius: 10, padding: "7px 12px", marginBottom: 5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div>
-                              <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1612" }}>קורס {c} – {courseItems.length} פריטים</div>
-                              <div style={{ fontSize: 11, marginTop: 3, fontWeight: 700, color: ss.labelColor }}>{ss.label}</div>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>קורס {c} – {courseItems.length} פריטים</div>
+                              <div style={{ fontSize: 10, marginTop: 2, fontWeight: 700, color: ss.labelColor }}>{ss.label}</div>
                             </div>
                             {state === "held" ? (
-                              <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "7px 18px", borderRadius: 99, border: "1.5px solid #d4a840", background: "#fdf7ed", color: "#92400e", fontSize: 12, fontWeight: 800, cursor: firingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
+                              <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "4px 13px", borderRadius: 99, border: "1.5px solid #d4a840", background: "#fdf7ed", color: "#92400e", fontSize: 11, fontWeight: 800, cursor: firingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
                                 {firingCourse === c ? "…" : "🔥 שחרר"}
                               </button>
                             ) : state === "done" ? (
-                              <button onClick={() => serveCourse(c)} disabled={servingCourse === c} style={{ padding: "7px 18px", borderRadius: 99, background: "#dcfce7", color: "#15803d", fontSize: 12, fontWeight: 800, border: "1.5px solid #86efac", cursor: servingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
+                              <button onClick={() => serveCourse(c)} disabled={servingCourse === c} style={{ padding: "4px 13px", borderRadius: 99, background: "#dcfce7", color: "#15803d", fontSize: 11, fontWeight: 800, border: "1.5px solid #86efac", cursor: servingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
                                 {servingCourse === c ? "…" : "✅ הוגש"}
                               </button>
                             ) : state === "served" ? (
-                              <div style={{ padding: "7px 14px", borderRadius: 99, background: "#eff6ff", color: "#1d4ed8", fontSize: 12, fontWeight: 800, border: "1.5px solid #bfdbfe" }}>✓ הוגש</div>
+                              <div style={{ padding: "4px 10px", borderRadius: 99, background: "#eff6ff", color: "#1d4ed8", fontSize: 11, fontWeight: 800, border: "1.5px solid #bfdbfe" }}>✓ הוגש</div>
                             ) : (
-                              <div style={{ padding: "7px 14px", borderRadius: 99, background: ss.bg, color: ss.labelColor, fontSize: 12, fontWeight: 700, border: ss.border }}>{state === "preparing" ? "מכינים..." : "במטבח"}</div>
+                              <div style={{ padding: "4px 10px", borderRadius: 99, background: ss.bg, color: ss.labelColor, fontSize: 11, fontWeight: 700, border: ss.border }}>{state === "preparing" ? "מכינים..." : "במטבח"}</div>
                             )}
                           </div>
                         );
