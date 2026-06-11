@@ -494,12 +494,20 @@ export default function ShiftsClient({
               <thead>
                 <tr>
                   <th style={{ padding: "8px 12px", textAlign: "right", color: T.muted, fontSize: T.fsm, fontWeight: 600, borderBottom: `1px solid ${T.border}`, minWidth: 100 }}>עובד</th>
-                  {weekDates.map((d, i) => (
-                    <th key={i} style={{ padding: "8px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm, fontWeight: 600, borderBottom: `1px solid ${T.border}`, minWidth: 90 }}>
-                      <div style={{ color: T.text, fontWeight: 700 }}>{DAYS_HE[i]}</div>
-                      <div style={{ color: T.muted, fontSize: T.fxs }}>{formatDate(d)}</div>
-                    </th>
-                  ))}
+                  {weekDates.map((d, i) => {
+                    const isToday = formatDateISO(d) === formatDateISO(new Date());
+                    return (
+                      <th key={i} style={{ padding: "6px 8px", textAlign: "center", fontSize: T.fsm, fontWeight: 600, borderBottom: `2px solid ${isToday ? T.gold : T.border}`, minWidth: 90, background: isToday ? T.gold + "12" : "transparent" }}>
+                        <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                          <span style={{ color: isToday ? T.gold : T.text, fontWeight: isToday ? 900 : 700 }}>{DAYS_HE[i]}</span>
+                          {isToday
+                            ? <span style={{ background: T.gold, color: "#1a1208", borderRadius: 99, fontSize: T.fxs, fontWeight: 800, padding: "1px 7px" }}>{formatDate(d)}</span>
+                            : <span style={{ color: T.muted, fontSize: T.fxs }}>{formatDate(d)}</span>
+                          }
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -514,11 +522,12 @@ export default function ShiftsClient({
                     </td>
                     {weekDates.map((d, di) => {
                       const iso = formatDateISO(d);
+                      const isToday = iso === formatDateISO(new Date());
                       const dayShifts = shifts.filter(s => s.userId === member.id && String(s.date).slice(0, 10) === iso);
                       return (
                         <td
                           key={di}
-                          style={{ padding: "4px 6px", verticalAlign: "top", cursor: isManager ? "pointer" : "default" }}
+                          style={{ padding: "4px 6px", verticalAlign: "top", cursor: isManager ? "pointer" : "default", background: isToday ? T.gold + "08" : "transparent" }}
                           onClick={() => {
                             if (isManager && dayShifts.length === 0) {
                               setAddModal({ userId: member.id, userName: member.name, date: iso });
