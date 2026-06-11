@@ -210,6 +210,7 @@ const sqls = [
     CONSTRAINT "ShiftRequest_toUserId_fkey" FOREIGN KEY ("toUserId") REFERENCES "User"("id") ON DELETE SET NULL
   );`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "shiftConfig" TEXT;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;`,
   `CREATE TABLE IF NOT EXISTS "ShiftSmsLog" (
     "id"           TEXT NOT NULL,
     "restaurantId" TEXT NOT NULL,
