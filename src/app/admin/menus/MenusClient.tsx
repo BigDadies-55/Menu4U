@@ -2,6 +2,7 @@
 
 import { T } from "@/lib/ui";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 import PageShell from "@/components/admin/PageShell";
@@ -482,6 +483,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
 }
 
 export default function MenusClient({ restaurants, canEdit }: { restaurants: Restaurant[]; canEdit: boolean }) {
+  const router = useRouter();
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(restaurants[0] ?? null);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(restaurants[0]?.menus[0] ?? null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -513,9 +515,16 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
         body: JSON.stringify({ restaurantId: selectedRestaurant.id }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setSeedResult(`שגיאה: ${data.error ?? res.status}`);
+        return;
+      }
       setSeedResult(`עודכנו ${data.updated} מנות`);
-    } catch {
-      setSeedResult("שגיאה");
+      if (data.updated > 0) {
+        router.refresh();
+      }
+    } catch (e) {
+      setSeedResult(`שגיאה: ${e instanceof Error ? e.message : "לא ידוע"}`);
     } finally {
       setSeedingAllergens(false);
     }
