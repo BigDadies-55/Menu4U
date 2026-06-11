@@ -85,6 +85,7 @@ export function TableOverlay({
   const [transferring, setTransferring]   = useState(false);
   const [removingItem, setRemovingItem]   = useState<string | null>(null);
   const [servingItem, setServingItem]     = useState<string | null>(null);
+  const [billWarning, setBillWarning]     = useState(false);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
@@ -97,6 +98,16 @@ export function TableOverlay({
 
   // Courses derived from order items
   const courseNums = Array.from(new Set((order?.items ?? []).map(i => i.course))).sort();
+
+  function handleCloseBill() {
+    if (!order) return;
+    const openItems = order.items.filter(i =>
+      !i.voidedAt && !i.isComped && i.itemStatus !== "CANCELLED" &&
+      i.itemStatus !== "SERVED" && !i.servedAt
+    );
+    if (openItems.length > 0) { setBillWarning(true); return; }
+    router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`);
+  }
 
   async function toggleComp(itemId: string) {
     if (!orderId) return;
@@ -195,7 +206,7 @@ export function TableOverlay({
 
   const panelStyle: React.CSSProperties = isMobile
     ? { position: "fixed", inset: 0, background: "#f5f3ef", display: "flex", flexDirection: "column", zIndex: 501 }
-    : { background: "#f5f3ef", borderRadius: 28, width: 500, height: "min(92dvh, 820px)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
+    : { position: "relative", background: "#f5f3ef", borderRadius: 28, width: 500, height: "min(92dvh, 820px)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
 
   return (
     <div style={bgStyle} onClick={isMobile ? undefined : onClose}>
@@ -458,6 +469,53 @@ export function TableOverlay({
           )}
         </div>
 
+        {/* ── Bill warning modal ── */}
+        {billWarning && order && (() => {
+          const blockItems   = order.items.filter(i => !i.voidedAt && !i.isComped && i.itemStatus !== "CANCELLED" && (i.itemStatus === "PENDING" || i.itemStatus === "PREPARING"));
+          const notServItems = order.items.filter(i => !i.voidedAt && !i.isComped && i.itemStatus !== "CANCELLED" && i.itemStatus !== "SERVED" && !i.servedAt && i.itemStatus !== "PENDING" && i.itemStatus !== "PREPARING");
+          const hardBlock    = blockItems.length > 0;
+          return (
+            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "inherit" }}>
+              <div style={{ background: "#fff", borderRadius: 20, padding: "24px 20px", margin: 16, width: "100%", maxWidth: 380, direction: "rtl", boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
+                <div style={{ fontSize: 28, textAlign: "center", marginBottom: 8 }}>{hardBlock ? "🚫" : "⚠️"}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1612", textAlign: "center", marginBottom: 6 }}>
+                  {hardBlock ? "לא ניתן לסגור חשבון" : "יש מנות שלא הוגשו"}
+                </div>
+                <div style={{ fontSize: 13, color: "#6b7280", textAlign: "center", marginBottom: 16, lineHeight: 1.6 }}>
+                  {hardBlock
+                    ? "ישנן מנות שעדיין בהכנה במטבח. יש להמתין לסיום לפני סגירת החשבון."
+                    : "הבא המנות הבאות לא סומנו כהוגשו. האם לסגור את החשבון בכל זאת?"}
+                </div>
+
+                {/* List of problematic items */}
+                <div style={{ background: "#f9fafb", borderRadius: 12, padding: "10px 14px", marginBottom: 16, maxHeight: 160, overflowY: "auto" }}>
+                  {[...blockItems, ...notServItems].map(i => (
+                    <div key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid #f3f4f6" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, background: i.itemStatus === "PREPARING" ? "#fff7ed" : i.itemStatus === "PENDING" ? "#f3f4f6" : "#eff6ff", color: i.itemStatus === "PREPARING" ? "#c2410c" : i.itemStatus === "PENDING" ? "#6b7280" : "#1d4ed8", borderRadius: 99, padding: "1px 7px", whiteSpace: "nowrap" }}>
+                        {i.itemStatus === "PREPARING" ? "בהכנה" : i.itemStatus === "PENDING" ? "ממתין" : "מוכן"}
+                      </span>
+                      <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{i.itemName}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setBillWarning(false)}
+                    style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "1.5px solid #e5e7eb", background: "#f9fafb", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#374151", fontFamily: "inherit" }}>
+                    ביטול
+                  </button>
+                  {!hardBlock && (
+                    <button onClick={() => { setBillWarning(false); router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`); }}
+                      style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
+                      סגור בכל זאת
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Footer ── */}
         <div style={{ background: "#fff", borderTop: "1px solid #ede9e3", padding: "14px 16px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
 
@@ -468,8 +526,7 @@ export function TableOverlay({
                 ➕ הוסף מנות
               </button>
               <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`)}
+                <button onClick={handleCloseBill}
                   style={{ flex: 2, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
                   💳 סגור חשבון
                 </button>
