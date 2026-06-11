@@ -270,6 +270,7 @@ export async function GET(req: Request) {
       cancellationRatePercent,
       busiestHour,
       topWaiters,
+      hourCounts,
     },
   });
 }

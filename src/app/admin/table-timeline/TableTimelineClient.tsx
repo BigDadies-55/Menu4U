@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { T, btn, badge, card } from "@/lib/ui";
 
 interface Restaurant { id: string; name: string; }
@@ -28,14 +28,17 @@ interface Insights {
   cancellationRatePercent: number;
   busiestHour: number;
   topWaiters: WaiterStat[];
+  hourCounts: number[];
+}
+
+interface Session {
+  id: string; tableNumber: string; openedAt: string; closedAt: string;
+  totalAmount: number; orderCount: number; durationMinutes: number;
 }
 
 interface ApiResponse {
   tableNumbers: string[];
-  sessions: {
-    id: string; tableNumber: string; openedAt: string; closedAt: string;
-    totalAmount: number; orderCount: number; durationMinutes: number;
-  }[];
+  sessions: Session[];
   events: TimelineEvent[];
   insights: Insights;
 }
@@ -65,6 +68,7 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
   const [data,         setData]         = useState<ApiResponse | null>(null);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState("");
+  const [viewTab,      setViewTab]      = useState<"gantt" | "events">("gantt");
 
   const load = useCallback(async () => {
     if (!restaurantId) return;
@@ -152,7 +156,7 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
 
       {/* ── Insight cards ── */}
       {insights && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12, marginBottom: 20 }}>
           <InsightCard label="סשנים" value={String(insights.totalSessions)} icon="📊" color={T.blue} />
           <InsightCard label="הזמנות" value={String(insights.totalOrders)} icon="📋" color={T.purple} />
           <InsightCard label="זמן ממוצע" value={fmtDuration(insights.avgSessionMinutes)} icon="⏱️" color={T.cyan} />
@@ -162,6 +166,36 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
         </div>
       )}
 
+      {/* ── Hourly load bar chart ── */}
+      {insights?.hourCounts && <HourlyChart hourCounts={insights.hourCounts} busiestHour={insights.busiestHour} />}
+
+      {/* ── View tabs ── */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: `1px solid ${T.border}`, paddingBottom: 0 }}>
+        {(["gantt", "events"] as const).map(t => (
+          <button key={t} onClick={() => setViewTab(t)} style={{
+            padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+            background: viewTab === t ? T.gold : "transparent",
+            color: viewTab === t ? T.text : T.sub,
+            border: "none", borderRadius: "8px 8px 0 0",
+          }}>
+            {t === "gantt" ? "📊 גאנט שולחנות" : "📋 יומן אירועים"}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Gantt view ── */}
+      {viewTab === "gantt" && data && (
+        <GanttChart
+          sessions={data.sessions}
+          tableNumbers={data.tableNumbers}
+          days={days}
+          onTableClick={t => setTableNumber(t === tableNumber ? "" : t)}
+          selectedTable={tableNumber}
+        />
+      )}
+
+      {/* ── Events view ── */}
+      {viewTab === "events" && (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20, alignItems: "start" }}>
 
         {/* ── Timeline ── */}
@@ -358,6 +392,179 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
             </div>
           )}
         </div>
+      </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Hourly load chart ── */
+function HourlyChart({ hourCounts, busiestHour }: { hourCounts: number[]; busiestHour: number }) {
+  const max = Math.max(...hourCounts, 1);
+  const activeHours = hourCounts.map((c, h) => ({ h, c })).filter(x => x.c > 0);
+  if (activeHours.length === 0) return null;
+  return (
+    <div style={{ ...card(), padding: "14px 18px", marginBottom: 20 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: T.sub, marginBottom: 12 }}>⏰ עומס לפי שעה</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 56 }}>
+        {hourCounts.map((c, h) => (
+          <div key={h} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <div style={{
+              width: "100%", borderRadius: "3px 3px 0 0",
+              height: Math.max(c > 0 ? 4 : 0, Math.round((c / max) * 48)),
+              background: h === busiestHour ? T.gold : c > 0 ? T.blue + "99" : "transparent",
+              transition: "height 0.3s",
+            }} title={`${h}:00 — ${c} הזמנות`} />
+            {h % 3 === 0 && <span style={{ fontSize: 9, color: T.muted, lineHeight: 1 }}>{h}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Gantt chart ── */
+function GanttChart({ sessions, tableNumbers, days, onTableClick, selectedTable }: {
+  sessions: Session[];
+  tableNumbers: string[];
+  days: number;
+  onTableClick: (t: string) => void;
+  selectedTable: string;
+}) {
+  const ROW_H = 36;
+  const LABEL_W = 52;
+
+  // For single-day view: X = hours 0-24. For multi-day: X = days.
+  const isMultiDay = days > 1;
+
+  // Compute time window
+  const now = Date.now();
+  const windowStart = now - days * 86_400_000;
+
+  // For multi-day: bucket by day. For single day: by hours of today.
+  const xSlots = isMultiDay ? days : 24;
+
+  function xPos(iso: string): number {
+    const t = new Date(iso).getTime();
+    if (isMultiDay) {
+      return Math.max(0, Math.min(1, (t - windowStart) / (days * 86_400_000)));
+    } else {
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      return Math.max(0, Math.min(1, (t - todayStart.getTime()) / 86_400_000));
+    }
+  }
+
+  // Group sessions by table
+  const byTable = useMemo(() => {
+    const map: Record<string, Session[]> = {};
+    for (const s of sessions) {
+      (map[s.tableNumber] ??= []).push(s);
+    }
+    return map;
+  }, [sessions]);
+
+  const tables = tableNumbers.length > 0 ? tableNumbers : Object.keys(byTable).sort((a,b) => Number(a)-Number(b));
+
+  if (tables.length === 0) return (
+    <div style={{ ...card(), padding: 40, textAlign: "center", color: T.muted }}>אין נתוני סשנים לתקופה זו</div>
+  );
+
+  const xLabels = isMultiDay
+    ? Array.from({ length: days }, (_, i) => {
+        const d = new Date(windowStart + i * 86_400_000);
+        return d.toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" });
+      })
+    : [0,3,6,9,12,15,18,21,24].map(h => `${h}:00`);
+
+  return (
+    <div style={{ ...card(), padding: 0, overflow: "hidden", marginBottom: 20 }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, fontSize: 13, fontWeight: 700, color: T.sub }}>
+        📊 גאנט שולחנות {isMultiDay ? `(${days} ימים)` : "(היום)"}
+        {selectedTable && (
+          <button onClick={() => onTableClick(selectedTable)} style={{ marginRight: 12, fontSize: 11, color: T.muted, background: "none", border: "none", cursor: "pointer" }}>✕ בטל סינון</button>
+        )}
+      </div>
+
+      <div style={{ overflowX: "auto" }}>
+        <div style={{ minWidth: 600 }}>
+          {/* X axis header */}
+          <div style={{ display: "flex", paddingRight: LABEL_W, borderBottom: `1px solid ${T.border}` }}>
+            {xLabels.map((lbl, i) => (
+              <div key={i} style={{
+                flex: 1, textAlign: "center", fontSize: 10, color: T.muted,
+                padding: "4px 0", borderRight: `1px solid ${T.borderSub}`,
+              }}>{lbl}</div>
+            ))}
+          </div>
+
+          {/* Rows */}
+          <div style={{ maxHeight: Math.min(tables.length * ROW_H + 8, 480), overflowY: "auto" }}>
+            {tables.map(tNum => {
+              const tableSessions = byTable[tNum] ?? [];
+              const isSelected = selectedTable === tNum;
+              const revenue = tableSessions.reduce((s, sess) => s + sess.totalAmount, 0);
+              return (
+                <div key={tNum}
+                  onClick={() => onTableClick(tNum)}
+                  style={{
+                    display: "flex", alignItems: "center", height: ROW_H,
+                    borderBottom: `1px solid ${T.borderSub}`,
+                    background: isSelected ? T.goldSub : "transparent",
+                    cursor: "pointer", transition: "background 0.12s",
+                  }}
+                  onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = T.panel; }}
+                  onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                >
+                  {/* Label */}
+                  <div style={{ width: LABEL_W, flexShrink: 0, paddingRight: 12, textAlign: "right", borderLeft: `1px solid ${T.border}` }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? T.gold : T.text }}>{tNum}</div>
+                    {revenue > 0 && <div style={{ fontSize: 9, color: T.muted }}>₪{Math.round(revenue)}</div>}
+                  </div>
+
+                  {/* Timeline bar area */}
+                  <div style={{ flex: 1, position: "relative", height: ROW_H, overflow: "hidden" }}>
+                    {tableSessions.map(sess => {
+                      const left  = xPos(sess.openedAt) * 100;
+                      const right = xPos(sess.closedAt) * 100;
+                      const width = Math.max(0.5, right - left);
+                      const mins  = sess.durationMinutes;
+                      const hue   = sess.totalAmount > 0 ? T.green : T.blue;
+                      return (
+                        <div key={sess.id}
+                          title={`שולחן ${sess.tableNumber} · ${fmtDuration(mins)} · ₪${Math.round(sess.totalAmount)}`}
+                          style={{
+                            position: "absolute",
+                            left: `${left}%`, width: `${width}%`,
+                            top: 6, height: ROW_H - 12,
+                            background: hue + "cc",
+                            border: `1px solid ${hue}`,
+                            borderRadius: 4,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            overflow: "hidden",
+                            fontSize: 9, color: "#fff", fontWeight: 700,
+                          }}
+                        >
+                          {width > 4 ? fmtDuration(mins) : ""}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ padding: "8px 16px", borderTop: `1px solid ${T.border}`, display: "flex", gap: 16, fontSize: 10, color: T.muted }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ width: 12, height: 8, background: T.green + "cc", borderRadius: 2, display: "inline-block" }} />עם הכנסה
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ width: 12, height: 8, background: T.blue + "cc", borderRadius: 2, display: "inline-block" }} />ללא הכנסה
+        </span>
+        <span style={{ marginRight: "auto" }}>לחץ על שורה לסינון אירועים</span>
       </div>
     </div>
   );
