@@ -1252,9 +1252,25 @@ export default function ShiftsClient({
 
             {/* Preview */}
             <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 6 }}>תצוגה מקדימה:</label>
-            <pre style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "10px 14px", fontSize: 13, color: T.text, fontFamily: "inherit", whiteSpace: "pre-wrap", marginBottom: 20, lineHeight: 1.6 }}>
-              {buildPreview(smsTarget)}
-            </pre>
+            {(() => {
+              const msg = buildPreview(smsTarget);
+              const chars = msg.length;
+              const smsCount = chars <= 70 ? 1 : Math.ceil(chars / 67);
+              const countColor = smsCount === 1 ? T.green : smsCount === 2 ? T.orange : T.red;
+              return (
+                <>
+                  <pre style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "10px 14px", fontSize: 13, color: T.text, fontFamily: "inherit", whiteSpace: "pre-wrap", marginBottom: 6, lineHeight: 1.6 }}>
+                    {msg}
+                  </pre>
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                    <span style={{ fontSize: T.fxs, color: T.muted }}>{chars} תווים</span>
+                    <span style={{ background: countColor + "20", color: countColor, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 10px" }}>
+                      {smsCount} SMS
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
 
             {!smsConfigured && (
               <div style={{ background: T.red + "18", border: `1px solid ${T.red}44`, borderRadius: T.rMd, color: T.red, fontSize: T.fsm, padding: "8px 12px", marginBottom: 14 }}>

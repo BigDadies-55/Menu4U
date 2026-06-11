@@ -43,26 +43,25 @@ export async function GET(req: Request) {
     if (!rows.length) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const logs = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-    `SELECT * FROM "ShiftSmsLog" WHERE "restaurantId"=$1 ORDER BY "sentAt" DESC LIMIT $2`,
-    restaurantId, limit
-  );
+  let logs: Record<string, unknown>[] = [];
+  let stats: { week: string; total: number; failed: number }[] = [];
+  try {
+    logs = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT * FROM "ShiftSmsLog" WHERE "restaurantId"=$1 ORDER BY "sentAt" DESC LIMIT $2`,
+      restaurantId, limit
+    );
+    const rawStats = await prisma.$queryRawUnsafe<{ week: string; total: bigint; failed: bigint }[]>(
+      `SELECT "weekFrom" || ' – ' || "weekTo" AS week,
+              COUNT(*) AS total,
+              COUNT(*) FILTER (WHERE status='FAILED') AS failed
+       FROM "ShiftSmsLog" WHERE "restaurantId"=$1
+       GROUP BY "weekFrom","weekTo" ORDER BY MAX("sentAt") DESC LIMIT 10`,
+      restaurantId
+    );
+    stats = rawStats.map(s => ({ ...s, total: Number(s.total), failed: Number(s.failed) }));
+  } catch { /* table may not exist yet */ }
 
-  // Aggregate stats
-  const stats = await prisma.$queryRawUnsafe<{ week: string; total: bigint; failed: bigint }[]>(
-    `SELECT "weekFrom" || ' – ' || "weekTo" AS week,
-            COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE status='FAILED') AS failed
-     FROM "ShiftSmsLog" WHERE "restaurantId"=$1
-     GROUP BY "weekFrom","weekTo" ORDER BY MAX("sentAt") DESC LIMIT 10`,
-    restaurantId
-  );
-
-  return NextResponse.json({
-    logs,
-    stats: stats.map(s => ({ ...s, total: Number(s.total), failed: Number(s.failed) })),
-    smsConfigured: isSmsConfigured(),
-  });
+  return NextResponse.json({ logs, stats, smsConfigured: isSmsConfigured() });
 }
 
 // POST /api/admin/shifts/sms — send shifts SMS for a week
@@ -125,36 +124,31 @@ export async function POST(req: Request) {
     logEntries.push({ userId, name: first.userName ?? first.userEmail ?? "", phone, message, status: "PENDING" });
   }
 
-  // Send via Inforu
-  try {
-    const recipients = logEntries.map(e => ({ phone: e.phone }));
-    const messages   = logEntries.map(e => e.message);
+  // Send via Inforu — one by one (different message per person)
+  if (!isSmsConfigured()) return NextResponse.json({ error: "SMS לא מוגדר — נדרש INFORU_USERNAME ו-INFORU_API_TOKEN" }, { status: 503 });
 
-    // Send one by one (different message per person)
-    for (const entry of logEntries) {
-      try {
-        await sendSmsBulkPersonalized([{ phone: entry.phone }], entry.message);
-        entry.status = "SENT";
-        sent++;
-      } catch {
-        entry.status = "FAILED";
-        failed++;
-      }
+  for (const entry of logEntries) {
+    try {
+      const r = await sendSmsBulkPersonalized([{ phone: entry.phone }], entry.message);
+      entry.status = r.sent > 0 ? "SENT" : "FAILED";
+      if (r.sent > 0) sent++; else failed++;
+    } catch {
+      entry.status = "FAILED";
+      failed++;
     }
-  } catch (e) {
-    if (e instanceof SmsConfigError) return NextResponse.json({ error: "SMS לא מוגדר" }, { status: 503 });
-    throw e;
   }
 
-  // Log to DB
+  // Log to DB (fail-safe — table may not exist yet)
   for (const e of logEntries) {
-    const id = crypto.randomUUID();
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "ShiftSmsLog" (id,"restaurantId","sentByUserId","weekFrom","weekTo","recipientId","recipientName","phone","message","status")
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      id, restaurantId, session.user.id, weekFrom, weekTo,
-      e.userId, e.name, e.phone, e.message, e.status
-    );
+    try {
+      const id = crypto.randomUUID();
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "ShiftSmsLog" (id,"restaurantId","sentByUserId","weekFrom","weekTo","recipientId","recipientName","phone","message","status")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        id, restaurantId, session.user.id, weekFrom, weekTo,
+        e.userId, e.name, e.phone, e.message, e.status
+      );
+    } catch { /* log table may not exist yet — ignore */ }
   }
 
   return NextResponse.json({ sent, failed, skipped });
