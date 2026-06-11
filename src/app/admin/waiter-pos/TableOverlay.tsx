@@ -145,7 +145,7 @@ export function TableOverlay({
 
   const panelStyle: React.CSSProperties = isMobile
     ? { position: "fixed", inset: 0, background: "#f5f3ef", display: "flex", flexDirection: "column", zIndex: 501 }
-    : { background: "#f5f3ef", borderRadius: 28, width: 500, maxHeight: "92dvh", minHeight: 0, display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
+    : { background: "#f5f3ef", borderRadius: 28, width: 500, height: "min(92dvh, 820px)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
 
   return (
     <div style={bgStyle} onClick={isMobile ? undefined : onClose}>
@@ -180,7 +180,7 @@ export function TableOverlay({
         </div>
 
         {/* ── Scrollable body ── */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 16px 8px" }}>
 
           {/* AI insights */}
           {insights.length > 0 && (
