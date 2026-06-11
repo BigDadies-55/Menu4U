@@ -362,28 +362,29 @@ export default function ShiftsClient({
     weekNav: {
       display: "flex",
       alignItems: "center",
-      gap: 8,
+      gap: 4,
       background: T.surface,
       border: `1px solid ${T.border}`,
       borderRadius: T.rLg,
-      padding: "6px 12px",
+      padding: "4px 8px",
     } as React.CSSProperties,
     weekNavBtn: {
       background: "transparent",
-      border: `1px solid ${T.border}`,
+      border: "none",
       borderRadius: T.rMd,
-      color: T.text,
-      fontSize: T.fmd,
-      padding: "4px 10px",
+      color: T.muted,
+      fontSize: T.fsm,
+      padding: "3px 7px",
       cursor: "pointer",
       fontFamily: "inherit",
     } as React.CSSProperties,
     weekLabel: {
-      fontSize: T.fmd,
+      fontSize: T.fsm,
       fontWeight: 600,
       color: T.text,
-      minWidth: 180,
+      minWidth: 160,
       textAlign: "center" as const,
+      padding: "0 4px",
     } as React.CSSProperties,
     restSelect: {
       background: T.surface,
@@ -479,7 +480,7 @@ export default function ShiftsClient({
                     </td>
                     {weekDates.map((d, di) => {
                       const iso = formatDateISO(d);
-                      const dayShifts = shifts.filter(s => s.userId === member.id && s.date.slice(0, 10) === iso);
+                      const dayShifts = shifts.filter(s => s.userId === member.id && String(s.date).slice(0, 10) === iso);
                       return (
                         <td
                           key={di}
@@ -932,18 +933,20 @@ export default function ShiftsClient({
       {/* Header */}
       <div style={S.header}>
         <h1 style={S.title}>📅 ניהול משמרות</h1>
-        {isManager && (
-          <button
-            onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
-            style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
-          >
-            ⚙️ הגדרות משמרות
-          </button>
-        )}
-        <div style={S.weekNav}>
-          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>→ שבוע קודם</button>
-          <span style={S.weekLabel}>{weekLabel(weekDates)}</span>
-          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w + 1)}>שבוע הבא ←</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {isManager && (
+            <button
+              onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
+              style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+            >
+              ⚙️ הגדרות
+            </button>
+          )}
+          <div style={S.weekNav}>
+            <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>→</button>
+            <span style={S.weekLabel}>{weekLabel(weekDates)}</span>
+            <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w + 1)}>←</button>
+          </div>
         </div>
       </div>
 

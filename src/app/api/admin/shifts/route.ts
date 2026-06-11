@@ -10,13 +10,17 @@ const DEFAULT_SHIFT_TIMES: Record<string, { start: string; end: string }> = {
 };
 
 async function getShiftTimes(restaurantId: string): Promise<Record<string, { start: string; end: string }>> {
-  const rows = await prisma.$queryRawUnsafe<{ shiftConfig: string | null }[]>(
-    `SELECT "shiftConfig" FROM "Restaurant" WHERE id = $1`, restaurantId
-  );
-  const raw = rows[0]?.shiftConfig;
-  if (!raw) return DEFAULT_SHIFT_TIMES;
-  const cfg: { key: string; startTime: string; endTime: string }[] = JSON.parse(raw);
-  return Object.fromEntries(cfg.map(c => [c.key, { start: c.startTime, end: c.endTime }]));
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ shiftConfig: string | null }[]>(
+      `SELECT "shiftConfig" FROM "Restaurant" WHERE id = $1`, restaurantId
+    );
+    const raw = rows[0]?.shiftConfig;
+    if (!raw) return DEFAULT_SHIFT_TIMES;
+    const cfg: { key: string; startTime: string; endTime: string }[] = JSON.parse(raw);
+    return Object.fromEntries(cfg.map(c => [c.key, { start: c.startTime, end: c.endTime }]));
+  } catch {
+    return DEFAULT_SHIFT_TIMES;
+  }
 }
 
 const MANAGER_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];

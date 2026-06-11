@@ -40,11 +40,14 @@ export async function GET(req: Request) {
   if (!await verifyAccess(restaurantId, session.user.id, session.user.role))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const rows = await prisma.$queryRawUnsafe<{ shiftConfig: string | null }[]>(
-    `SELECT "shiftConfig" FROM "Restaurant" WHERE id = $1`, restaurantId
-  );
-  const raw = rows[0]?.shiftConfig;
-  const config: ShiftTypeCfg[] = raw ? JSON.parse(raw) : DEFAULT_SHIFT_CONFIG;
+  let config: ShiftTypeCfg[] = DEFAULT_SHIFT_CONFIG;
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ shiftConfig: string | null }[]>(
+      `SELECT "shiftConfig" FROM "Restaurant" WHERE id = $1`, restaurantId
+    );
+    const raw = rows[0]?.shiftConfig;
+    if (raw) config = JSON.parse(raw);
+  } catch { /* column may not exist yet, return defaults */ }
   return NextResponse.json({ config });
 }
 
