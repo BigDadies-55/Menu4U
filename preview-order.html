@@ -11,22 +11,21 @@
 
   .section { display: flex; direction: rtl; }
 
-  /* הסימון הצדדי */
   .side-label {
     writing-mode: vertical-rl;
     text-orientation: mixed;
     transform: rotate(180deg);
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
-    padding: 10px 6px;
-    flex-shrink: 0; width: 26px;
-    border-left: 1px solid #e8e2da;
+    font-size: 13px; font-weight: 900; letter-spacing: 2.5px;
+    padding: 12px 7px;
+    flex-shrink: 0; width: 32px;
+    border-left: 3px solid;
   }
 
-  .side-label.no-kitchen { background: #fef3c7; color: #92400e; border-left-color: #fde68a; }
-  .side-label.course-1   { background: #eff6ff; color: #1d4ed8; border-left-color: #bfdbfe; }
-  .side-label.course-2   { background: #f0fdf4; color: #166534; border-left-color: #bbf7d0; }
-  .side-label.course-3   { background: #fdf4ff; color: #7e22ce; border-left-color: #e9d5ff; }
+  .side-label.no-kitchen { background: #fef3c7; color: #92400e; border-left-color: #f59e0b; }
+  .side-label.course-1   { background: #eff6ff; color: #1d4ed8; border-left-color: #3b82f6; }
+  .side-label.course-2   { background: #f0fdf4; color: #166534; border-left-color: #22c55e; }
+  .side-label.course-3   { background: #fdf4ff; color: #7e22ce; border-left-color: #a855f7; }
 
   .items { flex: 1; }
 
@@ -61,7 +60,7 @@
     font-size: 12px; font-weight: 700; cursor: pointer; padding: 2px 4px;
   }
 
-  .section-divider { height: 1px; background: #e8e2da; margin: 0; }
+  .section-divider { height: 8px; background: #f4f1ed; border-top: 1px solid #e8e2da; border-bottom: 1px solid #e8e2da; }
 
   .header {
     padding: 14px 16px 10px;
