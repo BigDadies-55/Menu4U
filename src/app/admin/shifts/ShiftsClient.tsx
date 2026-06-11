@@ -160,6 +160,7 @@ export default function ShiftsClient({
   // SMS modal
   const [smsModal, setSmsModal] = useState(false);
   const [smsTarget, setSmsTarget] = useState<"all" | string>("all");
+  const [smsShort, setSmsShort] = useState(false);
   const [smsSending, setSmsSending] = useState(false);
 
   // Operational tab data
@@ -344,7 +345,7 @@ export default function ShiftsClient({
   useEffect(() => { if (activeTab === "ops") loadOps(); }, [activeTab, loadOps]);
 
   // Build SMS preview for a given target
-  function buildPreview(targetId: "all" | string): string {
+  function buildPreview(targetId: "all" | string, short = false): string {
     const weekShifts = shifts.filter(s => {
       const d = String(s.date).slice(0, 10);
       return d >= formatDateISO(weekDates[0]) && d <= formatDateISO(weekDates[6]);
@@ -362,7 +363,9 @@ export default function ShiftsClient({
       const label = cfg?.label ?? s.shiftType;
       const d = new Date(String(s.date).slice(0,10) + "T00:00:00");
       const ft = (t: string) => { const [h,m] = t.slice(0,5).split(":").map(Number); return m === 0 ? String(h) : `${h}:${String(m).padStart(2,"0")}`; };
-      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label} ${ft(s.startTime)}-${ft(s.endTime)}`;
+      return short
+        ? `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label}`
+        : `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label} ${ft(s.startTime)}-${ft(s.endTime)}`;
     });
     if (targetId === "all" && target.length > 3) lines.push(`...ועוד ${target.length - 3}`);
     return `${name}, משמרות (${fmtDate(from)}-${fmtDate(to)}):\n${lines.join("\n")}`;
@@ -381,6 +384,7 @@ export default function ShiftsClient({
           weekTo:   formatDateISO(weekDates[6]),
           targetUserId: smsTarget === "all" ? undefined : smsTarget,
           shiftCfg: shiftCfgList.map(c => ({ key: c.key, label: c.label })),
+          shortFormat: smsShort,
         }),
       });
       const d = await res.json();
@@ -1268,10 +1272,21 @@ export default function ShiftsClient({
               {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
 
+            {/* Short format toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <label style={{ fontSize: T.fsm, color: T.muted }}>פורמט קצר (ללא שעות)</label>
+              <div
+                onClick={() => setSmsShort(v => !v)}
+                style={{ width: 40, height: 22, borderRadius: 11, background: smsShort ? T.gold : T.border, cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}
+              >
+                <div style={{ position: "absolute", top: 3, left: smsShort ? 20 : 3, width: 16, height: 16, borderRadius: "50%", background: smsShort ? "#1a1208" : T.surface, transition: "left 0.2s" }} />
+              </div>
+            </div>
+
             {/* Preview */}
             <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 6 }}>תצוגה מקדימה:</label>
             {(() => {
-              const msg = buildPreview(smsTarget);
+              const msg = buildPreview(smsTarget, smsShort);
               const chars = msg.length;
               const smsCount = chars <= 70 ? 1 : Math.ceil(chars / 67);
               const countColor = smsCount === 1 ? T.green : smsCount === 2 ? T.orange : T.red;

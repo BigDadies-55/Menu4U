@@ -23,10 +23,12 @@ function smsUnits(chars: number): number {
 
 function buildMessage(name: string, weekFrom: string, weekTo: string, shiftsForUser: {
   date: string; shiftType: string; startTime: string; endTime: string; label: string;
-}[]): string {
+}[], short = false): string {
   const lines = shiftsForUser.map(s => {
     const d = new Date(s.date + "T00:00:00");
-    return `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.label} ${fmtTime(s.startTime)}-${fmtTime(s.endTime)}`;
+    return short
+      ? `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.label}`
+      : `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.label} ${fmtTime(s.startTime)}-${fmtTime(s.endTime)}`;
   });
   return `${name}, משמרות (${fmtDateShort(weekFrom)}-${fmtDateShort(weekTo)}):\n${lines.join("\n")}`;
 }
@@ -78,12 +80,13 @@ export async function POST(req: Request) {
   if (!MANAGER_ROLES.includes(session.user.role))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { restaurantId, weekFrom, weekTo, targetUserId, shiftCfg } = await req.json() as {
+  const { restaurantId, weekFrom, weekTo, targetUserId, shiftCfg, shortFormat } = await req.json() as {
     restaurantId: string;
     weekFrom: string;
     weekTo: string;
-    targetUserId?: string; // undefined = all
+    targetUserId?: string;
     shiftCfg: { key: string; label: string }[];
+    shortFormat?: boolean;
   };
 
   if (!restaurantId || !weekFrom || !weekTo)
@@ -134,7 +137,7 @@ export async function POST(req: Request) {
       label: labelMap[s.shiftType] ?? s.shiftType,
     }));
 
-    const message = buildMessage(name, weekFrom, weekTo, shiftsWithLabel);
+    const message = buildMessage(name, weekFrom, weekTo, shiftsWithLabel, shortFormat);
     const charCount = message.length;
     logEntries.push({ userId, name: first.userName ?? first.userEmail ?? "", phone, message, status: "PENDING", charCount, smsCount: smsUnits(charCount) });
   }
