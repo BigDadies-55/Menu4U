@@ -4,6 +4,14 @@ import { sseNotify } from "@/lib/sse";
 import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
+async function ensureColumns() {
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedByUserId" TEXT`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "isComped" BOOLEAN NOT NULL DEFAULT false`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidedAt" TIMESTAMP(3)`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidReason" TEXT`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "compReason" TEXT`);
+}
+
 const ITEM_NEXT: Record<string, string> = {
   PENDING: "PREPARING",
   PREPARING: "DONE",
@@ -19,6 +27,8 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  await ensureColumns();
 
   const { orderId, itemId } = await params;
 
