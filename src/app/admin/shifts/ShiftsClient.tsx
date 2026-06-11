@@ -157,13 +157,16 @@ export default function ShiftsClient({
   const [swapReason, setSwapReason] = useState("");
   const [swapLoading, setSwapLoading] = useState(false);
 
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState<{ msg: string; undo?: () => void } | null>(null);
+  const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [undoShifts, setUndoShifts] = useState<ShiftRow[] | null>(null);
 
   const weekDates = getWeekDates(weekOffset);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(""), 3000);
+  const showToast = (msg: string, undo?: () => void) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ msg, undo });
+    toastTimer.current = setTimeout(() => { setToast(null); }, undo ? 6000 : 3000);
   };
 
   // Load shift config
@@ -311,6 +314,37 @@ export default function ShiftsClient({
     } else {
       showToast("שגיאה");
     }
+  }
+
+  async function clearWeek() {
+    const weekShifts = shifts.filter(s => {
+      const d = String(s.date).slice(0, 10);
+      return d >= formatDateISO(weekDates[0]) && d <= formatDateISO(weekDates[6]);
+    });
+    if (weekShifts.length === 0) { showToast("אין משמרות לניקוי השבוע"); return; }
+
+    // Optimistic delete — remove from state immediately
+    setShifts(prev => prev.filter(s => !weekShifts.some(ws => ws.id === s.id)));
+    setUndoShifts(weekShifts);
+
+    showToast(`🗑️ נמחקו ${weekShifts.length} משמרות`, async () => {
+      // Restore client-side state
+      setShifts(prev => [...prev, ...weekShifts].sort((a, b) => a.date.localeCompare(b.date)));
+      setUndoShifts(null);
+      // Re-create via API
+      for (const s of weekShifts) {
+        await fetch("/api/admin/shifts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restaurantId, userId: s.userId, date: s.date, shiftType: s.shiftType }),
+        });
+      }
+    });
+
+    // Fire actual deletes in background
+    await Promise.all(weekShifts.map(s =>
+      fetch(`/api/admin/shifts/${s.id}`, { method: "DELETE" })
+    ));
   }
 
   async function saveConfig() {
@@ -841,10 +875,19 @@ export default function ShiftsClient({
         <div style={{
           position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000,
           background: T.raised, border: `1px solid ${T.border}`, borderRadius: T.rLg,
-          color: T.text, fontSize: T.fmd, fontWeight: 600, padding: "12px 24px",
+          color: T.text, fontSize: T.fmd, fontWeight: 600, padding: "10px 18px",
           boxShadow: "0 8px 32px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
+          display: "flex", alignItems: "center", gap: 12, direction: "rtl",
         }}>
-          {toast}
+          <span>{toast.msg}</span>
+          {toast.undo && (
+            <button
+              onClick={() => { toast.undo!(); setToast(null); }}
+              style={{ background: T.gold, border: "none", borderRadius: T.rMd, color: "#1a1208", fontSize: T.fsm, fontWeight: 800, padding: "4px 12px", cursor: "pointer", fontFamily: "inherit" }}
+            >
+              ↩ בטל
+            </button>
+          )}
         </div>
       )}
 
@@ -931,12 +974,20 @@ export default function ShiftsClient({
         <h1 style={S.title}>📅 ניהול משמרות</h1>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {isManager && (
-            <button
-              onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
-              style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
-            >
-              ⚙️ הגדרות
-            </button>
+            <>
+              <button
+                onClick={clearWeek}
+                style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+              >
+                🗑️ נקה שבוע
+              </button>
+              <button
+                onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
+                style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+              >
+                ⚙️ הגדרות
+              </button>
+            </>
           )}
           <div style={S.weekNav}>
             <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>→</button>
