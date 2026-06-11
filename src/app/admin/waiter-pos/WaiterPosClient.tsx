@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { signOut } from "next-auth/react";
 import { TableOverlay, type OrderDetail } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
+import Receipt from "./Receipt";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string };
@@ -117,6 +118,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [allInsightsOpen, setAllInsightsOpen] = useState(false);
   const [tableOverlay, setTableOverlay]       = useState<string | null>(null);
   const [toastMsg, setToastMsg]               = useState("");
+  type ReceiptData = { order: import("./TableOverlay").OrderDetail; tableNum: string; restaurantName: string; waiterName: string };
+  const [receiptData, setReceiptData]         = useState<ReceiptData | null>(null);
   const [clock, setClock]                     = useState("");
   const [isMobile, setIsMobile]               = useState(false);
   const [isFullscreen, setIsFullscreen]       = useState(false);
@@ -951,6 +954,24 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             setTableOverlay(null);
           }}
           onStatusChange={(status) => patchStatus(overlayTable.tableNum, status)}
+          onRequestBill={(order) => setReceiptData({
+            order,
+            tableNum: overlayTable.tableNum,
+            restaurantName: restaurants.find(r => r.id === restaurantId)?.name ?? "המסעדה",
+            waiterName,
+          })}
+        />
+      )}
+
+      {/* ══ RECEIPT PREVIEW ══ */}
+      {receiptData && (
+        <Receipt
+          order={receiptData.order}
+          tableNum={receiptData.tableNum}
+          restaurantName={receiptData.restaurantName}
+          waiterName={receiptData.waiterName}
+          autoPrint={false}
+          onClose={() => setReceiptData(null)}
         />
       )}
 
