@@ -548,15 +548,16 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         position: "sticky", top: 56, zIndex: 99,
       }}>
         {/* View toggle */}
-        <div style={{ display: "flex", background: "#f0f2f5", borderRadius: 8, border: "1px solid #dde1e8", overflow: "hidden", flexShrink: 0 }}>
-          {(["grid", "floor"] as const).map(m => (
+        <div style={{ display: "flex", background: "#f0f2f5", borderRadius: 10, border: "1px solid #dde1e8", overflow: "hidden", flexShrink: 0, padding: 2, gap: 2 }}>
+          {([["grid", "📋 רגיל"], ["floor", "🗺️ לייאוט"]] as const).map(([m, label]) => (
             <button key={m} onClick={() => setViewMode(m)} style={{
-              padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-              border: "none", background: viewMode === m ? "#111" : "transparent",
-              color: viewMode === m ? "#fff" : "#888",
+              padding: "6px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              borderRadius: 8, border: "none",
+              background: viewMode === m ? "#1a1612" : "transparent",
+              color: viewMode === m ? "#fff" : "#666",
               transition: "all 0.15s",
             }}>
-              {m === "grid" ? "📋 כרטיסים" : "🗺️ לייאוט"}
+              {label}
             </button>
           ))}
         </div>
