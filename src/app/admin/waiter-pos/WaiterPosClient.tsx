@@ -126,6 +126,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [roomIdx, setRoomIdx]                 = useState(0);
   const [refreshing, setRefreshing]           = useState(false);
   const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
+  const [myTableNums, setMyTableNums]         = useState<Set<string> | null>(null); // null = no restriction
   const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
   const [notifications, setNotifications]     = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen]             = useState(false);
@@ -274,7 +275,20 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   useEffect(() => { fetchLayout(); }, [fetchLayout]);
 
-  // Fetch tables + insights together
+  // Fetch my station assignment (which tables I'm responsible for)
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/waiter-stations?restaurantId=${restaurantId}&userId=me`)
+      .then(r => r.ok ? r.json() : null)
+      .then((stations: Array<{ tableNumbers: string[] }> | null) => {
+        if (!stations || stations.length === 0 || stations[0]?.tableNumbers?.length === 0) {
+          setMyTableNums(null); // manager or no assignment — see all
+        } else {
+          setMyTableNums(new Set(stations[0].tableNumbers));
+        }
+      })
+      .catch(() => setMyTableNums(null));
+  }, [restaurantId]);
   const fetchAll = useCallback(async (quiet = false) => {
     if (!restaurantId) return;
     if (!quiet) setLoading(true);
@@ -369,9 +383,12 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const overlayInsights = insights.filter(i => i.tableNum === tableOverlay);
 
   // ── Status filter
-  const filteredTables = useMemo(() =>
-    statusFilter.size === 0 ? tables : tables.filter(t => statusFilter.has(t.availStatus)),
-  [tables, statusFilter]);
+  const filteredTables = useMemo(() => {
+    let result = tables;
+    if (myTableNums !== null) result = result.filter(t => myTableNums.has(t.tableNum));
+    if (statusFilter.size > 0) result = result.filter(t => statusFilter.has(t.availStatus));
+    return result;
+  }, [tables, statusFilter, myTableNums]);
 
   function toggleFilter(s: string) {
     setStatusFilter(prev => {
@@ -568,6 +585,11 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               cursor: "pointer", border: "1px solid #dde1e8",
               background: "transparent", color: "#888",
             }}>✕ הכל</button>
+          )}
+          {myTableNums !== null && (
+            <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
+              📍 התחנה שלי ({myTableNums.size})
+            </span>
           )}
         </div>
 
