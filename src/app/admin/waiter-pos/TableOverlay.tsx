@@ -287,25 +287,30 @@ export function TableOverlay({
                       const isServed = !!(oi.servedAt) || oi.itemStatus === "SERVED";
                       const canServe = !isServed && !oi.isComped && oi.itemStatus !== "CANCELLED";
                       return (
-                        <div key={oi.id} style={{ padding: "8px 14px", borderBottom: isLast ? undefined : "1px solid #f0ebe4", display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8, opacity: oi.isComped ? 0.6 : 1 }}>
+                        <div key={oi.id} style={{ padding: "8px 14px", borderBottom: isLast ? undefined : "1px solid #f0ebe4", display: "flex", alignItems: "center", direction: "rtl", gap: 6, opacity: oi.isComped ? 0.6 : 1 }}>
+                          {/* RTL start (physical right): course + name + allergens */}
                           <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
                             <span style={{ fontSize: 12, fontWeight: 700, background: "#f5f3ff", color: "#7c3aed", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
                             <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600, textDecoration: oi.isComped ? "line-through" : "none" }}>{oi.itemName} × {oi.quantity}</span>
                             {allergyHit && <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 7px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
                           </div>
+                          {/* Status + price */}
                           <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "3px 9px", whiteSpace: "nowrap" }}>{si.label}</span>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: oi.isComped ? "#9ca3af" : "#1a1612", minWidth: 36, textAlign: "left", textDecoration: oi.isComped ? "line-through" : "none" }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: oi.isComped ? "#9ca3af" : "#1a1612", minWidth: 34, textAlign: "left", textDecoration: oi.isComped ? "line-through" : "none" }}>
                               ₪{(oi.price * oi.quantity).toFixed(0)}
                             </div>
-                            {canServe && (
-                              <button onClick={() => serveItem(oi.id)} disabled={servingItem === oi.id} title="סמן כהוגש"
-                                style={{ height: 26, padding: "0 8px", borderRadius: 8, border: "1.5px solid #86efac", background: "#f0fdf4", color: "#15803d", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                          </div>
+                          {/* RTL end (physical left): הגש + X */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                            {canServe ? (
+                              <button onClick={() => serveItem(oi.id)} disabled={servingItem === oi.id}
+                                style={{ height: 24, padding: "0 8px", borderRadius: 6, border: "1.5px solid #86efac", background: "#f0fdf4", color: "#15803d", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0, fontFamily: "inherit", whiteSpace: "nowrap" }}>
                                 {servingItem === oi.id ? "…" : "הגש"}
                               </button>
-                            )}
-                            <button onClick={() => toggleComp(oi.id)} disabled={removingItem === oi.id} title={oi.isComped ? "בטל הסרה מחשבון" : "הסר מחשבון"}
-                              style={{ width: 26, height: 26, borderRadius: 99, border: `1.5px solid ${oi.isComped ? "#d1d5db" : "#fecaca"}`, background: oi.isComped ? "#f9fafb" : "#fef2f2", color: oi.isComped ? "#6b7280" : "#dc2626", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>
+                            ) : <div style={{ width: 32 }} />}
+                            <button onClick={() => toggleComp(oi.id)} disabled={removingItem === oi.id} title={oi.isComped ? "בטל הסרה" : "הסר מחשבון"}
+                              style={{ background: "none", border: "none", color: oi.isComped ? "#9ca3af" : "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "2px 4px", flexShrink: 0, fontFamily: "inherit", lineHeight: 1 }}>
                               {removingItem === oi.id ? "…" : "✕"}
                             </button>
                           </div>
@@ -337,10 +342,10 @@ export function TableOverlay({
                           </>
                         )}
 
-                        {/* Total row */}
-                        <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div style={{ fontSize: 15, fontWeight: 900, color: "#1a1612" }}>₪{billTotal.toFixed(0)}</div>
+                        {/* Total row — RTL: סה"כ on right, amount on left */}
+                        <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center", direction: "rtl" }}>
                           <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1612" }}>סה&quot;כ</div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "#1a1612" }}>₪{billTotal.toFixed(0)}</div>
                         </div>
                       </div>
                     );

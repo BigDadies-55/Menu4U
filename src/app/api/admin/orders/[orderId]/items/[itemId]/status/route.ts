@@ -75,6 +75,7 @@ export async function PATCH(
       where: { id: itemId },
       data: {
         servedAt,
+        itemStatus: serve ? "SERVED" : (orderItem.itemStatus === "SERVED" ? "DONE" : orderItem.itemStatus),
         servedByUserId: serve ? session.user.id : null,
       },
     });
