@@ -290,7 +290,7 @@ export function TableOverlay({
                         <div key={oi.id} style={{ padding: "8px 14px", borderBottom: isLast ? undefined : "1px solid #f0ebe4", display: "flex", alignItems: "center", direction: "rtl", gap: 6, opacity: oi.isComped ? 0.6 : 1 }}>
                           {/* RTL start (physical right): course + name + allergens */}
                           <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, background: "#f5f3ff", color: "#7c3aed", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, background: "#eff6ff", color: "#1d4ed8", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
                             <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600, textDecoration: oi.isComped ? "line-through" : "none" }}>{oi.itemName} × {oi.quantity}</span>
                             {allergyHit && <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 7px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
                           </div>
@@ -559,21 +559,22 @@ export function TableOverlay({
               <button onClick={() => onAddItems(order)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 ➕ הוסף מנות
               </button>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8, direction: "rtl" }}>
+                <button onClick={() => { onStatusChange("bill_requested"); }}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c2410c", fontFamily: "inherit" }}>
+                  🧾 מבקש חשבון
+                </button>
                 <button onClick={handleCloseBill}
-                  style={{ flex: 2, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
                   💳 סגור חשבון
                 </button>
-                <button
-                  onClick={() => { onStatusChange("bill_requested"); }}
-                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c2410c", fontFamily: "inherit" }}>
-                  🧾 מבקש
+                <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); }}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
+                  סטטוס
                 </button>
-                <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
-                  🔄 שנה
-                </button>
-                <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
-                  ⚠️
+                <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); }}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
+                  אלרגנים
                 </button>
               </div>
             </>
