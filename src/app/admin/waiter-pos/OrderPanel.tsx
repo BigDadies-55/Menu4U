@@ -5,6 +5,8 @@ import type { OrderItemDetail } from "./TableOverlay";
 import { ALLERGEN_LIST } from "@/lib/allergens";
 import { ManagerPinModal } from "./ManagerPinModal";
 
+export type CartItemModifier = { groupName: string; label: string; priceAdd: number };
+
 export type CartItem = {
   key: string;
   itemId: string;
@@ -14,6 +16,7 @@ export type CartItem = {
   course: number;
   notes: string;
   allergens: string[];
+  modifiers: CartItemModifier[];
 };
 
 type Props = {
@@ -171,6 +174,9 @@ export function OrderPanel({ orderId, restaurantId, existingItems, cartItems, ta
               {warn && <span style={{ fontSize: 9, background: "#fdf2f0", color: "#8b2e22", borderRadius: 5, padding: "1px 5px", fontWeight: 800 }}>⚠️</span>}
             </div>
             <div style={{ fontSize: 10, color: "#8878c0", marginTop: 1 }}>קורס {item.course}</div>
+            {item.modifiers?.length > 0 && (
+              <div style={{ fontSize: 10, color: "#5a4a9e", marginTop: 2 }}>{item.modifiers.map(m => m.label).join(" · ")}</div>
+            )}
           </div>
           <button onClick={() => setNotesOpen(o => !o)} title="הוסף הערה" style={{ width: 26, height: 26, borderRadius: 7, border: `1.5px solid ${notesOpen ? "#8878c0" : "#e8e2da"}`, background: notesOpen ? "#e8e4f8" : "#f4f1ed", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .12s" }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={notesOpen ? "#5a4a9e" : "#8a8480"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

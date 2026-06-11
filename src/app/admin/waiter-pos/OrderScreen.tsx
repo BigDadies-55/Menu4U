@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { OrderPanel, CartItem } from "./OrderPanel";
+import { OrderPanel, CartItem, CartItemModifier } from "./OrderPanel";
 import type { OrderDetail, OrderItemDetail } from "./TableOverlay";
 import { ALLERGEN_LIST } from "@/lib/allergens";
+
+type ModifierOption = { id: string; label: string; priceAdd: number };
+type ModifierGroup  = { id: string; name: string; required: boolean; maxSelect: number; options: ModifierOption[] };
 
 type MenuItem = {
   id: string; name: string; description: string | null;
   price: number; image: string | null; allergens: string[];
   isVegetarian: boolean; isVegan: boolean; isGlutenFree: boolean;
+  modifierGroups: ModifierGroup[];
 };
 type MenuCategory = { id: string; name: string; items: MenuItem[] };
 
@@ -37,6 +41,8 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   const [firingItem, setFiringItem]     = useState<string | null>(null);
   const [isMobile, setIsMobile]         = useState(false);
   const [cartOpen, setCartOpen]         = useState(false);
+  const [modifierItem, setModifierItem] = useState<MenuItem | null>(null);
+  const [modifierSel, setModifierSel]   = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     function check() { setIsMobile(window.innerWidth < 640); }
@@ -93,8 +99,46 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
 
   // Cart helpers
   function addItem(item: MenuItem) {
+    if (item.modifierGroups?.length > 0) {
+      setModifierItem(item);
+      setModifierSel({});
+      return;
+    }
+    pushToCart(item, []);
+  }
+
+  function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
+    const extraPrice = modifiers.reduce((s, m) => s + m.priceAdd, 0);
     const key = `${item.id}-c${activeCourse}-${Date.now()}`;
-    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: Number(item.price), quantity: 1, course: activeCourse, notes: "", allergens: item.allergens ?? [] }]);
+    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: Number(item.price) + extraPrice, quantity: 1, course: activeCourse, notes: "", allergens: item.allergens ?? [], modifiers }]);
+  }
+
+  function confirmModifiers() {
+    if (!modifierItem) return;
+    const mods: CartItemModifier[] = [];
+    for (const group of modifierItem.modifierGroups) {
+      const selected = modifierSel[group.id] ?? [];
+      for (const optId of selected) {
+        const opt = group.options.find(o => o.id === optId);
+        if (opt) mods.push({ groupName: group.name, label: opt.label, priceAdd: opt.priceAdd });
+      }
+    }
+    // Validate required groups
+    for (const group of modifierItem.modifierGroups) {
+      if (group.required && (modifierSel[group.id] ?? []).length === 0) return;
+    }
+    pushToCart(modifierItem, mods);
+    setModifierItem(null);
+  }
+
+  function toggleModOption(groupId: string, optId: string, maxSelect: number) {
+    setModifierSel(prev => {
+      const cur = prev[groupId] ?? [];
+      if (cur.includes(optId)) return { ...prev, [groupId]: cur.filter(id => id !== optId) };
+      if (maxSelect === 1) return { ...prev, [groupId]: [optId] };
+      if (cur.length >= maxSelect) return prev;
+      return { ...prev, [groupId]: [...cur, optId] };
+    });
   }
 
   function changeQty(key: string, qty: number) {
@@ -158,7 +202,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null })),
+            items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers })),
             tableAllergens,
           }),
         });
@@ -173,7 +217,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
             tableNumber: tableNum,
             coversCount: guestCount,
             tableAllergens,
-            items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null })),
+            items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers })),
           }),
         });
         const newOrder = await r.json();
@@ -341,6 +385,65 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           )}
         </>
       )}
+    {/* ── Modifier picker popup ── */}
+    {modifierItem && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(26,22,18,.5)" }}
+        onClick={() => setModifierItem(null)}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 20, width: "min(96vw,420px)", maxHeight: "85dvh", overflowY: "auto", direction: "rtl", display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1612" }}>{modifierItem.name}</div>
+              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>בחר אפשרויות</div>
+            </div>
+            <button onClick={() => setModifierItem(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#888", lineHeight: 1 }}>✕</button>
+          </div>
+
+          {/* Groups */}
+          {modifierItem.modifierGroups.map(group => {
+            const sel = modifierSel[group.id] ?? [];
+            const allSatisfied = !group.required || sel.length > 0;
+            return (
+              <div key={group.id}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1612", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                  {group.name}
+                  {group.required && <span style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>חובה</span>}
+                  {group.maxSelect > 1 && <span style={{ fontSize: 10, color: "#888" }}>עד {group.maxSelect}</span>}
+                  {!allSatisfied && <span style={{ fontSize: 10, color: "#dc2626" }}>← נא לבחור</span>}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {group.options.map(opt => {
+                    const active = sel.includes(opt.id);
+                    return (
+                      <button key={opt.id} onClick={() => toggleModOption(group.id, opt.id, group.maxSelect)}
+                        style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${active ? "#1a1612" : "#e8e2da"}`, background: active ? "#1a1612" : "#f9f7f4", color: active ? "#fff" : "#1a1612", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
+                        {opt.label}
+                        {opt.priceAdd > 0 && <span style={{ fontSize: 10, opacity: .75 }}>+₪{opt.priceAdd}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Confirm */}
+          {(() => {
+            const allOk = modifierItem.modifierGroups.every(g => !g.required || (modifierSel[g.id] ?? []).length > 0);
+            const extraPrice = Object.entries(modifierSel).flatMap(([gId, optIds]) => {
+              const g = modifierItem.modifierGroups.find(g => g.id === gId);
+              return optIds.map(oId => g?.options.find(o => o.id === oId)?.priceAdd ?? 0);
+            }).reduce((s, v) => s + v, 0);
+            return (
+              <button onClick={confirmModifiers} disabled={!allOk}
+                style={{ background: allOk ? "#1a1612" : "#ccc", color: "#fff", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 800, cursor: allOk ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                הוסף לסל — ₪{(Number(modifierItem.price) + extraPrice).toFixed(0)}
+              </button>
+            );
+          })()}
+        </div>
+      </div>
+    )}
     </div>
   );
 }
