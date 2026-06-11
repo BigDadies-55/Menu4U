@@ -133,10 +133,11 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
   const [firingCourse, setFiringCourse] = useState<string>("");
 
   // Station assignment
-  const [stations,     setStations]     = useState<WaiterStation[]>([]);
-  const [waiters,      setWaiters]      = useState<WaiterUser[]>([]);
-  const [stationEdit,  setStationEdit]  = useState<Record<string, string>>({}); // userId → comma-sep table nums
-  const [stationSaving,setStationSaving]= useState<string | null>(null);
+  const [stations,       setStations]       = useState<WaiterStation[]>([]);
+  const [waiters,        setWaiters]        = useState<WaiterUser[]>([]);
+  const [stationEdit,    setStationEdit]    = useState<Record<string, string>>({});
+  const [stationSaving,  setStationSaving]  = useState<string | null>(null);
+  const [selectedWaiter, setSelectedWaiter] = useState<string | null>(null);
 
   // Shift summary modal
   const [summaryOpen,  setSummaryOpen]  = useState(false);
@@ -1062,97 +1063,101 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
         {/* ── STATIONS TAB ── */}
         {tab === "stations" && (
           <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
-            <h2 style={{ color: T.gold, fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📍 שיוך תחנות מלצרים</h2>
-            <p style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>
-              הגדר אילו שולחנות שייכים לכל מלצר. המלצרים יראו את השולחנות שלהם מודגשים ברצפת השירות.
-            </p>
+            <h2 style={{ color: T.gold, fontSize: 16, fontWeight: 700, marginBottom: 16 }}>📍 שיוך שולחנות למלצרים</h2>
 
-            {waiters.length === 0 && (
+            {waiters.length === 0 ? (
               <div style={{ color: T.muted, textAlign: "center", padding: 40, fontSize: 13 }}>
-                אין מלצרים משויכים למסעדה זו
+                אין צוות משויך למסעדה זו
               </div>
-            )}
+            ) : (
+              <>
+                {/* Step 1 — pick waiter */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                  {waiters.map(w => {
+                    const assigned = stations.find(s => s.userId === w.id)?.tableNumbers ?? [];
+                    const isSelected = selectedWaiter === w.id;
+                    return (
+                      <button key={w.id} onClick={() => setSelectedWaiter(isSelected ? null : w.id)} style={{
+                        padding: "8px 14px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700,
+                        border: `2px solid ${isSelected ? T.gold : T.border}`,
+                        background: isSelected ? `${T.gold}22` : T.surface,
+                        color: isSelected ? T.gold : T.text,
+                        display: "flex", alignItems: "center", gap: 8,
+                      }}>
+                        👤 {w.name ?? w.email}
+                        {assigned.length > 0
+                          ? <span style={{ fontSize: 11, background: `${T.green}22`, color: T.green, borderRadius: 99, padding: "1px 7px" }}>{assigned.length} שולחנות</span>
+                          : <span style={{ fontSize: 11, color: T.muted }}>הכל</span>
+                        }
+                      </button>
+                    );
+                  })}
+                </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {waiters.map(waiter => {
-                const saved = stations.find(s => s.userId === waiter.id);
-                return (
-                  <div key={waiter.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${T.gold}22`, border: `1px solid ${T.gold}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
-                        👤
+                {/* Step 2 — pick tables for selected waiter */}
+                {selectedWaiter && (() => {
+                  const waiter = waiters.find(w => w.id === selectedWaiter)!;
+                  const current = (stationEdit[selectedWaiter] ?? "").split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+                  const allTables = activeRoom?.tables.slice().sort((a, b) => a.num - b.num) ?? [];
+                  return (
+                    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>
+                        שולחנות עבור {waiter.name ?? waiter.email}
+                        <span style={{ fontSize: 11, color: T.muted, fontWeight: 400, marginRight: 8 }}>
+                          — ללא סימון = רואה הכל
+                        </span>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: T.text }}>{waiter.name ?? waiter.email}</div>
-                        <div style={{ fontSize: 11, color: T.muted }}>{waiter.email}</div>
-                      </div>
-                      {saved && (
-                        <div style={{ fontSize: 11, color: T.green, background: `${T.green}18`, borderRadius: 20, padding: "2px 8px", border: `1px solid ${T.green}44` }}>
-                          {saved.tableNumbers.length} שולחנות
+
+                      {allTables.length === 0 ? (
+                        <div style={{ color: T.muted, fontSize: 12 }}>אין פריסת שולחנות מוגדרת</div>
+                      ) : (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                          {allTables.map(t => {
+                            const tStr = String(t.num);
+                            const isIn = current.includes(tStr);
+                            return (
+                              <button key={t.id} onClick={() => {
+                                setStationEdit(prev => {
+                                  const cur = (prev[selectedWaiter] ?? "").split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+                                  const next = isIn ? cur.filter(n => n !== tStr) : [...cur, tStr];
+                                  return { ...prev, [selectedWaiter]: next.join(", ") };
+                                });
+                              }} style={{
+                                width: 48, height: 48, borderRadius: 10, fontSize: 14, fontWeight: 800,
+                                cursor: "pointer",
+                                border: `2px solid ${isIn ? T.gold : T.border}`,
+                                background: isIn ? T.gold : "transparent",
+                                color: isIn ? "#000" : T.sub,
+                              }}>
+                                {t.num}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
-                    </div>
 
-                    <div style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: 12, color: T.sub, display: "block", marginBottom: 4 }}>
-                        שולחנות (הפרד בפסיק: 1, 2, 3, 4, 5)
-                      </label>
-                      <input
-                        value={stationEdit[waiter.id] ?? ""}
-                        onChange={e => setStationEdit(prev => ({ ...prev, [waiter.id]: e.target.value }))}
-                        placeholder="לדוגמה: 1, 2, 3, 4, 5"
-                        style={INP}
-                      />
-                    </div>
-
-                    {/* Quick table buttons from current layout */}
-                    {activeRoom && activeRoom.tables.length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-                        {activeRoom.tables.slice().sort((a, b) => a.num - b.num).map(t => {
-                          const tStr = String(t.num);
-                          const current = (stationEdit[waiter.id] ?? "").split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
-                          const isIn = current.includes(tStr);
-                          return (
-                            <button key={t.id} onClick={() => {
-                              setStationEdit(prev => {
-                                const cur = (prev[waiter.id] ?? "").split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
-                                const next = isIn ? cur.filter(n => n !== tStr) : [...cur, tStr];
-                                return { ...prev, [waiter.id]: next.join(", ") };
-                              });
-                            }} style={{
-                              padding: "4px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                              border: `1px solid ${isIn ? T.gold : T.border}`,
-                              background: isIn ? `${T.gold}22` : "transparent",
-                              color: isIn ? T.gold : T.sub,
-                            }}>
-                              {t.num}{t.name ? ` ${t.name}` : ""}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => saveStation(waiter.id)}
-                        disabled={stationSaving === waiter.id}
-                        style={{ ...BTN(T.gold), fontSize: 12, opacity: stationSaving === waiter.id ? 0.6 : 1 }}
-                      >
-                        {stationSaving === waiter.id ? "שומר..." : "💾 שמור תחנה"}
-                      </button>
-                      {saved && (
-                        <button
-                          onClick={() => deleteStation(waiter.id)}
-                          style={{ ...BTN(T.red, true), fontSize: 12 }}
-                        >
-                          🗑 מחק תחנה
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <button onClick={() => saveStation(selectedWaiter)} disabled={stationSaving === selectedWaiter}
+                          style={{ ...BTN(T.gold), fontSize: 13, opacity: stationSaving === selectedWaiter ? 0.6 : 1 }}>
+                          {stationSaving === selectedWaiter ? "שומר..." : "💾 שמור"}
                         </button>
-                      )}
+                        {stations.find(s => s.userId === selectedWaiter) && (
+                          <button onClick={() => deleteStation(selectedWaiter)}
+                            style={{ ...BTN(T.red, true), fontSize: 13 }}>
+                            🗑 אפס הכל
+                          </button>
+                        )}
+                        {current.length > 0 && (
+                          <span style={{ fontSize: 12, color: T.muted }}>
+                            נבחרו: {current.sort((a,b) => Number(a)-Number(b)).join(", ")}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })()}
+              </>
+            )}
           </div>
         )}
 
