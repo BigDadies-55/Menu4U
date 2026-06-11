@@ -1014,13 +1014,13 @@ export default function ShiftsClient({
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
         {/* Filter bar */}
-        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {presetBtn("all",   "הכל")}
             {presetBtn("week",  "שבוע זה")}
             {presetBtn("month", "החודש")}
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <span style={{ fontSize: T.fsm, color: T.muted }}>מ:</span>
             <input type="datetime-local" value={opsFrom} style={inpStyle}
               onChange={e => { setOpsFrom(e.target.value); setOpsPreset("custom"); }} />
