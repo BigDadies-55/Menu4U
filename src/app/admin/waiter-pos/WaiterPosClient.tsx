@@ -768,11 +768,13 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               const status    = tData?.availStatus ?? "free";
               // apply status filter
               if (statusFilter.size > 0 && !statusFilter.has(status)) return null;
-              const color     = STATUS_BORDER[status];
+              // my-station check — null means no restriction (see all interactive)
+              const isMyTable = myTableNums === null || myTableNums.has(tNum);
+              const color     = isMyTable ? (STATUS_BORDER[status] ?? "#9ca3af") : "#c8cdd6";
               const isRound   = lt.shape === "round" || lt.shape === "oval";
-              const tInsights = insights.filter(i => i.tableNum === tNum);
+              const tInsights = isMyTable ? insights.filter(i => i.tableNum === tNum) : [];
               const topIns    = tInsights[0];
-              const isWarn    = status === "occupied" && (tData?.minutesSitting ?? 0) > 20;
+              const isWarn    = isMyTable && status === "occupied" && (tData?.minutesSitting ?? 0) > 20;
 
               const W = lt.w * floorScale;
               const H = lt.h * floorScale;
@@ -782,24 +784,28 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               const showInfo  = W > 58 && H > 52;
               const showBadge = W > 68 && H > 64;
 
-              const statusBadgeBg   = ORDER_STATUS_COLOR[tData?.orderStatus ?? ""] ?? STATUS_BADGE_BG[status];
-              const statusBadgeFg   = tData?.orderStatus ? (ORDER_STATUS_TEXT_COLOR[tData.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[status] ?? "#374151");
-              const statusBadgeText = status === "occupied"
-                ? (ORDER_STATUS_HE[tData?.orderStatus ?? ""] ?? STATUS_LABEL[status])
+              const statusBadgeBg   = isMyTable ? (ORDER_STATUS_COLOR[tData?.orderStatus ?? ""] ?? STATUS_BADGE_BG[status]) : "#e5e7eb";
+              const statusBadgeFg   = isMyTable ? (tData?.orderStatus ? (ORDER_STATUS_TEXT_COLOR[tData.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[status] ?? "#374151")) : "#9ca3af";
+              const statusBadgeText = isMyTable
+                ? (status === "occupied" ? (ORDER_STATUS_HE[tData?.orderStatus ?? ""] ?? STATUS_LABEL[status]) : STATUS_LABEL[status])
                 : STATUS_LABEL[status];
 
               return (
-                <div key={`${lt.num}-${layoutRotation}`} onClick={() => setTableOverlay(tNum)}
+                <div key={`${lt.num}-${layoutRotation}`}
+                  onClick={() => isMyTable && setTableOverlay(tNum)}
                   style={{
                     position: "absolute",
                     left: lt.x * floorScale + floorOffsetX,
                     top:  lt.y * floorScale + floorOffsetY,
                     width: W, height: H,
                     borderRadius: isRound ? "50%" : lt.shape === "banquet" ? 12 : 6,
-                    background: status === "occupied" ? color + "18" : color + "12",
+                    background: isMyTable
+                      ? (status === "occupied" ? color + "18" : color + "12")
+                      : "#f0f1f3",
                     border: `2.5px solid ${color}`,
+                    opacity: isMyTable ? 1 : 0.45,
                     animation: tInsights.length > 0 ? "insightPulse 2.5s ease-in-out infinite" : undefined,
-                    cursor: "pointer",
+                    cursor: isMyTable ? "pointer" : "not-allowed",
                     display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center",
                     padding: "3px 4px",
@@ -808,7 +814,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     boxSizing: "border-box",
                     transition: "box-shadow 0.12s",
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 18px ${color}55`}
+                  onMouseEnter={e => isMyTable && ((e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 18px ${color}55`)}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = ""}
                 >
                   {/* Table number */}
