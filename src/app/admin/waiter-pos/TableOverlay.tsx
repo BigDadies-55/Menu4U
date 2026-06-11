@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ALLERGEN_LIST } from "@/lib/allergens";
+import Receipt from "./Receipt";
 
 // ── Types ──────────────────────────────────────────────────────────
 export type OrderItemDetail = {
@@ -18,10 +19,9 @@ export type OrderItemDetail = {
   heldUntilFired: boolean;
   firedAt: string | null;
   doneAt: string | null;
-  servedAt: string | null;
+  servedAt: string | null | undefined;
   isComped: boolean;
   voidedAt?: string | null;
-  servedAt?: string | null;
   noKitchen?: boolean;
 };
 
@@ -52,6 +52,8 @@ type Props = {
   isMobile: boolean;
   freeTables: string[];
   restaurantId: string;
+  restaurantName?: string;
+  waiterName?: string;
   onClose: () => void;
   onAddItems: (order: OrderDetail) => void;
   onNewOrder: (guestCount: number, allergens: string[]) => void;
@@ -67,6 +69,7 @@ function fmtMins(sittingStart: string | null): string {
 export function TableOverlay({
   tableNum, seats, availStatus, guests, sittingStart,
   activeOrderIds, totalAmount, insights, isMobile, freeTables, restaurantId,
+  restaurantName = "המסעדה", waiterName = "",
   onClose, onAddItems, onNewOrder, onStatusChange,
 }: Props) {
   const router = useRouter();
@@ -74,6 +77,7 @@ export function TableOverlay({
   const orderId = activeOrderIds[0] ?? null;
 
   const [order, setOrder]               = useState<OrderDetail | null>(null);
+  const [showReceipt, setShowReceipt]   = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [allergyEditOpen, setAllergyEditOpen] = useState(false);
   const [statusEditOpen, setStatusEditOpen]   = useState(false);
@@ -212,6 +216,7 @@ export function TableOverlay({
     : { position: "relative", background: "#f5f3ef", borderRadius: 28, width: 500, height: "min(92dvh, 820px)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
 
   return (
+    <>
     <div style={bgStyle} onClick={isMobile ? undefined : onClose}>
       <div style={panelStyle} onClick={e => e.stopPropagation()}>
 
@@ -572,7 +577,7 @@ export function TableOverlay({
                 ➕ הוסף מנות
               </button>
               <div style={{ display: "flex", gap: 8, direction: "rtl" }}>
-                <button onClick={() => { onStatusChange("bill_requested"); }}
+                <button onClick={() => { onStatusChange("bill_requested"); if (order) setShowReceipt(true); }}
                   style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c2410c", fontFamily: "inherit" }}>
                   🧾 מבקש חשבון
                 </button>
@@ -618,5 +623,17 @@ export function TableOverlay({
         </div>
       </div>
     </div>
+
+    {showReceipt && order && (
+      <Receipt
+        order={order}
+        tableNum={tableNum}
+        restaurantName={restaurantName}
+        waiterName={waiterName}
+        autoPrint={true}
+        onClose={() => setShowReceipt(false)}
+      />
+    )}
+    </>
   );
 }
