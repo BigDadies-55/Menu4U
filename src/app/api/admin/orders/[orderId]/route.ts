@@ -57,11 +57,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await ensureOrderItemColumns();
+  try {
+    await ensureOrderItemColumns();
+  } catch (e) {
+    console.error("[ensureOrderItemColumns error]", e);
+  }
 
   const { orderId } = await params;
 
-  const order = await prisma.order.findUnique({
+  let order;
+  try {
+    order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
       items: {
@@ -73,6 +79,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
       },
     },
   });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[orders GET error]", msg);
+    return NextResponse.json({ error: "query_failed", detail: msg }, { status: 500 });
+  }
 
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
