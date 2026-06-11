@@ -12,12 +12,21 @@ function fmtDateShort(iso: string): string {
   return `${d}/${m}`;
 }
 
+function fmtTime(t: string): string {
+  const [h, m] = t.slice(0, 5).split(":").map(Number);
+  return m === 0 ? String(h) : `${h}:${String(m).padStart(2, "0")}`;
+}
+
+function smsUnits(chars: number): number {
+  return chars <= 70 ? 1 : Math.ceil(chars / 67);
+}
+
 function buildMessage(name: string, weekFrom: string, weekTo: string, shiftsForUser: {
   date: string; shiftType: string; startTime: string; endTime: string; label: string;
 }[]): string {
   const lines = shiftsForUser.map(s => {
     const d = new Date(s.date + "T00:00:00");
-    return `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.label} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
+    return `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.label} ${fmtTime(s.startTime)}-${fmtTime(s.endTime)}`;
   });
   return `${name}, משמרות (${fmtDateShort(weekFrom)}-${fmtDateShort(weekTo)}):\n${lines.join("\n")}`;
 }
@@ -41,21 +50,22 @@ export async function GET(req: Request) {
   }
 
   let logs: Record<string, unknown>[] = [];
-  let stats: { week: string; total: number; failed: number }[] = [];
+  let stats: { week: string; total: number; failed: number; totalSmsUnits: number }[] = [];
   try {
     logs = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
       `SELECT * FROM "ShiftSmsLog" WHERE "restaurantId"=$1 ORDER BY "sentAt" DESC LIMIT $2`,
       restaurantId, limit
     );
-    const rawStats = await prisma.$queryRawUnsafe<{ week: string; total: bigint; failed: bigint }[]>(
+    const rawStats = await prisma.$queryRawUnsafe<{ week: string; total: bigint; failed: bigint; totalSmsUnits: bigint }[]>(
       `SELECT "weekFrom" || ' – ' || "weekTo" AS week,
               COUNT(*) AS total,
-              COUNT(*) FILTER (WHERE status='FAILED') AS failed
+              COUNT(*) FILTER (WHERE status='FAILED') AS failed,
+              COALESCE(SUM("smsCount") FILTER (WHERE status='SENT'), 0) AS "totalSmsUnits"
        FROM "ShiftSmsLog" WHERE "restaurantId"=$1
        GROUP BY "weekFrom","weekTo" ORDER BY MAX("sentAt") DESC LIMIT 10`,
       restaurantId
     );
-    stats = rawStats.map(s => ({ ...s, total: Number(s.total), failed: Number(s.failed) }));
+    stats = rawStats.map(s => ({ ...s, total: Number(s.total), failed: Number(s.failed), totalSmsUnits: Number(s.totalSmsUnits) }));
   } catch { /* table may not exist yet */ }
 
   return NextResponse.json({ logs, stats, smsConfigured: isSmsConfigured() });
@@ -78,6 +88,13 @@ export async function POST(req: Request) {
 
   if (!restaurantId || !weekFrom || !weekTo)
     return NextResponse.json({ error: "restaurantId, weekFrom, weekTo required" }, { status: 400 });
+
+  // Fetch restaurant name
+  let restaurantName = "";
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ name: string }[]>(`SELECT name FROM "Restaurant" WHERE id=$1 LIMIT 1`, restaurantId);
+    restaurantName = rows[0]?.name ?? "";
+  } catch { /* ignore */ }
 
   // Fetch shifts for the week
   type ShiftRow = { id: string; userId: string; date: string; shiftType: string; startTime: string; endTime: string; userName: string; userEmail: string; phone: string | null };
@@ -103,7 +120,7 @@ export async function POST(req: Request) {
   const labelMap = Object.fromEntries(shiftCfg.map(c => [c.key, c.label]));
 
   let sent = 0, failed = 0, skipped = 0;
-  const logEntries: { userId: string; name: string; phone: string; message: string; status: string }[] = [];
+  const logEntries: { userId: string; name: string; phone: string; message: string; status: string; charCount: number; smsCount: number }[] = [];
 
   for (const [userId, userShifts] of byUser) {
     const first = userShifts[0];
@@ -118,7 +135,8 @@ export async function POST(req: Request) {
     }));
 
     const message = buildMessage(name, weekFrom, weekTo, shiftsWithLabel);
-    logEntries.push({ userId, name: first.userName ?? first.userEmail ?? "", phone, message, status: "PENDING" });
+    const charCount = message.length;
+    logEntries.push({ userId, name: first.userName ?? first.userEmail ?? "", phone, message, status: "PENDING", charCount, smsCount: smsUnits(charCount) });
   }
 
   // Send via Inforu — one by one (different message per person)
@@ -143,10 +161,10 @@ export async function POST(req: Request) {
     try {
       const id = crypto.randomUUID();
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "ShiftSmsLog" (id,"restaurantId","sentByUserId","weekFrom","weekTo","recipientId","recipientName","phone","message","status")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        `INSERT INTO "ShiftSmsLog" (id,"restaurantId","sentByUserId","weekFrom","weekTo","recipientId","recipientName","phone","message","status","charCount","smsCount","restaurantName")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
         id, restaurantId, session.user.id, weekFrom, weekTo,
-        e.userId, e.name, e.phone, e.message, e.status
+        e.userId, e.name, e.phone, e.message, e.status, e.charCount, e.smsCount, restaurantName
       );
     } catch { /* log table may not exist yet — ignore */ }
   }

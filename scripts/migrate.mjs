@@ -227,6 +227,9 @@ const sqls = [
     CONSTRAINT "ShiftSmsLog_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE
   );`,
   `CREATE INDEX IF NOT EXISTS "ShiftSmsLog_restaurantId_sentAt_idx" ON "ShiftSmsLog"("restaurantId","sentAt" DESC);`,
+  `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "charCount" INTEGER;`,
+  `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "smsCount" INTEGER;`,
+  `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "restaurantName" TEXT;`,
 ];
 
 async function run() {

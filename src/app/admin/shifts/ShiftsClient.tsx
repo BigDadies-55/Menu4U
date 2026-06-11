@@ -163,7 +163,7 @@ export default function ShiftsClient({
   const [smsSending, setSmsSending] = useState(false);
 
   // Operational tab data
-  type SmsLog = { id: string; recipientName: string; phone: string; message: string; status: string; sentAt: string; weekFrom: string; weekTo: string };
+  type SmsLog = { id: string; recipientName: string; phone: string; message: string; status: string; sentAt: string; weekFrom: string; weekTo: string; charCount?: number; smsCount?: number; restaurantName?: string };
   type SmsStat = { week: string; total: number; failed: number };
   const [smsLogs, setSmsLogs] = useState<SmsLog[]>([]);
   const [smsStats, setSmsStats] = useState<SmsStat[]>([]);
@@ -361,7 +361,8 @@ export default function ShiftsClient({
       const cfg = shiftCfgList.find(c => c.key === s.shiftType);
       const label = cfg?.label ?? s.shiftType;
       const d = new Date(String(s.date).slice(0,10) + "T00:00:00");
-      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
+      const ft = (t: string) => { const [h,m] = t.slice(0,5).split(":").map(Number); return m === 0 ? String(h) : `${h}:${String(m).padStart(2,"0")}`; };
+      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label} ${ft(s.startTime)}-${ft(s.endTime)}`;
     });
     if (targetId === "all" && target.length > 3) lines.push(`...ועוד ${target.length - 3}`);
     return `${name}, משמרות (${fmtDate(from)}-${fmtDate(to)}):\n${lines.join("\n")}`;
@@ -966,15 +967,17 @@ export default function ShiftsClient({
     if (opsLoading) return <div style={{ textAlign: "center", padding: 40, color: T.muted }}>טוען...</div>;
     const totalSent   = smsLogs.filter(l => l.status === "SENT").length;
     const totalFailed = smsLogs.filter(l => l.status === "FAILED").length;
+    const totalSmsUnits = smsLogs.filter(l => l.status === "SENT").reduce((acc, l) => acc + (l.smsCount ?? (l.message ? (l.message.length <= 70 ? 1 : Math.ceil(l.message.length / 67)) : 1)), 0);
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Summary cards */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {[
-            { label: "SMS נשלחו", value: totalSent,   color: T.green },
-            { label: "נכשלו",     value: totalFailed,  color: T.red   },
-            { label: "שבועות",    value: smsStats.length, color: T.blue },
+            { label: "הודעות נשלחו", value: totalSent,      color: T.green },
+            { label: "SMS (לתשלום)", value: totalSmsUnits,  color: T.blue  },
+            { label: "נכשלו",        value: totalFailed,     color: T.red   },
+            { label: "שבועות",       value: smsStats.length, color: T.muted },
           ].map(c => (
             <div key={c.label} style={{ flex: 1, minWidth: 100, background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 18px" }}>
               <div style={{ fontSize: T.f2xl, fontWeight: 900, color: c.color }}>{c.value}</div>
@@ -1007,29 +1010,38 @@ export default function ShiftsClient({
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: T.panel }}>
-                    {["שם", "טלפון", "שבוע", "הודעה", "סטטוס", "נשלח"].map(h => (
+                    {["מסעדה", "שם", "טלפון", "שבוע", "הודעה", "תווים", "SMS", "סטטוס", "נשלח"].map(h => (
                       <th key={h} style={{ padding: "8px 12px", textAlign: "right", fontSize: T.fxs, color: T.muted, fontWeight: 600, borderBottom: `1px solid ${T.border}`, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {smsLogs.map(l => (
-                    <tr key={l.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
-                      <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.text, whiteSpace: "nowrap" }}>{l.recipientName}</td>
-                      <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.muted }}>{l.phone}</td>
-                      <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
-                      <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, maxWidth: 200 }}>
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</span>
-                      </td>
-                      <td style={{ padding: "8px 12px" }}>
-                        <span style={{ background: l.status === "SENT" ? T.green + "20" : T.red + "20", color: l.status === "SENT" ? T.green : T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
-                          {l.status === "SENT" ? "✓ נשלח" : "✗ נכשל"}
-                        </span>
-                      </td>
-                      <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>
-                        {new Date(l.sentAt).toLocaleDateString("he-IL")} {new Date(l.sentAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                      </td>
-                    </tr>
+                    {(() => {
+                      const chars = l.charCount ?? l.message?.length ?? 0;
+                      const units = l.smsCount ?? (chars <= 70 ? 1 : Math.ceil(chars / 67));
+                      return (
+                        <tr key={l.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.restaurantName ?? ""}</td>
+                          <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.text, whiteSpace: "nowrap" }}>{l.recipientName}</td>
+                          <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.muted }}>{l.phone}</td>
+                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
+                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, maxWidth: 200 }}>
+                            <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</span>
+                          </td>
+                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, textAlign: "center" }}>{chars}</td>
+                          <td style={{ padding: "8px 12px", fontSize: T.fxs, fontWeight: 700, color: units === 1 ? T.green : T.orange, textAlign: "center" }}>{units}</td>
+                          <td style={{ padding: "8px 12px" }}>
+                            <span style={{ background: l.status === "SENT" ? T.green + "20" : T.red + "20", color: l.status === "SENT" ? T.green : T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+                              {l.status === "SENT" ? "✓ נשלח" : "✗ נכשל"}
+                            </span>
+                          </td>
+                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>
+                            {new Date(l.sentAt).toLocaleDateString("he-IL")} {new Date(l.sentAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                        </tr>
+                      );
+                    })()}
                   ))}
                 </tbody>
               </table>
