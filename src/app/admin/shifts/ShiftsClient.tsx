@@ -855,56 +855,53 @@ export default function ShiftsClient({
             <div style={{ fontSize: T.flg, fontWeight: 800, color: T.text, marginBottom: 20 }}>⚙️ הגדרות סוגי משמרת</div>
 
             {editCfg.map((cfg, idx) => (
-              <div key={cfg.key} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "14px 16px", marginBottom: 10 }}>
+              <div key={cfg.key} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "12px 14px", marginBottom: 10 }}>
+                {/* Row 1: switch + label + times */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  {/* Visible toggle */}
-                  <button
+                  {/* Switch */}
+                  <div
                     onClick={() => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, visible: !c.visible } : c))}
-                    style={{ background: cfg.visible ? cfg.color + "22" : T.overlay ?? T.panel, border: `1px solid ${cfg.visible ? cfg.color : T.border}`, borderRadius: T.rMd, color: cfg.visible ? cfg.color : T.muted, fontSize: T.fsm, fontWeight: 700, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
-                    title="הצג/הסתר"
+                    style={{ position: "relative", width: 40, height: 22, borderRadius: 11, background: cfg.visible ? cfg.color : T.borderSub, cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
                   >
-                    {cfg.visible ? "✓ מוצג" : "מוסתר"}
-                  </button>
+                    <div style={{ position: "absolute", top: 3, right: cfg.visible ? 3 : undefined, left: cfg.visible ? undefined : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transition: "all 0.2s" }} />
+                  </div>
 
                   {/* Label */}
                   <input
                     value={cfg.label}
                     onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
-                    style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, fontWeight: 700, padding: "5px 10px", width: 90, fontFamily: "inherit", outline: "none" }}
+                    style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, fontWeight: 700, padding: "4px 8px", width: 80, fontFamily: "inherit", outline: "none" }}
                     placeholder="שם"
                   />
 
-                  {/* Start time */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  {/* Times on same row */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: T.fxs, color: T.muted }}>מ-</span>
                     <input
                       type="time"
                       value={cfg.startTime}
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
-                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "5px 8px", fontFamily: "inherit", outline: "none" }}
+                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "4px 6px", fontFamily: "inherit", outline: "none" }}
                     />
-                  </div>
-
-                  {/* End time */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{ fontSize: T.fxs, color: T.muted }}>עד-</span>
                     <input
                       type="time"
                       value={cfg.endTime}
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
-                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "5px 8px", fontFamily: "inherit", outline: "none" }}
+                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "4px 6px", fontFamily: "inherit", outline: "none" }}
                     />
                   </div>
+                </div>
 
-                  {/* Color picker */}
-                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                    {PRESET_COLORS.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setEditCfg(prev => prev.map((cf, i) => i === idx ? { ...cf, color: c } : cf))}
-                        style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box" }}
-                        title={c}
-                      />
+                {/* Row 2: color dots */}
+                <div style={{ display: "flex", gap: 6, marginTop: 10, paddingRight: 50 }}>
+                  {PRESET_COLORS.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setEditCfg(prev => prev.map((cf, i) => i === idx ? { ...cf, color: c } : cf))}
+                      style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box" }}
+                      title={c}
+                    />
                     ))}
                   </div>
                 </div>
