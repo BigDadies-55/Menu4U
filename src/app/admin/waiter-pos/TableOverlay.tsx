@@ -84,6 +84,7 @@ export function TableOverlay({
   const [transferOpen, setTransferOpen]   = useState(false);
   const [transferring, setTransferring]   = useState(false);
   const [removingItem, setRemovingItem]   = useState<string | null>(null);
+  const [servingItem, setServingItem]     = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
@@ -97,15 +98,28 @@ export function TableOverlay({
   // Courses derived from order items
   const courseNums = Array.from(new Set((order?.items ?? []).map(i => i.course))).sort();
 
-  async function removeItem(itemId: string) {
+  async function toggleComp(itemId: string) {
     if (!orderId) return;
     setRemovingItem(itemId);
-    const r = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/remove`, { method: "DELETE" });
-    if (r.ok) {
-      const updated = await fetch(`/api/admin/orders/${orderId}`);
-      if (updated.ok) setOrder(await updated.json());
-    }
+    await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comp: true }),
+    });
+    const r = await fetch(`/api/admin/orders/${orderId}`);
+    if (r.ok) setOrder(await r.json());
     setRemovingItem(null);
+  }
+
+  async function serveItem(itemId: string) {
+    if (!orderId) return;
+    setServingItem(itemId);
+    await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ serve: true }),
+    });
+    const r = await fetch(`/api/admin/orders/${orderId}`);
+    if (r.ok) setOrder(await r.json());
+    setServingItem(null);
   }
 
   async function serveCourse(course: number) {
@@ -255,27 +269,32 @@ export function TableOverlay({
                         CANCELLED:  { label: "בוטל",   bg: "#fef2f2", color: "#dc2626" },
                       };
                       const si = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
+                      const isServed  = !!(oi.servedAt) || oi.itemStatus === "SERVED";
+                      const canServe  = !isServed && !oi.isComped && oi.itemStatus !== "CANCELLED";
                       return (
-                        <div key={oi.id} style={{ padding: "8px 14px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8 }}>
-                          {/* Right side (RTL start): course number + item name + allergens + comped */}
+                        <div key={oi.id} style={{ padding: "8px 14px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8, opacity: oi.isComped ? 0.6 : 1 }}>
+                          {/* Right side (RTL start): course number + item name + allergens */}
                           <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
                             <span style={{ fontSize: 12, fontWeight: 700, background: "#f5f3ff", color: "#7c3aed", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
-                            <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600 }}>{oi.itemName} × {oi.quantity}</span>
+                            <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600, textDecoration: oi.isComped ? "line-through" : "none" }}>{oi.itemName} × {oi.quantity}</span>
                             {allergyHit && <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 7px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
-                            {oi.isComped && <span style={{ fontSize: 10, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 99, padding: "2px 7px", flexShrink: 0 }}>🎁</span>}
                           </div>
-                          {/* Left side (RTL end): status + price + delete */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          {/* Left side (RTL end): status + price + הגש + X */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "3px 9px", whiteSpace: "nowrap" }}>{si.label}</span>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1612", minWidth: 36, textAlign: "left" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
-                            {(oi.heldUntilFired || !oi.firedAt) ? (
-                              <button onClick={() => removeItem(oi.id)} disabled={removingItem === oi.id} title="הסר פריט"
-                                style={{ width: 26, height: 26, borderRadius: 99, border: "1.5px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>
-                                {removingItem === oi.id ? "…" : "✕"}
+                            <div style={{ fontSize: 14, fontWeight: 800, color: oi.isComped ? "#9ca3af" : "#1a1612", minWidth: 36, textAlign: "left", textDecoration: oi.isComped ? "line-through" : "none" }}>
+                              ₪{(oi.price * oi.quantity).toFixed(0)}
+                            </div>
+                            {canServe && (
+                              <button onClick={() => serveItem(oi.id)} disabled={servingItem === oi.id} title="סמן כהוגש"
+                                style={{ height: 26, padding: "0 8px", borderRadius: 8, border: "1.5px solid #86efac", background: "#f0fdf4", color: "#15803d", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                                {servingItem === oi.id ? "…" : "הגש"}
                               </button>
-                            ) : (
-                              <div style={{ width: 26, flexShrink: 0 }} />
                             )}
+                            <button onClick={() => toggleComp(oi.id)} disabled={removingItem === oi.id} title={oi.isComped ? "בטל הסרה מחשבון" : "הסר מחשבון"}
+                              style={{ width: 26, height: 26, borderRadius: 99, border: `1.5px solid ${oi.isComped ? "#d1d5db" : "#fecaca"}`, background: oi.isComped ? "#f9fafb" : "#fef2f2", color: oi.isComped ? "#6b7280" : "#dc2626", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>
+                              {removingItem === oi.id ? "…" : "✕"}
+                            </button>
                           </div>
                         </div>
                       );
