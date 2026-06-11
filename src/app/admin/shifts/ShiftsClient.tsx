@@ -37,12 +37,47 @@ interface Props {
 }
 
 // ── Shift type config ─────────────────────────────────────────────────────────
-const SHIFT_CFG: Record<string, { label: string; time: string; color: string; bg: string }> = {
-  MORNING:   { label: "בוקר",    time: "07–15", color: "#f59e0b", bg: "#fffbeb" },
-  AFTERNOON: { label: "צהריים", time: "12–20", color: "#3b82f6", bg: "#eff6ff" },
-  EVENING:   { label: "ערב",    time: "17–01", color: "#a855f7", bg: "#faf5ff" },
-  NIGHT:     { label: "לילה",   time: "22–06", color: "#6b7280", bg: "#f9fafb" },
+type ShiftTypeCfg = {
+  key: string;
+  label: string;
+  startTime: string;
+  endTime: string;
+  color: string;
+  visible: boolean;
 };
+
+const COLOR_BG: Record<string, string> = {
+  "#f59e0b": "#fffbeb",
+  "#3b82f6": "#eff6ff",
+  "#a855f7": "#faf5ff",
+  "#6b7280": "#f9fafb",
+  "#ef4444": "#fef2f2",
+  "#10b981": "#ecfdf5",
+  "#f97316": "#fff7ed",
+  "#ec4899": "#fdf2f8",
+};
+const PRESET_COLORS = Object.keys(COLOR_BG);
+
+const DEFAULT_CFG: ShiftTypeCfg[] = [
+  { key: "MORNING",   label: "בוקר",    startTime: "07:00", endTime: "15:00", color: "#f59e0b", visible: true },
+  { key: "AFTERNOON", label: "צהריים",  startTime: "12:00", endTime: "20:00", color: "#3b82f6", visible: true },
+  { key: "EVENING",   label: "ערב",     startTime: "17:00", endTime: "01:00", color: "#a855f7", visible: true },
+  { key: "NIGHT",     label: "לילה",    startTime: "22:00", endTime: "06:00", color: "#6b7280", visible: true },
+];
+
+function cfgToDisplay(cfg: ShiftTypeCfg[]): Record<string, { label: string; time: string; color: string; bg: string }> {
+  return Object.fromEntries(
+    cfg.filter(c => c.visible).map(c => [
+      c.key,
+      {
+        label: c.label,
+        time: `${c.startTime.slice(0, 5)}–${c.endTime.slice(0, 5)}`,
+        color: c.color,
+        bg: COLOR_BG[c.color] ?? "#f9fafb",
+      },
+    ])
+  );
+}
 
 const DAYS_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "שבת"];
 const MONTHS_HE = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
@@ -105,6 +140,13 @@ export default function ShiftsClient({
   const [loading, setLoading] = useState(false);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [staff, setStaff] = useState<{ id: string; name: string }[]>([]);
+  const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
+  const SHIFT_CFG = cfgToDisplay(shiftCfgList);
+
+  // Settings modal state
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editCfg, setEditCfg] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Add shift modal state
   const [addModal, setAddModal] = useState<{ userId: string; userName: string; date: string } | null>(null);
@@ -123,6 +165,17 @@ export default function ShiftsClient({
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
   };
+
+  // Load shift config
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/shifts/config?restaurantId=${restaurantId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.config)) setShiftCfgList(data.config);
+      })
+      .catch(() => {});
+  }, [restaurantId]);
 
   // Load staff
   useEffect(() => {
@@ -257,6 +310,26 @@ export default function ShiftsClient({
       loadRequests();
     } else {
       showToast("שגיאה");
+    }
+  }
+
+  async function saveConfig() {
+    setSettingsSaving(true);
+    try {
+      const res = await fetch("/api/admin/shifts/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, config: editCfg }),
+      });
+      if (res.ok) {
+        setShiftCfgList(editCfg);
+        setSettingsOpen(false);
+        showToast("✓ הגדרות נשמרו");
+      } else {
+        showToast("שגיאה בשמירה");
+      }
+    } finally {
+      setSettingsSaving(false);
     }
   }
 
@@ -774,9 +847,99 @@ export default function ShiftsClient({
         </div>
       )}
 
+      {/* Settings modal */}
+      {settingsOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 28, width: 480, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: T.flg, fontWeight: 800, color: T.text, marginBottom: 20 }}>⚙️ הגדרות סוגי משמרת</div>
+
+            {editCfg.map((cfg, idx) => (
+              <div key={cfg.key} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "14px 16px", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  {/* Visible toggle */}
+                  <button
+                    onClick={() => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, visible: !c.visible } : c))}
+                    style={{ background: cfg.visible ? cfg.color + "22" : T.overlay ?? T.panel, border: `1px solid ${cfg.visible ? cfg.color : T.border}`, borderRadius: T.rMd, color: cfg.visible ? cfg.color : T.muted, fontSize: T.fsm, fontWeight: 700, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+                    title="הצג/הסתר"
+                  >
+                    {cfg.visible ? "✓ מוצג" : "מוסתר"}
+                  </button>
+
+                  {/* Label */}
+                  <input
+                    value={cfg.label}
+                    onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
+                    style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, fontWeight: 700, padding: "5px 10px", width: 90, fontFamily: "inherit", outline: "none" }}
+                    placeholder="שם"
+                  />
+
+                  {/* Start time */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: T.fxs, color: T.muted }}>מ-</span>
+                    <input
+                      type="time"
+                      value={cfg.startTime}
+                      onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
+                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "5px 8px", fontFamily: "inherit", outline: "none" }}
+                    />
+                  </div>
+
+                  {/* End time */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: T.fxs, color: T.muted }}>עד-</span>
+                    <input
+                      type="time"
+                      value={cfg.endTime}
+                      onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
+                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "5px 8px", fontFamily: "inherit", outline: "none" }}
+                    />
+                  </div>
+
+                  {/* Color picker */}
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    {PRESET_COLORS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setEditCfg(prev => prev.map((cf, i) => i === idx ? { ...cf, color: c } : cf))}
+                        style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box" }}
+                        title={c}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+              <button
+                onClick={saveConfig}
+                disabled={settingsSaving}
+                style={{ flex: 1, background: T.gold, border: "none", borderRadius: T.rMd, color: "#1a1208", fontSize: T.fmd, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1 }}
+              >
+                {settingsSaving ? "שומר..." : "שמור"}
+              </button>
+              <button
+                onClick={() => setSettingsOpen(false)}
+                style={{ flex: 1, background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: 12, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={S.header}>
         <h1 style={S.title}>📅 ניהול משמרות</h1>
+        {isManager && (
+          <button
+            onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
+            style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
+          >
+            ⚙️ הגדרות משמרות
+          </button>
+        )}
         <div style={S.weekNav}>
           <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>→ שבוע קודם</button>
           <span style={S.weekLabel}>{weekLabel(weekDates)}</span>

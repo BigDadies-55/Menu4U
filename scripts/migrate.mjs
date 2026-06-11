@@ -209,6 +209,7 @@ const sqls = [
     CONSTRAINT "ShiftRequest_fromUserId_fkey" FOREIGN KEY ("fromUserId") REFERENCES "User"("id") ON DELETE CASCADE,
     CONSTRAINT "ShiftRequest_toUserId_fkey" FOREIGN KEY ("toUserId") REFERENCES "User"("id") ON DELETE SET NULL
   );`,
+  `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "shiftConfig" TEXT;`,
 ];
 
 async function run() {
