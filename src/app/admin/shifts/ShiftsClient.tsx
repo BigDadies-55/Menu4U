@@ -127,11 +127,11 @@ export default function ShiftsClient({
   // Load staff
   useEffect(() => {
     if (!restaurantId) return;
-    fetch(`/api/admin/users?restaurantId=${restaurantId}`)
+    fetch(`/api/admin/restaurants/${restaurantId}/users`)
       .then(r => r.json())
       .then(data => {
-        const users: { id: string; name: string; email?: string }[] = data.users ?? data ?? [];
-        setStaff(users.map(u => ({ id: u.id, name: u.name || u.email || u.id })));
+        const items: { user: { id: string; name: string | null; email: string } }[] = Array.isArray(data) ? data : [];
+        setStaff(items.map(ru => ({ id: ru.user.id, name: ru.user.name || ru.user.email })));
       })
       .catch(() => setStaff([]));
   }, [restaurantId]);
