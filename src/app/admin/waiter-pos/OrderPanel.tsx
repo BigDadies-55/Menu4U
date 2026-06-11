@@ -301,7 +301,17 @@ export function OrderPanel({ orderId, restaurantId, existingItems, cartItems, ta
             </div>
             <div style={{ borderBottom: "2px solid #e8e2da" }}>
               <LaneHead lane="holding" label="🔥 ממתין לשחרור" count={holdingItems.length} color="#92400e" bg="#fdf7ed" border="#e8cc90" />
-              {openLanes.holding && holdingItems.map(i => <ExistingRow key={i.id} item={i} />)}
+              {openLanes.holding && heldCourses.map(c => (
+                <div key={c}>
+                  <div style={{ padding: "3px 14px", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e8cc90" }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: "#92400e" }}>קורס {c}</span>
+                    <button onClick={() => handleFireCourse(c)} disabled={firingCourse === c} style={{ padding: "2px 9px", borderRadius: 99, border: "none", background: "#c89440", color: "#fff", fontSize: 10, fontWeight: 800, cursor: firingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
+                      {firingCourse === c ? "…" : "🔥 שחרר"}
+                    </button>
+                  </div>
+                  {holdingItems.filter(i => i.course === c).map(i => <ExistingRow key={i.id} item={i} />)}
+                </div>
+              ))}
             </div>
             <div style={{ borderBottom: "2px solid #e8e2da" }}>
               <LaneHead lane="new" label="➕ מוסיף עכשיו" count={cartItems.length} color="#3d3070" bg="#f5f3fb" border="#d0c8f0" />

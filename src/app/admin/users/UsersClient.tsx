@@ -93,6 +93,39 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [editForm, setEditForm] = useState({ name: "", email: "", role: "VIEWER" as Role });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [pinSaving, setPinSaving] = useState(false);
+  const [pinMsg, setPinMsg] = useState("");
+  const [hasPin, setHasPin] = useState(false);
+
+  async function loadPinStatus(userId: string) {
+    try {
+      const r = await fetch(`/api/admin/users/${userId}/manager-pin`);
+      if (r.ok) { const d = await r.json(); setHasPin(!!d.hasPin); }
+    } catch { /* ignore */ }
+  }
+
+  async function savePin() {
+    if (!editTarget || !pinInput.match(/^\d{4,8}$/)) { setPinMsg("PIN חייב להיות 4–8 ספרות"); return; }
+    setPinSaving(true); setPinMsg("");
+    try {
+      const r = await fetch(`/api/admin/users/${editTarget.id}/manager-pin`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: pinInput }),
+      });
+      if (r.ok) { setHasPin(true); setPinInput(""); setPinMsg("✓ PIN נשמר"); }
+      else { const d = await r.json(); setPinMsg(d.error ?? "שגיאה"); }
+    } finally { setPinSaving(false); }
+  }
+
+  async function deletePin() {
+    if (!editTarget) return;
+    setPinSaving(true); setPinMsg("");
+    try {
+      const r = await fetch(`/api/admin/users/${editTarget.id}/manager-pin`, { method: "DELETE" });
+      if (r.ok) { setHasPin(false); setPinMsg("✓ PIN נמחק"); }
+    } finally { setPinSaving(false); }
+  }
 
   const ROLE_ORDER: Record<string, number> = { SUPER_ADMIN: 0, ADMIN: 1, OWNER: 2, SHIFT_MANAGER: 3, EDITOR: 4, WAITER: 5, VIEWER: 6, DISPLAY: 7 };
 
@@ -199,7 +232,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   function openEdit(user: UserWithRestaurants) {
     setEditTarget(user);
     setEditForm({ name: user.name ?? "", email: user.email, role: user.role });
-    setEditError("");
+    setEditError(""); setPinInput(""); setPinMsg(""); setHasPin(false);
+    loadPinStatus(user.id);
   }
 
   async function handleEdit(e: React.FormEvent) {
@@ -636,6 +670,32 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   {ALL_ROLES.map((r) => <option key={r} value={r} style={{ background: T.surface }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
+              {/* ── Manager PIN section ── */}
+              {["ADMIN","OWNER","SHIFT_MANAGER"].includes(editForm.role) && (
+                <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 14 }}>
+                  <Label>🔐 PIN מנהל {hasPin ? <span style={{ color: T.green, fontSize: 11 }}>(מוגדר ✓)</span> : <span style={{ color: T.muted, fontSize: 11 }}>(לא מוגדר)</span>}</Label>
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <input
+                      type="password" inputMode="numeric" maxLength={8}
+                      value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,""))}
+                      placeholder="4–8 ספרות"
+                      style={{ ...DARK_INPUT, flex: 1, letterSpacing: 4, textAlign: "center" }}
+                    />
+                    <button type="button" onClick={savePin} disabled={pinSaving || !pinInput}
+                      style={{ padding: "0 14px", background: T.gold, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: (!pinInput || pinSaving) ? 0.5 : 1 }}>
+                      שמור
+                    </button>
+                    {hasPin && (
+                      <button type="button" onClick={deletePin} disabled={pinSaving}
+                        style={{ padding: "0 12px", background: "transparent", color: T.red, border: `1px solid ${T.red}55`, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                        מחק
+                      </button>
+                    )}
+                  </div>
+                  {pinMsg && <p style={{ fontSize: 12, color: pinMsg.startsWith("✓") ? T.green : T.red, marginTop: 6 }}>{pinMsg}</p>}
+                </div>
+              )}
+
               {editError && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{editError}</p>}
               <div className="flex gap-3" style={{ marginTop: 4 }}>
                 <button type="submit" disabled={editLoading} style={{ flex: 1, background: T.blue, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: editLoading ? 0.6 : 1 }}>
