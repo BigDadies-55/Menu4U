@@ -3,11 +3,54 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 async function ensureOrderItemColumns() {
-  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "isComped" BOOLEAN NOT NULL DEFAULT false`);
-  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "compReason" TEXT`);
-  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidedAt" TIMESTAMP(3)`);
-  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "voidReason" TEXT`);
-  await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedByUserId" TEXT`);
+  const cols: [string, string][] = [
+    [`"isComped" BOOLEAN NOT NULL DEFAULT false`, "isComped"],
+    [`"compReason" TEXT`, "compReason"],
+    [`"voidedAt" TIMESTAMP(3)`, "voidedAt"],
+    [`"voidReason" TEXT`, "voidReason"],
+    [`"servedByUserId" TEXT`, "servedByUserId"],
+    [`"itemStatus" TEXT NOT NULL DEFAULT 'PENDING'`, "itemStatus"],
+    [`"course" INTEGER NOT NULL DEFAULT 1`, "course"],
+    [`"heldUntilFired" BOOLEAN NOT NULL DEFAULT false`, "heldUntilFired"],
+    [`"firedAt" TIMESTAMP(3)`, "firedAt"],
+    [`"doneAt" TIMESTAMP(3)`, "doneAt"],
+    [`"servedAt" TIMESTAMP(3)`, "servedAt"],
+  ];
+  for (const [col] of cols) {
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS ${col}`);
+    } catch { /* ignore if column already exists */ }
+  }
+
+  // Ensure OrderItemModifier table exists
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "OrderItemModifier" (
+        "id" TEXT NOT NULL,
+        "orderItemId" TEXT NOT NULL,
+        "groupName" TEXT NOT NULL,
+        "label" TEXT NOT NULL,
+        "priceAdd" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        CONSTRAINT "OrderItemModifier_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "OrderItemModifier_orderItemId_fkey" FOREIGN KEY ("orderItemId")
+          REFERENCES "OrderItem"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+  } catch { /* already exists */ }
+
+  // Ensure allergens columns
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "allergens" TEXT[] NOT NULL DEFAULT '{}'`);
+  } catch { /* ignore */ }
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tableAllergens" TEXT[] NOT NULL DEFAULT '{}'`);
+  } catch { /* ignore */ }
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "coversCount" INTEGER`);
+  } catch { /* ignore */ }
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "notes" TEXT`);
+  } catch { /* ignore */ }
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ orderId: string }> }) {
@@ -45,14 +88,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
     orderNumber: order.orderNumber,
     totalAmount: order.totalAmount,
     status: order.status,
-    tableAllergens: order.tableAllergens,
+    tableAllergens: order.tableAllergens ?? [],
     coversCount: order.coversCount,
     notes: order.notes,
     items: order.items.map(oi => ({
       id: oi.id,
       itemId: oi.itemId,
       itemName: oi.item.name,
-      itemAllergens: oi.item.allergens,
+      itemAllergens: oi.item.allergens ?? [],
       quantity: oi.quantity,
       price: oi.price,
       notes: oi.notes,
@@ -64,7 +107,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
       servedAt: oi.servedAt,
       isComped: oi.isComped,
       voidedAt: oi.voidedAt,
-      modifiers: oi.modifiers,
+      modifiers: oi.modifiers ?? [],
     })),
   });
 }
