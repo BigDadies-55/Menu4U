@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מסך הזמנה — תצוגה מקדימה</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+  body { background: #f4f1ed; display: flex; justify-content: center; padding: 24px; }
+  .panel { background: #fff; border-radius: 20px; width: 420px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.15); }
+
+  .section { display: flex; direction: rtl; }
+
+  /* הסימון הצדדי */
+  .side-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+    padding: 10px 6px;
+    flex-shrink: 0; width: 26px;
+    border-left: 1px solid #e8e2da;
+  }
+
+  .side-label.no-kitchen { background: #fef3c7; color: #92400e; border-left-color: #fde68a; }
+  .side-label.course-1   { background: #eff6ff; color: #1d4ed8; border-left-color: #bfdbfe; }
+  .side-label.course-2   { background: #f0fdf4; color: #166534; border-left-color: #bbf7d0; }
+  .side-label.course-3   { background: #fdf4ff; color: #7e22ce; border-left-color: #e9d5ff; }
+
+  .items { flex: 1; }
+
+  .item-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px; border-bottom: 1px solid #f0ebe4;
+    direction: rtl;
+  }
+  .item-row:last-child { border-bottom: none; }
+
+  .item-name { flex: 1; font-size: 13px; font-weight: 600; color: #1a1612; }
+  .item-qty  { font-size: 12px; color: #888; }
+
+  .badge {
+    font-size: 10px; font-weight: 700; border-radius: 99px;
+    padding: 3px 9px; white-space: nowrap;
+  }
+  .badge.pending    { background: #fef9c3; color: #854d0e; }
+  .badge.preparing  { background: #dbeafe; color: #1e40af; }
+  .badge.done       { background: #dcfce7; color: #166534; }
+  .badge.served     { background: #e5e7eb; color: #4b5563; }
+
+  .price { font-size: 13px; font-weight: 800; color: #1a1612; min-width: 34px; text-align: left; direction: ltr; }
+
+  .serve-btn {
+    height: 24px; padding: 0 8px; border-radius: 6px;
+    border: 1.5px solid #86efac; background: #f0fdf4;
+    color: #15803d; font-size: 11px; font-weight: 700; cursor: pointer;
+  }
+  .x-btn {
+    background: none; border: none; color: #dc2626;
+    font-size: 12px; font-weight: 700; cursor: pointer; padding: 2px 4px;
+  }
+
+  .section-divider { height: 1px; background: #e8e2da; margin: 0; }
+
+  .header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid #ede9e3;
+    font-size: 15px; font-weight: 800; color: #1a1612;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .order-num { font-size: 12px; color: #888; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <div class="header">
+    <span>שולחן 5</span>
+    <span class="order-num">הזמנה #142</span>
+  </div>
+
+  <!-- ללא מטבח -->
+  <div class="section">
+    <div class="side-label no-kitchen">ללא מטבח</div>
+    <div class="items">
+      <div class="item-row">
+        <span class="item-name">קפה שחור</span>
+        <span class="item-qty">×1</span>
+        <span class="badge done">מוכן</span>
+        <span class="price">₪12</span>
+        <button class="serve-btn">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+      <div class="item-row">
+        <span class="item-name">מיץ תפוזים</span>
+        <span class="item-qty">×2</span>
+        <span class="badge done">מוכן</span>
+        <span class="price">₪36</span>
+        <button class="serve-btn">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- קורס 1 -->
+  <div class="section">
+    <div class="side-label course-1">קורס I</div>
+    <div class="items">
+      <div class="item-row">
+        <span class="item-name">המבורגר קלאסי</span>
+        <span class="item-qty">×1</span>
+        <span class="badge preparing">בהכנה</span>
+        <span class="price">₪65</span>
+        <button class="serve-btn" style="visibility:hidden">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+      <div class="item-row">
+        <span class="item-name">צ'יפס ביתי</span>
+        <span class="item-qty">×1</span>
+        <span class="badge done">מוכן</span>
+        <span class="price">₪22</span>
+        <button class="serve-btn">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+      <div class="item-row">
+        <span class="item-name">סלט קפרז</span>
+        <span class="item-qty">×2</span>
+        <span class="badge done">מוכן</span>
+        <span class="price">₪76</span>
+        <button class="serve-btn">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- קורס 2 -->
+  <div class="section">
+    <div class="side-label course-2">קורס II</div>
+    <div class="items">
+      <div class="item-row">
+        <span class="item-name">ריזוטו פטריות</span>
+        <span class="item-qty">×1</span>
+        <span class="badge pending">ממתין</span>
+        <span class="price">₪72</span>
+        <button class="serve-btn" style="visibility:hidden">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+      <div class="item-row">
+        <span class="item-name">פילה סלמון</span>
+        <span class="item-qty">×2</span>
+        <span class="badge pending">ממתין</span>
+        <span class="price">₪110</span>
+        <button class="serve-btn" style="visibility:hidden">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- קורס 3 -->
+  <div class="section">
+    <div class="side-label course-3">קורס III</div>
+    <div class="items">
+      <div class="item-row">
+        <span class="item-name">טירמיסו</span>
+        <span class="item-qty">×3</span>
+        <span class="badge pending">ממתין</span>
+        <span class="price">₪105</span>
+        <button class="serve-btn" style="visibility:hidden">הגש</button>
+        <button class="x-btn">✕</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
