@@ -144,6 +144,24 @@ const sqls = [
   `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "createdByUserId" TEXT;`,
   `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "closedByUserId" TEXT;`,
   `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "servedByUserId" TEXT;`,
+  // Waiter station assignments
+  `CREATE TABLE IF NOT EXISTS "WaiterStation" (
+    "id" TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tableNumbers" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "label" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WaiterStation_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "WaiterStation_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE,
+    CONSTRAINT "WaiterStation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "WaiterStation_restaurantId_userId_key" ON "WaiterStation"("restaurantId", "userId");`,
+  // allergens on Item
+  `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "allergens" TEXT[] DEFAULT '{}';`,
+  // manager PIN for void/comp
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "managerPin" TEXT;`,
 ];
 
 async function run() {
