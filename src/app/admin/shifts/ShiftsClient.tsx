@@ -778,9 +778,9 @@ export default function ShiftsClient({
       <div style={S.header}>
         <h1 style={S.title}>📅 ניהול משמרות</h1>
         <div style={S.weekNav}>
-          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w + 1)}>← שבוע הבא</button>
+          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>→ שבוע קודם</button>
           <span style={S.weekLabel}>{weekLabel(weekDates)}</span>
-          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>שבוע קודם →</button>
+          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w + 1)}>שבוע הבא ←</button>
         </div>
       </div>
 
