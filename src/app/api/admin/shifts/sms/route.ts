@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendSmsBulkPersonalized, SmsConfigError, isSmsConfigured } from "@/lib/sms";
+import { sendSmsDetailed, isSmsConfigured } from "@/lib/sms";
 import { NextResponse } from "next/server";
 
 const MANAGER_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
@@ -13,13 +13,13 @@ function fmtDateShort(iso: string): string {
 }
 
 function buildMessage(name: string, weekFrom: string, weekTo: string, shiftsForUser: {
-  date: string; startTime: string; endTime: string;
+  date: string; shiftType: string; startTime: string; endTime: string; label: string;
 }[]): string {
-  const parts = shiftsForUser.map(s => {
+  const lines = shiftsForUser.map(s => {
     const d = new Date(s.date + "T00:00:00");
-    return `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
+    return `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.label} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
   });
-  return `${name} ${fmtDateShort(weekFrom)}-${fmtDateShort(weekTo)}: ${parts.join(", ")}`;
+  return `${name}, משמרות (${fmtDateShort(weekFrom)}-${fmtDateShort(weekTo)}):\n${lines.join("\n")}`;
 }
 
 // GET /api/admin/shifts/sms?restaurantId=...&limit=50
@@ -124,14 +124,17 @@ export async function POST(req: Request) {
   // Send via Inforu — one by one (different message per person)
   if (!isSmsConfigured()) return NextResponse.json({ error: "SMS לא מוגדר — נדרש INFORU_USERNAME ו-INFORU_API_TOKEN" }, { status: 503 });
 
+  const debugInfo: { phone: string; ok: boolean; response?: string }[] = [];
   for (const entry of logEntries) {
     try {
-      const r = await sendSmsBulkPersonalized([{ phone: entry.phone }], entry.message);
-      entry.status = r.sent > 0 ? "SENT" : "FAILED";
-      if (r.sent > 0) sent++; else failed++;
-    } catch {
+      const r = await sendSmsDetailed(entry.phone, entry.message);
+      entry.status = r.ok ? "SENT" : "FAILED";
+      if (r.ok) sent++; else failed++;
+      debugInfo.push({ phone: entry.phone, ok: r.ok, response: r.response });
+    } catch (e) {
       entry.status = "FAILED";
       failed++;
+      debugInfo.push({ phone: entry.phone, ok: false, response: e instanceof Error ? e.message : "error" });
     }
   }
 
@@ -148,5 +151,5 @@ export async function POST(req: Request) {
     } catch { /* log table may not exist yet — ignore */ }
   }
 
-  return NextResponse.json({ sent, failed, skipped });
+  return NextResponse.json({ sent, failed, skipped, debug: debugInfo });
 }

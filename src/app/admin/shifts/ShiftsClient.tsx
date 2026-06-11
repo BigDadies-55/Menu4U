@@ -357,12 +357,14 @@ export default function ShiftsClient({
     const to   = formatDateISO(weekDates[6]);
     const fmtDate = (iso: string) => iso.slice(8) + "/" + iso.slice(5, 7);
     const DAY_S = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
-    const parts = (targetId === "all" ? target.slice(0, 3) : target).map(s => {
+    const lines = (targetId === "all" ? target.slice(0, 3) : target).map(s => {
+      const cfg = shiftCfgList.find(c => c.key === s.shiftType);
+      const label = cfg?.label ?? s.shiftType;
       const d = new Date(String(s.date).slice(0,10) + "T00:00:00");
-      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
+      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
     });
-    if (targetId === "all" && target.length > 3) parts.push(`...`);
-    return `${name} ${fmtDate(from)}-${fmtDate(to)}: ${parts.join(", ")}`;
+    if (targetId === "all" && target.length > 3) lines.push(`...ועוד ${target.length - 3}`);
+    return `${name}, משמרות (${fmtDate(from)}-${fmtDate(to)}):\n${lines.join("\n")}`;
   }
 
   async function sendSms() {
@@ -383,7 +385,12 @@ export default function ShiftsClient({
       const d = await res.json();
       if (!res.ok) { showToast(d.error ?? "שגיאה"); return; }
       setSmsModal(false);
-      showToast(`✓ SMS נשלח ל-${d.sent} עובד${d.sent !== 1 ? "ים" : ""}${d.failed ? ` (${d.failed} נכשלו)` : ""}${d.skipped ? ` (${d.skipped} ללא טלפון)` : ""}`);
+      const debugStr = d.debug?.map((x: {phone:string;ok:boolean;response?:string}) =>
+        `${x.phone}: ${x.ok ? "✓" : "✗ " + (x.response ?? "")}`
+      ).join(" | ") ?? "";
+      const summary = `SMS: ${d.sent} נשלחו${d.failed ? `, ${d.failed} נכשלו` : ""}${d.skipped ? `, ${d.skipped} ללא טלפון` : ""}`;
+      console.log("[SMS debug]", debugStr);
+      showToast(d.sent === 0 && d.failed === 0 ? `⚠️ לא נמצאו עובדים עם טלפון — ${d.skipped ?? 0} ללא טלפון` : summary);
     } finally { setSmsSending(false); }
   }
 
