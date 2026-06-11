@@ -18,6 +18,7 @@ type UserWithRestaurants = {
   name: string | null;
   email: string;
   role: Role;
+  phone: string | null;
   emailVerified: Date | null;
   mustChangePassword: boolean;
   createdAt: Date;
@@ -90,7 +91,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [forcingId, setForcingId] = useState<string | null>(null);
 
   const [editTarget, setEditTarget] = useState<UserWithRestaurants | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", email: "", role: "VIEWER" as Role });
+  const [editForm, setEditForm] = useState({ name: "", email: "", role: "VIEWER" as Role, phone: "" });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
   const [pinInput, setPinInput] = useState("");
@@ -231,7 +232,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   function openEdit(user: UserWithRestaurants) {
     setEditTarget(user);
-    setEditForm({ name: user.name ?? "", email: user.email, role: user.role });
+    setEditForm({ name: user.name ?? "", email: user.email, role: user.role, phone: user.phone ?? "" });
     setEditError(""); setPinInput(""); setPinMsg(""); setHasPin(false);
     loadPinStatus(user.id);
   }
@@ -244,7 +245,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     const res = await fetch(`/api/admin/users/${editTarget.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editForm.name, email: editForm.email, role: editForm.role }),
+      body: JSON.stringify({ name: editForm.name, email: editForm.email, role: editForm.role, phone: editForm.phone || null }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -663,6 +664,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             <form onSubmit={handleEdit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div><Label>שם מלא</Label>
                 <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} style={DARK_INPUT} /></div>
+              <div><Label>טלפון נייד</Label>
+                <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} placeholder="05X-XXXXXXX" style={DARK_INPUT} dir="ltr" /></div>
               <div><Label>אימייל *</Label>
                 <input required type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
               <div><Label>הרשאה</Label>

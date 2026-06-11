@@ -11,7 +11,7 @@ export default async function UsersPage() {
   if (!session?.user) redirect("/login");
   if (!isAdmin(session.user.role)) redirect("/admin");
 
-  const users = await prisma.user.findMany({
+  const rawUsers = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -25,6 +25,12 @@ export default async function UsersPage() {
       restaurantUsers: { include: { restaurant: { select: { id: true, name: true } } } },
     },
   });
+  // phone not in generated select — fetch separately
+  const phones = await prisma.$queryRawUnsafe<{ id: string; phone: string | null }[]>(
+    `SELECT id, phone FROM "User"`
+  );
+  const phoneMap = Object.fromEntries(phones.map(p => [p.id, p.phone]));
+  const users = rawUsers.map(u => ({ ...u, phone: phoneMap[u.id] ?? null }));
 
   const restaurants = await prisma.restaurant.findMany({
     where: { isActive: true },

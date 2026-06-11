@@ -63,7 +63,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data: updateData,
     select: { id: true, name: true, email: true, role: true, emailVerified: true, createdAt: true },
   });
-  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email, meta: { changed: Object.keys(updateData) }, ip: getIp(req) });
+  if (body.phone !== undefined) {
+    await prisma.$executeRawUnsafe(`UPDATE "User" SET phone=$1 WHERE id=$2`, body.phone || null, id);
+  }
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email, meta: { changed: [...Object.keys(updateData), ...(body.phone !== undefined ? ["phone"] : [])] }, ip: getIp(req) });
 
   if (body.email) {
     const otp = generateOtp();
