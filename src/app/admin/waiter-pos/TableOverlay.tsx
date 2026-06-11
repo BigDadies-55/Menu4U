@@ -118,18 +118,6 @@ export function TableOverlay({
     onClose();
   }
 
-  async function closeBill(payMethod: "cash" | "card" | "other" = "card") {
-    setClosing(true);
-    await fetch("/api/admin/orders/close-table", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restaurantId, tableNumber: tableNum, payMethod }),
-    });
-    setClosing(false);
-    setPayConfirm(false);
-    onStatusChange("free");
-    onClose();
-  }
-
   async function saveAllergens() {
     if (!orderId) return;
     setSavingAllergens(true);
@@ -212,7 +200,7 @@ export function TableOverlay({
             <>
               {loadingOrder && <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: 20 }}>טוען הזמנה...</div>}
 
-              {order && !billOpen && !payConfirm && (
+              {order && (
                 <>
                   {/* Order label */}
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", textAlign: "left", marginBottom: 8 }}>הזמנה #{order.orderNumber}</div>
@@ -292,10 +280,10 @@ export function TableOverlay({
                   {statusEditOpen && (
                     <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, padding: "12px 16px", marginBottom: 12 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 10 }}>שינוי סטטוס שולחן</div>
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        {(["reserved", "inactive", "free"] as const).map(s => (
-                          <button key={s} onClick={() => { onStatusChange(s); setStatusEditOpen(false); }} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-                            {{ reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                        {(["bill_requested", "reserved", "inactive", "free"] as const).map(s => (
+                          <button key={s} onClick={() => { onStatusChange(s); setStatusEditOpen(false); }} style={{ flex: 1, minWidth: 70, padding: "9px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                            {{ bill_requested: "🧾 מבקש חשבון", reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
                           </button>
                         ))}
                       </div>
@@ -321,41 +309,6 @@ export function TableOverlay({
                     </div>
                   )}
                 </>
-              )}
-
-              {/* ── Bill summary ── */}
-              {order && billOpen && !payConfirm && (
-                <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 8 }}>
-                  <div style={{ padding: "12px 16px", background: "#1a1612", color: "#fff" }}>
-                    <div style={{ fontSize: 11, color: "#aaa", marginBottom: 2 }}>חשבון שולחן {tableNum} · הזמנה #{order.orderNumber}</div>
-                    <div style={{ fontSize: 24, fontWeight: 900 }}>₪{billTotal.toFixed(2)}</div>
-                  </div>
-                  {activeItems.map((oi, i, arr) => (
-                    <div key={oi.id} style={{ padding: "9px 16px", borderBottom: i < arr.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                      <span style={{ fontWeight: 800 }}>₪{(oi.price * oi.quantity).toFixed(0)}</span>
-                      <span style={{ color: "#1a1612" }}>{oi.itemName} ×{oi.quantity}</span>
-                    </div>
-                  ))}
-                  <div style={{ padding: "11px 16px", background: "#f4f1ed", display: "flex", justifyContent: "space-between", fontWeight: 900, fontSize: 15 }}>
-                    <span>₪{billTotal.toFixed(2)}</span>
-                    <span>סה&quot;כ לתשלום</span>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Payment method selection ── */}
-              {payConfirm && (
-                <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 14, padding: "16px", marginBottom: 8, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#14532d", marginBottom: 4 }}>אישור תשלום — שולחן {tableNum}</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: "#1f5c3a", marginBottom: 8 }}>₪{billTotal.toFixed(2)}</div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {(["card", "cash", "other"] as const).map(m => (
-                      <button key={m} onClick={() => closeBill(m)} disabled={closing} style={{ flex: 1, padding: 12, borderRadius: 10, border: "1.5px solid #86efac", background: "#f0fdf4", fontSize: 12, fontWeight: 800, cursor: closing ? "default" : "pointer", color: "#1f5c3a", fontFamily: "inherit" }}>
-                        {closing ? "…" : { card: "💳 כרטיס", cash: "💵 מזומן", other: "📱 אחר" }[m]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               )}
 
               {/* Fallback: no order loaded */}
@@ -393,9 +346,9 @@ export function TableOverlay({
               <div style={{ marginBottom: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 8 }}>שינוי סטטוס:</div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {(["bill_requested", "reserved", "inactive", "free"] as const).map(s => (
-                    <button key={s} onClick={() => { onStatusChange(s); setStatusEditOpen(false); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit", minWidth: 70 }}>
-                      {{ bill_requested: "🧾 מבקש חשבון", reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
+                  {(["reserved", "inactive", "free"] as const).map(s => (
+                    <button key={s} onClick={() => { onStatusChange(s); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+                      {{ reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
                     </button>
                   ))}
                 </div>
