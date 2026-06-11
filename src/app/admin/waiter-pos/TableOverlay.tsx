@@ -290,7 +290,6 @@ export function TableOverlay({
                         <div key={oi.id} style={{ padding: "8px 14px", borderBottom: isLast ? undefined : "1px solid #f0ebe4", display: "flex", alignItems: "center", direction: "rtl", gap: 6, opacity: oi.isComped ? 0.6 : 1 }}>
                           {/* RTL start (physical right): course + name + allergens */}
                           <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, background: "#eff6ff", color: "#1d4ed8", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
                             <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600, textDecoration: oi.isComped ? "line-through" : "none" }}>{oi.itemName} × {oi.quantity}</span>
                             {allergyHit && <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 7px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
                           </div>
@@ -320,27 +319,40 @@ export function TableOverlay({
 
                     return (
                       <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
-                        {/* ── No-kitchen items first ── */}
+                        {/* ── No-kitchen items ── */}
                         {noKitchenItems.length > 0 && (
                           <>
-                            <div style={{ padding: "6px 14px", background: "#f0fdf4", borderBottom: "1px solid #d1fae5", display: "flex", alignItems: "center", gap: 6, direction: "rtl" }}>
-                              <span style={{ fontSize: 11, fontWeight: 800, color: "#15803d" }}>🍺 ללא מטבח</span>
+                            {(noKitchenItems.length > 0 && kitchenItems.length > 0) && <div style={{ height: 6, background: "#f4f1ed", borderTop: "1px solid #e8e2da", borderBottom: "1px solid #e8e2da" }} />}
+                            <div style={{ display: "flex", direction: "rtl" }}>
+                              <div style={{ writingMode: "vertical-rl", transform: "rotate(0deg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, letterSpacing: 2, padding: "10px 6px", flexShrink: 0, width: 28, borderLeft: "3px solid #f59e0b", color: "#92400e" }}>ללא מטבח</div>
+                              <div style={{ flex: 1 }}>
+                                {noKitchenItems.map((oi, i) => renderItem(oi, i === noKitchenItems.length - 1))}
+                              </div>
                             </div>
-                            {noKitchenItems.map((oi, i) => renderItem(oi, i === noKitchenItems.length - 1 && kitchenItems.length === 0))}
                           </>
                         )}
 
-                        {/* ── Kitchen items ── */}
-                        {kitchenItems.length > 0 && (
-                          <>
-                            {noKitchenItems.length > 0 && (
-                              <div style={{ padding: "6px 14px", background: "#fff7ed", borderBottom: "1px solid #fed7aa", borderTop: "1px solid #e8e2da", display: "flex", alignItems: "center", gap: 6, direction: "rtl" }}>
-                                <span style={{ fontSize: 11, fontWeight: 800, color: "#c2410c" }}>🍽️ מטבח</span>
-                              </div>
-                            )}
-                            {kitchenItems.map((oi, i) => renderItem(oi, i === kitchenItems.length - 1))}
-                          </>
-                        )}
+                        {/* ── Kitchen items grouped by course ── */}
+                        {(() => {
+                          const courses = Array.from(new Set(kitchenItems.map(i => i.course))).sort();
+                          const courseColors = ["#3b82f6","#22c55e","#a855f7","#f59e0b","#ef4444","#06b6d4"];
+                          const courseFg     = ["#1d4ed8","#166534","#7e22ce","#92400e","#b91c1c","#0e7490"];
+                          return courses.map((c, ci) => {
+                            const items = kitchenItems.filter(i => i.course === c);
+                            const isFirst = ci === 0;
+                            return (
+                              <React.Fragment key={c}>
+                                {(noKitchenItems.length > 0 || !isFirst) && <div style={{ height: 6, background: "#f4f1ed", borderTop: "1px solid #e8e2da", borderBottom: "1px solid #e8e2da" }} />}
+                                <div style={{ display: "flex", direction: "rtl" }}>
+                                  <div style={{ writingMode: "vertical-rl", transform: "rotate(0deg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, letterSpacing: 2, padding: "10px 6px", flexShrink: 0, width: 28, borderLeft: `3px solid ${courseColors[ci % courseColors.length]}`, color: courseFg[ci % courseFg.length] }}>{["I","II","III","IV","V","VI","VII","VIII"][c-1] ?? String(c)}</div>
+                                  <div style={{ flex: 1 }}>
+                                    {items.map((oi, i) => renderItem(oi, i === items.length - 1))}
+                                  </div>
+                                </div>
+                              </React.Fragment>
+                            );
+                          });
+                        })()}
 
                         {/* Total row — RTL: סה"כ on right, amount on left */}
                         <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center", direction: "rtl" }}>
