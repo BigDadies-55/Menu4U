@@ -259,15 +259,15 @@ export function TableOverlay({
                         <div key={oi.id} style={{ padding: "8px 14px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8 }}>
                           {/* Right side (RTL start): course number + item name + allergens + comped */}
                           <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, background: "#f5f3ff", color: "#7c3aed", borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
-                            <span style={{ fontSize: 13, color: "#1a1612", fontWeight: 600 }}>{oi.itemName} × {oi.quantity}</span>
-                            {allergyHit && <span style={{ fontSize: 9, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "1px 6px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
-                            {oi.isComped && <span style={{ fontSize: 9, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 99, padding: "1px 6px", flexShrink: 0 }}>🎁</span>}
+                            <span style={{ fontSize: 12, fontWeight: 700, background: "#f5f3ff", color: "#7c3aed", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
+                            <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600 }}>{oi.itemName} × {oi.quantity}</span>
+                            {allergyHit && <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 7px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
+                            {oi.isComped && <span style={{ fontSize: 10, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 99, padding: "2px 7px", flexShrink: 0 }}>🎁</span>}
                           </div>
                           {/* Left side (RTL end): status + price + delete */}
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap" }}>{si.label}</span>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612", minWidth: 36, textAlign: "left" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
+                            <span style={{ fontSize: 11, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "3px 9px", whiteSpace: "nowrap" }}>{si.label}</span>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1612", minWidth: 36, textAlign: "left" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
                             {(oi.heldUntilFired || !oi.firedAt) ? (
                               <button onClick={() => removeItem(oi.id)} disabled={removingItem === oi.id} title="הסר פריט"
                                 style={{ width: 26, height: 26, borderRadius: 99, border: "1.5px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>
@@ -451,14 +451,19 @@ export function TableOverlay({
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={() => router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`)}
-                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
+                  style={{ flex: 2, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
                   💳 סגור חשבון
                 </button>
+                <button
+                  onClick={() => { onStatusChange("bill_requested"); }}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c2410c", fontFamily: "inherit" }}>
+                  🧾 מבקש
+                </button>
                 <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
-                  🔄 שנה סטטוס
+                  🔄 שנה
                 </button>
                 <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
-                  ⚠️ אלרגיות
+                  ⚠️
                 </button>
               </div>
             </>
