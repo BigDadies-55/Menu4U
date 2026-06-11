@@ -79,7 +79,8 @@ export const ModelName = {
   LoyaltyTransaction: 'LoyaltyTransaction',
   LoyaltyCoupon: 'LoyaltyCoupon',
   WaiterStation: 'WaiterStation',
-  LoyaltySettings: 'LoyaltySettings'
+  LoyaltySettings: 'LoyaltySettings',
+  PushSubscription: 'PushSubscription'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -562,6 +563,19 @@ export const LoyaltySettingsScalarFieldEnum = {
 } as const
 
 export type LoyaltySettingsScalarFieldEnum = (typeof LoyaltySettingsScalarFieldEnum)[keyof typeof LoyaltySettingsScalarFieldEnum]
+
+
+export const PushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  events: 'events',
+  createdAt: 'createdAt'
+} as const
+
+export type PushSubscriptionScalarFieldEnum = (typeof PushSubscriptionScalarFieldEnum)[keyof typeof PushSubscriptionScalarFieldEnum]
 
 
 export const SortOrder = {

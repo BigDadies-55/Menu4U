@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sseNotify } from "@/lib/sse";
 import { logAudit, getIp } from "@/lib/audit";
 import { verifyManagerToken } from "@/lib/verifyManagerToken";
+import { notifyRestaurant } from "@/lib/push";
 import { NextResponse } from "next/server";
 
 // PATCH — void (cancel) a sent item. Requires managerToken.
@@ -52,5 +53,11 @@ export async function PATCH(
   });
 
   sseNotify(orderItem.order.restaurantId);
+  notifyRestaurant(orderItem.order.restaurantId, "ITEM_VOID", {
+    title: "⚠️ פריט בוטל (VOID)",
+    body: `${orderItem.item.name} ×${orderItem.quantity} — שולחן ${orderItem.order.tableNumber ?? "—"}${reason ? ` · ${reason}` : ""}`,
+    url: "/admin/orders",
+    tag: `void-${itemId}`,
+  });
   return NextResponse.json({ ok: true });
 }

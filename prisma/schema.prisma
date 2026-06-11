@@ -59,6 +59,7 @@ model User {
   restaurantUsers  RestaurantUser[]
   passwordHistory  PasswordHistory[]
   waiterStations   WaiterStation[]
+  pushSubscriptions PushSubscription[]
 }
 
 model PasswordHistory {
@@ -502,4 +503,18 @@ model LoyaltySettings {
   maxDailyPointsAdjust Int    @default(0)
 
   restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  events    String[] @default(["ORDER_CREATED","COURSE_DONE","TABLE_PAYMENT","ITEM_VOID"])
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
 }

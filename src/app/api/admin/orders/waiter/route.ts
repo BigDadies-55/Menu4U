@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sseNotify } from "@/lib/sse";
+import { notifyRestaurant } from "@/lib/push";
 import { NextResponse } from "next/server";
 import { logAudit, getIp } from "@/lib/audit";
 
@@ -135,5 +136,11 @@ export async function POST(req: Request) {
   });
 
   sseNotify(restaurantId);
+  notifyRestaurant(restaurantId, "ORDER_CREATED", {
+    title: "🍽️ הזמנה חדשה",
+    body: `שולחן ${tableNumber} · ${validItems.length} פריטים · ₪${totalAmount.toFixed(0)}`,
+    url: "/admin/orders",
+    tag: `order-${order.id}`,
+  });
   return NextResponse.json(order, { status: 201 });
 }

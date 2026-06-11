@@ -162,6 +162,19 @@ const sqls = [
   `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "allergens" TEXT[] DEFAULT '{}';`,
   // manager PIN for void/comp
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "managerPin" TEXT;`,
+  // Push subscriptions
+  `CREATE TABLE IF NOT EXISTS "PushSubscription" (
+    "id"        TEXT NOT NULL,
+    "userId"    TEXT NOT NULL,
+    "endpoint"  TEXT NOT NULL,
+    "p256dh"    TEXT NOT NULL,
+    "auth"      TEXT NOT NULL,
+    "events"    TEXT[] NOT NULL DEFAULT ARRAY['ORDER_CREATED','COURSE_DONE','TABLE_PAYMENT','ITEM_VOID']::TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PushSubscription_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "PushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "PushSubscription_userId_endpoint_key" ON "PushSubscription"("userId","endpoint");`,
 ];
 
 async function run() {

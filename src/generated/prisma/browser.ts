@@ -162,3 +162,8 @@ export type WaiterStation = Prisma.WaiterStationModel
  * 
  */
 export type LoyaltySettings = Prisma.LoyaltySettingsModel
+/**
+ * Model PushSubscription
+ * 
+ */
+export type PushSubscription = Prisma.PushSubscriptionModel

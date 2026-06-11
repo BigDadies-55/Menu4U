@@ -357,6 +357,7 @@ export type UserWhereInput = {
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
   passwordHistory?: Prisma.PasswordHistoryListRelationFilter
   waiterStations?: Prisma.WaiterStationListRelationFilter
+  pushSubscriptions?: Prisma.PushSubscriptionListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -387,6 +388,7 @@ export type UserOrderByWithRelationInput = {
   restaurantUsers?: Prisma.RestaurantUserOrderByRelationAggregateInput
   passwordHistory?: Prisma.PasswordHistoryOrderByRelationAggregateInput
   waiterStations?: Prisma.WaiterStationOrderByRelationAggregateInput
+  pushSubscriptions?: Prisma.PushSubscriptionOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -420,6 +422,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
   passwordHistory?: Prisma.PasswordHistoryListRelationFilter
   waiterStations?: Prisma.WaiterStationListRelationFilter
+  pushSubscriptions?: Prisma.PushSubscriptionListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -508,6 +511,7 @@ export type UserCreateInput = {
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -538,6 +542,7 @@ export type UserUncheckedCreateInput = {
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -568,6 +573,7 @@ export type UserUpdateInput = {
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -598,6 +604,7 @@ export type UserUncheckedUpdateInput = {
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -865,6 +872,20 @@ export type UserUpdateOneRequiredWithoutWaiterStationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWaiterStationsInput, Prisma.UserUpdateWithoutWaiterStationsInput>, Prisma.UserUncheckedUpdateWithoutWaiterStationsInput>
 }
 
+export type UserCreateNestedOneWithoutPushSubscriptionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPushSubscriptionsInput, Prisma.UserUncheckedCreateWithoutPushSubscriptionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPushSubscriptionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPushSubscriptionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPushSubscriptionsInput, Prisma.UserUncheckedCreateWithoutPushSubscriptionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPushSubscriptionsInput
+  upsert?: Prisma.UserUpsertWithoutPushSubscriptionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPushSubscriptionsInput, Prisma.UserUpdateWithoutPushSubscriptionsInput>, Prisma.UserUncheckedUpdateWithoutPushSubscriptionsInput>
+}
+
 export type UserCreateWithoutPasswordHistoryInput = {
   id?: string
   name?: string | null
@@ -892,6 +913,7 @@ export type UserCreateWithoutPasswordHistoryInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPasswordHistoryInput = {
@@ -921,6 +943,7 @@ export type UserUncheckedCreateWithoutPasswordHistoryInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPasswordHistoryInput = {
@@ -966,6 +989,7 @@ export type UserUpdateWithoutPasswordHistoryInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPasswordHistoryInput = {
@@ -995,6 +1019,7 @@ export type UserUncheckedUpdateWithoutPasswordHistoryInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAccountsInput = {
@@ -1024,6 +1049,7 @@ export type UserCreateWithoutAccountsInput = {
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -1053,6 +1079,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -1098,6 +1125,7 @@ export type UserUpdateWithoutAccountsInput = {
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -1127,6 +1155,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -1156,6 +1185,7 @@ export type UserCreateWithoutSessionsInput = {
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -1185,6 +1215,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1230,6 +1261,7 @@ export type UserUpdateWithoutSessionsInput = {
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1259,6 +1291,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRestaurantUsersInput = {
@@ -1288,6 +1321,7 @@ export type UserCreateWithoutRestaurantUsersInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRestaurantUsersInput = {
@@ -1317,6 +1351,7 @@ export type UserUncheckedCreateWithoutRestaurantUsersInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
   waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRestaurantUsersInput = {
@@ -1362,6 +1397,7 @@ export type UserUpdateWithoutRestaurantUsersInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRestaurantUsersInput = {
@@ -1391,6 +1427,7 @@ export type UserUncheckedUpdateWithoutRestaurantUsersInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
   waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWaiterStationsInput = {
@@ -1420,6 +1457,7 @@ export type UserCreateWithoutWaiterStationsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWaiterStationsInput = {
@@ -1449,6 +1487,7 @@ export type UserUncheckedCreateWithoutWaiterStationsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWaiterStationsInput = {
@@ -1494,6 +1533,7 @@ export type UserUpdateWithoutWaiterStationsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWaiterStationsInput = {
@@ -1523,6 +1563,143 @@ export type UserUncheckedUpdateWithoutWaiterStationsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPushSubscriptionsInput = {
+  id?: string
+  name?: string | null
+  email: string
+  emailVerified?: Date | string | null
+  image?: string | null
+  password?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  mustChangePassword?: boolean
+  passwordChangedAt?: Date | string | null
+  lastActivityAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  termsAccepted?: boolean
+  termsAcceptedAt?: Date | string | null
+  termsAcceptedIp?: string | null
+  termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
+  managerPin?: string | null
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
+  passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
+  id?: string
+  name?: string | null
+  email: string
+  emailVerified?: Date | string | null
+  image?: string | null
+  password?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  mustChangePassword?: boolean
+  passwordChangedAt?: Date | string | null
+  lastActivityAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  termsAccepted?: boolean
+  termsAcceptedAt?: Date | string | null
+  termsAcceptedIp?: string | null
+  termsAcceptedUserAgent?: string | null
+  failedLoginAttempts?: number
+  lockedUntil?: Date | string | null
+  totpSecret?: string | null
+  totpEnabled?: boolean
+  managerPin?: string | null
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
+  passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
+  waiterStations?: Prisma.WaiterStationUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPushSubscriptionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPushSubscriptionsInput, Prisma.UserUncheckedCreateWithoutPushSubscriptionsInput>
+}
+
+export type UserUpsertWithoutPushSubscriptionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPushSubscriptionsInput, Prisma.UserUncheckedUpdateWithoutPushSubscriptionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPushSubscriptionsInput, Prisma.UserUncheckedCreateWithoutPushSubscriptionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPushSubscriptionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPushSubscriptionsInput, Prisma.UserUncheckedUpdateWithoutPushSubscriptionsInput>
+}
+
+export type UserUpdateWithoutPushSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastActivityAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
+  passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastActivityAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  termsAcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termsAcceptedIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  termsAcceptedUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
+  passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
+  waiterStations?: Prisma.WaiterStationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -1536,6 +1713,7 @@ export type UserCountOutputType = {
   restaurantUsers: number
   passwordHistory: number
   waiterStations: number
+  pushSubscriptions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1544,6 +1722,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   restaurantUsers?: boolean | UserCountOutputTypeCountRestaurantUsersArgs
   passwordHistory?: boolean | UserCountOutputTypeCountPasswordHistoryArgs
   waiterStations?: boolean | UserCountOutputTypeCountWaiterStationsArgs
+  pushSubscriptions?: boolean | UserCountOutputTypeCountPushSubscriptionsArgs
 }
 
 /**
@@ -1591,6 +1770,13 @@ export type UserCountOutputTypeCountWaiterStationsArgs<ExtArgs extends runtime.T
   where?: Prisma.WaiterStationWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPushSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PushSubscriptionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1620,6 +1806,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   restaurantUsers?: boolean | Prisma.User$restaurantUsersArgs<ExtArgs>
   passwordHistory?: boolean | Prisma.User$passwordHistoryArgs<ExtArgs>
   waiterStations?: boolean | Prisma.User$waiterStationsArgs<ExtArgs>
+  pushSubscriptions?: boolean | Prisma.User$pushSubscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1705,6 +1892,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   restaurantUsers?: boolean | Prisma.User$restaurantUsersArgs<ExtArgs>
   passwordHistory?: boolean | Prisma.User$passwordHistoryArgs<ExtArgs>
   waiterStations?: boolean | Prisma.User$waiterStationsArgs<ExtArgs>
+  pushSubscriptions?: boolean | Prisma.User$pushSubscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1718,6 +1906,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     restaurantUsers: Prisma.$RestaurantUserPayload<ExtArgs>[]
     passwordHistory: Prisma.$PasswordHistoryPayload<ExtArgs>[]
     waiterStations: Prisma.$WaiterStationPayload<ExtArgs>[]
+    pushSubscriptions: Prisma.$PushSubscriptionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2141,6 +2330,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   restaurantUsers<T extends Prisma.User$restaurantUsersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$restaurantUsersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RestaurantUserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   passwordHistory<T extends Prisma.User$passwordHistoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passwordHistoryArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordHistoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   waiterStations<T extends Prisma.User$waiterStationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$waiterStationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WaiterStationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pushSubscriptions<T extends Prisma.User$pushSubscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pushSubscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PushSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2702,6 +2892,30 @@ export type User$waiterStationsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.WaiterStationScalarFieldEnum | Prisma.WaiterStationScalarFieldEnum[]
+}
+
+/**
+ * User.pushSubscriptions
+ */
+export type User$pushSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PushSubscription
+   */
+  select?: Prisma.PushSubscriptionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PushSubscription
+   */
+  omit?: Prisma.PushSubscriptionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PushSubscriptionInclude<ExtArgs> | null
+  where?: Prisma.PushSubscriptionWhereInput
+  orderBy?: Prisma.PushSubscriptionOrderByWithRelationInput | Prisma.PushSubscriptionOrderByWithRelationInput[]
+  cursor?: Prisma.PushSubscriptionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PushSubscriptionScalarFieldEnum | Prisma.PushSubscriptionScalarFieldEnum[]
 }
 
 /**

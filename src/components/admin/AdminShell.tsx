@@ -3,6 +3,7 @@ import { T } from "@/lib/ui";
 import { useState } from "react";
 import Sidebar, { useFavorites } from "./Sidebar";
 import PageTitle from "./PageTitle";
+import PushNotificationToggle from "@/components/PushNotificationToggle";
 import type { Role } from "@/generated/prisma/client";
 
 interface Props {
@@ -97,6 +98,11 @@ export default function AdminShell({
         }}
       >
         <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
+
+        {/* Top action bar — push bell */}
+        <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", padding: "8px 18px 0", gap: 8 }}>
+          <PushNotificationToggle />
+        </div>
 
         <div className="flex-1">
           {children}
