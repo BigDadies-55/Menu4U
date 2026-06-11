@@ -220,18 +220,20 @@ export function TableOverlay({
                       };
                       const si = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
                       return (
-                        <div key={oi.id} style={{ padding: "10px 16px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>{si.label}</span>
-                            <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f3ff", color: "#7c3aed", borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>ק{oi.course}</span>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div key={oi.id} style={{ padding: "10px 16px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
+                          {/* Right side (RTL start): item name + allergens + comped */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 13, color: "#1a1612" }}>{oi.itemName} × {oi.quantity}</span>
                             {allergyHit && (
                               <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 8px", border: "1px solid #f5c4bc" }}>⚠️ {allergyLabel}</span>
                             )}
                             {oi.isComped && <span style={{ fontSize: 10, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 99, padding: "2px 8px" }}>🎁 חינם</span>}
-                            <span style={{ fontSize: 13, color: "#1a1612" }}>{oi.itemName} × {oi.quantity}</span>
+                          </div>
+                          {/* Left side (RTL end): price + status + course */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>{si.label}</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f3ff", color: "#7c3aed", borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>ק{oi.course}</span>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
                           </div>
                         </div>
                       );
