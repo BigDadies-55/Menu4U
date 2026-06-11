@@ -499,6 +499,28 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [seedingAllergens, setSeedingAllergens] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
+
+  async function handleSeedAllergens() {
+    if (!selectedRestaurant) return;
+    setSeedingAllergens(true);
+    setSeedResult(null);
+    try {
+      const res = await fetch("/api/admin/menu/seed-allergens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: selectedRestaurant.id }),
+      });
+      const data = await res.json();
+      setSeedResult(`עודכנו ${data.updated} מנות`);
+    } catch {
+      setSeedResult("שגיאה");
+    } finally {
+      setSeedingAllergens(false);
+    }
+  }
+
   // Import / Export state
   const [showImportModal, setShowImportModal] = useState(false);
   const [importData, setImportData] = useState<ImportFile | null>(null);
@@ -1094,6 +1116,18 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             >
               📥 ייבא תפריט
             </button>
+
+            {/* Allergen auto-fill */}
+            <button
+              onClick={handleSeedAllergens}
+              disabled={seedingAllergens || !selectedRestaurant}
+              className="flex items-center gap-1.5 disabled:opacity-50"
+              style={{ background: T.raised, border: "1px solid #f59e0b", color: "#d97706", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
+              title="מלא אוטומטית אלרגנים לפי שמות המנות"
+            >
+              {seedingAllergens ? "⏳ מעדכן..." : "⚠️ אלרגנים אוטו"}
+            </button>
+            {seedResult && <span style={{ fontSize: 12, color: "#d97706", fontWeight: 600 }}>{seedResult}</span>}
 
             {/* Sample dropdown */}
             <div className="relative">

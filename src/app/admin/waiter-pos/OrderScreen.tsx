@@ -238,6 +238,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
               const qty    = cartQtyForItem(item.id);
               const warn   = hasAllergy(item);
               const wLabel = allergyLabel(item);
+              const safe   = tableAllergens.length > 0 && !warn;
               // find the last cart entry for this item (to remove one at a time)
               const lastKey = [...cart].reverse().find(i => i.itemId === item.id)?.key;
               return (
@@ -253,6 +254,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                   <div style={{ height: 90, background: "#f4f1ed", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative", borderRadius: "14px 14px 0 0", overflow: "hidden", flexShrink: 0 }}>
                     {item.image ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🍽️"}
                     {warn && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13 }}>⚠️</span>}
+                    {safe && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13, color: "#16a34a", textShadow: "0 0 4px #fff" }}>★</span>}
                   </div>
                   <div style={{ padding: "7px 9px 9px" }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1612", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
@@ -260,6 +262,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{Number(item.price).toFixed(0)}</span>
                       {warn && <span style={{ fontSize: 9, fontWeight: 800, color: "#8b2e22", background: "#fdf2f0", borderRadius: 5, padding: "1px 5px" }}>{wLabel}</span>}
+                      {safe && <span style={{ fontSize: 9, fontWeight: 800, color: "#15803d", background: "#f0fdf4", borderRadius: 5, padding: "1px 5px" }}>★ מותר</span>}
                     </div>
                   </div>
                 </div>
