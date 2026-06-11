@@ -73,7 +73,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
       items: {
         orderBy: [{ course: "asc" }],
         include: {
-          item: { select: { name: true, allergens: true } },
+          item: { select: { name: true, allergens: true, category: { select: { autoReady: true } } } },
           modifiers: true,
         },
       },
@@ -118,6 +118,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
       servedAt: oi.servedAt,
       isComped: oi.isComped,
       voidedAt: oi.voidedAt,
+      noKitchen: oi.item.category?.autoReady ?? false,
       modifiers: oi.modifiers ?? [],
     })),
   });

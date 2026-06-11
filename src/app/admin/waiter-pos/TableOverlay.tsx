@@ -22,6 +22,7 @@ export type OrderItemDetail = {
   isComped: boolean;
   voidedAt?: string | null;
   servedAt?: string | null;
+  noKitchen?: boolean;
 };
 
 export type OrderDetail = {
@@ -196,6 +197,8 @@ export function TableOverlay({
       if (aDone !== bDone) return aDone - bDone;
       return a.course - b.course;
     });
+  const noKitchenItems = activeItems.filter(i => i.noKitchen);
+  const kitchenItems   = activeItems.filter(i => !i.noKitchen);
   const billTotal    = order?.totalAmount ?? totalAmount;
   const allergyHits  = (order?.tableAllergens ?? []);
 
@@ -267,30 +270,29 @@ export function TableOverlay({
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", textAlign: "left", marginBottom: 8 }}>הזמנה #{order.orderNumber}</div>
 
                   {/* Items card */}
-                  <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
-                    {activeItems.map((oi, i) => {
-                      const allergyHit = oi.itemAllergens.some(a => allergyHits.includes(a));
+                  {(() => {
+                    const itemStatusMap: Record<string, { label: string; bg: string; color: string }> = {
+                      PENDING:   { label: "ממתין", bg: "#f3f4f6", color: "#6b7280" },
+                      PREPARING: { label: "בהכנה", bg: "#fff7ed", color: "#c2410c" },
+                      DONE:      { label: "מוכן",  bg: "#f0fdf4", color: "#15803d" },
+                      SERVED:    { label: "הוגש",  bg: "#eff6ff", color: "#1d4ed8" },
+                      CANCELLED: { label: "בוטל",  bg: "#fef2f2", color: "#dc2626" },
+                    };
+
+                    const renderItem = (oi: typeof activeItems[0], isLast: boolean) => {
+                      const allergyHit   = oi.itemAllergens.some(a => allergyHits.includes(a));
                       const allergyLabel = oi.itemAllergens.filter(a => allergyHits.includes(a))
                         .map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
-                      const itemStatusMap: Record<string, { label: string; bg: string; color: string }> = {
-                        PENDING:    { label: "ממתין",  bg: "#f3f4f6", color: "#6b7280" },
-                        PREPARING:  { label: "בהכנה",  bg: "#fff7ed", color: "#c2410c" },
-                        DONE:       { label: "מוכן",   bg: "#f0fdf4", color: "#15803d" },
-                        SERVED:     { label: "הוגש",   bg: "#eff6ff", color: "#1d4ed8" },
-                        CANCELLED:  { label: "בוטל",   bg: "#fef2f2", color: "#dc2626" },
-                      };
-                      const si = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
-                      const isServed  = !!(oi.servedAt) || oi.itemStatus === "SERVED";
-                      const canServe  = !isServed && !oi.isComped && oi.itemStatus !== "CANCELLED";
+                      const si       = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
+                      const isServed = !!(oi.servedAt) || oi.itemStatus === "SERVED";
+                      const canServe = !isServed && !oi.isComped && oi.itemStatus !== "CANCELLED";
                       return (
-                        <div key={oi.id} style={{ padding: "8px 14px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8, opacity: oi.isComped ? 0.6 : 1 }}>
-                          {/* Right side (RTL start): course number + item name + allergens */}
+                        <div key={oi.id} style={{ padding: "8px 14px", borderBottom: isLast ? undefined : "1px solid #f0ebe4", display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8, opacity: oi.isComped ? 0.6 : 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
                             <span style={{ fontSize: 12, fontWeight: 700, background: "#f5f3ff", color: "#7c3aed", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{oi.course}</span>
                             <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600, textDecoration: oi.isComped ? "line-through" : "none" }}>{oi.itemName} × {oi.quantity}</span>
                             {allergyHit && <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 7px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
                           </div>
-                          {/* Left side (RTL end): status + price + הגש + X */}
                           <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "3px 9px", whiteSpace: "nowrap" }}>{si.label}</span>
                             <div style={{ fontSize: 14, fontWeight: 800, color: oi.isComped ? "#9ca3af" : "#1a1612", minWidth: 36, textAlign: "left", textDecoration: oi.isComped ? "line-through" : "none" }}>
@@ -309,13 +311,40 @@ export function TableOverlay({
                           </div>
                         </div>
                       );
-                    })}
-                    {/* Total row */}
-                    <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ fontSize: 15, fontWeight: 900, color: "#1a1612" }}>₪{billTotal.toFixed(0)}</div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1612" }}>סה&quot;כ</div>
-                    </div>
-                  </div>
+                    };
+
+                    return (
+                      <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
+                        {/* ── No-kitchen items first ── */}
+                        {noKitchenItems.length > 0 && (
+                          <>
+                            <div style={{ padding: "6px 14px", background: "#f0fdf4", borderBottom: "1px solid #d1fae5", display: "flex", alignItems: "center", gap: 6, direction: "rtl" }}>
+                              <span style={{ fontSize: 11, fontWeight: 800, color: "#15803d" }}>🍺 ללא מטבח</span>
+                            </div>
+                            {noKitchenItems.map((oi, i) => renderItem(oi, i === noKitchenItems.length - 1 && kitchenItems.length === 0))}
+                          </>
+                        )}
+
+                        {/* ── Kitchen items ── */}
+                        {kitchenItems.length > 0 && (
+                          <>
+                            {noKitchenItems.length > 0 && (
+                              <div style={{ padding: "6px 14px", background: "#fff7ed", borderBottom: "1px solid #fed7aa", borderTop: "1px solid #e8e2da", display: "flex", alignItems: "center", gap: 6, direction: "rtl" }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: "#c2410c" }}>🍽️ מטבח</span>
+                              </div>
+                            )}
+                            {kitchenItems.map((oi, i) => renderItem(oi, i === kitchenItems.length - 1))}
+                          </>
+                        )}
+
+                        {/* Total row */}
+                        <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "#1a1612" }}>₪{billTotal.toFixed(0)}</div>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1612" }}>סה&quot;כ</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Course management */}
                   {courseNums.length > 0 && (
