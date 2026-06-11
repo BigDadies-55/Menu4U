@@ -48,11 +48,12 @@ const RULES: Array<{ match: RegExp; allergens: string[] }> = [
   { match: /לופין|קמח לופין/i, allergens: ["LUPIN"] },
 ];
 
-function inferAllergens(name: string, existing: string[]): string[] {
+function inferAllergens(name: string, description: string | null, existing: string[]): string[] {
   if (existing.length > 0) return existing; // already set — don't overwrite
+  const text = `${name} ${description ?? ""}`;
   const set = new Set<string>();
   for (const rule of RULES) {
-    if (rule.match.test(name)) {
+    if (rule.match.test(text)) {
       rule.allergens.forEach(a => set.add(a));
     }
   }
@@ -97,7 +98,7 @@ export async function POST(req: Request) {
 
   const items = await prisma.item.findMany({
     where: restaurantId ? { category: { menu: { restaurantId } } } : {},
-    select: { id: true, name: true, allergens: true },
+    select: { id: true, name: true, description: true, allergens: true },
   });
 
   let updated = 0;
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
     );
     const newAllergens = exactKey
       ? EXACT[exactKey]
-      : inferAllergens(item.name, item.allergens);
+      : inferAllergens(item.name, item.description ?? null, item.allergens);
 
     if (newAllergens.length > 0 &&
         JSON.stringify([...newAllergens].sort()) !== JSON.stringify([...item.allergens].sort())) {
