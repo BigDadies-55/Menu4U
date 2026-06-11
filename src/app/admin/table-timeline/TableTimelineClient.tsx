@@ -61,10 +61,23 @@ function fmtDuration(mins: number) {
   return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")} שע'`;
 }
 
+function toLocalDatetimeInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function defaultFrom(days: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
 export default function TableTimelineClient({ restaurants }: { restaurants: Restaurant[] }) {
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [tableNumber,  setTableNumber]  = useState<string>("");
   const [days,         setDays]         = useState(7);
+  const [fromDt,       setFromDt]       = useState(() => toLocalDatetimeInput(defaultFrom(7)));
+  const [toDt,         setToDt]         = useState(() => toLocalDatetimeInput(new Date()));
   const [data,         setData]         = useState<ApiResponse | null>(null);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState("");
@@ -93,7 +106,12 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
     setLoading(true);
     setError("");
     try {
-      const params = new URLSearchParams({ restaurantId, days: String(days) });
+      const params = new URLSearchParams({
+        restaurantId,
+        days: String(days),
+        from: new Date(fromDt).toISOString(),
+        to:   new Date(toDt).toISOString(),
+      });
       if (tableNumber) params.set("tableNumber", tableNumber);
       const res = await fetch(`/api/admin/orders/table-timeline?${params}`);
       if (!res.ok) throw new Error(await res.text());
@@ -103,19 +121,23 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
     } finally {
       setLoading(false);
     }
-  }, [restaurantId, tableNumber, days]);
+  }, [restaurantId, tableNumber, days, fromDt, toDt]);
 
   const loadFraud = useCallback(async () => {
     if (!restaurantId) return;
     setFraudLoading(true);
     try {
-      const params = new URLSearchParams({ restaurantId, days: String(days) });
+      const params = new URLSearchParams({
+        restaurantId, days: String(days),
+        from: new Date(fromDt).toISOString(),
+        to:   new Date(toDt).toISOString(),
+      });
       const res = await fetch(`/api/admin/fraud-detection?${params}`);
       if (res.ok) setFraudData(await res.json());
     } catch { /* ignore */ } finally {
       setFraudLoading(false);
     }
-  }, [restaurantId, days]);
+  }, [restaurantId, days, fromDt, toDt]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (viewTab === "fraud") loadFraud(); }, [viewTab, loadFraud]);
@@ -138,51 +160,80 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
 
       {/* ── Filters ── */}
       <div style={{
-        display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
+        display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end",
         marginBottom: 24, padding: "14px 16px",
         background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg,
       }}>
+        {/* Restaurant selector */}
         {restaurants.length > 1 && (
-          <select
-            value={restaurantId}
-            onChange={e => { setRestaurantId(e.target.value); setTableNumber(""); }}
-            style={{ ...selectStyle }}
-          >
-            {restaurants.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>מסעדה</label>
+            <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); setTableNumber(""); }} style={{ ...selectStyle }}>
+              {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </div>
         )}
 
-        <select
-          value={tableNumber}
-          onChange={e => setTableNumber(e.target.value)}
-          style={{ ...selectStyle }}
-        >
-          <option value="">כל השולחנות</option>
-          {(data?.tableNumbers ?? []).map(t => (
-            <option key={t} value={t}>שולחן {t}</option>
-          ))}
-        </select>
+        {/* Table selector */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>שולחן</label>
+          <select value={tableNumber} onChange={e => setTableNumber(e.target.value)} style={{ ...selectStyle }}>
+            <option value="">כל השולחנות</option>
+            {(data?.tableNumbers ?? []).map(t => <option key={t} value={t}>שולחן {t}</option>)}
+          </select>
+        </div>
 
-        <select
-          value={days}
-          onChange={e => setDays(Number(e.target.value))}
-          style={{ ...selectStyle }}
-        >
-          <option value={1}>היום</option>
-          <option value={3}>3 ימים</option>
-          <option value={7}>שבוע</option>
-          <option value={14}>שבועיים</option>
-          <option value={30}>30 ימים</option>
-        </select>
+        {/* Quick-range shortcuts */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>טווח מהיר</label>
+          <div style={{ display: "flex", gap: 4 }}>
+            {([
+              [1, "היום"], [3, "3י׳"], [7, "שבוע"], [14, "2 שב׳"], [30, "30י׳"],
+            ] as [number, string][]).map(([d, lbl]) => (
+              <button key={d} onClick={() => {
+                setDays(d);
+                const from = defaultFrom(d);
+                const to   = new Date();
+                setFromDt(toLocalDatetimeInput(from));
+                setToDt(toLocalDatetimeInput(to));
+              }} style={{
+                padding: "5px 10px", borderRadius: T.rMd, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                background: days === d ? T.gold : T.panel,
+                color: days === d ? T.text : T.sub,
+                border: `1px solid ${days === d ? T.gold + "88" : T.border}`,
+              }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <button onClick={load} style={{ ...btn("ghost", "sm"), marginRight: "auto" }}>
-          🔄 רענן
+        {/* Date-time range */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>מ-</label>
+          <input
+            type="datetime-local"
+            value={fromDt}
+            onChange={e => { setFromDt(e.target.value); setDays(0); }}
+            style={{ ...selectStyle, fontSize: 12 }}
+          />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>עד-</label>
+          <input
+            type="datetime-local"
+            value={toDt}
+            onChange={e => { setToDt(e.target.value); setDays(0); }}
+            style={{ ...selectStyle, fontSize: 12 }}
+          />
+        </div>
+
+        <button onClick={() => { load(); if (viewTab === "fraud") loadFraud(); }} style={{ ...btn("ghost", "sm"), alignSelf: "flex-end" }}>
+          🔍 חפש
         </button>
 
-        {loading && <span style={{ fontSize: T.fsm, color: T.muted }}>טוען...</span>}
-        {error   && <span style={{ fontSize: T.fsm, color: T.red }}>{error}</span>}
+        {loading && <span style={{ fontSize: T.fsm, color: T.muted, alignSelf: "flex-end" }}>טוען...</span>}
+        {error   && <span style={{ fontSize: T.fsm, color: T.red, alignSelf: "flex-end" }}>{error}</span>}
       </div>
 
       {/* ── Insight cards ── */}

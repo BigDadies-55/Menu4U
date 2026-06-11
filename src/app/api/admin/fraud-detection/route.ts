@@ -19,7 +19,10 @@ export async function GET(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const since = new Date(Date.now() - days * 86_400_000);
+  const fromParam = searchParams.get("from");
+  const toParam   = searchParams.get("to");
+  const since = fromParam ? new Date(fromParam) : new Date(Date.now() - days * 86_400_000);
+  const until = toParam   ? new Date(toParam)   : new Date();
 
   // Fetch all orders with items (void/comp columns added via ensureColumns pattern)
   type ItemRow = {
@@ -49,10 +52,10 @@ export async function GET(req: Request) {
      FROM "OrderItem" oi
      JOIN "Order" o ON o.id = oi."orderId"
      WHERE o."restaurantId" = $1
-       AND o."createdAt" >= $2
+       AND o."createdAt" >= $2 AND o."createdAt" <= $3
        AND (oi."voidedAt" IS NOT NULL OR COALESCE(oi."isComped", false) = true)
      ORDER BY o."createdAt" DESC`,
-    restaurantId, since
+    restaurantId, since, until
   );
 
   // Collect user IDs and fetch names
@@ -70,10 +73,10 @@ export async function GET(req: Request) {
   const totals = await prisma.$queryRawUnsafe<TotalRow[]>(
     `SELECT "createdByUserId", COUNT(*) AS "orderCount", COALESCE(SUM("totalAmount"),0) AS "totalRevenue"
      FROM "Order"
-     WHERE "restaurantId" = $1 AND "createdAt" >= $2
+     WHERE "restaurantId" = $1 AND "createdAt" >= $2 AND "createdAt" <= $3
        AND "status" NOT IN ('CANCELLED')
      GROUP BY "createdByUserId"`,
-    restaurantId, since
+    restaurantId, since, until
   );
 
   // Build per-waiter stats
