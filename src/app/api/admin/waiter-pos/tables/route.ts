@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       updatedAt: true,
       coversCount: true,
       totalAmount: true,
-      items: { select: { itemStatus: true, voidedAt: true } },
+      items: { select: { itemStatus: true, voidedAt: true, course: true, heldUntilFired: true, firedAt: true } },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -154,6 +154,13 @@ export async function GET(req: Request) {
       minutesSinceLastOrder,
       readyItemCount: activeOrders.reduce((sum, o) =>
         sum + o.items.filter(i => i.itemStatus === "DONE" && !i.voidedAt).length, 0),
+      heldCourseNums: Array.from(new Set(
+        activeOrders.flatMap(o =>
+          o.items
+            .filter(i => i.heldUntilFired && !i.firedAt && !i.voidedAt && i.itemStatus !== "CANCELLED")
+            .map(i => i.course)
+        )
+      )).sort() as number[],
     };
   });
 

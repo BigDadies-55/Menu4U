@@ -81,6 +81,7 @@ export function TableOverlay({
   const [firingCourse, setFiringCourse] = useState<number | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferring, setTransferring] = useState(false);
+  const [removingItem, setRemovingItem] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
@@ -93,6 +94,17 @@ export function TableOverlay({
 
   // Courses derived from order items
   const courseNums = Array.from(new Set((order?.items ?? []).map(i => i.course))).sort();
+
+  async function removeItem(itemId: string) {
+    if (!orderId) return;
+    setRemovingItem(itemId);
+    const r = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/remove`, { method: "DELETE" });
+    if (r.ok) {
+      const updated = await fetch(`/api/admin/orders/${orderId}`);
+      if (updated.ok) setOrder(await updated.json());
+    }
+    setRemovingItem(null);
+  }
 
   async function fireCourse(course: number) {
     if (!orderId) return;
@@ -220,20 +232,32 @@ export function TableOverlay({
                       };
                       const si = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
                       return (
-                        <div key={oi.id} style={{ padding: "10px 16px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
+                        <div key={oi.id} style={{ padding: "10px 16px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8 }}>
                           {/* Right side (RTL start): item name + allergens + comped */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
                             <span style={{ fontSize: 13, color: "#1a1612" }}>{oi.itemName} × {oi.quantity}</span>
                             {allergyHit && (
                               <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 8px", border: "1px solid #f5c4bc" }}>⚠️ {allergyLabel}</span>
                             )}
                             {oi.isComped && <span style={{ fontSize: 10, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 99, padding: "2px 8px" }}>🎁 חינם</span>}
                           </div>
-                          {/* Left side (RTL end): price + status + course */}
+                          {/* Left side (RTL end): price + status + course + delete */}
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                             <span style={{ fontSize: 10, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>{si.label}</span>
                             <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f3ff", color: "#7c3aed", borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>ק{oi.course}</span>
                             <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
+                            {(oi.heldUntilFired || !oi.firedAt) ? (
+                              <button
+                                onClick={() => removeItem(oi.id)}
+                                disabled={removingItem === oi.id}
+                                title="הסר פריט"
+                                style={{ width: 24, height: 24, borderRadius: 99, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}
+                              >
+                                {removingItem === oi.id ? "…" : "✕"}
+                              </button>
+                            ) : (
+                              <div style={{ width: 24, flexShrink: 0 }} />
+                            )}
                           </div>
                         </div>
                       );

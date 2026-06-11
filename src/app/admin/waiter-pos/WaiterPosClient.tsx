@@ -21,6 +21,16 @@ type TableData = {
   orderCount: number;
   minutesSinceLastOrder: number;
   readyItemCount?: number;
+  heldCourseNums?: number[];
+};
+
+type Notification = {
+  id: string;
+  tableNum: string;
+  type: "ready" | "held";
+  text: string;
+  at: number;
+  read: boolean;
 };
 
 type Insight = {
@@ -117,6 +127,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [refreshing, setRefreshing]           = useState(false);
   const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
   const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
+  const [notifications, setNotifications]     = useState<Notification[]>([]);
+  const [notifOpen, setNotifOpen]             = useState(false);
+  const prevReadyRef = useRef<Record<string, number>>({});
+  const prevHeldRef  = useRef<Record<string, string>>({});
 
   // Order flow state
   const [orderScreenData, setOrderScreenData] = useState<{
@@ -190,6 +204,58 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     return () => obs.disconnect();
   }, [viewMode]);
 
+  // SSE — re-fetch on kitchen updates
+  useEffect(() => {
+    if (!restaurantId) return;
+    const es = new EventSource(`/api/admin/orders/stream?restaurantId=${restaurantId}`);
+    es.onmessage = () => fetchAll(true);
+    return () => es.close();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId]);
+
+  // Track notifications from table data changes
+  useEffect(() => {
+    const newNotifs: Notification[] = [];
+    const now = Date.now();
+
+    for (const t of tables) {
+      const ready = t.readyItemCount ?? 0;
+      const prev  = prevReadyRef.current[t.tableNum] ?? 0;
+      if (ready > 0 && ready > prev) {
+        newNotifs.push({
+          id: `ready-${t.tableNum}-${now}`,
+          tableNum: t.tableNum,
+          type: "ready",
+          text: `שולחן ${t.tableNum}: ${ready} מנות מוכנות להגשה`,
+          at: now,
+          read: false,
+        });
+      }
+      prevReadyRef.current[t.tableNum] = ready;
+
+      const held = (t.heldCourseNums ?? []).join(",");
+      const prevHeld = prevHeldRef.current[t.tableNum] ?? "";
+      if (held && held !== prevHeld) {
+        const newCourses = (t.heldCourseNums ?? []).filter(c => !prevHeld.split(",").includes(String(c)));
+        for (const c of newCourses) {
+          newNotifs.push({
+            id: `held-${t.tableNum}-${c}-${now}`,
+            tableNum: t.tableNum,
+            type: "held",
+            text: `שולחן ${t.tableNum}: קורס ${c} ממתין לשחרור`,
+            at: now,
+            read: false,
+          });
+        }
+      }
+      prevHeldRef.current[t.tableNum] = held;
+    }
+
+    if (newNotifs.length > 0) {
+      setNotifications(prev => [...newNotifs, ...prev].slice(0, 50));
+    }
+  }, [tables]);
+
   // Fetch layout
   const fetchLayout = useCallback(async () => {
     if (!restaurantId) return;
@@ -260,6 +326,15 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   function showToast(msg: string) { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); }
 
+  async function quickFireCourse(orderId: string, course: number, tableNum: string) {
+    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ course }),
+    });
+    showToast(`🔥 קורס ${course} שולחן ${tableNum} — יצא למטבח`);
+    fetchAll(true);
+  }
+
   async function patchStatus(tableNum: string, status: "reserved" | "inactive" | "free" | "bill_requested") {
     await fetch("/api/admin/waiter-pos/tables", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -288,6 +363,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     ? Math.round(tablesWithCost.reduce((s, t) => s + t.totalAmount, 0) / tablesWithCost.length)
     : 0;
 
+  const unreadCount = notifications.filter(n => !n.read).length;
   const currentInsight = insights[insightIdx] ?? null;
   const overlayTable   = tables.find(t => t.tableNum === tableOverlay) ?? null;
   const overlayInsights = insights.filter(i => i.tableNum === tableOverlay);
@@ -372,6 +448,26 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* 🔔 Notification bell */}
+          <button onClick={() => { setNotifOpen(o => !o); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); }} style={{
+            position: "relative",
+            background: unreadCount > 0 ? "#fff7ed" : "#f5f5f7",
+            border: `1px solid ${unreadCount > 0 ? "#fed7aa" : "#e0e0e0"}`,
+            borderRadius: 8, padding: "6px 9px", fontSize: 17, cursor: "pointer",
+            display: "flex", alignItems: "center",
+          }}>
+            🔔
+            {unreadCount > 0 && (
+              <span style={{
+                position: "absolute", top: -5, right: -5,
+                background: "#ef4444", color: "#fff",
+                borderRadius: 99, fontSize: 10, fontWeight: 800,
+                minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "0 4px",
+              }}>{unreadCount}</span>
+            )}
+          </button>
+
           <button onClick={() => setAllInsightsOpen(true)} style={{
             background: "linear-gradient(135deg,#6c3fc5,#9b59e8)",
             color: "#fff", border: "none", borderRadius: 10,
@@ -594,6 +690,31 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                   )}
 
 
+                  {/* 🔥 Fire course quick button */}
+                  {(t.heldCourseNums ?? []).length > 0 && t.activeOrderIds.length > 0 && (
+                    <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
+                      {(t.heldCourseNums ?? []).length === 1 ? (
+                        <button
+                          onClick={e => { e.stopPropagation(); quickFireCourse(t.activeOrderIds[0], t.heldCourseNums![0], t.tableNum); }}
+                          style={{
+                            background: "#fdf7ed", border: "1px solid #d4a840",
+                            cursor: "pointer", width: "100%",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                            color: "#92400e", fontSize: 11, fontWeight: 700, padding: "3px 4px", borderRadius: 6,
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "#fef3c7")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "#fdf7ed")}
+                        >
+                          🔥 שחרר קורס {t.heldCourseNums![0]}
+                        </button>
+                      ) : (
+                        <div style={{ background: "#fdf7ed", border: "1px solid #d4a840", borderRadius: 6, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#92400e", display: "flex", alignItems: "center", gap: 4 }}>
+                          🔥 {(t.heldCourseNums ?? []).length} קורסים ממתינים
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Ready badge */}
                   {(t.readyItemCount ?? 0) > 0 && (
                     <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
@@ -724,6 +845,45 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ══ NOTIFICATION CENTER ══ */}
+      {notifOpen && (
+        <div onClick={() => setNotifOpen(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 300 }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            position: "absolute", top: 60, right: isMobile ? 8 : 16,
+            background: "#fff", borderRadius: 16, width: isMobile ? "calc(100vw - 16px)" : 340,
+            maxHeight: "70vh", overflowY: "auto", direction: "rtl",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid #e5e7eb",
+          }}>
+            <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", borderRadius: "16px 16px 0 0" }}>
+              <button onClick={() => setNotifications([])} style={{ fontSize: 11, color: "#9ca3af", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>נקה הכל</button>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>🔔 התראות</div>
+            </div>
+            {notifications.length === 0 ? (
+              <div style={{ padding: "24px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>אין התראות</div>
+            ) : notifications.map(n => (
+              <div key={n.id} onClick={() => { setTableOverlay(n.tableNum); setNotifOpen(false); }}
+                style={{
+                  padding: "12px 16px", borderBottom: "1px solid #f3f4f6",
+                  cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 10,
+                  background: n.read ? "#fff" : (n.type === "ready" ? "#f0fdf4" : "#fff7ed"),
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+                onMouseLeave={e => (e.currentTarget.style.background = n.read ? "#fff" : (n.type === "ready" ? "#f0fdf4" : "#fff7ed"))}
+              >
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{n.type === "ready" ? "✅" : "🔥"}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{n.text}</div>
+                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                    {Math.floor((Date.now() - n.at) / 60000) < 1 ? "עכשיו" : `לפני ${Math.floor((Date.now() - n.at) / 60000)} דק'`}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
