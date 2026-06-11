@@ -193,7 +193,7 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       if (!res.ok) return;
       const data = await res.json();
       setWaiters((data as Array<{ user: WaiterUser; role: string }>)
-        .filter(ru => ru.role === "WAITER")
+        .filter(ru => !["SUPER_ADMIN", "OWNER"].includes(ru.role))
         .map(ru => ru.user));
     } catch { /* ignore */ }
   }, []);
