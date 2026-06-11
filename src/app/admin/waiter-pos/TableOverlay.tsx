@@ -630,7 +630,7 @@ export function TableOverlay({
         tableNum={tableNum}
         restaurantName={restaurantName}
         waiterName={waiterName}
-        autoPrint={true}
+        autoPrint={false}
         onClose={() => setShowReceipt(false)}
       />
     )}
