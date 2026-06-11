@@ -1011,7 +1011,7 @@ export default function ShiftsClient({
           <div>
             <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.muted, marginBottom: 8 }}>יומן שליחות</div>
             <div style={{ overflowX: "auto", borderRadius: T.rMd, border: `1px solid ${T.border}` }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", direction: "rtl" }}>
                 <thead>
                   <tr style={{ background: T.panel }}>
                     {["מסעדה", "שם", "טלפון", "שבוע", "הודעה", "תווים", "SMS", "סטטוס", "נשלח"].map(h => (
@@ -1032,8 +1032,8 @@ export default function ShiftsClient({
                         <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, maxWidth: 200 }}>
                           <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</span>
                         </td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, textAlign: "center" }}>{chars}</td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, fontWeight: 700, color: units === 1 ? T.green : T.orange, textAlign: "center" }}>{units}</td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, textAlign: "right" }}>{chars}</td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, fontWeight: 700, color: units === 1 ? T.green : T.orange, textAlign: "right" }}>{units}</td>
                         <td style={{ padding: "8px 12px" }}>
                           <span style={{ background: l.status === "SENT" ? T.green + "20" : T.red + "20", color: l.status === "SENT" ? T.green : T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
                             {l.status === "SENT" ? "✓ נשלח" : "✗ נכשל"}
