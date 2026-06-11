@@ -521,6 +521,14 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       }
       setSeedResult(`עודכנו ${data.updated} מנות`);
       if (data.updated > 0) {
+        // Update open form if the current item was among the updated ones
+        if (editItem) {
+          const updated = (data.results as { name: string; allergens: string[] }[])
+            .find(r => r.name === editItem.name);
+          if (updated) {
+            setItemForm(prev => ({ ...prev, allergens: updated.allergens }));
+          }
+        }
         router.refresh();
       }
     } catch (e) {
