@@ -357,14 +357,12 @@ export default function ShiftsClient({
     const to   = formatDateISO(weekDates[6]);
     const fmtDate = (iso: string) => iso.slice(8) + "/" + iso.slice(5, 7);
     const DAY_S = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
-    const lines = (targetId === "all" ? target.slice(0, 2) : target).map(s => {
-      const cfg = shiftCfgList.find(c => c.key === s.shiftType);
-      const label = cfg?.label ?? s.shiftType;
-      const d = new Date(s.date + "T00:00:00");
-      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
+    const parts = (targetId === "all" ? target.slice(0, 3) : target).map(s => {
+      const d = new Date(String(s.date).slice(0,10) + "T00:00:00");
+      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
     });
-    if (targetId === "all" && target.length > 2) lines.push(`...ועוד ${target.length - 2}`);
-    return `${name}, משמרות (${fmtDate(from)}-${fmtDate(to)}):\n${lines.join("\n")}`;
+    if (targetId === "all" && target.length > 3) parts.push(`...`);
+    return `${name} ${fmtDate(from)}-${fmtDate(to)}: ${parts.join(", ")}`;
   }
 
   async function sendSms() {

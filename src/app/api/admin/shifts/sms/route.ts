@@ -13,16 +13,13 @@ function fmtDateShort(iso: string): string {
 }
 
 function buildMessage(name: string, weekFrom: string, weekTo: string, shiftsForUser: {
-  date: string; shiftType: string; startTime: string; endTime: string; label: string;
+  date: string; startTime: string; endTime: string;
 }[]): string {
-  const lines = shiftsForUser.map(s => {
+  const parts = shiftsForUser.map(s => {
     const d = new Date(s.date + "T00:00:00");
-    const day = DAY_SHORT[d.getDay()];
-    const start = s.startTime.slice(0, 5);
-    const end   = s.endTime.slice(0, 5);
-    return `${day} ${fmtDateShort(s.date)} ${s.label} ${start}-${end}`;
+    return `${DAY_SHORT[d.getDay()]} ${fmtDateShort(s.date)} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
   });
-  return `${name}, משמרות (${fmtDateShort(weekFrom)}-${fmtDateShort(weekTo)}):\n${lines.join("\n")}`;
+  return `${name} ${fmtDateShort(weekFrom)}-${fmtDateShort(weekTo)}: ${parts.join(", ")}`;
 }
 
 // GET /api/admin/shifts/sms?restaurantId=...&limit=50
