@@ -110,9 +110,15 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
     return cart.filter(i => i.itemId === itemId).reduce((s, i) => s + i.quantity, 0);
   }
 
+  // Items added to a different course — hide them from the grid
+  const itemIdsInOtherCourse = new Set(
+    cart.filter(i => i.course !== activeCourse).map(i => i.itemId)
+  );
+
   // Filter items by search + allergy
   const activeCategory = categories.find(c => c.id === activeCat);
   const filteredItems = (activeCategory?.items ?? []).filter(item => {
+    if (itemIdsInOtherCourse.has(item.id)) return false;
     if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -254,7 +260,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                   <div style={{ height: 90, background: "#f4f1ed", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative", borderRadius: "14px 14px 0 0", overflow: "hidden", flexShrink: 0 }}>
                     {item.image ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🍽️"}
                     {warn && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13 }}>⚠️</span>}
-                    {safe && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13, color: "#16a34a", textShadow: "0 0 4px #fff" }}>★</span>}
+                    {safe && !qty && <span style={{ position: "absolute", top: 3, right: 4, fontSize: 18, color: "#16a34a", textShadow: "0 0 4px #fff", lineHeight: 1 }}>★</span>}
                   </div>
                   <div style={{ padding: "7px 9px 9px" }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1612", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>

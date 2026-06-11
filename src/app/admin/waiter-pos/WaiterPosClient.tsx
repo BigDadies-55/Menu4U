@@ -622,7 +622,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               </div>
             ) : filteredTables.map(t => {
               const borderColor    = STATUS_BORDER[t.availStatus] ?? "#9ca3af";
-              const tableInsights  = insights.filter(i => i.tableNum === t.tableNum);
+              const isReserved     = t.availStatus === "reserved";
+              const tableInsights  = isReserved ? [] : insights.filter(i => i.tableNum === t.tableNum);
               const isWarn         = t.availStatus === "occupied" && t.minutesSitting > 20;
               const statusBadgeBg  = ORDER_STATUS_COLOR[t.orderStatus ?? ""] ?? STATUS_BADGE_BG[t.availStatus];
               const statusBadgeFg  = t.orderStatus ? (ORDER_STATUS_TEXT_COLOR[t.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[t.availStatus] ?? "#374151");
@@ -670,24 +671,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     </div>
                   </div>
 
-                  {/* Cancel reservation button — reserved tables only */}
-                  {t.availStatus === "reserved" && (
-                    <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
-                      <button
-                        onClick={e => { e.stopPropagation(); patchStatus(t.tableNum, "free"); }}
-                        style={{
-                          background: "#eff6ff", border: "1px solid #3b82f6",
-                          cursor: "pointer", width: "100%",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                          color: "#3b82f6", fontSize: 11, fontWeight: 600, padding: "3px 4px", borderRadius: 6,
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "#dbeafe")}
-                        onMouseLeave={e => (e.currentTarget.style.background = "#eff6ff")}
-                      >
-                        🔵 בטל הזמנה
-                      </button>
-                    </div>
-                  )}
 
 
                   {/* 🔥 Fire course quick button */}
