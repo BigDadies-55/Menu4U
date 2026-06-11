@@ -918,7 +918,7 @@ export default function ShiftsClient({
                   />
 
                   {/* Times on same row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
                     <span style={{ fontSize: T.fxs, color: T.muted }}>מ-</span>
                     <input
                       type="time"
@@ -934,6 +934,13 @@ export default function ShiftsClient({
                       style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "4px 6px", fontFamily: "inherit", outline: "none" }}
                     />
                   </div>
+
+                  {/* Remove */}
+                  <button
+                    onClick={() => setEditCfg(prev => prev.filter((_, i) => i !== idx))}
+                    style={{ background: "transparent", border: "none", color: T.red, fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0 }}
+                    title="הסר"
+                  >✕</button>
                 </div>
 
                 {/* Row 2: color dots */}
@@ -950,7 +957,18 @@ export default function ShiftsClient({
               </div>
             ))}
 
-            <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+            {/* Add new shift type */}
+            <button
+              onClick={() => {
+                const key = `CUSTOM_${Date.now()}`;
+                setEditCfg(prev => [...prev, { key, label: "משמרת חדשה", startTime: "08:00", endTime: "16:00", color: "#10b981", visible: true }]);
+              }}
+              style={{ width: "100%", background: "transparent", border: `1.5px dashed ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "9px", cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}
+            >
+              ＋ הוסף סוג משמרת
+            </button>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button
                 onClick={saveConfig}
                 disabled={settingsSaving}
