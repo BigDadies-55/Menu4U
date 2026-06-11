@@ -71,7 +71,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
     where: { id: orderId },
     include: {
       items: {
-        orderBy: [{ course: "asc" }, { createdAt: "asc" }],
+        orderBy: [{ course: "asc" }],
         include: {
           item: { select: { name: true, allergens: true } },
           modifiers: true,
