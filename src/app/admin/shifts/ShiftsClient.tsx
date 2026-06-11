@@ -171,6 +171,28 @@ export default function ShiftsClient({
   const [smsConfigured, setSmsConfigured] = useState(true);
   const [opsLoading, setOpsLoading] = useState(false);
 
+  // Ops filter
+  type OpsPreset = "all" | "week" | "month" | "custom";
+  const [opsPreset, setOpsPreset] = useState<OpsPreset>("all");
+  const [opsFrom, setOpsFrom] = useState("");
+  const [opsTo,   setOpsTo]   = useState("");
+
+  function applyPreset(preset: OpsPreset) {
+    setOpsPreset(preset);
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if (preset === "week") {
+      const sun = new Date(now); sun.setDate(now.getDate() - now.getDay()); sun.setHours(0,0,0,0);
+      setOpsFrom(fmt(sun)); setOpsTo(fmt(now));
+    } else if (preset === "month") {
+      const first = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      setOpsFrom(fmt(first)); setOpsTo(fmt(now));
+    } else if (preset === "all") {
+      setOpsFrom(""); setOpsTo("");
+    }
+  }
+
   const [toast, setToast] = useState<{ msg: string; undo?: () => void } | null>(null);
   const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [undoShifts, setUndoShifts] = useState<ShiftRow[] | null>(null);
@@ -969,12 +991,47 @@ export default function ShiftsClient({
   // ── Tab: Ops ───────────────────────────────────────────────────────────────
   function OpsTab() {
     if (opsLoading) return <div style={{ textAlign: "center", padding: 40, color: T.muted }}>טוען...</div>;
-    const totalSent   = smsLogs.filter(l => l.status === "SENT").length;
-    const totalFailed = smsLogs.filter(l => l.status === "FAILED").length;
-    const totalSmsUnits = smsLogs.filter(l => l.status === "SENT").reduce((acc, l) => acc + (l.smsCount ?? (l.message ? (l.message.length <= 70 ? 1 : Math.ceil(l.message.length / 67)) : 1)), 0);
+
+    const filtered = smsLogs.filter(l => {
+      const t = new Date(l.sentAt).getTime();
+      if (opsFrom && t < new Date(opsFrom).getTime()) return false;
+      if (opsTo   && t > new Date(opsTo).getTime())   return false;
+      return true;
+    });
+
+    const totalSent     = filtered.filter(l => l.status === "SENT").length;
+    const totalFailed   = filtered.filter(l => l.status === "FAILED").length;
+    const totalSmsUnits = filtered.filter(l => l.status === "SENT").reduce((acc, l) => acc + (l.smsCount ?? (l.message ? (l.message.length <= 70 ? 1 : Math.ceil(l.message.length / 67)) : 1)), 0);
+
+    const inpStyle = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "6px 10px", fontFamily: "inherit", outline: "none", colorScheme: "dark" as const };
+    const presetBtn = (key: OpsPreset, label: string) => (
+      <button key={key} onClick={() => applyPreset(key)} style={{ background: opsPreset === key ? T.gold : T.panel, border: `1px solid ${opsPreset === key ? T.gold : T.border}`, borderRadius: T.rMd, color: opsPreset === key ? "#1a1208" : T.text, fontSize: T.fsm, fontWeight: opsPreset === key ? 700 : 400, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>
+        {label}
+      </button>
+    );
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+        {/* Filter bar */}
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {presetBtn("all",   "הכל")}
+            {presetBtn("week",  "שבוע זה")}
+            {presetBtn("month", "החודש")}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: T.fsm, color: T.muted }}>מ:</span>
+            <input type="datetime-local" value={opsFrom} style={inpStyle}
+              onChange={e => { setOpsFrom(e.target.value); setOpsPreset("custom"); }} />
+            <span style={{ fontSize: T.fsm, color: T.muted }}>עד:</span>
+            <input type="datetime-local" value={opsTo} style={inpStyle}
+              onChange={e => { setOpsTo(e.target.value); setOpsPreset("custom"); }} />
+            {(opsFrom || opsTo) && (
+              <button onClick={() => applyPreset("all")} style={{ background: "transparent", border: "none", color: T.muted, fontSize: T.fsm, cursor: "pointer", padding: "0 4px" }}>✕ נקה</button>
+            )}
+          </div>
+        </div>
         {/* Summary cards */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {[
@@ -1007,9 +1064,9 @@ export default function ShiftsClient({
         )}
 
         {/* Log table */}
-        {smsLogs.length > 0 && (
+        {filtered.length > 0 && (
           <div>
-            <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.muted, marginBottom: 8 }}>יומן שליחות</div>
+            <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.muted, marginBottom: 8 }}>יומן שליחות ({filtered.length})</div>
             <div style={{ overflowX: "auto", borderRadius: T.rMd, border: `1px solid ${T.border}` }}>
               <table style={{ width: "100%", borderCollapse: "collapse", direction: "rtl" }}>
                 <thead>
@@ -1020,7 +1077,7 @@ export default function ShiftsClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {smsLogs.map(l => {
+                  {filtered.map(l => {
                     const chars = l.charCount ?? l.message?.length ?? 0;
                     const units = l.smsCount ?? (chars <= 70 ? 1 : Math.ceil(chars / 67));
                     return (
@@ -1051,8 +1108,10 @@ export default function ShiftsClient({
           </div>
         )}
 
-        {smsLogs.length === 0 && !opsLoading && (
-          <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>טרם נשלחו הודעות SMS</div>
+        {filtered.length === 0 && !opsLoading && (
+          <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>
+            {smsLogs.length === 0 ? "טרם נשלחו הודעות SMS" : "אין תוצאות לטווח התאריכים שנבחר"}
+          </div>
         )}
       </div>
     );
