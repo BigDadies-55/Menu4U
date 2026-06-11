@@ -68,7 +68,25 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
   const [data,         setData]         = useState<ApiResponse | null>(null);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState("");
-  const [viewTab,      setViewTab]      = useState<"gantt" | "events">("gantt");
+  const [viewTab,      setViewTab]      = useState<"gantt" | "events" | "fraud">("gantt");
+
+  // Fraud detection state
+  type WaiterFraudStat = {
+    id: string; name: string;
+    totalOrders: number; totalRevenue: number;
+    voidCount: number; voidAmount: number;
+    compCount: number; compAmount: number;
+    riskScore: number;
+  };
+  type FraudEvent = {
+    type: "VOID" | "COMP";
+    at: string; waiterId: string; waiterName: string;
+    itemName: string; quantity: number; amount: number;
+    reason: string | null; tableNumber: string | null; orderId: string;
+  };
+  type FraudData = { waiterStats: WaiterFraudStat[]; events: FraudEvent[] };
+  const [fraudData,    setFraudData]    = useState<FraudData | null>(null);
+  const [fraudLoading, setFraudLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!restaurantId) return;
@@ -87,7 +105,20 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
     }
   }, [restaurantId, tableNumber, days]);
 
+  const loadFraud = useCallback(async () => {
+    if (!restaurantId) return;
+    setFraudLoading(true);
+    try {
+      const params = new URLSearchParams({ restaurantId, days: String(days) });
+      const res = await fetch(`/api/admin/fraud-detection?${params}`);
+      if (res.ok) setFraudData(await res.json());
+    } catch { /* ignore */ } finally {
+      setFraudLoading(false);
+    }
+  }, [restaurantId, days]);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (viewTab === "fraud") loadFraud(); }, [viewTab, loadFraud]);
 
   const insights = data?.insights;
   const events   = data?.events ?? [];
@@ -171,14 +202,18 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
 
       {/* ── View tabs ── */}
       <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: `1px solid ${T.border}`, paddingBottom: 0 }}>
-        {(["gantt", "events"] as const).map(t => (
+        {([
+          ["gantt",  "📊 גאנט שולחנות"],
+          ["events", "📋 יומן אירועים"],
+          ["fraud",  "🚨 זיהוי הונאות"],
+        ] as const).map(([t, label]) => (
           <button key={t} onClick={() => setViewTab(t)} style={{
             padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-            background: viewTab === t ? T.gold : "transparent",
-            color: viewTab === t ? T.text : T.sub,
+            background: viewTab === t ? (t === "fraud" ? T.red : T.gold) : "transparent",
+            color: viewTab === t ? (t === "fraud" ? "#fff" : T.text) : T.sub,
             border: "none", borderRadius: "8px 8px 0 0",
           }}>
-            {t === "gantt" ? "📊 גאנט שולחנות" : "📋 יומן אירועים"}
+            {label}
           </button>
         ))}
       </div>
@@ -191,6 +226,16 @@ export default function TableTimelineClient({ restaurants }: { restaurants: Rest
           days={days}
           onTableClick={t => setTableNumber(t === tableNumber ? "" : t)}
           selectedTable={tableNumber}
+        />
+      )}
+
+      {/* ── Fraud detection view ── */}
+      {viewTab === "fraud" && (
+        <FraudDashboard
+          data={fraudData}
+          loading={fraudLoading}
+          onRefresh={loadFraud}
+          days={days}
         />
       )}
 
@@ -590,6 +635,218 @@ function AiInsight({ icon, text, color = T.sub }: { icon: string; text: string; 
     <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
       <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
       <span style={{ color, lineHeight: 1.4 }}>{text}</span>
+    </div>
+  );
+}
+
+/* ── Fraud Dashboard ── */
+type WaiterFraudStat = {
+  id: string; name: string;
+  totalOrders: number; totalRevenue: number;
+  voidCount: number; voidAmount: number;
+  compCount: number; compAmount: number;
+  riskScore: number;
+};
+type FraudEvent = {
+  type: "VOID" | "COMP";
+  at: string; waiterId: string; waiterName: string;
+  itemName: string; quantity: number; amount: number;
+  reason: string | null; tableNumber: string | null; orderId: string;
+};
+type FraudData = { waiterStats: WaiterFraudStat[]; events: FraudEvent[] };
+
+function riskColor(score: number): string {
+  if (score >= 20) return T.red;
+  if (score >= 8)  return T.orange;
+  if (score >= 3)  return "#e8c840";
+  return T.green;
+}
+function riskLabel(score: number): string {
+  if (score >= 20) return "סיכון גבוה";
+  if (score >= 8)  return "סיכון בינוני";
+  if (score >= 3)  return "נמוך";
+  return "תקין";
+}
+
+function FraudDashboard({ data, loading, onRefresh, days }: {
+  data: FraudData | null; loading: boolean; onRefresh: () => void; days: number;
+}) {
+  const [selectedWaiter, setSelectedWaiter] = useState<string | null>(null);
+  const [eventFilter,    setEventFilter]    = useState<"ALL" | "VOID" | "COMP">("ALL");
+
+  const filteredEvents = useMemo(() => {
+    if (!data) return [];
+    return data.events
+      .filter(e => eventFilter === "ALL" || e.type === eventFilter)
+      .filter(e => !selectedWaiter || e.waiterId === selectedWaiter);
+  }, [data, eventFilter, selectedWaiter]);
+
+  if (loading) return (
+    <div style={{ ...card(), padding: 40, textAlign: "center", color: T.muted }}>טוען נתוני הונאות...</div>
+  );
+  if (!data) return null;
+  if (data.waiterStats.length === 0 && data.events.length === 0) return (
+    <div style={{ ...card(), padding: 40, textAlign: "center", color: T.muted }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
+      <div style={{ fontWeight: 700, color: T.green }}>לא נמצאו ביטולים או מתנות ב-{days} הימים האחרונים</div>
+    </div>
+  );
+
+  const totalVoidAmount = data.waiterStats.reduce((s, w) => s + w.voidAmount, 0);
+  const totalCompAmount = data.waiterStats.reduce((s, w) => s + w.compAmount, 0);
+  const totalVoidCount  = data.waiterStats.reduce((s, w) => s + w.voidCount, 0);
+  const totalCompCount  = data.waiterStats.reduce((s, w) => s + w.compCount, 0);
+
+  return (
+    <div>
+      {/* Summary strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12, marginBottom: 20 }}>
+        <InsightCard label="סה״כ ביטולים (VOID)" value={`₪${Math.round(totalVoidAmount)}`} icon="⚠️" color={T.red} />
+        <InsightCard label="אירועי VOID"          value={String(totalVoidCount)}             icon="🗑️" color={T.red} />
+        <InsightCard label="סה״כ מתנות (COMP)"   value={`₪${Math.round(totalCompAmount)}`}  icon="🎁" color={T.orange} />
+        <InsightCard label="אירועי COMP"           value={String(totalCompCount)}             icon="🎁" color={T.orange} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: 20, alignItems: "start" }}>
+
+        {/* ── Waiter risk table ── */}
+        <div style={{ ...card(), padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "12px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>🚨 דירוג סיכון מלצרים</span>
+            <button onClick={onRefresh} style={{ ...btn("ghost", "sm") }}>🔄</button>
+          </div>
+          <div>
+            {/* Header */}
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 70px 70px 70px 70px 90px",
+              padding: "8px 18px", fontSize: 10, fontWeight: 700, color: T.muted,
+              borderBottom: `1px solid ${T.border}`, letterSpacing: "0.05em",
+            }}>
+              <span>מלצר</span>
+              <span style={{ textAlign: "center" }}>הזמנות</span>
+              <span style={{ textAlign: "center" }}>VOID</span>
+              <span style={{ textAlign: "center" }}>COMP</span>
+              <span style={{ textAlign: "center" }}>₪ שבוטל</span>
+              <span style={{ textAlign: "center" }}>רמת סיכון</span>
+            </div>
+            {data.waiterStats.map(w => {
+              const rc = riskColor(w.riskScore);
+              const isSelected = selectedWaiter === w.id;
+              return (
+                <div
+                  key={w.id}
+                  onClick={() => setSelectedWaiter(isSelected ? null : w.id)}
+                  style={{
+                    display: "grid", gridTemplateColumns: "1fr 70px 70px 70px 70px 90px",
+                    padding: "11px 18px", fontSize: 13,
+                    borderBottom: `1px solid ${T.borderSub}`,
+                    background: isSelected ? rc + "18" : "transparent",
+                    cursor: "pointer", transition: "background 0.12s",
+                    borderRight: isSelected ? `3px solid ${rc}` : "3px solid transparent",
+                  }}
+                  onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = T.panel; }}
+                  onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 700, color: T.text }}>{w.name}</div>
+                    <div style={{ fontSize: 10, color: T.muted }}>הכנסות: ₪{Math.round(w.totalRevenue)}</div>
+                  </div>
+                  <div style={{ textAlign: "center", color: T.sub }}>{w.totalOrders}</div>
+                  <div style={{ textAlign: "center", color: w.voidCount > 0 ? T.red : T.muted, fontWeight: w.voidCount > 0 ? 700 : 400 }}>{w.voidCount}</div>
+                  <div style={{ textAlign: "center", color: w.compCount > 0 ? T.orange : T.muted, fontWeight: w.compCount > 0 ? 700 : 400 }}>{w.compCount}</div>
+                  <div style={{ textAlign: "center", color: (w.voidAmount + w.compAmount) > 0 ? T.red : T.muted, fontWeight: 600 }}>
+                    ₪{Math.round(w.voidAmount + w.compAmount)}
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    {/* Risk bar */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
+                      <div style={{ flex: 1, height: 6, background: T.raised, borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{
+                          height: "100%", borderRadius: 3,
+                          width: `${Math.min(100, w.riskScore * 3)}%`,
+                          background: rc, transition: "width 0.4s",
+                        }} />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 9, color: rc, fontWeight: 700, marginTop: 2 }}>{riskLabel(w.riskScore)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Events journal ── */}
+        <div style={{ ...card(), padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+              יומן אירועים {selectedWaiter && `— ${data.waiterStats.find(w => w.id === selectedWaiter)?.name ?? ""}`}
+              {selectedWaiter && (
+                <button onClick={() => setSelectedWaiter(null)} style={{ marginRight: 8, fontSize: 11, color: T.muted, background: "none", border: "none", cursor: "pointer" }}>✕</button>
+              )}
+            </div>
+            {/* Filter toggles */}
+            <div style={{ display: "flex", gap: 6 }}>
+              {(["ALL", "VOID", "COMP"] as const).map(f => (
+                <button key={f} onClick={() => setEventFilter(f)} style={{
+                  padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                  border: `1.5px solid ${f === "VOID" ? T.red + "66" : f === "COMP" ? T.orange + "66" : T.border}`,
+                  background: eventFilter === f ? (f === "VOID" ? T.red + "22" : f === "COMP" ? T.orange + "22" : T.panel) : "transparent",
+                  color: f === "VOID" ? T.red : f === "COMP" ? T.orange : T.sub,
+                }}>
+                  {f === "ALL" ? "הכל" : f}
+                </button>
+              ))}
+              <span style={{ marginRight: "auto", fontSize: 11, color: T.muted, lineHeight: "26px" }}>
+                {filteredEvents.length} אירועים
+              </span>
+            </div>
+          </div>
+
+          <div style={{ maxHeight: 520, overflowY: "auto" }}>
+            {filteredEvents.length === 0 && (
+              <div style={{ padding: 32, textAlign: "center", color: T.muted, fontSize: 13 }}>אין אירועים</div>
+            )}
+            {filteredEvents.map((ev, i) => (
+              <div key={i} style={{
+                padding: "10px 14px", borderBottom: `1px solid ${T.borderSub}`,
+                display: "flex", gap: 10, alignItems: "flex-start",
+              }}>
+                {/* Icon */}
+                <div style={{
+                  width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                  background: ev.type === "VOID" ? T.red + "22" : T.orange + "22",
+                  border: `1.5px solid ${ev.type === "VOID" ? T.red + "55" : T.orange + "55"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                }}>
+                  {ev.type === "VOID" ? "⚠️" : "🎁"}
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: ev.type === "VOID" ? T.red : T.orange }}>
+                      {ev.type === "VOID" ? "VOID" : "COMP"}
+                    </span>
+                    <span style={{ fontSize: 11, color: T.muted }}>
+                      {fmtDate(ev.at)} {fmtTime(ev.at)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
+                    {ev.itemName} ×{ev.quantity}
+                    <span style={{ color: T.red, fontWeight: 800, marginRight: 6 }}>−₪{Math.round(ev.amount)}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                    <span style={{ color: T.gold }}>{ev.waiterName}</span>
+                    {ev.tableNumber && ` · שולחן ${ev.tableNumber}`}
+                    {ev.reason && <span style={{ fontStyle: "italic" }}> · "{ev.reason}"</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
