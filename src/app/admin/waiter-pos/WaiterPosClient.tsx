@@ -11,7 +11,7 @@ type Restaurant = { id: string; name: string };
 type TableData = {
   tableNum: string;
   seats: number;
-  availStatus: "free" | "occupied" | "reserved" | "inactive";
+  availStatus: "free" | "occupied" | "reserved" | "inactive" | "bill_requested" | "paid";
   sittingStart: string | null;
   guests: number;
   orderStatus: string | null;
@@ -39,15 +39,19 @@ type LayoutV2 = { version: 2; rooms: LayoutRoom[] };
 // ── Color maps ───────────────────────────────────────────────────────
 const STATUS_BORDER: Record<string, string> = {
   occupied: "#f87171", reserved: "#93c5fd", free: "#6ee7b7", inactive: "#d1d5db",
+  bill_requested: "#fb923c", paid: "#34d399",
 };
 const STATUS_LABEL: Record<string, string> = {
   occupied: "תפוס", reserved: "מוזמן", free: "פנוי", inactive: "לא פעיל",
+  bill_requested: "מבקש חשבון", paid: "שולם",
 };
 const STATUS_BADGE_BG: Record<string, string> = {
   occupied: "#fca5a5", reserved: "#bfdbfe", free: "#a7f3d0", inactive: "#e5e7eb",
+  bill_requested: "#fed7aa", paid: "#a7f3d0",
 };
 const STATUS_BADGE_TEXT: Record<string, string> = {
   occupied: "#b91c1c", reserved: "#1d4ed8", free: "#065f46", inactive: "#6b7280",
+  bill_requested: "#c2410c", paid: "#065f46",
 };
 const ORDER_STATUS_HE: Record<string, string> = {
   PENDING: "ממתין", CONFIRMED: "הזמנה נלקחה", PREPARING: "מכין",
@@ -256,7 +260,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   function showToast(msg: string) { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); }
 
-  async function patchStatus(tableNum: string, status: "reserved" | "inactive" | "free") {
+  async function patchStatus(tableNum: string, status: "reserved" | "inactive" | "free" | "bill_requested") {
     await fetch("/api/admin/waiter-pos/tables", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restaurantId, tableNum, status }),

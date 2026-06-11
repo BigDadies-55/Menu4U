@@ -93,13 +93,20 @@ export async function GET(req: Request) {
     const closedOrders   = tableOrders.filter(o => o.status === "PAID" || o.status === "CANCELLED");
 
     // availStatus driven by active (non-paid, non-cancelled) orders + manual overrides
-    let availStatus: "occupied" | "free" | "reserved" | "inactive" = "free";
+    let availStatus: "occupied" | "free" | "reserved" | "inactive" | "bill_requested" | "paid" = "free";
     if (overrides[tableNum] === "inactive") {
       availStatus = "inactive";
     } else if (overrides[tableNum] === "reserved") {
       availStatus = "reserved";
+    } else if (overrides[tableNum] === "bill_requested") {
+      availStatus = activeOrders.length > 0 ? "bill_requested" : "free";
     } else if (activeOrders.length > 0) {
       availStatus = "occupied";
+    } else {
+      // Show "paid" for 3 minutes after the table was closed
+      const threeMinAgo = new Date(now - 3 * 60 * 1000);
+      const recentlyPaid = closedOrders.filter(o => o.status === "PAID" && o.updatedAt >= threeMinAgo);
+      if (recentlyPaid.length > 0) availStatus = "paid";
     }
 
     const sittingStart = activeOrders.length > 0
@@ -164,8 +171,8 @@ export async function PATCH(req: Request) {
   if (!restaurantId || !tableNum || !status) {
     return NextResponse.json({ error: "restaurantId, tableNum and status required" }, { status: 400 });
   }
-  if (!["reserved", "inactive", "free"].includes(status)) {
-    return NextResponse.json({ error: "status must be reserved|inactive|free" }, { status: 400 });
+  if (!["reserved", "inactive", "free", "bill_requested"].includes(status)) {
+    return NextResponse.json({ error: "status must be reserved|inactive|free|bill_requested" }, { status: 400 });
   }
 
   if (!(await checkAccess(session.user.id, session.user.role, restaurantId))) {

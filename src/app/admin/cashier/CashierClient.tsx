@@ -2,6 +2,7 @@
 
 import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
 
@@ -902,9 +903,15 @@ export default function CashierClient({
   isSuperAdmin: boolean;
   defaultRestaurantId: string | null;
 }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const waiterTable = searchParams.get("tableNumber");   // set when coming from waiter POS
+  const waiterMode  = searchParams.get("waiter") === "1";
+  const waiterRid   = searchParams.get("restaurantId");
+
   const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [restaurantId, setRestaurantId] = useState(defaultRestaurantId ?? "");
+  const [selectedTable, setSelectedTable] = useState<string | null>(waiterTable ?? null);
+  const [restaurantId, setRestaurantId] = useState(waiterRid ?? defaultRestaurantId ?? "");
   const [refreshing, setRefreshing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -929,7 +936,7 @@ export default function CashierClient({
       if (res.ok) {
         const allOrders: Order[] = await res.json();
         const cashierOrders = allOrders.filter(o =>
-          ["DELIVERED", "READY"].includes(o.status)
+          ["DELIVERED", "READY", "BILL_REQUESTED", "PREPARING", "CONFIRMED", "PENDING"].includes(o.status)
         );
 
         // Detect new DELIVERED tables for sound alert
@@ -1008,6 +1015,11 @@ export default function CashierClient({
 
       // Success → re-sync from DB to confirm and avoid race with polling
       await fetchOrders();
+      // In waiter mode: go back to waiter POS after payment
+      if (waiterMode) {
+        router.push("/admin/waiter-pos");
+        return;
+      }
     } catch (err) {
       // Network error → restore orders and show message
       setErrorMsg("שגיאת תקשורת — נא לנסות שוב");
@@ -1019,7 +1031,7 @@ export default function CashierClient({
   // Group orders by table
   const tableMap = new Map<string, Order[]>();
   for (const o of orders) {
-    if (["DELIVERED", "READY"].includes(o.status)) {
+    if (!["CANCELLED", "PAID"].includes(o.status)) {
       const key = (o.tableNumber && o.tableNumber.trim() !== "") ? o.tableNumber : "–";
       if (!tableMap.has(key)) tableMap.set(key, []);
       tableMap.get(key)!.push(o);
@@ -1042,6 +1054,36 @@ export default function CashierClient({
   const selectedOrders = selectedTable
     ? orders.filter(o => tableKey(o) === selectedTable)
     : [];
+
+  // ── Waiter mode: show only the payment modal, no cashier UI ──
+  if (waiterMode && waiterTable) {
+    if (selectedOrders.length === 0) {
+      // Orders not loaded yet — show spinner
+      return (
+        <div dir="rtl" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100dvh", fontSize: 15, color: "#888" }}>
+          טוען הזמנה...
+        </div>
+      );
+    }
+    return (
+      <div dir="rtl">
+        {errorMsg && (
+          <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 500, background: "#ef4444", color: "#fff", padding: "14px 20px", borderRadius: 14, fontWeight: 700, fontSize: 14 }}>
+            ⚠️ {errorMsg}
+            <button type="button" onClick={() => setErrorMsg(null)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: 18, marginRight: 12 }}>✕</button>
+          </div>
+        )}
+        <BillModal
+          tableNumber={waiterTable}
+          orders={selectedOrders}
+          restaurantId={restaurantId}
+          onConfirm={() => closeTable(waiterTable)}
+          onClose={() => router.push("/admin/waiter-pos")}
+          onOrdersRefresh={fetchOrders}
+        />
+      </div>
+    );
+  }
 
   return (
     <div

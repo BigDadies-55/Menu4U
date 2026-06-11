@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ALLERGEN_LIST } from "@/lib/allergens";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ type Props = {
   onClose: () => void;
   onAddItems: (order: OrderDetail) => void;
   onNewOrder: (guestCount: number, allergens: string[]) => void;
-  onStatusChange: (status: "free" | "reserved" | "inactive") => void;
+  onStatusChange: (status: "free" | "reserved" | "inactive" | "bill_requested") => void;
 };
 
 function fmtMins(sittingStart: string | null): string {
@@ -66,7 +67,8 @@ export function TableOverlay({
   activeOrderIds, totalAmount, insights, isMobile, freeTables, restaurantId,
   onClose, onAddItems, onNewOrder, onStatusChange,
 }: Props) {
-  const isOccupied = availStatus === "occupied";
+  const router = useRouter();
+  const isOccupied = availStatus === "occupied" || availStatus === "bill_requested";
   const orderId = activeOrderIds[0] ?? null;
 
   const [order, setOrder]               = useState<OrderDetail | null>(null);
@@ -79,9 +81,6 @@ export function TableOverlay({
   const [firingCourse, setFiringCourse] = useState<number | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferring, setTransferring] = useState(false);
-  const [billOpen, setBillOpen]         = useState(false);
-  const [payConfirm, setPayConfirm]     = useState(false);
-  const [closing, setClosing]           = useState(false);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
@@ -393,10 +392,10 @@ export function TableOverlay({
               </div>
               <div style={{ marginBottom: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 8 }}>שינוי סטטוס:</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {(["reserved", "inactive", "free"] as const).map(s => (
-                    <button key={s} onClick={() => onStatusChange(s)} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-                      {{ reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {(["bill_requested", "reserved", "inactive", "free"] as const).map(s => (
+                    <button key={s} onClick={() => { onStatusChange(s); setStatusEditOpen(false); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit", minWidth: 70 }}>
+                      {{ bill_requested: "🧾 מבקש חשבון", reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
                     </button>
                   ))}
                 </div>
@@ -409,43 +408,25 @@ export function TableOverlay({
         <div style={{ background: "#fff", borderTop: "1px solid #ede9e3", padding: "14px 16px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
 
           {/* Occupied + order loaded */}
-          {isOccupied && order && !payConfirm && (
+          {isOccupied && order && (
             <>
-              {!billOpen ? (
-                <>
-                  <button onClick={() => onAddItems(order)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                    ➕ הוסף מנות
-                  </button>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => { setBillOpen(true); setAllergyEditOpen(false); setStatusEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
-                      💳 סגור חשבון
-                    </button>
-                    <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); setBillOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
-                      🔄 שנה סטטוס
-                    </button>
-                    <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); setBillOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
-                      ⚠️ אלרגיות
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => setPayConfirm(true)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1f5c3a", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
-                    ✓ סמן כשולם
-                  </button>
-                  <button onClick={() => setBillOpen(false)} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-                    ← חזור
-                  </button>
-                </>
-              )}
+              <button onClick={() => onAddItems(order)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                ➕ הוסף מנות
+              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`)}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
+                  💳 סגור חשבון
+                </button>
+                <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
+                  🔄 שנה סטטוס
+                </button>
+                <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
+                  ⚠️ אלרגיות
+                </button>
+              </div>
             </>
-          )}
-
-          {/* Occupied, payment confirm */}
-          {isOccupied && payConfirm && (
-            <button onClick={() => setPayConfirm(false)} disabled={closing} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-              ← חזור
-            </button>
           )}
 
           {/* Occupied, no order */}
