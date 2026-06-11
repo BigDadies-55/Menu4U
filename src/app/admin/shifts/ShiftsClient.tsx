@@ -1020,33 +1020,31 @@ export default function ShiftsClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {smsLogs.map(l => (
-                    {(() => {
-                      const chars = l.charCount ?? l.message?.length ?? 0;
-                      const units = l.smsCount ?? (chars <= 70 ? 1 : Math.ceil(chars / 67));
-                      return (
-                        <tr key={l.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
-                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.restaurantName ?? ""}</td>
-                          <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.text, whiteSpace: "nowrap" }}>{l.recipientName}</td>
-                          <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.muted }}>{l.phone}</td>
-                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
-                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, maxWidth: 200 }}>
-                            <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</span>
-                          </td>
-                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, textAlign: "center" }}>{chars}</td>
-                          <td style={{ padding: "8px 12px", fontSize: T.fxs, fontWeight: 700, color: units === 1 ? T.green : T.orange, textAlign: "center" }}>{units}</td>
-                          <td style={{ padding: "8px 12px" }}>
-                            <span style={{ background: l.status === "SENT" ? T.green + "20" : T.red + "20", color: l.status === "SENT" ? T.green : T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
-                              {l.status === "SENT" ? "✓ נשלח" : "✗ נכשל"}
-                            </span>
-                          </td>
-                          <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>
-                            {new Date(l.sentAt).toLocaleDateString("he-IL")} {new Date(l.sentAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  ))}
+                  {smsLogs.map(l => {
+                    const chars = l.charCount ?? l.message?.length ?? 0;
+                    const units = l.smsCount ?? (chars <= 70 ? 1 : Math.ceil(chars / 67));
+                    return (
+                      <tr key={l.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.restaurantName ?? ""}</td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.text, whiteSpace: "nowrap" }}>{l.recipientName}</td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.muted }}>{l.phone}</td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, maxWidth: 200 }}>
+                          <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</span>
+                        </td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, textAlign: "center" }}>{chars}</td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, fontWeight: 700, color: units === 1 ? T.green : T.orange, textAlign: "center" }}>{units}</td>
+                        <td style={{ padding: "8px 12px" }}>
+                          <span style={{ background: l.status === "SENT" ? T.green + "20" : T.red + "20", color: l.status === "SENT" ? T.green : T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+                            {l.status === "SENT" ? "✓ נשלח" : "✗ נכשל"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>
+                          {new Date(l.sentAt).toLocaleDateString("he-IL")} {new Date(l.sentAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
