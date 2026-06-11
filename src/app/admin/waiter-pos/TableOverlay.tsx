@@ -21,6 +21,8 @@ export type OrderItemDetail = {
   servedAt: string | null;
   isComped: boolean;
   voidedAt?: string | null;
+  servedAt?: string | null;
+  noKitchen?: boolean;
 };
 
 export type OrderDetail = {
@@ -78,10 +80,13 @@ export function TableOverlay({
   const [allergens, setAllergens]       = useState<string[]>([]);
   const [savingAllergens, setSavingAllergens] = useState(false);
   const [guestCount, setGuestCount]     = useState(Math.max(guests, 2));
-  const [firingCourse, setFiringCourse] = useState<number | null>(null);
-  const [transferOpen, setTransferOpen] = useState(false);
-  const [transferring, setTransferring] = useState(false);
-  const [removingItem, setRemovingItem] = useState<string | null>(null);
+  const [firingCourse, setFiringCourse]   = useState<number | null>(null);
+  const [servingCourse, setServingCourse] = useState<number | null>(null);
+  const [transferOpen, setTransferOpen]   = useState(false);
+  const [transferring, setTransferring]   = useState(false);
+  const [removingItem, setRemovingItem]   = useState<string | null>(null);
+  const [servingItem, setServingItem]     = useState<string | null>(null);
+  const [billWarning, setBillWarning]     = useState(false);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
@@ -95,15 +100,53 @@ export function TableOverlay({
   // Courses derived from order items
   const courseNums = Array.from(new Set((order?.items ?? []).map(i => i.course))).sort();
 
-  async function removeItem(itemId: string) {
+  function handleCloseBill() {
+    if (!order) return;
+    const openItems = order.items.filter(i =>
+      !i.voidedAt && !i.isComped && i.itemStatus !== "CANCELLED" &&
+      i.itemStatus !== "SERVED" && !i.servedAt
+    );
+    if (openItems.length > 0) { setBillWarning(true); return; }
+    router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`);
+  }
+
+  async function toggleComp(itemId: string) {
     if (!orderId) return;
     setRemovingItem(itemId);
-    const r = await fetch(`/api/admin/orders/${orderId}/items/${itemId}/remove`, { method: "DELETE" });
-    if (r.ok) {
-      const updated = await fetch(`/api/admin/orders/${orderId}`);
-      if (updated.ok) setOrder(await updated.json());
-    }
+    await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comp: true }),
+    });
+    const r = await fetch(`/api/admin/orders/${orderId}`);
+    if (r.ok) setOrder(await r.json());
     setRemovingItem(null);
+  }
+
+  async function serveItem(itemId: string) {
+    if (!orderId) return;
+    setServingItem(itemId);
+    await fetch(`/api/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ serve: true }),
+    });
+    const r = await fetch(`/api/admin/orders/${orderId}`);
+    if (r.ok) setOrder(await r.json());
+    setServingItem(null);
+  }
+
+  async function serveCourse(course: number) {
+    if (!orderId || !order) return;
+    setServingCourse(course);
+    const items = order.items.filter(i => i.course === course && !i.voidedAt && (i.itemStatus === "DONE" || i.itemStatus === "SERVED"));
+    await Promise.all(items.map(i =>
+      fetch(`/api/admin/orders/${orderId}/items/${i.id}/status`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serve: true }),
+      })
+    ));
+    const r = await fetch(`/api/admin/orders/${orderId}`);
+    if (r.ok) setOrder(await r.json());
+    setServingCourse(null);
   }
 
   async function fireCourse(course: number) {
@@ -146,7 +189,16 @@ export function TableOverlay({
     setAllergens(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   }
 
-  const activeItems  = (order?.items ?? []).filter(i => !i.voidedAt && i.itemStatus !== "CANCELLED");
+  const activeItems = (order?.items ?? [])
+    .filter(i => !i.voidedAt && i.itemStatus !== "CANCELLED")
+    .sort((a, b) => {
+      const aDone = a.itemStatus === "DONE" ? 0 : 1;
+      const bDone = b.itemStatus === "DONE" ? 0 : 1;
+      if (aDone !== bDone) return aDone - bDone;
+      return a.course - b.course;
+    });
+  const noKitchenItems = activeItems.filter(i => i.noKitchen);
+  const kitchenItems   = activeItems.filter(i => !i.noKitchen);
   const billTotal    = order?.totalAmount ?? totalAmount;
   const allergyHits  = (order?.tableAllergens ?? []);
 
@@ -157,7 +209,7 @@ export function TableOverlay({
 
   const panelStyle: React.CSSProperties = isMobile
     ? { position: "fixed", inset: 0, background: "#f5f3ef", display: "flex", flexDirection: "column", zIndex: 501 }
-    : { background: "#f5f3ef", borderRadius: 28, width: 500, height: "min(92dvh, 820px)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
+    : { position: "relative", background: "#f5f3ef", borderRadius: 28, width: 500, height: "min(92dvh, 820px)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
 
   return (
     <div style={bgStyle} onClick={isMobile ? undefined : onClose}>
@@ -218,84 +270,147 @@ export function TableOverlay({
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", textAlign: "left", marginBottom: 8 }}>הזמנה #{order.orderNumber}</div>
 
                   {/* Items card */}
-                  <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
-                    {activeItems.map((oi, i) => {
-                      const allergyHit = oi.itemAllergens.some(a => allergyHits.includes(a));
+                  {(() => {
+                    const itemStatusMap: Record<string, { label: string; bg: string; color: string }> = {
+                      PENDING:   { label: "ממתין", bg: "#f3f4f6", color: "#6b7280" },
+                      PREPARING: { label: "בהכנה", bg: "#fff7ed", color: "#c2410c" },
+                      DONE:      { label: "מוכן",  bg: "#f0fdf4", color: "#15803d" },
+                      SERVED:    { label: "הוגש",  bg: "#eff6ff", color: "#1d4ed8" },
+                      CANCELLED: { label: "בוטל",  bg: "#fef2f2", color: "#dc2626" },
+                    };
+
+                    const renderItem = (oi: typeof activeItems[0], isLast: boolean) => {
+                      const allergyHit   = oi.itemAllergens.some(a => allergyHits.includes(a));
                       const allergyLabel = oi.itemAllergens.filter(a => allergyHits.includes(a))
                         .map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
-                      const itemStatusMap: Record<string, { label: string; bg: string; color: string }> = {
-                        PENDING:    { label: "ממתין",  bg: "#f3f4f6", color: "#6b7280" },
-                        PREPARING:  { label: "בהכנה",  bg: "#fff7ed", color: "#c2410c" },
-                        DONE:       { label: "מוכן",   bg: "#f0fdf4", color: "#15803d" },
-                        SERVED:     { label: "הוגש",   bg: "#eff6ff", color: "#1d4ed8" },
-                        CANCELLED:  { label: "בוטל",   bg: "#fef2f2", color: "#dc2626" },
-                      };
-                      const si = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
+                      const si       = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
+                      const isServed = !!(oi.servedAt) || oi.itemStatus === "SERVED";
+                      const canServe = !isServed && !oi.isComped && oi.itemStatus !== "CANCELLED";
                       return (
-                        <div key={oi.id} style={{ padding: "10px 16px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", gap: 8 }}>
-                          {/* Right side (RTL start): item name + allergens + comped */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 13, color: "#1a1612" }}>{oi.itemName} × {oi.quantity}</span>
-                            {allergyHit && (
-                              <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 8px", border: "1px solid #f5c4bc" }}>⚠️ {allergyLabel}</span>
-                            )}
-                            {oi.isComped && <span style={{ fontSize: 10, fontWeight: 800, background: "#f0fdf4", color: "#166534", borderRadius: 99, padding: "2px 8px" }}>🎁 חינם</span>}
+                        <div key={oi.id} style={{ padding: "8px 14px", borderBottom: isLast ? undefined : "1px solid #f0ebe4", display: "flex", alignItems: "center", direction: "rtl", gap: 6, opacity: oi.isComped ? 0.6 : 1 }}>
+                          {/* RTL start (physical right): course + name + allergens */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 14, color: "#1a1612", fontWeight: 600, textDecoration: oi.isComped ? "line-through" : "none" }}>{oi.itemName} × {oi.quantity}</span>
+                            {allergyHit && <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 7px", border: "1px solid #f5c4bc", flexShrink: 0 }}>⚠️ {allergyLabel}</span>}
                           </div>
-                          {/* Left side (RTL end): price + status + course + delete */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>{si.label}</span>
-                            <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f3ff", color: "#7c3aed", borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>ק{oi.course}</span>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
-                            {(oi.heldUntilFired || !oi.firedAt) ? (
-                              <button
-                                onClick={() => removeItem(oi.id)}
-                                disabled={removingItem === oi.id}
-                                title="הסר פריט"
-                                style={{ width: 24, height: 24, borderRadius: 99, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}
-                              >
-                                {removingItem === oi.id ? "…" : "✕"}
+                          {/* Status + price */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "3px 9px", whiteSpace: "nowrap" }}>{si.label}</span>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: oi.isComped ? "#9ca3af" : "#1a1612", minWidth: 34, textAlign: "left", textDecoration: oi.isComped ? "line-through" : "none" }}>
+                              ₪{(oi.price * oi.quantity).toFixed(0)}
+                            </div>
+                          </div>
+                          {/* RTL end (physical left): הגש + X */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                            {canServe ? (
+                              <button onClick={() => serveItem(oi.id)} disabled={servingItem === oi.id}
+                                style={{ height: 24, padding: "0 8px", borderRadius: 6, border: "1.5px solid #86efac", background: "#f0fdf4", color: "#15803d", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                                {servingItem === oi.id ? "…" : "הגש"}
                               </button>
-                            ) : (
-                              <div style={{ width: 24, flexShrink: 0 }} />
-                            )}
+                            ) : <div style={{ width: 32 }} />}
+                            <button onClick={() => toggleComp(oi.id)} disabled={removingItem === oi.id} title={oi.isComped ? "בטל הסרה" : "הסר מחשבון"}
+                              style={{ background: "none", border: "none", color: oi.isComped ? "#9ca3af" : "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "2px 4px", flexShrink: 0, fontFamily: "inherit", lineHeight: 1 }}>
+                              {removingItem === oi.id ? "…" : "✕"}
+                            </button>
                           </div>
                         </div>
                       );
-                    })}
-                    {/* Total row */}
-                    <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ fontSize: 15, fontWeight: 900, color: "#1a1612" }}>₪{billTotal.toFixed(0)}</div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1612" }}>סה&quot;כ</div>
-                    </div>
-                  </div>
+                    };
+
+                    return (
+                      <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
+                        {/* ── No-kitchen items ── */}
+                        {noKitchenItems.length > 0 && (
+                          <>
+                            {(noKitchenItems.length > 0 && kitchenItems.length > 0) && <div style={{ height: 6, background: "#f4f1ed", borderTop: "1px solid #e8e2da", borderBottom: "1px solid #e8e2da" }} />}
+                            <div style={{ display: "flex", direction: "rtl" }}>
+                              <div style={{ writingMode: "vertical-rl", transform: "rotate(0deg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, letterSpacing: 2, padding: "10px 6px", flexShrink: 0, width: 28, borderLeft: "3px solid #f59e0b", color: "#92400e" }}>ללא מטבח</div>
+                              <div style={{ flex: 1 }}>
+                                {noKitchenItems.map((oi, i) => renderItem(oi, i === noKitchenItems.length - 1))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* ── Kitchen items grouped by course ── */}
+                        {(() => {
+                          const courses = Array.from(new Set(kitchenItems.map(i => i.course))).sort();
+                          const courseColors = ["#3b82f6","#22c55e","#a855f7","#f59e0b","#ef4444","#06b6d4"];
+                          const courseFg     = ["#1d4ed8","#166534","#7e22ce","#92400e","#b91c1c","#0e7490"];
+                          return courses.map((c, ci) => {
+                            const items = kitchenItems.filter(i => i.course === c);
+                            const isFirst = ci === 0;
+                            return (
+                              <React.Fragment key={c}>
+                                {(noKitchenItems.length > 0 || !isFirst) && <div style={{ height: 6, background: "#f4f1ed", borderTop: "1px solid #e8e2da", borderBottom: "1px solid #e8e2da" }} />}
+                                <div style={{ display: "flex", direction: "rtl" }}>
+                                  <div style={{ writingMode: "vertical-rl", transform: "rotate(0deg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, letterSpacing: 2, padding: "10px 6px", flexShrink: 0, width: 28, borderLeft: `3px solid ${courseColors[ci % courseColors.length]}`, color: courseFg[ci % courseFg.length] }}>{["I","II","III","IV","V","VI","VII","VIII"][c-1] ?? String(c)}</div>
+                                  <div style={{ flex: 1 }}>
+                                    {items.map((oi, i) => renderItem(oi, i === items.length - 1))}
+                                  </div>
+                                </div>
+                              </React.Fragment>
+                            );
+                          });
+                        })()}
+
+                        {/* Total row — RTL: סה"כ on right, amount on left */}
+                        <div style={{ padding: "11px 16px", borderTop: "1.5px solid #e8e2da", display: "flex", justifyContent: "space-between", alignItems: "center", direction: "rtl" }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1612" }}>סה&quot;כ</div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "#1a1612" }}>₪{billTotal.toFixed(0)}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Course management */}
                   {courseNums.length > 0 && (
                     <>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#c07020", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>🔥 ניהול קורסים</div>
                       {courseNums.map(c => {
-                        const courseItems = (order.items ?? []).filter(i => i.course === c && !i.voidedAt && i.itemStatus !== "CANCELLED");
-                        const allHeld     = courseItems.every(i => i.heldUntilFired);
-                        const hasFired    = courseItems.some(i => i.firedAt || !i.heldUntilFired);
-                        const allDone     = courseItems.length > 0 && courseItems.every(i => i.itemStatus === "DONE" || i.itemStatus === "SERVED");
-                        const border      = allDone ? "1.5px solid #86efac" : "1.5px solid #e8e2da";
-                        const bg          = allDone ? "#f0fdf4" : "#fff";
+                        const courseItems  = (order.items ?? []).filter(i => i.course === c && !i.voidedAt && i.itemStatus !== "CANCELLED");
+                        const allHeld      = courseItems.length > 0 && courseItems.every(i => i.heldUntilFired && !i.firedAt);
+                        const allServed    = courseItems.length > 0 && courseItems.every(i => i.servedAt || i.itemStatus === "SERVED");
+                        const allDone      = courseItems.length > 0 && courseItems.every(i => i.itemStatus === "DONE" || i.itemStatus === "SERVED" || i.servedAt);
+                        const anyPreparing = courseItems.some(i => i.itemStatus === "PREPARING");
+                        const hasFired     = courseItems.some(i => i.firedAt || !i.heldUntilFired);
+
+                        // Derive display status after firing
+                        type CourseState = "held" | "pending" | "preparing" | "done" | "served";
+                        const state: CourseState =
+                          allServed   ? "served"   :
+                          allDone     ? "done"     :
+                          anyPreparing? "preparing":
+                          allHeld     ? "held"     :
+                          hasFired    ? "pending"  : "held";
+
+                        const stateStyle: Record<CourseState, { bg: string; border: string; label: string; labelColor: string }> = {
+                          held:      { bg: "#fff",    border: "1.5px solid #e8e2da", label: "ממתין לשחרור", labelColor: "#8a8480" },
+                          pending:   { bg: "#fffbeb", border: "1.5px solid #fde68a", label: "⏳ נשלח — ממתין במטבח", labelColor: "#92400e" },
+                          preparing: { bg: "#fff7ed", border: "1.5px solid #fed7aa", label: "🍳 בהכנה", labelColor: "#c2410c" },
+                          done:      { bg: "#f0fdf4", border: "1.5px solid #86efac", label: "✅ מוכן להגשה!", labelColor: "#15803d" },
+                          served:    { bg: "#eff6ff", border: "1.5px solid #bfdbfe", label: "🍽️ הוגש", labelColor: "#1d4ed8" },
+                        };
+                        const ss = stateStyle[state];
+
                         return (
-                          <div key={c} style={{ background: bg, border, borderRadius: 14, padding: "12px 16px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div key={c} style={{ background: ss.bg, border: ss.border, borderRadius: 14, padding: "12px 16px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div>
                               <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1612" }}>קורס {c} – {courseItems.length} פריטים</div>
-                              <div style={{ fontSize: 11, marginTop: 2, fontWeight: allDone ? 800 : 400, color: allDone ? "#15803d" : "#8a8480" }}>
-                                {allDone ? "✅ מוכן להגשה!" : allHeld ? "ממתין לשחרור" : hasFired ? "✓ יצא למטבח" : "בהכנה"}
-                              </div>
+                              <div style={{ fontSize: 11, marginTop: 3, fontWeight: 700, color: ss.labelColor }}>{ss.label}</div>
                             </div>
-                            {allHeld && !allDone ? (
+                            {state === "held" ? (
                               <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "7px 18px", borderRadius: 99, border: "1.5px solid #d4a840", background: "#fdf7ed", color: "#92400e", fontSize: 12, fontWeight: 800, cursor: firingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
                                 {firingCourse === c ? "…" : "🔥 שחרר"}
                               </button>
-                            ) : allDone ? (
-                              <div style={{ padding: "7px 18px", borderRadius: 99, background: "#dcfce7", color: "#15803d", fontSize: 12, fontWeight: 800, border: "1.5px solid #86efac" }}>✅ הגש</div>
+                            ) : state === "done" ? (
+                              <button onClick={() => serveCourse(c)} disabled={servingCourse === c} style={{ padding: "7px 18px", borderRadius: 99, background: "#dcfce7", color: "#15803d", fontSize: 12, fontWeight: 800, border: "1.5px solid #86efac", cursor: servingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
+                                {servingCourse === c ? "…" : "✅ הוגש"}
+                              </button>
+                            ) : state === "served" ? (
+                              <div style={{ padding: "7px 14px", borderRadius: 99, background: "#eff6ff", color: "#1d4ed8", fontSize: 12, fontWeight: 800, border: "1.5px solid #bfdbfe" }}>✓ הוגש</div>
                             ) : (
-                              <div style={{ padding: "7px 18px", borderRadius: 99, background: "#f0f7f3", color: "#1f5c3a", fontSize: 12, fontWeight: 800, border: "1.5px solid #b3d9c4" }}>✓ יצא</div>
+                              <div style={{ padding: "7px 14px", borderRadius: 99, background: ss.bg, color: ss.labelColor, fontSize: 12, fontWeight: 700, border: ss.border }}>{state === "preparing" ? "מכינים..." : "במטבח"}</div>
                             )}
                           </div>
                         );
@@ -400,6 +515,53 @@ export function TableOverlay({
           )}
         </div>
 
+        {/* ── Bill warning modal ── */}
+        {billWarning && order && (() => {
+          const blockItems   = order.items.filter(i => !i.voidedAt && !i.isComped && i.itemStatus !== "CANCELLED" && (i.itemStatus === "PENDING" || i.itemStatus === "PREPARING"));
+          const notServItems = order.items.filter(i => !i.voidedAt && !i.isComped && i.itemStatus !== "CANCELLED" && i.itemStatus !== "SERVED" && !i.servedAt && i.itemStatus !== "PENDING" && i.itemStatus !== "PREPARING");
+          const hardBlock    = blockItems.length > 0;
+          return (
+            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "inherit" }}>
+              <div style={{ background: "#fff", borderRadius: 20, padding: "24px 20px", margin: 16, width: "100%", maxWidth: 380, direction: "rtl", boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
+                <div style={{ fontSize: 28, textAlign: "center", marginBottom: 8 }}>{hardBlock ? "🚫" : "⚠️"}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1612", textAlign: "center", marginBottom: 6 }}>
+                  {hardBlock ? "לא ניתן לסגור חשבון" : "יש מנות שלא הוגשו"}
+                </div>
+                <div style={{ fontSize: 13, color: "#6b7280", textAlign: "center", marginBottom: 16, lineHeight: 1.6 }}>
+                  {hardBlock
+                    ? "ישנן מנות שעדיין בהכנה במטבח. יש להמתין לסיום לפני סגירת החשבון."
+                    : "הבא המנות הבאות לא סומנו כהוגשו. האם לסגור את החשבון בכל זאת?"}
+                </div>
+
+                {/* List of problematic items */}
+                <div style={{ background: "#f9fafb", borderRadius: 12, padding: "10px 14px", marginBottom: 16, maxHeight: 160, overflowY: "auto" }}>
+                  {[...blockItems, ...notServItems].map(i => (
+                    <div key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid #f3f4f6" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, background: i.itemStatus === "PREPARING" ? "#fff7ed" : i.itemStatus === "PENDING" ? "#f3f4f6" : "#eff6ff", color: i.itemStatus === "PREPARING" ? "#c2410c" : i.itemStatus === "PENDING" ? "#6b7280" : "#1d4ed8", borderRadius: 99, padding: "1px 7px", whiteSpace: "nowrap" }}>
+                        {i.itemStatus === "PREPARING" ? "בהכנה" : i.itemStatus === "PENDING" ? "ממתין" : "מוכן"}
+                      </span>
+                      <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{i.itemName}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setBillWarning(false)}
+                    style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "1.5px solid #e5e7eb", background: "#f9fafb", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#374151", fontFamily: "inherit" }}>
+                    ביטול
+                  </button>
+                  {!hardBlock && (
+                    <button onClick={() => { setBillWarning(false); router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`); }}
+                      style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
+                      סגור בכל זאת
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Footer ── */}
         <div style={{ background: "#fff", borderTop: "1px solid #ede9e3", padding: "14px 16px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
 
@@ -409,17 +571,22 @@ export function TableOverlay({
               <button onClick={() => onAddItems(order)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 ➕ הוסף מנות
               </button>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`)}
+              <div style={{ display: "flex", gap: 8, direction: "rtl" }}>
+                <button onClick={() => { onStatusChange("bill_requested"); }}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c2410c", fontFamily: "inherit" }}>
+                  🧾 מבקש חשבון
+                </button>
+                <button onClick={handleCloseBill}
                   style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
                   💳 סגור חשבון
                 </button>
-                <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
-                  🔄 שנה סטטוס
+                <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); }}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
+                  סטטוס
                 </button>
-                <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); }} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
-                  ⚠️ אלרגיות
+                <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); }}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
+                  אלרגנים
                 </button>
               </div>
             </>

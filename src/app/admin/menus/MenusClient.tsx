@@ -2,6 +2,7 @@
 
 import { T } from "@/lib/ui";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 import PageShell from "@/components/admin/PageShell";
@@ -482,6 +483,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
 }
 
 export default function MenusClient({ restaurants, canEdit }: { restaurants: Restaurant[]; canEdit: boolean }) {
+  const router = useRouter();
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(restaurants[0] ?? null);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(restaurants[0]?.menus[0] ?? null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -498,6 +500,43 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [seedingAllergens, setSeedingAllergens] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
+
+  async function handleSeedAllergens() {
+    if (!selectedRestaurant) return;
+    setSeedingAllergens(true);
+    setSeedResult(null);
+    try {
+      const res = await fetch("/api/admin/menu/seed-allergens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: selectedRestaurant.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSeedResult(`שגיאה: ${data.error ?? res.status}`);
+        return;
+      }
+      setSeedResult(`עודכנו ${data.updated} מנות`);
+      if (data.updated > 0) {
+        // Update open form if the current item was among the updated ones
+        if (editItem) {
+          const updated = (data.results as { name: string; allergens: string[] }[])
+            .find(r => r.name === editItem.name);
+          if (updated) {
+            setItemForm(prev => ({ ...prev, allergens: updated.allergens }));
+          }
+        }
+        router.refresh();
+      }
+    } catch (e) {
+      setSeedResult(`שגיאה: ${e instanceof Error ? e.message : "לא ידוע"}`);
+    } finally {
+      setSeedingAllergens(false);
+    }
+  }
 
   // Import / Export state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -1094,6 +1133,18 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
             >
               📥 ייבא תפריט
             </button>
+
+            {/* Allergen auto-fill */}
+            <button
+              onClick={handleSeedAllergens}
+              disabled={seedingAllergens || !selectedRestaurant}
+              className="flex items-center gap-1.5 disabled:opacity-50"
+              style={{ background: T.raised, border: "1px solid #f59e0b", color: "#d97706", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
+              title="מלא אוטומטית אלרגנים לפי שמות המנות"
+            >
+              {seedingAllergens ? "⏳ מעדכן..." : "⚠️ אלרגנים אוטו"}
+            </button>
+            {seedResult && <span style={{ fontSize: 12, color: "#d97706", fontWeight: 600 }}>{seedResult}</span>}
 
             {/* Sample dropdown */}
             <div className="relative">

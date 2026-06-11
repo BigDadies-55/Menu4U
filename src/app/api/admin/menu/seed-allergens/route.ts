@@ -48,11 +48,12 @@ const RULES: Array<{ match: RegExp; allergens: string[] }> = [
   { match: /לופין|קמח לופין/i, allergens: ["LUPIN"] },
 ];
 
-function inferAllergens(name: string, existing: string[]): string[] {
+function inferAllergens(name: string, description: string | null, existing: string[]): string[] {
   if (existing.length > 0) return existing; // already set — don't overwrite
+  const text = `${name} ${description ?? ""}`;
   const set = new Set<string>();
   for (const rule of RULES) {
-    if (rule.match.test(name)) {
+    if (rule.match.test(text)) {
       rule.allergens.forEach(a => set.add(a));
     }
   }
@@ -90,27 +91,26 @@ const EXACT: Record<string, string[]> = {
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "SUPER_ADMIN")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session?.user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { restaurantId } = await req.json();
 
   const items = await prisma.item.findMany({
     where: restaurantId ? { category: { menu: { restaurantId } } } : {},
-    select: { id: true, name: true, allergens: true },
+    select: { id: true, name: true, description: true, allergens: true },
   });
 
   let updated = 0;
   const results: { name: string; allergens: string[] }[] = [];
 
   for (const item of items) {
-    // Exact match first, then regex inference
     const exactKey = Object.keys(EXACT).find(k =>
       item.name.includes(k) || k.includes(item.name)
     );
     const newAllergens = exactKey
       ? EXACT[exactKey]
-      : inferAllergens(item.name, item.allergens);
+      : inferAllergens(item.name, item.description ?? null, item.allergens);
 
     if (newAllergens.length > 0 &&
         JSON.stringify([...newAllergens].sort()) !== JSON.stringify([...item.allergens].sort())) {

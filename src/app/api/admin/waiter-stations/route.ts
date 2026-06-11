@@ -11,7 +11,8 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const restaurantId = searchParams.get("restaurantId");
-  const userId       = searchParams.get("userId") ?? undefined;
+  const userIdParam  = searchParams.get("userId") ?? undefined;
+  const userId       = userIdParam === "me" ? session.user.id : userIdParam;
 
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
 

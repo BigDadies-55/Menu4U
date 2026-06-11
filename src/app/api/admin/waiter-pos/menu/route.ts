@@ -37,6 +37,13 @@ export async function GET(req: Request) {
                 id: true, name: true, description: true, price: true,
                 image: true, allergens: true, isVegetarian: true,
                 isVegan: true, isGlutenFree: true,
+                modifierGroups: {
+                  orderBy: { order: "asc" },
+                  select: {
+                    id: true, name: true, required: true, maxSelect: true,
+                    options: { orderBy: { order: "asc" }, select: { id: true, label: true, priceAdd: true } },
+                  },
+                },
               },
             },
           },

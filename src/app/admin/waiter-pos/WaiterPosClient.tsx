@@ -126,6 +126,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [roomIdx, setRoomIdx]                 = useState(0);
   const [refreshing, setRefreshing]           = useState(false);
   const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
+  const [myTableNums, setMyTableNums]         = useState<Set<string> | null>(null); // null = no restriction
   const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
   const [notifications, setNotifications]     = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen]             = useState(false);
@@ -274,7 +275,20 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   useEffect(() => { fetchLayout(); }, [fetchLayout]);
 
-  // Fetch tables + insights together
+  // Fetch my station assignment (which tables I'm responsible for)
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/waiter-stations?restaurantId=${restaurantId}&userId=me`)
+      .then(r => r.ok ? r.json() : null)
+      .then((stations: Array<{ tableNumbers: string[] }> | null) => {
+        if (!stations || stations.length === 0 || stations[0]?.tableNumbers?.length === 0) {
+          setMyTableNums(null); // manager or no assignment — see all
+        } else {
+          setMyTableNums(new Set(stations[0].tableNumbers));
+        }
+      })
+      .catch(() => setMyTableNums(null));
+  }, [restaurantId]);
   const fetchAll = useCallback(async (quiet = false) => {
     if (!restaurantId) return;
     if (!quiet) setLoading(true);
@@ -369,9 +383,12 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const overlayInsights = insights.filter(i => i.tableNum === tableOverlay);
 
   // ── Status filter
-  const filteredTables = useMemo(() =>
-    statusFilter.size === 0 ? tables : tables.filter(t => statusFilter.has(t.availStatus)),
-  [tables, statusFilter]);
+  const filteredTables = useMemo(() => {
+    let result = tables;
+    if (myTableNums !== null) result = result.filter(t => myTableNums.has(t.tableNum));
+    if (statusFilter.size > 0) result = result.filter(t => statusFilter.has(t.availStatus));
+    return result;
+  }, [tables, statusFilter, myTableNums]);
 
   function toggleFilter(s: string) {
     setStatusFilter(prev => {
@@ -569,6 +586,11 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               background: "transparent", color: "#888",
             }}>✕ הכל</button>
           )}
+          {myTableNums !== null && (
+            <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
+              📍 התחנה שלי ({myTableNums.size})
+            </span>
+          )}
         </div>
 
         {/* Rotate button — floor only */}
@@ -622,7 +644,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               </div>
             ) : filteredTables.map(t => {
               const borderColor    = STATUS_BORDER[t.availStatus] ?? "#9ca3af";
-              const tableInsights  = insights.filter(i => i.tableNum === t.tableNum);
+              const isReserved     = t.availStatus === "reserved";
+              const tableInsights  = isReserved ? [] : insights.filter(i => i.tableNum === t.tableNum);
               const isWarn         = t.availStatus === "occupied" && t.minutesSitting > 20;
               const statusBadgeBg  = ORDER_STATUS_COLOR[t.orderStatus ?? ""] ?? STATUS_BADGE_BG[t.availStatus];
               const statusBadgeFg  = t.orderStatus ? (ORDER_STATUS_TEXT_COLOR[t.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[t.availStatus] ?? "#374151");
@@ -670,24 +693,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     </div>
                   </div>
 
-                  {/* Cancel reservation button — reserved tables only */}
-                  {t.availStatus === "reserved" && (
-                    <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
-                      <button
-                        onClick={e => { e.stopPropagation(); patchStatus(t.tableNum, "free"); }}
-                        style={{
-                          background: "#eff6ff", border: "1px solid #3b82f6",
-                          cursor: "pointer", width: "100%",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                          color: "#3b82f6", fontSize: 11, fontWeight: 600, padding: "3px 4px", borderRadius: 6,
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "#dbeafe")}
-                        onMouseLeave={e => (e.currentTarget.style.background = "#eff6ff")}
-                      >
-                        🔵 בטל הזמנה
-                      </button>
-                    </div>
-                  )}
 
 
                   {/* 🔥 Fire course quick button */}
