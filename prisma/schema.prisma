@@ -58,8 +58,11 @@ model User {
   sessions         Session[]
   restaurantUsers  RestaurantUser[]
   passwordHistory  PasswordHistory[]
-  waiterStations   WaiterStation[]
+  waiterStations    WaiterStation[]
   pushSubscriptions PushSubscription[]
+  shifts            Shift[]
+  shiftRequestsFrom ShiftRequest[] @relation("ShiftRequestFrom")
+  shiftRequestsTo   ShiftRequest[] @relation("ShiftRequestTo")
 }
 
 model PasswordHistory {
@@ -179,6 +182,8 @@ model Restaurant {
   loyaltyMembers  LoyaltyMember[]
   loyaltySettings LoyaltySettings?
   waiterStations  WaiterStation[]
+  shifts          Shift[]
+  shiftRequests   ShiftRequest[]
 }
 
 model RestaurantUser {
@@ -517,4 +522,40 @@ model PushSubscription {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, endpoint])
+}
+
+model Shift {
+  id           String   @id @default(cuid())
+  restaurantId String
+  userId       String
+  date         String   // "YYYY-MM-DD"
+  shiftType    String   // MORNING | AFTERNOON | EVENING | NIGHT
+  startTime    String   // "07:00"
+  endTime      String   // "15:00"
+  role         String?
+  notes        String?
+  status       String   @default("SCHEDULED")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests     ShiftRequest[]
+}
+
+model ShiftRequest {
+  id           String   @id @default(cuid())
+  restaurantId String
+  shiftId      String
+  fromUserId   String
+  toUserId     String?
+  type         String   // SWAP | COVER
+  reason       String?
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  shift        Shift      @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  fromUser     User       @relation("ShiftRequestFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser       User?      @relation("ShiftRequestTo",   fields: [toUserId],   references: [id], onDelete: SetNull)
 }

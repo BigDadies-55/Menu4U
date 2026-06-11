@@ -175,6 +175,40 @@ const sqls = [
     CONSTRAINT "PushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
   );`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "PushSubscription_userId_endpoint_key" ON "PushSubscription"("userId","endpoint");`,
+  // Shifts
+  `CREATE TABLE IF NOT EXISTS "Shift" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "userId"       TEXT NOT NULL,
+    "date"         TEXT NOT NULL,
+    "shiftType"    TEXT NOT NULL,
+    "startTime"    TEXT NOT NULL,
+    "endTime"      TEXT NOT NULL,
+    "role"         TEXT,
+    "notes"        TEXT,
+    "status"       TEXT NOT NULL DEFAULT 'SCHEDULED',
+    "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Shift_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "Shift_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE,
+    CONSTRAINT "Shift_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+  );`,
+  `CREATE TABLE IF NOT EXISTS "ShiftRequest" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "shiftId"      TEXT NOT NULL,
+    "fromUserId"   TEXT NOT NULL,
+    "toUserId"     TEXT,
+    "type"         TEXT NOT NULL,
+    "reason"       TEXT,
+    "status"       TEXT NOT NULL DEFAULT 'PENDING',
+    "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ShiftRequest_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "ShiftRequest_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE,
+    CONSTRAINT "ShiftRequest_shiftId_fkey" FOREIGN KEY ("shiftId") REFERENCES "Shift"("id") ON DELETE CASCADE,
+    CONSTRAINT "ShiftRequest_fromUserId_fkey" FOREIGN KEY ("fromUserId") REFERENCES "User"("id") ON DELETE CASCADE,
+    CONSTRAINT "ShiftRequest_toUserId_fkey" FOREIGN KEY ("toUserId") REFERENCES "User"("id") ON DELETE SET NULL
+  );`,
 ];
 
 async function run() {

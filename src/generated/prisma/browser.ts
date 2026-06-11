@@ -167,3 +167,13 @@ export type LoyaltySettings = Prisma.LoyaltySettingsModel
  * 
  */
 export type PushSubscription = Prisma.PushSubscriptionModel
+/**
+ * Model Shift
+ * 
+ */
+export type Shift = Prisma.ShiftModel
+/**
+ * Model ShiftRequest
+ * 
+ */
+export type ShiftRequest = Prisma.ShiftRequestModel

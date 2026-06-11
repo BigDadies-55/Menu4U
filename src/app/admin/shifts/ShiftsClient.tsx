@@ -1,0 +1,826 @@
+"use client";
+import React, { useState, useEffect, useCallback } from "react";
+import { T } from "@/lib/ui";
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+type ShiftRow = {
+  id: string;
+  userId: string;
+  userName: string;
+  date: string;
+  shiftType: string;
+  startTime: string;
+  endTime: string;
+  role: string | null;
+  notes: string | null;
+  status: string;
+};
+
+type RequestRow = {
+  id: string;
+  shiftId: string;
+  type: string;
+  reason: string | null;
+  status: string;
+  fromUserName: string;
+  toUserName: string | null;
+  shiftDate: string;
+  shiftType: string;
+  createdAt: string;
+};
+
+interface Props {
+  restaurants: { id: string; name: string }[];
+  currentUserId: string;
+  currentUserRole: string;
+  currentUserName: string;
+}
+
+// ── Shift type config ─────────────────────────────────────────────────────────
+const SHIFT_CFG: Record<string, { label: string; time: string; color: string; bg: string }> = {
+  MORNING:   { label: "בוקר",    time: "07–15", color: "#f59e0b", bg: "#fffbeb" },
+  AFTERNOON: { label: "צהריים", time: "12–20", color: "#3b82f6", bg: "#eff6ff" },
+  EVENING:   { label: "ערב",    time: "17–01", color: "#a855f7", bg: "#faf5ff" },
+  NIGHT:     { label: "לילה",   time: "22–06", color: "#6b7280", bg: "#f9fafb" },
+};
+
+const DAYS_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "שבת"];
+const MONTHS_HE = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+
+// ── Week helpers ──────────────────────────────────────────────────────────────
+function getWeekDates(offset: number): Date[] {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const sunday = new Date(now);
+  sunday.setDate(now.getDate() - day + offset * 7);
+  sunday.setHours(0, 0, 0, 0);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(sunday);
+    d.setDate(sunday.getDate() + i);
+    return d;
+  });
+}
+
+function formatDate(d: Date): string {
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function formatDateISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function weekLabel(dates: Date[]): string {
+  const first = dates[0];
+  const last = dates[6];
+  const sameMonth = first.getMonth() === last.getMonth();
+  if (sameMonth) {
+    return `${first.getDate()}–${last.getDate()} ${MONTHS_HE[first.getMonth()]} ${first.getFullYear()}`;
+  }
+  return `${first.getDate()} ${MONTHS_HE[first.getMonth()]} – ${last.getDate()} ${MONTHS_HE[last.getMonth()]} ${last.getFullYear()}`;
+}
+
+function calcHours(startTime: string, endTime: string): number {
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+  let startMins = sh * 60 + (sm || 0);
+  let endMins = eh * 60 + (em || 0);
+  if (endMins <= startMins) endMins += 24 * 60;
+  return (endMins - startMins) / 60;
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+export default function ShiftsClient({
+  restaurants,
+  currentUserId,
+  currentUserRole,
+  currentUserName,
+}: Props) {
+  const isManager = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"].includes(currentUserRole);
+
+  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "summary">("schedule");
+  const [shifts, setShifts] = useState<ShiftRow[]>([]);
+  const [requests, setRequests] = useState<RequestRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [staff, setStaff] = useState<{ id: string; name: string }[]>([]);
+
+  // Add shift modal state
+  const [addModal, setAddModal] = useState<{ userId: string; userName: string; date: string } | null>(null);
+  const [addLoading, setAddLoading] = useState(false);
+
+  // Swap request state
+  const [swapModal, setSwapModal] = useState<ShiftRow | null>(null);
+  const [swapReason, setSwapReason] = useState("");
+  const [swapLoading, setSwapLoading] = useState(false);
+
+  const [toast, setToast] = useState("");
+
+  const weekDates = getWeekDates(weekOffset);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3000);
+  };
+
+  // Load staff
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/users?restaurantId=${restaurantId}`)
+      .then(r => r.json())
+      .then(data => {
+        const users: { id: string; name: string; email?: string }[] = data.users ?? data ?? [];
+        setStaff(users.map(u => ({ id: u.id, name: u.name || u.email || u.id })));
+      })
+      .catch(() => setStaff([]));
+  }, [restaurantId]);
+
+  // Load shifts
+  const loadShifts = useCallback(async () => {
+    if (!restaurantId) return;
+    setLoading(true);
+    try {
+      const from = formatDateISO(weekDates[0]);
+      const to = formatDateISO(weekDates[6]);
+      const res = await fetch(`/api/admin/shifts?restaurantId=${restaurantId}&from=${from}&to=${to}`);
+      const data = await res.json();
+      setShifts(data.shifts ?? []);
+    } catch {
+      setShifts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [restaurantId, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadShifts(); }, [loadShifts]);
+
+  // Load requests
+  const loadRequests = useCallback(async () => {
+    if (!restaurantId) return;
+    setRequestsLoading(true);
+    try {
+      const statusParam = isManager ? "PENDING" : "";
+      const res = await fetch(
+        `/api/admin/shifts/requests?restaurantId=${restaurantId}${statusParam ? `&status=${statusParam}` : ""}`
+      );
+      const data = await res.json();
+      setRequests(data.requests ?? data ?? []);
+    } catch {
+      setRequests([]);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [restaurantId, isManager]);
+
+  useEffect(() => {
+    if (activeTab === "requests") loadRequests();
+  }, [activeTab, loadRequests]);
+
+  // Delete shift
+  async function deleteShift(id: string) {
+    if (!confirm("למחוק משמרת זו?")) return;
+    const res = await fetch(`/api/admin/shifts/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      showToast("✓ משמרת נמחקה");
+      loadShifts();
+    } else {
+      showToast("שגיאה במחיקה");
+    }
+  }
+
+  // Add shift
+  async function addShift(shiftType: string) {
+    if (!addModal || addLoading) return;
+    setAddLoading(true);
+    try {
+      const res = await fetch("/api/admin/shifts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId,
+          userId: addModal.userId,
+          date: addModal.date,
+          shiftType,
+        }),
+      });
+      if (res.ok) {
+        showToast("✓ משמרת נוספה");
+        setAddModal(null);
+        loadShifts();
+      } else {
+        const err = await res.json();
+        showToast(err.error ?? "שגיאה בהוספה");
+      }
+    } finally {
+      setAddLoading(false);
+    }
+  }
+
+  // Submit swap request
+  async function submitSwap() {
+    if (!swapModal || swapLoading) return;
+    setSwapLoading(true);
+    try {
+      const res = await fetch("/api/admin/shifts/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shiftId: swapModal.id,
+          type: "SWAP",
+          reason: swapReason || null,
+          restaurantId,
+        }),
+      });
+      if (res.ok) {
+        showToast("✓ בקשת החלפה נשלחה");
+        setSwapModal(null);
+        setSwapReason("");
+      } else {
+        const err = await res.json();
+        showToast(err.error ?? "שגיאה בשליחת בקשה");
+      }
+    } finally {
+      setSwapLoading(false);
+    }
+  }
+
+  // Approve / reject request
+  async function respondRequest(id: string, status: "APPROVED" | "REJECTED") {
+    const res = await fetch("/api/admin/shifts/requests", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    if (res.ok) {
+      showToast(status === "APPROVED" ? "✓ בקשה אושרה" : "✓ בקשה נדחתה");
+      loadRequests();
+    } else {
+      showToast("שגיאה");
+    }
+  }
+
+  const pendingCount = requests.filter(r => r.status === "PENDING").length;
+
+  // ── Styles ──────────────────────────────────────────────────────────────────
+  const S = {
+    wrap: {
+      minHeight: "100vh",
+      background: T.bg,
+      color: T.text,
+      fontFamily: T.fontSans,
+      direction: "rtl" as const,
+      padding: "24px 20px",
+    } as React.CSSProperties,
+    header: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap" as const,
+      gap: 12,
+      marginBottom: 20,
+    } as React.CSSProperties,
+    title: {
+      fontSize: T.f2xl,
+      fontWeight: 800,
+      color: T.gold,
+      margin: 0,
+    } as React.CSSProperties,
+    weekNav: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      background: T.surface,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.rLg,
+      padding: "6px 12px",
+    } as React.CSSProperties,
+    weekNavBtn: {
+      background: "transparent",
+      border: `1px solid ${T.border}`,
+      borderRadius: T.rMd,
+      color: T.text,
+      fontSize: T.fmd,
+      padding: "4px 10px",
+      cursor: "pointer",
+      fontFamily: "inherit",
+    } as React.CSSProperties,
+    weekLabel: {
+      fontSize: T.fmd,
+      fontWeight: 600,
+      color: T.text,
+      minWidth: 180,
+      textAlign: "center" as const,
+    } as React.CSSProperties,
+    restSelect: {
+      background: T.surface,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.rMd,
+      color: T.text,
+      fontSize: T.fmd,
+      padding: "6px 12px",
+      fontFamily: "inherit",
+      cursor: "pointer",
+      marginBottom: 16,
+    } as React.CSSProperties,
+    tabBar: {
+      display: "flex",
+      gap: 4,
+      background: T.surface,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.rLg,
+      padding: 4,
+      marginBottom: 20,
+      overflowX: "auto" as const,
+    } as React.CSSProperties,
+    tabContent: {
+      background: T.surface,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.rLg,
+      padding: 20,
+      minHeight: 300,
+    } as React.CSSProperties,
+  };
+
+  function tabBtn(id: typeof activeTab, label: React.ReactNode): React.ReactElement {
+    const active = activeTab === id;
+    return (
+      <button
+        key={id}
+        onClick={() => setActiveTab(id)}
+        style={{
+          background: active ? T.gold : "transparent",
+          color: active ? "#fff" : T.muted,
+          border: "none",
+          borderRadius: T.rMd,
+          padding: "8px 16px",
+          fontSize: T.fmd,
+          fontWeight: active ? 700 : 500,
+          cursor: "pointer",
+          fontFamily: "inherit",
+          whiteSpace: "nowrap",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          transition: "all 0.15s",
+        }}
+      >
+        {label}
+      </button>
+    );
+  }
+
+  // ── Tab: Schedule ──────────────────────────────────────────────────────────
+  function ScheduleTab() {
+    const displayStaff = staff.length > 0 ? staff : Array.from(
+      new Map(shifts.map(s => [s.userId, { id: s.userId, name: s.userName }])).values()
+    );
+
+    return (
+      <div>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40, color: T.muted, fontSize: T.flg }}>טוען...</div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: "8px 12px", textAlign: "right", color: T.muted, fontSize: T.fsm, fontWeight: 600, borderBottom: `1px solid ${T.border}`, minWidth: 100 }}>עובד</th>
+                  {weekDates.map((d, i) => (
+                    <th key={i} style={{ padding: "8px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm, fontWeight: 600, borderBottom: `1px solid ${T.border}`, minWidth: 90 }}>
+                      <div style={{ color: T.text, fontWeight: 700 }}>{DAYS_HE[i]}</div>
+                      <div style={{ color: T.muted, fontSize: T.fxs }}>{formatDate(d)}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {displayStaff.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: "center", padding: 32, color: T.muted }}>אין עובדים להצגה</td>
+                  </tr>
+                ) : displayStaff.map(member => (
+                  <tr key={member.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+                    <td style={{ padding: "8px 12px", color: T.text, fontSize: T.fmd, fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {member.name}
+                    </td>
+                    {weekDates.map((d, di) => {
+                      const iso = formatDateISO(d);
+                      const dayShifts = shifts.filter(s => s.userId === member.id && s.date.slice(0, 10) === iso);
+                      return (
+                        <td
+                          key={di}
+                          style={{ padding: "4px 6px", verticalAlign: "top", cursor: isManager ? "pointer" : "default" }}
+                          onClick={() => {
+                            if (isManager && dayShifts.length === 0) {
+                              setAddModal({ userId: member.id, userName: member.name, date: iso });
+                            }
+                          }}
+                        >
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3, minHeight: 36 }}>
+                            {dayShifts.map(sh => {
+                              const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: T.muted, bg: T.panel };
+                              return (
+                                <div
+                                  key={sh.id}
+                                  style={{
+                                    background: cfg.bg,
+                                    border: `1px solid ${cfg.color}44`,
+                                    borderRadius: T.rMd,
+                                    padding: "2px 6px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: 4,
+                                  }}
+                                >
+                                  <span style={{ color: cfg.color, fontSize: T.fxs, fontWeight: 700 }}>
+                                    {cfg.label}
+                                    <span style={{ color: cfg.color + "99", fontSize: 9, marginRight: 2 }}>{cfg.time}</span>
+                                  </span>
+                                  {isManager && (
+                                    <button
+                                      onClick={e => { e.stopPropagation(); deleteShift(sh.id); }}
+                                      style={{ background: "transparent", border: "none", color: T.red, fontSize: 11, cursor: "pointer", padding: "0 2px", lineHeight: 1, fontWeight: 700 }}
+                                      title="מחק"
+                                    >✕</button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {isManager && dayShifts.length === 0 && (
+                              <div style={{ color: T.borderSub, fontSize: T.fxs, textAlign: "center", paddingTop: 8 }}>＋</div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Add Shift Modal */}
+        {addModal && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 24, width: 340, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: T.flg, fontWeight: 700, color: T.text, marginBottom: 4 }}>הוסף משמרת</div>
+              <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 20 }}>
+                {addModal.userName} — {addModal.date.split("-").reverse().join("/")}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {Object.entries(SHIFT_CFG).map(([key, cfg]) => (
+                  <button
+                    key={key}
+                    onClick={() => addShift(key)}
+                    disabled={addLoading}
+                    style={{
+                      background: cfg.bg,
+                      border: `2px solid ${cfg.color}55`,
+                      borderRadius: T.rMd,
+                      padding: "12px 8px",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 4,
+                      opacity: addLoading ? 0.6 : 1,
+                    }}
+                  >
+                    <span style={{ color: cfg.color, fontWeight: 700, fontSize: T.fmd }}>{cfg.label}</span>
+                    <span style={{ color: cfg.color + "99", fontSize: T.fxs }}>{cfg.time}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setAddModal(null)}
+                style={{ marginTop: 16, width: "100%", background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, padding: "8px", cursor: "pointer", fontFamily: "inherit", fontSize: T.fmd }}
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Tab: My Shifts ─────────────────────────────────────────────────────────
+  function MyShiftsTab() {
+    const now = new Date();
+    const in14 = new Date(now);
+    in14.setDate(now.getDate() + 14);
+
+    const myShifts = shifts
+      .filter(s => {
+        const d = new Date(s.date);
+        return s.userId === currentUserId && d >= now && d <= in14;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const statusBadge = (status: string) => {
+      const map: Record<string, { label: string; color: string }> = {
+        SCHEDULED: { label: "מתוכנן", color: T.blue },
+        COMPLETED: { label: "הושלם", color: T.green },
+        CANCELLED: { label: "בוטל", color: T.red },
+      };
+      const s = map[status] ?? { label: status, color: T.muted };
+      return (
+        <span style={{ background: s.color + "20", border: `1px solid ${s.color}44`, borderRadius: T.rFull, color: s.color, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+          {s.label}
+        </span>
+      );
+    };
+
+    if (myShifts.length === 0) {
+      return (
+        <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>
+          אין משמרות קרובות
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {myShifts.map(sh => {
+          const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: T.muted, bg: T.panel };
+          const d = new Date(sh.date);
+          const dayName = DAYS_HE[d.getDay()];
+          return (
+            <div key={sh.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <div style={{ minWidth: 56, textAlign: "center" }}>
+                <div style={{ fontSize: T.fmd, fontWeight: 700, color: T.text }}>{dayName}</div>
+                <div style={{ fontSize: T.fsm, color: T.muted }}>{formatDate(d)}</div>
+              </div>
+              <div style={{ background: cfg.bg, border: `1px solid ${cfg.color}44`, borderRadius: T.rMd, padding: "6px 14px" }}>
+                <div style={{ color: cfg.color, fontWeight: 700, fontSize: T.fmd }}>{cfg.label}</div>
+                <div style={{ color: cfg.color + "99", fontSize: T.fxs }}>{cfg.time}</div>
+              </div>
+              <div style={{ flex: 1 }} />
+              {statusBadge(sh.status)}
+              <button
+                onClick={() => { setSwapModal(sh); setSwapReason(""); }}
+                style={{ background: T.blue + "18", border: `1px solid ${T.blue}44`, borderRadius: T.rMd, color: T.blue, fontSize: T.fsm, fontWeight: 700, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                🔄 בקש החלפה
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Swap Modal */}
+        {swapModal && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 24, width: 360, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: T.flg, fontWeight: 700, color: T.text, marginBottom: 4 }}>🔄 בקשת החלפת משמרת</div>
+              <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 16 }}>
+                {SHIFT_CFG[swapModal.shiftType]?.label ?? swapModal.shiftType} — {swapModal.date.slice(0, 10).split("-").reverse().join("/")}
+              </div>
+              <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 4 }}>סיבה (אופציונלי)</label>
+              <textarea
+                value={swapReason}
+                onChange={e => setSwapReason(e.target.value)}
+                rows={3}
+                placeholder="כתוב סיבה..."
+                style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, padding: "7px 10px", width: "100%", outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                <button
+                  onClick={submitSwap}
+                  disabled={swapLoading}
+                  style={{ flex: 1, background: T.blue, border: "none", borderRadius: T.rMd, color: "#fff", fontSize: T.fmd, fontWeight: 700, padding: "10px", cursor: "pointer", fontFamily: "inherit", opacity: swapLoading ? 0.6 : 1 }}
+                >
+                  {swapLoading ? "שולח..." : "שלח בקשה"}
+                </button>
+                <button
+                  onClick={() => setSwapModal(null)}
+                  style={{ flex: 1, background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: "10px", cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  ביטול
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Tab: Requests ──────────────────────────────────────────────────────────
+  function RequestsTab() {
+    const displayRequests = isManager
+      ? requests.filter(r => r.status === "PENDING")
+      : requests.filter(r => r.fromUserName === currentUserName);
+
+    const typeLabelMap: Record<string, string> = { SWAP: "החלפה", COVER: "כיסוי" };
+    const statusColorMap: Record<string, string> = {
+      PENDING: T.orange,
+      APPROVED: T.green,
+      REJECTED: T.red,
+    };
+    const statusLabelMap: Record<string, string> = {
+      PENDING: "ממתין",
+      APPROVED: "אושר",
+      REJECTED: "נדחה",
+    };
+
+    if (requestsLoading) {
+      return <div style={{ textAlign: "center", padding: 40, color: T.muted }}>טוען...</div>;
+    }
+
+    if (displayRequests.length === 0) {
+      return <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>אין בקשות להצגה</div>;
+    }
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {displayRequests.map(req => {
+          const shiftCfg = SHIFT_CFG[req.shiftType] ?? { label: req.shiftType, color: T.muted };
+          const sc = statusColorMap[req.status] ?? T.muted;
+          return (
+            <div key={req.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                <span style={{ fontWeight: 700, color: T.text, fontSize: T.fmd }}>{req.fromUserName}</span>
+                <span style={{ color: T.muted, fontSize: T.fsm }}>←</span>
+                <span style={{ background: shiftCfg.color + "20", color: shiftCfg.color, border: `1px solid ${shiftCfg.color}44`, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+                  {shiftCfg.label} {req.shiftDate?.slice(0, 10).split("-").reverse().join("/")}
+                </span>
+                <span style={{ background: T.blue + "18", color: T.blue, border: `1px solid ${T.blue}44`, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+                  {typeLabelMap[req.type] ?? req.type}
+                </span>
+                <div style={{ flex: 1 }} />
+                <span style={{ background: sc + "18", color: sc, border: `1px solid ${sc}44`, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+                  {statusLabelMap[req.status] ?? req.status}
+                </span>
+              </div>
+              {req.reason && (
+                <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 10 }}>סיבה: {req.reason}</div>
+              )}
+              {isManager && req.status === "PENDING" && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => respondRequest(req.id, "APPROVED")}
+                    style={{ background: T.green + "18", border: `1px solid ${T.green}44`, borderRadius: T.rMd, color: T.green, fontSize: T.fsm, fontWeight: 700, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    ✓ אשר
+                  </button>
+                  <button
+                    onClick={() => respondRequest(req.id, "REJECTED")}
+                    style={{ background: T.red + "18", border: `1px solid ${T.red}44`, borderRadius: T.rMd, color: T.red, fontSize: T.fsm, fontWeight: 700, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    ✗ דחה
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ── Tab: Summary ───────────────────────────────────────────────────────────
+  function SummaryTab() {
+    const displayStaff = staff.length > 0 ? staff : Array.from(
+      new Map(shifts.map(s => [s.userId, { id: s.userId, name: s.userName }])).values()
+    );
+
+    type MemberSummary = {
+      id: string;
+      name: string;
+      count: number;
+      hours: number;
+      byType: Record<string, number>;
+    };
+
+    const summaries: MemberSummary[] = displayStaff.map(member => {
+      const memberShifts = shifts.filter(s => s.userId === member.id);
+      let totalHours = 0;
+      const byType: Record<string, number> = {};
+      for (const sh of memberShifts) {
+        const h = calcHours(sh.startTime, sh.endTime);
+        totalHours += h;
+        byType[sh.shiftType] = (byType[sh.shiftType] ?? 0) + h;
+      }
+      return { id: member.id, name: member.name, count: memberShifts.length, hours: totalHours, byType };
+    }).filter(s => s.count > 0);
+
+    const grandTotal = summaries.reduce((a, s) => a + s.hours, 0);
+
+    if (summaries.length === 0) {
+      return <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>אין נתונים לשבוע זה</div>;
+    }
+
+    return (
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+              <th style={{ padding: "10px 12px", textAlign: "right", color: T.muted, fontSize: T.fsm, fontWeight: 600 }}>עובד</th>
+              <th style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm, fontWeight: 600 }}>משמרות</th>
+              <th style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm, fontWeight: 600 }}>סה"כ שעות</th>
+              {Object.entries(SHIFT_CFG).map(([key, cfg]) => (
+                <th key={key} style={{ padding: "10px 8px", textAlign: "center", color: cfg.color, fontSize: T.fxs, fontWeight: 600 }}>{cfg.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {summaries.map(s => (
+              <tr key={s.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+                <td style={{ padding: "10px 12px", color: T.text, fontSize: T.fmd, fontWeight: 600 }}>{s.name}</td>
+                <td style={{ padding: "10px 8px", textAlign: "center", color: T.text, fontSize: T.fmd }}>{s.count}</td>
+                <td style={{ padding: "10px 8px", textAlign: "center", color: T.gold, fontSize: T.fmd, fontWeight: 700 }}>{s.hours.toFixed(1)}</td>
+                {Object.keys(SHIFT_CFG).map(key => (
+                  <td key={key} style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm }}>
+                    {s.byType[key] ? s.byType[key].toFixed(1) : "–"}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            <tr style={{ borderTop: `2px solid ${T.border}`, background: T.raised }}>
+              <td style={{ padding: "10px 12px", color: T.text, fontSize: T.fmd, fontWeight: 700 }}>סה"כ</td>
+              <td style={{ padding: "10px 8px", textAlign: "center", color: T.text, fontSize: T.fmd, fontWeight: 700 }}>
+                {summaries.reduce((a, s) => a + s.count, 0)}
+              </td>
+              <td style={{ padding: "10px 8px", textAlign: "center", color: T.gold, fontSize: T.flg, fontWeight: 800 }}>
+                {grandTotal.toFixed(1)}
+              </td>
+              {Object.keys(SHIFT_CFG).map(key => (
+                <td key={key} style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm }}>
+                  {summaries.reduce((a, s) => a + (s.byType[key] ?? 0), 0).toFixed(1)}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div style={S.wrap}>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000,
+          background: T.raised, border: `1px solid ${T.border}`, borderRadius: T.rLg,
+          color: T.text, fontSize: T.fmd, fontWeight: 600, padding: "12px 24px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
+        }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={S.header}>
+        <h1 style={S.title}>📅 ניהול משמרות</h1>
+        <div style={S.weekNav}>
+          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w + 1)}>← שבוע הבא</button>
+          <span style={S.weekLabel}>{weekLabel(weekDates)}</span>
+          <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>שבוע קודם →</button>
+        </div>
+      </div>
+
+      {/* Restaurant selector */}
+      {restaurants.length > 1 && (
+        <select
+          value={restaurantId}
+          onChange={e => setRestaurantId(e.target.value)}
+          style={S.restSelect}
+        >
+          {restaurants.map(r => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </select>
+      )}
+
+      {/* Tab bar */}
+      <div style={S.tabBar}>
+        {tabBtn("schedule", "📅 שבועון")}
+        {tabBtn("myshifts", "👤 המשמרות שלי")}
+        {tabBtn("requests", (
+          <>
+            🔔 בקשות
+            {pendingCount > 0 && (
+              <span style={{ background: T.red, color: "#fff", borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "1px 6px", lineHeight: "16px" }}>
+                {pendingCount}
+              </span>
+            )}
+          </>
+        ))}
+        {tabBtn("summary", "📊 סיכום שעות")}
+      </div>
+
+      {/* Tab content */}
+      <div style={S.tabContent}>
+        {activeTab === "schedule" && <ScheduleTab />}
+        {activeTab === "myshifts" && <MyShiftsTab />}
+        {activeTab === "requests" && <RequestsTab />}
+        {activeTab === "summary" && <SummaryTab />}
+      </div>
+    </div>
+  );
+}

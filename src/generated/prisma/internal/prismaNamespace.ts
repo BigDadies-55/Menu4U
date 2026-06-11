@@ -413,7 +413,9 @@ export const ModelName = {
   LoyaltyCoupon: 'LoyaltyCoupon',
   WaiterStation: 'WaiterStation',
   LoyaltySettings: 'LoyaltySettings',
-  PushSubscription: 'PushSubscription'
+  PushSubscription: 'PushSubscription',
+  Shift: 'Shift',
+  ShiftRequest: 'ShiftRequest'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -429,7 +431,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "passwordHistory" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "waiterStation" | "loyaltySettings" | "pushSubscription"
+    modelProps: "user" | "passwordHistory" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "waiterStation" | "loyaltySettings" | "pushSubscription" | "shift" | "shiftRequest"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2653,6 +2655,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Shift: {
+      payload: Prisma.$ShiftPayload<ExtArgs>
+      fields: Prisma.ShiftFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ShiftFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ShiftFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>
+        }
+        findFirst: {
+          args: Prisma.ShiftFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ShiftFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>
+        }
+        findMany: {
+          args: Prisma.ShiftFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>[]
+        }
+        create: {
+          args: Prisma.ShiftCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>
+        }
+        createMany: {
+          args: Prisma.ShiftCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ShiftCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>[]
+        }
+        delete: {
+          args: Prisma.ShiftDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>
+        }
+        update: {
+          args: Prisma.ShiftUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>
+        }
+        deleteMany: {
+          args: Prisma.ShiftDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ShiftUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ShiftUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>[]
+        }
+        upsert: {
+          args: Prisma.ShiftUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftPayload>
+        }
+        aggregate: {
+          args: Prisma.ShiftAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateShift>
+        }
+        groupBy: {
+          args: Prisma.ShiftGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ShiftCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftCountAggregateOutputType> | number
+        }
+      }
+    }
+    ShiftRequest: {
+      payload: Prisma.$ShiftRequestPayload<ExtArgs>
+      fields: Prisma.ShiftRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ShiftRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ShiftRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.ShiftRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ShiftRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>
+        }
+        findMany: {
+          args: Prisma.ShiftRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>[]
+        }
+        create: {
+          args: Prisma.ShiftRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>
+        }
+        createMany: {
+          args: Prisma.ShiftRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ShiftRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.ShiftRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>
+        }
+        update: {
+          args: Prisma.ShiftRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.ShiftRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ShiftRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ShiftRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.ShiftRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.ShiftRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateShiftRequest>
+        }
+        groupBy: {
+          args: Prisma.ShiftRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ShiftRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftRequestCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3171,6 +3321,39 @@ export const PushSubscriptionScalarFieldEnum = {
 export type PushSubscriptionScalarFieldEnum = (typeof PushSubscriptionScalarFieldEnum)[keyof typeof PushSubscriptionScalarFieldEnum]
 
 
+export const ShiftScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  userId: 'userId',
+  date: 'date',
+  shiftType: 'shiftType',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  role: 'role',
+  notes: 'notes',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ShiftScalarFieldEnum = (typeof ShiftScalarFieldEnum)[keyof typeof ShiftScalarFieldEnum]
+
+
+export const ShiftRequestScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  shiftId: 'shiftId',
+  fromUserId: 'fromUserId',
+  toUserId: 'toUserId',
+  type: 'type',
+  reason: 'reason',
+  status: 'status',
+  createdAt: 'createdAt'
+} as const
+
+export type ShiftRequestScalarFieldEnum = (typeof ShiftRequestScalarFieldEnum)[keyof typeof ShiftRequestScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3462,6 +3645,8 @@ export type GlobalOmitConfig = {
   waiterStation?: Prisma.WaiterStationOmit
   loyaltySettings?: Prisma.LoyaltySettingsOmit
   pushSubscription?: Prisma.PushSubscriptionOmit
+  shift?: Prisma.ShiftOmit
+  shiftRequest?: Prisma.ShiftRequestOmit
 }
 
 /* Types for Logging */
