@@ -210,6 +210,22 @@ const sqls = [
     CONSTRAINT "ShiftRequest_toUserId_fkey" FOREIGN KEY ("toUserId") REFERENCES "User"("id") ON DELETE SET NULL
   );`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "shiftConfig" TEXT;`,
+  `CREATE TABLE IF NOT EXISTS "ShiftSmsLog" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "sentByUserId" TEXT,
+    "weekFrom"     TEXT NOT NULL,
+    "weekTo"       TEXT NOT NULL,
+    "recipientId"  TEXT,
+    "recipientName" TEXT,
+    "phone"        TEXT NOT NULL,
+    "message"      TEXT NOT NULL,
+    "status"       TEXT NOT NULL DEFAULT 'SENT',
+    "sentAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ShiftSmsLog_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "ShiftSmsLog_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE
+  );`,
+  `CREATE INDEX IF NOT EXISTS "ShiftSmsLog_restaurantId_sentAt_idx" ON "ShiftSmsLog"("restaurantId","sentAt" DESC);`,
 ];
 
 async function run() {

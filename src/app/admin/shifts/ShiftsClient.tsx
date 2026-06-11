@@ -134,7 +134,7 @@ export default function ShiftsClient({
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "summary">("schedule");
+  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "summary" | "ops">("schedule");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -156,6 +156,19 @@ export default function ShiftsClient({
   const [swapModal, setSwapModal] = useState<ShiftRow | null>(null);
   const [swapReason, setSwapReason] = useState("");
   const [swapLoading, setSwapLoading] = useState(false);
+
+  // SMS modal
+  const [smsModal, setSmsModal] = useState(false);
+  const [smsTarget, setSmsTarget] = useState<"all" | string>("all");
+  const [smsSending, setSmsSending] = useState(false);
+
+  // Operational tab data
+  type SmsLog = { id: string; recipientName: string; phone: string; message: string; status: string; sentAt: string; weekFrom: string; weekTo: string };
+  type SmsStat = { week: string; total: number; failed: number };
+  const [smsLogs, setSmsLogs] = useState<SmsLog[]>([]);
+  const [smsStats, setSmsStats] = useState<SmsStat[]>([]);
+  const [smsConfigured, setSmsConfigured] = useState(true);
+  const [opsLoading, setOpsLoading] = useState(false);
 
   const [toast, setToast] = useState<{ msg: string; undo?: () => void } | null>(null);
   const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -314,6 +327,66 @@ export default function ShiftsClient({
     } else {
       showToast("שגיאה");
     }
+  }
+
+  const loadOps = useCallback(async () => {
+    if (!restaurantId) return;
+    setOpsLoading(true);
+    try {
+      const r = await fetch(`/api/admin/shifts/sms?restaurantId=${restaurantId}`);
+      const d = await r.json();
+      setSmsLogs(d.logs ?? []);
+      setSmsStats(d.stats ?? []);
+      setSmsConfigured(d.smsConfigured ?? false);
+    } catch { /* ignore */ } finally { setOpsLoading(false); }
+  }, [restaurantId]);
+
+  useEffect(() => { if (activeTab === "ops") loadOps(); }, [activeTab, loadOps]);
+
+  // Build SMS preview for a given target
+  function buildPreview(targetId: "all" | string): string {
+    const weekShifts = shifts.filter(s => {
+      const d = String(s.date).slice(0, 10);
+      return d >= formatDateISO(weekDates[0]) && d <= formatDateISO(weekDates[6]);
+    });
+    const target = targetId === "all" ? weekShifts : weekShifts.filter(s => s.userId === targetId);
+    if (!target.length) return "(אין משמרות לשלוח)";
+    const first = target[0];
+    const name = targetId === "all" ? "[שם]" : (staff.find(s => s.id === targetId)?.name?.split(" ")[0] ?? "[שם]");
+    const from = formatDateISO(weekDates[0]);
+    const to   = formatDateISO(weekDates[6]);
+    const fmtDate = (iso: string) => iso.slice(8) + "/" + iso.slice(5, 7);
+    const DAY_S = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
+    const lines = (targetId === "all" ? target.slice(0, 2) : target).map(s => {
+      const cfg = shiftCfgList.find(c => c.key === s.shiftType);
+      const label = cfg?.label ?? s.shiftType;
+      const d = new Date(s.date + "T00:00:00");
+      return `${DAY_S[d.getDay()]} ${fmtDate(String(s.date).slice(0,10))} ${label} ${s.startTime.slice(0,5)}-${s.endTime.slice(0,5)}`;
+    });
+    if (targetId === "all" && target.length > 2) lines.push(`...ועוד ${target.length - 2}`);
+    return `${name}, משמרות (${fmtDate(from)}-${fmtDate(to)}):\n${lines.join("\n")}`;
+  }
+
+  async function sendSms() {
+    if (smsSending) return;
+    setSmsSending(true);
+    try {
+      const res = await fetch("/api/admin/shifts/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId,
+          weekFrom: formatDateISO(weekDates[0]),
+          weekTo:   formatDateISO(weekDates[6]),
+          targetUserId: smsTarget === "all" ? undefined : smsTarget,
+          shiftCfg: shiftCfgList.map(c => ({ key: c.key, label: c.label })),
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) { showToast(d.error ?? "שגיאה"); return; }
+      setSmsModal(false);
+      showToast(`✓ SMS נשלח ל-${d.sent} עובד${d.sent !== 1 ? "ים" : ""}${d.failed ? ` (${d.failed} נכשלו)` : ""}${d.skipped ? ` (${d.skipped} ללא טלפון)` : ""}`);
+    } finally { setSmsSending(false); }
   }
 
   async function clearWeek() {
@@ -882,6 +955,89 @@ export default function ShiftsClient({
     );
   }
 
+  // ── Tab: Ops ───────────────────────────────────────────────────────────────
+  function OpsTab() {
+    if (opsLoading) return <div style={{ textAlign: "center", padding: 40, color: T.muted }}>טוען...</div>;
+    const totalSent   = smsLogs.filter(l => l.status === "SENT").length;
+    const totalFailed = smsLogs.filter(l => l.status === "FAILED").length;
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Summary cards */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {[
+            { label: "SMS נשלחו", value: totalSent,   color: T.green },
+            { label: "נכשלו",     value: totalFailed,  color: T.red   },
+            { label: "שבועות",    value: smsStats.length, color: T.blue },
+          ].map(c => (
+            <div key={c.label} style={{ flex: 1, minWidth: 100, background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 18px" }}>
+              <div style={{ fontSize: T.f2xl, fontWeight: 900, color: c.color }}>{c.value}</div>
+              <div style={{ fontSize: T.fsm, color: T.muted, marginTop: 2 }}>{c.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Per-week stats */}
+        {smsStats.length > 0 && (
+          <div>
+            <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.muted, marginBottom: 8 }}>לפי שבוע</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {smsStats.map((s, i) => (
+                <div key={i} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700, color: T.text, fontSize: T.fmd, flex: 1 }}>{s.week}</span>
+                  <span style={{ background: T.green + "20", color: T.green, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 10px" }}>✓ {s.total - s.failed} נשלחו</span>
+                  {s.failed > 0 && <span style={{ background: T.red + "20", color: T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 10px" }}>✗ {s.failed} נכשלו</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Log table */}
+        {smsLogs.length > 0 && (
+          <div>
+            <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.muted, marginBottom: 8 }}>יומן שליחות</div>
+            <div style={{ overflowX: "auto", borderRadius: T.rMd, border: `1px solid ${T.border}` }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: T.panel }}>
+                    {["שם", "טלפון", "שבוע", "הודעה", "סטטוס", "נשלח"].map(h => (
+                      <th key={h} style={{ padding: "8px 12px", textAlign: "right", fontSize: T.fxs, color: T.muted, fontWeight: 600, borderBottom: `1px solid ${T.border}`, whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {smsLogs.map(l => (
+                    <tr key={l.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+                      <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.text, whiteSpace: "nowrap" }}>{l.recipientName}</td>
+                      <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.muted }}>{l.phone}</td>
+                      <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
+                      <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, maxWidth: 200 }}>
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</span>
+                      </td>
+                      <td style={{ padding: "8px 12px" }}>
+                        <span style={{ background: l.status === "SENT" ? T.green + "20" : T.red + "20", color: l.status === "SENT" ? T.green : T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+                          {l.status === "SENT" ? "✓ נשלח" : "✗ נכשל"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>
+                        {new Date(l.sentAt).toLocaleDateString("he-IL")} {new Date(l.sentAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {smsLogs.length === 0 && !opsLoading && (
+          <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>טרם נשלחו הודעות SMS</div>
+        )}
+      </div>
+    );
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={S.wrap}>
@@ -1009,6 +1165,12 @@ export default function ShiftsClient({
           {isManager && (
             <>
               <button
+                onClick={() => setSmsModal(true)}
+                style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+              >
+                📱 שלח SMS
+              </button>
+              <button
                 onClick={clearWeek}
                 style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
               >
@@ -1058,6 +1220,7 @@ export default function ShiftsClient({
           </>
         ))}
         {tabBtn("summary", "📊 סיכום שעות")}
+        {isManager && tabBtn("ops", "📱 תפעולי")}
       </div>
 
       {/* Tab content */}
@@ -1066,7 +1229,57 @@ export default function ShiftsClient({
         {activeTab === "myshifts" && <MyShiftsTab />}
         {activeTab === "requests" && <RequestsTab />}
         {activeTab === "summary" && <SummaryTab />}
+        {activeTab === "ops" && <OpsTab />}
       </div>
+
+      {/* SMS Modal */}
+      {smsModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 28, width: 440, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: T.flg, fontWeight: 800, color: T.text, marginBottom: 4 }}>📱 שלח SMS משמרות</div>
+            <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 20 }}>שבוע {weekLabel(weekDates)}</div>
+
+            {/* Target selector */}
+            <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 6 }}>שלח ל:</label>
+            <select
+              value={smsTarget}
+              onChange={e => setSmsTarget(e.target.value)}
+              style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, padding: "7px 10px", width: "100%", fontFamily: "inherit", outline: "none", marginBottom: 16 }}
+            >
+              <option value="all">כל העובדים עם משמרת השבוע</option>
+              {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+
+            {/* Preview */}
+            <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 6 }}>תצוגה מקדימה:</label>
+            <pre style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "10px 14px", fontSize: 13, color: T.text, fontFamily: "inherit", whiteSpace: "pre-wrap", marginBottom: 20, lineHeight: 1.6 }}>
+              {buildPreview(smsTarget)}
+            </pre>
+
+            {!smsConfigured && (
+              <div style={{ background: T.red + "18", border: `1px solid ${T.red}44`, borderRadius: T.rMd, color: T.red, fontSize: T.fsm, padding: "8px 12px", marginBottom: 14 }}>
+                ⚠️ SMS לא מוגדר — נדרש INFORU_USERNAME ו-INFORU_API_TOKEN
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={sendSms}
+                disabled={smsSending || !smsConfigured}
+                style={{ flex: 1, background: T.gold, border: "none", borderRadius: T.rMd, color: "#1a1208", fontSize: T.fmd, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: smsSending || !smsConfigured ? 0.6 : 1 }}
+              >
+                {smsSending ? "שולח..." : "📤 שלח"}
+              </button>
+              <button
+                onClick={() => setSmsModal(false)}
+                style={{ flex: 1, background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: 12, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
