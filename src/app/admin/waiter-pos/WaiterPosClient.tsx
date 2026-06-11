@@ -345,7 +345,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
       background: "#f0f2f5", color: "#111", fontFamily: "inherit",
       overflowY: viewMode === "floor" ? "hidden" : "auto",
-      paddingBottom: viewMode === "floor" ? 0 : 110,
+      paddingBottom: viewMode === "floor" ? 0 : 140,
       display: "flex", flexDirection: "column",
     }}>
 
@@ -799,7 +799,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         />
       )}
 
-      {/* ══ BOTTOM KPI BAR ══ */}
+      {/* ══ BOTTOM BAR ══ */}
       <div style={{ position: "fixed", bottom: 0, right: 0, left: 0, background: "#fff", borderTop: "1px solid #dde1e8", zIndex: 450, direction: "rtl" }}>
 
         {/* Segment bar */}
@@ -810,10 +810,50 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           <div style={{ flex: Math.max(inactiveCount, 0.01),   background: "#e5e7eb", transition: "flex 0.4s" }} />
         </div>
 
-        {/* KPI row + refresh button */}
+        {/* Insight ticker — black, on top */}
         <div style={{
-          display: "flex", gap: isMobile ? 5 : 8, alignItems: "stretch",
-          padding: isMobile ? "5px 8px" : "8px 14px",
+          background: "#0d0d0d",
+          padding: isMobile ? "6px 12px" : "8px 20px",
+          display: "flex", alignItems: "center", gap: 8,
+          minHeight: isMobile ? 36 : 44,
+          opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
+        }}>
+          {currentInsight ? (
+            <>
+              <span style={{ fontSize: isMobile ? 16 : 20, flexShrink: 0 }}>
+                {currentInsight.type === "alert" ? "⚠️" : currentInsight.type === "tip" ? "💡" : "ℹ️"}
+              </span>
+              <span style={{
+                fontSize: isMobile ? 14 : 16, fontWeight: 800,
+                color: INSIGHT_TYPE_COLOR[currentInsight.type],
+                whiteSpace: "nowrap", flexShrink: 0, letterSpacing: "0.01em",
+              }}>
+                שולחן {currentInsight.tableNum}:
+              </span>
+              <span style={{
+                fontSize: isMobile ? 13 : 15, fontWeight: 600,
+                color: INSIGHT_TYPE_DIM[currentInsight.type],
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
+              }}>
+                {currentInsight.text.replace(new RegExp(`^שולחן ${currentInsight.tableNum}[^—]*—\\s*`), "")}
+              </span>
+              {insights.length > 1 && (
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>
+                  {insightIdx + 1}/{insights.length}
+                </span>
+              )}
+            </>
+          ) : (
+            <span style={{ fontSize: isMobile ? 11 : 12, color: "rgba(255,255,255,0.3)", letterSpacing: "0.03em" }}>
+              {insightLoading ? "✨  מנתח נתונים..." : "✨  אין תובנות כרגע"}
+            </span>
+          )}
+        </div>
+
+        {/* KPI row — below insights */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: isMobile ? 4 : 8,
+          padding: isMobile ? "6px 10px" : "8px 16px",
           overflowX: "auto",
         }}>
           <KpiCard label="תפוס"    value={occupiedCount} color="#ef4444" bg="#fef2f2" small={isMobile} />
@@ -839,46 +879,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
             </svg>
           </button>
-        </div>
-
-        {/* Insight ticker — black, very bottom */}
-        <div style={{
-          background: "#0d0d0d",
-          padding: isMobile ? "8px 12px" : "10px 20px",
-          display: "flex", alignItems: "center", gap: 8,
-          minHeight: isMobile ? 44 : 52,
-          opacity: insightFade ? 1 : 0, transition: "opacity 0.4s",
-        }}>
-          {currentInsight ? (
-            <>
-              <span style={{ fontSize: isMobile ? 18 : 22, flexShrink: 0 }}>
-                {currentInsight.type === "alert" ? "⚠️" : currentInsight.type === "tip" ? "💡" : "ℹ️"}
-              </span>
-              <span style={{
-                fontSize: isMobile ? 16 : 18, fontWeight: 800,
-                color: INSIGHT_TYPE_COLOR[currentInsight.type],
-                whiteSpace: "nowrap", flexShrink: 0, letterSpacing: "0.01em",
-              }}>
-                שולחן {currentInsight.tableNum}:
-              </span>
-              <span style={{
-                fontSize: isMobile ? 15 : 17, fontWeight: 600,
-                color: INSIGHT_TYPE_DIM[currentInsight.type],
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
-              }}>
-                {currentInsight.text.replace(new RegExp(`^שולחן ${currentInsight.tableNum}[^—]*—\\s*`), "")}
-              </span>
-              {insights.length > 1 && (
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>
-                  {insightIdx + 1}/{insights.length}
-                </span>
-              )}
-            </>
-          ) : (
-            <span style={{ fontSize: isMobile ? 12 : 13, color: "rgba(255,255,255,0.3)", letterSpacing: "0.03em" }}>
-              {insightLoading ? "✨  מנתח נתונים..." : "✨  אין תובנות כרגע"}
-            </span>
-          )}
         </div>
       </div>
 

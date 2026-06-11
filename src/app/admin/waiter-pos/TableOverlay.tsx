@@ -211,9 +211,21 @@ export function TableOverlay({
                       const allergyHit = oi.itemAllergens.some(a => allergyHits.includes(a));
                       const allergyLabel = oi.itemAllergens.filter(a => allergyHits.includes(a))
                         .map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
+                      const itemStatusMap: Record<string, { label: string; bg: string; color: string }> = {
+                        PENDING:    { label: "ממתין",  bg: "#f3f4f6", color: "#6b7280" },
+                        PREPARING:  { label: "בהכנה",  bg: "#fff7ed", color: "#c2410c" },
+                        DONE:       { label: "מוכן",   bg: "#f0fdf4", color: "#15803d" },
+                        SERVED:     { label: "הוגש",   bg: "#eff6ff", color: "#1d4ed8" },
+                        CANCELLED:  { label: "בוטל",   bg: "#fef2f2", color: "#dc2626" },
+                      };
+                      const si = itemStatusMap[oi.itemStatus] ?? itemStatusMap.PENDING;
                       return (
                         <div key={oi.id} style={{ padding: "10px 16px", borderBottom: i < activeItems.length - 1 ? "1px solid #f0ebe4" : undefined, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, background: si.bg, color: si.color, borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>{si.label}</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f3ff", color: "#7c3aed", borderRadius: 99, padding: "2px 7px", whiteSpace: "nowrap" }}>ק{oi.course}</span>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1612" }}>₪{(oi.price * oi.quantity).toFixed(0)}</div>
+                          </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             {allergyHit && (
                               <span style={{ fontSize: 10, fontWeight: 800, background: "#fdf2f0", color: "#8b2e22", borderRadius: 99, padding: "2px 8px", border: "1px solid #f5c4bc" }}>⚠️ {allergyLabel}</span>
