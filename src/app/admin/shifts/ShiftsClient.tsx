@@ -618,7 +618,7 @@ export default function ShiftsClient({
                             }
                           }}
                         >
-                          <div style={{ display: "flex", flexDirection: "column", gap: 3, minHeight: 36 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3, minHeight: 36, width: "100%" }}>
                             {dayShifts.map(sh => {
                               const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: T.muted, bg: T.panel };
                               return (
@@ -628,21 +628,22 @@ export default function ShiftsClient({
                                     background: cfg.bg,
                                     border: `1px solid ${cfg.color}44`,
                                     borderRadius: T.rMd,
-                                    padding: "2px 6px",
+                                    padding: "4px 6px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
-                                    gap: 4,
+                                    width: "100%",
+                                    boxSizing: "border-box",
                                   }}
                                 >
-                                  <span style={{ color: cfg.color, fontSize: T.fxs, fontWeight: 700 }}>
-                                    {cfg.label}
-                                    <span style={{ color: cfg.color + "99", fontSize: 9, marginRight: 2 }}>{cfg.time}</span>
-                                  </span>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+                                    <span style={{ color: cfg.color, fontSize: T.fxs, fontWeight: 800, whiteSpace: "nowrap" }}>{cfg.label}</span>
+                                    <span style={{ color: cfg.color + "bb", fontSize: 9, whiteSpace: "nowrap" }}>{cfg.time}</span>
+                                  </div>
                                   {isManager && (
                                     <button
                                       onClick={e => { e.stopPropagation(); deleteShift(sh.id); }}
-                                      style={{ background: "transparent", border: "none", color: T.red, fontSize: 11, cursor: "pointer", padding: "0 2px", lineHeight: 1, fontWeight: 700 }}
+                                      style={{ background: "transparent", border: "none", color: T.red, fontSize: 11, cursor: "pointer", padding: "0 2px", lineHeight: 1, fontWeight: 700, flexShrink: 0 }}
                                       title="מחק"
                                     >✕</button>
                                   )}
