@@ -61,8 +61,8 @@ export async function GET(req: Request) {
      FROM "Shift" s
      LEFT JOIN "User" u ON u.id = s."userId"
      WHERE s."restaurantId" = $1
-       AND s.date >= $2::date
-       AND s.date <= $3::date
+       AND s.date >= $2
+       AND s.date <= $3
      ORDER BY s.date ASC, s."startTime" ASC`,
     restaurantId,
     from,
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
 
   await prisma.$executeRawUnsafe(
     `INSERT INTO "Shift" (id, "restaurantId", "userId", date, "shiftType", "startTime", "endTime", status, "createdAt", "updatedAt")
-     VALUES ($1, $2, $3, $4::date, $5, $6, $7, 'SCHEDULED', NOW(), NOW())`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 'SCHEDULED', NOW(), NOW())`,
     id,
     restaurantId,
     userId,
