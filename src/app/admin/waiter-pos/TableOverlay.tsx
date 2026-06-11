@@ -251,20 +251,25 @@ export function TableOverlay({
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#c07020", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>🔥 ניהול קורסים</div>
                       {courseNums.map(c => {
                         const courseItems = (order.items ?? []).filter(i => i.course === c && !i.voidedAt && i.itemStatus !== "CANCELLED");
-                        const hasFired    = courseItems.some(i => i.firedAt || !i.heldUntilFired);
                         const allHeld     = courseItems.every(i => i.heldUntilFired);
+                        const hasFired    = courseItems.some(i => i.firedAt || !i.heldUntilFired);
+                        const allDone     = courseItems.length > 0 && courseItems.every(i => i.itemStatus === "DONE" || i.itemStatus === "SERVED");
+                        const border      = allDone ? "1.5px solid #86efac" : "1.5px solid #e8e2da";
+                        const bg          = allDone ? "#f0fdf4" : "#fff";
                         return (
-                          <div key={c} style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 14, padding: "12px 16px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div key={c} style={{ background: bg, border, borderRadius: 14, padding: "12px 16px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div>
                               <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1612" }}>קורס {c} – {courseItems.length} פריטים</div>
-                              <div style={{ fontSize: 11, color: "#8a8480", marginTop: 2 }}>
-                                {allHeld ? "ממתין לשחרור" : hasFired ? "✓ יצא למטבח" : "בהכנה"}
+                              <div style={{ fontSize: 11, marginTop: 2, fontWeight: allDone ? 800 : 400, color: allDone ? "#15803d" : "#8a8480" }}>
+                                {allDone ? "✅ מוכן להגשה!" : allHeld ? "ממתין לשחרור" : hasFired ? "✓ יצא למטבח" : "בהכנה"}
                               </div>
                             </div>
-                            {allHeld ? (
+                            {allHeld && !allDone ? (
                               <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "7px 18px", borderRadius: 99, border: "1.5px solid #d4a840", background: "#fdf7ed", color: "#92400e", fontSize: 12, fontWeight: 800, cursor: firingCourse === c ? "default" : "pointer", fontFamily: "inherit" }}>
                                 {firingCourse === c ? "…" : "🔥 שחרר"}
                               </button>
+                            ) : allDone ? (
+                              <div style={{ padding: "7px 18px", borderRadius: 99, background: "#dcfce7", color: "#15803d", fontSize: 12, fontWeight: 800, border: "1.5px solid #86efac" }}>✅ הגש</div>
                             ) : (
                               <div style={{ padding: "7px 18px", borderRadius: 99, background: "#f0f7f3", color: "#1f5c3a", fontSize: 12, fontWeight: 800, border: "1.5px solid #b3d9c4" }}>✓ יצא</div>
                             )}
