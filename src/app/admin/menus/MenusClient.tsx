@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import ImageUpload from "@/components/admin/ImageUpload";
 import PageShell from "@/components/admin/PageShell";
+import AssistantWidget from "@/components/admin/AssistantWidget";
 
 type ItemTranslationsMap = { en?: { name?: string; description?: string }; ru?: { name?: string; description?: string }; fr?: { name?: string; description?: string } };
 type CatTranslationsMap  = { en?: { name?: string }; ru?: { name?: string }; fr?: { name?: string } };
@@ -1910,6 +1911,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
           </div>
         </div>
       )}
+      <AssistantWidget page="menus" />
     </PageShell>
   );
 }
