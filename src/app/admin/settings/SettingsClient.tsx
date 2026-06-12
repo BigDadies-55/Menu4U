@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { T, ADMIN_PALETTES, ADMIN_PALETTE_LABELS } from "@/lib/ui";
-import AssistantWidget from "@/components/admin/AssistantWidget";
+import { AssistantWidget } from "@/components/admin/AssistantWidget";
 
 const DARK_INPUT: React.CSSProperties = {
   background:   T.overlay,

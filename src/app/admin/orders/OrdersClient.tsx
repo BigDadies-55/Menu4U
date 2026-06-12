@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { T } from "@/lib/ui";
-import AssistantWidget from "@/components/admin/AssistantWidget";
+import { AssistantWidget } from "@/components/admin/AssistantWidget";
 
 type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
 
