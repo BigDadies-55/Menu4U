@@ -159,6 +159,43 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const floorRef = useRef<HTMLDivElement>(null);
   const [floorSize, setFloorSize] = useState({ w: 600, h: 400 });
 
+  // PWA install prompt
+  const [installPrompt, setInstallPrompt] = useState<Event & { prompt?: () => Promise<void> } | null>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches ||
+      ("standalone" in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true);
+    setIsStandalone(standalone);
+    if (standalone) return; // already installed — don't show banner
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    setIsIos(ios);
+
+    if (ios) {
+      // show iOS manual instructions after 3 seconds
+      const t = setTimeout(() => setShowInstallBanner(true), 3000);
+      return () => clearTimeout(t);
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as Event & { prompt?: () => Promise<void> });
+      setShowInstallBanner(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  async function triggerInstall() {
+    if (!installPrompt?.prompt) return;
+    await installPrompt.prompt();
+    setShowInstallBanner(false);
+    setInstallPrompt(null);
+  }
+
   useEffect(() => {
     function check() { setIsMobile(window.innerWidth < 640); }
     check();
@@ -571,6 +608,31 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               : " — ממתין לחיבור"}
           </span>
           <span style={{ fontSize: 12, opacity: 0.8 }}>יצירת הזמנות אינה זמינה</span>
+        </div>
+      )}
+
+      {/* PWA install banner */}
+      {showInstallBanner && !isStandalone && (
+        <div style={{ background: "#1a1612", color: "#fff", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0, direction: "rtl" }}>
+          {isIos ? (
+            <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+              📲 להתקנה: לחץ <strong>שתף</strong> <span style={{ fontSize: 16 }}>⎋</span> ← <strong>הוסף למסך הבית</strong>
+            </span>
+          ) : (
+            <span style={{ fontSize: 13, fontWeight: 600 }}>📲 התקן כאפליקציה למסך הבית</span>
+          )}
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {!isIos && (
+              <button onClick={triggerInstall}
+                style={{ background: "#d4a840", border: "none", borderRadius: 8, color: "#1a1208", fontSize: 13, fontWeight: 800, padding: "7px 16px", cursor: "pointer", fontFamily: "inherit" }}>
+                התקן
+              </button>
+            )}
+            <button onClick={() => setShowInstallBanner(false)}
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, color: "rgba(255,255,255,0.7)", fontSize: 13, padding: "7px 12px", cursor: "pointer", fontFamily: "inherit" }}>
+              לא עכשיו
+            </button>
+          </div>
         </div>
       )}
 
