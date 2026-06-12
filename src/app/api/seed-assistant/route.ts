@@ -67,11 +67,13 @@ const entries: Entry[] = [
   { page: "dashboard", question: "האם הדשבורד מתעדכן אוטומטית?", answer: "כן — הדשבורד מאזין לאירועים בזמן אמת (SSE) וגם מרענן אוטומטית כל 60 שניות.", tags: ["עדכון","אוטומטי","SSE"], isDefault: true },
 ];
 
+const SEED_TOKEN = "seed-assistant-t4b-2024";
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get("secret");
 
-  if (!secret || secret !== process.env.SETUP_SECRET) {
+  if (!secret || secret !== SEED_TOKEN) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
