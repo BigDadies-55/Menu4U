@@ -1,9 +1,9 @@
 // IndexedDB helper for waiter offline cache
-// Stores: menu, tables snapshot, layout — keyed by restaurantId
+// Stores: menu, tables snapshot, layout, orders — keyed by restaurantId or orderId
 
 const DB_NAME = "menu4u-waiter";
-const DB_VERSION = 1;
-const STORES = ["menu", "tables", "layout"] as const;
+const DB_VERSION = 2;
+const STORES = ["menu", "tables", "layout", "orders"] as const;
 type StoreName = typeof STORES[number];
 
 function openDb(): Promise<IDBDatabase> {

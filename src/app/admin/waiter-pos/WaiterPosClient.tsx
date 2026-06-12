@@ -318,8 +318,16 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         const data: TableData[] = await r.json();
         setTables(data);
         setUsingCachedData(false);
-        // Persist to IDB for offline use
+        // Persist tables to IDB for offline use
         idbSet("tables", restaurantId, { data, savedAt: new Date().toISOString() }).catch(() => {});
+        // Pre-fetch and cache each active order
+        const orderIds = data.flatMap(t => t.activeOrderIds);
+        for (const oid of orderIds) {
+          fetch(`/api/admin/orders/${oid}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d) idbSet("orders", oid, d).catch(() => {}); })
+            .catch(() => {});
+        }
         // Fetch insights right after with fresh table data
         setILoading(true);
         fetch("/api/admin/waiter-pos/insights", {

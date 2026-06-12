@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ALLERGEN_LIST } from "@/lib/allergens";
+import { idbGet, idbSet } from "@/lib/waiter-db";
+import { useOffline } from "@/hooks/useOffline";
 import Receipt from "./Receipt";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -74,11 +76,13 @@ export function TableOverlay({
   onClose, onAddItems, onNewOrder, onStatusChange, onRequestBill,
 }: Props) {
   const router = useRouter();
+  const isOffline = useOffline();
   const isOccupied = availStatus === "occupied" || availStatus === "bill_requested";
   const orderId = activeOrderIds[0] ?? null;
 
   const [order, setOrder]               = useState<OrderDetail | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  const [fromCache, setFromCache]       = useState(false);
   const [allergyEditOpen, setAllergyEditOpen] = useState(false);
   const [statusEditOpen, setStatusEditOpen]   = useState(false);
   const [allergens, setAllergens]       = useState<string[]>([]);
@@ -97,7 +101,18 @@ export function TableOverlay({
     setLoadingOrder(true);
     fetch(`/api/admin/orders/${orderId}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) { setOrder(d); setAllergens(d.tableAllergens ?? []); } })
+      .then(d => {
+        if (d) {
+          setOrder(d);
+          setAllergens(d.tableAllergens ?? []);
+          setFromCache(false);
+          idbSet("orders", orderId, d).catch(() => {});
+        }
+      })
+      .catch(async () => {
+        const cached = await idbGet<OrderDetail>("orders", orderId).catch(() => undefined);
+        if (cached) { setOrder(cached); setAllergens(cached.tableAllergens ?? []); setFromCache(true); }
+      })
       .finally(() => setLoadingOrder(false));
   }, [orderId, isOccupied]);
 
@@ -218,6 +233,14 @@ export function TableOverlay({
   return (
     <div style={bgStyle} onClick={isMobile ? undefined : onClose}>
       <div style={panelStyle} onClick={e => e.stopPropagation()}>
+
+        {/* Offline / cached data banner */}
+        {(isOffline || fromCache) && (
+          <div style={{ background: "#7c3aed", color: "#fff", padding: "6px 16px", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <span>📴 מצב offline</span>
+            {fromCache && <span style={{ opacity: 0.8 }}>— מציג הזמנה שמורה · פעולות אינן זמינות</span>}
+          </div>
+        )}
 
         {/* ── Header ── */}
         <div style={{ background: "#fff", padding: "16px 20px 14px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ede9e3" }}>
