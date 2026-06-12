@@ -5,6 +5,8 @@ import { signOut } from "next-auth/react";
 import { TableOverlay, type OrderDetail } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
 import Receipt from "./Receipt";
+import { useOffline } from "@/hooks/useOffline";
+import { idbSet, idbGet } from "@/lib/waiter-db";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string };
@@ -136,6 +138,15 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const prevReadyRef = useRef<Record<string, number>>({});
   const prevHeldRef  = useRef<Record<string, string>>({});
 
+  // Offline state
+  const isOffline = useOffline();
+  const [offlineSince, setOfflineSince] = useState<Date | null>(null);
+  const [usingCachedData, setUsingCachedData] = useState(false);
+  useEffect(() => {
+    if (isOffline) { setOfflineSince(prev => prev ?? new Date()); }
+    else { setOfflineSince(null); setUsingCachedData(false); }
+  }, [isOffline]);
+
   // Order flow state
   const [orderScreenData, setOrderScreenData] = useState<{
     orderId: string | null;
@@ -260,20 +271,26 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     }
   }, [tables]);
 
-  // Fetch layout
+  // Fetch layout (with IDB fallback)
   const fetchLayout = useCallback(async () => {
     if (!restaurantId) return;
     try {
       const r = await fetch(`/api/admin/restaurants/${restaurantId}/layout`);
       if (r.ok) {
         const d = await r.json();
-        // API returns { tableLayoutJson: string }
         const raw = d?.tableLayoutJson;
         const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-        setLayout(parsed?.version === 2 ? parsed : null);
+        const layout = parsed?.version === 2 ? parsed : null;
+        setLayout(layout);
         setRoomIdx(0);
+        if (layout) idbSet("layout", restaurantId, layout).catch(() => {});
+        return;
       }
-    } catch { setLayout(null); }
+    } catch { /* fall through to cache */ }
+    // Offline fallback
+    const cached = await idbGet<LayoutV2>("layout", restaurantId).catch(() => undefined);
+    if (cached) { setLayout(cached); setRoomIdx(0); }
+    else setLayout(null);
   }, [restaurantId]);
 
   useEffect(() => { fetchLayout(); }, [fetchLayout]);
@@ -300,6 +317,9 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       if (r.ok) {
         const data: TableData[] = await r.json();
         setTables(data);
+        setUsingCachedData(false);
+        // Persist to IDB for offline use
+        idbSet("tables", restaurantId, { data, savedAt: new Date().toISOString() }).catch(() => {});
         // Fetch insights right after with fresh table data
         setILoading(true);
         fetch("/api/admin/waiter-pos/insights", {
@@ -312,9 +332,16 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             setInsightIdx(0);
           })
           .finally(() => setILoading(false));
+        return;
       }
-    } finally {
-      setLoading(false);
+    } catch { /* fall through to cache */ }
+    finally { setLoading(false); }
+
+    // Offline fallback — load from IDB
+    const cached = await idbGet<{ data: TableData[]; savedAt: string }>("tables", restaurantId).catch(() => undefined);
+    if (cached?.data) {
+      setTables(cached.data);
+      setUsingCachedData(true);
     }
   }, [restaurantId]);
 
@@ -525,6 +552,19 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           </button>
         </div>
       </div>
+
+      {/* Offline banner */}
+      {isOffline && (
+        <div style={{ background: "#7c3aed", color: "#fff", padding: "8px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0, fontSize: 13 }}>
+          <span>
+            📴 <strong>מצב offline</strong>
+            {usingCachedData && offlineSince
+              ? ` — מציג נתונים מ-${offlineSince.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}`
+              : " — ממתין לחיבור"}
+          </span>
+          <span style={{ fontSize: 12, opacity: 0.8 }}>יצירת הזמנות אינה זמינה</span>
+        </div>
+      )}
 
       {/* Fullscreen banner */}
       {showFsBanner && (
@@ -946,10 +986,12 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           waiterName={waiterName}
           onClose={() => setTableOverlay(null)}
           onAddItems={(order) => {
+            if (isOffline) { showToast("📴 לא ניתן לערוך הזמנה במצב offline"); return; }
             setOrderScreenData({ orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });
             setTableOverlay(null);
           }}
           onNewOrder={(guestCount, allergens) => {
+            if (isOffline) { showToast("📴 לא ניתן ליצור הזמנה במצב offline"); return; }
             setOrderScreenData({ orderId: null, tableNum: overlayTable.tableNum, allergens, guestCount, existingOrder: null });
             setTableOverlay(null);
           }}
