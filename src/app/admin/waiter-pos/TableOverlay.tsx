@@ -243,7 +243,7 @@ export function TableOverlay({
         )}
 
         {/* ── Header ── */}
-        <div style={{ background: "#fff", padding: "16px 20px 14px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ede9e3" }}>
+        <div style={{ background: "#fff", padding: "16px 20px 14px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ede9e3", direction: "rtl" }}>
           {/* X button */}
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, letterSpacing: ".05em" }}>שולחן</div>
