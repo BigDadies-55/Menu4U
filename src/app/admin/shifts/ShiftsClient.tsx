@@ -1120,6 +1120,7 @@ export default function ShiftsClient({
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
+    <>
     <div style={S.wrap}>
       {/* Toast */}
       {toast && (
@@ -1389,5 +1390,6 @@ export default function ShiftsClient({
       )}
     </div>
     <AssistantWidget page="shifts" />
+    </>
   );
 }
