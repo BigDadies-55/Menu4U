@@ -245,14 +245,17 @@ export function TableOverlay({
         {/* ── Header ── */}
         <div style={{ background: "#fff", padding: "16px 20px 14px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ede9e3" }}>
           {/* X button */}
-          <button onClick={onClose} style={{ width: 42, height: 42, borderRadius: 99, border: "none", background: "#f0ede8", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", color: "#555", flexShrink: 0, fontFamily: "inherit" }}>✕</button>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, letterSpacing: ".05em" }}>שולחן</div>
+            <div style={{ fontSize: 46, fontWeight: 900, color: "#1a1612", lineHeight: 1 }}>{tableNum}</div>
+          </div>
 
           {/* Middle info */}
           {isOccupied ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#e07060", fontVariantNumeric: "tabular-nums" }}>⏱ {fmtMins(sittingStart)} דק&apos;</span>
                 <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 12px", borderRadius: 99, background: "#fdf2f0", color: "#c0392b", border: "1.5px solid #f5c4bc" }}>תפוס</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#e07060", fontVariantNumeric: "tabular-nums" }}>⏱ {fmtMins(sittingStart)} דק&apos;</span>
               </div>
               <div style={{ fontSize: 12, color: "#888" }}>👤 {guests > 0 ? `${guests} סועדים` : `${seats} מקומות`}</div>
             </div>
@@ -263,11 +266,8 @@ export function TableOverlay({
             </div>
           )}
 
-          {/* Table number */}
-          <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, letterSpacing: ".05em" }}>שולחן</div>
-            <div style={{ fontSize: 46, fontWeight: 900, color: "#1a1612", lineHeight: 1 }}>{tableNum}</div>
-          </div>
+          {/* Close button */}
+          <button onClick={onClose} style={{ width: 42, height: 42, borderRadius: 99, border: "none", background: "#f0ede8", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", color: "#555", flexShrink: 0, fontFamily: "inherit" }}>✕</button>
         </div>
 
         {/* ── Scrollable body ── */}
@@ -595,7 +595,7 @@ export function TableOverlay({
           {/* Occupied + order loaded */}
           {isOccupied && order && (
             <>
-              <button onClick={() => onAddItems(order)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button onClick={() => onAddItems(order)} disabled={isOffline} style={{ padding: 16, borderRadius: 14, border: "none", background: isOffline ? "#ccc" : "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isOffline ? 0.5 : 1 }}>
                 ➕ הוסף מנות
               </button>
               <div style={{ display: "flex", gap: 8, direction: "rtl" }}>
@@ -603,19 +603,23 @@ export function TableOverlay({
                     if (order && onRequestBill) onRequestBill(order);
                     onStatusChange("bill_requested");
                   }}
-                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c2410c", fontFamily: "inherit" }}>
+                  disabled={isOffline}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: isOffline ? "not-allowed" : "pointer", color: "#c2410c", fontFamily: "inherit", opacity: isOffline ? 0.4 : 1 }}>
                   🧾 מבקש חשבון
                 </button>
                 <button onClick={handleCloseBill}
-                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
+                  disabled={isOffline}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: isOffline ? "not-allowed" : "pointer", color: "#c0392b", fontFamily: "inherit", opacity: isOffline ? 0.4 : 1 }}>
                   💳 סגור חשבון
                 </button>
-                <button onClick={() => { setStatusEditOpen(o => !o); setAllergyEditOpen(false); }}
-                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit" }}>
+                <button onClick={() => { if (!isOffline) { setStatusEditOpen(o => !o); setAllergyEditOpen(false); } }}
+                  disabled={isOffline}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${statusEditOpen ? "#93c5fd" : "#e8e2da"}`, background: statusEditOpen ? "#eff6ff" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: isOffline ? "not-allowed" : "pointer", color: statusEditOpen ? "#1d4ed8" : "#4a4540", fontFamily: "inherit", opacity: isOffline ? 0.4 : 1 }}>
                   סטטוס
                 </button>
-                <button onClick={() => { setAllergyEditOpen(o => !o); setStatusEditOpen(false); }}
-                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit" }}>
+                <button onClick={() => { if (!isOffline) { setAllergyEditOpen(o => !o); setStatusEditOpen(false); } }}
+                  disabled={isOffline}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${allergyEditOpen ? "#e07060" : "#e8e2da"}`, background: allergyEditOpen ? "#fdf2f0" : "#f4f1ed", fontSize: 13, fontWeight: 800, cursor: isOffline ? "not-allowed" : "pointer", color: allergyEditOpen ? "#8b2e22" : "#4a4540", fontFamily: "inherit", opacity: isOffline ? 0.4 : 1 }}>
                   אלרגנים
                 </button>
               </div>
@@ -625,10 +629,10 @@ export function TableOverlay({
           {/* Occupied, no order */}
           {isOccupied && !order && !loadingOrder && (
             <>
-              <button onClick={() => onNewOrder(guestCount, allergens)} style={{ padding: 15, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => onNewOrder(guestCount, allergens)} disabled={isOffline} style={{ padding: 15, borderRadius: 12, border: "none", background: isOffline ? "#ccc" : "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: isOffline ? 0.5 : 1 }}>
                 🍽️ פתח הזמנה חדשה
               </button>
-              <button onClick={() => onStatusChange("free")} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
+              <button onClick={() => onStatusChange("free")} disabled={isOffline} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: isOffline ? "not-allowed" : "pointer", color: "#4a4540", fontFamily: "inherit", opacity: isOffline ? 0.4 : 1 }}>
                 🟢 סמן כפנוי
               </button>
             </>
@@ -637,7 +641,7 @@ export function TableOverlay({
           {/* Free table */}
           {!isOccupied && (
             <>
-              <button onClick={() => onNewOrder(guestCount, allergens)} style={{ padding: 16, borderRadius: 14, border: "none", background: "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => onNewOrder(guestCount, allergens)} disabled={isOffline} style={{ padding: 16, borderRadius: 14, border: "none", background: isOffline ? "#ccc" : "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: isOffline ? 0.5 : 1 }}>
                 🍽️ פתח שולחן והזמן
               </button>
               <button onClick={onClose} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
