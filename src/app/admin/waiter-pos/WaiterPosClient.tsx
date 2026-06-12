@@ -1130,8 +1130,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes insightPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
-          50%       { box-shadow: 0 0 0 8px rgba(124,58,237,0.35); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+          50%       { box-shadow: 0 0 0 7px rgba(251,191,36,0.4); }
         }
       `}</style>
 
