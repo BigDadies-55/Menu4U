@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { T } from "@/lib/ui";
+import { AssistantWidget } from "@/components/admin/AssistantWidget";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ShiftRow = {
@@ -1387,5 +1388,6 @@ export default function ShiftsClient({
         </div>
       )}
     </div>
+    <AssistantWidget page="shifts" />
   );
 }

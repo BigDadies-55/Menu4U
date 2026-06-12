@@ -230,6 +230,41 @@ const sqls = [
   `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "charCount" INTEGER;`,
   `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "smsCount" INTEGER;`,
   `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "restaurantName" TEXT;`,
+  // Assistant knowledge base
+  `CREATE TABLE IF NOT EXISTS "AssistantEntry" (
+    "id"        TEXT NOT NULL,
+    "page"      TEXT NOT NULL,
+    "question"  TEXT NOT NULL,
+    "answer"    TEXT NOT NULL,
+    "tags"      TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "score"     INTEGER NOT NULL DEFAULT 0,
+    "isDefault" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AssistantEntry_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE INDEX IF NOT EXISTS "AssistantEntry_page_idx" ON "AssistantEntry"("page");`,
+  `CREATE TABLE IF NOT EXISTS "AssistantFeedback" (
+    "id"         TEXT NOT NULL,
+    "entryId"    TEXT,
+    "page"       TEXT NOT NULL,
+    "question"   TEXT NOT NULL,
+    "answerId"   TEXT,
+    "rating"     INTEGER NOT NULL,
+    "createdAt"  TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AssistantFeedback_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE TABLE IF NOT EXISTS "AssistantUnanswered" (
+    "id"        TEXT NOT NULL,
+    "page"      TEXT NOT NULL,
+    "question"  TEXT NOT NULL,
+    "count"     INTEGER NOT NULL DEFAULT 1,
+    "resolved"  BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AssistantUnanswered_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE INDEX IF NOT EXISTS "AssistantUnanswered_resolved_idx" ON "AssistantUnanswered"("resolved","createdAt" DESC);`,
 ];
 
 async function run() {

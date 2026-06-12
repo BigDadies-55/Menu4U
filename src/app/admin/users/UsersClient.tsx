@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { AssistantWidget } from "@/components/admin/AssistantWidget";
 import { formatDate } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/client";
 import { T } from "@/lib/ui";
@@ -735,6 +736,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           </div>
         </div>
       )}
+    <AssistantWidget page="users" />
     </PageShell>
   );
 }

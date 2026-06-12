@@ -110,6 +110,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/groups",      label: "רשתות",         I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
       { href: "/admin/menus",       label: "תפריטים",      I: Ic.Menus,      waiterHide: true, displayHide: true },
       { href: "/admin/users",       label: "משתמשים",      I: Ic.Users,      adminOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/assistant",   label: "עוזר אישי",     I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/logs",        label: "לוגים",         I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,   adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,   waiterHide: true, displayHide: true },
