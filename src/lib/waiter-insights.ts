@@ -174,6 +174,11 @@ const BUILTIN_RULES: BuiltinRule[] = [
     match: t => t.availStatus === "occupied" && t.orderCount >= 2,
     text:  t => `שולחן ${t.tableNum} — ${t.orderCount} הזמנות, ודא שהכל הוגש` },
 
+  { id: "large-group-xl",   priority: 51,  type: "tip", defaultText: "8+ סועדים — נדרש שירות מוגבר",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "guests", operator: "gte", value: 8 }],
+    match: t => t.availStatus === "occupied" && t.guests >= 8,
+    text:  t => `שולחן ${t.tableNum} — ${t.guests} סועדים, שולחן גדול במיוחד — הגדל צוות שירות` },
+
   { id: "large-group",      priority: 40,  type: "tip", defaultText: "6+ סועדים — הצע מנות לשיתוף",
     defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "guests", operator: "gte", value: 6 }],
     match: t => t.availStatus === "occupied" && t.guests >= 6,
