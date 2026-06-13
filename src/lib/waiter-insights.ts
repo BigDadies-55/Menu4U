@@ -45,142 +45,172 @@ export interface Insight {
 
 export interface BuiltinRuleOverride {
   enabled: boolean;
-  text?: string;     // custom text template (same placeholders as CustomRule.text)
-  priority?: number; // custom priority (overrides default)
+  text?: string;                // custom text template (same placeholders as CustomRule.text)
+  priority?: number;            // custom priority (overrides default)
+  type?: InsightType;           // custom type (alert/tip/info)
+  conditions?: Condition[];     // if set, replaces the built-in match function entirely
 }
 export type BuiltinRuleOverrides = Record<string, BuiltinRuleOverride>; // key = rule id
 
 // ── Built-in rules ────────────────────────────────────────────────────────────
 
 interface BuiltinRule {
-  id: string;          // stable key used for per-restaurant overrides
+  id: string;                  // stable key used for per-restaurant overrides
   match: (t: TableInput) => boolean;
   type: InsightType;
   text: (t: TableInput) => string;
   priority: number;
-  defaultText: string; // shown in admin UI
+  defaultText: string;         // shown in admin UI
+  defaultConditions: Condition[]; // shown in admin UI + used as reset target
 }
 
 const BUILTIN_RULES: BuiltinRule[] = [
   // ── ALERTS ──────────────────────────────────────────────────────────────────
 
   { id: "ready-cold",       priority: 105, type: "alert", defaultText: "מוכן 15+ דק׳ ומתקרר — הגש מיד!",
+    defaultConditions: [{ field: "orderStatus", operator: "eq", value: "READY" }, { field: "minutesSinceLastOrder", operator: "gte", value: 15 }],
     match: t => t.orderStatus === "READY" && t.minutesSinceLastOrder >= 15,
     text:  t => `שולחן ${t.tableNum} — מוכן ${t.minutesSinceLastOrder} דק׳ ומתקרר, יש להגיש מיד!` },
 
   { id: "ready",            priority: 100, type: "alert", defaultText: "הזמנה בסטטוס READY — יש להגיש",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "orderStatus", operator: "eq", value: "READY" }],
     match: t => t.availStatus === "occupied" && t.orderStatus === "READY",
     text:  t => `שולחן ${t.tableNum} — הזמנה מוכנה, יש להגיש` },
 
   { id: "cancelled",        priority: 97,  type: "alert", defaultText: "הזמנה בוטלה — יש לבדוק",
+    defaultConditions: [{ field: "orderStatus", operator: "eq", value: "CANCELLED" }],
     match: t => t.orderStatus === "CANCELLED",
     text:  t => `שולחן ${t.tableNum} — הזמנה בוטלה, יש לבדוק ולטפל` },
 
   { id: "long-sit",         priority: 92,  type: "alert", defaultText: "ישיבה 90+ דקות — שקול חשבון",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 90 }],
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 90,
     text:  t => `שולחן ${t.tableNum} — ${t.minutesSitting} דק׳ ישיבה, שקול להציע חשבון` },
 
   { id: "bill-overdue",     priority: 90,  type: "alert", defaultText: "חשבון התבקש 10+ דק׳ ולא הוגש",
+    defaultConditions: [{ field: "billRequested", operator: "eq", value: "true" }, { field: "minutesSinceBillRequested", operator: "gte", value: 10 }],
     match: t => t.billRequested && t.minutesSinceBillRequested >= 10,
     text:  t => `שולחן ${t.tableNum} — חשבון התבקש לפני ${t.minutesSinceBillRequested} דק׳, הבא חשבון!` },
 
   { id: "confirmed-stuck",  priority: 88,  type: "alert", defaultText: "CONFIRMED 60+ דקות — תקוע במטבח?",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 60 }, { field: "orderStatus", operator: "eq", value: "CONFIRMED" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 60 && t.orderStatus === "CONFIRMED",
     text:  t => `שולחן ${t.tableNum} — מאושר ${t.minutesSitting} דק׳ ועוד לא הגיע למטבח?` },
 
   { id: "no-order",         priority: 85,  type: "alert", defaultText: "30+ דקות ללא הזמנה פתוחה",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 30 }, { field: "orderStatus", operator: "eq", value: "" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 30 && t.orderStatus === null,
     text:  t => `שולחן ${t.tableNum} — ${t.minutesSitting} דק׳ ללא הזמנה פתוחה` },
 
   { id: "bill-requested",   priority: 83,  type: "alert", defaultText: "חשבון התבקש — יש להגיש",
+    defaultConditions: [{ field: "billRequested", operator: "eq", value: "true" }],
     match: t => t.billRequested,
     text:  t => `שולחן ${t.tableNum} — חשבון התבקש, יש להגיש` },
 
   { id: "reserved-late",    priority: 80,  type: "alert", defaultText: "שמור 20+ דקות — האם הגיע?",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "reserved" }, { field: "minutesSitting", operator: "gte", value: 20 }],
     match: t => t.availStatus === "reserved" && t.minutesSitting >= 20,
     text:  t => `שולחן ${t.tableNum} — שמור ${t.minutesSitting} דק׳, האם הגיע?` },
 
   { id: "allergen",         priority: 79,  type: "alert", defaultText: "אלרגיה/הגבלה תזונתית מסומנת",
+    defaultConditions: [{ field: "hasAllergen", operator: "eq", value: "true" }],
     match: t => (t.availStatus === "occupied" || t.availStatus === "bill_requested") && t.hasAllergen,
     text:  t => `שולחן ${t.tableNum} — אלרגיה/הגבלה תזונתית מסומנת, שים לב במטבח!` },
 
   // ── TIPS ────────────────────────────────────────────────────────────────────
 
   { id: "upsell-dessert",   priority: 70,  type: "tip", defaultText: "45+ דקות + DELIVERED — הצע קינוח/קפה",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 45 }, { field: "orderStatus", operator: "eq", value: "DELIVERED" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 45 && t.orderStatus === "DELIVERED",
     text:  t => `שולחן ${t.tableNum} — הוגש לפני זמן, הצע קינוח או קפה` },
 
   { id: "upsell-drinks",    priority: 68,  type: "tip", defaultText: "30+ דקות + DELIVERED — הצע משקאות",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 30 }, { field: "orderStatus", operator: "eq", value: "DELIVERED" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 30 && t.orderStatus === "DELIVERED",
     text:  t => `שולחן ${t.tableNum} — הוגש, הצע משקאות נוספים` },
 
   { id: "check-kitchen",    priority: 65,  type: "tip", defaultText: "20+ דקות + CONFIRMED — בדוק מטבח",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 20 }, { field: "orderStatus", operator: "eq", value: "CONFIRMED" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 20 && t.orderStatus === "CONFIRMED",
     text:  t => `שולחן ${t.tableNum} — מאושר לפני ${t.minutesSitting} דק׳, בדוק סטטוס במטבח` },
 
   { id: "offer-round",      priority: 63,  type: "tip", defaultText: "30+ דק׳ ללא הזמנה חדשה אחרי DELIVERED — סבב/חשבון",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "orderStatus", operator: "eq", value: "DELIVERED" }, { field: "minutesSinceLastOrder", operator: "gte", value: 30 }],
     match: t => t.availStatus === "occupied" && t.orderStatus === "DELIVERED" && t.minutesSinceLastOrder >= 30,
     text:  t => `שולחן ${t.tableNum} — ${t.minutesSinceLastOrder} דק׳ מאז ההגשה, הצע סבב נוסף או חשבון` },
 
   { id: "update-guests",    priority: 60,  type: "tip", defaultText: "20+ דקות + PREPARING — עדכן סועדים",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 20 }, { field: "orderStatus", operator: "eq", value: "PREPARING" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting >= 20 && t.orderStatus === "PREPARING",
     text:  t => `שולחן ${t.tableNum} — מתבשל ${t.minutesSitting} דק׳, עדכן סועדים` },
 
   { id: "take-order",       priority: 55,  type: "tip", defaultText: "זה עתה ישב + ללא הזמנה — קח הזמנה",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "lt", value: 5 }, { field: "orderStatus", operator: "eq", value: "" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting < 5 && t.orderStatus === null,
     text:  t => `שולחן ${t.tableNum} — זה עתה ישב, קח הזמנה` },
 
   { id: "pending",          priority: 50,  type: "tip", defaultText: "הזמנה PENDING — ממתינה לאישור",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "orderStatus", operator: "eq", value: "PENDING" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting < 5 && t.orderStatus === "PENDING",
     text:  t => `שולחן ${t.tableNum} — הזמנה ממתינה לאישור` },
 
   { id: "paid-clear",       priority: 49,  type: "tip", defaultText: "תשלום הושלם — נקה ואפס שולחן",
+    defaultConditions: [{ field: "orderStatus", operator: "eq", value: "PAID" }],
     match: t => t.orderStatus === "PAID",
     text:  t => `שולחן ${t.tableNum} — תשלום הושלם, נקה ואפס שולחן` },
 
   { id: "vip",              priority: 45,  type: "tip", defaultText: "חשבון ₪300+ — שירות VIP",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "totalAmount", operator: "gte", value: 300 }],
     match: t => t.availStatus === "occupied" && t.totalAmount >= 300,
     text:  t => `שולחן ${t.tableNum} — חשבון ₪${Math.round(t.totalAmount)}, תן שירות VIP` },
 
   { id: "loyalty",          priority: 44,  type: "tip", defaultText: "לקוח נאמן — קבל בברכה אישית",
+    defaultConditions: [{ field: "isLoyaltyMember", operator: "eq", value: "true" }],
     match: t => (t.availStatus === "occupied" || t.availStatus === "bill_requested") && t.isLoyaltyMember,
     text:  t => `שולחן ${t.tableNum} — לקוח נאמן, קבל בברכה אישית` },
 
   { id: "multi-order",      priority: 42,  type: "tip", defaultText: "2+ הזמנות — ודא שהכל הוגש",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "orderCount", operator: "gte", value: 2 }],
     match: t => t.availStatus === "occupied" && t.orderCount >= 2,
     text:  t => `שולחן ${t.tableNum} — ${t.orderCount} הזמנות, ודא שהכל הוגש` },
 
   { id: "large-group",      priority: 40,  type: "tip", defaultText: "6+ סועדים — הצע מנות לשיתוף",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "guests", operator: "gte", value: 6 }],
     match: t => t.availStatus === "occupied" && t.guests >= 6,
     text:  t => `שולחן ${t.tableNum} — קבוצה גדולה (${t.guests} סועדים), הצע מנות לשיתוף` },
 
   // ── INFO ────────────────────────────────────────────────────────────────────
 
   { id: "full-table",       priority: 30,  type: "info", defaultText: "שולחן מלא (סועדים ≥ מושבים)",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "guests", operator: "gte", value: 1 }, { field: "seats", operator: "gte", value: 1 }],
     match: t => t.availStatus === "occupied" && t.guests > 0 && t.seats > 0 && t.guests >= t.seats,
     text:  t => `שולחן ${t.tableNum} — שולחן מלא (${t.guests}/${t.seats})` },
 
   { id: "empty-seats",      priority: 27,  type: "info", defaultText: "מקומות פנויים — ניתן להוסיף סועדים",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "guests", operator: "gte", value: 1 }],
     match: t => t.availStatus === "occupied" && t.guests > 0 && t.seats > 0 && t.guests < t.seats - 2,
     text:  t => `שולחן ${t.tableNum} — ${t.guests}/${t.seats} מקומות תפוסים, ניתן להוסיף סועדים` },
 
   { id: "couple-big",       priority: 25,  type: "info", defaultText: "זוג בשולחן גדול — שקול שיבוץ",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "guests", operator: "lte", value: 2 }, { field: "seats", operator: "gte", value: 6 }],
     match: t => t.availStatus === "occupied" && t.guests > 0 && t.guests <= 2 && t.seats >= 6,
     text:  t => `שולחן ${t.tableNum} — זוג בשולחן ל-${t.seats}, שקול שיבוץ נוח יותר` },
 
   { id: "confirmed-new",    priority: 22,  type: "info", defaultText: "הזמנה אושרה — בישול התחיל",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "lt", value: 3 }, { field: "orderStatus", operator: "eq", value: "CONFIRMED" }],
     match: t => t.availStatus === "occupied" && t.minutesSitting < 3 && t.orderStatus === "CONFIRMED",
     text:  t => `שולחן ${t.tableNum} — הזמנה אושרה, בישול התחיל` },
 
   { id: "reserved",         priority: 20,  type: "info", defaultText: "שולחן שמור — יש להכין",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "reserved" }],
     match: t => t.availStatus === "reserved",
     text:  t => `שולחן ${t.tableNum} — שמור, יש להכין` },
 ];
 
 // ── Export built-in rule metadata for admin UI ────────────────────────────────
 
-export const BUILTIN_RULE_META: { id: string; defaultText: string; type: InsightType; priority: number }[] =
-  BUILTIN_RULES.map(r => ({ id: r.id, defaultText: r.defaultText, type: r.type, priority: r.priority }));
+export const BUILTIN_RULE_META: { id: string; defaultText: string; type: InsightType; priority: number; defaultConditions: Condition[] }[] =
+  BUILTIN_RULES.map(r => ({ id: r.id, defaultText: r.defaultText, type: r.type, priority: r.priority, defaultConditions: r.defaultConditions }));
 
 // ── Custom rule evaluation ────────────────────────────────────────────────────
 
@@ -234,10 +264,15 @@ export function computeInsights(
     // Built-in rules — first match wins (highest effective priority first)
     for (const rule of sortedBuiltins) {
       const ov = builtinOverrides[rule.id];
-      if (ov && ov.enabled === false) continue; // disabled for this restaurant
-      if (rule.match(table)) {
+      if (ov && ov.enabled === false) continue;
+      // Use condition overrides if present, otherwise run the built-in match function
+      const matched = ov?.conditions?.length
+        ? ov.conditions.every(c => evalCondition(table, c))
+        : rule.match(table);
+      if (matched) {
         const text = ov?.text ? renderText(ov.text, table) : rule.text(table);
-        trySet({ tableNum: table.tableNum, type: rule.type, text, priority: rule.effectivePriority });
+        const type = ov?.type ?? rule.type;
+        trySet({ tableNum: table.tableNum, type, text, priority: rule.effectivePriority });
         break;
       }
     }

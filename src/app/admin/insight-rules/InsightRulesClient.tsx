@@ -4,6 +4,21 @@ import { T } from "@/lib/ui";
 import type { CustomRule, Condition, InsightType, BuiltinRuleOverride, BuiltinRuleOverrides } from "@/lib/waiter-insights";
 import { BUILTIN_RULE_META } from "@/lib/waiter-insights";
 
+const ALL_FIELDS: { value: Condition["field"]; label: string }[] = [
+  { value: "minutesSitting",           label: "דקות ישיבה" },
+  { value: "orderStatus",              label: "סטטוס הזמנה" },
+  { value: "availStatus",              label: "סטטוס שולחן" },
+  { value: "guests",                   label: "מספר סועדים" },
+  { value: "seats",                    label: "קיבולת שולחן" },
+  { value: "totalAmount",              label: "סכום חשבון (₪)" },
+  { value: "orderCount",               label: "מספר הזמנות" },
+  { value: "minutesSinceLastOrder",    label: "דקות מאז עדכון הזמנה" },
+  { value: "billRequested",            label: "חשבון התבקש" },
+  { value: "minutesSinceBillRequested",label: "דקות מאז בקשת חשבון" },
+  { value: "hasAllergen",              label: "יש אלרגיה" },
+  { value: "isLoyaltyMember",          label: "לקוח נאמן" },
+];
+
 const FIELDS: { value: Condition["field"]; label: string }[] = [
   { value: "minutesSitting",        label: "דקות ישיבה" },
   { value: "orderStatus",           label: "סטטוס הזמנה" },
@@ -56,7 +71,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   const [editId, setEditId]             = useState<string | "new" | null>(null);
   const [form, setForm]                 = useState<Omit<CustomRule, "id">>(EMPTY_RULE);
   const [editBuiltinId, setEditBuiltinId] = useState<string | null>(null);
-  const [builtinForm, setBuiltinForm]   = useState<{ text: string; priority: number }>({ text: "", priority: 0 });
+  const [builtinForm, setBuiltinForm]   = useState<{ text: string; priority: number; type: InsightType; conditions: Condition[] }>({ text: "", priority: 0, type: "alert", conditions: [] });
   const [toast, setToast]               = useState<string | null>(null);
 
   function showToast(msg: string) {
@@ -135,17 +150,37 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   function startEditBuiltin(ruleId: string) {
     const meta = BUILTIN_RULE_META.find(r => r.id === ruleId)!;
     const ov = builtinOverrides[ruleId];
-    setBuiltinForm({ text: ov?.text ?? "", priority: ov?.priority ?? meta.priority });
+    setBuiltinForm({
+      text:       ov?.text ?? "",
+      priority:   ov?.priority ?? meta.priority,
+      type:       ov?.type ?? meta.type,
+      conditions: ov?.conditions ? [...ov.conditions] : [...meta.defaultConditions],
+    });
     setEditBuiltinId(ruleId);
+  }
+
+  function updateBuiltinCond(i: number, patch: Partial<Condition>) {
+    setBuiltinForm(f => ({ ...f, conditions: f.conditions.map((c, ci) => ci === i ? { ...c, ...patch } : c) }));
+  }
+  function addBuiltinCond() {
+    setBuiltinForm(f => ({ ...f, conditions: [...f.conditions, { field: "minutesSitting", operator: "gte", value: 30 }] }));
+  }
+  function removeBuiltinCond(i: number) {
+    setBuiltinForm(f => ({ ...f, conditions: f.conditions.filter((_, ci) => ci !== i) }));
   }
 
   async function saveBuiltin() {
     if (!editBuiltinId) return;
+    const meta = BUILTIN_RULE_META.find(r => r.id === editBuiltinId)!;
     const cur = builtinOverrides[editBuiltinId];
+    // Detect if conditions changed from default
+    const condsChanged = JSON.stringify(builtinForm.conditions) !== JSON.stringify(meta.defaultConditions);
     await patchBuiltin(editBuiltinId, {
-      enabled: cur?.enabled ?? true,
-      text: builtinForm.text.trim() || undefined,
-      priority: builtinForm.priority,
+      enabled:    cur?.enabled ?? true,
+      text:       builtinForm.text.trim() || undefined,
+      priority:   builtinForm.priority,
+      type:       builtinForm.type !== meta.type ? builtinForm.type : undefined,
+      conditions: condsChanged ? builtinForm.conditions : undefined,
     });
     setEditBuiltinId(null);
     showToast("כלל עודכן");
@@ -298,27 +333,69 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
         const meta = BUILTIN_RULE_META.find(r => r.id === editBuiltinId)!;
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)" }}>
-            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 28, width: "min(500px,94vw)", direction: "rtl" }}>
+            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 28, width: "min(580px,96vw)", maxHeight: "92vh", overflowY: "auto", direction: "rtl" }}>
               <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>עריכת כלל מובנה</div>
               <div style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>{meta.defaultText}</div>
 
-              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4 }}>
+              {/* Type + Priority */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>סוג</div>
+                  <select value={builtinForm.type} onChange={e => setBuiltinForm(f => ({ ...f, type: e.target.value as InsightType }))} style={{ ...INP, width: "100%" }}>
+                    <option value="alert">🔴 התראה (alert)</option>
+                    <option value="tip">🟡 עצה (tip)</option>
+                    <option value="info">🔵 מידע (info)</option>
+                  </select>
+                </div>
+                <div style={{ width: 110 }}>
+                  <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>עדיפות</div>
+                  <input type="number" min={1} max={200} value={builtinForm.priority}
+                    onChange={e => setBuiltinForm(f => ({ ...f, priority: Number(e.target.value) }))}
+                    style={{ ...INP, width: "100%", boxSizing: "border-box" }} />
+                </div>
+              </div>
+
+              {/* Conditions */}
+              <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>
+                תנאים (כולם חייבים להתקיים)
+                <span style={{ color: T.muted, fontSize: 11, marginRight: 6 }}>· שינוי תנאים מחליף את הלוגיקה המובנית</span>
+              </div>
+              {builtinForm.conditions.map((c, i) => (
+                <div key={i} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
+                  <select value={c.field} onChange={e => updateBuiltinCond(i, { field: e.target.value as Condition["field"] })} style={{ ...INP, flex: 1 }}>
+                    {ALL_FIELDS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                  </select>
+                  <select value={c.operator} onChange={e => updateBuiltinCond(i, { operator: e.target.value as Condition["operator"] })} style={{ ...INP, flex: 1 }}>
+                    {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <input value={c.value} onChange={e => updateBuiltinCond(i, { value: e.target.value })}
+                    style={{ ...INP, width: 80 }} placeholder="ערך" />
+                  {builtinForm.conditions.length > 1 && (
+                    <button onClick={() => removeBuiltinCond(i)} style={{
+                      background: T.redSub, border: `1px solid ${T.red}44`, borderRadius: 6,
+                      color: T.red, fontSize: 13, padding: "5px 9px", cursor: "pointer",
+                    }}>✕</button>
+                  )}
+                </div>
+              ))}
+              <button onClick={addBuiltinCond} style={{
+                background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7,
+                color: T.sub, fontSize: 12, padding: "5px 12px", cursor: "pointer", marginBottom: 16,
+              }}>+ הוסף תנאי</button>
+
+              {/* Text */}
+              <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
                 טקסט מותאם <span style={{ color: T.muted }}>(ריק = ברירת מחדל)</span>
-              </label>
+              </div>
               <input value={builtinForm.text}
                 onChange={e => setBuiltinForm(f => ({ ...f, text: e.target.value }))}
                 placeholder={meta.defaultText}
-                style={{ ...INP, width: "100%", marginBottom: 16, boxSizing: "border-box" }} />
-              <div style={{ fontSize: 11, color: T.muted, marginBottom: 16 }}>
-                משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{minutesSinceLastOrder}"} {"{minutesSinceBillRequested}"}
+                style={{ ...INP, width: "100%", marginBottom: 8, boxSizing: "border-box" }} />
+              <div style={{ fontSize: 11, color: T.muted, marginBottom: 20 }}>
+                משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{orderStatus}"} {"{totalAmount}"} {"{minutesSinceLastOrder}"} {"{minutesSinceBillRequested}"}
               </div>
 
-              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4 }}>עדיפות</label>
-              <input type="number" min={1} max={200} value={builtinForm.priority}
-                onChange={e => setBuiltinForm(f => ({ ...f, priority: Number(e.target.value) }))}
-                style={{ ...INP, width: 100, marginBottom: 20 }} />
-
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <button onClick={saveBuiltin} style={{
                   background: T.gold, border: "none", borderRadius: 8,
                   color: "#fff", fontWeight: 700, fontSize: 13, padding: "9px 20px", cursor: "pointer",
