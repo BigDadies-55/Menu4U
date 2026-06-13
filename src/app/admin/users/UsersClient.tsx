@@ -414,7 +414,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           <button
                             onClick={e => {
                               const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                              setMenuPos({ top: rect.bottom + 6, left: rect.right - 188 });
+                              const menuW = 200;
+                              const left  = rect.right + menuW > window.innerWidth
+                                ? rect.left - menuW          // not enough room to the right → open left
+                                : rect.left;                 // open to the right of the button
+                              setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
                               setOpenMenuId(openMenuId === user.id ? null : user.id);
                             }}
                             style={{ background: "none", border: "none", cursor: "pointer", color: L.muted, fontSize: 20, padding: "2px 6px", borderRadius: 6, lineHeight: 1, fontFamily: "inherit" }}
@@ -648,7 +652,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         const user = filtered.find(u => u.id === openMenuId);
         if (!user) return null;
         return (
-          <div ref={menuRef} style={{ position: "fixed", top: menuPos.top, left: menuPos.left, background: "#fff", border: `1px solid ${L.border2}`, borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", minWidth: 188, zIndex: 9999, overflow: "hidden" }}>
+          <div ref={menuRef} style={{ position: "fixed", top: menuPos.top, left: menuPos.left, background: "#fff", border: `1px solid ${L.border2}`, borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", width: 200, zIndex: 9999, overflow: "hidden" }}>
             {currentUserRole === "SUPER_ADMIN" && (
               <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />
             )}
