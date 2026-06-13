@@ -43,10 +43,14 @@ const INP: React.CSSProperties = {
   color: T.text, fontSize: 13, padding: "6px 10px", outline: "none", direction: "rtl",
 };
 
-export default function InsightRulesClient({ restaurants }: { restaurants: { id: string; name: string }[] }) {
+const GLOBAL_ID = "GLOBAL";
+
+export default function InsightRulesClient({ restaurants, isSuperAdmin }: { restaurants: { id: string; name: string }[]; isSuperAdmin?: boolean }) {
   const [rid, setRid]                   = useState(restaurants[0]?.id ?? "");
   const [rules, setRules]               = useState<CustomRule[]>([]);
   const [builtinOverrides, setBuiltinOverrides] = useState<BuiltinRuleOverrides>({});
+  const [globalOverrides, setGlobalOverrides]   = useState<BuiltinRuleOverrides>({});
+  const isGlobal = rid === GLOBAL_ID;
   const [loading, setLoading]           = useState(false);
   const [saving, setSaving]             = useState(false);
   const [editId, setEditId]             = useState<string | "new" | null>(null);
@@ -68,6 +72,7 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
       const d = await r.json();
       setRules(d.rules ?? []);
       setBuiltinOverrides(d.builtinOverrides ?? {});
+      setGlobalOverrides(d.globalOverrides ?? {});
     } finally { setLoading(false); }
   }, [rid]);
 
@@ -195,12 +200,11 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
           </div>
         </div>
         <span style={{ flex: 1 }} />
-        {restaurants.length > 1 && (
-          <select value={rid} onChange={e => setRid(e.target.value)} style={{ ...INP, width: "auto" }}>
-            {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        )}
-        <button onClick={startNew} style={{
+        <select value={rid} onChange={e => setRid(e.target.value)} style={{ ...INP, width: "auto" }}>
+          {isSuperAdmin && <option value={GLOBAL_ID}>🌐 גלובלי — כל המסעדות</option>}
+          {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
+        <button onClick={startNew} disabled={isGlobal} style={{
           background: T.gold, border: "none", borderRadius: 8,
           color: "#fff", fontWeight: 700, fontSize: 13, padding: "8px 16px", cursor: "pointer",
         }}>
@@ -210,14 +214,28 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
 
       {/* Built-in rules — now editable */}
       <section style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.muted, marginBottom: 10 }}>
-          כללים מובנים — ניתן להשבית, לשנות טקסט ועדיפות
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.muted }}>
+            כללים מובנים — ניתן להשבית, לשנות טקסט ועדיפות
+          </div>
+          {isGlobal && (
+            <span style={{ fontSize: 11, background: "#3b82f622", color: "#60a5fa", borderRadius: 6, padding: "2px 8px" }}>
+              🌐 שינויים יחולו על כל המסעדות
+            </span>
+          )}
+          {!isGlobal && (
+            <span style={{ fontSize: 11, color: T.muted }}>
+              שינויים למסעדה זו בלבד · override גלובלי מסומן 🌐
+            </span>
+          )}
         </div>
         <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
           {BUILTIN_RULE_META.map((r, i) => {
             const ov = builtinOverrides[r.id];
-            const isEnabled = ov ? ov.enabled !== false : true;
+            const globalOv = !isGlobal ? globalOverrides[r.id] : undefined;
+            const isEnabled = ov ? ov.enabled !== false : (globalOv ? globalOv.enabled !== false : true);
             const hasOverride = ov && (ov.text || (ov.priority !== undefined && ov.priority !== r.priority));
+            const hasGlobalOv = !isGlobal && globalOv && (globalOv.text || (globalOv.priority !== undefined && globalOv.priority !== r.priority) || globalOv.enabled === false);
             return (
               <div key={r.id} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
@@ -241,12 +259,20 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, color: T.text }}>
-                    {ov?.text ? <><span style={{ color: T.gold }}>✎ </span>{ov.text}</> : r.defaultText}
+                    {ov?.text
+                      ? <><span style={{ color: T.gold }}>✎ </span>{ov.text}</>
+                      : globalOv?.text
+                        ? <><span style={{ color: "#60a5fa" }}>🌐 </span>{globalOv.text}</>
+                        : r.defaultText
+                    }
                   </div>
+                  {hasGlobalOv && !ov && (
+                    <div style={{ fontSize: 11, color: "#60a5fa", marginTop: 2 }}>מושפע מהגדרה גלובלית</div>
+                  )}
                 </div>
 
-                <span style={{ fontSize: 11, color: hasOverride ? T.gold : T.muted, flexShrink: 0 }}>
-                  עדיפות {ov?.priority ?? r.priority}{hasOverride ? " *" : ""}
+                <span style={{ fontSize: 11, color: hasOverride ? T.gold : hasGlobalOv ? "#60a5fa" : T.muted, flexShrink: 0 }}>
+                  עדיפות {ov?.priority ?? globalOv?.priority ?? r.priority}{hasOverride ? " *" : hasGlobalOv && !ov ? " 🌐" : ""}
                 </span>
 
                 <button onClick={() => startEditBuiltin(r.id)} style={{

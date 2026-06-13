@@ -26,7 +26,7 @@ export default async function InsightRulesPage() {
 
   return (
     <PageShell>
-      <InsightRulesClient restaurants={restaurants} />
+      <InsightRulesClient restaurants={restaurants} isSuperAdmin={role === "SUPER_ADMIN"} />
     </PageShell>
   );
 }

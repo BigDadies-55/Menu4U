@@ -4,12 +4,44 @@ import { NextResponse } from "next/server";
 import type { CustomRule, BuiltinRuleOverrides } from "@/lib/waiter-insights";
 import { randomUUID } from "crypto";
 
+const GLOBAL_ID = "GLOBAL";
+
 async function ensureColumn() {
   await prisma.$executeRawUnsafe(
     `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "insightRulesJson" TEXT DEFAULT '[]'`
   );
   await prisma.$executeRawUnsafe(
     `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "insightBuiltinOverridesJson" TEXT DEFAULT '{}'`
+  );
+}
+
+async function ensureGlobalTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "InsightGlobalConfig" (
+      id TEXT PRIMARY KEY,
+      "builtinOverridesJson" TEXT NOT NULL DEFAULT '{}'
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    INSERT INTO "InsightGlobalConfig" (id, "builtinOverridesJson")
+    VALUES ('${GLOBAL_ID}', '{}')
+    ON CONFLICT (id) DO NOTHING
+  `);
+}
+
+async function getGlobalOverrides(): Promise<BuiltinRuleOverrides> {
+  await ensureGlobalTable();
+  const rows = await prisma.$queryRawUnsafe<Array<{ builtinOverridesJson: string | null }>>(
+    `SELECT "builtinOverridesJson" FROM "InsightGlobalConfig" WHERE id = '${GLOBAL_ID}'`
+  );
+  try { return JSON.parse(rows[0]?.builtinOverridesJson ?? "{}"); } catch { return {}; }
+}
+
+async function saveGlobalOverrides(overrides: BuiltinRuleOverrides) {
+  await ensureGlobalTable();
+  await prisma.$executeRawUnsafe(
+    `UPDATE "InsightGlobalConfig" SET "builtinOverridesJson" = $1 WHERE id = '${GLOBAL_ID}'`,
+    JSON.stringify(overrides)
   );
 }
 
@@ -53,7 +85,7 @@ async function saveRules(restaurantId: string, rules: CustomRule[]) {
   );
 }
 
-// GET /api/admin/insight-rules?restaurantId=X
+// GET /api/admin/insight-rules?restaurantId=X  (restaurantId=GLOBAL for global overrides)
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -62,15 +94,22 @@ export async function GET(req: Request) {
   const restaurantId = searchParams.get("restaurantId");
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
 
+  if (restaurantId === GLOBAL_ID) {
+    if (session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const builtinOverrides = await getGlobalOverrides();
+    return NextResponse.json({ rules: [], builtinOverrides, isGlobal: true });
+  }
+
   if (!(await checkAccess(session.user.id, session.user.role, restaurantId))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [rules, builtinOverrides] = await Promise.all([
+  const [rules, builtinOverrides, globalOverrides] = await Promise.all([
     getRules(restaurantId),
     getBuiltinOverrides(restaurantId),
+    getGlobalOverrides(),
   ]);
-  return NextResponse.json({ rules, builtinOverrides });
+  return NextResponse.json({ rules, builtinOverrides, globalOverrides });
 }
 
 // POST /api/admin/insight-rules — create rule
@@ -115,6 +154,7 @@ export async function PUT(req: Request) {
 }
 
 // PATCH /api/admin/insight-rules — update a single builtin rule override
+// restaurantId=GLOBAL → updates global overrides (SUPER_ADMIN only)
 export async function PATCH(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -127,16 +167,21 @@ export async function PATCH(req: Request) {
   };
 
   if (!restaurantId || !ruleId) return NextResponse.json({ error: "restaurantId and ruleId required" }, { status: 400 });
+
+  if (restaurantId === GLOBAL_ID) {
+    if (session.user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const overrides = await getGlobalOverrides();
+    if (override === null) { delete overrides[ruleId]; } else { overrides[ruleId] = override; }
+    await saveGlobalOverrides(overrides);
+    return NextResponse.json({ ok: true, builtinOverrides: overrides });
+  }
+
   if (!(await checkAccess(session.user.id, session.user.role, restaurantId))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const overrides = await getBuiltinOverrides(restaurantId);
-  if (override === null) {
-    delete overrides[ruleId]; // reset to default
-  } else {
-    overrides[ruleId] = override;
-  }
+  if (override === null) { delete overrides[ruleId]; } else { overrides[ruleId] = override; }
   await saveBuiltinOverrides(restaurantId, overrides);
   return NextResponse.json({ ok: true, builtinOverrides: overrides });
 }

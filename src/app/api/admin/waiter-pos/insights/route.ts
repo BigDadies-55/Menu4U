@@ -21,11 +21,20 @@ async function getCustomRules(restaurantId: string): Promise<CustomRule[]> {
 
 async function getBuiltinOverrides(restaurantId: string): Promise<BuiltinRuleOverrides> {
   try {
-    const rows = await prisma.$queryRawUnsafe<Array<{ insightBuiltinOverridesJson: string | null }>>(
-      `SELECT "insightBuiltinOverridesJson" FROM "Restaurant" WHERE id = $1`,
-      restaurantId
-    );
-    return JSON.parse(rows[0]?.insightBuiltinOverridesJson ?? "{}");
+    // Fetch global overrides + restaurant-specific overrides in parallel
+    const [globalRows, restRows] = await Promise.all([
+      prisma.$queryRawUnsafe<Array<{ builtinOverridesJson: string | null }>>(
+        `SELECT "builtinOverridesJson" FROM "InsightGlobalConfig" WHERE id = 'GLOBAL'`
+      ).catch(() => [] as Array<{ builtinOverridesJson: string | null }>),
+      prisma.$queryRawUnsafe<Array<{ insightBuiltinOverridesJson: string | null }>>(
+        `SELECT "insightBuiltinOverridesJson" FROM "Restaurant" WHERE id = $1`,
+        restaurantId
+      ),
+    ]);
+    const global: BuiltinRuleOverrides = JSON.parse(globalRows[0]?.builtinOverridesJson ?? "{}");
+    const local: BuiltinRuleOverrides  = JSON.parse(restRows[0]?.insightBuiltinOverridesJson ?? "{}");
+    // Restaurant-specific overrides take precedence over global
+    return { ...global, ...local };
   } catch { return {}; }
 }
 
