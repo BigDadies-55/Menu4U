@@ -75,6 +75,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "ADMIN" | "WAITER" | "unverified">("all");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos]       = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
 
   // close dropdown on outside click
@@ -409,40 +410,17 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           {status.label}
                         </td>
                         {/* 3-dot menu */}
-                        <td style={{ padding: "10px 12px", position: "relative" }}>
-                          <div ref={openMenuId === user.id ? menuRef : undefined} style={{ position: "relative", display: "inline-block" }}>
-                            <button
-                              onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: L.muted, fontSize: 20, padding: "2px 6px", borderRadius: 6, lineHeight: 1, fontFamily: "inherit" }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "#f4f5f7")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "none")}
-                            >⋮</button>
-                            {openMenuId === user.id && (
-                              <div style={{ position: "absolute", left: 0, top: "110%", background: "#fff", border: `1px solid ${L.border2}`, borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.1)", minWidth: 180, zIndex: 100, overflow: "hidden" }}>
-                                {currentUserRole === "SUPER_ADMIN" && (
-                                  <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />
-                                )}
-                                <MenuAction icon="🏪" label="ניהול מסעדות" onClick={() => { setManagingUser(user); setAddRestaurantId(""); setOpenMenuId(null); }} />
-                                <MenuAction icon="🔑" label="איפוס סיסמה" onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); setOpenMenuId(null); }} />
-                                <MenuAction
-                                  icon="🔐"
-                                  label={user.mustChangePassword ? "בטל כפיית שינוי סיסמה" : "כפה שינוי סיסמה"}
-                                  onClick={() => { handleForcePasswordChange(user.id, user.mustChangePassword); setOpenMenuId(null); }}
-                                  disabled={forcingId === user.id}
-                                />
-                                {!user.emailVerified && (
-                                  <MenuAction
-                                    icon={resentId === user.id ? "✓" : "📨"}
-                                    label={resendingId === user.id ? "שולח..." : resentId === user.id ? "נשלח!" : "שלח הזמנה מחדש"}
-                                    onClick={() => { handleResendVerification(user.id); setOpenMenuId(null); }}
-                                    disabled={resendingId === user.id}
-                                  />
-                                )}
-                                <div style={{ borderTop: `1px solid ${L.border}` }} />
-                                <MenuAction icon="🗑️" label="מחק משתמש" onClick={() => { handleDelete(user.id); setOpenMenuId(null); }} danger />
-                              </div>
-                            )}
-                          </div>
+                        <td style={{ padding: "10px 12px" }}>
+                          <button
+                            onClick={e => {
+                              const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                              setMenuPos({ top: rect.bottom + 6, left: rect.right - 188 });
+                              setOpenMenuId(openMenuId === user.id ? null : user.id);
+                            }}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: L.muted, fontSize: 20, padding: "2px 6px", borderRadius: 6, lineHeight: 1, fontFamily: "inherit" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "#f4f5f7")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "none")}
+                          >⋮</button>
                         </td>
                       </tr>
                     );
@@ -664,6 +642,37 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           </div>
         </div>
       )}
+
+      {/* ── Fixed dropdown (outside table overflow) ──────────────────────── */}
+      {openMenuId && (() => {
+        const user = filtered.find(u => u.id === openMenuId);
+        if (!user) return null;
+        return (
+          <div ref={menuRef} style={{ position: "fixed", top: menuPos.top, left: menuPos.left, background: "#fff", border: `1px solid ${L.border2}`, borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", minWidth: 188, zIndex: 9999, overflow: "hidden" }}>
+            {currentUserRole === "SUPER_ADMIN" && (
+              <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />
+            )}
+            <MenuAction icon="🏪" label="ניהול מסעדות" onClick={() => { setManagingUser(user); setAddRestaurantId(""); setOpenMenuId(null); }} />
+            <MenuAction icon="🔑" label="איפוס סיסמה" onClick={() => { setResetTarget(user); setResetPassword(""); setResetError(""); setOpenMenuId(null); }} />
+            <MenuAction
+              icon="🔐"
+              label={user.mustChangePassword ? "בטל כפיית שינוי סיסמה" : "כפה שינוי סיסמה"}
+              onClick={() => { handleForcePasswordChange(user.id, user.mustChangePassword); setOpenMenuId(null); }}
+              disabled={forcingId === user.id}
+            />
+            {!user.emailVerified && (
+              <MenuAction
+                icon={resentId === user.id ? "✓" : "📨"}
+                label={resendingId === user.id ? "שולח..." : resentId === user.id ? "נשלח!" : "שלח הזמנה מחדש"}
+                onClick={() => { handleResendVerification(user.id); setOpenMenuId(null); }}
+                disabled={resendingId === user.id}
+              />
+            )}
+            <div style={{ borderTop: `1px solid ${L.border}` }} />
+            <MenuAction icon="🗑️" label="מחק משתמש" onClick={() => { handleDelete(user.id); setOpenMenuId(null); }} danger />
+          </div>
+        );
+      })()}
 
       <AssistantWidget page="users" />
     </PageShell>
