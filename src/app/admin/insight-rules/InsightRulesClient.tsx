@@ -61,7 +61,7 @@ const INP: React.CSSProperties = {
 const GLOBAL_ID = "GLOBAL";
 
 export default function InsightRulesClient({ restaurants, isSuperAdmin }: { restaurants: { id: string; name: string }[]; isSuperAdmin?: boolean }) {
-  const [rid, setRid]                   = useState(restaurants[0]?.id ?? "");
+  const [rid, setRid]                   = useState(isSuperAdmin ? GLOBAL_ID : (restaurants[0]?.id ?? ""));
   const [rules, setRules]               = useState<CustomRule[]>([]);
   const [builtinOverrides, setBuiltinOverrides] = useState<BuiltinRuleOverrides>({});
   const [globalOverrides, setGlobalOverrides]   = useState<BuiltinRuleOverrides>({});
