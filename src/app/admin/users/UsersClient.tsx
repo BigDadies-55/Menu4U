@@ -308,7 +308,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
         {/* Filter bar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", background: "#ebebeb", borderRadius: 22, padding: 3, gap: 2 }}>
             {([
               { key: "all",        label: "כל המשתמשים" },
               { key: "ADMIN",      label: "ADMIN" },
@@ -316,9 +316,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               { key: "unverified", label: "ממתין לאימות" },
             ] as const).map(tab => (
               <button key={tab.key} onClick={() => setRoleFilter(tab.key)}
-                style={{ padding: "7px 18px", borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: "pointer", border: "none", fontFamily: "inherit",
+                style={{ padding: "5px 14px", borderRadius: 18, fontSize: 12, fontWeight: 500, cursor: "pointer", border: "none", fontFamily: "inherit", transition: "all 0.15s",
                   background: roleFilter === tab.key ? L.orange : "transparent",
-                  color:      roleFilter === tab.key ? "#fff"    : L.muted,
+                  color:      roleFilter === tab.key ? "#fff"   : L.muted,
                 }}>
                 {tab.label}
               </button>
@@ -338,7 +338,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: T.surface, borderBottom: `1px solid ${T.border}` }}>
+                <tr style={{ background: T.bg, borderBottom: `1px solid ${T.border}` }}>
                   {["מזהה", "תאריך הצטרפות", "משתמש", "תפקיד", "מסעדות", "טלפון", "סטטוס", ""].map(h => (
                     <th key={h} style={{ padding: "13px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: L.muted, whiteSpace: "nowrap" }}>
                       {h}
