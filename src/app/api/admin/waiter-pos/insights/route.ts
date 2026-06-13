@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { computeInsights, type TableInput, type CustomRule } from "@/lib/waiter-insights";
+import { computeInsights, type TableInput, type CustomRule, type BuiltinRuleOverrides } from "@/lib/waiter-insights";
 
 async function checkAccess(userId: string, role: string, restaurantId: string): Promise<boolean> {
   if (role === "SUPER_ADMIN") return true;
@@ -19,6 +19,16 @@ async function getCustomRules(restaurantId: string): Promise<CustomRule[]> {
   } catch { return []; }
 }
 
+async function getBuiltinOverrides(restaurantId: string): Promise<BuiltinRuleOverrides> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ insightBuiltinOverridesJson: string | null }>>(
+      `SELECT "insightBuiltinOverridesJson" FROM "Restaurant" WHERE id = $1`,
+      restaurantId
+    );
+    return JSON.parse(rows[0]?.insightBuiltinOverridesJson ?? "{}");
+  } catch { return {}; }
+}
+
 // POST /api/admin/waiter-pos/insights
 // Body: { restaurantId, tables: TableInput[] }
 export async function POST(req: Request) {
@@ -34,7 +44,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const customRules = await getCustomRules(restaurantId);
-  const insights = computeInsights(tables ?? [], customRules);
+  const [customRules, builtinOverrides] = await Promise.all([
+    getCustomRules(restaurantId),
+    getBuiltinOverrides(restaurantId),
+  ]);
+  const insights = computeInsights(tables ?? [], customRules, builtinOverrides);
   return NextResponse.json({ insights });
 }

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { T } from "@/lib/ui";
-import type { CustomRule, Condition, InsightType } from "@/lib/waiter-insights";
-import { DEFAULT_RULE_LABELS } from "@/lib/waiter-insights";
+import type { CustomRule, Condition, InsightType, BuiltinRuleOverride, BuiltinRuleOverrides } from "@/lib/waiter-insights";
+import { BUILTIN_RULE_META } from "@/lib/waiter-insights";
 
 const FIELDS: { value: Condition["field"]; label: string }[] = [
   { value: "minutesSitting",        label: "דקות ישיבה" },
@@ -44,13 +44,16 @@ const INP: React.CSSProperties = {
 };
 
 export default function InsightRulesClient({ restaurants }: { restaurants: { id: string; name: string }[] }) {
-  const [rid, setRid]         = useState(restaurants[0]?.id ?? "");
-  const [rules, setRules]     = useState<CustomRule[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving]   = useState(false);
-  const [editId, setEditId]   = useState<string | "new" | null>(null);
-  const [form, setForm]       = useState<Omit<CustomRule, "id">>(EMPTY_RULE);
-  const [toast, setToast]     = useState<string | null>(null);
+  const [rid, setRid]                   = useState(restaurants[0]?.id ?? "");
+  const [rules, setRules]               = useState<CustomRule[]>([]);
+  const [builtinOverrides, setBuiltinOverrides] = useState<BuiltinRuleOverrides>({});
+  const [loading, setLoading]           = useState(false);
+  const [saving, setSaving]             = useState(false);
+  const [editId, setEditId]             = useState<string | "new" | null>(null);
+  const [form, setForm]                 = useState<Omit<CustomRule, "id">>(EMPTY_RULE);
+  const [editBuiltinId, setEditBuiltinId] = useState<string | null>(null);
+  const [builtinForm, setBuiltinForm]   = useState<{ text: string; priority: number }>({ text: "", priority: 0 });
+  const [toast, setToast]               = useState<string | null>(null);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -64,6 +67,7 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
       const r = await fetch(`/api/admin/insight-rules?restaurantId=${rid}`);
       const d = await r.json();
       setRules(d.rules ?? []);
+      setBuiltinOverrides(d.builtinOverrides ?? {});
     } finally { setLoading(false); }
   }, [rid]);
 
@@ -99,6 +103,47 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
     await fetch(`/api/admin/insight-rules?restaurantId=${rid}&id=${id}`, { method: "DELETE" });
     setRules(prev => prev.filter(r => r.id !== id));
     showToast("כלל נמחק");
+  }
+
+  async function patchBuiltin(ruleId: string, override: BuiltinRuleOverride | null) {
+    const r = await fetch("/api/admin/insight-rules", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restaurantId: rid, ruleId, override }),
+    });
+    const d = await r.json();
+    setBuiltinOverrides(d.builtinOverrides ?? {});
+  }
+
+  async function toggleBuiltin(ruleId: string) {
+    const cur = builtinOverrides[ruleId];
+    const nowEnabled = cur ? !cur.enabled : false; // default=true → first toggle disables
+    await patchBuiltin(ruleId, { ...cur, enabled: nowEnabled });
+    showToast(nowEnabled ? "כלל הופעל" : "כלל הושבת");
+  }
+
+  async function resetBuiltin(ruleId: string) {
+    await patchBuiltin(ruleId, null);
+    showToast("כלל אופס לברירת המחדל");
+  }
+
+  function startEditBuiltin(ruleId: string) {
+    const meta = BUILTIN_RULE_META.find(r => r.id === ruleId)!;
+    const ov = builtinOverrides[ruleId];
+    setBuiltinForm({ text: ov?.text ?? "", priority: ov?.priority ?? meta.priority });
+    setEditBuiltinId(ruleId);
+  }
+
+  async function saveBuiltin() {
+    if (!editBuiltinId) return;
+    const cur = builtinOverrides[editBuiltinId];
+    await patchBuiltin(editBuiltinId, {
+      enabled: cur?.enabled ?? true,
+      text: builtinForm.text.trim() || undefined,
+      priority: builtinForm.priority,
+    });
+    setEditBuiltinId(null);
+    showToast("כלל עודכן");
   }
 
   async function toggleEnabled(rule: CustomRule) {
@@ -163,26 +208,108 @@ export default function InsightRulesClient({ restaurants }: { restaurants: { id:
         </button>
       </div>
 
-      {/* Default rules — read only */}
+      {/* Built-in rules — now editable */}
       <section style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.muted, marginBottom: 10 }}>
-          כללים מובנים (לא ניתנים לעריכה)
+          כללים מובנים — ניתן להשבית, לשנות טקסט ועדיפות
         </div>
         <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
-          {DEFAULT_RULE_LABELS.map((r, i) => (
-            <div key={i} style={{
-              display: "flex", alignItems: "center", gap: 12, padding: "10px 16px",
-              borderBottom: i < DEFAULT_RULE_LABELS.length - 1 ? `1px solid ${T.borderSub}` : "none",
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLOR[r.type], minWidth: 60 }}>
-                {TYPE_LABEL[r.type]}
-              </span>
-              <span style={{ flex: 1, fontSize: 13, color: T.sub }}>{r.text}</span>
-              <span style={{ fontSize: 11, color: T.muted }}>עדיפות {r.priority}</span>
-            </div>
-          ))}
+          {BUILTIN_RULE_META.map((r, i) => {
+            const ov = builtinOverrides[r.id];
+            const isEnabled = ov ? ov.enabled !== false : true;
+            const hasOverride = ov && (ov.text || (ov.priority !== undefined && ov.priority !== r.priority));
+            return (
+              <div key={r.id} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
+                borderBottom: i < BUILTIN_RULE_META.length - 1 ? `1px solid ${T.borderSub}` : "none",
+                opacity: isEnabled ? 1 : 0.45,
+              }}>
+                {/* Toggle */}
+                <button onClick={() => toggleBuiltin(r.id)} title={isEnabled ? "השבת" : "הפעל"} style={{
+                  width: 32, height: 18, borderRadius: 9, border: "none", cursor: "pointer",
+                  background: isEnabled ? T.green : T.border, flexShrink: 0, position: "relative", transition: "background 0.2s",
+                }}>
+                  <span style={{
+                    position: "absolute", top: 2, width: 14, height: 14, borderRadius: "50%",
+                    background: "#fff", transition: "left 0.2s", left: isEnabled ? 16 : 2,
+                  }} />
+                </button>
+
+                <span style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLOR[r.type], minWidth: 56, flexShrink: 0 }}>
+                  {TYPE_LABEL[r.type]}
+                </span>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, color: T.text }}>
+                    {ov?.text ? <><span style={{ color: T.gold }}>✎ </span>{ov.text}</> : r.defaultText}
+                  </div>
+                </div>
+
+                <span style={{ fontSize: 11, color: hasOverride ? T.gold : T.muted, flexShrink: 0 }}>
+                  עדיפות {ov?.priority ?? r.priority}{hasOverride ? " *" : ""}
+                </span>
+
+                <button onClick={() => startEditBuiltin(r.id)} style={{
+                  background: T.panel, border: `1px solid ${T.border}`, borderRadius: 6,
+                  color: T.sub, fontSize: 12, padding: "3px 8px", cursor: "pointer", flexShrink: 0,
+                }}>
+                  עריכה
+                </button>
+                {hasOverride && (
+                  <button onClick={() => resetBuiltin(r.id)} title="אפס לברירת מחדל" style={{
+                    background: "transparent", border: "none", color: T.muted, fontSize: 13,
+                    cursor: "pointer", padding: "3px 4px", flexShrink: 0,
+                  }}>↺</button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
+
+      {/* Builtin edit modal */}
+      {editBuiltinId && (() => {
+        const meta = BUILTIN_RULE_META.find(r => r.id === editBuiltinId)!;
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)" }}>
+            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 28, width: "min(500px,94vw)", direction: "rtl" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>עריכת כלל מובנה</div>
+              <div style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>{meta.defaultText}</div>
+
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4 }}>
+                טקסט מותאם <span style={{ color: T.muted }}>(ריק = ברירת מחדל)</span>
+              </label>
+              <input value={builtinForm.text}
+                onChange={e => setBuiltinForm(f => ({ ...f, text: e.target.value }))}
+                placeholder={meta.defaultText}
+                style={{ ...INP, width: "100%", marginBottom: 16, boxSizing: "border-box" }} />
+              <div style={{ fontSize: 11, color: T.muted, marginBottom: 16 }}>
+                משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{minutesSinceLastOrder}"} {"{minutesSinceBillRequested}"}
+              </div>
+
+              <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4 }}>עדיפות</label>
+              <input type="number" min={1} max={200} value={builtinForm.priority}
+                onChange={e => setBuiltinForm(f => ({ ...f, priority: Number(e.target.value) }))}
+                style={{ ...INP, width: 100, marginBottom: 20 }} />
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={saveBuiltin} style={{
+                  background: T.gold, border: "none", borderRadius: 8,
+                  color: "#fff", fontWeight: 700, fontSize: 13, padding: "9px 20px", cursor: "pointer",
+                }}>שמור</button>
+                <button onClick={() => setEditBuiltinId(null)} style={{
+                  background: T.panel, border: `1px solid ${T.border}`, borderRadius: 8,
+                  color: T.sub, fontSize: 13, padding: "9px 16px", cursor: "pointer",
+                }}>ביטול</button>
+                <button onClick={() => { resetBuiltin(editBuiltinId); setEditBuiltinId(null); }} style={{
+                  background: "transparent", border: `1px solid ${T.border}`, borderRadius: 8,
+                  color: T.muted, fontSize: 13, padding: "9px 16px", cursor: "pointer", marginRight: "auto",
+                }}>↺ אפס לברירת מחדל</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Custom rules */}
       <section style={{ marginBottom: 32 }}>
