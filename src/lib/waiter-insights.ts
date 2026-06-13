@@ -2,7 +2,8 @@ export type InsightType = "alert" | "tip" | "info";
 
 export interface Condition {
   field: "minutesSitting" | "orderStatus" | "availStatus" | "guests" | "seats"
-       | "totalAmount" | "orderCount" | "minutesSinceLastOrder";
+       | "totalAmount" | "orderCount" | "minutesSinceLastOrder"
+       | "billRequested" | "minutesSinceBillRequested" | "hasAllergen" | "isLoyaltyMember";
   operator: "gt" | "lt" | "gte" | "lte" | "eq" | "neq";
   value: string | number;
 }
@@ -13,20 +14,24 @@ export interface CustomRule {
   enabled: boolean;
   conditions: Condition[];
   type: InsightType;
-  text: string; // supports {tableNum} {minutesSitting} {guests} {seats} {orderStatus} {totalAmount} {orderCount} {minutesSinceLastOrder}
+  text: string; // supports {tableNum} {minutesSitting} {guests} {seats} {orderStatus} {totalAmount} {orderCount} {minutesSinceLastOrder} {minutesSinceBillRequested}
   priority: number;
 }
 
 export interface TableInput {
   tableNum: string;
   seats: number;
-  availStatus: "occupied" | "free" | "reserved" | "inactive";
+  availStatus: "occupied" | "free" | "reserved" | "inactive" | "bill_requested" | "paid";
   minutesSitting: number;
   guests: number;
   orderStatus: string | null;
   totalAmount: number;
   orderCount: number;
   minutesSinceLastOrder: number;
+  billRequested: boolean;
+  minutesSinceBillRequested: number;
+  hasAllergen: boolean;
+  isLoyaltyMember: boolean;
 }
 
 export interface Insight {
@@ -83,6 +88,21 @@ const BUILTIN_RULES: BuiltinRule[] = [
     match: t => t.availStatus === "reserved" && t.minutesSitting >= 20,
     text:  t => `שולחן ${t.tableNum} — שמור ${t.minutesSitting} דק׳, האם הגיע?` },
 
+  // Bill requested but not delivered after 10 min
+  { priority: 90, type: "alert",
+    match: t => t.billRequested && t.minutesSinceBillRequested >= 10,
+    text:  t => `שולחן ${t.tableNum} — חשבון התבקש לפני ${t.minutesSinceBillRequested} דק׳, הבא חשבון!` },
+
+  // Bill requested — any duration
+  { priority: 83, type: "alert",
+    match: t => t.billRequested,
+    text:  t => `שולחן ${t.tableNum} — חשבון התבקש, יש להגיש` },
+
+  // Allergen flag on active order
+  { priority: 79, type: "alert",
+    match: t => (t.availStatus === "occupied" || t.availStatus === "bill_requested") && t.hasAllergen,
+    text:  t => `שולחן ${t.tableNum} — אלרגיה/הגבלה תזונתית מסומנת, שים לב במטבח!` },
+
   // ── TIPS ────────────────────────────────────────────────────────────────────
 
   // Delivered a while ago — upsell dessert/coffee
@@ -130,6 +150,21 @@ const BUILTIN_RULES: BuiltinRule[] = [
     match: t => t.availStatus === "occupied" && t.guests >= 6,
     text:  t => `שולחן ${t.tableNum} — קבוצה גדולה (${t.guests} סועדים), הצע מנות לשיתוף` },
 
+  // No new order 30+ min after delivery — offer round/bill
+  { priority: 63, type: "tip",
+    match: t => t.availStatus === "occupied" && t.orderStatus === "DELIVERED" && t.minutesSinceLastOrder >= 30,
+    text:  t => `שולחן ${t.tableNum} — ${t.minutesSinceLastOrder} דק׳ מאז ההגשה, הצע סבב נוסף או חשבון` },
+
+  // Payment completed — clear table
+  { priority: 49, type: "tip",
+    match: t => t.orderStatus === "PAID",
+    text:  t => `שולחן ${t.tableNum} — תשלום הושלם, נקה ואפס שולחן` },
+
+  // Loyalty member — personal greeting
+  { priority: 44, type: "tip",
+    match: t => (t.availStatus === "occupied" || t.availStatus === "bill_requested") && t.isLoyaltyMember,
+    text:  t => `שולחן ${t.tableNum} — לקוח נאמן, קבל בברכה אישית` },
+
   // ── INFO ────────────────────────────────────────────────────────────────────
 
   // Full table
@@ -175,14 +210,15 @@ function evalCondition(t: TableInput, c: Condition): boolean {
 
 function renderText(tpl: string, t: TableInput): string {
   return tpl
-    .replace(/\{tableNum\}/g,               t.tableNum)
-    .replace(/\{minutesSitting\}/g,         String(t.minutesSitting))
-    .replace(/\{guests\}/g,                 String(t.guests))
-    .replace(/\{seats\}/g,                  String(t.seats))
-    .replace(/\{orderStatus\}/g,            t.orderStatus ?? "")
-    .replace(/\{totalAmount\}/g,            String(Math.round(t.totalAmount)))
-    .replace(/\{orderCount\}/g,             String(t.orderCount))
-    .replace(/\{minutesSinceLastOrder\}/g,  String(t.minutesSinceLastOrder));
+    .replace(/\{tableNum\}/g,                    t.tableNum)
+    .replace(/\{minutesSitting\}/g,              String(t.minutesSitting))
+    .replace(/\{guests\}/g,                      String(t.guests))
+    .replace(/\{seats\}/g,                       String(t.seats))
+    .replace(/\{orderStatus\}/g,                 t.orderStatus ?? "")
+    .replace(/\{totalAmount\}/g,                 String(Math.round(t.totalAmount)))
+    .replace(/\{orderCount\}/g,                  String(t.orderCount))
+    .replace(/\{minutesSinceLastOrder\}/g,        String(t.minutesSinceLastOrder))
+    .replace(/\{minutesSinceBillRequested\}/g,    String(t.minutesSinceBillRequested));
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -228,16 +264,22 @@ export const DEFAULT_RULE_LABELS: { text: string; type: InsightType; priority: n
   { priority: 100, type: "alert", text: "הזמנה בסטטוס READY — יש להגיש" },
   { priority: 97,  type: "alert", text: "הזמנה בוטלה — יש לבדוק" },
   { priority: 92,  type: "alert", text: "ישיבה 90+ דקות — שקול חשבון" },
+  { priority: 90,  type: "alert", text: "חשבון התבקש 10+ דק׳ ולא הוגש — הבא חשבון" },
   { priority: 88,  type: "alert", text: "CONFIRMED 60+ דקות — תקוע במטבח?" },
   { priority: 85,  type: "alert", text: "30+ דקות ללא הזמנה פתוחה" },
+  { priority: 83,  type: "alert", text: "חשבון התבקש — יש להגיש" },
   { priority: 80,  type: "alert", text: "שמור 20+ דקות — האם הגיע?" },
+  { priority: 79,  type: "alert", text: "אלרגיה/הגבלה תזונתית מסומנת — שים לב במטבח!" },
   { priority: 70,  type: "tip",   text: "45+ דקות + DELIVERED — הצע קינוח/קפה" },
   { priority: 68,  type: "tip",   text: "30+ דקות + DELIVERED — הצע משקאות" },
   { priority: 65,  type: "tip",   text: "20+ דקות + CONFIRMED — בדוק מטבח" },
+  { priority: 63,  type: "tip",   text: "30+ דק׳ ללא הזמנה חדשה אחרי DELIVERED — סבב/חשבון" },
   { priority: 60,  type: "tip",   text: "20+ דקות + PREPARING — עדכן סועדים" },
   { priority: 55,  type: "tip",   text: "זה עתה ישב + ללא הזמנה — קח הזמנה" },
   { priority: 50,  type: "tip",   text: "הזמנה PENDING — ממתינה לאישור" },
+  { priority: 49,  type: "tip",   text: "תשלום הושלם — נקה ואפס שולחן" },
   { priority: 45,  type: "tip",   text: "חשבון ₪300+ — שירות VIP" },
+  { priority: 44,  type: "tip",   text: "לקוח נאמן — קבל בברכה אישית" },
   { priority: 42,  type: "tip",   text: "2+ הזמנות — ודא שהכל הוגש" },
   { priority: 40,  type: "tip",   text: "6+ סועדים — הצע מנות לשיתוף" },
   { priority: 30,  type: "info",  text: "שולחן מלא (סועדים ≥ מושבים)" },

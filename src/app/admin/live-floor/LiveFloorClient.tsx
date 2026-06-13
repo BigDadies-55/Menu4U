@@ -245,12 +245,19 @@ export default function LiveFloorClient({ restaurants }: { restaurants: { id: st
   const localInsights     = computeInsights(tables);
   const customInsights    = computeCustom(
     tables.map(t => ({
-      tableNum:       t.tableNumber,
-      seats:          t.coversCount + 1,
-      availStatus:    "occupied" as const,
-      minutesSitting: t.ageMin,
-      guests:         t.coversCount,
-      orderStatus:    t.orders[t.orders.length - 1]?.status ?? null,
+      tableNum:                  t.tableNumber,
+      seats:                     t.coversCount + 1,
+      availStatus:               "occupied" as const,
+      minutesSitting:            t.ageMin,
+      guests:                    t.coversCount,
+      orderStatus:               t.orders[t.orders.length - 1]?.status ?? null,
+      totalAmount:               0,
+      orderCount:                t.orders.length,
+      minutesSinceLastOrder:     0,
+      billRequested:             false,
+      minutesSinceBillRequested: 0,
+      hasAllergen:               false,
+      isLoyaltyMember:           false,
     })),
     customRules,
   );

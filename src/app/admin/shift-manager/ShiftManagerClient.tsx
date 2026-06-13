@@ -470,10 +470,17 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
       return {
         tableNum,
         seats,
-        availStatus: "occupied" as const,
-        minutesSitting: Math.floor((now_ - new Date(sorted[0].createdAt).getTime()) / 60000),
-        guests: last.coversCount ?? 0,
-        orderStatus: last.status,
+        availStatus:               "occupied" as const,
+        minutesSitting:            Math.floor((now_ - new Date(sorted[0].createdAt).getTime()) / 60000),
+        guests:                    last.coversCount ?? 0,
+        orderStatus:               last.status,
+        totalAmount:               tOrders.reduce((s, o) => s + (o.totalAmount ?? 0), 0),
+        orderCount:                tOrders.length,
+        minutesSinceLastOrder:     Math.floor((now_ - new Date(last.createdAt).getTime()) / 60000),
+        billRequested:             false,
+        minutesSinceBillRequested: 0,
+        hasAllergen:               false,
+        isLoyaltyMember:           false,
       };
     });
   }, [orders, layout]);
