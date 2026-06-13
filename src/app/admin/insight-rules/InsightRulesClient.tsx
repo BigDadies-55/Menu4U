@@ -17,6 +17,8 @@ const ALL_FIELDS: { value: Condition["field"]; label: string }[] = [
   { value: "minutesSinceBillRequested",label: "דקות מאז בקשת חשבון" },
   { value: "hasAllergen",              label: "יש אלרגיה" },
   { value: "isLoyaltyMember",          label: "לקוח נאמן" },
+  { value: "voidsCount",               label: "מספר ביטולים/זיכויים" },
+  { value: "spendPerSeat",             label: "הוצאה לסועד (₪)" },
 ];
 
 const FIELDS: { value: Condition["field"]; label: string }[] = [

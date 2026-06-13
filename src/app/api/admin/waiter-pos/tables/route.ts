@@ -155,6 +155,10 @@ export async function GET(req: Request) {
     const isLoyaltyMember = activeOrders.some(o =>
       !!(o as { loyaltyMemberId?: string | null }).loyaltyMemberId
     );
+    const voidsCount = activeOrders.reduce((sum, o) =>
+      sum + o.items.filter(i => i.voidedAt !== null && i.voidedAt !== undefined).length, 0
+    );
+    const spendPerSeat = guests > 0 ? totalAmount / guests : 0;
 
     return {
       tableNum,
@@ -172,6 +176,8 @@ export async function GET(req: Request) {
       minutesSinceBillRequested,
       hasAllergen,
       isLoyaltyMember,
+      voidsCount,
+      spendPerSeat,
       readyItemCount: activeOrders.reduce((sum, o) =>
         sum + o.items.filter(i => i.itemStatus === "DONE" && !i.voidedAt).length, 0),
       heldCourseNums: Array.from(new Set(

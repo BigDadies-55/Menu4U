@@ -481,6 +481,8 @@ export default function ShiftManagerClient({ restaurants, managerName }: { resta
         minutesSinceBillRequested: 0,
         hasAllergen:               false,
         isLoyaltyMember:           false,
+        voidsCount:                0,
+        spendPerSeat:              0,
       };
     });
   }, [orders, layout]);

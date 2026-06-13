@@ -258,6 +258,8 @@ export default function LiveFloorClient({ restaurants }: { restaurants: { id: st
       minutesSinceBillRequested: 0,
       hasAllergen:               false,
       isLoyaltyMember:           false,
+      voidsCount:                0,
+      spendPerSeat:              0,
     })),
     customRules,
   );

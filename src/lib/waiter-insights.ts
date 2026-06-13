@@ -3,7 +3,8 @@ export type InsightType = "alert" | "tip" | "info";
 export interface Condition {
   field: "minutesSitting" | "orderStatus" | "availStatus" | "guests" | "seats"
        | "totalAmount" | "orderCount" | "minutesSinceLastOrder"
-       | "billRequested" | "minutesSinceBillRequested" | "hasAllergen" | "isLoyaltyMember";
+       | "billRequested" | "minutesSinceBillRequested" | "hasAllergen" | "isLoyaltyMember"
+       | "voidsCount" | "spendPerSeat";
   operator: "gt" | "lt" | "gte" | "lte" | "eq" | "neq";
   value: string | number;
 }
@@ -32,6 +33,8 @@ export interface TableInput {
   minutesSinceBillRequested: number;
   hasAllergen: boolean;
   isLoyaltyMember: boolean;
+  voidsCount: number;       // number of voided/cancelled items in active orders
+  spendPerSeat: number;     // totalAmount / max(guests, 1)
 }
 
 export interface Insight {
@@ -112,6 +115,11 @@ const BUILTIN_RULES: BuiltinRule[] = [
     match: t => t.availStatus === "reserved" && t.minutesSitting >= 20,
     text:  t => `שולחן ${t.tableNum} — שמור ${t.minutesSitting} דק׳, האם הגיע?` },
 
+  { id: "voids-many",       priority: 76,  type: "alert", defaultText: "2+ ביטולים/זיכויים בשולחן — יש לבדוק",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "voidsCount", operator: "gte", value: 2 }],
+    match: t => t.availStatus === "occupied" && t.voidsCount >= 2,
+    text:  t => `שולחן ${t.tableNum} — ${t.voidsCount} פריטים בוטלו/זוכו, יש לבדוק` },
+
   { id: "allergen",         priority: 79,  type: "alert", defaultText: "אלרגיה/הגבלה תזונתית מסומנת",
     defaultConditions: [{ field: "hasAllergen", operator: "eq", value: "true" }],
     match: t => (t.availStatus === "occupied" || t.availStatus === "bill_requested") && t.hasAllergen,
@@ -173,6 +181,11 @@ const BUILTIN_RULES: BuiltinRule[] = [
     defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "orderCount", operator: "gte", value: 2 }],
     match: t => t.availStatus === "occupied" && t.orderCount >= 2,
     text:  t => `שולחן ${t.tableNum} — ${t.orderCount} הזמנות, ודא שהכל הוגש` },
+
+  { id: "low-spend-per-seat", priority: 87, type: "tip", defaultText: "הוצאה נמוכה לסועד (60+ דק׳) — שקול שחרור שולחן",
+    defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "minutesSitting", operator: "gte", value: 60 }, { field: "spendPerSeat", operator: "lt", value: 50 }, { field: "guests", operator: "gte", value: 1 }],
+    match: t => t.availStatus === "occupied" && t.minutesSitting >= 60 && t.guests > 0 && t.spendPerSeat < 50,
+    text:  t => `שולחן ${t.tableNum} — ₪${Math.round(t.spendPerSeat)} לסועד אחרי ${t.minutesSitting} דק׳, שקול שחרור שולחן` },
 
   { id: "large-group-xl",   priority: 51,  type: "tip", defaultText: "8+ סועדים — נדרש שירות מוגבר",
     defaultConditions: [{ field: "availStatus", operator: "eq", value: "occupied" }, { field: "guests", operator: "gte", value: 8 }],
