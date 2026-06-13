@@ -334,11 +334,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
 
         {/* Table card */}
-        <div style={{ background: L.card, borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+        <div style={{ background: T.bg, borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: `1px solid ${L.border}` }}>
+                <tr style={{ background: T.surface, borderBottom: `1px solid ${T.border}` }}>
                   {["מזהה", "תאריך הצטרפות", "משתמש", "תפקיד", "מסעדות", "טלפון", "סטטוס", ""].map(h => (
                     <th key={h} style={{ padding: "13px 16px", textAlign: "right", fontSize: 12, fontWeight: 600, color: L.muted, whiteSpace: "nowrap" }}>
                       {h}
@@ -357,8 +357,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
                     return (
                       <tr key={user.id}
-                        style={{ borderBottom: `1px solid ${L.border}` }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "#fafbff")}
+                        style={{ borderBottom: `1px solid ${T.border}` }}
+                        onMouseEnter={e => (e.currentTarget.style.background = T.surface)}
                         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                       >
                         {/* ID */}
@@ -430,7 +430,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             </table>
           </div>
           {/* Pagination stub */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderTop: `1px solid ${L.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderTop: `1px solid ${T.border}` }}>
             <span style={{ fontSize: 12, color: L.muted }}>מציג {filtered.length} מתוך {users.length} משתמשים</span>
           </div>
         </div>
