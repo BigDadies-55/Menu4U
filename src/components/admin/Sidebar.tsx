@@ -102,48 +102,79 @@ const STANDALONE: NavLeaf = {
 };
 
 const GROUPS: NavGroup[] = [
+  // ── כללי ────────────────────────────────────────────────────────────────────
   {
-    id: "manage", label: "ניהול", I: Ic.Manage,
+    id: "general", label: "כללי", I: Ic.Settings,
     waiterHide: true, displayHide: true,
     items: [
-      { href: "/admin/restaurants", label: "מסעדות",       I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
-      { href: "/admin/groups",      label: "רשתות",         I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
-      { href: "/admin/menus",       label: "תפריטים",      I: Ic.Menus,      waiterHide: true, displayHide: true },
-      { href: "/admin/users",       label: "משתמשים",      I: Ic.Users,      adminOnly: true,  waiterHide: true, displayHide: true },
-      { href: "/admin/assistant",   label: "עוזר אישי",     I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
-      { href: "/admin/logs",        label: "לוגים",         I: Ic.Logs,       adminOnly: true,  waiterHide: true, displayHide: true },
-      { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,   adminOnly: true,  waiterHide: true, displayHide: true },
-      { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,   waiterHide: true, displayHide: true },
-      { href: "/admin/appearance",  label: "מראה",           I: Ic.Settings,   ownerOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,  waiterHide: true, displayHide: true },
+      { href: "/admin/appearance",  label: "מראה",           I: Ic.Settings,  ownerOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,  adminOnly: true,  waiterHide: true, displayHide: true },
     ],
   },
+  // ── תפריט וקטלוג ─────────────────────────────────────────────────────────
   {
-    id: "service", label: "שירות", I: Ic.Service,
+    id: "catalog", label: "תפריט וקטלוג", I: Ic.Menus,
+    waiterHide: true, displayHide: true,
+    items: [
+      { href: "/admin/menus",       label: "תפריטים",  I: Ic.Menus,       waiterHide: true, displayHide: true },
+      { href: "/admin/restaurants", label: "מסעדות",   I: Ic.Restaurant,  superAdmin: true, waiterHide: true, displayHide: true },
+      { href: "/admin/groups",      label: "רשתות",     I: Ic.Restaurant,  superAdmin: true, waiterHide: true, displayHide: true },
+    ],
+  },
+  // ── הזמנות ושירות ────────────────────────────────────────────────────────
+  {
+    id: "service", label: "הזמנות ושירות", I: Ic.Service,
     displayHide: true,
     items: [
-      { href: "/admin/orders", label: "הזמנות", I: Ic.Orders, displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
-      { href: "/admin/cashier",        label: "קאשייר",             I: Ic.Cashier,   displayHide: true },
-      { href: "/admin/waiter-floor",    label: "רצפת שירות 🗺️",    I: Ic.Layout,       displayHide: true },
-      { href: "/admin/waiter-pos",     label: "מלצר חכם",           I: Ic.SmartWaiter,  displayHide: true, waiterHide: false },
-      { href: "/admin/shift-manager",  label: "מנהל משמרת",         I: Ic.Stats,        displayHide: true, waiterHide: true },
-      { href: "/admin/shifts",          label: "ניהול משמרות",        I: Ic.Calendar,     displayHide: true, waiterHide: false },
-      { href: "/admin/live-floor",     label: "מפת שולחנות חיה",   I: Ic.Layout,       displayHide: true, waiterHide: true, ownerOnly: true },
-      { href: "/admin/table-timeline", label: "ציר זמן שולחנות",   I: Ic.TableView,    displayHide: true, waiterHide: true, ownerOnly: true },
-      { href: "/admin/waiter",         label: "הזמנת מלצר 🍽️",    I: Ic.Orders,       displayHide: true },
-      { href: "/admin/insight-rules",   label: "כללי תובנות AI",      I: Ic.Stats,        waiterHide: true, displayHide: true, ownerOnly: true },
-      { href: "/admin/orders/stats",   label: "סטטיסטיקות",         I: Ic.Stats,        waiterHide: true, displayHide: true, ownerOnly: true },
-      { href: "/admin/layout-builder", label: "פריסת שולחנות", I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
-      { href: "/admin/loyalty",        label: "מועדון לקוחות",    I: Ic.Loyalty,   displayHide: true },
-      { href: "/admin/crm",            label: "קשרי לקוחות",      I: Ic.Customers, displayHide: true },
+      { href: "/admin/orders",       label: "הזמנות",          I: Ic.Orders,      displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
+      { href: "/admin/cashier",      label: "קאשייר",           I: Ic.Cashier,     displayHide: true },
+      { href: "/admin/waiter",       label: "הזמנת מלצר 🍽️",  I: Ic.Orders,      displayHide: true },
+      { href: "/admin/waiter-pos",   label: "מלצר חכם",         I: Ic.SmartWaiter, displayHide: true, waiterHide: false },
+      { href: "/admin/shift-manager",label: "מנהל משמרת",       I: Ic.Stats,       displayHide: true, waiterHide: true },
+      { href: "/admin/shifts",       label: "ניהול משמרות",      I: Ic.Calendar,    displayHide: true, waiterHide: false },
     ],
   },
+  // ── רצפה ושולחנות ────────────────────────────────────────────────────────
+  {
+    id: "floor", label: "רצפה ושולחנות", I: Ic.Layout,
+    displayHide: true,
+    items: [
+      { href: "/admin/waiter-floor",    label: "רצפת שירות 🗺️",  I: Ic.Layout,    displayHide: true },
+      { href: "/admin/layout-builder",  label: "פריסת שולחנות",   I: Ic.Layout,    ownerOnly: true, waiterHide: true, displayHide: true },
+      { href: "/admin/live-floor",      label: "מפת שולחנות חיה", I: Ic.Layout,    displayHide: true, waiterHide: true, ownerOnly: true },
+      { href: "/admin/table-timeline",  label: "ציר זמן שולחנות", I: Ic.TableView, displayHide: true, waiterHide: true, ownerOnly: true },
+    ],
+  },
+  // ── KDS ──────────────────────────────────────────────────────────────────
   {
     id: "kds", label: "KDS", I: Ic.KDSIcon,
     items: [
-      { href: "/admin/kitchen-table",   label: "תצוגת שולחן", I: Ic.TableView },
       { href: "/admin/kitchen",         label: "Station Dark", I: Ic.Kitchen   },
       { href: "/admin/kitchen-kanban",  label: "Kanban",       I: Ic.Kanban    },
       { href: "/admin/kitchen-tickets", label: "Ticket Board", I: Ic.Ticket    },
+      { href: "/admin/kitchen-table",   label: "תצוגת שולחן", I: Ic.TableView },
+    ],
+  },
+  // ── AI ואנליטיקה ─────────────────────────────────────────────────────────
+  {
+    id: "ai", label: "AI ואנליטיקה", I: Ic.Stats,
+    waiterHide: true, displayHide: true,
+    items: [
+      { href: "/admin/insight-rules", label: "כללי תובנות AI", I: Ic.Stats, ownerOnly: true, waiterHide: true, displayHide: true },
+      { href: "/admin/orders/stats",  label: "סטטיסטיקות",    I: Ic.Stats, ownerOnly: true, waiterHide: true, displayHide: true },
+    ],
+  },
+  // ── לקוחות וניהול ────────────────────────────────────────────────────────
+  {
+    id: "customers", label: "לקוחות וניהול", I: Ic.Customers,
+    waiterHide: true, displayHide: true,
+    items: [
+      { href: "/admin/users",     label: "משתמשים",       I: Ic.Users,     adminOnly: true, waiterHide: true, displayHide: true },
+      { href: "/admin/loyalty",   label: "מועדון לקוחות", I: Ic.Loyalty,   displayHide: true },
+      { href: "/admin/crm",       label: "קשרי לקוחות",   I: Ic.Customers, displayHide: true },
+      { href: "/admin/assistant", label: "עוזר אישי",      I: Ic.Logs,      adminOnly: true, waiterHide: true, displayHide: true },
+      { href: "/admin/logs",      label: "לוגים",           I: Ic.Logs,      adminOnly: true, waiterHide: true, displayHide: true },
     ],
   },
 ];
