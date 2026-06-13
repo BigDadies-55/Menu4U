@@ -1092,308 +1092,322 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   // #3 — hide menu selector when restaurant has only 1 menu (reduces complexity)
   const isSingleMenu = (selectedRestaurant?.menus.length ?? 0) <= 1;
 
-  // ─── Design tokens ────────────────────────────────────────────────────────
-  const I = "#4f46e5";           // indigo
-  const IB = "#eef2ff";          // indigo bg
-  const OR = "#f97316";          // orange
-  const GR = "#10b981";          // emerald
-  const RE = "#ef4444";          // red
-  const BG = "#f8f9fa";          // page bg
-  const CA = "#ffffff";          // card bg
-  const BO = "#e5e7eb";          // border
-  const TX = "#111827";          // text
-  const SB = "#6b7280";          // sub
-  const MU = "#9ca3af";          // muted
-  const SH = "0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04)";
-  const SHM = "0 4px 12px rgba(0,0,0,0.08)";
-  const btn = (color: string, bg: string, border?: string): React.CSSProperties => ({
-    display: "inline-flex", alignItems: "center", gap: 6,
-    background: bg, color, border: `1px solid ${border ?? color}`,
-    borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600,
-    cursor: "pointer", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap",
-  });
-
   return (
     <PageShell>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');`}</style>
-      <div style={{ background: BG, minHeight: "100%", padding: "0 0 48px", fontFamily: "Rubik, sans-serif", direction: "rtl" }}>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: T.text }}>ניהול תפריטים</h1>
+        {selectedRestaurant && (
+          <div className="flex items-center gap-2 flex-wrap">
 
-        {/* ════ HEADER CARD ════════════════════════════════════════════════ */}
-        <div style={{ background: CA, boxShadow: SH, borderRadius: 16, padding: "18px 24px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: TX }}>ניהול תפריטים</h1>
-          {selectedRestaurant && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-
-              {/* Sample dropdown */}
-              <div style={{ position: "relative" }}>
-                <button onClick={() => { setSampleDropdown(v => !v); setExportDropdown(false); }} disabled={importing} style={{ ...btn(SB, CA, BO), opacity: importing ? 0.5 : 1 }}>
-                  📄 קובץ דוגמה ▾
-                </button>
-                {sampleDropdown && (
-                  <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: CA, border: `1px solid ${BO}`, borderRadius: 12, boxShadow: SHM, overflow: "hidden", minWidth: 150, zIndex: 30 }}>
-                    <button onClick={handleSampleJson} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", fontSize: 13, color: TX, background: "none", border: "none", cursor: "pointer", textAlign: "right", fontFamily: "Rubik, sans-serif" }} onMouseEnter={e => (e.currentTarget.style.background = BG)} onMouseLeave={e => (e.currentTarget.style.background = "none")}>📄 JSON</button>
-                    <button onClick={handleSampleXlsx} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", fontSize: 13, color: TX, background: "none", border: "none", borderTop: `1px solid ${BO}`, cursor: "pointer", textAlign: "right", fontFamily: "Rubik, sans-serif" }} onMouseEnter={e => (e.currentTarget.style.background = BG)} onMouseLeave={e => (e.currentTarget.style.background = "none")}>📊 Excel (.xlsx)</button>
-                  </div>
-                )}
-              </div>
-
-              {/* Export dropdown */}
-              <div style={{ position: "relative" }}>
-                <button onClick={() => { setExportDropdown(v => !v); setSampleDropdown(false); }} disabled={importing} style={{ ...btn(I, CA, BO), opacity: importing ? 0.5 : 1 }}>
-                  📤 ייצוא ▾
-                </button>
-                {exportDropdown && (
-                  <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: CA, border: `1px solid ${BO}`, borderRadius: 12, boxShadow: SHM, overflow: "hidden", minWidth: 150, zIndex: 30 }}>
-                    <button onClick={handleExportJson} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", fontSize: 13, color: TX, background: "none", border: "none", cursor: "pointer", textAlign: "right", fontFamily: "Rubik, sans-serif" }} onMouseEnter={e => (e.currentTarget.style.background = BG)} onMouseLeave={e => (e.currentTarget.style.background = "none")}>📄 JSON</button>
-                    <button onClick={handleExportXlsx} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", fontSize: 13, color: TX, background: "none", border: "none", borderTop: `1px solid ${BO}`, cursor: "pointer", textAlign: "right", fontFamily: "Rubik, sans-serif" }} onMouseEnter={e => (e.currentTarget.style.background = BG)} onMouseLeave={e => (e.currentTarget.style.background = "none")}>📊 Excel (.xlsx)</button>
-                  </div>
-                )}
-              </div>
-
-              {/* Import */}
-              <button onClick={handleImportClick} disabled={importing} style={{ ...btn(I, CA, BO), opacity: importing ? 0.5 : 1 }}>
-                📥 ייבוא תפריט
+            {/* Export dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setExportDropdown(v => !v); setSampleDropdown(false); }}
+                disabled={importing}
+                className="flex items-center gap-1.5 disabled:opacity-50"
+                style={{ background: T.raised, border: "1px solid #fcc419", color: T.gold, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
+              >
+                📤 ייצא ▾
               </button>
+              {exportDropdown && (
+                <div className="absolute left-0 top-full mt-1 z-30 overflow-hidden min-w-[140px]" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+                  <button onClick={handleExportJson} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text }}
+                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <span className="text-base">📄</span> JSON
+                  </button>
+                  <button onClick={handleExportXlsx} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text, borderTop: "1px solid #2d3239" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <span className="text-base">📊</span> Excel (.xlsx)
+                  </button>
+                </div>
+              )}
+            </div>
 
-              {/* Allergen — orange filled */}
-              <button onClick={handleSeedAllergens} disabled={seedingAllergens || !selectedRestaurant} title="מלא אוטומטית אלרגנים לפי שמות המנות"
-                style={{ ...btn("#fff", OR, OR), opacity: seedingAllergens ? 0.6 : 1 }}>
-                {seedingAllergens ? "⏳ מעדכן..." : "⚠️ אלרגנים אוטומטי"}
+            {/* Import button */}
+            <button
+              onClick={handleImportClick}
+              disabled={importing}
+              className="flex items-center gap-1.5 disabled:opacity-50"
+              style={{ background: T.raised, border: "1px solid #51cf66", color: T.green, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
+            >
+              📥 ייבא תפריט
+            </button>
+
+            {/* Allergen auto-fill */}
+            <button
+              onClick={handleSeedAllergens}
+              disabled={seedingAllergens || !selectedRestaurant}
+              className="flex items-center gap-1.5 disabled:opacity-50"
+              style={{ background: T.raised, border: "1px solid #f59e0b", color: "#d97706", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
+              title="מלא אוטומטית אלרגנים לפי שמות המנות"
+            >
+              {seedingAllergens ? "⏳ מעדכן..." : "⚠️ אלרגנים אוטו"}
+            </button>
+            {seedResult && <span style={{ fontSize: 12, color: "#d97706", fontWeight: 600 }}>{seedResult}</span>}
+
+            {/* Sample dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setSampleDropdown(v => !v); setExportDropdown(false); }}
+                disabled={importing}
+                className="flex items-center gap-1.5 disabled:opacity-50"
+                style={{ background: T.raised, border: "1px solid #3a3f47", color: T.sub, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
+              >
+                📋 קובץ דוגמא ▾
               </button>
-              {seedResult && <span style={{ fontSize: 12, color: OR, fontWeight: 600 }}>{seedResult}</span>}
-            </div>
-          )}
-        </div>
-
-        {/* Close dropdowns */}
-        {(exportDropdown || sampleDropdown) && <div style={{ position: "fixed", inset: 0, zIndex: 20 }} onClick={() => { setExportDropdown(false); setSampleDropdown(false); }} />}
-        <input ref={fileInputRef} type="file" accept=".json,.xlsx,.xls" style={{ display: "none" }} onChange={handleFileChange} />
-
-        {restaurants.length === 0 ? (
-          <div style={{ background: CA, borderRadius: 16, padding: 48, textAlign: "center", color: MU, boxShadow: SH }}>אין מסעדות זמינות</div>
-        ) : (
-          <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-
-            {/* ════ SIDEBAR (300px, right) ══════════════════════════════════ */}
-            <div style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-
-              {/* Restaurants card */}
-              <div style={{ background: CA, borderRadius: 16, boxShadow: SH, overflow: "hidden" }}>
-                <div style={{ padding: "14px 18px", borderBottom: `1px solid ${BO}`, fontWeight: 700, fontSize: 14, color: TX }}>מסעדות</div>
-                {restaurants.map(rest => {
-                  const active = selectedRestaurant?.id === rest.id;
-                  return (
-                    <button key={rest.id}
-                      onClick={() => { setSelectedRestaurant(rest); setSelectedMenu(rest.menus[0] ?? null); }}
-                      style={{ width: "100%", textAlign: "right", padding: "11px 18px", fontSize: 14, fontWeight: active ? 600 : 400, background: active ? IB : "none", color: active ? I : SB, border: "none", cursor: "pointer", display: "block", fontFamily: "Rubik, sans-serif" }}
-                      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = BG; }}
-                      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "none"; }}>
-                      {rest.name}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Menus card — multi */}
-              {selectedRestaurant && !isSingleMenu && (
-                <div style={{ background: CA, borderRadius: 16, boxShadow: SH, overflow: "hidden" }}>
-                  <div style={{ padding: "14px 18px", borderBottom: `1px solid ${BO}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: TX }}>תפריטים</span>
-                    {canEdit && <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 13, color: I, fontWeight: 700, background: "none", border: "none", cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>➕ תפריט נוסף</button>}
-                  </div>
-                  {selectedRestaurant.menus.map(menu => {
-                    const active = selectedMenu?.id === menu.id;
-                    return (
-                      <div key={menu.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: active ? IB : "none", padding: "10px 18px" }}>
-                        <button onClick={() => setSelectedMenu(menu)} style={{ flex: 1, textAlign: "right", fontSize: 14, fontWeight: active ? 600 : 400, color: active ? I : SB, background: "none", border: "none", cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>
-                          {menu.isPrimary && <span style={{ color: OR, marginLeft: 4 }}>★</span>}
-                          {menu.scheduleDays?.length > 0 && <span style={{ color: I, fontSize: 12, marginLeft: 4 }}>⏰</span>}
-                          {menu.name}
-                        </button>
-                        {canEdit && (
-                          <div style={{ display: "flex", gap: 2 }}>
-                            <button onClick={() => openSchedule(menu)} style={{ color: MU, fontSize: 14, padding: "2px 5px", background: "none", border: "none", cursor: "pointer" }} title="הגדרות תזמון">🕐</button>
-                            <button onClick={() => deleteMenu(menu.id)} style={{ color: MU, fontSize: 13, padding: "2px 5px", background: "none", border: "none", cursor: "pointer" }}>✕</button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {selectedRestaurant.menus.length === 0 && (
-                    <div style={{ padding: 24, textAlign: "center" }}>
-                      <div style={{ fontSize: 24, marginBottom: 8 }}>📋</div>
-                      <p style={{ fontSize: 13, color: MU, marginBottom: 12 }}>אין תפריטים עדיין</p>
-                      {canEdit && <button onClick={() => setShowMenuForm(true)} style={{ ...btn("#fff", I, I) }}>+ צור תפריט ראשון</button>}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Single-menu compact */}
-              {selectedRestaurant && isSingleMenu && selectedMenu && canEdit && (
-                <div style={{ background: CA, borderRadius: 16, boxShadow: SH }}>
-                  <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: SB, fontWeight: 500 }}>{selectedMenu.name}</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <button onClick={() => openSchedule(selectedMenu)} style={{ color: MU, fontSize: 14, padding: "4px 6px", background: "none", border: "none", cursor: "pointer" }} title="הגדרות תפריט">⚙️</button>
-                      <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 13, color: I, fontWeight: 700, background: "none", border: "none", cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>➕ תפריט נוסף</button>
-                    </div>
-                  </div>
+              {sampleDropdown && (
+                <div className="absolute left-0 top-full mt-1 z-30 overflow-hidden min-w-[140px]" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+                  <button onClick={handleSampleJson} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text }}
+                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <span className="text-base">📄</span> JSON
+                  </button>
+                  <button onClick={handleSampleXlsx} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text, borderTop: "1px solid #2d3239" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <span className="text-base">📊</span> Excel (.xlsx)
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* ════ MAIN CONTENT (1fr, left) ═══════════════════════════════ */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {!selectedMenu ? (
-                <div style={{ background: CA, borderRadius: 16, padding: 48, textAlign: "center", color: MU, boxShadow: SH }}>בחר תפריט או צור חדש</div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-
-                  {/* Menu title + back + new category */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: TX }}>{selectedMenu.name}</h2>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      {expandedCats.size > 0 && (
-                        <button onClick={() => setExpandedCats(new Set())}
-                          style={{ ...btn(I, IB, IB) }}>
-                          ← חזרה לקטגוריות
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button onClick={() => setShowCategoryForm(true)}
-                          style={{ ...btn("#fff", I, I), boxShadow: "0 2px 8px rgba(79,70,229,0.3)" }}>
-                          ➕ קטגוריה חדשה
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {sortedCategories.length === 0 ? (
-                    <div style={{ background: CA, borderRadius: 16, padding: 48, textAlign: "center", boxShadow: SH }}>
-                      <div style={{ fontSize: 36, marginBottom: 12 }}>🗂️</div>
-                      <div style={{ fontWeight: 700, color: SB, marginBottom: 4 }}>אין קטגוריות עדיין</div>
-                      <div style={{ fontSize: 13, color: MU, marginBottom: 16 }}>הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
-                      {canEdit && <button onClick={() => setShowCategoryForm(true)} style={{ ...btn("#fff", I, I) }}>➕ קטגוריה חדשה</button>}
-                    </div>
-                  ) : (
-                    sortedCategories.map((cat, idx) => {
-                      const isExpanded = expandedCats.has(cat.id);
-                      return (
-                        <div key={cat.id} style={{ background: CA, borderRadius: 16, boxShadow: SH, overflow: "hidden" }}>
-
-                          {/* ── Category row ──────────────────────────────── */}
-                          <div
-                            style={{ display: "flex", alignItems: "center", padding: "16px 20px", gap: 14, cursor: "pointer", userSelect: "none", borderBottom: isExpanded ? `1px solid ${BO}` : undefined }}
-                            onClick={() => toggleCat(cat.id)}
-                            onMouseEnter={e => (e.currentTarget.style.background = "#fafafa")}
-                            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                          >
-                            {/* Zone A — right: drag handle + image + name */}
-                            <span style={{ color: MU, fontSize: 18, flexShrink: 0, cursor: "grab" }}>☰</span>
-                            {cat.image && <img src={cat.image} alt={cat.name} style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />}
-                            <span style={{ fontWeight: 700, fontSize: 15, color: TX, flex: 1 }}>{cat.name}</span>
-
-                            {/* Zone B — middle: pills */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                              <button
-                                onClick={() => toggleCategoryAutoReady(cat.id, cat.autoReady ?? false)}
-                                title={cat.autoReady ? "ביטול ללא מטבח" : "הפעל ללא מטבח (בר/שתיה)"}
-                                style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 999, border: `1px solid ${cat.autoReady ? GR : BO}`, background: cat.autoReady ? "#d1fae5" : BG, color: cat.autoReady ? GR : MU, cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>
-                                🍹 {cat.autoReady ? "ללא מטבח" : "ללא מטבח"}
-                              </button>
-                              <span style={{ fontSize: 12, fontWeight: 500, padding: "4px 12px", borderRadius: 999, border: `1px solid ${BO}`, background: BG, color: SB }}>
-                                {cat.items.length} פריטים
-                              </span>
-                            </div>
-
-                            {/* Zone C — left: order arrows + add + delete */}
-                            {canEdit && (
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                  <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
-                                    style={{ fontSize: 11, color: MU, background: "none", border: "none", cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.3 : 1, lineHeight: 1, padding: "1px 3px" }}>▲</button>
-                                  <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1}
-                                    style={{ fontSize: 11, color: MU, background: "none", border: "none", cursor: idx === sortedCategories.length - 1 ? "default" : "pointer", opacity: idx === sortedCategories.length - 1 ? 0.3 : 1, lineHeight: 1, padding: "1px 3px" }}>▼</button>
-                                </div>
-                                <button
-                                  onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                                  style={{ fontSize: 13, fontWeight: 700, color: I, background: IB, border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>
-                                  ➕ פריט
-                                </button>
-                                <button onClick={() => deleteCategory(cat.id)}
-                                  style={{ fontSize: 18, color: MU, background: "none", border: "none", borderRadius: 8, padding: "4px 6px", cursor: "pointer" }}
-                                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = RE; (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
-                                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = MU; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}>
-                                  🗑️
-                                </button>
-                              </div>
-                            )}
-
-                            {/* Chevron */}
-                            <svg className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                              style={{ width: 16, height: 16, flexShrink: 0, color: MU }}
-                              fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-
-                          {/* ── Items (expanded) ──────────────────────────── */}
-                          {isExpanded && (
-                            <div>
-                              {cat.items.length === 0 ? (
-                                <div style={{ padding: 24, textAlign: "center" }}>
-                                  <div style={{ fontSize: 24, marginBottom: 6 }}>🍽️</div>
-                                  <p style={{ fontSize: 13, color: MU, marginBottom: 10 }}>אין פריטים בקטגוריה זו</p>
-                                  {canEdit && (
-                                    <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                                      style={{ ...btn(I, IB, I) }}>
-                                      + הוסף פריט ראשון
-                                    </button>
-                                  )}
-                                </div>
-                              ) : (
-                                cat.items.map((item, itemIdx) => (
-                                  <div key={item.id} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, padding: "12px 20px", borderTop: itemIdx === 0 ? undefined : `1px solid ${BO}` }}>
-                                    {item.image && <img src={item.image} alt={item.name} style={{ width: 48, height: 48, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />}
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                        <span style={{ fontWeight: 600, fontSize: 14, color: item.isActive ? TX : MU, textDecoration: item.isActive ? "none" : "line-through" }}>{item.name}</span>
-                                        {item.isVegetarian && <span title="צמחוני">🌿</span>}
-                                        {item.isVegan && <span title="טבעוני">🌱</span>}
-                                        {item.isGlutenFree && <span style={{ color: OR, fontWeight: 700, fontSize: 11, background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, padding: "1px 6px" }}>GF</span>}
-                                        {item.prepTime != null && <span style={{ background: "#eff6ff", color: "#3b82f6", borderRadius: 999, padding: "2px 7px", fontSize: 11, fontWeight: 600 }}>⏱ {item.prepTime}&apos;</span>}
-                                        {item.tags?.map(tag => <span key={tag} style={{ background: BG, color: SB, border: `1px solid ${BO}`, borderRadius: 999, padding: "1px 7px", fontSize: 11 }}>{tag}</span>)}
-                                      </div>
-                                      {item.description && <p style={{ fontSize: 12, color: MU, marginTop: 2 }}>{item.description}</p>}
-                                    </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                                      <span style={{ color: GR, fontWeight: 700, fontSize: 15 }}>{formatPrice(item.price)}</span>
-                                      {canEdit && (
-                                        <>
-                                          <button onClick={() => openEditItem(cat, item)} style={{ color: I, fontSize: 12, fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>ערוך</button>
-                                          <button onClick={() => toggleItem(cat.id, item.id, item.isActive)} style={{ color: item.isActive ? MU : GR, fontSize: 12, background: "none", border: "none", cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>
-                                            {item.isActive ? "השבת" : "הפעל"}
-                                          </button>
-                                          <button onClick={() => deleteItem(cat.id, item.id)} style={{ color: RE, fontSize: 12, background: "none", border: "none", cursor: "pointer", fontFamily: "Rubik, sans-serif" }}>מחק</button>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-            </div>
           </div>
         )}
       </div>
+
+      {/* Close dropdowns on outside click */}
+      {(exportDropdown || sampleDropdown) && (
+        <div className="fixed inset-0 z-20" onClick={() => { setExportDropdown(false); setSampleDropdown(false); }} />
+      )}
+
+      {/* Hidden file input for import — accepts JSON and Excel */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,.xlsx,.xls"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {restaurants.length === 0 ? (
+        <div className="p-12 text-center" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, color: T.muted }}>אין מסעדות זמינות</div>
+      ) : (
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+          {/* Sidebar */}
+          <div className="w-full md:w-64 md:shrink-0 space-y-4">
+            <div style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ borderBottom: "1px solid #2d3239", color: T.sub, padding: "12px 16px", fontWeight: 600, fontSize: 14 }}>מסעדות</div>
+              {restaurants.map(rest => (
+                <button key={rest.id} onClick={() => { setSelectedRestaurant(rest); setSelectedMenu(rest.menus[0] ?? null); }}
+                  className="w-full text-right px-4 py-3 text-sm transition-colors"
+                  style={selectedRestaurant?.id === rest.id
+                    ? { background: "rgba(252,196,25,0.12)", color: T.gold, fontWeight: 600 }
+                    : { color: T.sub }}
+                  onMouseEnter={e => { if (selectedRestaurant?.id !== rest.id) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+                  onMouseLeave={e => { if (selectedRestaurant?.id !== rest.id) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+                  {rest.name}
+                </button>
+              ))}
+            </div>
+
+            {selectedRestaurant && !isSingleMenu && (
+              <div style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ borderBottom: "1px solid #2d3239", padding: "12px 16px" }} className="flex items-center justify-between">
+                  <span style={{ fontWeight: 600, fontSize: 14, color: T.sub }}>תפריטים</span>
+                  {canEdit && (
+                    <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 12, color: T.gold, fontWeight: 500 }}>+ חדש</button>
+                  )}
+                </div>
+                {selectedRestaurant.menus.map(menu => (
+                  <div key={menu.id} className="flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors"
+                    style={selectedMenu?.id === menu.id ? { background: "rgba(252,196,25,0.12)" } : {}}>
+                    <button onClick={() => setSelectedMenu(menu)} className="flex-1 text-right text-sm"
+                      style={selectedMenu?.id === menu.id ? { color: T.gold } : { color: T.sub }}>
+                      <span className="flex items-center gap-1.5">
+                        {menu.isPrimary && <span title="תפריט ראשי" style={{ color: T.gold, fontSize: 12 }}>★</span>}
+                        {menu.scheduleDays?.length > 0 && <span title="עם תזמון" style={{ color: T.blue, fontSize: 12 }}>⏰</span>}
+                        {menu.name}
+                      </span>
+                    </button>
+                    {canEdit && (
+                      <div className="flex items-center gap-0.5">
+                        <button onClick={() => openSchedule(menu)} style={{ color: T.muted, fontSize: 12, padding: "0 4px" }} title="הגדרות תזמון">🕐</button>
+                        <button onClick={() => deleteMenu(menu.id)} style={{ color: T.muted, fontSize: 12, padding: "0 4px" }}>✕</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {selectedRestaurant.menus.length === 0 && (
+                  <div className="p-6 text-center">
+                    <div className="text-2xl mb-2">📋</div>
+                    <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>אין תפריטים עדיין</p>
+                    {canEdit && <button onClick={() => setShowMenuForm(true)} className="text-xs text-white px-3 py-1.5 rounded-lg font-medium" style={{ background: T.gold, boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>+ צור תפריט ראשון</button>}
+                  </div>
+                )}
+              </div>
+            )}
+            {/* #3 — single-menu: show settings icon inline */}
+            {selectedRestaurant && isSingleMenu && selectedMenu && canEdit && (
+              <div style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+                <div className="p-3 flex items-center justify-between">
+                  <span style={{ fontSize: 12, color: T.sub, fontWeight: 500 }}>{selectedMenu.name}</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openSchedule(selectedMenu)} style={{ color: T.muted, fontSize: 12, padding: "4px 6px", borderRadius: 6 }} title="הגדרות תפריט">⚙️</button>
+                    <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 12, color: T.gold, fontWeight: 500, padding: "4px 6px", borderRadius: 6 }}>+ תפריט נוסף</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Main */}
+          <div className="flex-1">
+            {!selectedMenu ? (
+              <div className="p-12 text-center" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, color: T.muted }}>בחר תפריט או צור חדש</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold" style={{ color: T.text }}>{selectedMenu.name}</h2>
+                  {canEdit && (
+                    <button onClick={() => setShowCategoryForm(true)}
+                      className="text-white px-4 py-2 rounded-lg text-sm font-medium"
+                      style={{ background: T.gold, boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                      + קטגוריה חדשה
+                    </button>
+                  )}
+                </div>
+
+                {sortedCategories.length === 0 ? (
+                  <div className="p-12 text-center" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12 }}>
+                    <div className="text-4xl mb-3">🗂️</div>
+                    <div className="font-medium mb-1" style={{ color: T.sub }}>אין קטגוריות עדיין</div>
+                    <div className="text-sm mb-4" style={{ color: T.muted }}>הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
+                    {canEdit && (
+                      <button onClick={() => setShowCategoryForm(true)}
+                        className="inline-flex items-center gap-1.5 text-white px-5 py-2.5 rounded-lg text-sm font-medium"
+                        style={{ background: T.gold, boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+                        + קטגוריה חדשה
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  sortedCategories.map((cat, idx) => {
+                    const isExpanded = expandedCats.has(cat.id);
+                    return (
+                    <div key={cat.id} style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
+                      {/* Category header — always visible, click to expand */}
+                      <div
+                        className="p-4 flex items-center gap-3 cursor-pointer select-none transition-colors"
+                        style={{ borderBottom: isExpanded ? "1px solid #2d3239" : undefined }}
+                        onClick={() => toggleCat(cat.id)}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                      >
+                        {cat.image && <img src={cat.image} alt={cat.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />}
+                        <h3 className="font-semibold flex-1" style={{ color: T.text }}>{cat.name}</h3>
+                        {/* Item count badge */}
+                        <span className="shrink-0" style={{ background: T.raised, color: T.muted, borderRadius: 999, padding: "2px 8px", fontSize: 12 }}>
+                          {cat.items.length} פריטים
+                        </span>
+                        {canEdit && (
+                          <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                            {/* autoReady toggle — drinks/bar bypass kitchen */}
+                            <button
+                              onClick={() => toggleCategoryAutoReady(cat.id, cat.autoReady ?? false)}
+                              title={cat.autoReady ? "ביטול auto-ready — פריטים יישלחו למטבח" : "הפעל auto-ready — פריטים יסומנו כמוכנים מיידית (שתיה/בר)"}
+                              style={{
+                                fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20,
+                                border: `1px solid ${cat.autoReady ? "rgba(81,207,102,.4)" : "rgba(108,117,125,.3)"}`,
+                                background: cat.autoReady ? "rgba(81,207,102,.15)" : "rgba(108,117,125,.1)",
+                                color: cat.autoReady ? T.green : T.muted,
+                                cursor: "pointer",
+                              }}>
+                              {cat.autoReady ? "🍹 ללא מטבח" : "🍹"}
+                            </button>
+                            <div className="flex flex-col gap-0.5">
+                              <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
+                                className="disabled:opacity-30 leading-none" style={{ fontSize: 12, color: T.muted }}>▲</button>
+                              <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1}
+                                className="disabled:opacity-30 leading-none" style={{ fontSize: 12, color: T.muted }}>▼</button>
+                            </div>
+                            <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                              className="text-sm font-medium" style={{ color: T.gold }}>+ פריט</button>
+                            <button onClick={() => deleteCategory(cat.id)} className="text-sm" style={{ color: T.red }}>מחק</button>
+                          </div>
+                        )}
+                        {/* Chevron */}
+                        <svg
+                          className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          style={{ color: T.muted }}
+                          fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+
+                      {/* Items — only when expanded */}
+                      {isExpanded && (
+                        <div>
+                          {cat.items.length === 0 ? (
+                            <div className="p-6 text-center">
+                              <div className="text-2xl mb-1">🍽️</div>
+                              <p className="text-sm mb-2" style={{ color: T.muted }}>אין פריטים בקטגוריה זו</p>
+                              {canEdit && (
+                                <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                                  style={{ fontSize: 12, color: T.gold, border: "1px solid rgba(252,196,25,0.3)", background: "rgba(252,196,25,0.08)", borderRadius: 8, padding: "6px 12px", fontWeight: 500 }}>
+                                  + הוסף פריט ראשון
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            cat.items.map((item, itemIdx) => (
+                              <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap"
+                                style={{ borderTop: itemIdx === 0 ? undefined : "1px solid #2d3239" }}>
+                                {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium" style={!item.isActive ? { color: T.muted, textDecoration: "line-through" } : { color: T.text }}>{item.name}</span>
+                                    {item.isVegetarian && <span title="צמחוני" className="text-xs">🌿</span>}
+                                    {item.isVegan && <span title="טבעוני" className="text-xs">🌱</span>}
+                                    {item.isGlutenFree && <span title="ללא גלוטן" style={{ color: T.gold, fontWeight: 700, fontSize: 11 }}>GF</span>}
+                                    {item.prepTime != null && (
+                                      <span style={{ background: "rgba(51,154,240,0.15)", color: T.blue, borderRadius: 999, padding: "2px 6px", fontSize: 11, fontWeight: 600 }}>⏱ {item.prepTime}&apos;</span>
+                                    )}
+                                    {item.tags?.map(tag => (
+                                      <span key={tag} style={{ background: T.raised, color: T.sub, borderRadius: 999, padding: "2px 6px", fontSize: 11 }}>{tag}</span>
+                                    ))}
+                                  </div>
+                                  {item.description && <p className="text-xs mt-0.5" style={{ color: T.muted }}>{item.description}</p>}
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <span style={{ color: T.green, fontWeight: 700 }}>{formatPrice(item.price)}</span>
+                                  {canEdit && (
+                                    <>
+                                      <button onClick={() => openEditItem(cat, item)} style={{ color: T.blue, fontSize: 12 }}>ערוך</button>
+                                      <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
+                                        style={{ color: item.isActive ? T.muted : T.green, fontSize: 12 }}>
+                                        {item.isActive ? "השבת" : "הפעל"}
+                                      </button>
+                                      <button onClick={() => deleteItem(cat.id, item.id)} style={{ color: T.red, fontSize: 12 }}>מחק</button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Menu Form Modal */}
       {showMenuForm && (
