@@ -1056,7 +1056,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     <span key={i} onClick={() => setTableOverlay(ins.tableNum)} style={{
                       display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20,
                       background: s.bg, border: `1px solid ${s.border}`, color: s.color,
-                      fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer",
+                      fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", direction: "rtl",
                     }}>
                       <span style={{ fontWeight: 900, fontSize: 11, background: "rgba(255,255,255,0.12)", padding: "1px 6px", borderRadius: 6 }}>{ins.tableNum}</span>
                       {ins.type === "alert" ? "⚠️" : ins.type === "tip" ? "💡" : "ℹ️"}
