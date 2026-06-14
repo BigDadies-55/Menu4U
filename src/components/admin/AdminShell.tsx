@@ -98,7 +98,7 @@ export default function AdminShell({
           marginRight: isWaiter ? 0 : "var(--sidebar-w, 52px)",
           color: adminContentTextColor,
           paddingLeft: 24,
-          paddingRight: 8,
+          paddingRight: 24,
         }}
       >
         <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; padding-left: 12px !important; } }`}</style>
