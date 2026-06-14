@@ -25,6 +25,12 @@ type Config = {
   adminSidebarBg: string | null; adminSidebarAccent: string | null;
   adminSidebarTextColor: string; adminContentTextColor: string;
   adminTopBarBg: string | null; adminTopBarTextColor: string;
+  // extended
+  contactEmail: string | null; contactPhone: string | null; address: string | null;
+  timezone: string; currency: string; interfaceLanguage: string;
+  privacyUrl: string | null; termsUrl: string | null;
+  showPrivacyPolicy: boolean; enableLoyaltyPoints: boolean;
+  enableOnlineOrders: boolean; showPrices: boolean;
 };
 
 type TopTab = "settings" | "security" | "advanced" | "appearance";
@@ -1030,115 +1036,281 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
       }}>
 
         {/* ════ TAB: הגדרות ════ */}
-        {topTab === "settings" && (
-          <>
-            {/* 4-col grid — full width */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 1,
-              background: T.border,
+        {topTab === "settings" && (() => {
+          /* Glass design tokens */
+          const GB = "rgba(255,255,255,0.06)";
+          const GBorder = "rgba(255,255,255,0.14)";
+          const GAccent = "#D97706";
+          const GGlow = "rgba(217,119,6,0.4)";
+          const GInput: React.CSSProperties = {
+            width: "100%", boxSizing: "border-box",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.14)",
+            borderRadius: 14, padding: "13px 16px",
+            color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit",
+          };
+          const GLabel: React.CSSProperties = {
+            fontSize: 13, fontWeight: 700, color: "#fff",
+            display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
+          };
+          const GSub: React.CSSProperties = { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 };
+          const GCard: React.CSSProperties = {
+            background: GB, border: `1px solid ${GBorder}`, borderRadius: 22,
+            padding: 22, display: "flex", flexDirection: "column", gap: 0,
+          };
+          const sectionTitle = (icon: string, title: string) => (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `rgba(217,119,6,0.15)`,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                {icon}
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{title}</div>
+            </div>
+          );
+          const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
+            <button onClick={() => onChange(!value)} style={{
+              width: 46, height: 26, borderRadius: 13, flexShrink: 0,
+              background: value ? `linear-gradient(135deg, ${GAccent}, #F59E0B)` : "rgba(255,255,255,0.15)",
+              border: "none", cursor: "pointer", position: "relative", transition: "background 0.25s",
+              boxShadow: value ? `0 0 12px ${GGlow}` : "none",
             }}>
-              {/* שם האתר */}
-              <div style={{ background: T.surface, padding: "20px 22px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
-                  <span style={{ fontSize: 15 }}>✏️</span> שם האתר
+              <div style={{
+                position: "absolute", top: 3,
+                right: value ? 3 : undefined, left: value ? undefined : 3,
+                width: 20, height: 20, borderRadius: "50%", background: "#fff",
+                transition: "all 0.25s", boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+              }} />
+            </button>
+          );
+          const ToggleRow = ({ label, desc, value, onChange }: { label: string; desc: string; value: boolean; onChange: (v: boolean) => void }) => (
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.07)", cursor: "pointer" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{label}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{desc}</div>
+              </div>
+              <Toggle value={value} onChange={onChange} />
+            </label>
+          );
+
+          return (
+            <div style={{ padding: "32px 32px 40px", display: "flex", flexDirection: "column", gap: 28 }}>
+
+              {/* 1. כללי */}
+              <div style={GCard}>
+                {sectionTitle("⚙️", "כללי")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
+                  {/* שם האתר */}
+                  <div>
+                    <div style={GLabel}>✏️ שם האתר</div>
+                    <input style={GInput} type="text" value={form.siteName}
+                      onChange={e => update("siteName", e.target.value)} placeholder="Menu4U" />
+                    <p style={GSub}>מוצג בסיידבר לצד הלוגו</p>
+                  </div>
+                  {/* דומיין */}
+                  <div>
+                    <div style={GLabel}>🌐 דומיין ראשי</div>
+                    <input style={{ ...GInput, direction: "ltr" }} type="text"
+                      value={form.domain ?? ""} onChange={e => update("domain", e.target.value || null)}
+                      placeholder="app.mysite.co.il" />
+                    <p style={GSub}>הדומיין הראשי של הפלטפורמה</p>
+                  </div>
+                  {/* זכויות */}
+                  <div>
+                    <div style={GLabel}>© זכויות יוצרים</div>
+                    <input style={GInput} type="text"
+                      value={form.copyright ?? ""} onChange={e => update("copyright", e.target.value || null)}
+                      placeholder={`© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות`} />
+                    <p style={GSub}>מוצג בתחתית הפאנל</p>
+                  </div>
+                  {/* לוגו */}
+                  <div>
+                    <div style={GLabel}>🖼️ לוגו האתר</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div onClick={() => fileRef.current?.click()}
+                        style={{ width: 56, height: 56, background: "rgba(255,255,255,0.06)",
+                          border: `2px dashed ${GBorder}`, borderRadius: 12,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 22, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
+                        {form.logo
+                          ? <img src={form.logo} alt="לוגו" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                          : <span>🏪</span>}
+                      </div>
+                      <div>
+                        <p style={{ ...GSub, marginBottom: 8 }}>PNG/SVG שקוף, 200×200px+</p>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => fileRef.current?.click()} disabled={uploadingLogo} style={{
+                            background: `linear-gradient(135deg, ${GAccent}, #F59E0B)`,
+                            color: "#fff", fontSize: 12, fontWeight: 700,
+                            padding: "7px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+                            opacity: uploadingLogo ? 0.6 : 1,
+                            boxShadow: `0 4px 14px ${GGlow}`,
+                          }}>
+                            {uploadingLogo ? "מעלה..." : "📤 העלה"}
+                          </button>
+                          {form.logo && (
+                            <button onClick={() => update("logo", null)} style={{
+                              background: "transparent", color: "#f87171", fontSize: 12, fontWeight: 600,
+                              padding: "7px 12px", borderRadius: 10,
+                              border: "1px solid rgba(248,113,113,0.35)", cursor: "pointer",
+                            }}>הסר</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
+                  </div>
                 </div>
-                <input style={DARK_INPUT} type="text" value={form.siteName}
-                  onChange={e => update("siteName", e.target.value)} placeholder="Menu4U" />
-                <p style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>מוצג בסיידבר לצד הלוגו</p>
               </div>
 
-              {/* דומיין ראשי */}
-              <div style={{ background: T.surface, padding: "20px 22px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
-                  <span style={{ fontSize: 15 }}>🌐</span> דומיין ראשי
-                </div>
-                <input style={{ ...DARK_INPUT, direction: "ltr" }} type="text"
-                  value={form.domain ?? ""} onChange={e => update("domain", e.target.value || null)}
-                  placeholder="app.mysite.co.il" />
-                <p style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>הדומיין הראשי של הפלטפורמה</p>
-              </div>
-
-              {/* זכויות יוצרים */}
-              <div style={{ background: T.surface, padding: "20px 22px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
-                  <span style={{ fontSize: 15 }}>©</span> זכויות יוצרים
-                </div>
-                <input style={DARK_INPUT} type="text"
-                  value={form.copyright ?? ""} onChange={e => update("copyright", e.target.value || null)}
-                  placeholder={`© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות`} />
-                <p style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>מוצג בתחתית הפאנל</p>
-              </div>
-
-              {/* לוגו */}
-              <div style={{ background: T.surface, padding: "20px 22px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7,
-                  fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>
-                  <span style={{ fontSize: 15 }}>🖼️</span> לוגו האתר
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div onClick={() => fileRef.current?.click()}
-                    style={{ width: 58, height: 58, background: T.overlay,
-                      border: `2px dashed ${T.border}`, borderRadius: 10,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 22, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
-                    {form.logo
-                      ? <img src={form.logo} alt="לוגו" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                      : <span>🏪</span>}
+              {/* 2. יצירת קשר */}
+              <div style={GCard}>
+                {sectionTitle("📞", "יצירת קשר")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
+                  <div>
+                    <div style={GLabel}>✉️ אימייל</div>
+                    <input style={{ ...GInput, direction: "ltr" }} type="email"
+                      value={form.contactEmail ?? ""} onChange={e => update("contactEmail", e.target.value || null)}
+                      placeholder="contact@restaurant.co.il" />
+                    <p style={GSub}>לתמיכה ולפניות לקוחות</p>
                   </div>
                   <div>
-                    <p style={{ color: T.sub, fontSize: 12, marginBottom: 8 }}>PNG/SVG שקוף, 200×200px+</p>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => fileRef.current?.click()} disabled={uploadingLogo} style={{
-                        display: "inline-flex", alignItems: "center", gap: 6,
-                        background: "linear-gradient(135deg,#8B6914,#C9A84C)",
-                        color: "#fff", fontSize: 12, fontWeight: 700,
-                        padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-                        opacity: uploadingLogo ? 0.6 : 1,
-                      }}>
-                        {uploadingLogo ? "מעלה..." : "📤 העלה"}
-                      </button>
-                      {form.logo && (
-                        <button onClick={() => update("logo", null)} style={{
-                          background: "transparent", color: T.red, fontSize: 12, fontWeight: 600,
-                          padding: "7px 12px", borderRadius: 8,
-                          border: "1px solid rgba(255,107,107,0.3)", cursor: "pointer",
-                        }}>הסר</button>
-                      )}
-                    </div>
+                    <div style={GLabel}>📱 טלפון</div>
+                    <input style={{ ...GInput, direction: "ltr" }} type="tel"
+                      value={form.contactPhone ?? ""} onChange={e => update("contactPhone", e.target.value || null)}
+                      placeholder="+972-50-000-0000" />
+                    <p style={GSub}>מספר ליצירת קשר</p>
+                  </div>
+                  <div style={{ gridColumn: "span 1" }}>
+                    <div style={GLabel}>📍 כתובת</div>
+                    <input style={GInput} type="text"
+                      value={form.address ?? ""} onChange={e => update("address", e.target.value || null)}
+                      placeholder="רחוב הראשי 1, תל אביב" />
+                    <p style={GSub}>כתובת פיזית של העסק</p>
                   </div>
                 </div>
-                <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
               </div>
-            </div>
 
-            {/* Save bar */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12,
-              borderTop: `1px solid ${T.border}`, padding: "14px 22px",
-              background: "rgba(0,0,0,0.12)" }}>
-              <button onClick={save} disabled={saving} style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                background: "linear-gradient(135deg,#8B6914,#C9A84C)",
-                color: "#fff", fontSize: 14, fontWeight: 700,
-                padding: "10px 24px", borderRadius: 8, border: "none", cursor: "pointer",
-                opacity: saving ? 0.6 : 1,
-              }}>
-                {saving ? "שומר..." : "💾 שמור שינויים"}
-              </button>
-              {saved && (
-                <span style={{ color: T.green, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  נשמר בהצלחה!
-                </span>
-              )}
+              {/* 3. אזור ומטבע */}
+              <div style={GCard}>
+                {sectionTitle("🌍", "אזור ומטבע")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+                  <div>
+                    <div style={GLabel}>🕐 אזור זמן</div>
+                    <select style={{ ...GInput, cursor: "pointer" }}
+                      value={form.timezone} onChange={e => update("timezone", e.target.value)}>
+                      <option value="Asia/Jerusalem">ישראל (UTC+3)</option>
+                      <option value="Europe/London">לונדון (UTC+0)</option>
+                      <option value="America/New_York">ניו יורק (UTC-5)</option>
+                      <option value="America/Los_Angeles">לוס אנג&apos;לס (UTC-8)</option>
+                      <option value="Europe/Paris">פריז (UTC+1)</option>
+                    </select>
+                    <p style={GSub}>עבור חותמות זמן ותזמון</p>
+                  </div>
+                  <div>
+                    <div style={GLabel}>💰 מטבע</div>
+                    <select style={{ ...GInput, cursor: "pointer" }}
+                      value={form.currency} onChange={e => update("currency", e.target.value)}>
+                      <option value="ILS">₪ שקל ישראלי (ILS)</option>
+                      <option value="USD">$ דולר אמריקאי (USD)</option>
+                      <option value="EUR">€ אירו (EUR)</option>
+                      <option value="GBP">£ פאונד בריטי (GBP)</option>
+                    </select>
+                    <p style={GSub}>מטבע להצגת מחירים</p>
+                  </div>
+                  <div>
+                    <div style={GLabel}>🗣️ שפת ממשק</div>
+                    <select style={{ ...GInput, cursor: "pointer" }}
+                      value={form.interfaceLanguage} onChange={e => update("interfaceLanguage", e.target.value)}>
+                      <option value="he">עברית</option>
+                      <option value="en">English</option>
+                      <option value="ar">العربية</option>
+                    </select>
+                    <p style={GSub}>שפת ברירת מחדל לממשק</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. פרטיות ותנאים */}
+              <div style={GCard}>
+                {sectionTitle("🔒", "פרטיות ותנאים")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
+                  <div>
+                    <div style={GLabel}>🔗 קישור מדיניות פרטיות</div>
+                    <input style={{ ...GInput, direction: "ltr" }} type="url"
+                      value={form.privacyUrl ?? ""} onChange={e => update("privacyUrl", e.target.value || null)}
+                      placeholder="https://mysite.co.il/privacy" />
+                    <p style={GSub}>יוצג בתחתית עמוד הלקוח</p>
+                  </div>
+                  <div>
+                    <div style={GLabel}>📄 קישור תנאי שימוש</div>
+                    <input style={{ ...GInput, direction: "ltr" }} type="url"
+                      value={form.termsUrl ?? ""} onChange={e => update("termsUrl", e.target.value || null)}
+                      placeholder="https://mysite.co.il/terms" />
+                    <p style={GSub}>תנאי שימוש לצד מדיניות הפרטיות</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. פיצ'רים */}
+              <div style={GCard}>
+                {sectionTitle("✨", "פיצ׳רים")}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <ToggleRow
+                    label="הצג מדיניות פרטיות"
+                    desc="הצג קישור למדיניות פרטיות בתחתית עמוד הלקוח"
+                    value={form.showPrivacyPolicy}
+                    onChange={v => update("showPrivacyPolicy", v)}
+                  />
+                  <ToggleRow
+                    label="נקודות נאמנות"
+                    desc="אפשר מערכת צבירת נקודות נאמנות ללקוחות"
+                    value={form.enableLoyaltyPoints}
+                    onChange={v => update("enableLoyaltyPoints", v)}
+                  />
+                  <ToggleRow
+                    label="הזמנות אונליין"
+                    desc="אפשר ללקוחות לבצע הזמנות דרך הממשק הדיגיטלי"
+                    value={form.enableOnlineOrders}
+                    onChange={v => update("enableOnlineOrders", v)}
+                  />
+                  <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 0", cursor: "pointer" }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>הצג מחירים בתפריט</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>הצג מחירים לצד פריטי התפריט</div>
+                    </div>
+                    <Toggle value={form.showPrices} onChange={v => update("showPrices", v)} />
+                  </label>
+                </div>
+              </div>
+
+              {/* Save bar */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12,
+                borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 24 }}>
+                <button onClick={save} disabled={saving} style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: `linear-gradient(135deg, ${GAccent}, #F59E0B)`,
+                  color: "#fff", fontSize: 15, fontWeight: 700,
+                  padding: "13px 36px", borderRadius: 14, border: "none", cursor: "pointer",
+                  opacity: saving ? 0.7 : 1,
+                  boxShadow: `0 8px 24px ${GGlow}`,
+                  transition: "all 0.3s",
+                }}>
+                  {saving ? "שומר..." : "💾 שמור שינויים"}
+                </button>
+                {saved && (
+                  <span style={{ color: "#34d399", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    נשמר בהצלחה!
+                  </span>
+                )}
+              </div>
+
             </div>
-          </>
-        )}
+          );
+        })()}
 
         {/* ════ TAB: מראה ════ */}
         {topTab === "appearance" && (

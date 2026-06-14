@@ -14,6 +14,12 @@ const DEFAULTS = {
   adminSidebarBg: null as string | null, adminSidebarAccent: null as string | null,
   adminSidebarTextColor: T.muted, adminContentTextColor: T.bg,
   adminTopBarBg: null as string | null, adminTopBarTextColor: T.panel,
+  contactEmail: null as string | null, contactPhone: null as string | null,
+  address: null as string | null,
+  timezone: "Asia/Jerusalem", currency: "ILS", interfaceLanguage: "he",
+  privacyUrl: null as string | null, termsUrl: null as string | null,
+  showPrivacyPolicy: true, enableLoyaltyPoints: true,
+  enableOnlineOrders: false, showPrices: true,
 };
 
 export default async function SettingsPage() {

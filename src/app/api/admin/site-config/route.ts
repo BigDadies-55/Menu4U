@@ -9,6 +9,13 @@ const DEFAULTS = {
   adminSidebarBg: null, adminSidebarAccent: null,
   adminSidebarTextColor: "#9ca3af", adminContentTextColor: "#111827",
   adminTopBarBg: null as string | null, adminTopBarTextColor: "#374151",
+  // extended fields
+  contactEmail: null as string | null, contactPhone: null as string | null,
+  address: null as string | null,
+  timezone: "Asia/Jerusalem", currency: "ILS", interfaceLanguage: "he",
+  privacyUrl: null as string | null, termsUrl: null as string | null,
+  showPrivacyPolicy: true, enableLoyaltyPoints: true,
+  enableOnlineOrders: false, showPrices: true,
 };
 
 export async function GET() {
@@ -28,9 +35,15 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();
-  const { siteName, logo, domain, copyright, adminPalette, adminBg, adminBgImage,
-          adminSidebarBg, adminSidebarAccent, adminSidebarTextColor, adminContentTextColor,
-          adminTopBarBg, adminTopBarTextColor } = body;
+  const {
+    siteName, logo, domain, copyright, adminPalette, adminBg, adminBgImage,
+    adminSidebarBg, adminSidebarAccent, adminSidebarTextColor, adminContentTextColor,
+    adminTopBarBg, adminTopBarTextColor,
+    contactEmail, contactPhone, address,
+    timezone, currency, interfaceLanguage,
+    privacyUrl, termsUrl,
+    showPrivacyPolicy, enableLoyaltyPoints, enableOnlineOrders, showPrices,
+  } = body;
   try {
     await prisma.$executeRawUnsafe(`
       UPDATE "SiteConfig" SET
@@ -47,14 +60,33 @@ export async function PATCH(req: Request) {
         "adminContentTextColor"  = $11,
         "adminTopBarBg"          = $12,
         "adminTopBarTextColor"   = $13,
+        "contactEmail"           = $14,
+        "contactPhone"           = $15,
+        "address"                = $16,
+        "timezone"               = $17,
+        "currency"               = $18,
+        "interfaceLanguage"      = $19,
+        "privacyUrl"             = $20,
+        "termsUrl"               = $21,
+        "showPrivacyPolicy"      = $22,
+        "enableLoyaltyPoints"    = $23,
+        "enableOnlineOrders"     = $24,
+        "showPrices"             = $25,
         "updatedAt"              = NOW()
       WHERE id = 'default'
-    `, siteName ?? "Menu4U", logo ?? null, domain ?? null,
-       copyright ?? null, adminPalette ?? "dark",
-       adminBg ?? "#f0ece3", adminBgImage ?? null,
-       adminSidebarBg ?? null, adminSidebarAccent ?? null,
-       adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827",
-       adminTopBarBg ?? null, adminTopBarTextColor ?? "#374151");
+    `,
+      siteName ?? "Menu4U", logo ?? null, domain ?? null,
+      copyright ?? null, adminPalette ?? "dark",
+      adminBg ?? "#f0ece3", adminBgImage ?? null,
+      adminSidebarBg ?? null, adminSidebarAccent ?? null,
+      adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827",
+      adminTopBarBg ?? null, adminTopBarTextColor ?? "#374151",
+      contactEmail ?? null, contactPhone ?? null, address ?? null,
+      timezone ?? "Asia/Jerusalem", currency ?? "ILS", interfaceLanguage ?? "he",
+      privacyUrl ?? null, termsUrl ?? null,
+      showPrivacyPolicy ?? true, enableLoyaltyPoints ?? true,
+      enableOnlineOrders ?? false, showPrices ?? true,
+    );
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });
     return NextResponse.json({ success: true });
   } catch {
