@@ -199,7 +199,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   }
 
   function startEdit(rule: CustomRule) {
-    setForm({ label: rule.label, enabled: rule.enabled, conditions: rule.conditions, type: rule.type, text: rule.text, priority: rule.priority });
+    setForm({ label: rule.label, enabled: rule.enabled, conditions: rule.conditions, type: rule.type, text: rule.text, priority: rule.priority, stopAfterMinutes: rule.stopAfterMinutes, stopTrigger: rule.stopTrigger });
     setEditId(rule.id);
   }
 
@@ -560,6 +560,61 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
             <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
               placeholder="שולחן {tableNum} — ..."
               style={{ ...INP, width: "100%", marginBottom: 20, boxSizing: "border-box" }} />
+
+            {/* stopAfterMinutes */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: T.muted, display: "block", marginBottom: 4 }}>
+                עצור לאחר X דקות ישיבה (אופציונלי)
+              </label>
+              <input
+                type="number"
+                min={1}
+                placeholder="למשל 120"
+                value={form.stopAfterMinutes ?? ""}
+                onChange={e => setForm(f => ({ ...f, stopAfterMinutes: e.target.value ? Number(e.target.value) : undefined }))}
+                style={{ ...INP, width: 120 }}
+              />
+              <span style={{ fontSize: 11, color: T.muted, marginRight: 8 }}>
+                התובנה לא תופיע לאחר שהשולחן ישב יותר מ-X דקות
+              </span>
+            </div>
+
+            {/* stopTrigger */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, color: T.muted, display: "block", marginBottom: 4 }}>
+                עצור כאשר (אופציונלי)
+              </label>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                <select
+                  value={form.stopTrigger?.field ?? ""}
+                  onChange={e => setForm(f => ({ ...f, stopTrigger: e.target.value ? { field: e.target.value as Condition["field"], operator: f.stopTrigger?.operator ?? "eq", value: f.stopTrigger?.value ?? "" } : undefined }))}
+                  style={{ ...INP, minWidth: 160 }}
+                >
+                  <option value="">-- ללא --</option>
+                  {FIELDS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                </select>
+                {form.stopTrigger && (
+                  <>
+                    <select
+                      value={form.stopTrigger.operator}
+                      onChange={e => setForm(f => ({ ...f, stopTrigger: f.stopTrigger ? { ...f.stopTrigger, operator: e.target.value as Condition["operator"] } : undefined }))}
+                      style={{ ...INP, minWidth: 120 }}
+                    >
+                      {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <input
+                      value={form.stopTrigger.value}
+                      onChange={e => setForm(f => ({ ...f, stopTrigger: f.stopTrigger ? { ...f.stopTrigger, value: e.target.value } : undefined }))}
+                      style={{ ...INP, width: 90 }}
+                      placeholder="ערך"
+                    />
+                  </>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
+                התובנה לא תופיע כאשר תנאי זה מתקיים (למשל: סטטוס שולחן = free)
+              </div>
+            </div>
 
             {/* Buttons */}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-start" }}>

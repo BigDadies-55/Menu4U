@@ -17,6 +17,8 @@ export interface CustomRule {
   type: InsightType;
   text: string; // supports {tableNum} {minutesSitting} {guests} {seats} {orderStatus} {totalAmount} {orderCount} {minutesSinceLastOrder} {minutesSinceBillRequested}
   priority: number;
+  stopAfterMinutes?: number;   // suppress once table.minutesSitting >= this value
+  stopTrigger?: Condition;     // suppress once this condition evaluates to true
 }
 
 export interface TableInput {
@@ -297,6 +299,9 @@ export function computeInsights(
     // Custom rules — all enabled rules compete via trySet
     for (const rule of customRules.filter(r => r.enabled && r.conditions.length > 0)) {
       if (rule.conditions.every(c => evalCondition(table, c))) {
+        // Check stop conditions
+        if (rule.stopAfterMinutes !== undefined && table.minutesSitting >= rule.stopAfterMinutes) continue;
+        if (rule.stopTrigger && evalCondition(table, rule.stopTrigger)) continue;
         trySet({ tableNum: table.tableNum, type: rule.type, text: renderText(rule.text, table), priority: rule.priority });
         break;
       }
