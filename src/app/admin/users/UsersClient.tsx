@@ -340,7 +340,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               <thead>
                 <tr style={{ background: T.bg, borderBottom: `1px solid ${T.border}` }}>
                   {["מזהה", "תאריך הצטרפות", "משתמש", "תפקיד", "מסעדות", "טלפון", "סטטוס", ""].map(h => (
-                    <th key={h} style={{ padding: "8px 16px", textAlign: "right", fontSize: 12, fontWeight: 700, color: L.muted, whiteSpace: "nowrap" }}>
+                    <th key={h} style={{ padding: "8px 16px", textAlign: "right", fontSize: 12, fontWeight: 700, color: L.text, whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}
