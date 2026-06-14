@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { T } from "@/lib/ui";
 import { AssistantWidget } from "@/components/admin/AssistantWidget";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -66,6 +65,21 @@ const DEFAULT_CFG: ShiftTypeCfg[] = [
   { key: "NIGHT",     label: "לילה",    startTime: "22:00", endTime: "06:00", color: "#6b7280", visible: true },
 ];
 
+// Glass shift color map — maps hex color → glass theme bg/text/border
+const GLASS_SHIFT: Record<string, { bg: string; text: string; border: string }> = {
+  "#f59e0b": { bg: "rgba(245,158,11,0.15)",  text: "#FCD34D", border: "rgba(245,158,11,0.3)"  },
+  "#3b82f6": { bg: "rgba(59,130,246,0.15)",  text: "#60A5FA", border: "rgba(59,130,246,0.3)"  },
+  "#a855f7": { bg: "rgba(168,85,247,0.15)",  text: "#C084FC", border: "rgba(168,85,247,0.3)"  },
+  "#6b7280": { bg: "rgba(107,114,128,0.15)", text: "#9CA3AF", border: "rgba(107,114,128,0.3)" },
+  "#ef4444": { bg: "rgba(239,68,68,0.15)",   text: "#F87171", border: "rgba(239,68,68,0.3)"   },
+  "#10b981": { bg: "rgba(16,185,129,0.15)",  text: "#34D399", border: "rgba(16,185,129,0.3)"  },
+  "#f97316": { bg: "rgba(249,115,22,0.15)",  text: "#FB923C", border: "rgba(249,115,22,0.3)"  },
+  "#ec4899": { bg: "rgba(236,72,153,0.15)",  text: "#F472B6", border: "rgba(236,72,153,0.3)"  },
+};
+function glassShift(color: string) {
+  return GLASS_SHIFT[color] ?? { bg: "rgba(255,255,255,0.08)", text: "#fff", border: "rgba(255,255,255,0.2)" };
+}
+
 function cfgToDisplay(cfg: ShiftTypeCfg[]): Record<string, { label: string; time: string; color: string; bg: string }> {
   return Object.fromEntries(
     cfg.filter(c => c.visible).map(c => [
@@ -123,6 +137,16 @@ function calcHours(startTime: string, endTime: string): number {
   if (endMins <= startMins) endMins += 24 * 60;
   return (endMins - startMins) / 60;
 }
+
+// ── Glass design tokens ───────────────────────────────────────────────────────
+const BG_PAGE     = `linear-gradient(rgba(12,12,20,0.80),rgba(12,12,20,0.80)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`;
+const GB          = "rgba(255,255,255,0.14)";   // glass border
+const GC          = "rgba(255,255,255,0.04)";   // glass card bg
+const GM          = "rgba(255,255,255,0.55)";   // glass muted text
+const ACCENT      = "#D97706";
+const ACCENT_GRAD = "linear-gradient(135deg,#D97706,#F59E0B)";
+const MODAL_BG    = "rgba(18,18,30,0.98)";
+const MODAL_BORDER = "rgba(255,255,255,0.18)";
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ShiftsClient({
@@ -375,7 +399,6 @@ export default function ShiftsClient({
     });
     const target = targetId === "all" ? weekShifts : weekShifts.filter(s => s.userId === targetId);
     if (!target.length) return "(אין משמרות לשלוח)";
-    const first = target[0];
     const name = targetId === "all" ? "[שם]" : (staff.find(s => s.id === targetId)?.name?.split(" ")[0] ?? "[שם]");
     const from = formatDateISO(weekDates[0]);
     const to   = formatDateISO(weekDates[6]);
@@ -475,87 +498,7 @@ export default function ShiftsClient({
 
   const pendingCount = requests.filter(r => r.status === "PENDING").length;
 
-  // ── Styles ──────────────────────────────────────────────────────────────────
-  const S = {
-    wrap: {
-      minHeight: "100vh",
-      background: T.bg,
-      color: T.text,
-      fontFamily: T.fontSans,
-      direction: "rtl" as const,
-      padding: "24px 20px",
-    } as React.CSSProperties,
-    header: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      flexWrap: "wrap" as const,
-      gap: 12,
-      marginBottom: 20,
-    } as React.CSSProperties,
-    title: {
-      fontSize: T.f2xl,
-      fontWeight: 800,
-      color: T.gold,
-      margin: 0,
-    } as React.CSSProperties,
-    weekNav: {
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      background: T.surface,
-      border: `1px solid ${T.border}`,
-      borderRadius: T.rLg,
-      padding: "4px 8px",
-    } as React.CSSProperties,
-    weekNavBtn: {
-      background: "transparent",
-      border: "none",
-      borderRadius: T.rMd,
-      color: T.muted,
-      fontSize: T.fsm,
-      padding: "3px 7px",
-      cursor: "pointer",
-      fontFamily: "inherit",
-    } as React.CSSProperties,
-    weekLabel: {
-      fontSize: T.fsm,
-      fontWeight: 600,
-      color: T.text,
-      minWidth: 160,
-      textAlign: "center" as const,
-      padding: "0 4px",
-    } as React.CSSProperties,
-    restSelect: {
-      background: T.surface,
-      border: `1px solid ${T.border}`,
-      borderRadius: T.rMd,
-      color: T.text,
-      fontSize: T.fmd,
-      padding: "6px 12px",
-      fontFamily: "inherit",
-      cursor: "pointer",
-      marginBottom: 16,
-    } as React.CSSProperties,
-    tabBar: {
-      display: "flex",
-      gap: 4,
-      background: T.surface,
-      border: `1px solid ${T.border}`,
-      borderRadius: T.rLg,
-      padding: 4,
-      marginBottom: 20,
-      overflowX: "auto" as const,
-    } as React.CSSProperties,
-    tabContent: {
-      background: T.surface,
-      border: `1px solid ${T.border}`,
-      borderRadius: T.rLg,
-      padding: 20,
-      minHeight: 300,
-    } as React.CSSProperties,
-  };
-
+  // ── Tab button ─────────────────────────────────────────────────────────────
   function tabBtn(id: typeof activeTab, label: React.ReactNode): React.ReactElement {
     const active = activeTab === id;
     return (
@@ -563,20 +506,21 @@ export default function ShiftsClient({
         key={id}
         onClick={() => setActiveTab(id)}
         style={{
-          background: active ? T.gold : "transparent",
-          color: active ? "#fff" : T.muted,
+          background: active ? ACCENT_GRAD : "none",
+          color: active ? "#fff" : GM,
           border: "none",
-          borderRadius: T.rMd,
-          padding: "8px 16px",
-          fontSize: T.fmd,
+          borderRadius: 10,
+          padding: "8px 18px",
+          fontSize: 13,
           fontWeight: active ? 700 : 500,
           cursor: "pointer",
           fontFamily: "inherit",
           whiteSpace: "nowrap",
           display: "flex",
           alignItems: "center",
-          gap: 6,
+          gap: 7,
           transition: "all 0.15s",
+          boxShadow: active ? "0 4px 14px rgba(217,119,6,0.3)" : "none",
         }}
       >
         {label}
@@ -589,31 +533,28 @@ export default function ShiftsClient({
     const displayStaff = staff.length > 0 ? staff : Array.from(
       new Map(shifts.map(s => [s.userId, { id: s.userId, name: s.userName }])).values()
     );
+    const todayIso = formatDateISO(new Date());
 
     return (
       <div>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: T.muted, fontSize: T.flg }}>טוען...</div>
+          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 16 }}>טוען...</div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960, direction: "rtl" }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "8px 12px", textAlign: "right", color: T.muted, fontSize: T.fsm, fontWeight: 600, borderBottom: `1px solid ${T.border}`, minWidth: 100 }}>עובד</th>
+                  <th style={{ padding: "10px 8px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "right", width: 140 }}>עובד</th>
                   {weekDates.map((d, i) => {
                     const iso = formatDateISO(d);
-                    const todayIso = formatDateISO(new Date());
                     const isToday = iso === todayIso;
-                    const isPast  = iso < todayIso;
                     return (
-                      <th key={i} style={{ padding: "6px 8px", textAlign: "center", fontSize: T.fsm, fontWeight: 600, borderBottom: `2px solid ${isToday ? T.gold : T.border}`, minWidth: 90, background: isToday ? T.gold + "12" : isPast ? "rgba(0,0,0,0.06)" : "transparent", opacity: isPast ? 0.55 : 1 }}>
-                        <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                          <span style={{ color: isToday ? T.gold : isPast ? T.muted : T.text, fontWeight: isToday ? 900 : 700 }}>{DAYS_HE[i]}</span>
-                          {isToday
-                            ? <span style={{ background: T.gold, color: "#1a1208", borderRadius: 99, fontSize: T.fxs, fontWeight: 800, padding: "1px 7px" }}>{formatDate(d)}</span>
-                            : <span style={{ color: T.muted, fontSize: T.fxs }}>{formatDate(d)}</span>
-                          }
-                        </div>
+                      <th key={i} style={{ padding: "10px 8px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                        <span style={{ fontSize: 15, fontWeight: 900, color: isToday ? "#60A5FA" : "#fff", display: "block" }}>{DAYS_HE[i]}</span>
+                        <span style={{ fontSize: 11, opacity: isToday ? 0.9 : 0.65, color: isToday ? "#60A5FA" : "inherit", display: "block", marginTop: 1 }}>{formatDate(d)}</span>
+                        {isToday && (
+                          <span style={{ display: "block", width: 28, height: 2, background: "#60A5FA", borderRadius: 99, margin: "4px auto 0", boxShadow: "0 0 8px #60A5FA88" }} />
+                        )}
                       </th>
                     );
                   })}
@@ -622,66 +563,89 @@ export default function ShiftsClient({
               <tbody>
                 {displayStaff.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ textAlign: "center", padding: 32, color: T.muted }}>אין עובדים להצגה</td>
+                    <td colSpan={8} style={{ textAlign: "center", padding: 32, color: GM }}>אין עובדים להצגה</td>
                   </tr>
                 ) : displayStaff.map(member => (
-                  <tr key={member.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
-                    <td style={{ padding: "8px 12px", color: T.text, fontSize: T.fmd, fontWeight: 600, whiteSpace: "nowrap" }}>
+                  <tr key={member.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: "10px 8px", color: "#fff", fontSize: 15, fontWeight: 700, paddingRight: 4, verticalAlign: "middle" }}>
                       {member.name}
                     </td>
                     {weekDates.map((d, di) => {
                       const iso = formatDateISO(d);
-                      const todayIso = formatDateISO(new Date());
-                      const isToday = iso === todayIso;
                       const isPast  = iso < todayIso;
                       const dayShifts = shifts.filter(s => s.userId === member.id && String(s.date).slice(0, 10) === iso);
                       const canAdd = isManager && !isPast;
                       return (
                         <td
                           key={di}
-                          style={{ padding: "4px 6px", verticalAlign: "top", cursor: canAdd && dayShifts.length === 0 ? "pointer" : "default", background: isToday ? T.gold + "08" : isPast ? "rgba(0,0,0,0.04)" : "transparent", opacity: isPast ? 0.5 : 1 }}
+                          style={{ padding: "10px 8px", verticalAlign: "middle", cursor: canAdd && dayShifts.length === 0 ? "pointer" : "default" }}
                           onClick={() => {
                             if (canAdd && dayShifts.length === 0) {
                               setAddModal({ userId: member.id, userName: member.name, date: iso });
                             }
                           }}
                         >
-                          <div style={{ display: "flex", flexDirection: "column", gap: 3, minHeight: 36, width: "100%" }}>
-                            {dayShifts.map(sh => {
-                              const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: T.muted, bg: T.panel };
-                              return (
-                                <div
-                                  key={sh.id}
-                                  style={{
-                                    background: cfg.bg,
-                                    border: `1px solid ${cfg.color}44`,
-                                    borderRadius: T.rMd,
-                                    padding: "4px 6px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    width: "100%",
-                                    boxSizing: "border-box",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
-                                    <span style={{ color: cfg.color, fontSize: T.fxs, fontWeight: 800, whiteSpace: "nowrap" }}>{cfg.label}</span>
-                                    <span style={{ color: cfg.color + "bb", fontSize: 9, whiteSpace: "nowrap" }}>{cfg.time}</span>
+                          {dayShifts.length > 0 ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                              {dayShifts.map(sh => {
+                                const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: "#6b7280" };
+                                const gs = glassShift(cfg.color);
+                                return (
+                                  <div
+                                    key={sh.id}
+                                    style={{
+                                      background: gs.bg,
+                                      border: `1px solid ${gs.border}`,
+                                      borderRadius: 11,
+                                      padding: "8px 30px 8px 10px",
+                                      minHeight: 50,
+                                      position: "relative",
+                                      transition: "transform 0.15s, box-shadow 0.15s",
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      justifyContent: "center",
+                                    }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.25)"; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
+                                  >
+                                    <span style={{ color: gs.text, fontSize: 13, fontWeight: 700 }}>{cfg.label}</span>
+                                    <span style={{ color: gs.text, fontSize: 11, opacity: 0.8, marginTop: 1 }}>{cfg.time}</span>
+                                    {isManager && (
+                                      <button
+                                        onClick={e => { e.stopPropagation(); deleteShift(sh.id); }}
+                                        className="shift-del-btn"
+                                        style={{
+                                          position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)",
+                                          background: "none", border: "none", color: gs.text, opacity: 0,
+                                          cursor: "pointer", padding: 4, display: "flex", alignItems: "center",
+                                          borderRadius: 5, transition: "opacity 0.15s", fontSize: 12,
+                                        }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)"; }}
+                                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0"; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+                                        title="מחק"
+                                      >✕</button>
+                                    )}
                                   </div>
-                                  {isManager && (
-                                    <button
-                                      onClick={e => { e.stopPropagation(); deleteShift(sh.id); }}
-                                      style={{ background: "transparent", border: "none", color: T.red, fontSize: 11, cursor: "pointer", padding: "0 2px", lineHeight: 1, fontWeight: 700, flexShrink: 0 }}
-                                      title="מחק"
-                                    >✕</button>
-                                  )}
-                                </div>
-                              );
-                            })}
-                            {isManager && dayShifts.length === 0 && (
-                              <div style={{ color: T.borderSub, fontSize: T.fxs, textAlign: "center", paddingTop: 8 }}>＋</div>
-                            )}
-                          </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 50 }}>
+                              {canAdd && (
+                                <button
+                                  style={{
+                                    background: "none", border: "1px dashed rgba(255,255,255,0.12)",
+                                    color: GM, width: 32, height: 32, borderRadius: 8,
+                                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                    opacity: 0, transition: "0.15s", fontSize: 16,
+                                  }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.3)"; (e.currentTarget as HTMLButtonElement).style.color = "#fff"; }}
+                                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)"; (e.currentTarget as HTMLButtonElement).style.color = GM; }}
+                                  onClick={e => { e.stopPropagation(); setAddModal({ userId: member.id, userName: member.name, date: iso }); }}
+                                >+</button>
+                              )}
+                            </div>
+                          )}
                         </td>
                       );
                     })}
@@ -694,39 +658,35 @@ export default function ShiftsClient({
 
         {/* Add Shift Modal */}
         {addModal && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 24, width: 340, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: T.flg, fontWeight: 700, color: T.text, marginBottom: 4 }}>הוסף משמרת</div>
-              <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 20 }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 26, width: 340, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>הוסף משמרת</div>
+              <div style={{ fontSize: 13, color: GM, marginBottom: 20 }}>
                 {addModal.userName} — {addModal.date.split("-").reverse().join("/")}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {Object.entries(SHIFT_CFG).map(([key, cfg]) => (
-                  <button
-                    key={key}
-                    onClick={() => addShift(key)}
-                    disabled={addLoading}
-                    style={{
-                      background: cfg.bg,
-                      border: `2px solid ${cfg.color}55`,
-                      borderRadius: T.rMd,
-                      padding: "12px 8px",
-                      cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 4,
-                      opacity: addLoading ? 0.6 : 1,
-                    }}
-                  >
-                    <span style={{ color: cfg.color, fontWeight: 700, fontSize: T.fmd }}>{cfg.label}</span>
-                    <span style={{ color: cfg.color + "99", fontSize: T.fxs }}>{cfg.time}</span>
-                  </button>
-                ))}
+                {Object.entries(SHIFT_CFG).map(([key, cfg]) => {
+                  const gs = glassShift(cfg.color);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => addShift(key)}
+                      disabled={addLoading}
+                      style={{
+                        background: gs.bg, border: `2px solid ${gs.border}`, borderRadius: 11,
+                        padding: "12px 8px", cursor: "pointer", display: "flex", flexDirection: "column",
+                        alignItems: "center", gap: 4, opacity: addLoading ? 0.6 : 1, transition: "0.15s",
+                      }}
+                    >
+                      <span style={{ color: gs.text, fontWeight: 700, fontSize: 14 }}>{cfg.label}</span>
+                      <span style={{ color: gs.text, fontSize: 11, opacity: 0.8 }}>{cfg.time}</span>
+                    </button>
+                  );
+                })}
               </div>
               <button
                 onClick={() => setAddModal(null)}
-                style={{ marginTop: 16, width: "100%", background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, padding: "8px", cursor: "pointer", fontFamily: "inherit", fontSize: T.fmd }}
+                style={{ marginTop: 16, width: "100%", background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: GM, padding: "8px", cursor: "pointer", fontFamily: "inherit", fontSize: 13 }}
               >
                 ביטול
               </button>
@@ -751,14 +711,14 @@ export default function ShiftsClient({
       .sort((a, b) => a.date.localeCompare(b.date));
 
     const statusBadge = (status: string) => {
-      const map: Record<string, { label: string; color: string }> = {
-        SCHEDULED: { label: "מתוכנן", color: T.blue },
-        COMPLETED: { label: "הושלם", color: T.green },
-        CANCELLED: { label: "בוטל", color: T.red },
+      const map: Record<string, { label: string; bg: string; color: string; border: string }> = {
+        SCHEDULED: { label: "מתוכנן", bg: "rgba(59,130,246,0.15)", color: "#60A5FA", border: "rgba(59,130,246,0.3)" },
+        COMPLETED: { label: "הושלם",  bg: "rgba(16,185,129,0.15)", color: "#34D399", border: "rgba(16,185,129,0.3)" },
+        CANCELLED: { label: "בוטל",   bg: "rgba(239,68,68,0.15)",  color: "#F87171", border: "rgba(239,68,68,0.3)"  },
       };
-      const s = map[status] ?? { label: status, color: T.muted };
+      const s = map[status] ?? { label: status, bg: "rgba(255,255,255,0.08)", color: "#fff", border: GB };
       return (
-        <span style={{ background: s.color + "20", border: `1px solid ${s.color}44`, borderRadius: T.rFull, color: s.color, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+        <span style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 99, color: s.color, fontSize: 11, fontWeight: 700, padding: "3px 10px" }}>
           {s.label}
         </span>
       );
@@ -766,67 +726,73 @@ export default function ShiftsClient({
 
     if (myShifts.length === 0) {
       return (
-        <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>
+        <div style={{ textAlign: "center", padding: 60, color: GM, fontSize: 16 }}>
           אין משמרות קרובות
         </div>
       );
     }
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {myShifts.map(sh => {
-          const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: T.muted, bg: T.panel };
-          const d = new Date(sh.date);
-          const dayName = DAYS_HE[d.getDay()];
-          return (
-            <div key={sh.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-              <div style={{ minWidth: 56, textAlign: "center" }}>
-                <div style={{ fontSize: T.fmd, fontWeight: 700, color: T.text }}>{dayName}</div>
-                <div style={{ fontSize: T.fsm, color: T.muted }}>{formatDate(d)}</div>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM, marginBottom: 12 }}>
+          המשמרות שלי — 14 הימים הקרובים
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {myShifts.map(sh => {
+            const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: "#6b7280" };
+            const gs = glassShift(cfg.color);
+            const d = new Date(sh.date);
+            const dayName = DAYS_HE[d.getDay()];
+            return (
+              <div key={sh.id} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <div style={{ minWidth: 52, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{dayName}</div>
+                  <div style={{ fontSize: 11, color: GM, marginTop: 2 }}>{formatDate(d)}</div>
+                </div>
+                <div style={{ background: gs.bg, border: `1px solid ${gs.border}`, borderRadius: 11, padding: "8px 14px", flexShrink: 0 }}>
+                  <div style={{ color: gs.text, fontWeight: 700, fontSize: 13 }}>{cfg.label}</div>
+                  <div style={{ color: gs.text, fontSize: 11, opacity: 0.8, marginTop: 1 }}>{cfg.time}</div>
+                </div>
+                <div style={{ flex: 1 }} />
+                {statusBadge(sh.status)}
+                <button
+                  onClick={() => { setSwapModal(sh); setSwapReason(""); }}
+                  style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 9, color: "#60A5FA", fontSize: 12, fontWeight: 700, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  🔄 בקש החלפה
+                </button>
               </div>
-              <div style={{ background: cfg.bg, border: `1px solid ${cfg.color}44`, borderRadius: T.rMd, padding: "6px 14px" }}>
-                <div style={{ color: cfg.color, fontWeight: 700, fontSize: T.fmd }}>{cfg.label}</div>
-                <div style={{ color: cfg.color + "99", fontSize: T.fxs }}>{cfg.time}</div>
-              </div>
-              <div style={{ flex: 1 }} />
-              {statusBadge(sh.status)}
-              <button
-                onClick={() => { setSwapModal(sh); setSwapReason(""); }}
-                style={{ background: T.blue + "18", border: `1px solid ${T.blue}44`, borderRadius: T.rMd, color: T.blue, fontSize: T.fsm, fontWeight: 700, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit" }}
-              >
-                🔄 בקש החלפה
-              </button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {/* Swap Modal */}
         {swapModal && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 24, width: 360, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: T.flg, fontWeight: 700, color: T.text, marginBottom: 4 }}>🔄 בקשת החלפת משמרת</div>
-              <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 16 }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 26, width: 360, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>🔄 בקשת החלפת משמרת</div>
+              <div style={{ fontSize: 13, color: GM, marginBottom: 16 }}>
                 {SHIFT_CFG[swapModal.shiftType]?.label ?? swapModal.shiftType} — {swapModal.date.slice(0, 10).split("-").reverse().join("/")}
               </div>
-              <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 4 }}>סיבה (אופציונלי)</label>
+              <label style={{ fontSize: 13, color: GM, display: "block", marginBottom: 4 }}>סיבה (אופציונלי)</label>
               <textarea
                 value={swapReason}
                 onChange={e => setSwapReason(e.target.value)}
                 rows={3}
                 placeholder="כתוב סיבה..."
-                style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, padding: "7px 10px", width: "100%", outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 14, padding: "7px 10px", width: "100%", outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
               />
               <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <button
                   onClick={submitSwap}
                   disabled={swapLoading}
-                  style={{ flex: 1, background: T.blue, border: "none", borderRadius: T.rMd, color: "#fff", fontSize: T.fmd, fontWeight: 700, padding: "10px", cursor: "pointer", fontFamily: "inherit", opacity: swapLoading ? 0.6 : 1 }}
+                  style={{ flex: 1, background: "rgba(59,130,246,0.2)", border: "1px solid rgba(59,130,246,0.4)", borderRadius: 9, color: "#60A5FA", fontSize: 14, fontWeight: 700, padding: "10px", cursor: "pointer", fontFamily: "inherit", opacity: swapLoading ? 0.6 : 1 }}
                 >
                   {swapLoading ? "שולח..." : "שלח בקשה"}
                 </button>
                 <button
                   onClick={() => setSwapModal(null)}
-                  style={{ flex: 1, background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: "10px", cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: GM, fontSize: 14, padding: "10px", cursor: "pointer", fontFamily: "inherit" }}
                 >
                   ביטול
                 </button>
@@ -845,68 +811,58 @@ export default function ShiftsClient({
       : requests.filter(r => r.fromUserName === currentUserName);
 
     const typeLabelMap: Record<string, string> = { SWAP: "החלפה", COVER: "כיסוי" };
-    const statusColorMap: Record<string, string> = {
-      PENDING: T.orange,
-      APPROVED: T.green,
-      REJECTED: T.red,
-    };
-    const statusLabelMap: Record<string, string> = {
-      PENDING: "ממתין",
-      APPROVED: "אושר",
-      REJECTED: "נדחה",
-    };
 
     if (requestsLoading) {
-      return <div style={{ textAlign: "center", padding: 40, color: T.muted }}>טוען...</div>;
+      return <div style={{ textAlign: "center", padding: 40, color: GM }}>טוען...</div>;
     }
 
     if (displayRequests.length === 0) {
-      return <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>אין בקשות להצגה</div>;
+      return <div style={{ textAlign: "center", padding: 60, color: GM, fontSize: 16 }}>אין בקשות להצגה</div>;
     }
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {displayRequests.map(req => {
-          const shiftCfg = SHIFT_CFG[req.shiftType] ?? { label: req.shiftType, color: T.muted };
-          const sc = statusColorMap[req.status] ?? T.muted;
-          return (
-            <div key={req.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-                <span style={{ fontWeight: 700, color: T.text, fontSize: T.fmd }}>{req.fromUserName}</span>
-                <span style={{ color: T.muted, fontSize: T.fsm }}>←</span>
-                <span style={{ background: shiftCfg.color + "20", color: shiftCfg.color, border: `1px solid ${shiftCfg.color}44`, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
-                  {shiftCfg.label} {req.shiftDate?.slice(0, 10).split("-").reverse().join("/")}
-                </span>
-                <span style={{ background: T.blue + "18", color: T.blue, border: `1px solid ${T.blue}44`, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
-                  {typeLabelMap[req.type] ?? req.type}
-                </span>
-                <div style={{ flex: 1 }} />
-                <span style={{ background: sc + "18", color: sc, border: `1px solid ${sc}44`, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
-                  {statusLabelMap[req.status] ?? req.status}
-                </span>
-              </div>
-              {req.reason && (
-                <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 10 }}>סיבה: {req.reason}</div>
-              )}
-              {isManager && req.status === "PENDING" && (
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => respondRequest(req.id, "APPROVED")}
-                    style={{ background: T.green + "18", border: `1px solid ${T.green}44`, borderRadius: T.rMd, color: T.green, fontSize: T.fsm, fontWeight: 700, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
-                  >
-                    ✓ אשר
-                  </button>
-                  <button
-                    onClick={() => respondRequest(req.id, "REJECTED")}
-                    style={{ background: T.red + "18", border: `1px solid ${T.red}44`, borderRadius: T.rMd, color: T.red, fontSize: T.fsm, fontWeight: 700, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
-                  >
-                    ✗ דחה
-                  </button>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM, marginBottom: 12 }}>
+          בקשות פתוחות
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {displayRequests.map(req => {
+            const shiftCfg = SHIFT_CFG[req.shiftType] ?? { label: req.shiftType, color: "#6b7280" };
+            const gs = glassShift(shiftCfg.color);
+            return (
+              <div key={req.id} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                    {typeLabelMap[req.type] ?? req.type} — {req.fromUserName}
+                  </div>
+                  <div style={{ fontSize: 12, color: GM, marginTop: 3 }}>
+                    משמרת {shiftCfg.label} {req.shiftDate?.slice(0, 10).split("-").reverse().join("/")}
+                    {req.reason ? ` · סיבה: ${req.reason}` : " · אין סיבה"}
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+                <span style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 99, fontSize: 11, fontWeight: 700, padding: "3px 10px", flexShrink: 0 }}>
+                  ממתין לאישור
+                </span>
+                {isManager && req.status === "PENDING" && (
+                  <>
+                    <button
+                      onClick={() => respondRequest(req.id, "APPROVED")}
+                      style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 9, color: "#34D399", fontSize: 12, fontWeight: 700, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      ✓ אשר
+                    </button>
+                    <button
+                      onClick={() => respondRequest(req.id, "REJECTED")}
+                      style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 9, color: "#F87171", fontSize: 12, fontWeight: 700, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      ✕ דחה
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -940,58 +896,67 @@ export default function ShiftsClient({
     const grandTotal = summaries.reduce((a, s) => a + s.hours, 0);
 
     if (summaries.length === 0) {
-      return <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>אין נתונים לשבוע זה</div>;
+      return <div style={{ textAlign: "center", padding: 60, color: GM, fontSize: 16 }}>אין נתונים לשבוע זה</div>;
     }
 
     return (
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
-              <th style={{ padding: "10px 12px", textAlign: "right", color: T.muted, fontSize: T.fsm, fontWeight: 600 }}>עובד</th>
-              <th style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm, fontWeight: 600 }}>משמרות</th>
-              <th style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm, fontWeight: 600 }}>סה"כ שעות</th>
-              {Object.entries(SHIFT_CFG).map(([key, cfg]) => (
-                <th key={key} style={{ padding: "10px 8px", textAlign: "center", color: cfg.color, fontSize: T.fxs, fontWeight: 600 }}>{cfg.label}</th>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM, marginBottom: 12 }}>
+          סיכום שעות שבועי
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ fontSize: 12, fontWeight: 700, color: GM, textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
+                {Object.entries(SHIFT_CFG).map(([key, cfg]) => {
+                  const gs = glassShift(cfg.color);
+                  return (
+                    <th key={key} style={{ fontSize: 12, fontWeight: 700, color: gs.text, textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{cfg.label}</th>
+                  );
+                })}
+                <th style={{ fontSize: 12, fontWeight: 700, color: GM, textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>סה"כ שעות</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summaries.map(s => (
+                <tr key={s.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <td style={{ padding: "12px 12px", fontSize: 14, color: "#fff", fontWeight: 700 }}>{s.name}</td>
+                  {Object.keys(SHIFT_CFG).map(key => (
+                    <td key={key} style={{ padding: "12px 12px", fontSize: 14, color: "rgba(255,255,255,0.75)" }}>
+                      {s.byType[key] ? s.byType[key].toFixed(1) : "–"}
+                    </td>
+                  ))}
+                  <td style={{ padding: "12px 12px" }}>
+                    <span style={{ display: "inline-block", background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 8, padding: "3px 10px", fontWeight: 700, fontSize: 13 }}>
+                      {s.hours.toFixed(1)} ש׳
+                    </span>
+                  </td>
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {summaries.map(s => (
-              <tr key={s.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
-                <td style={{ padding: "10px 12px", color: T.text, fontSize: T.fmd, fontWeight: 600 }}>{s.name}</td>
-                <td style={{ padding: "10px 8px", textAlign: "center", color: T.text, fontSize: T.fmd }}>{s.count}</td>
-                <td style={{ padding: "10px 8px", textAlign: "center", color: T.gold, fontSize: T.fmd, fontWeight: 700 }}>{s.hours.toFixed(1)}</td>
+              <tr style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <td style={{ padding: "12px 12px", fontSize: 14, color: "#fff", fontWeight: 800 }}>סה"כ</td>
                 {Object.keys(SHIFT_CFG).map(key => (
-                  <td key={key} style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm }}>
-                    {s.byType[key] ? s.byType[key].toFixed(1) : "–"}
+                  <td key={key} style={{ padding: "12px 12px", fontSize: 14, color: GM }}>
+                    {summaries.reduce((a, s) => a + (s.byType[key] ?? 0), 0).toFixed(1)}
                   </td>
                 ))}
-              </tr>
-            ))}
-            <tr style={{ borderTop: `2px solid ${T.border}`, background: T.raised }}>
-              <td style={{ padding: "10px 12px", color: T.text, fontSize: T.fmd, fontWeight: 700 }}>סה"כ</td>
-              <td style={{ padding: "10px 8px", textAlign: "center", color: T.text, fontSize: T.fmd, fontWeight: 700 }}>
-                {summaries.reduce((a, s) => a + s.count, 0)}
-              </td>
-              <td style={{ padding: "10px 8px", textAlign: "center", color: T.gold, fontSize: T.flg, fontWeight: 800 }}>
-                {grandTotal.toFixed(1)}
-              </td>
-              {Object.keys(SHIFT_CFG).map(key => (
-                <td key={key} style={{ padding: "10px 8px", textAlign: "center", color: T.muted, fontSize: T.fsm }}>
-                  {summaries.reduce((a, s) => a + (s.byType[key] ?? 0), 0).toFixed(1)}
+                <td style={{ padding: "12px 12px" }}>
+                  <span style={{ display: "inline-block", background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 8, padding: "3px 10px", fontWeight: 800, fontSize: 15 }}>
+                    {grandTotal.toFixed(1)} ש׳
+                  </span>
                 </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
 
   // ── Tab: Ops ───────────────────────────────────────────────────────────────
   function OpsTab() {
-    if (opsLoading) return <div style={{ textAlign: "center", padding: 40, color: T.muted }}>טוען...</div>;
+    if (opsLoading) return <div style={{ textAlign: "center", padding: 40, color: GM }}>טוען...</div>;
 
     const filtered = smsLogs.filter(l => {
       const t = new Date(l.sentAt).getTime();
@@ -1004,9 +969,9 @@ export default function ShiftsClient({
     const totalFailed   = filtered.filter(l => l.status === "FAILED").length;
     const totalSmsUnits = filtered.filter(l => l.status === "SENT").reduce((acc, l) => acc + (l.smsCount ?? (l.message ? (l.message.length <= 70 ? 1 : Math.ceil(l.message.length / 67)) : 1)), 0);
 
-    const inpStyle = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "6px 10px", fontFamily: "inherit", outline: "none", colorScheme: "dark" as const };
+    const inpStyle: React.CSSProperties = { background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "6px 10px", fontFamily: "inherit", outline: "none", colorScheme: "dark" };
     const presetBtn = (key: OpsPreset, label: string) => (
-      <button key={key} onClick={() => applyPreset(key)} style={{ background: opsPreset === key ? T.gold : T.panel, border: `1px solid ${opsPreset === key ? T.gold : T.border}`, borderRadius: T.rMd, color: opsPreset === key ? "#1a1208" : T.text, fontSize: T.fsm, fontWeight: opsPreset === key ? 700 : 400, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>
+      <button key={key} onClick={() => applyPreset(key)} style={{ background: opsPreset === key ? ACCENT_GRAD : "rgba(255,255,255,0.06)", border: `1px solid ${opsPreset === key ? ACCENT : GB}`, borderRadius: 9, color: opsPreset === key ? "#fff" : GM, fontSize: 13, fontWeight: opsPreset === key ? 700 : 400, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>
         {label}
       </button>
     );
@@ -1015,65 +980,70 @@ export default function ShiftsClient({
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
         {/* Filter bar */}
-        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "space-between" }}>
+        <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {presetBtn("all",   "הכל")}
             {presetBtn("week",  "שבוע זה")}
             {presetBtn("month", "החודש")}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: T.fsm, color: T.muted }}>מ:</span>
+            <span style={{ fontSize: 13, color: GM }}>מ:</span>
             <input type="datetime-local" value={opsFrom} style={inpStyle}
               onChange={e => { setOpsFrom(e.target.value); setOpsPreset("custom"); }} />
-            <span style={{ fontSize: T.fsm, color: T.muted }}>עד:</span>
+            <span style={{ fontSize: 13, color: GM }}>עד:</span>
             <input type="datetime-local" value={opsTo} style={inpStyle}
               onChange={e => { setOpsTo(e.target.value); setOpsPreset("custom"); }} />
             {(opsFrom || opsTo) && (
-              <button onClick={() => applyPreset("all")} style={{ background: "transparent", border: "none", color: T.muted, fontSize: T.fsm, cursor: "pointer", padding: "0 4px" }}>✕ נקה</button>
+              <button onClick={() => applyPreset("all")} style={{ background: "transparent", border: "none", color: GM, fontSize: 13, cursor: "pointer", padding: "0 4px" }}>✕ נקה</button>
             )}
           </div>
         </div>
-        {/* Summary cards */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {[
-            { label: "הודעות נשלחו", value: totalSent,      color: T.green },
-            { label: "SMS (לתשלום)", value: totalSmsUnits,  color: T.blue  },
-            { label: "נכשלו",        value: totalFailed,     color: T.red   },
-            { label: "שבועות",       value: smsStats.length, color: T.muted },
-          ].map(c => (
-            <div key={c.label} style={{ flex: 1, minWidth: 100, background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: "14px 18px" }}>
-              <div style={{ fontSize: T.f2xl, fontWeight: 900, color: c.color }}>{c.value}</div>
-              <div style={{ fontSize: T.fsm, color: T.muted, marginTop: 2 }}>{c.label}</div>
-            </div>
-          ))}
-        </div>
 
-        {/* Per-week stats */}
-        {smsStats.length > 0 && (
-          <div>
-            <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.muted, marginBottom: 8 }}>לפי שבוע</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {smsStats.map((s, i) => (
-                <div key={i} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, color: T.text, fontSize: T.fmd, flex: 1 }}>{s.week}</span>
-                  <span style={{ background: T.green + "20", color: T.green, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 10px" }}>✓ {s.total - s.failed} נשלחו</span>
-                  {s.failed > 0 && <span style={{ background: T.red + "20", color: T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 10px" }}>✗ {s.failed} נכשלו</span>}
-                </div>
-              ))}
-            </div>
+        {/* Ops 2-column cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {/* SMS stats card */}
+          <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 16, padding: 18 }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: GM, textTransform: "uppercase", letterSpacing: "0.06em" }}>סטטיסטיקות SMS</h3>
+            {[
+              { label: "הודעות נשלחו", value: totalSent,      color: "#34D399" },
+              { label: "SMS (לתשלום)", value: totalSmsUnits,  color: "#60A5FA" },
+              { label: "נכשלו",        value: totalFailed,    color: "#F87171" },
+              { label: "שבועות",       value: smsStats.length, color: GM },
+            ].map(c => (
+              <div key={c.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
+                <span>{c.label}</span>
+                <span style={{ fontWeight: 700, color: c.color }}>{c.value}</span>
+              </div>
+            ))}
           </div>
-        )}
+
+          {/* Per-week stats card */}
+          <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 16, padding: 18 }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: GM, textTransform: "uppercase", letterSpacing: "0.06em" }}>לפי שבוע</h3>
+            {smsStats.length === 0 ? (
+              <div style={{ fontSize: 13, color: GM, padding: "12px 0" }}>טרם נשלחו הודעות</div>
+            ) : smsStats.map((s, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
+                <span>{s.week}</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <span style={{ background: "rgba(16,185,129,0.2)", color: "#34D399", borderRadius: 99, fontSize: 11, fontWeight: 700, padding: "2px 10px" }}>✓ {s.total - s.failed}</span>
+                  {s.failed > 0 && <span style={{ background: "rgba(239,68,68,0.2)", color: "#F87171", borderRadius: 99, fontSize: 11, fontWeight: 700, padding: "2px 10px" }}>✗ {s.failed}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Log table */}
         {filtered.length > 0 && (
           <div>
-            <div style={{ fontSize: T.fsm, fontWeight: 700, color: T.muted, marginBottom: 8 }}>יומן שליחות ({filtered.length})</div>
-            <div style={{ overflowX: "auto", borderRadius: T.rMd, border: `1px solid ${T.border}` }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM, marginBottom: 8 }}>יומן שליחות ({filtered.length})</div>
+            <div style={{ overflowX: "auto", borderRadius: 10, border: `1px solid ${GB}` }}>
               <table style={{ width: "100%", borderCollapse: "collapse", direction: "rtl" }}>
                 <thead>
-                  <tr style={{ background: T.panel }}>
+                  <tr style={{ background: "rgba(255,255,255,0.03)" }}>
                     {["מסעדה", "שם", "טלפון", "שבוע", "הודעה", "תווים", "SMS", "סטטוס", "נשלח"].map(h => (
-                      <th key={h} style={{ padding: "8px 12px", textAlign: "right", fontSize: T.fxs, color: T.muted, fontWeight: 600, borderBottom: `1px solid ${T.border}`, whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ padding: "8px 12px", textAlign: "right", fontSize: 11, color: GM, fontWeight: 600, borderBottom: `1px solid ${GB}`, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1082,22 +1052,22 @@ export default function ShiftsClient({
                     const chars = l.charCount ?? l.message?.length ?? 0;
                     const units = l.smsCount ?? (chars <= 70 ? 1 : Math.ceil(chars / 67));
                     return (
-                      <tr key={l.id} style={{ borderBottom: `1px solid ${T.borderSub}` }}>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.restaurantName ?? ""}</td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.text, whiteSpace: "nowrap" }}>{l.recipientName}</td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fsm, color: T.muted }}>{l.phone}</td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, maxWidth: 200 }}>
+                      <tr key={l.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: GM, whiteSpace: "nowrap" }}>{l.restaurantName ?? ""}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 13, color: "#fff", whiteSpace: "nowrap" }}>{l.recipientName}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 13, color: GM }}>{l.phone}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: GM, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: GM, maxWidth: 200 }}>
                           <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.message}</span>
                         </td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, textAlign: "right" }}>{chars}</td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, fontWeight: 700, color: units === 1 ? T.green : T.orange, textAlign: "right" }}>{units}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: GM, textAlign: "right" }}>{chars}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: units === 1 ? "#34D399" : "#FB923C", textAlign: "right" }}>{units}</td>
                         <td style={{ padding: "8px 12px" }}>
-                          <span style={{ background: l.status === "SENT" ? T.green + "20" : T.red + "20", color: l.status === "SENT" ? T.green : T.red, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 8px" }}>
+                          <span style={{ background: l.status === "SENT" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)", color: l.status === "SENT" ? "#34D399" : "#F87171", borderRadius: 99, fontSize: 11, fontWeight: 700, padding: "2px 8px" }}>
                             {l.status === "SENT" ? "✓ נשלח" : "✗ נכשל"}
                           </span>
                         </td>
-                        <td style={{ padding: "8px 12px", fontSize: T.fxs, color: T.muted, whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: GM, whiteSpace: "nowrap" }}>
                           {new Date(l.sentAt).toLocaleDateString("he-IL")} {new Date(l.sentAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
                         </td>
                       </tr>
@@ -1110,7 +1080,7 @@ export default function ShiftsClient({
         )}
 
         {filtered.length === 0 && !opsLoading && (
-          <div style={{ textAlign: "center", padding: 60, color: T.muted, fontSize: T.flg }}>
+          <div style={{ textAlign: "center", padding: 60, color: GM, fontSize: 16 }}>
             {smsLogs.length === 0 ? "טרם נשלחו הודעות SMS" : "אין תוצאות לטווח התאריכים שנבחר"}
           </div>
         )}
@@ -1121,273 +1091,330 @@ export default function ShiftsClient({
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
-    <div style={S.wrap}>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000,
-          background: T.raised, border: `1px solid ${T.border}`, borderRadius: T.rLg,
-          color: T.text, fontSize: T.fmd, fontWeight: 600, padding: "10px 18px",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
-          display: "flex", alignItems: "center", gap: 12, direction: "rtl",
-        }}>
-          <span>{toast.msg}</span>
-          {toast.undo && (
-            <button
-              onClick={() => { toast.undo!(); setToast(null); }}
-              style={{ background: T.gold, border: "none", borderRadius: T.rMd, color: "#1a1208", fontSize: T.fsm, fontWeight: 800, padding: "4px 12px", cursor: "pointer", fontFamily: "inherit" }}
-            >
-              ↩ בטל
-            </button>
-          )}
-        </div>
-      )}
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
+    `}</style>
+    <div style={{
+      minHeight: "100vh",
+      background: BG_PAGE,
+      color: "#fff",
+      fontFamily: "'Heebo', sans-serif",
+      direction: "rtl",
+      padding: 20,
+    }}>
+      <div style={{ maxWidth: 1500, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
 
-      {/* Settings modal */}
-      {settingsOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 28, width: 480, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-            <div style={{ fontSize: T.flg, fontWeight: 800, color: T.text, marginBottom: 20 }}>⚙️ הגדרות סוגי משמרת</div>
+        {/* Toast */}
+        {toast && (
+          <div style={{
+            position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000,
+            background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 14,
+            color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)", whiteSpace: "nowrap",
+            display: "flex", alignItems: "center", gap: 12, direction: "rtl",
+          }}>
+            <span>{toast.msg}</span>
+            {toast.undo && (
+              <button
+                onClick={() => { toast.undo!(); setToast(null); }}
+                style={{ background: ACCENT_GRAD, border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 800, padding: "4px 12px", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                ↩ בטל
+              </button>
+            )}
+          </div>
+        )}
 
-            {editCfg.map((cfg, idx) => (
-              <div key={cfg.key} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "12px 14px", marginBottom: 10 }}>
-                {/* Row 1: switch + label + times */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  {/* Switch */}
-                  <div
-                    onClick={() => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, visible: !c.visible } : c))}
-                    style={{ position: "relative", width: 40, height: 22, borderRadius: 11, background: cfg.visible ? cfg.color : T.borderSub, cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
-                  >
-                    <div style={{ position: "absolute", top: 3, right: cfg.visible ? 3 : undefined, left: cfg.visible ? undefined : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transition: "all 0.2s" }} />
-                  </div>
+        {/* Settings modal */}
+        {settingsOpen && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 26, width: 480, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 20 }}>⚙️ הגדרות סוגי משמרת</div>
 
-                  {/* Label */}
-                  <input
-                    value={cfg.label}
-                    onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
-                    style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, fontWeight: 700, padding: "4px 8px", width: 80, fontFamily: "inherit", outline: "none" }}
-                    placeholder="שם"
-                  />
+              {editCfg.map((cfg, idx) => (
+                <div key={cfg.key} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    {/* Switch */}
+                    <div
+                      onClick={() => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, visible: !c.visible } : c))}
+                      style={{ position: "relative", width: 40, height: 22, borderRadius: 11, background: cfg.visible ? cfg.color : "rgba(255,255,255,0.15)", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
+                    >
+                      <div style={{ position: "absolute", top: 3, right: cfg.visible ? 3 : undefined, left: cfg.visible ? undefined : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transition: "all 0.2s" }} />
+                    </div>
 
-                  {/* Times on same row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
-                    <span style={{ fontSize: T.fxs, color: T.muted }}>מ-</span>
+                    {/* Label */}
                     <input
-                      type="time"
-                      value={cfg.startTime}
-                      onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
-                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "4px 6px", fontFamily: "inherit", outline: "none" }}
+                      value={cfg.label}
+                      onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 700, padding: "4px 8px", width: 80, fontFamily: "inherit", outline: "none" }}
+                      placeholder="שם"
                     />
-                    <span style={{ fontSize: T.fxs, color: T.muted }}>עד-</span>
-                    <input
-                      type="time"
-                      value={cfg.endTime}
-                      onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
-                      style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fsm, padding: "4px 6px", fontFamily: "inherit", outline: "none" }}
-                    />
-                  </div>
 
-                  {/* Remove */}
-                  <button
-                    onClick={() => setEditCfg(prev => prev.filter((_, i) => i !== idx))}
-                    style={{ background: "transparent", border: "none", color: T.red, fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0 }}
-                    title="הסר"
-                  >✕</button>
-                </div>
+                    {/* Times */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                      <span style={{ fontSize: 11, color: GM }}>מ-</span>
+                      <input
+                        type="time"
+                        value={cfg.startTime}
+                        onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
+                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
+                      />
+                      <span style={{ fontSize: 11, color: GM }}>עד-</span>
+                      <input
+                        type="time"
+                        value={cfg.endTime}
+                        onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
+                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
+                      />
+                    </div>
 
-                {/* Row 2: color dots */}
-                <div style={{ display: "flex", gap: 6, marginTop: 10, paddingRight: 50 }}>
-                  {PRESET_COLORS.map(c => (
+                    {/* Remove */}
                     <button
-                      key={c}
-                      onClick={() => setEditCfg(prev => prev.map((cf, i) => i === idx ? { ...cf, color: c } : cf))}
-                      style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box" }}
-                      title={c}
-                    />
-                  ))}
+                      onClick={() => setEditCfg(prev => prev.filter((_, i) => i !== idx))}
+                      style={{ background: "transparent", border: "none", color: "#F87171", fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0 }}
+                      title="הסר"
+                    >✕</button>
+                  </div>
+
+                  {/* Color dots */}
+                  <div style={{ display: "flex", gap: 6, marginTop: 10, paddingRight: 50 }}>
+                    {PRESET_COLORS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setEditCfg(prev => prev.map((cf, i) => i === idx ? { ...cf, color: c } : cf))}
+                        style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box" }}
+                        title={c}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Add new shift type */}
+              <button
+                onClick={() => {
+                  const key = `CUSTOM_${Date.now()}`;
+                  setEditCfg(prev => [...prev, { key, label: "משמרת חדשה", startTime: "08:00", endTime: "16:00", color: "#10b981", visible: true }]);
+                }}
+                style={{ width: "100%", background: "transparent", border: `1.5px dashed ${GB}`, borderRadius: 9, color: GM, fontSize: 13, padding: "9px", cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}
+              >
+                ＋ הוסף סוג משמרת
+              </button>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                <button
+                  onClick={saveConfig}
+                  disabled={settingsSaving}
+                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
+                >
+                  {settingsSaving ? "שומר..." : "שמור"}
+                </button>
+                <button
+                  onClick={() => setSettingsOpen(false)}
+                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 9, color: GM, fontSize: 14, padding: 12, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  ביטול
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── NAVBAR ── */}
+        <header style={{
+          background: GC,
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: `1px solid ${GB}`,
+          borderRadius: 18,
+          padding: "14px 22px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
+        }}>
+          {/* Right: title + restaurant selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, display: "flex", alignItems: "center", gap: 8 }}>
+              📅 ניהול משמרות
+            </div>
+            {restaurants.length > 1 && (
+              <select
+                value={restaurantId}
+                onChange={e => setRestaurantId(e.target.value)}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "6px 12px", borderRadius: 9, fontFamily: "Heebo, sans-serif", fontSize: 13, cursor: "pointer", appearance: "none", WebkitAppearance: "none", minWidth: 150 }}
+              >
+                {restaurants.map(r => (
+                  <option key={r.id} value={r.id} style={{ background: "#1a1a2e" }}>{r.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Left: date nav + action buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Date nav */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(0,0,0,0.25)", border: `1px solid ${GB}`, borderRadius: 10, padding: "4px 6px" }}>
+              <button
+                onClick={() => setWeekOffset(w => w - 1)}
+                style={{ background: "none", border: "none", color: GM, cursor: "pointer", padding: "4px 8px", borderRadius: 7, display: "flex", alignItems: "center", transition: "0.15s", fontSize: 16 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+              >›</button>
+              <span style={{ fontSize: 14, fontWeight: 700, padding: "0 10px", whiteSpace: "nowrap" }}>{weekLabel(weekDates)}</span>
+              <button
+                onClick={() => setWeekOffset(w => w + 1)}
+                style={{ background: "none", border: "none", color: GM, cursor: "pointer", padding: "4px 8px", borderRadius: 7, display: "flex", alignItems: "center", transition: "0.15s", fontSize: 16 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+              >‹</button>
+            </div>
+
+            {isManager && (
+              <>
+                <button
+                  onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                >
+                  ⚙️ הגדרות
+                </button>
+                <button
+                  onClick={clearWeek}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                >
+                  🗑️ נקה שבוע
+                </button>
+                <button
+                  onClick={() => setSmsModal(true)}
+                  style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.35)", color: "#93C5FD", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                >
+                  📱 שלח SMS
+                </button>
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* ── TAB BAR ── */}
+        <div style={{
+          background: "rgba(0,0,0,0.18)",
+          border: `1px solid ${GB}`,
+          borderRadius: 14,
+          padding: 5,
+          display: "flex",
+          gap: 5,
+          alignSelf: "flex-start",
+          overflowX: "auto",
+        }}>
+          {tabBtn("schedule", "📅 שבועי")}
+          {tabBtn("myshifts", "👤 המשמרות שלי")}
+          {tabBtn("requests", (
+            <>
+              🔔 בקשות
+              {pendingCount > 0 && (
+                <span style={{ background: "rgba(239,68,68,0.2)", color: "#F87171", borderRadius: 99, fontSize: 10, fontWeight: 800, padding: "1px 6px" }}>
+                  {pendingCount}
+                </span>
+              )}
+            </>
+          ))}
+          {tabBtn("summary", "📊 סיכום שעות")}
+          {isManager && tabBtn("ops", "📱 תפעולי")}
+        </div>
+
+        {/* ── TAB PANEL ── */}
+        <div style={{
+          background: "rgba(255,255,255,0.025)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: `1px solid ${GB}`,
+          borderRadius: 22,
+          padding: 22,
+          boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+          minHeight: 300,
+        }}>
+          {activeTab === "schedule"  && <ScheduleTab />}
+          {activeTab === "myshifts"  && <MyShiftsTab />}
+          {activeTab === "requests"  && <RequestsTab />}
+          {activeTab === "summary"   && <SummaryTab />}
+          {activeTab === "ops"       && <OpsTab />}
+        </div>
+
+        {/* ── SMS Modal ── */}
+        {smsModal && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 28, width: 440, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>📱 שלח SMS משמרות</div>
+              <div style={{ fontSize: 13, color: GM, marginBottom: 20 }}>שבוע {weekLabel(weekDates)}</div>
+
+              <label style={{ fontSize: 13, color: GM, display: "block", marginBottom: 6 }}>שלח ל:</label>
+              <select
+                value={smsTarget}
+                onChange={e => setSmsTarget(e.target.value)}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 14, padding: "7px 10px", width: "100%", fontFamily: "inherit", outline: "none", marginBottom: 16, colorScheme: "dark" }}
+              >
+                <option value="all" style={{ background: "#1a1a2e" }}>כל העובדים עם משמרת השבוע</option>
+                {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}</option>)}
+              </select>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <label style={{ fontSize: 13, color: GM }}>פורמט קצר (ללא שעות)</label>
+                <div
+                  onClick={() => setSmsShort(v => !v)}
+                  style={{ width: 40, height: 22, borderRadius: 11, background: smsShort ? ACCENT : "rgba(255,255,255,0.15)", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}
+                >
+                  <div style={{ position: "absolute", top: 3, left: smsShort ? 20 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
                 </div>
               </div>
-            ))}
 
-            {/* Add new shift type */}
-            <button
-              onClick={() => {
-                const key = `CUSTOM_${Date.now()}`;
-                setEditCfg(prev => [...prev, { key, label: "משמרת חדשה", startTime: "08:00", endTime: "16:00", color: "#10b981", visible: true }]);
-              }}
-              style={{ width: "100%", background: "transparent", border: `1.5px dashed ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "9px", cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}
-            >
-              ＋ הוסף סוג משמרת
-            </button>
+              <label style={{ fontSize: 13, color: GM, display: "block", marginBottom: 6 }}>תצוגה מקדימה:</label>
+              {(() => {
+                const msg = buildPreview(smsTarget, smsShort);
+                const chars = msg.length;
+                const smsCount = chars <= 70 ? 1 : Math.ceil(chars / 67);
+                const countColor = smsCount === 1 ? "#34D399" : smsCount === 2 ? "#FB923C" : "#F87171";
+                return (
+                  <>
+                    <pre style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 9, padding: "10px 14px", fontSize: 13, color: "#fff", fontFamily: "inherit", whiteSpace: "pre-wrap", marginBottom: 6, lineHeight: 1.6 }}>
+                      {msg}
+                    </pre>
+                    <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                      <span style={{ fontSize: 11, color: GM }}>{chars} תווים</span>
+                      <span style={{ background: `${countColor}20`, color: countColor, borderRadius: 99, fontSize: 11, fontWeight: 700, padding: "2px 10px" }}>
+                        {smsCount} SMS
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
 
-            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-              <button
-                onClick={saveConfig}
-                disabled={settingsSaving}
-                style={{ flex: 1, background: T.gold, border: "none", borderRadius: T.rMd, color: "#1a1208", fontSize: T.fmd, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1 }}
-              >
-                {settingsSaving ? "שומר..." : "שמור"}
-              </button>
-              <button
-                onClick={() => setSettingsOpen(false)}
-                style={{ flex: 1, background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: 12, cursor: "pointer", fontFamily: "inherit" }}
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {!smsConfigured && (
+                <div style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 9, color: "#F87171", fontSize: 13, padding: "8px 12px", marginBottom: 14 }}>
+                  ⚠️ SMS לא מוגדר — נדרש INFORU_USERNAME ו-INFORU_API_TOKEN
+                </div>
+              )}
 
-      {/* Header */}
-      <div style={S.header}>
-        <h1 style={S.title}>📅 ניהול משמרות</h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {isManager && (
-            <>
-              <button
-                onClick={() => setSmsModal(true)}
-                style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
-              >
-                📱 שלח SMS
-              </button>
-              <button
-                onClick={clearWeek}
-                style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
-              >
-                🗑️ נקה שבוע
-              </button>
-              <button
-                onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
-                style={{ background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fsm, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
-              >
-                ⚙️ הגדרות
-              </button>
-            </>
-          )}
-          <div style={S.weekNav}>
-            <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w - 1)}>→</button>
-            <span style={S.weekLabel}>{weekLabel(weekDates)}</span>
-            <button style={S.weekNavBtn} onClick={() => setWeekOffset(w => w + 1)}>←</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Restaurant selector */}
-      {restaurants.length > 1 && (
-        <select
-          value={restaurantId}
-          onChange={e => setRestaurantId(e.target.value)}
-          style={S.restSelect}
-        >
-          {restaurants.map(r => (
-            <option key={r.id} value={r.id}>{r.name}</option>
-          ))}
-        </select>
-      )}
-
-      {/* Tab bar */}
-      <div style={S.tabBar}>
-        {tabBtn("schedule", "📅 שבועון")}
-        {tabBtn("myshifts", "👤 המשמרות שלי")}
-        {tabBtn("requests", (
-          <>
-            🔔 בקשות
-            {pendingCount > 0 && (
-              <span style={{ background: T.red, color: "#fff", borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "1px 6px", lineHeight: "16px" }}>
-                {pendingCount}
-              </span>
-            )}
-          </>
-        ))}
-        {tabBtn("summary", "📊 סיכום שעות")}
-        {isManager && tabBtn("ops", "📱 תפעולי")}
-      </div>
-
-      {/* Tab content */}
-      <div style={S.tabContent}>
-        {activeTab === "schedule" && <ScheduleTab />}
-        {activeTab === "myshifts" && <MyShiftsTab />}
-        {activeTab === "requests" && <RequestsTab />}
-        {activeTab === "summary" && <SummaryTab />}
-        {activeTab === "ops" && <OpsTab />}
-      </div>
-
-      {/* SMS Modal */}
-      {smsModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, padding: 28, width: 440, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-            <div style={{ fontSize: T.flg, fontWeight: 800, color: T.text, marginBottom: 4 }}>📱 שלח SMS משמרות</div>
-            <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 20 }}>שבוע {weekLabel(weekDates)}</div>
-
-            {/* Target selector */}
-            <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 6 }}>שלח ל:</label>
-            <select
-              value={smsTarget}
-              onChange={e => setSmsTarget(e.target.value)}
-              style={{ background: T.overlay ?? T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.text, fontSize: T.fmd, padding: "7px 10px", width: "100%", fontFamily: "inherit", outline: "none", marginBottom: 16 }}
-            >
-              <option value="all">כל העובדים עם משמרת השבוע</option>
-              {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-
-            {/* Short format toggle */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-              <label style={{ fontSize: T.fsm, color: T.muted }}>פורמט קצר (ללא שעות)</label>
-              <div
-                onClick={() => setSmsShort(v => !v)}
-                style={{ width: 40, height: 22, borderRadius: 11, background: smsShort ? T.gold : T.border, cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}
-              >
-                <div style={{ position: "absolute", top: 3, left: smsShort ? 20 : 3, width: 16, height: 16, borderRadius: "50%", background: smsShort ? "#1a1208" : T.surface, transition: "left 0.2s" }} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={sendSms}
+                  disabled={smsSending || !smsConfigured}
+                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: smsSending || !smsConfigured ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
+                >
+                  {smsSending ? "שולח..." : "📤 שלח"}
+                </button>
+                <button
+                  onClick={() => setSmsModal(false)}
+                  style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: GM, fontSize: 14, padding: 12, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  ביטול
+                </button>
               </div>
             </div>
-
-            {/* Preview */}
-            <label style={{ fontSize: T.fsm, color: T.muted, display: "block", marginBottom: 6 }}>תצוגה מקדימה:</label>
-            {(() => {
-              const msg = buildPreview(smsTarget, smsShort);
-              const chars = msg.length;
-              const smsCount = chars <= 70 ? 1 : Math.ceil(chars / 67);
-              const countColor = smsCount === 1 ? T.green : smsCount === 2 ? T.orange : T.red;
-              return (
-                <>
-                  <pre style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: T.rMd, padding: "10px 14px", fontSize: 13, color: T.text, fontFamily: "inherit", whiteSpace: "pre-wrap", marginBottom: 6, lineHeight: 1.6 }}>
-                    {msg}
-                  </pre>
-                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <span style={{ fontSize: T.fxs, color: T.muted }}>{chars} תווים</span>
-                    <span style={{ background: countColor + "20", color: countColor, borderRadius: T.rFull, fontSize: T.fxs, fontWeight: 700, padding: "2px 10px" }}>
-                      {smsCount} SMS
-                    </span>
-                  </div>
-                </>
-              );
-            })()}
-
-            {!smsConfigured && (
-              <div style={{ background: T.red + "18", border: `1px solid ${T.red}44`, borderRadius: T.rMd, color: T.red, fontSize: T.fsm, padding: "8px 12px", marginBottom: 14 }}>
-                ⚠️ SMS לא מוגדר — נדרש INFORU_USERNAME ו-INFORU_API_TOKEN
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={sendSms}
-                disabled={smsSending || !smsConfigured}
-                style={{ flex: 1, background: T.gold, border: "none", borderRadius: T.rMd, color: "#1a1208", fontSize: T.fmd, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: smsSending || !smsConfigured ? 0.6 : 1 }}
-              >
-                {smsSending ? "שולח..." : "📤 שלח"}
-              </button>
-              <button
-                onClick={() => setSmsModal(false)}
-                style={{ flex: 1, background: "transparent", border: `1px solid ${T.border}`, borderRadius: T.rMd, color: T.muted, fontSize: T.fmd, padding: 12, cursor: "pointer", fontFamily: "inherit" }}
-              >
-                ביטול
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
     </div>
     <AssistantWidget page="shifts" />
     </>
