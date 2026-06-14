@@ -19,6 +19,7 @@ export interface CustomRule {
   priority: number;
   stopAfterMinutes?: number;   // suppress once table.minutesSitting >= this value
   stopTrigger?: Condition;     // suppress once this condition evaluates to true
+  fireOnce?: boolean;          // fire at most once per table per sitting session
 }
 
 export interface TableInput {

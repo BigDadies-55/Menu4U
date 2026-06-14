@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { computeInsights, type TableInput, type CustomRule, type BuiltinRuleOverrides } from "@/lib/waiter-insights";
 
+async function ensureSuppressColumn() {
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "insightSuppressJson" TEXT DEFAULT '{}'`
+  );
+}
+
 async function checkAccess(userId: string, role: string, restaurantId: string): Promise<boolean> {
   if (role === "SUPER_ADMIN") return true;
   const access = await prisma.restaurantUser.findFirst({ where: { userId, restaurantId } });
@@ -38,6 +44,27 @@ async function getBuiltinOverrides(restaurantId: string): Promise<BuiltinRuleOve
   } catch { return {}; }
 }
 
+type SuppressEntry = { firedAt: string; minutesSittingAtFire: number };
+type SuppressMap = Record<string, SuppressEntry>; // key = "ruleId|tableNum"
+
+async function getSuppressMap(restaurantId: string): Promise<SuppressMap> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ insightSuppressJson: string | null }>>(
+      `SELECT "insightSuppressJson" FROM "Restaurant" WHERE id = $1`,
+      restaurantId
+    );
+    return JSON.parse(rows[0]?.insightSuppressJson ?? "{}");
+  } catch { return {}; }
+}
+
+async function saveSuppressMap(restaurantId: string, map: SuppressMap): Promise<void> {
+  await prisma.$executeRawUnsafe(
+    `UPDATE "Restaurant" SET "insightSuppressJson" = $1 WHERE id = $2`,
+    JSON.stringify(map),
+    restaurantId
+  );
+}
+
 // POST /api/admin/waiter-pos/insights
 // Body: { restaurantId, tables: TableInput[] }
 export async function POST(req: Request) {
@@ -53,10 +80,111 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [customRules, builtinOverrides] = await Promise.all([
+  await ensureSuppressColumn();
+
+  const [customRules, builtinOverrides, suppressMap] = await Promise.all([
     getCustomRules(restaurantId),
     getBuiltinOverrides(restaurantId),
+    getSuppressMap(restaurantId),
   ]);
-  const insights = computeInsights(tables ?? [], customRules, builtinOverrides);
-  return NextResponse.json({ insights });
+
+  // Build a lookup of tableNum -> minutesSitting for session reset detection
+  const tableMinutes: Record<string, number> = {};
+  for (const t of (tables ?? [])) {
+    tableMinutes[t.tableNum] = t.minutesSitting;
+  }
+
+  // Clean up stale suppressions where table was freed and re-occupied
+  // (current minutesSitting < minutesSittingAtFire => new sitting session)
+  let suppressChanged = false;
+  for (const key of Object.keys(suppressMap)) {
+    const [, tableNum] = key.split("|");
+    const entry = suppressMap[key];
+    const currentMinutes = tableMinutes[tableNum];
+    if (currentMinutes !== undefined && currentMinutes < entry.minutesSittingAtFire) {
+      delete suppressMap[key];
+      suppressChanged = true;
+    }
+  }
+
+  // Compute insights
+  const allInsights = computeInsights(tables ?? [], customRules, builtinOverrides);
+
+  // Identify fireOnce rules by id
+  const fireOnceRuleIds = new Set(
+    customRules.filter(r => r.fireOnce && r.enabled).map(r => r.id)
+  );
+
+  // Re-run custom rule matching to find ruleId->tableNum pairs for fired insights.
+  const firedFireOnce: Array<{ ruleId: string; tableNum: string; minutesSitting: number }> = [];
+
+  if (fireOnceRuleIds.size > 0) {
+    for (const table of (tables ?? [])) {
+      for (const rule of customRules.filter(r => r.fireOnce && r.enabled && r.conditions.length > 0)) {
+        // Check if this rule's insight is in allInsights for this table
+        const insight = allInsights.find(i => i.tableNum === table.tableNum);
+        if (!insight) continue;
+        // Check conditions match
+        const matches = rule.conditions.every(c => {
+          const actual = (table as unknown as Record<string, unknown>)[c.field] as string | number | null;
+          switch (c.operator) {
+            case "gt":  return Number(actual) >  Number(c.value);
+            case "lt":  return Number(actual) <  Number(c.value);
+            case "gte": return Number(actual) >= Number(c.value);
+            case "lte": return Number(actual) <= Number(c.value);
+            case "eq":  return String(actual ?? "") === String(c.value);
+            case "neq": return String(actual ?? "") !== String(c.value);
+            default: return false;
+          }
+        });
+        if (matches) {
+          // Check stop conditions
+          if (rule.stopAfterMinutes !== undefined && table.minutesSitting >= rule.stopAfterMinutes) continue;
+          if (rule.stopTrigger) {
+            const st = rule.stopTrigger;
+            const actual = (table as unknown as Record<string, unknown>)[st.field] as string | number | null;
+            let triggered = false;
+            switch (st.operator) {
+              case "gt":  triggered = Number(actual) >  Number(st.value); break;
+              case "lt":  triggered = Number(actual) <  Number(st.value); break;
+              case "gte": triggered = Number(actual) >= Number(st.value); break;
+              case "lte": triggered = Number(actual) <= Number(st.value); break;
+              case "eq":  triggered = String(actual ?? "") === String(st.value); break;
+              case "neq": triggered = String(actual ?? "") !== String(st.value); break;
+            }
+            if (triggered) continue;
+          }
+          firedFireOnce.push({ ruleId: rule.id, tableNum: table.tableNum, minutesSitting: table.minutesSitting });
+          break; // only first matching custom rule per table
+        }
+      }
+    }
+  }
+
+  // Build the set of tableNums to suppress based on fireOnce rules that already fired
+  const tablesToSuppress = new Set<string>();
+  for (const { ruleId, tableNum } of firedFireOnce) {
+    const key = `${ruleId}|${tableNum}`;
+    if (suppressMap[key]) {
+      tablesToSuppress.add(tableNum);
+    }
+  }
+
+  const filteredInsights = allInsights.filter(i => !tablesToSuppress.has(i.tableNum));
+
+  // Record newly fired fireOnce insights (not yet suppressed)
+  const now = new Date().toISOString();
+  for (const { ruleId, tableNum, minutesSitting } of firedFireOnce) {
+    const key = `${ruleId}|${tableNum}`;
+    if (!suppressMap[key]) {
+      suppressMap[key] = { firedAt: now, minutesSittingAtFire: minutesSitting };
+      suppressChanged = true;
+    }
+  }
+
+  if (suppressChanged) {
+    await saveSuppressMap(restaurantId, suppressMap);
+  }
+
+  return NextResponse.json({ insights: filteredInsights });
 }

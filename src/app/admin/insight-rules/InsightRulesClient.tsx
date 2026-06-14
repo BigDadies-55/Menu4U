@@ -199,7 +199,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   }
 
   function startEdit(rule: CustomRule) {
-    setForm({ label: rule.label, enabled: rule.enabled, conditions: rule.conditions, type: rule.type, text: rule.text, priority: rule.priority, stopAfterMinutes: rule.stopAfterMinutes, stopTrigger: rule.stopTrigger });
+    setForm({ label: rule.label, enabled: rule.enabled, conditions: rule.conditions, type: rule.type, text: rule.text, priority: rule.priority, stopAfterMinutes: rule.stopAfterMinutes, stopTrigger: rule.stopTrigger, fireOnce: rule.fireOnce });
     setEditId(rule.id);
   }
 
@@ -559,7 +559,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
             </div>
             <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
               placeholder="שולחן {tableNum} — ..."
-              style={{ ...INP, width: "100%", marginBottom: 20, boxSizing: "border-box" }} />
+              style={{ ...INP, width: "100%", marginBottom: 16, boxSizing: "border-box" }} />
 
             {/* stopAfterMinutes */}
             <div style={{ marginBottom: 16 }}>
@@ -614,6 +614,19 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
                 התובנה לא תופיע כאשר תנאי זה מתקיים (למשל: סטטוס שולחן = free)
               </div>
+            </div>
+
+            {/* fireOnce */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={form.fireOnce ?? false}
+                  onChange={e => setForm(f => ({ ...f, fireOnce: e.target.checked || undefined }))}
+                />
+                <span style={{ fontSize: 13, color: T.text }}>הצג פעם אחת בלבד לכל ישיבה</span>
+                <span style={{ fontSize: 11, color: T.muted }}>(מתאפס כשהשולחן מתפנה ולקוחות חדשים מגיעים)</span>
+              </label>
             </div>
 
             {/* Buttons */}
