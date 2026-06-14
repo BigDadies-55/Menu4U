@@ -97,9 +97,11 @@ export default function AdminShell({
         style={{
           marginRight: isWaiter ? 0 : "var(--sidebar-w, 52px)",
           color: adminContentTextColor,
+          paddingLeft: 24,
+          paddingRight: 8,
         }}
       >
-        <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
+        <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; padding-left: 12px !important; } }`}</style>
 
         {/* Top action bar — push bell */}
         <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", padding: "8px 18px 0", gap: 8 }}>
