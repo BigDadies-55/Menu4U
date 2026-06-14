@@ -1,6 +1,5 @@
 "use client";
 
-import { T } from "@/lib/ui";
 import { useState, useEffect } from "react";
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -36,42 +35,34 @@ type DashData = {
 };
 type Restaurant = { id: string; name: string };
 
-/* ─── Color palette ─────────────────────────────────────────── */
-const COLORS = {
-  pageBg:       T.surface,
-  cardBg:       T.panel,
-  cardBorder:   T.raised,
-  textPrimary:  T.text,
-  textSecondary:T.sub,
-  textMuted:    T.muted,
-  blue:         T.blue,
-  blueDark:     T.blue,
-  green:        T.green,
-  greenDark:    T.green,
-  yellow:       T.gold,
-  yellowDark:   T.gold,
-  red:          T.red,
-  redDark:      T.red,
-  orange:       T.orange,
-  purple:       T.purple,
-};
-
-const GRADIENTS = {
-  blue:   `linear-gradient(135deg,${COLORS.blueDark},${COLORS.blue})`,
-  green:  `linear-gradient(135deg,${COLORS.greenDark},${COLORS.green})`,
-  yellow: `linear-gradient(135deg,${COLORS.yellowDark},${COLORS.yellow})`,
-  red:    `linear-gradient(135deg,${COLORS.redDark},${COLORS.red})`,
+/* ─── Glass design tokens ───────────────────────────────────── */
+const G = {
+  card:       "rgba(255,255,255,0.08)",
+  cardHover:  "rgba(255,255,255,0.12)",
+  panel:      "rgba(255,255,255,0.05)",
+  border:     "rgba(255,255,255,0.15)",
+  border2:    "rgba(255,255,255,0.07)",
+  text:       "#FFFFFF",
+  muted:      "rgba(255,255,255,0.65)",
+  sub:        "rgba(255,255,255,0.85)",
+  red:        "#FF4D4D",
+  blue:       "#3B82F6",
+  green:      "#10B981",
+  cyan:       "#06B6D4",
+  amber:      "#F59E0B",
+  blur:       "blur(20px) saturate(160%)",
+  blurHeavy:  "blur(30px)",
 };
 
 /* ─── Status config ─────────────────────────────────────────── */
-const STATUS_CFG: Record<string, { label: string; color: string; badgeBg: string; badgeColor: string }> = {
-  PENDING:   { label: "ממתין",  color: COLORS.yellow, badgeBg: "rgba(255,193,7,.15)",   badgeColor: T.orange },
-  CONFIRMED: { label: "אושר",   color: COLORS.blue,   badgeBg: "rgba(13,110,253,.15)",  badgeColor: T.blue },
-  PREPARING: { label: "בהכנה",  color: COLORS.orange, badgeBg: "rgba(255,153,0,.15)",   badgeColor: T.orange },
-  READY:     { label: "מוכן",   color: T.green,     badgeBg: "rgba(16,185,129,.15)",  badgeColor: T.green },
-  DELIVERED: { label: "הוגש",   color: COLORS.purple, badgeBg: "rgba(99,102,241,.15)",  badgeColor: T.purple },
-  PAID:      { label: "שולם",   color: T.green,     badgeBg: "rgba(34,197,94,.15)",   badgeColor: T.green },
-  CANCELLED: { label: "בוטל",   color: COLORS.textMuted, badgeBg: "rgba(108,117,125,.15)", badgeColor: T.muted },
+const STATUS_CFG: Record<string, { label: string; badgeBg: string; badgeColor: string; dot: string }> = {
+  PENDING:   { label: "ממתין",  badgeBg: "rgba(245,158,11,.18)",  badgeColor: "#FCD34D", dot: "#F59E0B" },
+  CONFIRMED: { label: "אושר",   badgeBg: "rgba(59,130,246,.18)",  badgeColor: "#93C5FD", dot: G.blue },
+  PREPARING: { label: "בהכנה",  badgeBg: "rgba(249,115,22,.18)",  badgeColor: "#FCA5A5", dot: "#F97316" },
+  READY:     { label: "מוכן",   badgeBg: "rgba(16,185,129,.18)",  badgeColor: "#6EE7B7", dot: G.green },
+  DELIVERED: { label: "הוגש",   badgeBg: "rgba(167,139,250,.18)", badgeColor: "#C4B5FD", dot: "#8B5CF6" },
+  PAID:      { label: "שולם",   badgeBg: "rgba(16,185,129,.18)",  badgeColor: "#34D399", dot: G.green },
+  CANCELLED: { label: "בוטל",   badgeBg: "rgba(255,255,255,.08)", badgeColor: "rgba(255,255,255,0.4)", dot: "rgba(255,255,255,0.3)" },
 };
 
 /* ─── Helpers ────────────────────────────────────────────────── */
@@ -89,105 +80,169 @@ function minutesAgo(dateStr: string) {
   return `לפני ${mins} דק׳`;
 }
 
-/* ─── Card wrapper ───────────────────────────────────────────── */
-function DarkCard({ title, children, extra }: { title: string; children: React.ReactNode; extra?: React.ReactNode }) {
+/* ─── Glass Panel ────────────────────────────────────────────── */
+function GlassPanel({ title, icon, children, extra }: { title: string; icon?: React.ReactNode; children: React.ReactNode; extra?: React.ReactNode }) {
   return (
-    <div style={{ background: COLORS.cardBg, borderRadius: 12, border: `1px solid ${COLORS.cardBorder}`, overflow: "hidden" }}>
-      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${COLORS.cardBorder}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.textPrimary }}>{title}</div>
+    <div style={{
+      background: G.panel,
+      backdropFilter: G.blurHeavy,
+      WebkitBackdropFilter: G.blurHeavy,
+      border: `1px solid ${G.border}`,
+      borderRadius: 28,
+      padding: 25,
+      boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+    }}>
+      <div style={{
+        fontSize: 16, fontWeight: 700, marginBottom: 20,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        letterSpacing: "0.5px", color: G.text,
+      }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {icon && <span style={{ color: G.amber }}>{icon}</span>}
+          {title}
+        </span>
         {extra}
       </div>
-      <div style={{ padding: 20 }}>{children}</div>
+      {children}
     </div>
   );
 }
 
 /* ─── KPI Card ───────────────────────────────────────────────── */
-function KpiCardDark({
-  color, icon, num, label, trend,
-}: {
-  color: "blue" | "green" | "yellow" | "red";
-  icon: string;
-  num: string;
-  label: string;
-  trend: string;
-}) {
+type NeonColor = "red" | "blue" | "green" | "cyan";
+const NEON_COLORS: Record<NeonColor, { hex: string; glow: string; icon: string }> = {
+  red:  { hex: G.red,   glow: "rgba(255,77,77,0.25)",    icon: "👁" },
+  blue: { hex: G.blue,  glow: "rgba(59,130,246,0.25)",   icon: "🕐" },
+  green:{ hex: G.green, glow: "rgba(16,185,129,0.25)",   icon: "$" },
+  cyan: { hex: G.cyan,  glow: "rgba(6,182,212,0.25)",    icon: "🛒" },
+};
+
+function KpiCard({ color, label, value, lucideIcon }: { color: NeonColor; label: string; value: string; lucideIcon: React.ReactNode }) {
+  const c = NEON_COLORS[color];
+  const [hovered, setHovered] = useState(false);
   return (
-    <div style={{
-      background: GRADIENTS[color],
-      borderRadius: 12,
-      padding: "20px 22px 0",
-      position: "relative",
-      overflow: "hidden",
-      cursor: "pointer",
-      transition: "transform .15s, box-shadow .15s",
-    }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 24px rgba(0,0,0,.3)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = ""; }}
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? G.cardHover : G.card,
+        backdropFilter: G.blur,
+        WebkitBackdropFilter: G.blur,
+        border: `1px solid ${hovered ? c.hex : G.border}`,
+        borderRadius: 24,
+        padding: 22,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        transform: hovered ? "translateY(-4px)" : "translateY(0)",
+        boxShadow: hovered ? `0 0 25px ${c.glow}` : "none",
+        transition: "all 0.3s ease",
+        cursor: "default",
+      }}
     >
-      <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-60%)", fontSize: 52, opacity: 0.2 }}>{icon}</div>
-      <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num}</div>
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,.85)", marginTop: 4, fontWeight: 500 }}>{label}</div>
-      <div style={{ borderTop: "1px solid rgba(255,255,255,.25)", marginTop: 12, padding: "10px 0", fontSize: 12, color: "rgba(255,255,255,.8)", display: "flex", alignItems: "center", gap: 6 }}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        פרטים נוספים
-        <span style={{ marginRight: "auto", background: "rgba(255,255,255,.2)", padding: "2px 7px", borderRadius: 20, fontSize: 11 }}>{trend}</span>
+      <div>
+        <span style={{ fontSize: 14, color: G.muted, fontWeight: 500, display: "block", marginBottom: 6 }}>
+          {label}
+        </span>
+        <span style={{ fontSize: 32, fontWeight: 900, color: c.hex, lineHeight: 1 }}>
+          {value}
+        </span>
       </div>
+      <span style={{ color: c.hex, opacity: 0.9 }}>{lucideIcon}</span>
     </div>
   );
 }
+
+/* ─── SVG Icons ──────────────────────────────────────────────── */
+const EyeIcon = ({ color }: { color: string }) => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+const ClockIcon = ({ color }: { color: string }) => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+const DollarIcon = ({ color }: { color: string }) => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+  </svg>
+);
+const CartIcon = ({ color }: { color: string }) => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+  </svg>
+);
+const TrendIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+  </svg>
+);
+const PieIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+  </svg>
+);
+const StarIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </svg>
+);
+const HistoryIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+  </svg>
+);
 
 /* ─── Donut Chart ─────────────────────────────────────────────── */
 function DonutChart({ statusCounts }: { statusCounts: Record<string, number> }) {
   const statuses = ["PENDING", "CONFIRMED", "PREPARING", "READY", "DELIVERED", "PAID", "CANCELLED"];
   const total = statuses.reduce((s, k) => s + (statusCounts[k] ?? 0), 0);
-  const CIRC = 2 * Math.PI * 70; // ≈ 439.8
+  const R = 60; const CIRC = 2 * Math.PI * R;
 
   let offset = 0;
   const segments = statuses.map(k => {
     const count = statusCounts[k] ?? 0;
     const frac = total > 0 ? count / total : 0;
     const dash = frac * CIRC;
-    const gap = CIRC - dash;
-    const seg = { key: k, count, dash, gap, offset, color: STATUS_CFG[k]?.color ?? "#888" };
+    const gap  = CIRC - dash;
+    const seg  = { key: k, count, dash, gap, offset, color: STATUS_CFG[k]?.dot ?? "#888" };
     offset += dash;
     return seg;
   });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-      <svg viewBox="0 0 200 200" width={160} height={160}>
-        <circle cx="100" cy="100" r="70" fill="none" stroke={COLORS.cardBorder} strokeWidth="24" />
+      <svg viewBox="0 0 150 150" width={150} height={150}>
+        <circle cx="75" cy="75" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="12"/>
         {total === 0 ? (
-          <circle cx="100" cy="100" r="70" fill="none" stroke={COLORS.textMuted} strokeWidth="24" strokeDasharray={`${CIRC} 0`} transform="rotate(-90 100 100)" />
+          <circle cx="75" cy="75" r={R} fill="none" stroke={G.amber} strokeWidth="12"
+            strokeDasharray={`${CIRC} 0`} transform="rotate(-90 75 75)" />
         ) : (
           segments.map(seg => seg.count > 0 && (
-            <circle
-              key={seg.key}
-              cx="100" cy="100" r="70"
-              fill="none"
-              stroke={seg.color}
-              strokeWidth="24"
+            <circle key={seg.key} cx="75" cy="75" r={R} fill="none"
+              stroke={seg.color} strokeWidth="12" strokeLinecap="round"
               strokeDasharray={`${seg.dash} ${seg.gap}`}
               strokeDashoffset={-seg.offset}
-              transform="rotate(-90 100 100)"
-            />
+              transform="rotate(-90 75 75)" />
           ))
         )}
-        <text x="100" y="94" textAnchor="middle" fontSize="28" fontWeight="900" fill="#fff">{total}</text>
-        <text x="100" y="112" textAnchor="middle" fontSize="11" fill={COLORS.textMuted}>הזמנות היום</text>
+        <text x="75" y="82" fill="#fff" fontSize="26" fontWeight="900" textAnchor="middle" fontFamily="Heebo">
+          {total}
+        </text>
       </svg>
       <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 7 }}>
         {statuses.map(k => {
           const count = statusCounts[k] ?? 0;
-          if (count === 0) return null;
+          if (!count) return null;
+          const cfg = STATUS_CFG[k];
           return (
-            <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.textSecondary }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: STATUS_CFG[k]?.color ?? "#888", display: "inline-block", flexShrink: 0 }} />
-                {STATUS_CFG[k]?.label ?? k}
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: G.muted }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: cfg.dot, display: "inline-block", flexShrink: 0 }} />
+                {cfg.label}
               </span>
-              <span style={{ color: T.text, fontWeight: 700 }}>{count}</span>
+              <span style={{ color: G.text, fontWeight: 700 }}>{count}</span>
             </div>
           );
         })}
@@ -197,36 +252,28 @@ function DonutChart({ statusCounts }: { statusCounts: Record<string, number> }) 
 }
 
 /* ─── Revenue Chart ───────────────────────────────────────────── */
-function RevenueChartDark({ data, chartPeriod }: { data: DayPoint[]; chartPeriod: "7" | "30" }) {
+function RevenueChart({ data, chartPeriod }: { data: DayPoint[]; chartPeriod: "7" | "30" }) {
   const visible = chartPeriod === "7" ? data.slice(-7) : data;
   const maxRev = Math.max(...visible.map(d => d.revenue), 1);
   const maxOrd = Math.max(...visible.map(d => d.orders), 1);
-  const W = 600; const H = 180; const PAD_L = 40; const PAD_R = 8; const PAD_T = 20; const PAD_B = 20;
-  const chartW = W - PAD_L - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
+  const W = 700; const H = 220; const PL = 0; const PR = 10; const PT = 20; const PB = 30;
+  const cW = W - PL - PR; const cH = H - PT - PB;
 
   const [hovered, setHovered] = useState<number | null>(null);
 
   const pts = visible.map((d, i) => ({
-    x: visible.length < 2 ? PAD_L + chartW / 2 : PAD_L + (i / (visible.length - 1)) * chartW,
-    yRev: PAD_T + (1 - d.revenue / maxRev) * chartH,
-    yOrd: PAD_T + (1 - d.orders / maxOrd) * chartH,
+    x: visible.length < 2 ? PL + cW / 2 : PL + (i / (visible.length - 1)) * cW,
+    yRev: PT + (1 - d.revenue / maxRev) * cH,
+    yOrd: PT + (1 - d.orders / maxOrd) * cH,
     ...d,
   }));
 
-  const revLine = pts.map(p => `${p.x},${p.yRev}`).join(" ");
-  const ordLine = pts.map(p => `${p.x},${p.yOrd}`).join(" ");
-  const revArea = pts.length > 0
-    ? `M${pts[0].x},${PAD_T + chartH} ` + pts.map(p => `L${p.x},${p.yRev}`).join(" ") + ` L${pts[pts.length - 1].x},${PAD_T + chartH} Z`
+  const revLinePts = pts.map(p => `${p.x},${p.yRev}`).join(" ");
+  const ordLinePts = pts.map(p => `${p.x},${p.yOrd}`).join(" ");
+  const areaPath = pts.length > 0
+    ? `M${pts[0].x},${PT + cH} ` + pts.map(p => `L${p.x},${p.yRev}`).join(" ") + ` L${pts[pts.length - 1].x},${PT + cH} Z`
     : "";
 
-  // Grid
-  const gridLines = [0.25, 0.5, 0.75, 1].map(frac => ({
-    y: PAD_T + (1 - frac) * chartH,
-    label: fmtCurrency(Math.round(maxRev * frac)),
-  }));
-
-  // Day labels — show every nth
   const step = chartPeriod === "7" ? 1 : 5;
   const labelPts = pts.filter((_, i) => i % step === 0 || i === pts.length - 1);
 
@@ -234,69 +281,43 @@ function RevenueChartDark({ data, chartPeriod }: { data: DayPoint[]; chartPeriod
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block", overflow: "visible" }}>
         <defs>
-          <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={COLORS.blue} stopOpacity="0.4" />
-            <stop offset="100%" stopColor={COLORS.blue} stopOpacity="0" />
+          <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={G.blue} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={G.blue} stopOpacity="0.0" />
           </linearGradient>
         </defs>
-
-        {/* Grid lines */}
-        {gridLines.map((g, i) => (
-          <g key={i}>
-            <line x1={PAD_L} y1={g.y} x2={W - PAD_R} y2={g.y} stroke={COLORS.cardBorder} strokeWidth="1" />
-            <text x={PAD_L - 4} y={g.y + 4} fontSize="9" fill={COLORS.textMuted} textAnchor="end">{g.label}</text>
-          </g>
-        ))}
-
-        {/* Revenue area */}
-        <path d={revArea} fill="url(#blueGrad)" />
-        {/* Revenue line */}
-        <polyline points={revLine} fill="none" stroke={COLORS.blue} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        {/* Orders dashed line */}
-        <polyline points={ordLine} fill="none" stroke={COLORS.green} strokeWidth="2" strokeDasharray="5,3" strokeLinejoin="round" strokeLinecap="round" />
-
-        {/* Day labels */}
+        <path d={areaPath} fill="url(#revGrad)" />
+        <polyline points={revLinePts} fill="none" stroke={G.blue} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
+        <polyline points={ordLinePts} fill="none" stroke={G.green} strokeWidth="2.5" strokeDasharray="6,5" strokeLinejoin="round" strokeLinecap="round" />
         {labelPts.map((p, i) => (
-          <text key={i} x={p.x} y={H - 2} fontSize="10" fill={COLORS.textMuted} textAnchor="middle">
-            {shortDate(p.date)}
-          </text>
+          <text key={i} x={p.x} y={H - 4} fontSize="11" fill={G.muted} textAnchor="middle">{shortDate(p.date)}</text>
         ))}
-
-        {/* Dots + hover zones */}
         {pts.map((p, i) => (
           <g key={i}>
-            <circle cx={p.x} cy={p.yRev} r={hovered === i ? 5.5 : 3.5} fill={COLORS.blue} stroke={COLORS.pageBg} strokeWidth="2" />
-            <rect
-              x={p.x - 18} y={0} width={36} height={H}
-              fill="transparent"
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
+            <circle cx={p.x} cy={p.yRev} r={hovered === i ? 7 : 5} fill={G.blue} stroke="#fff" strokeWidth="2.5" />
+            <rect x={p.x - 22} y={0} width={44} height={H} fill="transparent"
+              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
               style={{ cursor: "crosshair" }}
             />
             {hovered === i && (
               <g>
-                <rect x={Math.min(p.x - 55, W - 125)} y={p.yRev - 52} width={120} height={46} rx={6} fill={T.surface} stroke={T.overlay} strokeWidth="1" />
-                <text x={Math.min(p.x - 55, W - 125) + 60} y={p.yRev - 34} textAnchor="middle" fill={COLORS.blue} fontSize="13" fontWeight="bold">
-                  {fmtCurrency(p.revenue)}
-                </text>
-                <text x={Math.min(p.x - 55, W - 125) + 60} y={p.yRev - 18} textAnchor="middle" fill={COLORS.textSecondary} fontSize="11">
-                  {shortDate(p.date)} · {p.orders} הזמנות
-                </text>
+                <rect x={Math.min(p.x - 60, W - 135)} y={p.yRev - 52} width={130} height={44} rx={8}
+                  fill="rgba(0,0,0,0.7)" stroke={G.border} strokeWidth="1" />
+                <text x={Math.min(p.x - 60, W - 135) + 65} y={p.yRev - 30} textAnchor="middle"
+                  fill={G.blue} fontSize="14" fontWeight="bold">{fmtCurrency(p.revenue)}</text>
+                <text x={Math.min(p.x - 60, W - 135) + 65} y={p.yRev - 14} textAnchor="middle"
+                  fill={G.muted} fontSize="11">{shortDate(p.date)} · {p.orders} הזמנות</text>
               </g>
             )}
           </g>
         ))}
       </svg>
-
-      {/* Legend */}
-      <div style={{ display: "flex", gap: 20, marginTop: 6, paddingRight: PAD_L }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: COLORS.textSecondary }}>
-          <div style={{ width: 14, height: 3, background: COLORS.blue, borderRadius: 2 }} />
-          הכנסות
+      <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: G.muted }}>
+          <div style={{ width: 18, height: 3, background: G.blue, borderRadius: 2 }} /> הכנסות
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: COLORS.textSecondary }}>
-          <div style={{ width: 14, height: 2, background: COLORS.green, borderRadius: 2, borderTop: `2px dashed ${COLORS.green}` }} />
-          הזמנות
+        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: G.muted }}>
+          <div style={{ width: 18, height: 2, borderTop: `2px dashed ${G.green}` }} /> הזמנות
         </div>
       </div>
     </div>
@@ -305,33 +326,49 @@ function RevenueChartDark({ data, chartPeriod }: { data: DayPoint[]; chartPeriod
 
 /* ─── Status Badge ────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CFG[status] ?? { label: status, badgeBg: "rgba(108,117,125,.15)", badgeColor: T.muted };
+  const cfg = STATUS_CFG[status] ?? { label: status, badgeBg: G.card, badgeColor: G.muted };
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.badgeBg, color: cfg.badgeColor }}>
+    <span style={{
+      display: "inline-flex", alignItems: "center",
+      padding: "5px 12px", borderRadius: 10,
+      fontSize: 13, fontWeight: 700,
+      background: cfg.badgeBg, color: cfg.badgeColor,
+      border: `1px solid ${cfg.badgeColor}44`,
+    }}>
       {cfg.label}
     </span>
   );
 }
 
-/* ─── Dark Skeleton ───────────────────────────────────────────── */
-function DarkSkeleton() {
+/* ─── Premium Table ───────────────────────────────────────────── */
+const thStyle: React.CSSProperties = {
+  padding: "12px 12px", color: G.muted, fontSize: 13, fontWeight: 700,
+  borderBottom: `1px solid ${G.border}`, textAlign: "right",
+};
+const tdStyle: React.CSSProperties = {
+  padding: "16px 12px", fontSize: 15, color: G.text,
+  borderBottom: `1px solid rgba(255,255,255,0.05)`,
+};
+
+/* ─── Skeleton ────────────────────────────────────────────────── */
+function GlassSkeleton() {
   return (
     <div style={{ padding: 0 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 22 }}>
+      <style>{`@keyframes shimmer{0%,100%{opacity:0.4}50%{opacity:0.7}}`}</style>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 25 }}>
         {[...Array(4)].map((_, i) => (
-          <div key={i} style={{ background: T.panel, borderRadius: 12, height: 110, animation: "pulse 1.5s ease-in-out infinite" }} />
+          <div key={i} style={{ background: G.card, borderRadius: 24, height: 100, animation: "shimmer 1.5s ease-in-out infinite" }} />
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 16, marginBottom: 22 }}>
-        <div style={{ background: T.panel, borderRadius: 12, height: 260, animation: "pulse 1.5s ease-in-out infinite" }} />
-        <div style={{ background: T.panel, borderRadius: 12, height: 260, animation: "pulse 1.5s ease-in-out infinite" }} />
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 25, marginBottom: 25 }}>
+        <div style={{ background: G.card, borderRadius: 28, height: 300, animation: "shimmer 1.5s ease-in-out infinite" }} />
+        <div style={{ background: G.card, borderRadius: 28, height: 300, animation: "shimmer 1.5s ease-in-out infinite" }} />
       </div>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
   );
 }
 
-/* ─── Main ───────────────────────────────────────────────────── */
+/* ─── Main Component ─────────────────────────────────────────── */
 export default function DashboardExtra({
   isSuperAdmin,
   restaurants,
@@ -339,9 +376,9 @@ export default function DashboardExtra({
   isSuperAdmin: boolean;
   restaurants: Restaurant[];
 }) {
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [data, setData]             = useState<DashData | null>(null);
-  const [loading, setLoading]       = useState(true);
+  const [selectedId,  setSelectedId]  = useState<string>("");
+  const [data,        setData]        = useState<DashData | null>(null);
+  const [loading,     setLoading]     = useState(true);
   const [chartPeriod, setChartPeriod] = useState<"7" | "30">("7");
 
   useEffect(() => {
@@ -353,37 +390,34 @@ export default function DashboardExtra({
       .catch(() => setLoading(false));
   }, [selectedId]);
 
-  if (loading) return <DarkSkeleton />;
-  if (!data) return null;
+  if (loading) return <GlassSkeleton />;
+  if (!data)   return null;
 
   const { kpis, topItems, revenueChart, expiringSubscriptions, recentOrders, statusCounts, weekStats, cancelledToday, restaurantStats } = data;
 
   const showFilter = isSuperAdmin || restaurants.length > 1;
-
-  // Cancellation rate
-  const totalToday = kpis.todayOrderCount + cancelledToday;
-  const cancelRate = totalToday > 0 ? ((cancelledToday / totalToday) * 100).toFixed(1) : "0.0";
-
-  // Completion rate today
-  const completedToday = (statusCounts["DELIVERED"] ?? 0) + (statusCounts["PAID"] ?? 0);
+  const totalToday    = kpis.todayOrderCount + cancelledToday;
+  const cancelRate    = totalToday > 0 ? ((cancelledToday / totalToday) * 100).toFixed(1) : "0.0";
+  const completedToday   = (statusCounts["DELIVERED"] ?? 0) + (statusCounts["PAID"] ?? 0);
   const nonCancelledToday = totalToday - cancelledToday;
-  const completionRate = nonCancelledToday > 0 ? Math.round((completedToday / nonCancelledToday) * 100) : 0;
-
-  // Top item badge colors by rank
-  const rankColors = [COLORS.blueDark, COLORS.greenDark, COLORS.yellowDark, COLORS.redDark, T.purple];
+  const completionRate    = nonCancelledToday > 0 ? Math.round((completedToday / nonCancelledToday) * 100) : 0;
 
   return (
-    <div style={{ direction: "rtl" }}>
+    <div style={{ direction: "rtl", fontFamily: "Heebo, sans-serif" }}>
 
       {/* ── Expiry warnings ── */}
       {expiringSubscriptions.length > 0 && (
-        <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
           {expiringSubscriptions.map(s => {
             const days = Math.ceil((new Date(s.subscriptionTo!).getTime() - Date.now()) / 86400000);
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 10, background: "rgba(230,119,0,.12)", border: "1px solid rgba(230,119,0,.3)" }}>
+              <div key={s.id} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 16px", borderRadius: 14,
+                background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)",
+              }}>
                 <span>⚠️</span>
-                <span style={{ fontSize: 13, color: COLORS.yellow }}>
+                <span style={{ fontSize: 13, color: G.amber }}>
                   המנוי של <strong>{s.name}</strong> יפוג בעוד {days} ימים ({new Date(s.subscriptionTo!).toLocaleDateString("he-IL")})
                 </span>
               </div>
@@ -392,74 +426,60 @@ export default function DashboardExtra({
         </div>
       )}
 
-      {/* ── Page header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.textPrimary }}>דשבורד</div>
-        <div style={{ fontSize: 12, color: COLORS.textMuted }}>
-          עדכון אחרון: עכשיו · <span style={{ color: COLORS.green }}>●</span> חי
+      {/* ── Header + filter ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: G.text }}>דשבורד</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {showFilter && (
+            <select
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value)}
+              style={{
+                background: G.card, backdropFilter: G.blur, WebkitBackdropFilter: G.blur,
+                border: `1px solid ${G.border}`, color: G.sub,
+                borderRadius: 12, padding: "6px 14px", fontSize: 13, outline: "none", cursor: "pointer",
+              }}
+            >
+              <option value="">כל המסעדות</option>
+              {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          )}
+          <div style={{ fontSize: 12, color: G.muted }}>
+            עדכון אחרון: עכשיו · <span style={{ color: G.green }}>●</span> חי
+          </div>
         </div>
       </div>
 
-      {/* ── Restaurant filter (dropdown) ── */}
-      {showFilter && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-          <span style={{ fontSize: 13, color: COLORS.textMuted, flexShrink: 0 }}>מסעדה:</span>
-          <select
-            value={selectedId}
-            onChange={e => setSelectedId(e.target.value)}
-            style={{
-              background: COLORS.cardBg,
-              border: `1px solid ${COLORS.cardBorder}`,
-              color: COLORS.textSecondary,
-              borderRadius: 8,
-              padding: "6px 12px",
-              fontSize: 13,
-              outline: "none",
-              cursor: "pointer",
-              minWidth: 180,
-            }}
-          >
-            <option value="">כולם</option>
-            {restaurants.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* ── KPI Cards (4) ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 22 }}>
-        <KpiCardDark color="blue" icon="🛒" num={String(kpis.todayOrderCount)} label="הזמנות היום" trend="בזמן אמת" />
-        <KpiCardDark color="green" icon="💰" num={fmtCurrency(kpis.todayRevenue)} label="הכנסות היום" trend="היום" />
-        <KpiCardDark color="yellow" icon="⏳" num={String(kpis.openOrders)} label="הזמנות פתוחות" trend="בזמן אמת" />
-        <KpiCardDark color="red" icon="👁️" num={String(kpis.menuViewsToday)} label="צפיות בתפריט היום" trend="היום" />
+      {/* ── KPI Cards ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 25 }}>
+        <KpiCard color="red"   label="צפיות בתפריט היום" value={String(kpis.menuViewsToday)}  lucideIcon={<EyeIcon    color={G.red}   />} />
+        <KpiCard color="blue"  label="הזמנות פתוחות"      value={String(kpis.openOrders)}      lucideIcon={<ClockIcon  color={G.blue}  />} />
+        <KpiCard color="green" label="הכנסות היום"         value={fmtCurrency(kpis.todayRevenue)} lucideIcon={<DollarIcon color={G.green} />} />
+        <KpiCard color="cyan"  label="הזמנות היום"         value={String(kpis.todayOrderCount)} lucideIcon={<CartIcon   color={G.cyan}  />} />
       </div>
 
       {/* ── Charts row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 16, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 25, marginBottom: 25 }}>
 
-        {/* Revenue chart */}
-        <DarkCard
-          title="📈 הכנסות לאורך זמן"
+        {/* Donut — right column (RTL first = visual right) */}
+        <GlassPanel title="סטטוס הזמנות" icon={<PieIcon color={G.amber} />}>
+          <DonutChart statusCounts={statusCounts} />
+        </GlassPanel>
+
+        {/* Revenue chart — left column (RTL second = visual left) */}
+        <GlassPanel
+          title={`הכנסות לאורך זמן`}
+          icon={<TrendIcon color={G.amber} />}
           extra={
             <div style={{ display: "flex", gap: 6 }}>
               {(["7", "30"] as const).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setChartPeriod(p)}
-                  style={{
-                    background: chartPeriod === p ? COLORS.blueDark : T.panel,
-                    color: chartPeriod === p ? "#fff" : COLORS.textSecondary,
-                    border: "none",
-                    borderRadius: 6,
-                    padding: "0 10px",
-                    height: 26,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    transition: "all .15s",
-                  }}
-                >
+                <button key={p} onClick={() => setChartPeriod(p)} style={{
+                  background: chartPeriod === p ? G.blue : "rgba(255,255,255,0.08)",
+                  color: chartPeriod === p ? "#fff" : G.muted,
+                  border: `1px solid ${chartPeriod === p ? G.blue : G.border}`,
+                  borderRadius: 8, padding: "3px 10px", fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", transition: "all .15s",
+                }}>
                   {p === "7" ? "7י" : "30י"}
                 </button>
               ))}
@@ -467,107 +487,94 @@ export default function DashboardExtra({
           }
         >
           {revenueChart.every(d => d.revenue === 0) ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 180, color: COLORS.textMuted, gap: 8 }}>
-              <span style={{ fontSize: 32 }}>📊</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 220, color: G.muted, gap: 8 }}>
+              <span style={{ fontSize: 36 }}>📊</span>
               <span style={{ fontSize: 13 }}>אין נתוני הזמנות עדיין</span>
             </div>
           ) : (
-            <RevenueChartDark data={revenueChart} chartPeriod={chartPeriod} />
+            <RevenueChart data={revenueChart} chartPeriod={chartPeriod} />
           )}
-        </DarkCard>
-
-        {/* Status donut */}
-        <DarkCard title="🍩 סטטוס הזמנות">
-          <DonutChart statusCounts={statusCounts} />
-        </DarkCard>
+        </GlassPanel>
       </div>
 
       {/* ── Tables row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 22 }}>
-
-        {/* Recent orders */}
-        <DarkCard title="🛒 הזמנות אחרונות" extra={<a href="/admin/orders" style={{ fontSize: 12, color: T.gold, textDecoration: "none" }}>הכל ←</a>}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr>
-                  {["#", "שולחן", "סכום", "סטטוס", "לפני"].map(h => (
-                    <th key={h} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".8px", color: COLORS.textMuted, padding: "8px 12px", textAlign: "right", borderBottom: `1px solid ${COLORS.cardBorder}` }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.slice(0, 5).map(o => (
-                  <tr key={o.id}
-                    onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,.03)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = ""; }}
-                  >
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, fontFamily: "monospace", color: COLORS.textMuted }}>#{o.id.slice(-4).toUpperCase()}</td>
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: T.sub }}>🪑 שולחן {o.tableNumber ?? "—"}</td>
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: COLORS.green, fontWeight: 600 }}>{fmtCurrency(o.totalAmount)}</td>
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}` }}><StatusBadge status={o.status} /></td>
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: COLORS.textMuted }}>{minutesAgo(o.createdAt)}</td>
-                  </tr>
-                ))}
-                {recentOrders.length === 0 && (
-                  <tr><td colSpan={5} style={{ padding: "24px 12px", textAlign: "center", color: COLORS.textMuted }}>אין הזמנות</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </DarkCard>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 25, marginBottom: 25 }}>
 
         {/* Top items */}
-        <DarkCard title="🏆 פריטים מובילים" extra={<span style={{ fontSize: 12, color: COLORS.textMuted }}>(30 יום)</span>}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr>
-                  {["פריט", "כמות", "הכנסה"].map(h => (
-                    <th key={h} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".8px", color: COLORS.textMuted, padding: "8px 12px", textAlign: "right", borderBottom: `1px solid ${COLORS.cardBorder}` }}>{h}</th>
-                  ))}
+        <GlassPanel title="פריטים מובילים" icon={<StarIcon color={G.amber} />}
+          extra={<span style={{ fontSize: 12, color: G.muted }}>(30 יום)</span>}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
+            <thead>
+              <tr>
+                {["פריט", "כמות", "הכנסה"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {topItems.length === 0 ? (
+                <tr><td colSpan={3} style={{ ...tdStyle, textAlign: "center", color: G.muted }}>אין נתונים</td></tr>
+              ) : topItems.map((item, i) => (
+                <tr key={i} style={{ transition: "background 0.15s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
+                  <td style={tdStyle}>{item.name}</td>
+                  <td style={tdStyle}>
+                    <span style={{ background: "rgba(255,255,255,0.1)", color: "#fff", padding: "3px 10px", borderRadius: 8, fontSize: 13, fontWeight: 700 }}>
+                      {item.quantity}
+                    </span>
+                  </td>
+                  <td style={{ ...tdStyle, color: G.green, fontWeight: 700 }}>{fmtCurrency(item.revenue)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {topItems.map((item, i) => (
-                  <tr key={i}
-                    onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,.03)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = ""; }}
-                  >
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: T.sub }}>{item.name}</td>
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}` }}>
-                      <span style={{ background: rankColors[i] ?? "#555", color: "#fff", padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>{item.quantity}</span>
-                    </td>
-                    <td style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.cardBorder}`, color: COLORS.green, fontWeight: 600 }}>{fmtCurrency(item.revenue)}</td>
-                  </tr>
-                ))}
-                {topItems.length === 0 && (
-                  <tr><td colSpan={3} style={{ padding: "24px 12px", textAlign: "center", color: COLORS.textMuted }}>אין נתונים</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </DarkCard>
+              ))}
+            </tbody>
+          </table>
+        </GlassPanel>
+
+        {/* Recent orders */}
+        <GlassPanel title="הזמנות אחרונות" icon={<HistoryIcon color={G.amber} />}
+          extra={<a href="/admin/orders" style={{ fontSize: 12, color: G.amber, textDecoration: "none" }}>הכל ←</a>}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
+            <thead>
+              <tr>
+                {["#", "שולחן", "סכום", "סטטוס", "לפני"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.length === 0 ? (
+                <tr><td colSpan={5} style={{ ...tdStyle, textAlign: "center", color: G.muted }}>אין הזמנות</td></tr>
+              ) : recentOrders.slice(0, 5).map(o => (
+                <tr key={o.id} style={{ transition: "background 0.15s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
+                  <td style={{ ...tdStyle, fontFamily: "monospace", color: G.muted }}>#{o.id.slice(-4).toUpperCase()}</td>
+                  <td style={tdStyle}>שולחן {o.tableNumber ?? "—"}</td>
+                  <td style={{ ...tdStyle, color: G.green, fontWeight: 700 }}>{fmtCurrency(o.totalAmount)}</td>
+                  <td style={tdStyle}><StatusBadge status={o.status} /></td>
+                  <td style={{ ...tdStyle, color: G.muted, fontSize: 13 }}>{minutesAgo(o.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </GlassPanel>
       </div>
 
       {/* ── Bottom row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 25 }}>
 
-        {/* Restaurant progress bars */}
-        <DarkCard title="📊 ביצועי מסעדות">
+        {/* Restaurant stats */}
+        <GlassPanel title="ביצועי מסעדות" icon="📊">
           {restaurantStats.length === 0 ? (
-            <div style={{ textAlign: "center", color: COLORS.textMuted, fontSize: 13, padding: "12px 0" }}>אין נתונים</div>
+            <div style={{ textAlign: "center", color: G.muted, fontSize: 13, padding: "12px 0" }}>אין נתונים</div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {restaurantStats.map((r, i) => {
-                const barColor = r.pct >= 70 ? COLORS.green : r.pct >= 50 ? COLORS.blue : r.pct >= 30 ? COLORS.yellow : COLORS.red;
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {restaurantStats.map(r => {
+                const barColor = r.pct >= 70 ? G.green : r.pct >= 50 ? G.blue : r.pct >= 30 ? G.amber : G.red;
                 return (
-                  <div key={r.id} style={{ marginBottom: i === restaurantStats.length - 1 ? 0 : undefined }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: COLORS.textSecondary, marginBottom: 5 }}>
+                  <div key={r.id}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: G.muted, marginBottom: 6 }}>
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>{r.name}</span>
                       <span style={{ color: barColor, fontWeight: 700 }}>{r.pct}%</span>
                     </div>
-                    <div style={{ height: 8, background: T.panel, borderRadius: 10, overflow: "hidden" }}>
+                    <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${r.pct}%`, background: barColor, borderRadius: 10, transition: "width .4s" }} />
                     </div>
                   </div>
@@ -575,51 +582,53 @@ export default function DashboardExtra({
               })}
             </div>
           )}
-        </DarkCard>
+        </GlassPanel>
 
         {/* Quick stats */}
-        <DarkCard title="⚡ נתונים מהירים">
+        <GlassPanel title="נתונים מהירים" icon="⚡">
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[
-              { icon: "📦", val: String(weekStats.orders), lbl: "הזמנות השבוע", iconBg: "rgba(51,154,240,.15)", trend: null },
-              { icon: "💳", val: fmtCurrency(weekStats.revenue), lbl: "הכנסות השבוע", iconBg: "rgba(81,207,102,.15)", trend: null },
-              { icon: "❌", val: `${cancelRate}%`, lbl: "שיעור ביטולים", iconBg: "rgba(255,107,107,.15)", trend: null },
-              { icon: "✅", val: `${completionRate}%`, lbl: "קצב ביצוע היום", iconBg: "rgba(201,168,76,.15)", trend: null },
+              { icon: "📦", val: String(weekStats.orders),    lbl: "הזמנות השבוע",    bg: "rgba(59,130,246,.15)" },
+              { icon: "💳", val: fmtCurrency(weekStats.revenue), lbl: "הכנסות השבוע",  bg: "rgba(16,185,129,.15)" },
+              { icon: "❌", val: `${cancelRate}%`,            lbl: "שיעור ביטולים",   bg: "rgba(255,77,77,.15)"  },
+              { icon: "✅", val: `${completionRate}%`,        lbl: "קצב ביצוע היום",  bg: "rgba(245,158,11,.15)" },
             ].map((item, i, arr) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < arr.length - 1 ? `1px solid ${COLORS.cardBorder}` : "none" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: item.iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{item.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.textPrimary }}>{item.val}</div>
-                  <div style={{ fontSize: 11, color: COLORS.textMuted }}>{item.lbl}</div>
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 14,
+                padding: "12px 0",
+                borderBottom: i < arr.length - 1 ? `1px solid ${G.border2}` : "none",
+              }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: G.text }}>{item.val}</div>
+                  <div style={{ fontSize: 12, color: G.muted }}>{item.lbl}</div>
                 </div>
               </div>
             ))}
           </div>
-        </DarkCard>
+        </GlassPanel>
 
         {/* Activity feed */}
-        <DarkCard title="🔔 פעילות אחרונה">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {recentOrders.slice(0, 5).map(o => {
-              const dot = STATUS_CFG[o.status]?.color ?? COLORS.textMuted;
+        <GlassPanel title="פעילות אחרונה" icon="🔔">
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {recentOrders.length === 0 ? (
+              <div style={{ textAlign: "center", color: G.muted, fontSize: 13 }}>אין פעילות</div>
+            ) : recentOrders.slice(0, 5).map(o => {
+              const dot = STATUS_CFG[o.status]?.dot ?? G.muted;
               return (
-                <div key={o.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: dot, marginTop: 5, flexShrink: 0 }} />
+                <div key={o.id} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: dot, marginTop: 5, flexShrink: 0, boxShadow: `0 0 6px ${dot}` }} />
                   <div>
-                    <div style={{ fontSize: 12, color: T.sub }}>
+                    <div style={{ fontSize: 13, color: G.sub, lineHeight: 1.4 }}>
                       הזמנה #{o.id.slice(-4).toUpperCase()} — שולחן {o.tableNumber ?? "—"} — {fmtCurrency(o.totalAmount)}
                     </div>
-                    <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 2 }}>{minutesAgo(o.createdAt)}</div>
+                    <div style={{ fontSize: 11, color: G.muted, marginTop: 3 }}>{minutesAgo(o.createdAt)}</div>
                   </div>
                 </div>
               );
             })}
-            {recentOrders.length === 0 && (
-              <div style={{ textAlign: "center", color: COLORS.textMuted, fontSize: 13 }}>אין פעילות</div>
-            )}
           </div>
-        </DarkCard>
-
+        </GlassPanel>
       </div>
     </div>
   );
