@@ -268,46 +268,45 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            {isSuperAdmin && (
-              <>
-                <button
-                  onClick={() => setRid(GLOBAL_ID)}
-                  style={{
-                    background: rid === GLOBAL_ID ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.07)",
-                    border: `1px solid ${rid === GLOBAL_ID ? "rgba(59,130,246,0.5)" : G_BORDER}`,
-                    borderRadius: 8, color: rid === GLOBAL_ID ? T.blue : G_MUTED,
-                    fontSize: 13, fontWeight: 600, padding: "7px 14px", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 6,
-                  }}
-                >
-                  <span>⊞</span> גלובלי — כל המסעדות
-                </button>
-                {isGlobal && (
-                  <span style={{
-                    background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.35)",
-                    borderRadius: 8, color: T.blue, fontSize: 12, fontWeight: 600,
-                    padding: "7px 14px", display: "flex", alignItems: "center", gap: 6,
-                  }}>
-                    <span>🌐</span> שינויים יחולו על כל המסעדות
-                  </span>
-                )}
-              </>
-            )}
-            {restaurants.length > 1 && !isGlobal && (
+            {/* Restaurant selector — always visible */}
+            {!isGlobal && (
               <select value={rid} onChange={e => setRid(e.target.value)} style={{ ...INP, width: "auto", minWidth: 160 }}>
                 {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             )}
+            {/* Global toggle for super-admin */}
+            {isSuperAdmin && (
+              <button
+                onClick={() => setRid(isGlobal ? (restaurants[0]?.id ?? "") : GLOBAL_ID)}
+                style={{
+                  background: isGlobal ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.07)",
+                  border: `1px solid ${isGlobal ? "rgba(59,130,246,0.5)" : G_BORDER}`,
+                  borderRadius: 8, color: isGlobal ? T.blue : G_MUTED,
+                  fontSize: 13, fontWeight: 600, padding: "7px 14px", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                <span>⊞</span> גלובלי — כל המסעדות
+              </button>
+            )}
+            {/* Info badge when in global mode */}
+            {isGlobal && (
+              <span style={{
+                background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)",
+                borderRadius: 8, color: T.blue, fontSize: 12, fontWeight: 500,
+                padding: "7px 12px", display: "flex", alignItems: "center", gap: 5,
+              }}>
+                🌐 שינויים יחולו על כל המסעדות
+              </span>
+            )}
             <button
               onClick={startNew}
-              disabled={isGlobal}
               style={{
-                background: isGlobal ? "rgba(255,255,255,0.06)" : "rgba(251,191,36,0.9)",
+                background: "rgba(251,191,36,0.9)",
                 border: "none", borderRadius: 8,
-                color: isGlobal ? G_MUTED : "#000",
-                fontSize: 13, fontWeight: 700, padding: "8px 18px", cursor: isGlobal ? "not-allowed" : "pointer",
+                color: "#000",
+                fontSize: 13, fontWeight: 700, padding: "8px 18px", cursor: "pointer",
                 display: "flex", alignItems: "center", gap: 6,
-                opacity: isGlobal ? 0.5 : 1,
               }}
             >
               + כלל חדש
