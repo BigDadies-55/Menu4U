@@ -1154,19 +1154,21 @@ export default function ShiftsClient({
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
                       <span style={{ fontSize: 11, color: GM }}>מ-</span>
                       <input
-                        type="time"
-                        lang="he"
+                        type="text"
                         value={cfg.startTime}
                         onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
-                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
+                        placeholder="HH:MM"
+                        maxLength={5}
+                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", width: 62, textAlign: "center" }}
                       />
                       <span style={{ fontSize: 11, color: GM }}>עד-</span>
                       <input
-                        type="time"
-                        lang="he"
+                        type="text"
                         value={cfg.endTime}
                         onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
-                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
+                        placeholder="HH:MM"
+                        maxLength={5}
+                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", width: 62, textAlign: "center" }}
                       />
                     </div>
 
