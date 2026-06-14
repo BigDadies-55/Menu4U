@@ -583,9 +583,9 @@
       btn.classList.add('open');
       const rect = btn.getBoundingClientRect();
       portal.style.display = 'block';
-      // position: right-align with button, below it
+      // align left edge of dropdown with left edge of button (opens rightward)
       const pw = portal.offsetWidth;
-      let left = rect.right - pw;
+      let left = rect.left;
       let top  = rect.bottom + 6;
       // keep inside viewport
       if (left < 8) left = 8;
