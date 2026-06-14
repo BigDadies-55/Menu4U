@@ -1442,12 +1442,20 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                             <span style={{ fontSize: 12, color: G_MUTED }}>[{sortedCategories.findIndex(c => c.id === expandedCat.id) + 1}]</span>
                             <span style={{ fontSize: 12, color: G_MUTED }}>{expandedCat.items.length} פריטים</span>
                           </div>
-                          <button onClick={() => setExpandedCats(new Set())}
-                            style={{ background: "none", border: "none", color: G_MUTED, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "4px 8px", borderRadius: 8 }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = G_TEXT; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = G_MUTED; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}>
-                            ✕
-                          </button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            {canEdit && (
+                              <button onClick={() => { setSelectedCategory(expandedCat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                                style={{ background: G_ACCENT_GRAD, border: "none", color: "#fff", cursor: "pointer", fontSize: 18, lineHeight: 1, width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(217,119,6,0.35)" }}>
+                                +
+                              </button>
+                            )}
+                            <button onClick={() => setExpandedCats(new Set())}
+                              style={{ background: "none", border: "none", color: G_MUTED, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "4px 8px", borderRadius: 8 }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = G_TEXT; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = G_MUTED; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}>
+                              ✕
+                            </button>
+                          </div>
                         </div>
                         {expandedCat.items.length === 0 ? (
                           <div style={{ padding: 24, textAlign: "center" }}>
@@ -1695,14 +1703,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: G_TEXT }}>
                 {editItem ? `ערוך פריט — ${editItem.name}` : `פריט חדש — ${selectedCategory?.name}`}
               </h2>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button type="submit" disabled={loading}
-                  style={{ background: G_ACCENT_GRAD, border: "none", color: "#fff", borderRadius: 10, padding: "7px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.6 : 1, boxShadow: "0 3px 10px rgba(217,119,6,0.3)" }}>
-                  {loading ? "שומר..." : editItem ? "שמור" : "הוסף פריט"}
-                </button>
-                <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`, color: G_MUTED, borderRadius: 10, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-              </div>
+              <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`, color: G_MUTED, borderRadius: 10, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
               {/* Name + Price in one row */}
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
