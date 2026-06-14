@@ -361,15 +361,15 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                       >
                         {/* ID */}
-                        <td style={{ padding: "4px 12px", fontSize: 12, color: L.muted, fontWeight: 500, whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "2px 12px", fontSize: 12, color: L.muted, fontWeight: 500, whiteSpace: "nowrap" }}>
                           {shortId(user.id)}
                         </td>
                         {/* Date */}
-                        <td style={{ padding: "4px 12px", fontSize: 12, color: L.muted, whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "2px 12px", fontSize: 12, color: L.muted, whiteSpace: "nowrap" }}>
                           {formatDate(user.createdAt)}
                         </td>
                         {/* User */}
-                        <td style={{ padding: "4px 12px" }}>
+                        <td style={{ padding: "2px 12px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#f0f2f5", border: `1px solid ${L.border2}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: L.muted, flexShrink: 0 }}>
                               {initials}
@@ -381,13 +381,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           </div>
                         </td>
                         {/* Role */}
-                        <td style={{ padding: "4px 12px" }}>
+                        <td style={{ padding: "2px 12px" }}>
                           <span style={{ ...ROLE_BADGE[user.role], borderRadius: T.rFull, padding: "2px 8px", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "inline-block" }}>
                             {ROLE_LABELS[user.role] ?? user.role}
                           </span>
                         </td>
                         {/* Restaurants */}
-                        <td style={{ padding: "4px 12px" }}>
+                        <td style={{ padding: "2px 12px" }}>
                           {user.restaurantUsers.length === 0 ? (
                             <span style={{ fontSize: 12, color: L.muted }}>ללא שיוך</span>
                           ) : (
@@ -401,15 +401,15 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           )}
                         </td>
                         {/* Phone */}
-                        <td style={{ padding: "4px 12px", fontSize: 12, color: L.muted, whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "2px 12px", fontSize: 12, color: L.muted, whiteSpace: "nowrap" }}>
                           {user.phone ?? "—"}
                         </td>
                         {/* Status */}
-                        <td style={{ padding: "4px 12px", fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "2px 12px", fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
                           {status.label}
                         </td>
                         {/* 3-dot menu */}
-                        <td style={{ padding: "4px 8px" }}>
+                        <td style={{ padding: "2px 8px" }}>
                           <button
                             onClick={e => {
                               const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
@@ -554,7 +554,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   {pendingInviteLink.link}
                 </div>
                 <button onClick={() => navigator.clipboard.writeText(pendingInviteLink!.link)}
-                  style={{ flexShrink: 0, background: "rgba(201,164,82,0.15)", border: "1px solid rgba(201,164,82,0.3)", color: T.gold, borderRadius: 8, padding: "4px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  style={{ flexShrink: 0, background: "rgba(201,164,82,0.15)", border: "1px solid rgba(201,164,82,0.3)", color: T.gold, borderRadius: 8, padding: "2px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   📋 העתק
                 </button>
               </div>
