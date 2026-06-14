@@ -45,6 +45,7 @@ export interface Insight {
   type: InsightType;
   text: string;
   priority: number;
+  ruleId?: string;  // set for custom rules; used for fireOnce suppression
 }
 
 // ── Built-in rule override (per restaurant, stored in DB) ────────────────────
@@ -303,7 +304,7 @@ export function computeInsights(
         // Check stop conditions
         if (rule.stopAfterMinutes !== undefined && table.minutesSitting >= rule.stopAfterMinutes) continue;
         if (rule.stopTrigger && evalCondition(table, rule.stopTrigger)) continue;
-        trySet({ tableNum: table.tableNum, type: rule.type, text: renderText(rule.text, table), priority: rule.priority });
+        trySet({ tableNum: table.tableNum, type: rule.type, text: renderText(rule.text, table), priority: rule.priority, ruleId: rule.id });
         break;
       }
     }
