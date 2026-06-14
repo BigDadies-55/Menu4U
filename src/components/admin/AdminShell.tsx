@@ -71,7 +71,9 @@ export default function AdminShell({
       style={{
         background: adminBgImage
           ? `url(${adminBgImage}) center/cover no-repeat fixed`
-          : adminBg,
+          : (adminBg === "var(--c-bg)" || adminBg === "var(--c-panel)")
+            ? `linear-gradient(rgba(0,0,0,0.58),rgba(0,0,0,0.58)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') center/cover no-repeat fixed`
+            : adminBg,
       }}
       dir="rtl"
     >
