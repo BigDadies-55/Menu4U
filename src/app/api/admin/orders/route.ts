@@ -190,6 +190,23 @@ export async function POST(req: Request) {
     }
   }
 
+  // Clear bill_requested / free override so table shows "occupied"
+  if (tableNumber) {
+    try {
+      const rows = await prisma.$queryRawUnsafe<Array<{ tableStatusOverridesJson: string | null }>>(
+        `SELECT "tableStatusOverridesJson" FROM "Restaurant" WHERE id = $1`, restaurantId
+      );
+      const overrides: Record<string, string> = JSON.parse(rows[0]?.tableStatusOverridesJson ?? "{}");
+      if (overrides[tableNumber] === "bill_requested" || overrides[tableNumber] === "free") {
+        delete overrides[tableNumber];
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Restaurant" SET "tableStatusOverridesJson" = $1 WHERE id = $2`,
+          JSON.stringify(overrides), restaurantId
+        );
+      }
+    } catch { /* ignore — non-critical */ }
+  }
+
   await logAudit({
     userId: session.user.id,
     userEmail: session.user.email,
