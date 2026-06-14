@@ -526,9 +526,9 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   return (
     <div dir="rtl" style={{
-      ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
+      ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { height: "calc(100vh - 64px)" }),
       fontFamily: "'Heebo', sans-serif",
-      overflowY: viewMode === "floor" ? "hidden" : "auto",
+      overflow: "hidden",
       display: "flex", flexDirection: "column",
       padding: "16px 20px 10px", gap: 10,
       background: `linear-gradient(rgba(12,12,18,0.78),rgba(12,12,18,0.78)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`,
@@ -732,7 +732,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
       {/* ══ GRID VIEW ══ */}
       {viewMode === "grid" && (
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, overflowY: "auto" }}>
           <div style={{
             display: "grid",
             gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 150 : 185}px, 1fr))`,
