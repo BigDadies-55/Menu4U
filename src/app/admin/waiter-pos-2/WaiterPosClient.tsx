@@ -508,13 +508,32 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   void tick;
 
+  // ── Glass design tokens ───────────────────────────────────────────
+  const G_CARD       = "rgba(255,255,255,0.08)";
+  const G_CARD_HOVER = "rgba(255,255,255,0.14)";
+  const G_BORDER_C   = "rgba(255,255,255,0.15)";
+  const G_NAV        = "rgba(255,255,255,0.05)";
+  const G_MUTED_C    = "rgba(255,255,255,0.6)";
+
+  // Status → table-number font color (replaces side-border-strip)
+  const STATUS_NUM_COLOR: Record<string, string> = {
+    occupied: "#EF4444", reserved: "#3B82F6", free: "#10B981",
+    inactive: "rgba(255,255,255,0.25)", bill_requested: "#F97316", paid: "#34d399",
+  };
+  const STATUS_NUM_GLOW: Record<string, string> = {
+    occupied: "rgba(239,68,68,0.45)", reserved: "rgba(59,130,246,0.45)", free: "rgba(16,185,129,0.45)",
+    inactive: "transparent", bill_requested: "rgba(249,115,22,0.45)", paid: "rgba(52,211,153,0.45)",
+  };
+
   return (
     <div dir="rtl" style={{
       ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
-      background: "#f0f2f5", color: "#111", fontFamily: "inherit",
+      fontFamily: "'Heebo', sans-serif",
       overflowY: viewMode === "floor" ? "hidden" : "auto",
-      paddingBottom: viewMode === "floor" ? 0 : 140,
       display: "flex", flexDirection: "column",
+      padding: "16px 20px 10px", gap: 10,
+      background: `linear-gradient(rgba(12,12,18,0.78),rgba(12,12,18,0.78)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`,
+      color: "#fff",
     }}>
 
       {/* ══ TOP BAR ══ */}
