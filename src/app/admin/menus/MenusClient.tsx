@@ -1496,7 +1496,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                                   <div style={{ flex: 1, display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center", padding: "0 12px" }}>
                                     {chips}
                                   </div>
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399", flexShrink: 0, minWidth: 50, textAlign: "left" }}>{formatPrice(item.price)}</span>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: G_ACCENT, flexShrink: 0, minWidth: 50, textAlign: "left" }}>{formatPrice(item.price)}</span>
                                   {canEdit && (
                                     <button
                                       onClick={e => {
