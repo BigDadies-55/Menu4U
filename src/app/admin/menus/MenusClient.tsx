@@ -1340,7 +1340,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 };
 
                 return (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
                     {sortedCategories.map((cat, idx) => {
                       const isActive = cat.id === expandedCatId;
                       return (
