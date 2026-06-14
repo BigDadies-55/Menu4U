@@ -905,9 +905,10 @@ export default function CashierClient({
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const waiterTable = searchParams.get("tableNumber");   // set when coming from waiter POS
-  const waiterMode  = searchParams.get("waiter") === "1";
-  const waiterRid   = searchParams.get("restaurantId");
+  const waiterTable  = searchParams.get("tableNumber");   // set when coming from waiter POS
+  const waiterMode   = searchParams.get("waiter") === "1";
+  const waiterRid    = searchParams.get("restaurantId");
+  const waiterReturn = searchParams.get("returnTo") ?? "/admin/waiter-pos";
 
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedTable, setSelectedTable] = useState<string | null>(waiterTable ?? null);
@@ -1017,7 +1018,7 @@ export default function CashierClient({
       await fetchOrders();
       // In waiter mode: go back to waiter POS after payment
       if (waiterMode) {
-        router.push("/admin/waiter-pos");
+        router.push(waiterReturn);
         return;
       }
     } catch (err) {
@@ -1078,7 +1079,7 @@ export default function CashierClient({
           orders={selectedOrders}
           restaurantId={restaurantId}
           onConfirm={() => closeTable(waiterTable)}
-          onClose={() => router.push("/admin/waiter-pos")}
+          onClose={() => router.push(waiterReturn)}
           onOrdersRefresh={fetchOrders}
         />
       </div>
