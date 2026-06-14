@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { T } from "@/lib/ui";
+import { T, btn, btnGhost, inp, card, badge, heading, label as labelStyle, backdrop, modal } from "@/lib/ui";
 import type { CustomRule, Condition, InsightType, BuiltinRuleOverride, BuiltinRuleOverrides } from "@/lib/waiter-insights";
 import { BUILTIN_RULE_META } from "@/lib/waiter-insights";
 
@@ -55,9 +55,17 @@ const EMPTY_RULE: Omit<CustomRule, "id"> = {
   priority: 60,
 };
 
-const INP: React.CSSProperties = {
-  background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7,
-  color: T.text, fontSize: 13, padding: "6px 10px", outline: "none", direction: "rtl",
+// ─── shared input style — design-system inp token + RTL ─────────────────────
+const INP: React.CSSProperties = { ...inp, direction: "rtl" };
+
+// ─── section label ───────────────────────────────────────────────────────────
+const sectionLabel: React.CSSProperties = {
+  fontSize:      T.fxs,
+  fontWeight:    800,
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  color:         T.muted,
+  marginBottom:  10,
 };
 
 const GLOBAL_ID = "GLOBAL";
@@ -139,7 +147,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
 
   async function toggleBuiltin(ruleId: string) {
     const cur = builtinOverrides[ruleId];
-    const nowEnabled = cur ? !cur.enabled : false; // default=true → first toggle disables
+    const nowEnabled = cur ? !cur.enabled : false;
     await patchBuiltin(ruleId, { ...cur, enabled: nowEnabled });
     showToast(nowEnabled ? "כלל הופעל" : "כלל הושבת");
   }
@@ -175,7 +183,6 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
     if (!editBuiltinId) return;
     const meta = BUILTIN_RULE_META.find(r => r.id === editBuiltinId)!;
     const cur = builtinOverrides[editBuiltinId];
-    // Detect if conditions changed from default
     const condsChanged = JSON.stringify(builtinForm.conditions) !== JSON.stringify(meta.defaultConditions);
     await patchBuiltin(editBuiltinId, {
       enabled:    cur?.enabled ?? true,
@@ -220,53 +227,52 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
 
   return (
     <div style={{ direction: "rtl", fontFamily: T.fontSans, color: T.text, maxWidth: 860, margin: "0 auto", padding: "32px 24px" }}>
+
       {toast && (
         <div style={{
           position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
-          background: T.green, color: "#fff", borderRadius: 10, padding: "10px 22px",
-          fontSize: 14, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 18px rgba(0,0,0,0.3)",
+          background: T.green, color: "#fff", borderRadius: T.rMd,
+          padding: "10px 22px", fontSize: T.fmd, fontWeight: 700,
+          zIndex: 9999, boxShadow: "0 4px 18px rgba(0,0,0,0.3)",
         }}>{toast}</div>
       )}
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 900 }}>כללי תובנות AI</div>
-          <div style={{ fontSize: 13, color: T.muted, marginTop: 3 }}>
+      {/* Page header */}
+      <div style={{
+        display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 32,
+        paddingBottom: 24, borderBottom: `1px solid ${T.border}`,
+      }}>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ ...heading, margin: 0 }}>כללי תובנות AI</h1>
+          <p style={{ fontSize: T.fmd, color: T.muted, marginTop: 4, marginBottom: 0 }}>
             הגדר כללים מותאמים שיופיעו בנוסף לכללים המובנים בכל מסך שירות
-          </div>
+          </p>
         </div>
-        <span style={{ flex: 1 }} />
-        <select value={rid} onChange={e => setRid(e.target.value)} style={{ ...INP, width: "auto" }}>
+        <select value={rid} onChange={e => setRid(e.target.value)} style={{ ...INP, width: "auto", minWidth: 170 }}>
           {isSuperAdmin && <option value={GLOBAL_ID}>🌐 גלובלי — כל המסעדות</option>}
           {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
-        <button onClick={startNew} disabled={isGlobal} style={{
-          background: T.gold, border: "none", borderRadius: 8,
-          color: "#fff", fontWeight: 700, fontSize: 13, padding: "8px 16px", cursor: "pointer",
-        }}>
+        <button onClick={startNew} disabled={isGlobal} style={{ ...btn("primary"), opacity: isGlobal ? 0.4 : 1 }}>
           + כלל חדש
         </button>
       </div>
 
-      {/* Built-in rules — now editable */}
+      {/* Built-in rules */}
       <section style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.muted }}>
-            כללים מובנים — ניתן להשבית, לשנות טקסט ועדיפות
-          </div>
+          <div style={sectionLabel}>כללים מובנים — ניתן להשבית, לשנות טקסט ועדיפות</div>
           {isGlobal && (
-            <span style={{ fontSize: 11, background: "#3b82f622", color: "#60a5fa", borderRadius: 6, padding: "2px 8px" }}>
+            <span style={{ ...badge(T.blue), fontSize: T.fxs }}>
               🌐 שינויים יחולו על כל המסעדות
             </span>
           )}
           {!isGlobal && (
-            <span style={{ fontSize: 11, color: T.muted }}>
+            <span style={{ fontSize: T.fxs, color: T.muted }}>
               שינויים למסעדה זו בלבד · override גלובלי מסומן 🌐
             </span>
           )}
         </div>
-        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ ...card(), overflow: "hidden" }}>
           {BUILTIN_RULE_META.map((r, i) => {
             const ov = builtinOverrides[r.id];
             const globalOv = !isGlobal ? globalOverrides[r.id] : undefined;
@@ -275,14 +281,16 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
             const hasGlobalOv = !isGlobal && globalOv && (globalOv.text || (globalOv.priority !== undefined && globalOv.priority !== r.priority) || globalOv.enabled === false);
             return (
               <div key={r.id} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
+                display: "flex", alignItems: "center", gap: 10,
+                padding: `${T.p3}px ${T.p4}px`,
                 borderBottom: i < BUILTIN_RULE_META.length - 1 ? `1px solid ${T.borderSub}` : "none",
                 opacity: isEnabled ? 1 : 0.45,
+                transition: "opacity 0.2s",
               }}>
-                {/* Toggle */}
                 <button onClick={() => toggleBuiltin(r.id)} title={isEnabled ? "השבת" : "הפעל"} style={{
-                  width: 32, height: 18, borderRadius: 9, border: "none", cursor: "pointer",
-                  background: isEnabled ? T.green : T.border, flexShrink: 0, position: "relative", transition: "background 0.2s",
+                  width: 32, height: 18, borderRadius: T.rFull, border: "none", cursor: "pointer",
+                  background: isEnabled ? T.green : T.border,
+                  flexShrink: 0, position: "relative", transition: "background 0.2s",
                 }}>
                   <span style={{
                     position: "absolute", top: 2, width: 14, height: 14, borderRadius: "50%",
@@ -290,37 +298,34 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                   }} />
                 </button>
 
-                <span style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLOR[r.type], minWidth: 56, flexShrink: 0 }}>
+                <span style={{ ...badge(TYPE_COLOR[r.type]), minWidth: 68, textAlign: "center", flexShrink: 0 }}>
                   {TYPE_LABEL[r.type]}
                 </span>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: T.text }}>
+                  <div style={{ fontSize: T.fmd, color: T.text }}>
                     {ov?.text
                       ? <><span style={{ color: T.gold }}>✎ </span>{ov.text}</>
                       : globalOv?.text
-                        ? <><span style={{ color: "#60a5fa" }}>🌐 </span>{globalOv.text}</>
+                        ? <><span style={{ color: T.blue }}>🌐 </span>{globalOv.text}</>
                         : r.defaultText
                     }
                   </div>
                   {hasGlobalOv && !ov && (
-                    <div style={{ fontSize: 11, color: "#60a5fa", marginTop: 2 }}>מושפע מהגדרה גלובלית</div>
+                    <div style={{ fontSize: T.fsm, color: T.blue, marginTop: 2 }}>מושפע מהגדרה גלובלית</div>
                   )}
                 </div>
 
-                <span style={{ fontSize: 11, color: hasOverride ? T.gold : hasGlobalOv ? "#60a5fa" : T.muted, flexShrink: 0 }}>
+                <span style={{ fontSize: T.fsm, color: hasOverride ? T.gold : hasGlobalOv ? T.blue : T.muted, flexShrink: 0 }}>
                   עדיפות {ov?.priority ?? globalOv?.priority ?? r.priority}{hasOverride ? " *" : hasGlobalOv && !ov ? " 🌐" : ""}
                 </span>
 
-                <button onClick={() => startEditBuiltin(r.id)} style={{
-                  background: T.panel, border: `1px solid ${T.border}`, borderRadius: 6,
-                  color: T.sub, fontSize: 12, padding: "3px 8px", cursor: "pointer", flexShrink: 0,
-                }}>
+                <button onClick={() => startEditBuiltin(r.id)} style={btnGhost(T.gold, "sm")}>
                   עריכה
                 </button>
                 {hasOverride && (
                   <button onClick={() => resetBuiltin(r.id)} title="אפס לברירת מחדל" style={{
-                    background: "transparent", border: "none", color: T.muted, fontSize: 13,
+                    background: "transparent", border: "none", color: T.muted, fontSize: T.fmd,
                     cursor: "pointer", padding: "3px 4px", flexShrink: 0,
                   }}>↺</button>
                 )}
@@ -334,33 +339,31 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
       {editBuiltinId && (() => {
         const meta = BUILTIN_RULE_META.find(r => r.id === editBuiltinId)!;
         return (
-          <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)" }}>
-            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 28, width: "min(580px,96vw)", maxHeight: "92vh", overflowY: "auto", direction: "rtl" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>עריכת כלל מובנה</div>
-              <div style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>{meta.defaultText}</div>
+          <div style={backdrop}>
+            <div style={{ ...modal(580), maxHeight: "92vh", overflowY: "auto" }}>
+              <h2 style={{ ...heading, fontSize: T.fxl, marginTop: 0, marginBottom: 4 }}>עריכת כלל מובנה</h2>
+              <p style={{ fontSize: T.fsm, color: T.muted, marginTop: 0, marginBottom: 20 }}>{meta.defaultText}</p>
 
-              {/* Type + Priority */}
               <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>סוג</div>
-                  <select value={builtinForm.type} onChange={e => setBuiltinForm(f => ({ ...f, type: e.target.value as InsightType }))} style={{ ...INP, width: "100%" }}>
+                  <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>סוג</label>
+                  <select value={builtinForm.type} onChange={e => setBuiltinForm(f => ({ ...f, type: e.target.value as InsightType }))} style={{ ...INP }}>
                     <option value="alert">🔴 התראה (alert)</option>
                     <option value="tip">🟡 עצה (tip)</option>
                     <option value="info">🔵 מידע (info)</option>
                   </select>
                 </div>
                 <div style={{ width: 110 }}>
-                  <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>עדיפות</div>
+                  <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>עדיפות</label>
                   <input type="number" min={1} max={200} value={builtinForm.priority}
                     onChange={e => setBuiltinForm(f => ({ ...f, priority: Number(e.target.value) }))}
-                    style={{ ...INP, width: "100%", boxSizing: "border-box" }} />
+                    style={{ ...INP, boxSizing: "border-box" }} />
                 </div>
               </div>
 
-              {/* Conditions */}
-              <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>
+              <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 8, fontWeight: 600 }}>
                 תנאים (כולם חייבים להתקיים)
-                <span style={{ color: T.muted, fontSize: 11, marginRight: 6 }}>· שינוי תנאים מחליף את הלוגיקה המובנית</span>
+                <span style={{ fontWeight: 400, fontSize: T.fxs, marginRight: 6 }}>· שינוי תנאים מחליף את הלוגיקה המובנית</span>
               </div>
               {builtinForm.conditions.map((c, i) => (
                 <div key={i} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
@@ -373,43 +376,31 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                   <input value={c.value} onChange={e => updateBuiltinCond(i, { value: e.target.value })}
                     style={{ ...INP, width: 80 }} placeholder="ערך" />
                   {builtinForm.conditions.length > 1 && (
-                    <button onClick={() => removeBuiltinCond(i)} style={{
-                      background: T.redSub, border: `1px solid ${T.red}44`, borderRadius: 6,
-                      color: T.red, fontSize: 13, padding: "5px 9px", cursor: "pointer",
-                    }}>✕</button>
+                    <button onClick={() => removeBuiltinCond(i)} style={btnGhost(T.red, "sm")}>✕</button>
                   )}
                 </div>
               ))}
-              <button onClick={addBuiltinCond} style={{
-                background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7,
-                color: T.sub, fontSize: 12, padding: "5px 12px", cursor: "pointer", marginBottom: 16,
-              }}>+ הוסף תנאי</button>
+              <button onClick={addBuiltinCond} style={{ ...btnGhost(T.muted, "sm"), marginBottom: 16 }}>
+                + הוסף תנאי
+              </button>
 
-              {/* Text */}
-              <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
-                טקסט מותאם <span style={{ color: T.muted }}>(ריק = ברירת מחדל)</span>
-              </div>
+              <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>
+                טקסט מותאם <span style={{ fontWeight: 400, fontSize: T.fxs }}>(ריק = ברירת מחדל)</span>
+              </label>
               <input value={builtinForm.text}
                 onChange={e => setBuiltinForm(f => ({ ...f, text: e.target.value }))}
                 placeholder={meta.defaultText}
-                style={{ ...INP, width: "100%", marginBottom: 8, boxSizing: "border-box" }} />
-              <div style={{ fontSize: 11, color: T.muted, marginBottom: 20 }}>
+                style={{ ...INP, marginBottom: 6, boxSizing: "border-box" }} />
+              <div style={{ fontSize: T.fxs, color: T.muted, marginBottom: 24 }}>
                 משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{orderStatus}"} {"{totalAmount}"} {"{minutesSinceLastOrder}"} {"{minutesSinceBillRequested}"}
               </div>
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button onClick={saveBuiltin} style={{
-                  background: T.gold, border: "none", borderRadius: 8,
-                  color: "#fff", fontWeight: 700, fontSize: 13, padding: "9px 20px", cursor: "pointer",
-                }}>שמור</button>
-                <button onClick={() => setEditBuiltinId(null)} style={{
-                  background: T.panel, border: `1px solid ${T.border}`, borderRadius: 8,
-                  color: T.sub, fontSize: 13, padding: "9px 16px", cursor: "pointer",
-                }}>ביטול</button>
-                <button onClick={() => { resetBuiltin(editBuiltinId); setEditBuiltinId(null); }} style={{
-                  background: "transparent", border: `1px solid ${T.border}`, borderRadius: 8,
-                  color: T.muted, fontSize: 13, padding: "9px 16px", cursor: "pointer", marginRight: "auto",
-                }}>↺ אפס לברירת מחדל</button>
+                <button onClick={saveBuiltin} style={btn("primary")}>שמור</button>
+                <button onClick={() => setEditBuiltinId(null)} style={btn("ghost")}>ביטול</button>
+                <button onClick={() => { resetBuiltin(editBuiltinId); setEditBuiltinId(null); }} style={{ ...btn("ghost"), marginRight: "auto" }}>
+                  ↺ אפס לברירת מחדל
+                </button>
               </div>
             </div>
           </div>
@@ -418,26 +409,32 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
 
       {/* Custom rules */}
       <section style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.muted, marginBottom: 10 }}>
-          כללים מותאמים אישית
-        </div>
+        <div style={sectionLabel}>כללים מותאמים אישית</div>
         {loading ? (
-          <div style={{ color: T.muted, fontSize: 13 }}>טוען...</div>
+          <div style={{ color: T.muted, fontSize: T.fmd, padding: `${T.p3}px 0` }}>טוען...</div>
         ) : rules.length === 0 ? (
-          <div style={{ background: T.surface, border: `1px dashed ${T.border}`, borderRadius: 12, padding: "24px 20px", textAlign: "center", color: T.muted, fontSize: 13 }}>
-            אין כללים מותאמים עדיין — לחץ "+ כלל חדש" להוסיף
+          <div style={{
+            ...card(),
+            border: `1px dashed ${T.border}`,
+            padding: `${T.p5}px ${T.p4}px`,
+            textAlign: "center",
+            color: T.muted,
+            fontSize: T.fmd,
+          }}>
+            אין כללים מותאמים עדיין — לחץ &quot;+ כלל חדש&quot; להוסיף
           </div>
         ) : (
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ ...card(), overflow: "hidden" }}>
             {rules.map((rule, i) => (
               <div key={rule.id} style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                display: "flex", alignItems: "center", gap: 12,
+                padding: `${T.p3}px ${T.p4}px`,
                 borderBottom: i < rules.length - 1 ? `1px solid ${T.borderSub}` : "none",
                 opacity: rule.enabled ? 1 : 0.5,
+                transition: "opacity 0.2s",
               }}>
-                {/* Toggle */}
-                <button onClick={() => toggleEnabled(rule)} style={{
-                  width: 32, height: 18, borderRadius: 9, border: "none", cursor: "pointer",
+                <button onClick={() => toggleEnabled(rule)} title={rule.enabled ? "השבת" : "הפעל"} style={{
+                  width: 32, height: 18, borderRadius: T.rFull, border: "none", cursor: "pointer",
                   background: rule.enabled ? T.green : T.border,
                   flexShrink: 0, position: "relative", transition: "background 0.2s",
                 }}>
@@ -448,13 +445,15 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                   }} />
                 </button>
 
-                <span style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLOR[rule.type], minWidth: 60 }}>
+                <span style={{ ...badge(TYPE_COLOR[rule.type]), minWidth: 68, textAlign: "center", flexShrink: 0 }}>
                   {TYPE_LABEL[rule.type]}
                 </span>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{rule.label || rule.text}</div>
-                  <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                  <div style={{ fontSize: T.fmd, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {rule.label || rule.text}
+                  </div>
+                  <div style={{ fontSize: T.fsm, color: T.muted, marginTop: 2 }}>
                     {rule.conditions.map((c, ci) => (
                       <span key={ci}>{ci > 0 ? " ו-" : ""}{c.field} {c.operator} {c.value}</span>
                     ))}
@@ -462,16 +461,10 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                   </div>
                 </div>
 
-                <button onClick={() => startEdit(rule)} style={{
-                  background: T.panel, border: `1px solid ${T.border}`, borderRadius: 6,
-                  color: T.sub, fontSize: 12, padding: "4px 10px", cursor: "pointer",
-                }}>
+                <button onClick={() => startEdit(rule)} style={btnGhost(T.gold, "sm")}>
                   עריכה
                 </button>
-                <button onClick={() => deleteRule(rule.id)} style={{
-                  background: T.redSub, border: `1px solid ${T.red}44`, borderRadius: 6,
-                  color: T.red, fontSize: 12, padding: "4px 10px", cursor: "pointer",
-                }}>
+                <button onClick={() => deleteRule(rule.id)} style={btnGhost(T.red, "sm")}>
                   מחיקה
                 </button>
               </div>
@@ -480,30 +473,22 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
         )}
       </section>
 
-      {/* Add / Edit form */}
+      {/* Add / Edit modal */}
       {editId !== null && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 500,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "rgba(0,0,0,0.6)",
-        }}>
-          <div style={{
-            background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16,
-            padding: 28, width: "min(560px,94vw)", maxHeight: "90vh", overflowY: "auto",
-            direction: "rtl",
-          }}>
-            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 20 }}>
+        <div style={backdrop}>
+          <div style={{ ...modal(560), maxHeight: "90vh", overflowY: "auto" }}>
+            <h2 style={{ ...heading, fontSize: T.fxl, marginTop: 0, marginBottom: 20 }}>
               {editId === "new" ? "כלל חדש" : "עריכת כלל"}
-            </div>
+            </h2>
 
-            {/* Label */}
-            <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4 }}>שם הכלל</label>
+            <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>שם הכלל</label>
             <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
               placeholder="תיאור קצר של הכלל..."
-              style={{ ...INP, width: "100%", marginBottom: 16, boxSizing: "border-box" }} />
+              style={{ ...INP, marginBottom: 16, boxSizing: "border-box" }} />
 
-            {/* Conditions */}
-            <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>תנאים (כולם חייבים להתקיים)</div>
+            <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 8, fontWeight: 600 }}>
+              תנאים (כולם חייבים להתקיים)
+            </div>
             {form.conditions.map((c, i) => (
               <div key={i} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
                 <select value={c.field} onChange={e => updateCond(i, { field: e.target.value as Condition["field"] })}
@@ -517,72 +502,60 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                 <input value={c.value} onChange={e => updateCond(i, { value: e.target.value })}
                   style={{ ...INP, width: 80 }} placeholder="ערך" />
                 {form.conditions.length > 1 && (
-                  <button onClick={() => removeCond(i)} style={{
-                    background: T.redSub, border: `1px solid ${T.red}44`, borderRadius: 6,
-                    color: T.red, fontSize: 13, padding: "5px 9px", cursor: "pointer", flexShrink: 0,
-                  }}>✕</button>
+                  <button onClick={() => removeCond(i)} style={btnGhost(T.red, "sm")}>✕</button>
                 )}
               </div>
             ))}
-            <button onClick={addCond} style={{
-              background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7,
-              color: T.sub, fontSize: 12, padding: "5px 12px", cursor: "pointer", marginBottom: 16,
-            }}>
+            <button onClick={addCond} style={{ ...btnGhost(T.muted, "sm"), marginBottom: 16 }}>
               + הוסף תנאי
             </button>
 
-            {/* Type + Priority row */}
             <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>סוג</div>
+                <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>סוג</label>
                 <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as InsightType }))}
-                  style={{ ...INP, width: "100%" }}>
+                  style={{ ...INP }}>
                   <option value="alert">🔴 התראה (alert)</option>
                   <option value="tip">🟡 עצה (tip)</option>
                   <option value="info">🔵 מידע (info)</option>
                 </select>
               </div>
-              <div style={{ width: 100 }}>
-                <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>עדיפות (1–100)</div>
+              <div style={{ width: 110 }}>
+                <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>עדיפות (1–100)</label>
                 <input type="number" min={1} max={100} value={form.priority}
                   onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))}
-                  style={{ ...INP, width: "100%", boxSizing: "border-box" }} />
+                  style={{ ...INP, boxSizing: "border-box" }} />
               </div>
             </div>
 
-            {/* Text template */}
-            <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
-              טקסט התובנה
-              <span style={{ color: T.muted, marginRight: 8, fontSize: 11 }}>
-                משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{seats}"} {"{orderStatus}"} {"{totalAmount}"} {"{orderCount}"} {"{minutesSinceLastOrder}"}
-              </span>
+            <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>טקסט התובנה</label>
+            <div style={{ fontSize: T.fxs, color: T.muted, marginBottom: 6 }}>
+              משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{seats}"} {"{orderStatus}"} {"{totalAmount}"} {"{orderCount}"} {"{minutesSinceLastOrder}"}
             </div>
             <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
               placeholder="שולחן {tableNum} — ..."
-              style={{ ...INP, width: "100%", marginBottom: 16, boxSizing: "border-box" }} />
+              style={{ ...INP, marginBottom: 16, boxSizing: "border-box" }} />
 
-            {/* stopAfterMinutes */}
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: T.muted, display: "block", marginBottom: 4 }}>
-                עצור לאחר X דקות ישיבה (אופציונלי)
+              <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>
+                עצור לאחר X דקות ישיבה <span style={{ fontWeight: 400, fontSize: T.fxs }}>(אופציונלי)</span>
               </label>
-              <input
-                type="number"
-                min={1}
-                placeholder="למשל 120"
-                value={form.stopAfterMinutes ?? ""}
-                onChange={e => setForm(f => ({ ...f, stopAfterMinutes: e.target.value ? Number(e.target.value) : undefined }))}
-                style={{ ...INP, width: 120 }}
-              />
-              <span style={{ fontSize: 11, color: T.muted, marginRight: 8 }}>
-                התובנה לא תופיע לאחר שהשולחן ישב יותר מ-X דקות
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input
+                  type="number" min={1} placeholder="למשל 120"
+                  value={form.stopAfterMinutes ?? ""}
+                  onChange={e => setForm(f => ({ ...f, stopAfterMinutes: e.target.value ? Number(e.target.value) : undefined }))}
+                  style={{ ...INP, width: 120 }}
+                />
+                <span style={{ fontSize: T.fsm, color: T.muted }}>
+                  התובנה לא תופיע לאחר שהשולחן ישב יותר מ-X דקות
+                </span>
+              </div>
             </div>
 
-            {/* stopTrigger */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 12, color: T.muted, display: "block", marginBottom: 4 }}>
-                עצור כאשר (אופציונלי)
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ ...labelStyle, display: "block", marginBottom: 4 }}>
+                עצור כאשר <span style={{ fontWeight: 400, fontSize: T.fxs }}>(אופציונלי)</span>
               </label>
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                 <select
@@ -605,43 +578,34 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                     <input
                       value={form.stopTrigger.value}
                       onChange={e => setForm(f => ({ ...f, stopTrigger: f.stopTrigger ? { ...f.stopTrigger, value: e.target.value } : undefined }))}
-                      style={{ ...INP, width: 90 }}
-                      placeholder="ערך"
+                      style={{ ...INP, width: 90 }} placeholder="ערך"
                     />
                   </>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
+              <div style={{ fontSize: T.fxs, color: T.muted, marginTop: 4 }}>
                 התובנה לא תופיע כאשר תנאי זה מתקיים (למשל: סטטוס שולחן = free)
               </div>
             </div>
 
-            {/* fireOnce */}
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 24 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
                   type="checkbox"
                   checked={form.fireOnce ?? false}
                   onChange={e => setForm(f => ({ ...f, fireOnce: e.target.checked || undefined }))}
                 />
-                <span style={{ fontSize: 13, color: T.text }}>הצג פעם אחת בלבד לכל ישיבה</span>
-                <span style={{ fontSize: 11, color: T.muted }}>(מתאפס כשהשולחן מתפנה ולקוחות חדשים מגיעים)</span>
+                <span style={{ fontSize: T.fmd, color: T.text }}>הצג פעם אחת בלבד לכל ישיבה</span>
+                <span style={{ fontSize: T.fsm, color: T.muted }}>(מתאפס כשהשולחן מתפנה ולקוחות חדשים מגיעים)</span>
               </label>
             </div>
 
-            {/* Buttons */}
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-start" }}>
-              <button onClick={save} disabled={saving || !form.text.trim()} style={{
-                background: T.gold, border: "none", borderRadius: 8,
-                color: "#fff", fontWeight: 700, fontSize: 13, padding: "9px 20px", cursor: "pointer",
-                opacity: saving || !form.text.trim() ? 0.5 : 1,
-              }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button onClick={save} disabled={saving || !form.text.trim()}
+                style={{ ...btn("primary"), opacity: saving || !form.text.trim() ? 0.5 : 1 }}>
                 {saving ? "שומר..." : "שמור"}
               </button>
-              <button onClick={() => setEditId(null)} style={{
-                background: T.panel, border: `1px solid ${T.border}`, borderRadius: 8,
-                color: T.sub, fontSize: 13, padding: "9px 16px", cursor: "pointer",
-              }}>
+              <button onClick={() => setEditId(null)} style={btn("ghost")}>
                 ביטול
               </button>
             </div>
