@@ -6,9 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/client";
 import { ROLE_LABELS } from "@/lib/permissions";
-import { Playfair_Display } from "next/font/google";
+import { Playfair_Display, Heebo } from "next/font/google";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["700", "900"], display: "swap" });
+const heebo = Heebo({ subsets: ["hebrew", "latin"], weight: ["400", "700", "900"], display: "swap" });
 
 /* ─── Width constants (52 for API compat — strip width) ─────── */
 export const SIDEBAR_W_COLLAPSED = 52;
@@ -220,6 +221,11 @@ function isLeafActive(leaf: NavLeaf, pathname: string): boolean {
 
 /* ─── Colors ─────────────────────────────────────────────────── */
 const GOLD_GRADIENT = `linear-gradient(110deg,#7a3c04 0%,${T.gold} 50%,#e8843a 100%)`;
+const GLASS_BG      = "rgba(255,255,255,0.08)";
+const GLASS_BORDER  = "rgba(255,255,255,0.18)";
+const GLASS_ACCENT  = "#D97706";
+const GLASS_ACCENT2 = "#f59e0b";
+const GLASS_GLOW    = "rgba(217,119,6,0.45)";
 
 /* ─── Main Sidebar ───────────────────────────────────────────── */
 export default function Sidebar({
@@ -382,13 +388,23 @@ export default function Sidebar({
     }
   }, [searchPanelOpen]);
 
-  /* ── Close all on Escape ── */
+  /* ── Close all on Escape / open search on Ctrl+K ── */
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setDrawerOpen(false);
         setFavPanelOpen(false);
         setSearchPanelOpen(false);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setDrawerOpen(false);
+        setFavPanelOpen(false);
+        if (searchBtnRef.current) {
+          const rect = searchBtnRef.current.getBoundingClientRect();
+          setSearchBtnFromBottom(window.innerHeight - rect.bottom);
+        }
+        setSearchPanelOpen(prev => !prev);
       }
     }
     document.addEventListener("keydown", onKey);
@@ -485,9 +501,10 @@ export default function Sidebar({
         .group-chevron { transition: transform 0.22s; display: inline-block; }
         .group-chevron.open { transform: rotate(180deg); }
         .strip-icon-link:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
-        .nav-item-link:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
+        .nav-item-link:hover { background: rgba(255,255,255,0.12) !important; color: #fff !important; }
         .fav-item-link:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
         .search-result-btn:hover { background: ${T.goldSub} !important; color: ${T.gold} !important; }
+        @keyframes glass-pulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.5); opacity:0.5; } }
       `}</style>
 
       {/* ── Overlay ── */}
@@ -620,11 +637,14 @@ export default function Sidebar({
 
       {/* ══════════ DRAWER ══════════ */}
       <div
+        className={heebo.className}
         style={{
           position: "fixed", top: 0, right: 52,
           width: drawerW, height: "100vh",
-          background: drawerBg,
-          borderLeft: `1px solid ${T.border}`,
+          background: useDefaultDrawer ? GLASS_BG : drawerBg,
+          backdropFilter: useDefaultDrawer ? "blur(28px) saturate(180%)" : undefined,
+          WebkitBackdropFilter: useDefaultDrawer ? "blur(28px) saturate(180%)" : undefined,
+          borderLeft: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
           zIndex: 510,
           display: "flex", flexDirection: "column",
           transform: drawerTranslate,
@@ -633,13 +653,13 @@ export default function Sidebar({
           direction: "rtl",
         }}
       >
-        {/* Gradient D — gold accent edge on the right (toward the strip) */}
+        {/* Accent edge on the right (toward the strip) */}
         {useDefaultDrawer && (
           <div style={{
             position: "absolute", top: 0, right: 0,
             width: 3, height: "100%",
-            background: "linear-gradient(180deg,#7a4e04 0%,#c9890a 50%,#e8b84b 100%)",
-            opacity: 0.7, zIndex: 6, pointerEvents: "none",
+            background: `linear-gradient(180deg,${GLASS_ACCENT} 0%,${GLASS_ACCENT2} 50%,${GLASS_ACCENT} 100%)`,
+            opacity: 0.8, zIndex: 6, pointerEvents: "none",
           }} />
         )}
 
@@ -662,8 +682,10 @@ export default function Sidebar({
           style={{
             position: "absolute", top: 10, left: 10,
             width: 30, height: 30, borderRadius: "50%",
-            border: `1px solid ${T.border}`, background: "transparent",
-            color: T.sub, fontSize: 15, cursor: "pointer",
+            border: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
+            background: useDefaultDrawer ? "rgba(255,255,255,0.08)" : "transparent",
+            color: useDefaultDrawer ? "rgba(255,255,255,0.6)" : T.sub,
+            fontSize: 15, cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s", zIndex: 5,
           }}
@@ -677,31 +699,43 @@ export default function Sidebar({
           style={{ flex: 1, overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column" }}
         >
           {/* Logo */}
-          <div style={{ padding: "16px 24px 14px", borderBottom: `1px solid ${T.border}`, marginBottom: 14 }}>
+          <div style={{
+            padding: "20px 24px 16px",
+            borderBottom: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
+            marginBottom: 14,
+          }}>
             {siteLogo ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={siteLogo} alt={siteName} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain" }} />
-                <div className={playfair.className} style={{
+                <div className={useDefaultDrawer ? heebo.className : playfair.className} style={{
                   fontSize: 26, fontWeight: 900, letterSpacing: 1,
-                  background: GOLD_GRADIENT,
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
+                  color: useDefaultDrawer ? "#fff" : undefined,
+                  background: useDefaultDrawer ? undefined : GOLD_GRADIENT,
+                  WebkitBackgroundClip: useDefaultDrawer ? undefined : "text",
+                  WebkitTextFillColor: useDefaultDrawer ? undefined : "transparent",
+                  backgroundClip: useDefaultDrawer ? undefined : "text",
                 }}>
                   {siteName}
                 </div>
               </div>
             ) : (
               <>
-                <div className={playfair.className} style={{
-                  fontSize: 32, fontWeight: 900, letterSpacing: 1,
-                  background: GOLD_GRADIENT,
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  backgroundClip: "text", lineHeight: 1.1,
-                }}>
-                  {siteName}
-                </div>
-                <div style={{ fontSize: 10, color: T.muted, marginTop: 4, letterSpacing: "2px", textTransform: "uppercase" as const }}>
+                {useDefaultDrawer ? (
+                  <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 1, lineHeight: 1.1, color: "#fff" }}>
+                    Menu<span style={{ color: GLASS_ACCENT }}>4U</span>
+                  </div>
+                ) : (
+                  <div className={playfair.className} style={{
+                    fontSize: 32, fontWeight: 900, letterSpacing: 1,
+                    background: GOLD_GRADIENT,
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    backgroundClip: "text", lineHeight: 1.1,
+                  }}>
+                    {siteName}
+                  </div>
+                )}
+                <div style={{ fontSize: 10, color: useDefaultDrawer ? "rgba(255,255,255,0.4)" : T.muted, marginTop: 4, letterSpacing: "3px", textTransform: "uppercase" as const }}>
                   Restaurant OS
                 </div>
               </>
@@ -715,16 +749,25 @@ export default function Sidebar({
               <Link
                 href={STANDALONE.href}
                 onClick={closeDrawer}
+                className="nav-item-link"
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  padding: "7px 0", fontSize: 13, fontWeight: 600,
-                  color: isLeafActive(STANDALONE, pathname) ? T.gold : T.sub,
+                  padding: "9px 10px", fontSize: 13, fontWeight: 600,
+                  color: isLeafActive(STANDALONE, pathname) ? "#fff" : "rgba(255,255,255,0.75)",
                   textDecoration: "none",
-                  borderBottom: `1px solid ${T.border}`,
+                  borderRadius: 12,
+                  borderBottom: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
                   marginBottom: 10,
+                  background: isLeafActive(STANDALONE, pathname)
+                    ? `linear-gradient(135deg, ${GLASS_ACCENT}, ${GLASS_ACCENT2})`
+                    : "transparent",
+                  boxShadow: isLeafActive(STANDALONE, pathname)
+                    ? `0 6px 16px ${GLASS_GLOW}`
+                    : "none",
+                  transition: "all 0.2s",
                 }}
               >
-                <span style={{ opacity: 0.7 }}><Ic.Dashboard /></span>
+                <span style={{ opacity: 0.85 }}><Ic.Dashboard /></span>
                 {STANDALONE.label}
               </Link>
             )}
@@ -746,27 +789,23 @@ export default function Sidebar({
                     onClick={() => toggleGroup(group.id)}
                     style={{
                       display: "flex", alignItems: "center", gap: 8,
-                      padding: "10px 0 9px",
-                      fontSize: 14, fontWeight: 800,
+                      padding: "10px 4px 9px",
+                      fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+                      textTransform: "uppercase" as const,
                       cursor: "pointer", background: "none", border: "none",
                       width: "100%", textAlign: "right" as const,
                       userSelect: "none" as const, position: "relative" as const,
+                      color: useDefaultDrawer ? "rgba(255,255,255,0.45)" : undefined,
                     }}
                   >
-                    {/* bullet dot */}
-                    <span style={{
-                      fontSize: 16, lineHeight: 1, flexShrink: 0,
-                      background: GOLD_GRADIENT,
-                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                    }}>•</span>
-
-                    {/* label with gradient */}
+                    {/* label */}
                     <span style={{
                       flexShrink: 0,
-                      background: GOLD_GRADIENT,
-                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
+                      color: useDefaultDrawer ? "rgba(255,255,255,0.45)" : undefined,
+                      background: useDefaultDrawer ? undefined : GOLD_GRADIENT,
+                      WebkitBackgroundClip: useDefaultDrawer ? undefined : "text",
+                      WebkitTextFillColor: useDefaultDrawer ? undefined : "transparent",
+                      backgroundClip: useDefaultDrawer ? undefined : "text",
                     }}>
                       {group.label}
                     </span>
@@ -774,14 +813,16 @@ export default function Sidebar({
                     {/* decorative line */}
                     <span style={{
                       flex: 1, height: 1, margin: "0 2px",
-                      background: `linear-gradient(to left, transparent 0%, ${T.gold}55 100%)`,
+                      background: useDefaultDrawer
+                        ? "rgba(255,255,255,0.12)"
+                        : `linear-gradient(to left, transparent 0%, ${T.gold}55 100%)`,
                       display: "block",
                     }} />
 
                     {/* chevron */}
                     <span
                       className={`group-chevron${isGroupOpen ? " open" : ""}`}
-                      style={{ fontSize: 9, color: T.gold, opacity: isGroupOpen ? 1 : 0.55, flexShrink: 0 }}
+                      style={{ fontSize: 9, color: useDefaultDrawer ? "rgba(255,255,255,0.4)" : T.gold, flexShrink: 0 }}
                     >
                       ▾
                     </span>
@@ -789,7 +830,8 @@ export default function Sidebar({
                     {/* bottom separator */}
                     <span style={{
                       position: "absolute", bottom: 0, right: 0, left: 0,
-                      height: 1, background: T.border,
+                      height: 1,
+                      background: useDefaultDrawer ? "rgba(255,255,255,0.08)" : T.border,
                       display: "block",
                     }} />
                   </button>
@@ -804,33 +846,46 @@ export default function Sidebar({
                           <div
                             key={item.href}
                             className="nav-item-row"
-                            style={{ display: "flex", alignItems: "center", position: "relative", margin: "1px 0" }}
+                            style={{ display: "flex", alignItems: "center", position: "relative", margin: "2px 0" }}
                           >
                             <Link
                               href={item.href}
                               onClick={closeDrawer}
-                              className="nav-item-link"
+                              className={active ? undefined : "nav-item-link"}
                               style={{
-                                display: "flex", alignItems: "center", gap: 9,
-                                padding: "7px 8px", fontSize: 13,
-                                color: active ? T.gold : T.sub,
-                                textDecoration: "none", borderRadius: 7,
-                                background: active ? T.goldSub : "transparent",
-                                fontWeight: active ? 600 : 400,
+                                display: "flex", alignItems: "center", gap: 12,
+                                padding: "10px 14px", fontSize: 13,
+                                color: active ? "#fff" : "rgba(255,255,255,0.8)",
+                                textDecoration: "none", borderRadius: 14,
+                                background: active
+                                  ? `linear-gradient(135deg, ${GLASS_ACCENT}, ${GLASS_ACCENT2})`
+                                  : "transparent",
+                                boxShadow: active ? `0 6px 16px ${GLASS_GLOW}` : "none",
+                                fontWeight: active ? 700 : 400,
                                 flex: 1,
-                                transition: "all 0.12s",
+                                transition: "all 0.2s",
                               }}
                             >
                               <span style={{
-                                width: 24, height: 24, borderRadius: 6,
-                                background: active ? T.goldSub : T.panel,
+                                width: 22, height: 22, borderRadius: 8,
+                                background: active ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 flexShrink: 0,
-                                color: active ? T.gold : T.muted,
+                                color: active ? "#fff" : "rgba(255,255,255,0.65)",
                               }}>
                                 <item.I />
                               </span>
                               {item.label}
+                              {/* Live dot for הזמנות */}
+                              {item.href === "/admin/orders" && (
+                                <span style={{
+                                  marginRight: "auto", width: 8, height: 8, borderRadius: "50%",
+                                  background: "#10b981", flexShrink: 0,
+                                  boxShadow: "0 0 8px #10b981",
+                                  animation: "glass-pulse 2s infinite",
+                                  display: "inline-block",
+                                }} />
+                              )}
                             </Link>
 
                             {/* Fav star button */}
@@ -841,7 +896,7 @@ export default function Sidebar({
                                 position: "absolute", left: 6,
                                 opacity: isFav ? 1 : 0,
                                 fontSize: 12,
-                                color: isFav ? accent : T.muted,
+                                color: isFav ? GLASS_ACCENT2 : "rgba(255,255,255,0.4)",
                                 cursor: "pointer",
                                 padding: "0 3px",
                                 background: "none", border: "none",
@@ -868,34 +923,52 @@ export default function Sidebar({
         <div style={{
           flexShrink: 0,
           padding: "14px 18px",
-          borderTop: `1px solid ${T.border}`,
-          display: "flex", alignItems: "center", gap: 10,
+          borderTop: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
+          display: "flex", flexDirection: "column", gap: 12,
           direction: "rtl",
+          background: useDefaultDrawer ? "rgba(255,255,255,0.04)" : "transparent",
         }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%",
-            background: `linear-gradient(135deg,${T.gold},#7a3c04)`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 800, color: "#fff", flexShrink: 0,
-          }}>
-            {userInitials}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
-              {user.name ?? user.email ?? ""}
+          {/* User info row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: useDefaultDrawer
+                ? "linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))"
+                : `linear-gradient(135deg,${T.gold},#7a3c04)`,
+              border: useDefaultDrawer ? `1px solid ${GLASS_BORDER}` : "none",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 13, fontWeight: 800,
+              color: useDefaultDrawer ? "#fff" : "#fff",
+              flexShrink: 0,
+            }}>
+              {userInitials}
             </div>
-            <div style={{ fontSize: 10, color: T.muted }}>
-              {ROLE_LABELS[user.role]}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: 13, fontWeight: 700,
+                color: useDefaultDrawer ? "#fff" : T.text,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
+              }}>
+                {user.name ?? user.email ?? ""}
+              </div>
+              <div style={{ fontSize: 10, color: useDefaultDrawer ? "rgba(255,255,255,0.5)" : T.muted }}>
+                {ROLE_LABELS[user.role]}
+              </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+
+          {/* Action buttons row */}
+          <div style={{ display: "flex", gap: 8 }}>
             {onChangePassword && (
               <button
                 onClick={() => { closeDrawer(); onChangePassword(); }}
                 style={{
-                  padding: "3px 8px", borderRadius: 20,
-                  border: `1px solid ${T.border}`, background: "transparent",
-                  color: T.sub, fontSize: 11, cursor: "pointer",
+                  flex: 1, padding: "8px 0", borderRadius: 12,
+                  border: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
+                  background: useDefaultDrawer ? "rgba(255,255,255,0.07)" : "transparent",
+                  color: useDefaultDrawer ? "rgba(255,255,255,0.8)" : T.sub,
+                  fontSize: 12, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                   transition: "all 0.15s",
                 }}
               >
@@ -905,13 +978,16 @@ export default function Sidebar({
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               style={{
-                padding: "3px 8px", borderRadius: 20,
-                border: `1px solid ${T.border}`, background: "transparent",
-                color: T.sub, fontSize: 11, cursor: "pointer",
+                flex: 1, padding: "8px 0", borderRadius: 12,
+                border: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
+                background: useDefaultDrawer ? "rgba(255,255,255,0.07)" : "transparent",
+                color: useDefaultDrawer ? "rgba(248,113,113,0.9)" : T.sub,
+                fontSize: 12, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                 transition: "all 0.15s",
               }}
             >
-              יציאה
+              ⬅ יציאה
             </button>
           </div>
         </div>
