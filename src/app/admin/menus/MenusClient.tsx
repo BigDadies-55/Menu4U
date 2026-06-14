@@ -466,11 +466,11 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
         </div>
       )}
 
-      <div className="flex gap-2 flex-wrap">
-        <button type="button" onClick={addGroup} style={{ border: "1px solid rgba(252,196,25,0.4)", background: "rgba(252,196,25,0.08)", color: T.gold, borderRadius: 12, padding: "6px 12px", fontSize: 13 }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" onClick={addGroup} style={{ flex: 1, border: "1px solid rgba(217,119,6,0.4)", background: "rgba(217,119,6,0.08)", color: "#F59E0B", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
           + קבוצת אפשרויות
         </button>
-        <button type="button" onClick={openTemplates} style={{ border: "1px solid rgba(51,154,240,0.4)", background: "rgba(51,154,240,0.08)", color: T.blue, borderRadius: 12, padding: "6px 12px", fontSize: 13 }}>
+        <button type="button" onClick={openTemplates} style={{ flex: 1, border: "1px solid rgba(217,119,6,0.4)", background: "rgba(217,119,6,0.08)", color: "#F59E0B", borderRadius: 12, padding: "8px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
           📋 העתק מתבנית
         </button>
         {dirty && (
@@ -1689,31 +1689,38 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
       {showItemForm && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: "rgba(15,14,22,0.97)", backdropFilter: "blur(30px)", WebkitBackdropFilter: "blur(30px)", border: `1px solid ${G_BORDER}`, borderRadius: 22, padding: 28 }}>
+            <form onSubmit={handleItemSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Modal header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: G_TEXT }}>
                 {editItem ? `ערוך פריט — ${editItem.name}` : `פריט חדש — ${selectedCategory?.name}`}
               </h2>
-              <button onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }}
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`, color: G_MUTED, borderRadius: 10, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button type="submit" disabled={loading}
+                  style={{ background: G_ACCENT_GRAD, border: "none", color: "#fff", borderRadius: 10, padding: "7px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.6 : 1, boxShadow: "0 3px 10px rgba(217,119,6,0.3)" }}>
+                  {loading ? "שומר..." : editItem ? "שמור" : "הוסף פריט"}
+                </button>
+                <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`, color: G_MUTED, borderRadius: 10, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+              </div>
             </div>
-            <form onSubmit={handleItemSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Name */}
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>שם הפריט *</label>
-                <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })} style={darkInput} />
+              {/* Name + Price in one row */}
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>שם הפריט *</label>
+                  <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })} style={darkInput} />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>מחיר (₪) *</label>
+                  <input required type="number" min="0" step="0.5" value={itemForm.price}
+                    onChange={e => setItemForm({ ...itemForm, price: e.target.value })} style={darkInput} dir="ltr" />
+                </div>
               </div>
               {/* Description */}
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>תיאור</label>
                 <textarea value={itemForm.description} onChange={e => setItemForm({ ...itemForm, description: e.target.value })}
                   rows={2} style={{ ...darkInput, resize: "vertical" }} />
-              </div>
-              {/* Price */}
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>מחיר (₪) *</label>
-                <input required type="number" min="0" step="0.5" value={itemForm.price}
-                  onChange={e => setItemForm({ ...itemForm, price: e.target.value })} style={darkInput} dir="ltr" />
               </div>
               {/* Image */}
               <ImageUpload label="תמונת פריט" value={itemForm.image} onChange={url => setItemForm({ ...itemForm, image: url })} />
