@@ -6,7 +6,7 @@ import { BUILTIN_RULE_META } from "@/lib/waiter-insights";
 
 // ─── design tokens (glass) ───────────────────────────────────────────────────
 const BG_PAGE    = `linear-gradient(rgba(8,8,20,0.82),rgba(8,8,20,0.82)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`;
-const G_ROW      = "rgba(255,255,255,0.12)";
+const G_ROW      = "rgba(255,255,255,0.18)";
 const G_BORDER   = "rgba(255,255,255,0.10)";
 const G_BORDER_B = "rgba(255,255,255,0.18)";
 const G_MUTED    = "rgba(255,255,255,0.45)";
@@ -337,7 +337,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                 <div key={r.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "13px 18px",
-                  background: i % 2 === 0 ? G_ROW : "transparent",
+                  background: G_ROW,
                   borderBottom: i < BUILTIN_RULE_META.length - 1 ? `1px solid ${G_BORDER}` : "none",
                   opacity: isEnabled ? 1 : 0.4,
                   transition: "opacity 0.2s",
@@ -386,7 +386,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                 <div key={rule.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "13px 18px",
-                  background: i % 2 === 0 ? G_ROW : "transparent",
+                  background: G_ROW,
                   borderBottom: i < rules.length - 1 ? `1px solid ${G_BORDER}` : "none",
                   opacity: rule.enabled ? 1 : 0.4,
                   transition: "opacity 0.2s",
