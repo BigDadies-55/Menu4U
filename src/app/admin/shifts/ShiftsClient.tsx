@@ -1128,68 +1128,67 @@ export default function ShiftsClient({
         {/* Settings modal */}
         {settingsOpen && (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 26, width: 480, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 20 }}>⚙️ הגדרות סוגי משמרת</div>
+            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: "18px 20px", width: 520, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 12 }}>⚙️ הגדרות סוגי משמרת</div>
 
               {editCfg.map((cfg, idx) => (
-                <div key={cfg.key} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div key={cfg.key} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
+                  {/* Single row: switch + label + times + colors + remove */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {/* Switch */}
                     <div
                       onClick={() => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, visible: !c.visible } : c))}
-                      style={{ position: "relative", width: 40, height: 22, borderRadius: 11, background: cfg.visible ? cfg.color : "rgba(255,255,255,0.15)", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
+                      style={{ position: "relative", width: 34, height: 19, borderRadius: 10, background: cfg.visible ? cfg.color : "rgba(255,255,255,0.15)", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
                     >
-                      <div style={{ position: "absolute", top: 3, right: cfg.visible ? 3 : undefined, left: cfg.visible ? undefined : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transition: "all 0.2s" }} />
+                      <div style={{ position: "absolute", top: 2, right: cfg.visible ? 2 : undefined, left: cfg.visible ? undefined : 2, width: 15, height: 15, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transition: "all 0.2s" }} />
                     </div>
 
                     {/* Label */}
                     <input
                       value={cfg.label}
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 700, padding: "4px 8px", width: 80, fontFamily: "inherit", outline: "none" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 70, fontFamily: "inherit", outline: "none" }}
                       placeholder="שם"
                     />
 
                     {/* Times */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
-                      <span style={{ fontSize: 11, color: GM }}>מ-</span>
-                      <input
-                        type="text"
-                        value={cfg.startTime}
-                        onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
-                        placeholder="HH:MM"
-                        maxLength={5}
-                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", width: 62, textAlign: "center" }}
-                      />
-                      <span style={{ fontSize: 11, color: GM }}>עד-</span>
-                      <input
-                        type="text"
-                        value={cfg.endTime}
-                        onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
-                        placeholder="HH:MM"
-                        maxLength={5}
-                        style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", width: 62, textAlign: "center" }}
-                      />
+                    <span style={{ fontSize: 11, color: GM }}>מ-</span>
+                    <input
+                      type="text"
+                      value={cfg.startTime}
+                      onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
+                      placeholder="HH:MM"
+                      maxLength={5}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
+                    />
+                    <span style={{ fontSize: 11, color: GM }}>עד-</span>
+                    <input
+                      type="text"
+                      value={cfg.endTime}
+                      onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
+                      placeholder="HH:MM"
+                      maxLength={5}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
+                    />
+
+                    {/* Color dots */}
+                    <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "center" }}>
+                      {PRESET_COLORS.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setEditCfg(prev => prev.map((cf, i) => i === idx ? { ...cf, color: c } : cf))}
+                          style={{ width: 16, height: 16, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box", flexShrink: 0 }}
+                          title={c}
+                        />
+                      ))}
                     </div>
 
                     {/* Remove */}
                     <button
                       onClick={() => setEditCfg(prev => prev.filter((_, i) => i !== idx))}
-                      style={{ background: "transparent", border: "none", color: "#F87171", fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0 }}
+                      style={{ background: "transparent", border: "none", color: "#F87171", fontSize: 14, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0 }}
                       title="הסר"
                     >✕</button>
-                  </div>
-
-                  {/* Color dots */}
-                  <div style={{ display: "flex", gap: 6, marginTop: 10, paddingRight: 50 }}>
-                    {PRESET_COLORS.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setEditCfg(prev => prev.map((cf, i) => i === idx ? { ...cf, color: c } : cf))}
-                        style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: cfg.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", outline: cfg.color === c ? `2px solid ${c}` : "none", boxSizing: "border-box" }}
-                        title={c}
-                      />
-                    ))}
                   </div>
                 </div>
               ))}
@@ -1200,22 +1199,22 @@ export default function ShiftsClient({
                   const key = `CUSTOM_${Date.now()}`;
                   setEditCfg(prev => [...prev, { key, label: "משמרת חדשה", startTime: "08:00", endTime: "16:00", color: "#10b981", visible: true }]);
                 }}
-                style={{ width: "100%", background: "transparent", border: `1.5px dashed ${GB}`, borderRadius: 9, color: GM, fontSize: 13, padding: "9px", cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}
+                style={{ width: "100%", background: "transparent", border: `1.5px dashed ${GB}`, borderRadius: 9, color: GM, fontSize: 13, padding: "7px", cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}
               >
                 ＋ הוסף סוג משמרת
               </button>
 
-              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                 <button
                   onClick={saveConfig}
                   disabled={settingsSaving}
-                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
+                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 10, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
                 >
                   {settingsSaving ? "שומר..." : "שמור"}
                 </button>
                 <button
                   onClick={() => setSettingsOpen(false)}
-                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 9, color: GM, fontSize: 14, padding: 12, cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 9, color: GM, fontSize: 14, padding: 10, cursor: "pointer", fontFamily: "inherit" }}
                 >
                   ביטול
                 </button>
