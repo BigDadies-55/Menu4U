@@ -476,6 +476,33 @@ export default function ShiftsClient({
     ));
   }
 
+  async function clearUserWeek(userId: string, userName: string) {
+    const userWeekShifts = shifts.filter(s => {
+      const d = String(s.date).slice(0, 10);
+      return s.userId === userId && d >= formatDateISO(weekDates[0]) && d <= formatDateISO(weekDates[6]);
+    });
+    if (userWeekShifts.length === 0) { showToast(`אין משמרות ל${userName} השבוע`); return; }
+
+    setShifts(prev => prev.filter(s => !userWeekShifts.some(ws => ws.id === s.id)));
+    setUndoShifts(userWeekShifts);
+
+    showToast(`🗑️ נמחקו משמרות של ${userName}`, async () => {
+      setShifts(prev => [...prev, ...userWeekShifts].sort((a, b) => a.date.localeCompare(b.date)));
+      setUndoShifts(null);
+      for (const s of userWeekShifts) {
+        await fetch("/api/admin/shifts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restaurantId, userId: s.userId, date: s.date, shiftType: s.shiftType }),
+        });
+      }
+    });
+
+    await Promise.all(userWeekShifts.map(s =>
+      fetch(`/api/admin/shifts/${s.id}`, { method: "DELETE" })
+    ));
+  }
+
   async function saveConfig() {
     setSettingsSaving(true);
     try {
@@ -567,8 +594,19 @@ export default function ShiftsClient({
                   </tr>
                 ) : displayStaff.map(member => (
                   <tr key={member.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <td style={{ padding: "8px 4px", color: "#fff", fontSize: 13, fontWeight: 700, verticalAlign: "middle", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {member.name}
+                    <td style={{ padding: "8px 4px", color: "#fff", fontSize: 13, fontWeight: 700, verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{member.name}</span>
+                        {isManager && (
+                          <button
+                            onClick={() => clearUserWeek(member.id, member.name)}
+                            title={`נקה שבוע של ${member.name}`}
+                            style={{ background: "none", border: "none", color: "rgba(248,113,113,0.5)", cursor: "pointer", padding: "2px 3px", fontSize: 12, lineHeight: 1, borderRadius: 5, flexShrink: 0, transition: "color 0.15s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#F87171"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(248,113,113,0.5)"; }}
+                          >🗑️</button>
+                        )}
+                      </div>
                     </td>
                     {weekDates.map((d, di) => {
                       const iso = formatDateISO(d);
