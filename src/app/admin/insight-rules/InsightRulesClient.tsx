@@ -292,9 +292,8 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
             {/* Info badge when in global mode */}
             {isGlobal && (
               <span style={{
-                background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)",
-                borderRadius: 8, color: T.blue, fontSize: 12, fontWeight: 500,
-                padding: "7px 12px", display: "flex", alignItems: "center", gap: 5,
+                color: T.blue, fontSize: 12, fontWeight: 500,
+                padding: "7px 4px", display: "flex", alignItems: "center", gap: 5,
               }}>
                 🌐 שינויים יחולו על כל המסעדות
               </span>
@@ -335,7 +334,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               return (
                 <div key={r.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "13px 18px",
+                  padding: "17px 18px",
                   background: G_ROW,
                   borderBottom: i < BUILTIN_RULE_META.length - 1 ? `1px solid ${G_BORDER}` : "none",
                   opacity: isEnabled ? 1 : 0.4,
@@ -384,7 +383,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               {rules.map((rule, i) => (
                 <div key={rule.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "13px 18px",
+                  padding: "17px 18px",
                   background: G_ROW,
                   borderBottom: i < rules.length - 1 ? `1px solid ${G_BORDER}` : "none",
                   opacity: rule.enabled ? 1 : 0.4,
