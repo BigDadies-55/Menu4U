@@ -5,7 +5,7 @@ import { ROLE_LABELS } from "@/lib/permissions";
 import { AssistantWidget } from "@/components/admin/AssistantWidget";
 import { formatDate } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/client";
-import { T } from "@/lib/ui";
+import { T, btn, inp } from "@/lib/ui";
 import PageShell from "@/components/admin/PageShell";
 
 type RestaurantUser = {
@@ -300,15 +300,14 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: L.text }}>ניהול משתמשים</div>
-          <button
-            onClick={() => setShowForm(true)}
-            style={{ background: L.orange, color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-          >+ הוסף משתמש</button>
+          <button onClick={() => setShowForm(true)} style={{ ...btn("warning"), fontFamily: "inherit" }}>
+            + הוסף משתמש
+          </button>
         </div>
 
         {/* Filter bar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", background: "#ebebeb", borderRadius: 22, padding: 3, gap: 2 }}>
+          <div style={{ display: "flex", background: T.overlay, borderRadius: T.rFull, padding: 3, gap: 2 }}>
             {([
               { key: "all",        label: "כל המשתמשים" },
               { key: "ADMIN",      label: "ADMIN" },
@@ -316,9 +315,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               { key: "unverified", label: "ממתין לאימות" },
             ] as const).map(tab => (
               <button key={tab.key} onClick={() => setRoleFilter(tab.key)}
-                style={{ padding: "5px 14px", borderRadius: 18, fontSize: 12, fontWeight: 500, cursor: "pointer", border: "none", fontFamily: "inherit", transition: "all 0.15s",
-                  background: roleFilter === tab.key ? L.orange : "transparent",
-                  color:      roleFilter === tab.key ? "#fff"   : L.muted,
+                style={{ padding: "5px 14px", borderRadius: T.rFull, fontSize: 12, fontWeight: 500, cursor: "pointer", border: "none", fontFamily: "inherit", transition: "all 0.15s",
+                  background: roleFilter === tab.key ? T.orange : "transparent",
+                  color:      roleFilter === tab.key ? "#fff"   : T.muted,
                 }}>
                 {tab.label}
               </button>
@@ -328,13 +327,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             <input
               type="search" placeholder="חיפוש לפי שם / מייל…"
               value={search} onChange={e => setSearch(e.target.value)}
-              style={{ background: "#fff", border: `1px solid ${L.border2}`, borderRadius: 10, padding: "8px 14px", fontSize: 13, width: 220, outline: "none", color: L.sub, fontFamily: "inherit" }}
+              style={{ ...inp, borderRadius: T.rMd, padding: "8px 14px", fontSize: 13, width: 220, fontFamily: "inherit" }}
             />
           </div>
         </div>
 
         {/* Table card */}
-        <div style={{ background: T.bg, borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+        <div style={{ background: T.bg, borderRadius: T.rLg, border: `1px solid ${T.border}`, overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -383,7 +382,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         </td>
                         {/* Role */}
                         <td style={{ padding: "10px 16px" }}>
-                          <span style={{ ...ROLE_BADGE[user.role], borderRadius: 20, padding: "3px 8px", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "inline-block" }}>
+                          <span style={{ ...ROLE_BADGE[user.role], borderRadius: T.rFull, padding: "2px 8px", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "inline-block" }}>
                             {ROLE_LABELS[user.role] ?? user.role}
                           </span>
                         </td>
@@ -394,7 +393,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           ) : (
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                               {user.restaurantUsers.map(ru => (
-                                <span key={ru.restaurantId} style={{ background: "#f0f2f5", color: L.muted, borderRadius: 6, padding: "2px 8px", fontSize: 12, fontWeight: 500 }}>
+                                <span key={ru.restaurantId} style={{ background: T.overlay, color: T.muted, borderRadius: T.rSm, padding: "2px 8px", fontSize: 12, fontWeight: 500, border: `1px solid ${T.border}` }}>
                                   {ru.restaurant.name}
                                 </span>
                               ))}
@@ -421,8 +420,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                               setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
                               setOpenMenuId(openMenuId === user.id ? null : user.id);
                             }}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: L.muted, fontSize: 20, padding: "2px 6px", borderRadius: 6, lineHeight: 1, fontFamily: "inherit" }}
-                            onMouseEnter={e => (e.currentTarget.style.background = "#f4f5f7")}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, padding: "2px 6px", borderRadius: T.rSm, lineHeight: 1, fontFamily: "inherit" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = T.overlay)}
                             onMouseLeave={e => (e.currentTarget.style.background = "none")}
                           >⋮</button>
                         </td>
@@ -652,7 +651,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         const user = filtered.find(u => u.id === openMenuId);
         if (!user) return null;
         return (
-          <div ref={menuRef} style={{ position: "fixed", top: menuPos.top, left: menuPos.left, background: "#fff", border: `1px solid ${L.border2}`, borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", width: 200, zIndex: 9999, overflow: "hidden" }}>
+          <div ref={menuRef} style={{ position: "fixed", top: menuPos.top, left: menuPos.left, background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, boxShadow: "0 4px 20px rgba(0,0,0,0.14)", width: 200, zIndex: 9999, overflow: "hidden" }}>
             {currentUserRole === "SUPER_ADMIN" && (
               <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />
             )}
@@ -696,7 +695,7 @@ function MenuAction({ icon, label, onClick, danger, disabled }: { icon: string; 
         display: "flex", alignItems: "center", gap: 8,
         opacity: disabled ? 0.5 : 1, fontFamily: "inherit",
       }}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = danger ? "#fff5f5" : "#f9fafb"; }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(239,68,68,0.08)" : T.overlay; }}
       onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
     >
       <span style={{ fontSize: 14 }}>{icon}</span>
