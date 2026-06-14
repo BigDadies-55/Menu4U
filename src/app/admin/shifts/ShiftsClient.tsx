@@ -540,16 +540,16 @@ export default function ShiftsClient({
         {loading ? (
           <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 16 }}>טוען...</div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960, direction: "rtl" }}>
+          <div>
+            <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", direction: "rtl" }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "10px 8px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "right", width: 140 }}>עובד</th>
+                  <th style={{ padding: "8px 6px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "right", width: "12%" }}>עובד</th>
                   {weekDates.map((d, i) => {
                     const iso = formatDateISO(d);
                     const isToday = iso === todayIso;
                     return (
-                      <th key={i} style={{ padding: "10px 8px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                      <th key={i} style={{ padding: "8px 4px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center", width: "12.57%" }}>
                         <span style={{ fontSize: 15, fontWeight: 900, color: isToday ? "#60A5FA" : "#fff", display: "block" }}>{DAYS_HE[i]}</span>
                         <span style={{ fontSize: 11, opacity: isToday ? 0.9 : 0.65, color: isToday ? "#60A5FA" : "inherit", display: "block", marginTop: 1 }}>{formatDate(d)}</span>
                         {isToday && (
@@ -567,7 +567,7 @@ export default function ShiftsClient({
                   </tr>
                 ) : displayStaff.map(member => (
                   <tr key={member.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <td style={{ padding: "10px 8px", color: "#fff", fontSize: 15, fontWeight: 700, paddingRight: 4, verticalAlign: "middle" }}>
+                    <td style={{ padding: "8px 4px", color: "#fff", fontSize: 13, fontWeight: 700, verticalAlign: "middle", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {member.name}
                     </td>
                     {weekDates.map((d, di) => {
@@ -578,7 +578,7 @@ export default function ShiftsClient({
                       return (
                         <td
                           key={di}
-                          style={{ padding: "10px 8px", verticalAlign: "middle", cursor: canAdd && dayShifts.length === 0 ? "pointer" : "default" }}
+                          style={{ padding: "4px 3px", verticalAlign: "middle", cursor: canAdd && dayShifts.length === 0 ? "pointer" : "default" }}
                           onClick={() => {
                             if (canAdd && dayShifts.length === 0) {
                               setAddModal({ userId: member.id, userName: member.name, date: iso });
@@ -596,9 +596,9 @@ export default function ShiftsClient({
                                     style={{
                                       background: gs.bg,
                                       border: `1px solid ${gs.border}`,
-                                      borderRadius: 11,
-                                      padding: "8px 30px 8px 10px",
-                                      minHeight: 50,
+                                      borderRadius: 9,
+                                      padding: "6px 24px 6px 8px",
+                                      minHeight: 42,
                                       position: "relative",
                                       transition: "transform 0.15s, box-shadow 0.15s",
                                       display: "flex",
@@ -608,8 +608,8 @@ export default function ShiftsClient({
                                     onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.25)"; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
                                   >
-                                    <span style={{ color: gs.text, fontSize: 13, fontWeight: 700 }}>{cfg.label}</span>
-                                    <span style={{ color: gs.text, fontSize: 11, opacity: 0.8, marginTop: 1 }}>{cfg.time}</span>
+                                    <span style={{ color: gs.text, fontSize: 12, fontWeight: 700 }}>{cfg.label}</span>
+                                    <span style={{ color: gs.text, fontSize: 10, opacity: 0.8, marginTop: 1 }}>{cfg.time}</span>
                                     {isManager && (
                                       <button
                                         onClick={e => { e.stopPropagation(); deleteShift(sh.id); }}
@@ -630,7 +630,7 @@ export default function ShiftsClient({
                               })}
                             </div>
                           ) : (
-                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 50 }}>
+                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 42 }}>
                               {canAdd && (
                                 <button
                                   style={{
@@ -904,7 +904,7 @@ export default function ShiftsClient({
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM, marginBottom: 12 }}>
           סיכום שעות שבועי
         </div>
-        <div style={{ overflowX: "auto" }}>
+        <div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
