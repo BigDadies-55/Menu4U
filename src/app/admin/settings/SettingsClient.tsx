@@ -1404,6 +1404,92 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               })}
             </div>
 
+            {/* ── Template selector ── */}
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: G_ACCENT, marginBottom: 4 }}>תבנית ממשק</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 20 }}>בחר את סגנון תצוגת דפי הניהול</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+
+                {/* Classic template */}
+                {(() => {
+                  const isActive = (form.adminBg !== "var(--c-bg)" && form.adminBg !== "var(--c-panel)") &&
+                    !form.adminBgImage;
+                  return (
+                    <button onClick={() => {}} style={{
+                      padding: 0, cursor: "default", textAlign: "right",
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      borderRadius: 14, overflow: "hidden", background: "transparent",
+                      opacity: 0.55,
+                    }}>
+                      <div style={{ height: 120, background: "#1a1208", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ height: 18, background: "#2a1e0a", borderRadius: 4, display: "flex", alignItems: "center", paddingRight: 8, gap: 6 }}>
+                          <div style={{ width: 16, height: 2, borderRadius: 1, background: "#C9A84C" }} />
+                          <div style={{ width: 40, height: 8, borderRadius: 2, background: "#2e2008" }} />
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flex: 1 }}>
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} style={{ flex: 1, background: "#221a08", border: "1px solid #3a2c10", borderRadius: 4 }} />
+                          ))}
+                        </div>
+                        <div style={{ height: 12, background: "#2a1e0a", borderRadius: 3, width: "70%" }} />
+                      </div>
+                      <div style={{ padding: "9px 12px", background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>קלאסי</span>
+                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", padding: "2px 8px", borderRadius: 99, background: "rgba(255,255,255,0.06)" }}>ברירת מחדל</span>
+                      </div>
+                    </button>
+                  );
+                })()}
+
+                {/* Glass template */}
+                <button onClick={() => {}} style={{
+                  padding: 0, cursor: "default", textAlign: "right",
+                  border: `2px solid ${G_ACCENT}`,
+                  borderRadius: 14, overflow: "hidden", background: "transparent",
+                  boxShadow: `0 0 0 3px rgba(217,119,6,0.2)`,
+                }}>
+                  <div style={{
+                    height: 120,
+                    background: "linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400') center/cover",
+                    padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6,
+                  }}>
+                    {/* Title bar */}
+                    <div style={{ height: 18, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", borderRadius: 6, border: "1px solid rgba(255,255,255,0.14)", display: "flex", alignItems: "center", paddingRight: 8, gap: 5 }}>
+                      <div style={{ width: 3, height: 10, borderRadius: 1, background: "#F59E0B" }} />
+                      <div style={{ width: 30, height: 6, borderRadius: 2, background: "rgba(255,255,255,0.2)" }} />
+                      <div style={{ flex: 1 }} />
+                      <div style={{ width: 22, height: 8, borderRadius: 4, background: "linear-gradient(135deg,#D97706,#F59E0B)" }} />
+                    </div>
+                    {/* KPI cards */}
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {["rgba(217,119,6,0.25)","rgba(16,185,129,0.2)","rgba(59,130,246,0.2)"].map((c, i) => (
+                        <div key={i} style={{ flex: 1, height: 22, background: "rgba(0,0,0,0.35)", border: `1px solid ${c}`, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ width: 12, height: 3, borderRadius: 1, background: c.replace("0.2","0.8").replace("0.25","0.9") }} />
+                        </div>
+                      ))}
+                    </div>
+                    {/* Table */}
+                    <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 5, overflow: "hidden" }}>
+                      <div style={{ height: 8, background: "rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.08)" }} />
+                      {[...Array(2)].map((_, i) => (
+                        <div key={i} style={{ height: 10, borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 4, padding: "0 5px" }}>
+                          <div style={{ width: 16, height: 16, borderRadius: 3, background: "rgba(217,119,6,0.15)", flexShrink: 0 }} />
+                          <div style={{ width: 30, height: 3, borderRadius: 1, background: "rgba(255,255,255,0.25)" }} />
+                          <div style={{ flex: 1 }} />
+                          <div style={{ width: 18, height: 5, borderRadius: 3, background: "rgba(16,185,129,0.3)", border: "1px solid rgba(16,185,129,0.4)" }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ padding: "9px 12px", background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>גלס מודרני</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: G_ACCENT, padding: "2px 8px", borderRadius: 99, background: "rgba(217,119,6,0.15)" }}>פעיל ✓</span>
+                  </div>
+                </button>
+
+              </div>
+            </div>
+
             {/* Save bar */}
             <div style={{ display: "flex", alignItems: "center", gap: 12,
               borderTop: `1px solid ${G_BORDER}`, padding: "14px 0 0",
