@@ -155,6 +155,7 @@ model Restaurant {
   language      String    @default("he")
   welcomeText   String?
   splashImage   String?
+  waiterBg      String?   // background image URL for waiter screens
   subscriptionFrom DateTime?
   subscriptionTo   DateTime?
   // Social links

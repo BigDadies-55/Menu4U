@@ -12,12 +12,22 @@ export default async function WaiterPosPage() {
   const role = session.user.role;
   if (role === "DISPLAY") redirect("/admin");
 
-  const restaurants =
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`).catch(() => {});
+
+  const baseRestaurants =
     role === "SUPER_ADMIN"
       ? await prisma.restaurant.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } })
       : await prisma.restaurantUser
           .findMany({ where: { userId: session.user.id }, include: { restaurant: { select: { id: true, name: true } } } })
           .then(rs => rs.map(r => r.restaurant));
+
+  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null }>>(
+    `SELECT id, "waiterBg" FROM "Restaurant" WHERE id = ANY($1::text[])`,
+    baseRestaurants.map(r => r.id)
+  ).catch(() => [] as Array<{ id: string; waiterBg: string | null }>);
+
+  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, r.waiterBg]));
+  const restaurants = baseRestaurants.map(r => ({ ...r, waiterBg: bgMap[r.id] ?? null }));
 
   if (restaurants.length === 0) redirect("/admin");
 

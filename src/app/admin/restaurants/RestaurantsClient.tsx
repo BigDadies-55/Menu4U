@@ -28,6 +28,7 @@ type Restaurant = {
   language: string;
   welcomeText: string | null;
   splashImage: string | null;
+  waiterBg: string | null;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   instagram: string | null;
@@ -70,6 +71,7 @@ const emptyForm = {
   language: "he",
   welcomeText: "",
   splashImage: "",
+  waiterBg: "",
   instagram: "",
   facebook: "",
   whatsapp: "",
@@ -213,6 +215,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       language: r.language ?? "he",
       welcomeText: r.welcomeText ?? "",
       splashImage: r.splashImage ?? "",
+      waiterBg: r.waiterBg ?? "",
       instagram: r.instagram ?? "",
       facebook: r.facebook ?? "",
       whatsapp: r.whatsapp ?? "",
@@ -262,6 +265,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       language: form.language,
       welcomeText: form.welcomeText || null,
       splashImage: form.splashImage || null,
+      waiterBg: form.waiterBg || null,
       instagram: form.instagram || null,
       facebook: form.facebook || null,
       whatsapp: form.whatsapp || null,
@@ -565,6 +569,38 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                               textShadow: "0 2px 12px rgba(0,0,0,0.8)",
                             }}>
                               {form.name || "שם המסעדה"}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Waiter bg */}
+                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid #2d3239", background: T.surface }}>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 4 }}>
+                          🍽️ רקע למסך מלצר
+                        </label>
+                        <p className="text-xs mb-3" style={{ color: T.muted }}>
+                          תמונה זו תוצג כרקע במסכי מלצר חכם 1 ו-2. אם לא תוגדר, ייעשה שימוש בתמונת ברירת המחדל.
+                        </p>
+                        <ImageUpload
+                          label=""
+                          value={form.waiterBg}
+                          onChange={url => setForm(f => ({ ...f, waiterBg: url }))}
+                        />
+                        {form.waiterBg && (
+                          <div style={{ marginTop: 10, borderRadius: 10, overflow: "hidden", position: "relative", height: 100 }}>
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              backgroundImage: `url('${form.waiterBg}')`,
+                              backgroundSize: "cover", backgroundPosition: "center",
+                            }} />
+                            <div style={{ position: "absolute", inset: 0, background: "rgba(8,8,20,0.7)" }} />
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: "#fff", fontSize: 12, fontWeight: 600, opacity: 0.8,
+                            }}>
+                              תצוגה מקדימה — מסך מלצר
                             </div>
                           </div>
                         )}

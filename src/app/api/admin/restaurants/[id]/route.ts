@@ -15,11 +15,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     isActive, ordersEnabled, menuTheme, menuPalette, menuPaletteData,
     kdsView, tableLayoutJson, groupId,
     subscriptionFrom, subscriptionTo,
+    logo, description, website, language, welcomeText, splashImage, waiterBg,
+    instagram, facebook, whatsapp, tripadvisor, googleReview,
+    showPhonePublic, showAddressPublic,
   } = body;
+  // waiterBg is a new column — save it via raw SQL to avoid Prisma type issues
+  if (waiterBg !== undefined) {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`
+    ).catch(() => {});
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Restaurant" SET "waiterBg" = $1 WHERE id = $2`,
+      waiterBg ?? null, id
+    );
+  }
   const data = Object.fromEntries(
     Object.entries({ name, email, phone, phone2, orderPhone, address, locationUrl,
       isActive, ordersEnabled, menuTheme, menuPalette, menuPaletteData,
-      kdsView, tableLayoutJson, groupId, subscriptionFrom, subscriptionTo })
+      kdsView, tableLayoutJson, groupId, subscriptionFrom, subscriptionTo,
+      logo, description, website, language, welcomeText, splashImage,
+      instagram, facebook, whatsapp, tripadvisor, googleReview,
+      showPhonePublic, showAddressPublic })
     .filter(([, v]) => v !== undefined)
   );
   const restaurant = await prisma.restaurant.update({ where: { id }, data });

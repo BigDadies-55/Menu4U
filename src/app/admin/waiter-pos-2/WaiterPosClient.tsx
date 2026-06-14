@@ -9,7 +9,7 @@ import { useOffline } from "@/hooks/useOffline";
 import { idbSet, idbGet } from "@/lib/waiter-db";
 
 // ── Types ──────────────────────────────────────────────────────────────
-type Restaurant = { id: string; name: string };
+type Restaurant = { id: string; name: string; waiterBg?: string | null };
 
 type TableData = {
   tableNum: string;
@@ -556,7 +556,11 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       overflowX: "hidden",
       display: "flex", flexDirection: "column",
       padding: "16px 20px 115px", gap: 10,
-      background: `linear-gradient(rgba(12,12,18,0.78),rgba(12,12,18,0.78)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`,
+      background: (() => {
+        const bg = restaurants.find(r => r.id === restaurantId)?.waiterBg
+          ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070";
+        return `linear-gradient(rgba(12,12,18,0.78),rgba(12,12,18,0.78)), url('${bg}') no-repeat center center / cover fixed`;
+      })(),
       color: "#fff",
     }}>
       <style>{`
