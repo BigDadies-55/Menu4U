@@ -277,9 +277,9 @@ async function parseXlsxToImportFile(file: File): Promise<ImportFile> {
 
 // Shared dark input style
 const darkInput: React.CSSProperties = {
-  background: T.raised,
-  border: "1px solid #3a3f47",
-  color: T.text,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.14)",
+  color: "#ffffff",
   borderRadius: 8,
   padding: "8px 12px",
   width: "100%",
@@ -1136,6 +1136,8 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
           justifyContent: "space-between",
           alignItems: "center",
           direction: "rtl",
+          position: "relative",
+          zIndex: 100,
         }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 900, color: G_TEXT, lineHeight: 1.2 }}>
@@ -1685,83 +1687,78 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
 
       {/* Item Form Modal */}
       {showItemForm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="w-full max-w-md p-6 max-h-[90vh] overflow-y-auto" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 16 }}>
-            <h2 className="text-xl font-bold mb-4" style={{ color: T.text }}>{editItem ? `ערוך פריט — ${editItem.name}` : `פריט חדש — ${selectedCategory?.name}`}</h2>
-            <form onSubmit={handleItemSubmit} className="space-y-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: "rgba(15,14,22,0.97)", backdropFilter: "blur(30px)", WebkitBackdropFilter: "blur(30px)", border: `1px solid ${G_BORDER}`, borderRadius: 22, padding: 28 }}>
+            {/* Modal header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: G_TEXT }}>
+                {editItem ? `ערוך פריט — ${editItem.name}` : `פריט חדש — ${selectedCategory?.name}`}
+              </h2>
+              <button onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`, color: G_MUTED, borderRadius: 10, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            </div>
+            <form onSubmit={handleItemSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Name */}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>שם הפריט *</label>
-                <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })}
-                  style={darkInput} />
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>שם הפריט *</label>
+                <input required value={itemForm.name} onChange={e => setItemForm({ ...itemForm, name: e.target.value })} style={darkInput} />
               </div>
+              {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>תיאור</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>תיאור</label>
                 <textarea value={itemForm.description} onChange={e => setItemForm({ ...itemForm, description: e.target.value })}
                   rows={2} style={{ ...darkInput, resize: "vertical" }} />
               </div>
+              {/* Price */}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>מחיר (₪) *</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>מחיר (₪) *</label>
                 <input required type="number" min="0" step="0.5" value={itemForm.price}
-                  onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
-                  style={darkInput} dir="ltr" />
+                  onChange={e => setItemForm({ ...itemForm, price: e.target.value })} style={darkInput} dir="ltr" />
               </div>
-              <ImageUpload
-                label="תמונת פריט"
-                value={itemForm.image}
-                onChange={url => setItemForm({ ...itemForm, image: url })}
-              />
-              <div className="flex gap-4 flex-wrap">
+              {/* Image */}
+              <ImageUpload label="תמונת פריט" value={itemForm.image} onChange={url => setItemForm({ ...itemForm, image: url })} />
+              {/* Diet flags */}
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                 {[{ key: "isVegetarian", label: "צמחוני 🌿" }, { key: "isVegan", label: "טבעוני 🌱" }, { key: "isGlutenFree", label: "ללא גלוטן" }].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: T.sub }}>
+                  <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: G_MUTED, cursor: "pointer" }}>
                     <input type="checkbox" checked={itemForm[key as keyof typeof itemForm] as boolean}
-                      onChange={e => setItemForm({ ...itemForm, [key]: e.target.checked })} className="rounded" />
+                      onChange={e => setItemForm({ ...itemForm, [key]: e.target.checked })} />
                     {label}
                   </label>
                 ))}
               </div>
+              {/* Allergens */}
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: T.sub }}>אלרגנים ⚠️</label>
-                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 8 }}>אלרגנים ⚠️</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px" }}>
                   {ALLERGEN_LIST.map(({ key, label }) => {
                     const checked = itemForm.allergens.includes(key);
                     return (
-                      <label key={key} className="flex items-center gap-1.5 text-sm cursor-pointer" style={{ color: checked ? "#f87171" : T.sub }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => setItemForm({
-                            ...itemForm,
-                            allergens: checked
-                              ? itemForm.allergens.filter(a => a !== key)
-                              : [...itemForm.allergens, key],
-                          })}
-                          className="rounded"
-                        />
+                      <label key={key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: checked ? "#f87171" : G_MUTED }}>
+                        <input type="checkbox" checked={checked}
+                          onChange={() => setItemForm({ ...itemForm, allergens: checked ? itemForm.allergens.filter(a => a !== key) : [...itemForm.allergens, key] })} />
                         {label}
                       </label>
                     );
                   })}
                 </div>
               </div>
+              {/* Tags */}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>תגיות נוספות</label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    value={tagInput}
-                    onChange={e => setTagInput(e.target.value)}
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 6 }}>תגיות נוספות</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                  <input value={tagInput} onChange={e => setTagInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
-                    placeholder="הוסף תגית..."
-                    style={{ ...darkInput, flex: 1 }}
-                  />
+                    placeholder="הוסף תגית..." style={{ ...darkInput, flex: 1 }} />
                   <button type="button" onClick={addTag}
-                    style={{ background: T.raised, color: T.sub, borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>הוסף</button>
+                    style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${G_BORDER}`, color: G_MUTED, borderRadius: 8, padding: "8px 14px", fontSize: 13, cursor: "pointer" }}>הוסף</button>
                 </div>
                 {itemForm.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {itemForm.tags.map(tag => (
-                      <span key={tag} className="flex items-center gap-1" style={{ background: "rgba(252,196,25,0.15)", color: T.gold, borderRadius: 999, padding: "3px 8px", fontSize: 11 }}>
+                      <span key={tag} style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(217,119,6,0.15)", color: G_ACCENT, borderRadius: 999, padding: "3px 10px", fontSize: 11 }}>
                         {tag}
-                        <button type="button" onClick={() => removeTag(tag)} className="font-bold leading-none" style={{ color: T.red }}>×</button>
+                        <button type="button" onClick={() => removeTag(tag)} style={{ color: "#f87171", background: "none", border: "none", cursor: "pointer", fontWeight: 700, lineHeight: 1 }}>×</button>
                       </span>
                     ))}
                   </div>
@@ -1769,73 +1766,60 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               </div>
               {/* Prep time */}
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: T.sub }}>⏱ זמן הכנה ממוצע</label>
-                <div className="flex items-center gap-2 flex-wrap">
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 8 }}>⏱ זמן הכנה ממוצע</label>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   {[5, 10, 15, 20, 30, 45].map(m => (
-                    <button
-                      key={m}
-                      type="button"
+                    <button key={m} type="button"
                       onClick={() => setItemForm({ ...itemForm, prepTime: itemForm.prepTime === String(m) ? "" : String(m) })}
                       style={itemForm.prepTime === String(m)
-                        ? { background: T.bg, border: "1px solid #fcc419", color: T.gold, borderRadius: 8, padding: "6px 12px", fontSize: 13, fontWeight: 600 }
-                        : { background: T.raised, border: "1px solid #3a3f47", color: T.sub, borderRadius: 8, padding: "6px 12px", fontSize: 13 }}
-                    >
+                        ? { background: "rgba(217,119,6,0.2)", border: `1px solid ${G_ACCENT}`, color: G_ACCENT, borderRadius: 8, padding: "6px 12px", fontSize: 13, fontWeight: 700, cursor: "pointer" }
+                        : { background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.1)`, color: G_MUTED, borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>
                       {m}&apos;
                     </button>
                   ))}
-                  <input
-                    type="number"
-                    min="1"
-                    max="180"
-                    value={itemForm.prepTime}
+                  <input type="number" min="1" max="180" value={itemForm.prepTime}
                     onChange={e => setItemForm({ ...itemForm, prepTime: e.target.value })}
-                    placeholder="דק'"
-                    style={{ ...darkInput, width: 80 }}
-                    dir="ltr"
-                  />
+                    placeholder="דק'" style={{ ...darkInput, width: 80 }} dir="ltr" />
                 </div>
               </div>
 
               {editItem && selectedRestaurant && (
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: T.sub }}>תגיות / אפשרויות</label>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: G_MUTED, marginBottom: 8 }}>תגיות / אפשרויות</label>
                   <ModifierGroupsEditor itemId={editItem.id} restaurantId={selectedRestaurant.id} />
                 </div>
               )}
 
-              {/* ── Translations ── */}
-              <details style={{ border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
-                <summary className="px-4 py-3 text-sm font-semibold cursor-pointer select-none flex items-center gap-2" style={{ background: T.surface, color: T.sub }}>
+              {/* Translations */}
+              <details style={{ border: `1px solid ${G_BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+                <summary style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", background: "rgba(255,255,255,0.04)", color: G_MUTED, display: "flex", alignItems: "center", gap: 8 }}>
                   🌐 תרגומים (EN · RU · FR)
                 </summary>
-                <div className="p-4 space-y-4">
+                <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
                   {(["en", "ru", "fr"] as const).map(lang => (
-                    <div key={lang} style={{ border: "1px solid #2d3239", borderRadius: 8, padding: 12 }} className="space-y-2">
-                      <div className="text-xs font-bold uppercase tracking-wide" style={{ color: T.muted }}>{lang === "en" ? "🇬🇧 English" : lang === "ru" ? "🇷🇺 Русский" : "🇫🇷 Français"}</div>
-                      <input
-                        value={itemForm.translations?.[lang]?.name ?? ""}
+                    <div key={lang} style={{ border: `1px solid ${G_BORDER}`, borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: G_MUTED }}>{lang === "en" ? "🇬🇧 English" : lang === "ru" ? "🇷🇺 Русский" : "🇫🇷 Français"}</div>
+                      <input value={itemForm.translations?.[lang]?.name ?? ""}
                         onChange={e => setItemForm({ ...itemForm, translations: { ...itemForm.translations, [lang]: { ...itemForm.translations?.[lang], name: e.target.value } } })}
-                        placeholder="Item name..."
-                        dir="ltr"
-                        style={darkInput}
-                      />
-                      <textarea
-                        value={itemForm.translations?.[lang]?.description ?? ""}
+                        placeholder="Item name..." dir="ltr" style={darkInput} />
+                      <textarea value={itemForm.translations?.[lang]?.description ?? ""}
                         onChange={e => setItemForm({ ...itemForm, translations: { ...itemForm.translations, [lang]: { ...itemForm.translations?.[lang], description: e.target.value } } })}
-                        placeholder="Description..."
-                        dir="ltr" rows={2}
-                        style={{ ...darkInput, resize: "vertical" }}
-                      />
+                        placeholder="Description..." dir="ltr" rows={2} style={{ ...darkInput, resize: "vertical" }} />
                     </div>
                   ))}
                 </div>
               </details>
 
-              <div className="flex gap-3">
-                <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: T.gold, color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
+              {/* Submit */}
+              <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+                <button type="submit" disabled={loading}
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "none", background: G_ACCENT_GRAD, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.6 : 1, boxShadow: "0 4px 15px rgba(217,119,6,0.3)" }}>
                   {loading ? "שומר..." : editItem ? "שמור שינויים" : "הוסף פריט"}
                 </button>
-                <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }} className="flex-1 py-2.5 rounded-lg font-medium" style={{ background: T.raised, color: T.sub }}>ביטול</button>
+                <button type="button" onClick={() => { setShowItemForm(false); setEditItem(null); setTagInput(""); }}
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: `1px solid ${G_BORDER}`, background: "rgba(255,255,255,0.06)", color: G_MUTED, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                  ביטול
+                </button>
               </div>
             </form>
           </div>
