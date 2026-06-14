@@ -1285,7 +1285,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
               )}
 
               {/* Category grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
                 {sortedCategories.map((cat, idx) => {
                   const isExpanded = expandedCats.has(cat.id);
                   return (
