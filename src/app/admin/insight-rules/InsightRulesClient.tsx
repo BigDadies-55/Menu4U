@@ -323,7 +323,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               <span style={{ fontSize: 11, color: G_MUTED }}>· שינויים למסעדה זו בלבד · override גלובלי מסומן 🌐</span>
             )}
           </div>
-          <div style={{ borderRadius: 14, overflow: "hidden", border: `1px solid ${G_BORDER}` }}>
+          <div style={{ borderRadius: 14, overflow: "hidden", border: `1px solid ${G_BORDER}`, display: "flex", flexDirection: "column", gap: 6 }}>
             {BUILTIN_RULE_META.map((r, i) => {
               const ov = builtinOverrides[r.id];
               const globalOv = !isGlobal ? globalOverrides[r.id] : undefined;
@@ -379,7 +379,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               אין כללים מותאמים עדיין — לחץ &quot;+ כלל חדש&quot; להוסיף
             </div>
           ) : (
-            <div style={{ borderRadius: 14, overflow: "hidden", border: `1px solid ${G_BORDER}` }}>
+            <div style={{ borderRadius: 14, overflow: "hidden", border: `1px solid ${G_BORDER}`, display: "flex", flexDirection: "column", gap: 6 }}>
               {rules.map((rule, i) => (
                 <div key={rule.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
