@@ -270,8 +270,15 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {/* Restaurant selector — always visible */}
             {!isGlobal && (
-              <select value={rid} onChange={e => setRid(e.target.value)} style={{ ...INP, width: "auto", minWidth: 160 }}>
-                {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              <select value={rid} onChange={e => setRid(e.target.value)} style={{
+                background: "rgba(255,255,255,0.07)",
+                border: `1px solid ${G_BORDER_B}`,
+                borderRadius: 8, color: G_TEXT, fontSize: 13, fontWeight: 600,
+                padding: "7px 14px", outline: "none", cursor: "pointer",
+                direction: "rtl", minWidth: 160, appearance: "none",
+                WebkitAppearance: "none",
+              }}>
+                {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>{r.name}</option>)}
               </select>
             )}
             {/* Global toggle for super-admin */}
