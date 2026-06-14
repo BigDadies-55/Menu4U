@@ -537,7 +537,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes insightPulse { 0%,100% { box-shadow:0 0 0 0 rgba(251,191,36,0); } 50% { box-shadow:0 0 0 7px rgba(251,191,36,0.4); } }
-        @keyframes scrollStrip { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
+        @keyframes scrollStrip { 0% { transform:translateX(0); } 100% { transform:translateX(-100%); } }
       `}</style>
 
       {/* ══ TOP NAV ══ */}
@@ -1043,9 +1043,9 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               <div style={{
                 display: "flex", gap: 10, position: "absolute", whiteSpace: "nowrap", alignItems: "center", height: "100%",
                 direction: "ltr", left: 0,
-                animation: insights.length >= 1 ? "scrollStrip 22s linear infinite" : undefined,
+                animation: insights.length >= 1 ? "scrollStrip 18s ease-in-out infinite alternate" : undefined,
               }}>
-                {[...insights, ...insights].map((ins, i) => {
+                {insights.map((ins, i) => {
                   const cs: Record<string, { bg: string; border: string; color: string }> = {
                     alert: { bg: "rgba(239,68,68,0.14)",   border: "rgba(239,68,68,0.35)",   color: "#fca5a5" },
                     tip:   { bg: "rgba(139,92,246,0.14)",  border: "rgba(139,92,246,0.35)",  color: "#c4b5fd" },
