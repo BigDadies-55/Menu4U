@@ -1092,97 +1092,24 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
   // #3 — hide menu selector when restaurant has only 1 menu (reduces complexity)
   const isSingleMenu = (selectedRestaurant?.menus.length ?? 0) <= 1;
 
+  // Glass design constants
+  const G_CARD = "rgba(255,255,255,0.07)";
+  const G_CARD_HOVER = "rgba(255,255,255,0.14)";
+  const G_BORDER = "rgba(255,255,255,0.15)";
+  const G_HEADER = "rgba(255,255,255,0.04)";
+  const G_ACCENT = "#D97706";
+  const G_ACCENT_GRAD = "linear-gradient(135deg, #D97706, #F59E0B)";
+  const G_TEXT = "#FFFFFF";
+  const G_MUTED = "rgba(255,255,255,0.6)";
+
   return (
     <PageShell>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: T.text }}>ניהול תפריטים</h1>
-        {selectedRestaurant && (
-          <div className="flex items-center gap-2 flex-wrap">
-
-            {/* Export dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => { setExportDropdown(v => !v); setSampleDropdown(false); }}
-                disabled={importing}
-                className="flex items-center gap-1.5 disabled:opacity-50"
-                style={{ background: T.raised, border: "1px solid #fcc419", color: T.gold, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
-              >
-                📤 ייצא ▾
-              </button>
-              {exportDropdown && (
-                <div className="absolute left-0 top-full mt-1 z-30 overflow-hidden min-w-[140px]" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
-                  <button onClick={handleExportJson} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text }}
-                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <span className="text-base">📄</span> JSON
-                  </button>
-                  <button onClick={handleExportXlsx} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text, borderTop: "1px solid #2d3239" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <span className="text-base">📊</span> Excel (.xlsx)
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Import button */}
-            <button
-              onClick={handleImportClick}
-              disabled={importing}
-              className="flex items-center gap-1.5 disabled:opacity-50"
-              style={{ background: T.raised, border: "1px solid #51cf66", color: T.green, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
-            >
-              📥 ייבא תפריט
-            </button>
-
-            {/* Allergen auto-fill */}
-            <button
-              onClick={handleSeedAllergens}
-              disabled={seedingAllergens || !selectedRestaurant}
-              className="flex items-center gap-1.5 disabled:opacity-50"
-              style={{ background: T.raised, border: "1px solid #f59e0b", color: "#d97706", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
-              title="מלא אוטומטית אלרגנים לפי שמות המנות"
-            >
-              {seedingAllergens ? "⏳ מעדכן..." : "⚠️ אלרגנים אוטו"}
-            </button>
-            {seedResult && <span style={{ fontSize: 12, color: "#d97706", fontWeight: 600 }}>{seedResult}</span>}
-
-            {/* Sample dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => { setSampleDropdown(v => !v); setExportDropdown(false); }}
-                disabled={importing}
-                className="flex items-center gap-1.5 disabled:opacity-50"
-                style={{ background: T.raised, border: "1px solid #3a3f47", color: T.sub, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}
-              >
-                📋 קובץ דוגמא ▾
-              </button>
-              {sampleDropdown && (
-                <div className="absolute left-0 top-full mt-1 z-30 overflow-hidden min-w-[140px]" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
-                  <button onClick={handleSampleJson} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text }}
-                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <span className="text-base">📄</span> JSON
-                  </button>
-                  <button onClick={handleSampleXlsx} className="w-full text-right flex items-center gap-2" style={{ padding: "10px 16px", fontSize: 13, color: T.text, borderTop: "1px solid #2d3239" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <span className="text-base">📊</span> Excel (.xlsx)
-                  </button>
-                </div>
-              )}
-            </div>
-
-          </div>
-        )}
-      </div>
-
       {/* Close dropdowns on outside click */}
       {(exportDropdown || sampleDropdown) && (
         <div className="fixed inset-0 z-20" onClick={() => { setExportDropdown(false); setSampleDropdown(false); }} />
       )}
 
-      {/* Hidden file input for import — accepts JSON and Excel */}
+      {/* Hidden file input for import */}
       <input
         ref={fileInputRef}
         type="file"
@@ -1191,206 +1118,311 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
         onChange={handleFileChange}
       />
 
-      {restaurants.length === 0 ? (
-        <div className="p-12 text-center" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, color: T.muted }}>אין מסעדות זמינות</div>
-      ) : (
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-          {/* Sidebar */}
-          <div className="w-full md:w-64 md:shrink-0 space-y-4">
-            <div style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
-              <div style={{ borderBottom: "1px solid #2d3239", color: T.sub, padding: "12px 16px", fontWeight: 600, fontSize: 14 }}>מסעדות</div>
-              {restaurants.map(rest => (
-                <button key={rest.id} onClick={() => { setSelectedRestaurant(rest); setSelectedMenu(rest.menus[0] ?? null); }}
-                  className="w-full text-right px-4 py-3 text-sm transition-colors"
-                  style={selectedRestaurant?.id === rest.id
-                    ? { background: "rgba(252,196,25,0.12)", color: T.gold, fontWeight: 600 }
-                    : { color: T.sub }}
-                  onMouseEnter={e => { if (selectedRestaurant?.id !== rest.id) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
-                  onMouseLeave={e => { if (selectedRestaurant?.id !== rest.id) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
-                  {rest.name}
-                </button>
-              ))}
-            </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 24, direction: "rtl", alignItems: "start" }}>
 
-            {selectedRestaurant && !isSingleMenu && (
-              <div style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
-                <div style={{ borderBottom: "1px solid #2d3239", padding: "12px 16px" }} className="flex items-center justify-between">
-                  <span style={{ fontWeight: 600, fontSize: 14, color: T.sub }}>תפריטים</span>
-                  {canEdit && (
-                    <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 12, color: T.gold, fontWeight: 500 }}>+ חדש</button>
-                  )}
-                </div>
-                {selectedRestaurant.menus.map(menu => (
-                  <div key={menu.id} className="flex items-center justify-between pr-4 pl-2 py-2.5 transition-colors"
-                    style={selectedMenu?.id === menu.id ? { background: "rgba(252,196,25,0.12)" } : {}}>
-                    <button onClick={() => setSelectedMenu(menu)} className="flex-1 text-right text-sm"
-                      style={selectedMenu?.id === menu.id ? { color: T.gold } : { color: T.sub }}>
-                      <span className="flex items-center gap-1.5">
-                        {menu.isPrimary && <span title="תפריט ראשי" style={{ color: T.gold, fontSize: 12 }}>★</span>}
-                        {menu.scheduleDays?.length > 0 && <span title="עם תזמון" style={{ color: T.blue, fontSize: 12 }}>⏰</span>}
-                        {menu.name}
-                      </span>
-                    </button>
-                    {canEdit && (
-                      <div className="flex items-center gap-0.5">
-                        <button onClick={() => openSchedule(menu)} style={{ color: T.muted, fontSize: 12, padding: "0 4px" }} title="הגדרות תזמון">🕐</button>
-                        <button onClick={() => deleteMenu(menu.id)} style={{ color: T.muted, fontSize: 12, padding: "0 4px" }}>✕</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {selectedRestaurant.menus.length === 0 && (
-                  <div className="p-6 text-center">
-                    <div className="text-2xl mb-2">📋</div>
-                    <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>אין תפריטים עדיין</p>
-                    {canEdit && <button onClick={() => setShowMenuForm(true)} className="text-xs text-white px-3 py-1.5 rounded-lg font-medium" style={{ background: T.gold, boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>+ צור תפריט ראשון</button>}
-                  </div>
-                )}
-              </div>
-            )}
-            {/* #3 — single-menu: show settings icon inline */}
-            {selectedRestaurant && isSingleMenu && selectedMenu && canEdit && (
-              <div style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
-                <div className="p-3 flex items-center justify-between">
-                  <span style={{ fontSize: 12, color: T.sub, fontWeight: 500 }}>{selectedMenu.name}</span>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => openSchedule(selectedMenu)} style={{ color: T.muted, fontSize: 12, padding: "4px 6px", borderRadius: 6 }} title="הגדרות תפריט">⚙️</button>
-                    <button onClick={() => setShowMenuForm(true)} style={{ fontSize: 12, color: T.gold, fontWeight: 500, padding: "4px 6px", borderRadius: 6 }}>+ תפריט נוסף</button>
-                  </div>
-                </div>
-              </div>
+        {/* ─── Glass Action Header (full width) ─── */}
+        <div style={{
+          gridColumn: "1 / -1",
+          background: G_HEADER,
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: `1px solid ${G_BORDER}`,
+          borderRadius: 20,
+          padding: "15px 25px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          direction: "rtl",
+        }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: G_TEXT, lineHeight: 1.2 }}>
+              ניהול תפריטים
+              {selectedRestaurant && selectedMenu && (
+                <span style={{ fontSize: 13, fontWeight: 400, color: G_MUTED, marginRight: 10 }}>
+                  {selectedRestaurant.name} · {selectedMenu.name}
+                </span>
+              )}
+            </div>
+            {selectedRestaurant && (
+              <div style={{ fontSize: 12, color: G_MUTED, marginTop: 2 }}>{selectedRestaurant.name}</div>
             )}
           </div>
 
-          {/* Main */}
-          <div className="flex-1">
-            {!selectedMenu ? (
-              <div className="p-12 text-center" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, color: T.muted }}>בחר תפריט או צור חדש</div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold" style={{ color: T.text }}>{selectedMenu.name}</h2>
-                  {canEdit && (
-                    <button onClick={() => setShowCategoryForm(true)}
-                      className="text-white px-4 py-2 rounded-lg text-sm font-medium"
-                      style={{ background: T.gold, boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
-                      + קטגוריה חדשה
-                    </button>
-                  )}
-                </div>
+          {selectedRestaurant && (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", direction: "ltr" }}>
+              {seedResult && <span style={{ fontSize: 12, color: G_ACCENT, fontWeight: 600 }}>{seedResult}</span>}
 
-                {sortedCategories.length === 0 ? (
-                  <div className="p-12 text-center" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12 }}>
-                    <div className="text-4xl mb-3">🗂️</div>
-                    <div className="font-medium mb-1" style={{ color: T.sub }}>אין קטגוריות עדיין</div>
-                    <div className="text-sm mb-4" style={{ color: T.muted }}>הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
-                    {canEdit && (
-                      <button onClick={() => setShowCategoryForm(true)}
-                        className="inline-flex items-center gap-1.5 text-white px-5 py-2.5 rounded-lg text-sm font-medium"
-                        style={{ background: T.gold, boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
-                        + קטגוריה חדשה
-                      </button>
-                    )}
+              {/* Allergen auto-fill */}
+              <button
+                onClick={handleSeedAllergens}
+                disabled={seedingAllergens || !selectedRestaurant}
+                style={{
+                  background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`,
+                  color: "#F59E0B", borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 500,
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: seedingAllergens ? 0.5 : 1,
+                }}
+              >
+                ✨ {seedingAllergens ? "מעדכן..." : "אלרגנים אוטו׳"}
+              </button>
+
+              {/* Sample dropdown */}
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => { setSampleDropdown(v => !v); setExportDropdown(false); }}
+                  disabled={importing}
+                  style={{
+                    background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`,
+                    color: G_TEXT, borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 500,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                  }}
+                >
+                  📋 קובץ דוגמה ▾
+                </button>
+                {sampleDropdown && (
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 30, minWidth: 150, background: "rgba(20,20,28,0.95)", border: `1px solid ${G_BORDER}`, borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+                    <button onClick={handleSampleJson} style={{ width: "100%", textAlign: "right", padding: "10px 16px", fontSize: 13, color: G_TEXT, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      📄 JSON
+                    </button>
+                    <button onClick={handleSampleXlsx} style={{ width: "100%", textAlign: "right", padding: "10px 16px", fontSize: 13, color: G_TEXT, background: "transparent", border: "none", borderTop: `1px solid ${G_BORDER}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      📊 Excel (.xlsx)
+                    </button>
                   </div>
-                ) : (
-                  sortedCategories.map((cat, idx) => {
-                    const isExpanded = expandedCats.has(cat.id);
-                    return (
-                    <div key={cat.id} style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12, overflow: "hidden" }}>
-                      {/* Category header — always visible, click to expand */}
+                )}
+              </div>
+
+              {/* Import button */}
+              <button
+                onClick={handleImportClick}
+                disabled={importing}
+                style={{
+                  background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`,
+                  color: G_TEXT, borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 500,
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                📥 ייבא
+              </button>
+
+              {/* Export dropdown */}
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => { setExportDropdown(v => !v); setSampleDropdown(false); }}
+                  disabled={importing}
+                  style={{
+                    background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER}`,
+                    color: G_TEXT, borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 500,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                  }}
+                >
+                  📤 ייצא ▾
+                </button>
+                {exportDropdown && (
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 30, minWidth: 150, background: "rgba(20,20,28,0.95)", border: `1px solid ${G_BORDER}`, borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+                    <button onClick={handleExportJson} style={{ width: "100%", textAlign: "right", padding: "10px 16px", fontSize: 13, color: G_TEXT, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      📄 JSON
+                    </button>
+                    <button onClick={handleExportXlsx} style={{ width: "100%", textAlign: "right", padding: "10px 16px", fontSize: 13, color: G_TEXT, background: "transparent", border: "none", borderTop: `1px solid ${G_BORDER}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      📊 Excel (.xlsx)
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* New category button */}
+              {selectedMenu && canEdit && (
+                <button
+                  onClick={() => setShowCategoryForm(true)}
+                  style={{
+                    background: G_ACCENT_GRAD, border: "none",
+                    color: G_TEXT, borderRadius: 10, padding: "8px 18px", fontSize: 13, fontWeight: 700,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                    boxShadow: "0 4px 15px rgba(217,119,6,0.3)",
+                  }}
+                >
+                  + קטגוריה חדשה
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ─── Main grid ─── */}
+        <div>
+          {restaurants.length === 0 ? (
+            <div style={{ padding: 48, textAlign: "center", background: G_CARD, border: `1px solid ${G_BORDER}`, borderRadius: 20, color: G_MUTED }}>אין מסעדות זמינות</div>
+          ) : !selectedMenu ? (
+            <div style={{ padding: 48, textAlign: "center", background: G_CARD, border: `1px solid ${G_BORDER}`, borderRadius: 20, color: G_MUTED }}>בחר תפריט או צור חדש</div>
+          ) : sortedCategories.length === 0 ? (
+            <div style={{ padding: 48, textAlign: "center", background: G_CARD, border: `1px solid ${G_BORDER}`, borderRadius: 20 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🗂️</div>
+              <div style={{ fontWeight: 600, color: G_TEXT, marginBottom: 6 }}>אין קטגוריות עדיין</div>
+              <div style={{ fontSize: 13, color: G_MUTED, marginBottom: 16 }}>הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
+              {canEdit && (
+                <button onClick={() => setShowCategoryForm(true)}
+                  style={{ background: G_ACCENT_GRAD, border: "none", color: G_TEXT, borderRadius: 10, padding: "10px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 15px rgba(217,119,6,0.3)" }}>
+                  + קטגוריה חדשה
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Back button — collapses all expanded categories */}
+              {expandedCats.size > 0 && (
+                <button
+                  onClick={() => setExpandedCats(new Set())}
+                  style={{ marginBottom: 16, background: "none", border: "none", color: G_ACCENT, fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  ← חזרה לקטגוריות
+                </button>
+              )}
+
+              {/* Category grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+                {sortedCategories.map((cat, idx) => {
+                  const isExpanded = expandedCats.has(cat.id);
+                  return (
+                    <div key={cat.id} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      {/* Category card */}
                       <div
-                        className="p-4 flex items-center gap-3 cursor-pointer select-none transition-colors"
-                        style={{ borderBottom: isExpanded ? "1px solid #2d3239" : undefined }}
-                        onClick={() => toggleCat(cat.id)}
-                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                        style={{
+                          background: isExpanded ? G_CARD_HOVER : G_CARD,
+                          backdropFilter: "blur(15px)",
+                          WebkitBackdropFilter: "blur(15px)",
+                          border: `1px solid ${isExpanded ? "rgba(255,255,255,0.25)" : G_BORDER}`,
+                          borderRadius: isExpanded ? "24px 24px 0 0" : 24,
+                          padding: 22,
+                          height: 160,
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
+                          boxShadow: isExpanded ? "0 15px 35px rgba(0,0,0,0.3)" : "0 10px 30px rgba(0,0,0,0.15)",
+                          transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+                          cursor: "pointer",
+                        }}
                       >
-                        {cat.image && <img src={cat.image} alt={cat.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />}
-                        <h3 className="font-semibold flex-1" style={{ color: T.text }}>{cat.name}</h3>
-                        {/* Item count badge */}
-                        <span className="shrink-0" style={{ background: T.raised, color: T.muted, borderRadius: 999, padding: "2px 8px", fontSize: 12 }}>
-                          {cat.items.length} פריטים
-                        </span>
+                        {/* Top row */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }} onClick={() => toggleCat(cat.id)}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              {cat.image && <img src={cat.image} alt={cat.name} style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }} />}
+                              <span style={{ fontSize: 18, fontWeight: 700, color: G_TEXT }}>{cat.name}</span>
+                            </div>
+                            <div style={{ fontSize: 13, color: G_MUTED, display: "flex", alignItems: "center", gap: 6 }}>
+                              🗂 {cat.items.length} פריטים
+                            </div>
+                            {cat.autoReady && (
+                              <span style={{ alignSelf: "flex-start", background: "rgba(245,158,11,0.15)", color: "#FBBF24", border: "1px solid rgba(245,158,11,0.3)", padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, marginTop: 4 }}>
+                                🍹 ללא מטבח
+                              </span>
+                            )}
+                          </div>
+                          {/* Drag / order controls */}
+                          {canEdit && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2, opacity: 0.5 }} onClick={e => e.stopPropagation()}>
+                              <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
+                                style={{ background: "none", border: "none", color: G_MUTED, fontSize: 12, cursor: "pointer", lineHeight: 1, padding: "2px 4px", opacity: idx === 0 ? 0.3 : 1 }}>▲</button>
+                              <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1}
+                                style={{ background: "none", border: "none", color: G_MUTED, fontSize: 12, cursor: "pointer", lineHeight: 1, padding: "2px 4px", opacity: idx === sortedCategories.length - 1 ? 0.3 : 1 }}>▼</button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom actions */}
                         {canEdit && (
-                          <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                            {/* autoReady toggle — drinks/bar bypass kitchen */}
+                          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12 }} onClick={e => e.stopPropagation()}>
+                            {/* Toggle auto-ready */}
                             <button
                               onClick={() => toggleCategoryAutoReady(cat.id, cat.autoReady ?? false)}
-                              title={cat.autoReady ? "ביטול auto-ready — פריטים יישלחו למטבח" : "הפעל auto-ready — פריטים יסומנו כמוכנים מיידית (שתיה/בר)"}
-                              style={{
-                                fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20,
-                                border: `1px solid ${cat.autoReady ? "rgba(81,207,102,.4)" : "rgba(108,117,125,.3)"}`,
-                                background: cat.autoReady ? "rgba(81,207,102,.15)" : "rgba(108,117,125,.1)",
-                                color: cat.autoReady ? T.green : T.muted,
-                                cursor: "pointer",
-                              }}>
-                              {cat.autoReady ? "🍹 ללא מטבח" : "🍹"}
+                              title={cat.autoReady ? "ביטול auto-ready" : "הפעל auto-ready (שתיה/בר)"}
+                              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: cat.autoReady ? "#34d399" : G_MUTED, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", fontSize: 14, transition: "0.2s" }}
+                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+                              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                            >
+                              🍹
                             </button>
-                            <div className="flex flex-col gap-0.5">
-                              <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0}
-                                className="disabled:opacity-30 leading-none" style={{ fontSize: 12, color: T.muted }}>▲</button>
-                              <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1}
-                                className="disabled:opacity-30 leading-none" style={{ fontSize: 12, color: T.muted }}>▼</button>
-                            </div>
-                            <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                              className="text-sm font-medium" style={{ color: T.gold }}>+ פריט</button>
-                            <button onClick={() => deleteCategory(cat.id)} className="text-sm" style={{ color: T.red }}>מחק</button>
+                            {/* Add item */}
+                            <button
+                              onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: "8px 12px", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, transition: "0.2s" }}
+                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+                              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                            >
+                              ＋ פריט
+                            </button>
+                            {/* Edit category — expand/toggle */}
+                            <button
+                              onClick={() => toggleCat(cat.id)}
+                              title="פתח/סגור קטגוריה"
+                              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: isExpanded ? G_ACCENT : G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", fontSize: 14, transition: "0.2s" }}
+                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+                              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                            >
+                              {isExpanded ? "▲" : "▼"}
+                            </button>
+                            {/* Delete */}
+                            <button
+                              onClick={() => deleteCategory(cat.id)}
+                              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", fontSize: 14, transition: "0.2s" }}
+                              onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#FCA5A5"; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = G_BORDER; e.currentTarget.style.color = G_TEXT; }}
+                            >
+                              🗑
+                            </button>
                           </div>
                         )}
-                        {/* Chevron */}
-                        <svg
-                          className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                          style={{ color: T.muted }}
-                          fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
                       </div>
 
-                      {/* Items — only when expanded */}
+                      {/* Expanded items panel — attached below the card */}
                       {isExpanded && (
-                        <div>
+                        <div style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: `1px solid ${G_BORDER}`, borderTop: "none", borderRadius: "0 0 24px 24px", overflow: "hidden" }}>
                           {cat.items.length === 0 ? (
-                            <div className="p-6 text-center">
-                              <div className="text-2xl mb-1">🍽️</div>
-                              <p className="text-sm mb-2" style={{ color: T.muted }}>אין פריטים בקטגוריה זו</p>
+                            <div style={{ padding: 24, textAlign: "center" }}>
+                              <div style={{ fontSize: 28, marginBottom: 8 }}>🍽️</div>
+                              <p style={{ fontSize: 12, color: G_MUTED, marginBottom: 12 }}>אין פריטים בקטגוריה זו</p>
                               {canEdit && (
                                 <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                                  style={{ fontSize: 12, color: T.gold, border: "1px solid rgba(252,196,25,0.3)", background: "rgba(252,196,25,0.08)", borderRadius: 8, padding: "6px 12px", fontWeight: 500 }}>
+                                  style={{ fontSize: 12, color: G_ACCENT, border: "1px solid rgba(217,119,6,0.3)", background: "rgba(217,119,6,0.08)", borderRadius: 8, padding: "6px 12px", fontWeight: 500, cursor: "pointer" }}>
                                   + הוסף פריט ראשון
                                 </button>
                               )}
                             </div>
                           ) : (
                             cat.items.map((item, itemIdx) => (
-                              <div key={item.id} className="p-3 md:p-4 flex items-start md:items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap"
-                                style={{ borderTop: itemIdx === 0 ? undefined : "1px solid #2d3239" }}>
-                                {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium" style={!item.isActive ? { color: T.muted, textDecoration: "line-through" } : { color: T.text }}>{item.name}</span>
-                                    {item.isVegetarian && <span title="צמחוני" className="text-xs">🌿</span>}
-                                    {item.isVegan && <span title="טבעוני" className="text-xs">🌱</span>}
-                                    {item.isGlutenFree && <span title="ללא גלוטן" style={{ color: T.gold, fontWeight: 700, fontSize: 11 }}>GF</span>}
+                              <div key={item.id} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, borderTop: itemIdx === 0 ? "none" : `1px solid ${G_BORDER}` }}>
+                                {item.image && <img src={item.image} alt={item.name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />}
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                    <span style={{ fontWeight: 600, fontSize: 14, color: !item.isActive ? G_MUTED : G_TEXT, textDecoration: !item.isActive ? "line-through" : undefined }}>{item.name}</span>
+                                    {item.isVegetarian && <span title="צמחוני" style={{ fontSize: 12 }}>🌿</span>}
+                                    {item.isVegan && <span title="טבעוני" style={{ fontSize: 12 }}>🌱</span>}
+                                    {item.isGlutenFree && <span style={{ color: "#fbbf24", fontWeight: 700, fontSize: 11 }}>GF</span>}
                                     {item.prepTime != null && (
-                                      <span style={{ background: "rgba(51,154,240,0.15)", color: T.blue, borderRadius: 999, padding: "2px 6px", fontSize: 11, fontWeight: 600 }}>⏱ {item.prepTime}&apos;</span>
+                                      <span style={{ background: "rgba(96,165,250,0.15)", color: "#60a5fa", borderRadius: 999, padding: "2px 6px", fontSize: 11, fontWeight: 600 }}>⏱ {item.prepTime}&apos;</span>
                                     )}
                                     {item.tags?.map(tag => (
-                                      <span key={tag} style={{ background: T.raised, color: T.sub, borderRadius: 999, padding: "2px 6px", fontSize: 11 }}>{tag}</span>
+                                      <span key={tag} style={{ background: "rgba(255,255,255,0.08)", color: G_MUTED, borderRadius: 999, padding: "2px 6px", fontSize: 11 }}>{tag}</span>
                                     ))}
                                   </div>
-                                  {item.description && <p className="text-xs mt-0.5" style={{ color: T.muted }}>{item.description}</p>}
+                                  {item.description && <p style={{ fontSize: 11, color: G_MUTED, marginTop: 2, marginBottom: 0 }}>{item.description}</p>}
                                 </div>
-                                <div className="flex items-center gap-3 shrink-0">
-                                  <span style={{ color: T.green, fontWeight: 700 }}>{formatPrice(item.price)}</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                                  <span style={{ color: "#34d399", fontWeight: 700, fontSize: 14 }}>{formatPrice(item.price)}</span>
                                   {canEdit && (
                                     <>
-                                      <button onClick={() => openEditItem(cat, item)} style={{ color: T.blue, fontSize: 12 }}>ערוך</button>
+                                      <button onClick={() => openEditItem(cat, item)} style={{ color: "#60a5fa", fontSize: 12, background: "none", border: "none", cursor: "pointer" }}>ערוך</button>
                                       <button onClick={() => toggleItem(cat.id, item.id, item.isActive)}
-                                        style={{ color: item.isActive ? T.muted : T.green, fontSize: 12 }}>
+                                        style={{ color: item.isActive ? G_MUTED : "#34d399", fontSize: 12, background: "none", border: "none", cursor: "pointer" }}>
                                         {item.isActive ? "השבת" : "הפעל"}
                                       </button>
-                                      <button onClick={() => deleteItem(cat.id, item.id)} style={{ color: T.red, fontSize: 12 }}>מחק</button>
+                                      <button onClick={() => deleteItem(cat.id, item.id)} style={{ color: "#f87171", fontSize: 12, background: "none", border: "none", cursor: "pointer" }}>מחק</button>
                                     </>
                                   )}
                                 </div>
@@ -1400,14 +1432,102 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                         </div>
                       )}
                     </div>
-                    );
-                  })
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ─── Sidebar (right side in RTL = first in visual order, second in DOM) ─── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Restaurants panel */}
+          <div style={{ background: G_HEADER, backdropFilter: "blur(25px)", WebkitBackdropFilter: "blur(25px)", border: `1px solid ${G_BORDER}`, borderRadius: 22, padding: 20 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: G_MUTED, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              🏪 מסעדות פתוחות
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {restaurants.map(rest => (
+                <button key={rest.id}
+                  onClick={() => { setSelectedRestaurant(rest); setSelectedMenu(rest.menus[0] ?? null); }}
+                  style={{
+                    padding: "11px 16px", borderRadius: 12, border: "none", textAlign: "right",
+                    fontSize: 14, fontWeight: selectedRestaurant?.id === rest.id ? 700 : 500,
+                    cursor: "pointer", transition: "0.2s", width: "100%",
+                    background: selectedRestaurant?.id === rest.id ? "rgba(255,255,255,0.1)" : "transparent",
+                    color: selectedRestaurant?.id === rest.id ? G_TEXT : G_MUTED,
+                    boxShadow: selectedRestaurant?.id === rest.id ? `inset 0 0 0 1px ${G_BORDER}` : "none",
+                  }}
+                  onMouseEnter={e => { if (selectedRestaurant?.id !== rest.id) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = G_TEXT; } }}
+                  onMouseLeave={e => { if (selectedRestaurant?.id !== rest.id) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = G_MUTED; } }}
+                >
+                  {rest.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Menus panel */}
+          {selectedRestaurant && (
+            <div style={{ background: G_HEADER, backdropFilter: "blur(25px)", WebkitBackdropFilter: "blur(25px)", border: `1px solid ${G_BORDER}`, borderRadius: 22, padding: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: G_MUTED, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                📖 סוג תפריט
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {selectedRestaurant.menus.map(menu => (
+                  <div key={menu.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <button
+                      onClick={() => setSelectedMenu(menu)}
+                      style={{
+                        flex: 1, padding: "11px 16px", borderRadius: 12, border: "none", textAlign: "right",
+                        fontSize: 14, fontWeight: selectedMenu?.id === menu.id ? 700 : 500,
+                        cursor: "pointer", transition: "0.2s",
+                        background: selectedMenu?.id === menu.id ? "rgba(255,255,255,0.1)" : "transparent",
+                        color: selectedMenu?.id === menu.id ? G_TEXT : G_MUTED,
+                        boxShadow: selectedMenu?.id === menu.id ? `inset 0 0 0 1px ${G_BORDER}` : "none",
+                        display: "flex", alignItems: "center", gap: 6,
+                      }}
+                    >
+                      {menu.isPrimary && <span style={{ color: G_ACCENT, fontSize: 12 }}>★</span>}
+                      {menu.scheduleDays?.length > 0 && <span style={{ color: "#60a5fa", fontSize: 12 }}>⏰</span>}
+                      {menu.name}
+                    </button>
+                    {canEdit && (
+                      <div style={{ display: "flex", gap: 2, marginRight: 4 }}>
+                        <button onClick={() => openSchedule(menu)} style={{ color: G_MUTED, fontSize: 12, background: "none", border: "none", cursor: "pointer", padding: "0 4px" }} title="הגדרות תזמון">⚙️</button>
+                        <button onClick={() => deleteMenu(menu.id)} style={{ color: G_MUTED, fontSize: 12, background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}>✕</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {selectedRestaurant.menus.length === 0 && (
+                  <div style={{ padding: "16px 0", textAlign: "center" }}>
+                    <div style={{ fontSize: 24, marginBottom: 8 }}>📋</div>
+                    <p style={{ fontSize: 12, color: G_MUTED, marginBottom: 12 }}>אין תפריטים עדיין</p>
+                    {canEdit && (
+                      <button onClick={() => setShowMenuForm(true)}
+                        style={{ fontSize: 12, color: G_TEXT, border: "none", background: G_ACCENT_GRAD, borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", boxShadow: "0 2px 8px rgba(217,119,6,0.35)" }}>
+                        + צור תפריט ראשון
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
+              {canEdit && (
+                <button
+                  onClick={() => setShowMenuForm(true)}
+                  style={{ width: "100%", marginTop: 12, padding: "9px 0", borderRadius: 10, border: `1px dashed ${G_BORDER}`, background: "none", color: G_MUTED, fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                  onMouseEnter={e => { e.currentTarget.style.color = G_TEXT; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = G_MUTED; e.currentTarget.style.borderColor = G_BORDER; }}
+                >
+                  + תפריט נוסף
+                </button>
+              )}
+            </div>
+          )}
         </div>
-      )}
+
+      </div>
 
       {/* Menu Form Modal */}
       {showMenuForm && (
