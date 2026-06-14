@@ -105,11 +105,11 @@ function TypeBadge({ type }: { type: InsightType }) {
 function PrioBadge({ priority, highlight }: { priority: number; highlight?: boolean }) {
   return (
     <span style={{
-      fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
+      fontSize: 11, fontWeight: 400, padding: "3px 10px", borderRadius: 6,
       background: "transparent",
       color: T.amber,
       border: "none",
-      flexShrink: 0, whiteSpace: "nowrap",
+      flexShrink: 0, whiteSpace: "nowrap", textAlign: "right",
     }}>
       עדיפות {priority}
     </span>
