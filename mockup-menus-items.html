@@ -93,31 +93,42 @@
     .expand-items-list { flex: 1; }
 
     .item-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 11px 18px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 3px 14px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       position: relative;
       transition: background 0.15s;
+      min-height: 44px;
     }
     .item-row:last-child { border-bottom: none; }
     .item-row:hover { background: rgba(255,255,255,0.04); }
 
     .item-thumb {
-      width: 36px; height: 36px; border-radius: 9px;
+      width: 32px; height: 32px; border-radius: 8px;
       background: rgba(255,255,255,0.07);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
+      font-size: 16px; flex-shrink: 0;
     }
-    .item-info { flex: 1 }
+    .item-info { flex: 1; min-width: 0; }
     .item-name { font-size: 13px; font-weight: 600; }
     .item-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
-    .item-tags { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
-    .tag { background: rgba(255,255,255,0.07); border-radius: 20px; padding: 2px 8px; font-size: 10px; color: var(--muted); }
-    .tag.gf { color: #fbbf24; background: rgba(251,191,36,0.1); }
-    .tag.veg { color: #34d399; background: rgba(52,211,153,0.1); }
-    .item-price { font-size: 14px; font-weight: 700; color: var(--green); flex-shrink: 0; }
+
+    /* chips row */
+    .item-chips { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; align-items: center; }
+    .chip { border-radius: 20px; padding: 1px 7px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+    .chip.tag    { background: rgba(255,255,255,0.07); color: var(--muted); }
+    .chip.gf     { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+    .chip.veg    { background: rgba(52,211,153,0.1);  color: #34d399;  border: 1px solid rgba(52,211,153,0.2); }
+    .chip.vegan  { background: rgba(52,211,153,0.08); color: #6ee7b7;  border: 1px solid rgba(52,211,153,0.15); }
+    .chip.prep   { background: rgba(96,165,250,0.1);  color: #60a5fa;  border: 1px solid rgba(96,165,250,0.2); }
+    .chip.allerg { background: rgba(251,113,133,0.1); color: #fda4af;  border: 1px solid rgba(251,113,133,0.2); }
+    .chip.spicy  { background: rgba(239,68,68,0.1);   color: #f87171;  border: 1px solid rgba(239,68,68,0.2); }
+    .chip.new    { background: var(--accent-grad); color: #fff; }
+    .chip.calories { background: rgba(167,139,250,0.1); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.2); }
+
+    .item-price { font-size: 13px; font-weight: 700; color: var(--green); flex-shrink: 0; min-width: 46px; text-align: left; }
     .item-status-dot {
-      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
       background: var(--green);
     }
     .item-status-dot.off { background: rgba(255,255,255,0.2); }
@@ -203,7 +214,15 @@
             <div class="item-info">
               <div class="item-name">פילה בקר</div>
               <div class="item-desc">300 גרם, צלוי על פחמים</div>
-              <div class="item-tags"><span class="tag gf">GF</span><span class="tag">בשרי</span></div>
+              <div class="item-chips">
+                <span class="chip gf">GF</span>
+                <span class="chip prep">⏱ 18′</span>
+                <span class="chip allerg">🥛 חלב</span>
+                <span class="chip allerg">🥚 ביצים</span>
+                <span class="chip tag">בשרי</span>
+                <span class="chip calories">🔥 520 קל'</span>
+                <span class="chip new">NEW</span>
+              </div>
             </div>
             <span class="item-price">₪145</span>
             <button class="kebab-btn" onclick="openKebab(event,this)">⋮</button>
@@ -214,8 +233,14 @@
             <div class="item-thumb">🍝</div>
             <div class="item-info">
               <div class="item-name">פסטה בולונז</div>
-              <div class="item-desc">רוטב בשר ביתי</div>
-              <div class="item-tags"><span class="tag">פסטה</span></div>
+              <div class="item-desc">רוטב בשר ביתי, פרמזן</div>
+              <div class="item-chips">
+                <span class="chip allerg">🌾 גלוטן</span>
+                <span class="chip allerg">🥚 ביצים</span>
+                <span class="chip prep">⏱ 12′</span>
+                <span class="chip tag">פסטה</span>
+                <span class="chip calories">🔥 680 קל'</span>
+              </div>
             </div>
             <span class="item-price">₪78</span>
             <button class="kebab-btn" onclick="openKebab(event,this)">⋮</button>
@@ -227,18 +252,29 @@
             <div class="item-info">
               <div class="item-name">פילה דג ים</div>
               <div class="item-desc">עם ירקות מוקפצים</div>
-              <div class="item-tags"><span class="tag gf">GF</span><span class="tag veg">🌿</span></div>
+              <div class="item-chips">
+                <span class="chip gf">GF</span>
+                <span class="chip veg">🌿 צמחוני</span>
+                <span class="chip allerg">🐟 דגים</span>
+                <span class="chip prep">⏱ 20′</span>
+                <span class="chip calories">🔥 340 קל'</span>
+              </div>
             </div>
             <span class="item-price">₪118</span>
             <button class="kebab-btn" onclick="openKebab(event,this)">⋮</button>
           </div>
 
-          <div class="item-row" style="opacity:0.5">
+          <div class="item-row" style="opacity:0.55">
             <div class="item-status-dot off"></div>
             <div class="item-thumb">🍗</div>
             <div class="item-info">
               <div class="item-name" style="text-decoration:line-through">חזה עוף צלוי</div>
-              <div class="item-desc">לא פעיל</div>
+              <div class="item-desc">לא פעיל — הוסר מהתפריט זמנית</div>
+              <div class="item-chips">
+                <span class="chip gf">GF</span>
+                <span class="chip prep">⏱ 15′</span>
+                <span class="chip tag">פופולרי</span>
+              </div>
             </div>
             <span class="item-price" style="color:var(--muted)">₪89</span>
             <button class="kebab-btn" onclick="openKebab(event,this)">⋮</button>
@@ -250,7 +286,13 @@
             <div class="item-info">
               <div class="item-name">ריזוטו פטריות</div>
               <div class="item-desc">פרמזן ושמן כמהין</div>
-              <div class="item-tags"><span class="tag veg">🌿 צמחוני</span></div>
+              <div class="item-chips">
+                <span class="chip veg">🌿 צמחוני</span>
+                <span class="chip allerg">🥛 חלב</span>
+                <span class="chip allerg">🌾 גלוטן</span>
+                <span class="chip prep">⏱ 22′</span>
+                <span class="chip calories">🔥 490 קל'</span>
+              </div>
             </div>
             <span class="item-price">₪82</span>
             <button class="kebab-btn" onclick="openKebab(event,this)">⋮</button>
@@ -262,6 +304,13 @@
             <div class="item-info">
               <div class="item-name">טלה ברוסמרי</div>
               <div class="item-desc">קצב, עם ירקות שורש</div>
+              <div class="item-chips">
+                <span class="chip gf">GF</span>
+                <span class="chip spicy">🌶 חריף</span>
+                <span class="chip prep">⏱ 35′</span>
+                <span class="chip tag">מומלץ השף</span>
+                <span class="chip calories">🔥 720 קל'</span>
+              </div>
             </div>
             <span class="item-price">₪158</span>
             <button class="kebab-btn" onclick="openKebab(event,this)">⋮</button>
