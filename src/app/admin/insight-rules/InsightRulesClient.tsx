@@ -341,7 +341,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               return (
                 <div key={r.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "17px 18px",
+                  padding: "10px 16px",
                   background: G_ROW,
                   borderBottom: i < BUILTIN_RULE_META.length - 1 ? `1px solid ${G_BORDER}` : "none",
                   opacity: isEnabled ? 1 : 0.4,
@@ -390,7 +390,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               {rules.map((rule, i) => (
                 <div key={rule.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "17px 18px",
+                  padding: "10px 16px",
                   background: G_ROW,
                   borderBottom: i < rules.length - 1 ? `1px solid ${G_BORDER}` : "none",
                   opacity: rule.enabled ? 1 : 0.4,
