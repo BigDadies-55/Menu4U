@@ -112,6 +112,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   const [tables, setTables]           = useState<TableData[]>([]);
   const [insights, setInsights]       = useState<Insight[]>([]);
+  // key → { until: timestamp, tableStatus at snooze time }
+  const [snoozed, setSnoozed]         = useState<Map<string, { until: number; status: string }>>(new Map());
   const [loadingTables, setLoading]   = useState(true);
   const [insightLoading, setILoading] = useState(false);
   const [tick, setTick]               = useState(0);
@@ -353,7 +355,19 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       const r = await fetch(`/api/admin/waiter-pos/tables?restaurantId=${restaurantId}`);
       if (r.ok) {
         const data: TableData[] = await r.json();
-        setTables(data);
+        setTables(prev => {
+          // Clear snoozes for tables whose status changed
+          setSnoozed(s => {
+            const next = new Map(s);
+            for (const [key, v] of next) {
+              const tNum = key.split("|")[0];
+              const newT = data.find(t => t.tableNum === tNum);
+              if (newT && newT.availStatus !== v.status) next.delete(key);
+            }
+            return next;
+          });
+          return data;
+        });
         setUsingCachedData(false);
         // Persist tables to IDB for offline use
         idbSet("tables", restaurantId, { data, savedAt: new Date().toISOString() }).catch(() => {});
@@ -507,6 +521,17 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   }, [rotatedFloor, floorSize]);
 
   void tick;
+  // ── Insight snooze helpers ────────────────────────────────────────
+  function insightKey(ins: Insight) { return `${ins.tableNum}|${ins.type}|${ins.text.slice(0, 30)}`; }
+  function snoozeInsight(ins: Insight, minutes: number) {
+    const tStatus = tables.find(t => t.tableNum === ins.tableNum)?.availStatus ?? "";
+    setSnoozed(s => new Map(s).set(insightKey(ins), { until: Date.now() + minutes * 60_000, status: tStatus }));
+  }
+  const visibleInsights = insights.filter(ins => {
+    const entry = snoozed.get(insightKey(ins));
+    return !entry || Date.now() > entry.until;
+  });
+
   // ── Glass design tokens ───────────────────────────────────────────
   const G_CARD       = "rgba(255,255,255,0.08)";
   const G_CARD_HOVER = "rgba(255,255,255,0.14)";
@@ -946,11 +971,19 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               <button onClick={() => setAllInsightsOpen(false)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${G_BORDER_C}`, borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#fff" }}>✕</button>
             </div>
             <div style={{ padding: "16px 22px 22px" }}>
-              {insights.length === 0 ? (
+              {visibleInsights.length === 0 ? (
                 <div style={{ textAlign: "center", color: G_MUTED_C, fontSize: 14, padding: 30 }}>
                   {insightLoading ? "מנתח שולחנות..." : "אין תובנות זמינות כרגע"}
                 </div>
-              ) : insights.map((ins, i) => <InsightCard key={i} insight={ins} />)}
+              ) : visibleInsights.map((ins, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <InsightCard insight={ins} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 12, flexShrink: 0 }}>
+                    <button onClick={() => snoozeInsight(ins, 30)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: G_MUTED_C, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>⏸ 30 דק'</button>
+                    <button onClick={() => snoozeInsight(ins, 120)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: G_MUTED_C, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>⏸ 2 שע'</button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -1035,7 +1068,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           </div>
           <div style={{ width: 1, height: 22, background: "rgba(139,92,246,0.3)", flexShrink: 0 }} />
           <div style={{ flex: 1, overflow: "hidden", position: "relative", height: 28 }}>
-            {insights.length === 0 ? (
+            {visibleInsights.length === 0 ? (
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", height: "100%" }}>
                 {insightLoading ? "מנתח נתונים..." : "אין תובנות כרגע"}
               </div>
@@ -1043,9 +1076,9 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               <div style={{
                 display: "flex", gap: 10, position: "absolute", whiteSpace: "nowrap", alignItems: "center", height: "100%",
                 direction: "ltr", left: 0,
-                animation: insights.length >= 1 ? "scrollStrip 18s ease-in-out infinite alternate" : undefined,
+                animation: visibleInsights.length >= 1 ? "scrollStrip 18s ease-in-out infinite alternate" : undefined,
               }}>
-                {insights.map((ins, i) => {
+                {visibleInsights.map((ins, i) => {
                   const cs: Record<string, { bg: string; border: string; color: string }> = {
                     alert: { bg: "rgba(239,68,68,0.14)",   border: "rgba(239,68,68,0.35)",   color: "#fca5a5" },
                     tip:   { bg: "rgba(139,92,246,0.14)",  border: "rgba(139,92,246,0.35)",  color: "#c4b5fd" },
@@ -1053,14 +1086,17 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                   };
                   const s = cs[ins.type] ?? cs.info;
                   return (
-                    <span key={i} onClick={() => setTableOverlay(ins.tableNum)} style={{
-                      display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20,
+                    <span key={i} style={{
+                      display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 8px 4px 12px", borderRadius: 20,
                       background: s.bg, border: `1px solid ${s.border}`, color: s.color,
-                      fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", direction: "rtl",
+                      fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", direction: "rtl",
                     }}>
-                      <span style={{ fontWeight: 900, fontSize: 11, background: "rgba(255,255,255,0.12)", padding: "1px 6px", borderRadius: 6 }}>{ins.tableNum}</span>
-                      {ins.type === "alert" ? "⚠️" : ins.type === "tip" ? "💡" : "ℹ️"}
-                      {ins.text.replace(new RegExp(`^שולחן ${ins.tableNum}[^—]*—\\s*`), "").slice(0, 60)}
+                      <span onClick={() => setTableOverlay(ins.tableNum)} style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <span style={{ fontWeight: 900, fontSize: 11, background: "rgba(255,255,255,0.12)", padding: "1px 6px", borderRadius: 6 }}>{ins.tableNum}</span>
+                        {ins.type === "alert" ? "⚠️" : ins.type === "tip" ? "💡" : "ℹ️"}
+                        {ins.text.replace(new RegExp(`^שולחן ${ins.tableNum}[^—]*—\\s*`), "").slice(0, 60)}
+                      </span>
+                      <button onClick={e => { e.stopPropagation(); snoozeInsight(ins, 30); }} title="הסתר 30 דקות" style={{ background: "rgba(255,255,255,0.12)", border: "none", borderRadius: 99, width: 16, height: 16, fontSize: 9, cursor: "pointer", color: s.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>✕</button>
                     </span>
                   );
                 })}
