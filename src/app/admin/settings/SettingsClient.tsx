@@ -968,32 +968,37 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     { id: "clear",   label: "🗑️ ניקוי הזמנות" },
   ];
 
+  const G_ACCENT = "#D97706";
+  const G_BORDER = "rgba(255,255,255,0.15)";
+
   const tabBarStyle: React.CSSProperties = {
     display: "flex",
-    background: T.surface,
-    borderRadius: "14px 14px 0 0",
-    borderBottom: `2px solid ${T.border}`,
-    padding: "0 12px",
+    background: "rgba(0,0,0,0.35)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    borderRadius: "22px 22px 0 0",
+    borderBottom: `1px solid ${G_BORDER}`,
+    padding: "0 16px",
   };
 
   function topTabStyle(id: TopTab): React.CSSProperties {
     const active = topTab === id;
     return {
       display: "flex", alignItems: "center", gap: 8,
-      padding: "14px 24px 12px",
-      fontSize: 14, fontWeight: 700,
-      color: active ? T.gold : T.muted,
-      borderBottom: active ? `3px solid ${T.gold}` : "3px solid transparent",
-      position: "relative", bottom: -2,
+      padding: "16px 24px 14px",
+      fontSize: 15, fontWeight: 700,
+      color: active ? "#fff" : "rgba(255,255,255,0.5)",
+      borderBottom: active ? `3px solid ${G_ACCENT}` : "3px solid transparent",
+      position: "relative", bottom: -1,
       cursor: "pointer", background: "transparent", border: "none",
-      outline: "none", transition: "color 0.15s",
+      outline: "none", transition: "color 0.2s",
       whiteSpace: "nowrap",
     };
   }
 
   const subTabBarStyle: React.CSSProperties = {
     display: "flex",
-    borderBottom: `1px solid ${T.border}`,
+    borderBottom: `1px solid ${G_BORDER}`,
     padding: "0 20px",
     background: "rgba(0,0,0,0.2)",
   };
@@ -1004,8 +1009,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
       display: "flex", alignItems: "center", gap: 7,
       padding: "10px 18px 9px",
       fontSize: 13, fontWeight: 600,
-      color: active ? T.gold : T.muted,
-      borderBottom: active ? `2px solid ${T.gold}` : "2px solid transparent",
+      color: active ? G_ACCENT : "rgba(255,255,255,0.5)",
+      borderBottom: active ? `2px solid ${G_ACCENT}` : "2px solid transparent",
       position: "relative", bottom: -1,
       cursor: "pointer", background: "transparent", border: "none",
       outline: "none", transition: "color 0.15s",
@@ -1026,13 +1031,16 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
         ))}
       </div>
 
-      {/* ── Card ── */}
+      {/* ── Glass card wrapper ── */}
       <div style={{
-        background: T.surface,
-        border: `1px solid ${T.border}`,
+        background: "rgba(255,255,255,0.05)",
+        backdropFilter: "blur(28px) saturate(180%)",
+        WebkitBackdropFilter: "blur(28px) saturate(180%)",
+        border: `1px solid ${G_BORDER}`,
         borderTop: "none",
-        borderRadius: "0 0 16px 16px",
+        borderRadius: "0 0 22px 22px",
         overflow: "hidden",
+        boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
       }}>
 
         {/* ════ TAB: הגדרות ════ */}
@@ -1315,8 +1323,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
         {/* ════ TAB: מראה ════ */}
         {topTab === "appearance" && (
           <div style={{ padding: "28px 28px 32px", direction: "rtl" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: T.gold, marginBottom: 4 }}>פלטת צבעים — ממשק SUPER ADMIN</div>
-            <div style={{ fontSize: 13, color: T.sub, marginBottom: 24 }}>הפלטה שנבחר תופיע עבורך בלבד (Super Admin). כל מסעדה בוחרת פלטה משלה.</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: G_ACCENT, marginBottom: 4 }}>פלטת צבעים — ממשק SUPER ADMIN</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 24 }}>הפלטה שנבחר תופיע עבורך בלבד (Super Admin). כל מסעדה בוחרת פלטה משלה.</div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 28 }}>
               {Object.keys(ADMIN_PALETTES).map(p => {
@@ -1365,8 +1373,8 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                       </div>
                     </div>
                     <div style={{ padding: "8px 10px", background: isActive ? accent + "10" : "transparent", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{ADMIN_PALETTE_LABELS[p] ?? p}</span>
-                      {isActive && <span style={{ fontSize: 10, fontWeight: 700, color: T.gold, background: accent + "15", padding: "2px 7px", borderRadius: 99 }}>פעיל ✓</span>}
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{ADMIN_PALETTE_LABELS[p] ?? p}</span>
+                      {isActive && <span style={{ fontSize: 10, fontWeight: 700, color: G_ACCENT, background: accent + "15", padding: "2px 7px", borderRadius: 99 }}>פעיל ✓</span>}
                     </div>
                   </button>
                 );
@@ -1375,19 +1383,20 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
 
             {/* Save bar */}
             <div style={{ display: "flex", alignItems: "center", gap: 12,
-              borderTop: `1px solid ${T.border}`, padding: "14px 0 0",
+              borderTop: `1px solid ${G_BORDER}`, padding: "14px 0 0",
             }}>
               <button onClick={save} disabled={saving} style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
-                background: "linear-gradient(135deg,#8B6914,#C9A84C)",
+                background: `linear-gradient(135deg, ${G_ACCENT}, #F59E0B)`,
                 color: "#fff", fontSize: 14, fontWeight: 700,
-                padding: "10px 24px", borderRadius: 8, border: "none", cursor: "pointer",
+                padding: "12px 28px", borderRadius: 12, border: "none", cursor: "pointer",
                 opacity: saving ? 0.6 : 1,
+                boxShadow: "0 6px 20px rgba(217,119,6,0.4)",
               }}>
                 {saving ? "שומר..." : "💾 שמור שינויים"}
               </button>
               {saved && (
-                <span style={{ color: T.green, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ color: "#34d399", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                   נשמר בהצלחה!
                 </span>
