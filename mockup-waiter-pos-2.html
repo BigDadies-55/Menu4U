@@ -34,8 +34,8 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 16px 20px;
-            gap: 8px;
+            padding: 16px 20px 10px;
+            gap: 10px;
         }
 
         /* ═══════════════════════════════════════════
@@ -668,6 +668,8 @@
 
     </main>
 
+    <!-- ═══ BOTTOM SECTION (insights + KPI) ════════════════════════ -->
+    <div style="display:flex; flex-direction:column; gap:1px; margin-top:auto;">
     <!-- ═══ INSIGHTS STRIP ══════════════════════════════════════════ -->
     <div class="insights-strip">
         <div class="strip-label">
@@ -767,6 +769,8 @@
         </div>
         <button class="btn-refresh"><i data-lucide="refresh-cw" size="16"></i></button>
     </footer>
+
+    </div><!-- end bottom section -->
 
     <script>lucide.createIcons();</script>
 </body>
