@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Menu4U — Item Expansion Options</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --glass-card: rgba(255,255,255,0.07);
+      --glass-card-hover: rgba(255,255,255,0.14);
+      --glass-border: rgba(255,255,255,0.15);
+      --glass-header: rgba(255,255,255,0.04);
+      --text: #fff;
+      --muted: rgba(255,255,255,0.55);
+      --accent: #D97706;
+      --accent-grad: linear-gradient(135deg,#D97706,#F59E0B);
+      --green: #34d399;
+      --red: #f87171;
+      --blue: #60a5fa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: linear-gradient(rgba(10,10,16,0.80),rgba(10,10,16,0.80)),
+                  url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') center/cover fixed;
+      color: var(--text);
+      min-height: 100vh;
+      padding: 30px;
+    }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .option-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      background: var(--accent-grad);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* ── CATEGORY CARD BASE ── */
+    .cat-card {
+      background: var(--glass-card);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 20px;
+      height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cat-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .cat-name { font-size: 17px; font-weight: 700; }
+    .cat-count { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .cat-badge {
+      align-self: flex-start;
+      background: rgba(245,158,11,0.15); color: #FBBF24;
+      border: 1px solid rgba(245,158,11,0.3);
+      padding: 3px 9px; border-radius: 8px;
+      font-size: 10px; font-weight: 700; margin-top: 6px;
+    }
+    .cat-actions {
+      display: flex; justify-content: flex-end; gap: 8px;
+      border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;
+    }
+    .icon-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      padding: 7px 10px; border-radius: 10px;
+      font-size: 13px; cursor: pointer;
+    }
+    .icon-btn.amber { background: var(--accent-grad); border: none; font-weight: 700; font-size: 12px; padding: 7px 13px; }
+
+    /* ═══════════════════════════════════════════
+       OPTION A — Drawer: sliding panel right
+    ═══════════════════════════════════════════ */
+    .option-a-wrap { display: flex; gap: 0; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+    .drawer-card {
+      background: var(--glass-card);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-left: none;
+      border-radius: 24px 0 0 24px;
+      padding: 20px;
+      width: 260px;
+      height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .drawer-panel {
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(25px);
+      border: 1px solid var(--glass-border);
+      border-right: none;
+      border-radius: 0 24px 24px 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .drawer-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .drawer-header span { font-size: 13px; font-weight: 700; color: var(--accent); }
+    .drawer-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .item-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+    .item-name { font-size: 13px; flex: 1; }
+    .item-price { font-size: 13px; font-weight: 700; color: var(--green); }
+    .item-actions { display: flex; gap: 4px; }
+    .item-actions button {
+      background: none; border: none;
+      font-size: 11px; cursor: pointer;
+      padding: 2px 5px; border-radius: 6px;
+      color: var(--muted);
+    }
+    .drawer-add {
+      margin: 10px 14px;
+      border: 1px dashed rgba(217,119,6,0.4);
+      background: rgba(217,119,6,0.06);
+      border-radius: 10px;
+      padding: 7px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════
+       OPTION B — Overlay modal / spotlight
+    ═══════════════════════════════════════════ */
+    .modal-backdrop {
+      position: relative;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* dimmed cards */
+    .modal-bg-grid {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 14px;
+      filter: blur(1px) brightness(0.45);
+      pointer-events: none;
+    }
+    .modal-bg-card {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      height: 110px;
+      padding: 14px;
+    }
+    .modal-bg-card .t { font-size: 15px; font-weight: 700; }
+    .modal-bg-card .s { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    /* the spotlight modal */
+    .spotlight {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 580px;
+      background: rgba(15,14,22,0.96);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 28px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+      overflow: hidden;
+    }
+    .spotlight-header {
+      padding: 18px 22px;
+      background: var(--accent-grad);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .spotlight-header h3 { font-size: 18px; font-weight: 900; }
+    .spotlight-header span { font-size: 12px; opacity: 0.8; }
+    .spotlight-close { background: rgba(0,0,0,0.25); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+    .spotlight-body { display: grid; grid-template-columns: 1fr 1fr; }
+    .s-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      border-left: 1px solid rgba(255,255,255,0.06);
+    }
+    .s-item:nth-child(odd) { border-left: none; }
+    .s-thumb {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(255,255,255,0.07);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .s-item-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .s-item-price { font-size: 13px; font-weight: 700; color: var(--green); }
+    .s-item-edit { font-size: 11px; color: var(--blue); background: none; border: none; cursor: pointer; }
+    .spotlight-footer {
+      padding: 12px 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .spotlight-footer span { font-size: 12px; color: var(--muted); }
+    .btn-add-item {
+      background: var(--accent-grad); border: none;
+      color: #fff; padding: 7px 16px; border-radius: 10px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════
+       OPTION C — Expand-in-place accordion (2-col list inside card row)
+    ═══════════════════════════════════════════ */
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+    .expand-card {
+      background: var(--glass-card-hover);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 24px;
+      overflow: hidden;
+      grid-column: span 4;
+    }
+    .expand-card-top {
+      display: flex; gap: 0;
+    }
+    .expand-left {
+      width: 260px; flex-shrink: 0;
+      padding: 20px;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .expand-items-area {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 0;
+      padding: 0;
+      align-content: start;
+    }
+    .e-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-left: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+    .e-item:hover { background: rgba(255,255,255,0.04); }
+    .e-thumb {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: rgba(255,255,255,0.07);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .e-info { flex: 1 }
+    .e-name { font-size: 13px; font-weight: 600; }
+    .e-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .e-price { font-size: 13px; font-weight: 700; color: var(--green); }
+    .e-edit-del { display: flex; gap: 4px; flex-direction: column; }
+    .e-edit-del button { background: none; border: none; cursor: pointer; font-size: 10px; color: var(--muted); }
+    .e-add-tile {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-left: 1px solid rgba(255,255,255,0.05);
+      gap: 4px;
+      cursor: pointer;
+      color: var(--accent);
+    }
+    .e-add-tile:hover { background: rgba(217,119,6,0.07); }
+    .e-add-tile span { font-size: 18px; }
+    .e-add-tile p { font-size: 11px; font-weight: 600; }
+
+    .plain-card {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 20px;
+      height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==============================
+       OPTION A — Side Drawer
+  ============================== -->
+  <div style="margin-bottom:40px">
+    <div class="option-label">🔀 אפשרות A — מגירה צדדית (Side Drawer)</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">לחיצה על הקוביה פותחת מגירה ימינה בתוך אותה שורה — הקוביה נשארת גלויה, הפריטים מוצגים בצד</p>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start">
+
+      <!-- Category with open drawer -->
+      <div class="option-a-wrap" style="grid-column:span 2">
+        <div class="drawer-card">
+          <div class="cat-top">
+            <div>
+              <div class="cat-name">מנות ראשונות</div>
+              <div class="cat-count">🗂 8 פריטים</div>
+            </div>
+            <button style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:14px;cursor:pointer">✕</button>
+          </div>
+          <div class="cat-actions">
+            <button class="icon-btn">🍹</button>
+            <button class="icon-btn amber">＋ פריט</button>
+            <button class="icon-btn">🗑</button>
+          </div>
+        </div>
+        <div class="drawer-panel">
+          <div class="drawer-header">
+            <span>📋 פריטים — מנות ראשונות</span>
+            <span style="font-size:11px;color:var(--muted)">8 פריטים</span>
+          </div>
+          <div style="flex:1;overflow-y:auto">
+            <div class="drawer-item"><div class="item-dot"></div><span class="item-name">ברוסקטה איטלקית</span><span class="item-price">₪42</span><div class="item-actions"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="drawer-item"><div class="item-dot"></div><span class="item-name">מרק עגבניות</span><span class="item-price">₪38</span><div class="item-actions"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="drawer-item"><div class="item-dot"></div><span class="item-name">קרפצ'יו בקר</span><span class="item-price">₪68</span><div class="item-actions"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="drawer-item"><div class="item-dot"></div><span class="item-name">סלמון מעושן</span><span class="item-price">₪72</span><div class="item-actions"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="drawer-item"><div class="item-dot"></div><span class="item-name">פטה ביתי</span><span class="item-price">₪35</span><div class="item-actions"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+          </div>
+          <div class="drawer-add">＋ הוסף פריט חדש</div>
+        </div>
+      </div>
+
+      <!-- Regular cards -->
+      <div class="plain-card">
+        <div class="cat-top"><div><div class="cat-name">מנות עיקריות</div><div class="cat-count">🗂 16 פריטים</div></div></div>
+        <div class="cat-actions"><button class="icon-btn">🍹</button><button class="icon-btn">▼</button><button class="icon-btn">🗑</button></div>
+      </div>
+      <div class="plain-card">
+        <div class="cat-top"><div><div class="cat-name">קינוחים</div><div class="cat-count">🗂 8 פריטים</div></div></div>
+        <div class="cat-actions"><button class="icon-btn">🍹</button><button class="icon-btn">▼</button><button class="icon-btn">🗑</button></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==============================
+       OPTION B — Spotlight Modal
+  ============================== -->
+  <div style="margin-bottom:40px">
+    <div class="option-label">🔍 אפשרות B — Spotlight Modal</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">לחיצה על קוביה פותחת modal עם תצוגת גריד 2-עמודות של הפריטים, הרקע מטשטש — פריטים בולטים</p>
+
+    <div class="modal-backdrop">
+      <div class="modal-bg-grid">
+        <div class="modal-bg-card"><div class="t">מנות ראשונות</div><div class="s">8 פריטים</div></div>
+        <div class="modal-bg-card" style="border-color:rgba(217,119,6,0.4)"><div class="t" style="color:var(--accent)">מנות עיקריות</div><div class="s">16 פריטים</div></div>
+        <div class="modal-bg-card"><div class="t">קינוחים</div><div class="s">8 פריטים</div></div>
+        <div class="modal-bg-card"><div class="t">משקאות חמים</div><div class="s">7 פריטים</div></div>
+      </div>
+      <div class="spotlight">
+        <div class="spotlight-header">
+          <div>
+            <h3>מנות עיקריות</h3>
+            <span>16 פריטים</span>
+          </div>
+          <button class="spotlight-close">✕</button>
+        </div>
+        <div class="spotlight-body">
+          <div class="s-item"><div class="s-thumb">🥩</div><div style="flex:1"><div class="s-item-name">פילה בקר</div><div style="font-size:11px;color:var(--muted)">300 גרם</div></div><span class="s-item-price">₪145</span><button class="s-item-edit">ערוך</button></div>
+          <div class="s-item"><div class="s-thumb">🍝</div><div style="flex:1"><div class="s-item-name">פסטה בולונז</div><div style="font-size:11px;color:var(--muted)">ביתית</div></div><span class="s-item-price">₪78</span><button class="s-item-edit">ערוך</button></div>
+          <div class="s-item"><div class="s-thumb">🐟</div><div style="flex:1"><div class="s-item-name">פילה דג ים</div><div style="font-size:11px;color:var(--muted)">עם ירקות</div></div><span class="s-item-price">₪118</span><button class="s-item-edit">ערוך</button></div>
+          <div class="s-item"><div class="s-thumb">🍗</div><div style="flex:1"><div class="s-item-name">חזה עוף צלוי</div><div style="font-size:11px;color:var(--muted)">עם תוספות</div></div><span class="s-item-price">₪89</span><button class="s-item-edit">ערוך</button></div>
+          <div class="s-item"><div class="s-thumb">🥗</div><div style="flex:1"><div class="s-item-name">ריזוטו פטריות</div><div style="font-size:11px;color:var(--muted)">פרמזן</div></div><span class="s-item-price">₪82</span><button class="s-item-edit">ערוך</button></div>
+          <div class="s-item"><div class="s-thumb">🍖</div><div style="flex:1"><div class="s-item-name">טלה ברוסמרי</div><div style="font-size:11px;color:var(--muted)">קצב</div></div><span class="s-item-price">₪158</span><button class="s-item-edit">ערוך</button></div>
+        </div>
+        <div class="spotlight-footer">
+          <span>מציג 6 מתוך 16</span>
+          <button class="btn-add-item">＋ פריט חדש</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================
+       OPTION C — Inline Expand (full-width row)
+  ============================== -->
+  <div>
+    <div class="option-label">📐 אפשרות C — פריסה מלאה בשורה (Inline Expand)</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">לחיצה על קוביה מפרישה אותה לשורה מלאה (4 עמודות) עם כרטיסיות הפריטים בגריד 3 עמודות</p>
+
+    <div class="grid-4">
+
+      <!-- Expanded category — takes full row -->
+      <div class="expand-card">
+        <div class="expand-card-top">
+          <!-- Left: category info -->
+          <div class="expand-left">
+            <div>
+              <div style="font-size:17px;font-weight:700;margin-bottom:4px">מנות עיקריות</div>
+              <div style="font-size:12px;color:var(--muted)">16 פריטים</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="icon-btn" style="flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--accent)">＋ פריט</button>
+              <button class="icon-btn">▲</button>
+              <button class="icon-btn">🗑</button>
+            </div>
+          </div>
+          <!-- Right: items grid -->
+          <div class="expand-items-area">
+            <div class="e-item"><div class="e-thumb">🥩</div><div class="e-info"><div class="e-name">פילה בקר</div><div class="e-desc">300 גרם</div></div><span class="e-price">₪145</span><div class="e-edit-del"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="e-item"><div class="e-thumb">🍝</div><div class="e-info"><div class="e-name">פסטה בולונז</div><div class="e-desc">ביתית</div></div><span class="e-price">₪78</span><div class="e-edit-del"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="e-item"><div class="e-thumb">🐟</div><div class="e-info"><div class="e-name">פילה דג ים</div><div class="e-desc">עם ירקות</div></div><span class="e-price">₪118</span><div class="e-edit-del"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="e-item"><div class="e-thumb">🍗</div><div class="e-info"><div class="e-name">חזה עוף צלוי</div><div class="e-desc">עם תוספות</div></div><span class="e-price">₪89</span><div class="e-edit-del"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="e-item"><div class="e-thumb">🥗</div><div class="e-info"><div class="e-name">ריזוטו פטריות</div><div class="e-desc">פרמזן</div></div><span class="e-price">₪82</span><div class="e-edit-del"><button style="color:var(--blue)">ערוך</button><button style="color:var(--red)">מחק</button></div></div>
+            <div class="e-add-tile"><span>＋</span><p>פריט חדש</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Regular cards below -->
+      <div class="plain-card">
+        <div class="cat-top"><div><div class="cat-name">מנות ראשונות</div><div class="cat-count">🗂 8 פריטים</div></div></div>
+        <div class="cat-actions"><button class="icon-btn">🍹</button><button class="icon-btn">▼</button><button class="icon-btn">🗑</button></div>
+      </div>
+      <div class="plain-card">
+        <div class="cat-top"><div><div class="cat-name">קינוחים</div><div class="cat-count">🗂 8 פריטים</div></div></div>
+        <div class="cat-actions"><button class="icon-btn">🍹</button><button class="icon-btn">▼</button><button class="icon-btn">🗑</button></div>
+      </div>
+      <div class="plain-card">
+        <div class="cat-top"><div><div class="cat-name">משקאות חמים</div><div class="cat-count">🗂 7 פריטים</div><div class="cat-badge">🍹 ללא מטבח</div></div></div>
+        <div class="cat-actions"><button class="icon-btn">🍹</button><button class="icon-btn">▼</button><button class="icon-btn">🗑</button></div>
+      </div>
+      <div class="plain-card">
+        <div class="cat-top"><div><div class="cat-name">יינות</div><div class="cat-count">🗂 4 פריטים</div><div class="cat-badge">🍹 ללא מטבח</div></div></div>
+        <div class="cat-actions"><button class="icon-btn">🍹</button><button class="icon-btn">▼</button><button class="icon-btn">🗑</button></div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
