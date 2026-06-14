@@ -340,6 +340,110 @@
             transition: 0.2s;
         }
         .btn-refresh:hover { background: rgba(255,255,255,0.12); transform: rotate(30deg); }
+
+        /* ═══════════════════════════════════════════
+           INSIGHTS STRIP — פס תובנות צף
+        ═══════════════════════════════════════════ */
+        .insights-strip {
+            background: rgba(8,8,14,0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(139,92,246,0.25);
+            border-radius: 16px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .strip-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #a78bfa;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .strip-divider {
+            width: 1px; height: 22px;
+            background: rgba(139,92,246,0.3);
+            flex-shrink: 0;
+        }
+
+        /* גלגלת בועות */
+        .strip-track {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            height: 28px;
+        }
+
+        .strip-scroller {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            white-space: nowrap;
+            animation: scrollInsights 22s linear infinite;
+        }
+        .strip-scroller:hover { animation-play-state: paused; }
+
+        @keyframes scrollInsights {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .insight-bubble {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .insight-bubble:hover { filter: brightness(1.2); transform: scale(1.04); }
+
+        .ib-alert {
+            background: rgba(239,68,68,0.14);
+            border: 1px solid rgba(239,68,68,0.35);
+            color: #fca5a5;
+        }
+        .ib-warn {
+            background: rgba(249,115,22,0.14);
+            border: 1px solid rgba(249,115,22,0.35);
+            color: #fdba74;
+        }
+        .ib-tip {
+            background: rgba(139,92,246,0.14);
+            border: 1px solid rgba(139,92,246,0.35);
+            color: #c4b5fd;
+        }
+        .ib-info {
+            background: rgba(59,130,246,0.14);
+            border: 1px solid rgba(59,130,246,0.3);
+            color: #93c5fd;
+        }
+        .ib-ok {
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #6ee7b7;
+        }
+
+        .bubble-table {
+            font-weight: 900;
+            font-size: 11px;
+            background: rgba(255,255,255,0.12);
+            padding: 1px 6px;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -563,6 +667,67 @@
         </div>
 
     </main>
+
+    <!-- ═══ INSIGHTS STRIP ══════════════════════════════════════════ -->
+    <div class="insights-strip">
+        <div class="strip-label">
+            <i data-lucide="sparkles" size="13"></i> תובנות
+        </div>
+        <div class="strip-divider"></div>
+        <div class="strip-track">
+            <!-- הבועות מוכפלות כדי שהגלגלת תיראה רציפה -->
+            <div class="strip-scroller" id="scroller">
+
+                <span class="insight-bubble ib-alert">
+                    <span class="bubble-table">8</span>
+                    ⚠️ שולחן 8 מחכה לחשבון כ-10 דקות
+                </span>
+                <span class="insight-bubble ib-warn">
+                    <span class="bubble-table">4</span>
+                    🕐 שולחן 4 ישב 42 דקות — עדיין לא הוזמן קינוח
+                </span>
+                <span class="insight-bubble ib-tip">
+                    <span class="bubble-table">6</span>
+                    💡 שולחן 6 מוזמן בעוד 15 דקות — הכן
+                </span>
+                <span class="insight-bubble ib-info">
+                    <span class="bubble-table">4</span>
+                    🍽️ שולחן 4 — מנה עיקרית מוכנה למסירה
+                </span>
+                <span class="insight-bubble ib-ok">
+                    ✅ כל ההזמנות הפעילות בסדר
+                </span>
+                <span class="insight-bubble ib-tip">
+                    📈 שעת שיא עוד 30 דקות — 3 הזמנות ממתינות
+                </span>
+
+                <!-- שכפול לגלגלת חלקה -->
+                <span class="insight-bubble ib-alert">
+                    <span class="bubble-table">8</span>
+                    ⚠️ שולחן 8 מחכה לחשבון כ-10 דקות
+                </span>
+                <span class="insight-bubble ib-warn">
+                    <span class="bubble-table">4</span>
+                    🕐 שולחן 4 ישב 42 דקות — עדיין לא הוזמן קינוח
+                </span>
+                <span class="insight-bubble ib-tip">
+                    <span class="bubble-table">6</span>
+                    💡 שולחן 6 מוזמן בעוד 15 דקות — הכן
+                </span>
+                <span class="insight-bubble ib-info">
+                    <span class="bubble-table">4</span>
+                    🍽️ שולחן 4 — מנה עיקרית מוכנה למסירה
+                </span>
+                <span class="insight-bubble ib-ok">
+                    ✅ כל ההזמנות הפעילות בסדר
+                </span>
+                <span class="insight-bubble ib-tip">
+                    📈 שעת שיא עוד 30 דקות — 3 הזמנות ממתינות
+                </span>
+
+            </div>
+        </div>
+    </div>
 
     <!-- ═══ BOTTOM BAR ════════════════════════════════════════════════ -->
     <footer class="bottom-bar">
