@@ -221,7 +221,7 @@ function isLeafActive(leaf: NavLeaf, pathname: string): boolean {
 
 /* ─── Colors ─────────────────────────────────────────────────── */
 const GOLD_GRADIENT = `linear-gradient(110deg,#7a3c04 0%,${T.gold} 50%,#e8843a 100%)`;
-const GLASS_BG      = "rgba(255,255,255,0.08)";
+const GLASS_BG      = "rgba(0,0,0,0.45)";
 const GLASS_BORDER  = "rgba(255,255,255,0.18)";
 const GLASS_ACCENT  = "#D97706";
 const GLASS_ACCENT2 = "#f59e0b";
@@ -814,26 +814,23 @@ export default function Sidebar({
                     onClick={() => toggleGroup(group.id)}
                     style={{
                       display: "flex", alignItems: "center", gap: 8,
-                      padding: "9px 6px 8px",
-                      fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+                      padding: "10px 6px 9px",
+                      fontSize: 13, fontWeight: 700, letterSpacing: "0.03em",
                       cursor: "pointer", background: "none", border: "none",
                       width: "100%", textAlign: "right" as const,
                       userSelect: "none" as const, position: "relative" as const,
                       color: useDefaultDrawer ? "rgba(255,255,255,0.55)" : undefined,
                     }}
                   >
-                    {/* chevron */}
-                    <span
-                      className={`group-chevron${isGroupOpen ? " open" : ""}`}
-                      style={{ fontSize: 9, color: useDefaultDrawer ? "rgba(255,255,255,0.5)" : T.gold, flexShrink: 0, transform: isGroupOpen ? "rotate(90deg)" : "rotate(0deg)" }}
-                    >
-                      ▶
+                    {/* group icon — RIGHT side (RTL start) */}
+                    <span style={{ color: useDefaultDrawer ? "rgba(255,255,255,0.6)" : T.muted, flexShrink: 0 }}>
+                      <group.I />
                     </span>
 
                     {/* label */}
                     <span style={{
                       flexShrink: 0,
-                      color: useDefaultDrawer ? "rgba(255,255,255,0.7)" : undefined,
+                      color: useDefaultDrawer ? "rgba(255,255,255,0.8)" : undefined,
                       background: useDefaultDrawer ? undefined : GOLD_GRADIENT,
                       WebkitBackgroundClip: useDefaultDrawer ? undefined : "text",
                       WebkitTextFillColor: useDefaultDrawer ? undefined : "transparent",
@@ -845,9 +842,12 @@ export default function Sidebar({
                     {/* flex spacer */}
                     <span style={{ flex: 1 }} />
 
-                    {/* group icon */}
-                    <span style={{ color: useDefaultDrawer ? "rgba(255,255,255,0.45)" : T.muted, flexShrink: 0 }}>
-                      <group.I />
+                    {/* chevron — LEFT side (RTL end) */}
+                    <span
+                      className={`group-chevron${isGroupOpen ? " open" : ""}`}
+                      style={{ fontSize: 9, color: useDefaultDrawer ? "rgba(255,255,255,0.5)" : T.gold, flexShrink: 0, transform: isGroupOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+                    >
+                      ▶
                     </span>
 
                     {/* bottom separator */}
@@ -877,7 +877,7 @@ export default function Sidebar({
                               className={active ? undefined : "nav-item-link"}
                               style={{
                                 display: "flex", alignItems: "center", gap: 12,
-                                padding: "10px 14px", fontSize: 13,
+                                padding: "11px 14px", fontSize: 14,
                                 color: active ? "#fff" : "rgba(255,255,255,0.8)",
                                 textDecoration: "none", borderRadius: 14,
                                 background: active
