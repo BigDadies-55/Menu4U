@@ -847,7 +847,7 @@ export default function Sidebar({
                     {/* chevron — LEFT side (RTL end) */}
                     <span
                       className={`group-chevron${isGroupOpen ? " open" : ""}`}
-                      style={{ fontSize: 9, color: useDefaultDrawer ? "rgba(255,255,255,0.5)" : T.gold, flexShrink: 0, transform: isGroupOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+                      style={{ fontSize: 9, color: useDefaultDrawer ? "rgba(255,255,255,0.5)" : T.gold, flexShrink: 0, transform: isGroupOpen ? "rotate(-90deg)" : "rotate(0deg)" }}
                     >
                       ◀
                     </span>
