@@ -6,7 +6,7 @@ import { BUILTIN_RULE_META } from "@/lib/waiter-insights";
 
 // ─── design tokens (glass) ───────────────────────────────────────────────────
 const BG_PAGE    = `linear-gradient(rgba(8,8,20,0.82),rgba(8,8,20,0.82)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`;
-const G_ROW      = "rgba(255,255,255,0.055)";
+const G_ROW      = "rgba(255,255,255,0.12)";
 const G_BORDER   = "rgba(255,255,255,0.10)";
 const G_BORDER_B = "rgba(255,255,255,0.18)";
 const G_MUTED    = "rgba(255,255,255,0.45)";
@@ -141,7 +141,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   const [editId, setEditId]         = useState<string | "new" | null>(null);
   const [form, setForm]             = useState<Omit<CustomRule, "id">>(EMPTY_RULE);
   const [editBuiltinId, setEditBuiltinId] = useState<string | null>(null);
-  const [builtinForm, setBuiltinForm] = useState<{ text: string; priority: number; type: InsightType; conditions: Condition[] }>({ text: "", priority: 0, type: "alert", conditions: [] });
+  const [builtinForm, setBuiltinForm] = useState<{ text: string; priority: number; type: InsightType; conditions: Condition[]; fireOnce: boolean }>({ text: "", priority: 0, type: "alert", conditions: [], fireOnce: false });
   const [toast, setToast]           = useState<string | null>(null);
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 2500); }
@@ -205,7 +205,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   function startEditBuiltin(ruleId: string) {
     const meta = BUILTIN_RULE_META.find(r => r.id === ruleId)!;
     const ov = builtinOverrides[ruleId];
-    setBuiltinForm({ text: ov?.text ?? "", priority: ov?.priority ?? meta.priority, type: ov?.type ?? meta.type, conditions: ov?.conditions ? [...ov.conditions] : [...meta.defaultConditions] });
+    setBuiltinForm({ text: ov?.text ?? "", priority: ov?.priority ?? meta.priority, type: ov?.type ?? meta.type, conditions: ov?.conditions ? [...ov.conditions] : [...meta.defaultConditions], fireOnce: ov?.fireOnce ?? false });
     setEditBuiltinId(ruleId);
   }
 
@@ -220,7 +220,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
     const meta = BUILTIN_RULE_META.find(r => r.id === editBuiltinId)!;
     const cur = builtinOverrides[editBuiltinId];
     const condsChanged = JSON.stringify(builtinForm.conditions) !== JSON.stringify(meta.defaultConditions);
-    await patchBuiltin(editBuiltinId, { enabled: cur?.enabled ?? true, text: builtinForm.text.trim() || undefined, priority: builtinForm.priority, type: builtinForm.type !== meta.type ? builtinForm.type : undefined, conditions: condsChanged ? builtinForm.conditions : undefined });
+    await patchBuiltin(editBuiltinId, { enabled: cur?.enabled ?? true, text: builtinForm.text.trim() || undefined, priority: builtinForm.priority, type: builtinForm.type !== meta.type ? builtinForm.type : undefined, conditions: condsChanged ? builtinForm.conditions : undefined, fireOnce: builtinForm.fireOnce || undefined });
     setEditBuiltinId(null);
     showToast("כלל עודכן");
   }
@@ -464,6 +464,14 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
               <input value={builtinForm.text} onChange={e => setBuiltinForm(f => ({ ...f, text: e.target.value }))} placeholder={meta.defaultText} style={{ ...INP, marginBottom: 6, boxSizing: "border-box" }} />
               <div style={{ fontSize: 11, color: G_MUTED, marginBottom: 24 }}>
                 משתנים: {"{tableNum}"} {"{minutesSitting}"} {"{guests}"} {"{orderStatus}"} {"{totalAmount}"} {"{minutesSinceLastOrder}"} {"{minutesSinceBillRequested}"}
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input type="checkbox" checked={builtinForm.fireOnce} onChange={e => setBuiltinForm(f => ({ ...f, fireOnce: e.target.checked }))} style={{ width: 15, height: 15, cursor: "pointer" }} />
+                  <span style={{ fontSize: 13, color: G_TEXT, fontWeight: 600 }}>הצג פעם אחת בלבד לכל ישיבה</span>
+                  <span style={{ fontSize: 11, color: G_MUTED }}>(מתאפס כשהשולחן מתפנה)</span>
+                </label>
               </div>
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

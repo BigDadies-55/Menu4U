@@ -56,6 +56,7 @@ export interface BuiltinRuleOverride {
   priority?: number;            // custom priority (overrides default)
   type?: InsightType;           // custom type (alert/tip/info)
   conditions?: Condition[];     // if set, replaces the built-in match function entirely
+  fireOnce?: boolean;           // fire at most once per table per sitting session
 }
 export type BuiltinRuleOverrides = Record<string, BuiltinRuleOverride>; // key = rule id
 
@@ -294,7 +295,7 @@ export function computeInsights(
       if (matched) {
         const text = ov?.text ? renderText(ov.text, table) : rule.text(table);
         const type = ov?.type ?? rule.type;
-        trySet({ tableNum: table.tableNum, type, text, priority: rule.effectivePriority });
+        trySet({ tableNum: table.tableNum, type, text, priority: rule.effectivePriority, ruleId: rule.id });
         break;
       }
     }
