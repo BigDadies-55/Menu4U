@@ -107,7 +107,7 @@ function PrioBadge({ priority, highlight }: { priority: number; highlight?: bool
     <span style={{
       fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
       background: "transparent",
-      color: highlight ? T.amber : G_MUTED,
+      color: T.amber,
       border: "none",
       flexShrink: 0, whiteSpace: "nowrap",
     }}>
