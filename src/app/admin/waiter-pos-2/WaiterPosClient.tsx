@@ -526,11 +526,11 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
   return (
     <div dir="rtl" style={{
-      ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { height: "calc(100vh - 64px)" }),
+      ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
       fontFamily: "'Heebo', sans-serif",
-      overflow: "hidden",
+      overflowX: "hidden",
       display: "flex", flexDirection: "column",
-      padding: "16px 20px 0", gap: 10,
+      padding: "16px 20px 115px", gap: 10,
       background: `linear-gradient(rgba(12,12,18,0.78),rgba(12,12,18,0.78)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`,
       color: "#fff",
     }}>
@@ -732,7 +732,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
       {/* ══ GRID VIEW ══ */}
       {viewMode === "grid" && (
-        <div style={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ flex: 1 }}>
           <div style={{
             display: "grid",
             gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 150 : 185}px, 1fr))`,
@@ -1022,7 +1022,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       )}
 
       {/* ══ BOTTOM SECTION ══ */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: "auto" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", flexDirection: "column", gap: 1, padding: "0 20px 0" }}>
 
         {/* Scrolling insights strip */}
         <div style={{
@@ -1043,9 +1043,9 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               <div style={{
                 display: "flex", gap: 10, position: "absolute", whiteSpace: "nowrap", alignItems: "center", height: "100%",
                 direction: "ltr", left: 0,
-                animation: insights.length > 2 ? "scrollStrip 22s linear infinite" : undefined,
+                animation: insights.length >= 1 ? "scrollStrip 22s linear infinite" : undefined,
               }}>
-                {[...insights, ...(insights.length > 2 ? insights : [])].map((ins, i) => {
+                {[...insights, ...insights].map((ins, i) => {
                   const cs: Record<string, { bg: string; border: string; color: string }> = {
                     alert: { bg: "rgba(239,68,68,0.14)",   border: "rgba(239,68,68,0.35)",   color: "#fca5a5" },
                     tip:   { bg: "rgba(139,92,246,0.14)",  border: "rgba(139,92,246,0.35)",  color: "#c4b5fd" },
