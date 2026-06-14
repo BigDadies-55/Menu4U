@@ -358,7 +358,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                     )}
                   </div>
                   <PrioBadge priority={effectivePriority} highlight={!!hasOverride || !!hasGlobalOv} />
-                  <GBtn onClick={() => startEditBuiltin(r.id)}>עריכה</GBtn>
+                  <GBtn onClick={() => startEditBuiltin(r.id)} title="עריכה">✏️</GBtn>
                   {hasOverride && (
                     <button onClick={() => resetBuiltin(r.id)} title="אפס לברירת מחדל" style={{
                       background: "transparent", border: "none", color: G_MUTED,
@@ -411,7 +411,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                     </div>
                   </div>
                   <PrioBadge priority={rule.priority} highlight />
-                  <GBtn onClick={() => startEdit(rule)}>עריכה</GBtn>
+                  <GBtn onClick={() => startEdit(rule)} title="עריכה">✏️</GBtn>
                   <GBtn onClick={() => deleteRule(rule.id)} color={T.red}>מחיקה</GBtn>
                 </div>
               ))}
