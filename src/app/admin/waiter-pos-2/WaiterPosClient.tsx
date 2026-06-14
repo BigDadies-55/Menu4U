@@ -530,7 +530,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       fontFamily: "'Heebo', sans-serif",
       overflow: "hidden",
       display: "flex", flexDirection: "column",
-      padding: "16px 20px 10px", gap: 10,
+      padding: "16px 20px 0", gap: 10,
       background: `linear-gradient(rgba(12,12,18,0.78),rgba(12,12,18,0.78)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`,
       color: "#fff",
     }}>
@@ -748,7 +748,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               const numColor      = STATUS_NUM_COLOR[t.availStatus] ?? "#fff";
               const numGlow       = STATUS_NUM_GLOW[t.availStatus] ?? "transparent";
               const tableInsights = t.availStatus === "reserved" ? [] : insights.filter(i => i.tableNum === t.tableNum);
-              const isWarn        = t.availStatus === "occupied" && t.minutesSitting > 20;
+              const isOccupied    = t.availStatus === "occupied" || t.availStatus === "bill_requested";
+              const isWarn        = isOccupied && t.minutesSitting > 20;
               const isInactive    = t.availStatus === "inactive";
               const statusBadgeBg   = ORDER_STATUS_COLOR[t.orderStatus ?? ""] ?? STATUS_BADGE_BG[t.availStatus];
               const statusBadgeFg   = t.orderStatus ? (ORDER_STATUS_TEXT_COLOR[t.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[t.availStatus] ?? "#374151");
@@ -790,14 +791,14 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     <div style={{ textAlign: "left", direction: "ltr" }}>
                       <div style={{ fontSize: 11, color: G_MUTED_C }}>זמן ישיבה</div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: isWarn ? "#fca5a5" : "#fff", fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
-                        {t.availStatus === "occupied" ? fmtTimer(t.sittingStart) : "--:--"}
+                        {isOccupied ? fmtTimer(t.sittingStart) : "--:--"}
                       </div>
                     </div>
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontSize: 12, color: G_MUTED_C }}>
-                      👤 {t.availStatus === "occupied" && t.guests > 0 ? `${t.guests} סועדים` : `${t.seats} מקומות`}
+                      👤 {isOccupied && t.guests > 0 ? `${t.guests} סועדים` : `${t.seats} מקומות`}
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: statusBadgeBg, color: statusBadgeFg }}>{statusBadgeText}</span>
                   </div>
@@ -1041,6 +1042,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             ) : (
               <div style={{
                 display: "flex", gap: 10, position: "absolute", whiteSpace: "nowrap", alignItems: "center", height: "100%",
+                direction: "ltr", left: 0,
                 animation: insights.length > 2 ? "scrollStrip 22s linear infinite" : undefined,
               }}>
                 {[...insights, ...(insights.length > 2 ? insights : [])].map((ins, i) => {
