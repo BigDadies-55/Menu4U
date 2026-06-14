@@ -1326,200 +1326,200 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 </>
               )}
 
-              {/* Category grid — 4 columns, cards match exact mockup */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
-                {sortedCategories.map((cat, idx) => {
-                  const isExpanded = expandedCats.has(cat.id);
+              {/* Category grid — 4 equal-height cards */}
+              {(() => {
+                const expandedCatId = expandedCats.size > 0 ? [...expandedCats][0] : null;
+                const expandedCat = expandedCatId ? sortedCategories.find(c => c.id === expandedCatId) : null;
+                const chipStyle: React.CSSProperties = { borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 600, whiteSpace: "nowrap", background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.1)" };
 
-                  const chipStyle: React.CSSProperties = { borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 600, whiteSpace: "nowrap", background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.1)" };
+                const handleToggleCat = (id: string) => {
+                  if (expandedCats.has(id)) setExpandedCats(new Set());
+                  else setExpandedCats(new Set([id]));
+                };
 
-                  return (
-                    <div key={cat.id} style={{ display: "flex", flexDirection: "column" }}>
-
-                      {/* ── Category card — exact mockup look ── */}
-                      <div
-                        className="category-card-glass"
-                        style={{
-                          background: G_CARD,
-                          backdropFilter: "blur(15px)",
-                          WebkitBackdropFilter: "blur(15px)",
-                          border: `1px solid ${isExpanded ? "rgba(255,255,255,0.25)" : G_BORDER}`,
-                          borderRadius: isExpanded ? "24px 24px 0 0" : 24,
-                          padding: 22,
-                          height: 160,
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                          boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-                          transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
-                          cursor: "pointer",
-                          position: "relative",
-                        }}
-                        onMouseEnter={e => {
-                          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-5px)";
-                          (e.currentTarget as HTMLDivElement).style.background = G_CARD_HOVER;
-                          (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.25)";
-                          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 15px 35px rgba(0,0,0,0.3)";
-                        }}
-                        onMouseLeave={e => {
-                          (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                          (e.currentTarget as HTMLDivElement).style.background = G_CARD;
-                          (e.currentTarget as HTMLDivElement).style.borderColor = isExpanded ? "rgba(255,255,255,0.25)" : G_BORDER;
-                          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 10px 30px rgba(0,0,0,0.15)";
-                        }}
-                        onClick={() => toggleCat(cat.id)}
-                      >
-                        {/* Top: title area (right in RTL) + drag dots (left in RTL) */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                            {cat.image && <img src={cat.image} alt={cat.name} style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover", marginBottom: 2 }} />}
-                            <span style={{ fontSize: 18, fontWeight: 700, color: G_TEXT }}>{cat.name}</span>
-                            <div style={{ fontSize: 13, color: G_MUTED, display: "flex", alignItems: "center", gap: 5 }}>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>
-                              {cat.items.length} פריטים
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+                    {sortedCategories.map((cat, idx) => {
+                      const isActive = cat.id === expandedCatId;
+                      return (
+                        <div key={cat.id}
+                          style={{
+                            background: isActive ? G_CARD_HOVER : G_CARD,
+                            backdropFilter: "blur(15px)",
+                            WebkitBackdropFilter: "blur(15px)",
+                            border: `1px solid ${isActive ? G_ACCENT : G_BORDER}`,
+                            borderRadius: 24,
+                            padding: 22,
+                            height: 160,
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                            boxShadow: isActive ? `0 0 0 1px ${G_ACCENT}, 0 10px 30px rgba(0,0,0,0.25)` : "0 10px 30px rgba(0,0,0,0.15)",
+                            transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+                            cursor: "pointer",
+                          }}
+                          onMouseEnter={e => {
+                            if (!isActive) {
+                              (e.currentTarget as HTMLDivElement).style.transform = "translateY(-5px)";
+                              (e.currentTarget as HTMLDivElement).style.background = G_CARD_HOVER;
+                              (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.25)";
+                              (e.currentTarget as HTMLDivElement).style.boxShadow = "0 15px 35px rgba(0,0,0,0.3)";
+                            }
+                          }}
+                          onMouseLeave={e => {
+                            if (!isActive) {
+                              (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                              (e.currentTarget as HTMLDivElement).style.background = G_CARD;
+                              (e.currentTarget as HTMLDivElement).style.borderColor = G_BORDER;
+                              (e.currentTarget as HTMLDivElement).style.boxShadow = "0 10px 30px rgba(0,0,0,0.15)";
+                            }
+                          }}
+                          onClick={() => handleToggleCat(cat.id)}
+                        >
+                          {/* Top row */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                {cat.image && <img src={cat.image} alt={cat.name} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />}
+                                <span style={{ fontSize: 17, fontWeight: 700, color: G_TEXT }}>{cat.name}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: G_MUTED, opacity: 0.7 }}>[{idx + 1}]</span>
+                                {cat.autoReady && (
+                                  <span style={{ background: "rgba(245,158,11,0.15)", color: "#FBBF24", border: "1px solid rgba(245,158,11,0.3)", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>
+                                    ללא מטבח
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: 12, color: G_MUTED, display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>
+                                {cat.items.length} פריטים
+                              </div>
                             </div>
-                            {cat.autoReady && (
-                              <span style={{ alignSelf: "flex-start", background: "rgba(245,158,11,0.15)", color: "#FBBF24", border: "1px solid rgba(245,158,11,0.3)", padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, marginTop: 2 }}>
-                                ללא מטבח
-                              </span>
-                            )}
-                          </div>
-                          {/* Drag dots — 6-dot grid icon */}
-                          <div style={{ color: G_MUTED, opacity: 0.4, cursor: "grab", flexShrink: 0 }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
-                              <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-                              <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
-                            </svg>
-                          </div>
-                        </div>
-
-                        {/* Bottom actions — 3 icon buttons */}
-                        {canEdit && (
-                          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12 }}
-                            onClick={e => e.stopPropagation()}>
-                            {/* Add item */}
-                            <button
-                              onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                              title="הוסף פריט לקטגוריה"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                            </button>
-                            {/* Toggle auto-ready / edit */}
-                            <button
-                              onClick={() => toggleCategoryAutoReady(cat.id, cat.autoReady ?? false)}
-                              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                              title="ערוך קטגוריה / auto-ready"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </button>
-                            {/* Delete */}
-                            <button
-                              onClick={() => deleteCategory(cat.id)}
-                              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
-                              onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#FCA5A5"; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = G_BORDER; e.currentTarget.style.color = G_TEXT; }}
-                              title="מחק קטגוריה"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* ── Expanded items — full-width row panel ── */}
-                      {isExpanded && (
-                        <div style={{ gridColumn: "1 / -1", background: "rgba(0,0,0,0.45)", backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)", border: `1px solid ${G_BORDER}`, borderTop: "none", borderRadius: "0 0 24px 24px", overflow: "hidden" }}>
-                          {cat.items.length === 0 ? (
-                            <div style={{ padding: 24, textAlign: "center" }}>
-                              <div style={{ fontSize: 28, marginBottom: 8 }}>🍽️</div>
-                              <p style={{ fontSize: 12, color: G_MUTED, marginBottom: 12 }}>אין פריטים בקטגוריה זו</p>
-                              {canEdit && (
-                                <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                                  style={{ fontSize: 12, color: G_ACCENT, border: "1px solid rgba(217,119,6,0.3)", background: "rgba(217,119,6,0.08)", borderRadius: 8, padding: "6px 12px", fontWeight: 500, cursor: "pointer" }}>
-                                  + הוסף פריט ראשון
-                                </button>
-                              )}
+                            <div style={{ color: G_MUTED, opacity: 0.4, cursor: "grab", flexShrink: 0 }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+                                <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                                <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+                              </svg>
                             </div>
-                          ) : (
-                            <>
-                              {cat.items.map((item, itemIdx) => {
-                                // Build chips in fixed order
-                                const chips: React.ReactNode[] = [];
-                                if (item.isGlutenFree) chips.push(<span key="gf" style={chipStyle}>GF</span>);
-                                if (item.isVegetarian && !item.isVegan) chips.push(<span key="veg" style={chipStyle}>🌿 צמחוני</span>);
-                                if (item.isVegan) chips.push(<span key="vegan" style={chipStyle}>🌱 טבעוני</span>);
-                                item.allergens?.forEach((a: string) => chips.push(<span key={`al-${a}`} style={chipStyle}>{a}</span>));
-                                item.tags?.forEach((t: string) => chips.push(<span key={`tag-${t}`} style={chipStyle}>{t}</span>));
-                                if (item.prepTime != null) chips.push(<span key="prep" style={chipStyle}>⏱ {item.prepTime}&apos;</span>);
-
-                                return (
-                                  <div key={item.id}
-                                    style={{ padding: "3px 16px", display: "flex", alignItems: "center", gap: 10, borderTop: itemIdx === 0 ? "none" : `1px solid rgba(255,255,255,0.05)`, minHeight: 46, transition: "background 0.15s" }}
-                                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-                                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                                  >
-                                    {/* Status dot */}
-                                    <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: item.isActive ? "#34d399" : "rgba(255,255,255,0.2)" }} />
-                                    {/* Thumb */}
-                                    {item.image
-                                      ? <img src={item.image} alt={item.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
-                                      : <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
-                                    }
-                                    {/* Name + description — fixed width */}
-                                    <div style={{ width: 200, flexShrink: 0 }}>
-                                      <div style={{ fontSize: 13, fontWeight: 600, color: item.isActive ? G_TEXT : G_MUTED, textDecoration: item.isActive ? undefined : "line-through" }}>{item.name}</div>
-                                      {item.description && <div style={{ fontSize: 11, color: G_MUTED, marginTop: 1 }}>{item.description}</div>}
-                                    </div>
-                                    {/* Vertical divider */}
-                                    <div style={{ width: 1, height: 30, background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
-                                    {/* Chips — take remaining space */}
-                                    <div style={{ flex: 1, display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center", padding: "0 12px" }}>
-                                      {chips}
-                                    </div>
-                                    {/* Price */}
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399", flexShrink: 0, minWidth: 50, textAlign: "left" }}>{formatPrice(item.price)}</span>
-                                    {/* Kebab */}
-                                    {canEdit && (
-                                      <button
-                                        onClick={e => {
-                                          e.stopPropagation();
-                                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                                          setItemKebab(prev => prev?.itemId === item.id ? null : { catId: cat.id, itemId: item.id, top: rect.bottom + 6, left: rect.left });
-                                        }}
-                                        style={{ background: "none", border: "none", color: G_MUTED, fontSize: 18, fontWeight: 700, padding: "4px 8px", borderRadius: 8, cursor: "pointer", lineHeight: 1, flexShrink: 0 }}
-                                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = G_TEXT; }}
-                                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = G_MUTED; }}
-                                      >⋮</button>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                              {/* Add item row */}
-                              {canEdit && (
-                                <div
-                                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", cursor: "pointer", color: G_ACCENT, fontSize: 13, fontWeight: 600, background: "rgba(217,119,6,0.04)", borderTop: "1px solid rgba(217,119,6,0.15)", transition: "background 0.15s" }}
-                                  onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
-                                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(217,119,6,0.09)")}
-                                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(217,119,6,0.04)")}
-                                >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                                  הוסף פריט חדש
-                                </div>
-                              )}
-                            </>
+                          </div>
+                          {canEdit && (
+                            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12 }}
+                              onClick={e => e.stopPropagation()}>
+                              <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                                title="הוסף פריט">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                              </button>
+                              <button onClick={() => toggleCategoryAutoReady(cat.id, cat.autoReady ?? false)}
+                                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                                title="ערוך">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              </button>
+                              <button onClick={() => deleteCategory(cat.id)}
+                                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#FCA5A5"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = G_BORDER; e.currentTarget.style.color = G_TEXT; }}
+                                title="מחק">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                              </button>
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                      );
+                    })}
+
+                    {expandedCat && (
+                      <div style={{ gridColumn: "1 / -1", background: "rgba(0,0,0,0.45)", backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)", border: `1px solid ${G_ACCENT}`, borderRadius: 24, overflow: "hidden" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: G_TEXT }}>{expandedCat.name}</span>
+                            <span style={{ fontSize: 12, color: G_MUTED }}>[{sortedCategories.findIndex(c => c.id === expandedCat.id) + 1}]</span>
+                            <span style={{ fontSize: 12, color: G_MUTED }}>{expandedCat.items.length} פריטים</span>
+                          </div>
+                          <button onClick={() => setExpandedCats(new Set())}
+                            style={{ background: "none", border: "none", color: G_MUTED, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "4px 8px", borderRadius: 8 }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = G_TEXT; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = G_MUTED; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}>
+                            ✕
+                          </button>
+                        </div>
+                        {expandedCat.items.length === 0 ? (
+                          <div style={{ padding: 24, textAlign: "center" }}>
+                            <div style={{ fontSize: 28, marginBottom: 8 }}>🍽️</div>
+                            <p style={{ fontSize: 12, color: G_MUTED, marginBottom: 12 }}>אין פריטים בקטגוריה זו</p>
+                            {canEdit && (
+                              <button onClick={() => { setSelectedCategory(expandedCat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                                style={{ fontSize: 12, color: G_ACCENT, border: "1px solid rgba(217,119,6,0.3)", background: "rgba(217,119,6,0.08)", borderRadius: 8, padding: "6px 12px", fontWeight: 500, cursor: "pointer" }}>
+                                + הוסף פריט ראשון
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            {expandedCat.items.map((item, itemIdx) => {
+                              const chips: React.ReactNode[] = [];
+                              if (item.isGlutenFree) chips.push(<span key="gf" style={chipStyle}>GF</span>);
+                              if (item.isVegetarian && !item.isVegan) chips.push(<span key="veg" style={chipStyle}>🌿 צמחוני</span>);
+                              if (item.isVegan) chips.push(<span key="vegan" style={chipStyle}>🌱 טבעוני</span>);
+                              item.allergens?.forEach((a: string) => chips.push(<span key={`al-${a}`} style={chipStyle}>{a}</span>));
+                              item.tags?.forEach((t: string) => chips.push(<span key={`tag-${t}`} style={chipStyle}>{t}</span>));
+                              if (item.prepTime != null) chips.push(<span key="prep" style={chipStyle}>⏱ {item.prepTime}&apos;</span>);
+                              return (
+                                <div key={item.id}
+                                  style={{ padding: "3px 20px", display: "flex", alignItems: "center", gap: 12, borderTop: itemIdx === 0 ? "none" : "1px solid rgba(255,255,255,0.05)", minHeight: 46, transition: "background 0.15s" }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                                >
+                                  <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: item.isActive ? "#34d399" : "rgba(255,255,255,0.2)" }} />
+                                  {item.image
+                                    ? <img src={item.image} alt={item.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+                                    : <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />}
+                                  <div style={{ width: 220, flexShrink: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color: item.isActive ? G_TEXT : G_MUTED, textDecoration: item.isActive ? undefined : "line-through" }}>{item.name}</div>
+                                    {item.description && <div style={{ fontSize: 11, color: G_MUTED, marginTop: 1 }}>{item.description}</div>}
+                                  </div>
+                                  <div style={{ width: 1, height: 30, background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
+                                  <div style={{ flex: 1, display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center", padding: "0 12px" }}>
+                                    {chips}
+                                  </div>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399", flexShrink: 0, minWidth: 50, textAlign: "left" }}>{formatPrice(item.price)}</span>
+                                  {canEdit && (
+                                    <button
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                                        setItemKebab(prev => prev?.itemId === item.id ? null : { catId: expandedCat.id, itemId: item.id, top: rect.bottom + 6, left: rect.left });
+                                      }}
+                                      style={{ background: "none", border: "none", color: G_MUTED, fontSize: 18, fontWeight: 700, padding: "4px 8px", borderRadius: 8, cursor: "pointer", lineHeight: 1, flexShrink: 0 }}
+                                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = G_TEXT; }}
+                                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = G_MUTED; }}
+                                    >⋮</button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {canEdit && (
+                              <div
+                                style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 20px", cursor: "pointer", color: G_ACCENT, fontSize: 13, fontWeight: 600, background: "rgba(217,119,6,0.04)", borderTop: "1px solid rgba(217,119,6,0.15)", transition: "background 0.15s" }}
+                                onClick={() => { setSelectedCategory(expandedCat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(217,119,6,0.09)")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(217,119,6,0.04)")}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                                הוסף פריט חדש
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
