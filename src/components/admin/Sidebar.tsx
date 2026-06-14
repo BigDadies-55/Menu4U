@@ -701,12 +701,13 @@ export default function Sidebar({
         >
           {/* Logo */}
           <div style={{
-            padding: "20px 24px 16px",
+            padding: "24px 20px 18px",
             borderBottom: `1px solid ${useDefaultDrawer ? GLASS_BORDER : T.border}`,
             marginBottom: 14,
+            textAlign: "center",
           }}>
             {siteLogo ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={siteLogo} alt={siteName} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain" }} />
                 <div className={useDefaultDrawer ? heebo.className : playfair.className} style={{
@@ -747,20 +748,21 @@ export default function Sidebar({
           <div
             onClick={toggleSearchPanel}
             style={{
-              margin: "0 20px 16px",
+              margin: "0 16px 16px",
               background: "rgba(255,255,255,0.07)",
               border: `1px solid ${GLASS_BORDER}`,
               borderRadius: 14,
               padding: "10px 14px",
-              display: "flex", alignItems: "center", gap: 10,
+              display: "flex", alignItems: "center", flexDirection: "row-reverse", gap: 10,
               cursor: "text",
+              direction: "rtl",
               transition: "background 0.2s, border-color 0.2s",
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", flex: 1 }}>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", flex: 1, textAlign: "right" }}>
               חיפוש מהיר... (Ctrl+K)
             </span>
           </div>
