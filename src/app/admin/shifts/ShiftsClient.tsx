@@ -1155,6 +1155,7 @@ export default function ShiftsClient({
                       <span style={{ fontSize: 11, color: GM }}>מ-</span>
                       <input
                         type="time"
+                        lang="he"
                         value={cfg.startTime}
                         onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
                         style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
@@ -1162,6 +1163,7 @@ export default function ShiftsClient({
                       <span style={{ fontSize: 11, color: GM }}>עד-</span>
                       <input
                         type="time"
+                        lang="he"
                         value={cfg.endTime}
                         onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
                         style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "4px 6px", fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
