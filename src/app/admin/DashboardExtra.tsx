@@ -129,46 +129,40 @@ function KpiCard({ color, label, value, lucideIcon }: { color: NeonColor; label:
         backdropFilter: G.blur,
         WebkitBackdropFilter: G.blur,
         border: `1px solid ${hovered ? c.hex : G.border}`,
-        borderRadius: 12,
-        padding: "8px 12px",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
+        borderRadius: 10,
+        padding: "6px 10px",
+        display: "flex", alignItems: "center", gap: 8,
         transform: hovered ? "translateY(-2px)" : "translateY(0)",
-        boxShadow: hovered ? `0 0 14px ${c.glow}` : "none",
-        transition: "all 0.3s ease",
+        boxShadow: hovered ? `0 0 12px ${c.glow}` : "none",
+        transition: "all 0.25s ease",
         cursor: "default",
       }}
     >
-      <div>
-        <span style={{ fontSize: 11, color: G.muted, fontWeight: 500, display: "block", marginBottom: 2 }}>
-          {label}
-        </span>
-        <span style={{ fontSize: 18, fontWeight: 900, color: c.hex, lineHeight: 1 }}>
-          {value}
-        </span>
-      </div>
-      <span style={{ color: c.hex, opacity: 0.9 }}>{lucideIcon}</span>
+      <span style={{ color: c.hex, opacity: 0.85, flexShrink: 0 }}>{lucideIcon}</span>
+      <span style={{ fontSize: 10, color: G.muted, fontWeight: 500, flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 15, fontWeight: 900, color: c.hex, lineHeight: 1, marginRight: "auto" }}>{value}</span>
     </div>
   );
 }
 
 /* ─── SVG Icons ──────────────────────────────────────────────── */
 const EyeIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
   </svg>
 );
 const ClockIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
   </svg>
 );
 const DollarIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
   </svg>
 );
 const CartIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
   </svg>
