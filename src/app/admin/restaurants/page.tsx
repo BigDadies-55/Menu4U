@@ -16,6 +16,7 @@ export default async function RestaurantsPage() {
   await Promise.allSettled([
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBgOpacity" DOUBLE PRECISION`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "instagram" TEXT`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "facebook" TEXT`),
@@ -63,15 +64,16 @@ export default async function RestaurantsPage() {
     },
   });
 
-  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null }>>(
-    `SELECT id, "waiterBg" FROM "Restaurant"`
-  ).catch(() => [] as Array<{ id: string; waiterBg: string | null }>);
-  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, r.waiterBg]));
+  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null }>>(
+    `SELECT id, "waiterBg", "waiterBgOpacity" FROM "Restaurant"`
+  ).catch(() => [] as Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null }>);
+  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, { waiterBg: r.waiterBg, waiterBgOpacity: r.waiterBgOpacity }]));
 
   // Convert Date fields to ISO strings for client component serialization
   const restaurants = rows.map(r => ({
     ...r,
-    waiterBg: bgMap[r.id] ?? null,
+    waiterBg: bgMap[r.id]?.waiterBg ?? null,
+    waiterBgOpacity: bgMap[r.id]?.waiterBgOpacity ?? null,
     createdAt: r.createdAt.toISOString(),
     subscriptionFrom: r.subscriptionFrom ? r.subscriptionFrom.toISOString() : null,
     subscriptionTo: r.subscriptionTo ? r.subscriptionTo.toISOString() : null,

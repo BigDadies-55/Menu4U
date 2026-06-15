@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { signOut } from "next-auth/react";
 import { TableOverlay } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
@@ -52,20 +52,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     snoozeInsight,
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
-  // ── Background opacity (localStorage, V2 only) ───────────────────
-  const [bgOpacity, setBgOpacity] = useState(0.78);
-  const [showBgControl, setShowBgControl] = useState(false);
-  useEffect(() => {
-    const saved = localStorage.getItem("waiter2_bg_opacity");
-    if (saved !== null) setBgOpacity(parseFloat(saved));
-  }, []);
-  function changeBgOpacity(val: number) {
-    const v = Math.max(0.3, Math.min(0.95, Math.round(val * 100) / 100));
-    setBgOpacity(v);
-    localStorage.setItem("waiter2_bg_opacity", String(v));
-  }
-  const bgUrl = restaurants.find(r => r.id === restaurantId)?.waiterBg
+  const activeRestaurant = restaurants.find(r => r.id === restaurantId);
+  const bgUrl = activeRestaurant?.waiterBg
     ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070";
+  const bgOpacity = activeRestaurant?.waiterBgOpacity ?? 0.78;
 
   // ── Glass design tokens ───────────────────────────────────────────
   const G_CARD       = "rgba(255,255,255,0.08)";
@@ -149,47 +139,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             ✨{!isMobile && " תובנות"}
             {insightLoading && <span style={{ fontSize: 10 }}>…</span>}
           </button>
-
-          {/* Background opacity control */}
-          <div style={{ position: "relative" }}>
-            <button onClick={() => setShowBgControl(o => !o)} title="שקיפות רקע" style={{
-              background: showBgControl ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)",
-              border: `1px solid ${showBgControl ? "rgba(255,255,255,0.4)" : G_BORDER_C}`,
-              borderRadius: 10, padding: "7px 10px", fontSize: 14, cursor: "pointer", color: "#fff",
-              display: "flex", alignItems: "center", gap: 4,
-            }}>
-              🖼️
-            </button>
-            {showBgControl && (
-              <>
-                <div onClick={() => setShowBgControl(false)} style={{ position: "fixed", inset: 0, zIndex: 499 }} />
-                <div style={{
-                position: "absolute", top: 48, left: "50%", transform: "translateX(-50%)",
-                background: "rgba(15,14,22,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-                border: `1px solid ${G_BORDER_C}`, borderRadius: 14, padding: "14px 18px",
-                zIndex: 500, minWidth: 200, direction: "rtl",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-              }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 10 }}>
-                  שקיפות רקע
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>כהה</span>
-                  <input
-                    type="range" min={0.3} max={0.95} step={0.05}
-                    value={bgOpacity}
-                    onChange={e => changeBgOpacity(parseFloat(e.target.value))}
-                    style={{ flex: 1, accentColor: "#7c3aed", cursor: "pointer" }}
-                  />
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>בהיר</span>
-                </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "center", marginTop: 6 }}>
-                  {Math.round((1 - bgOpacity) * 100)}% שקיפות
-                </div>
-              </div>
-              </>
-            )}
-          </div>
 
           <button onClick={toggleFullscreen} title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"} style={{
             background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 10,

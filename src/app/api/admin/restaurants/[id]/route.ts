@@ -15,11 +15,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     isActive, ordersEnabled, menuTheme, menuPalette, menuPaletteData,
     kdsView, tableLayoutJson, groupId,
     subscriptionFrom, subscriptionTo,
-    logo, description, website, language, welcomeText, splashImage, waiterBg,
+    logo, description, website, language, welcomeText, splashImage, waiterBg, waiterBgOpacity,
     instagram, facebook, whatsapp, tripadvisor, googleReview,
     showPhonePublic, showAddressPublic,
   } = body;
-  // waiterBg is a new column — save it via raw SQL to avoid Prisma type issues
+  // waiterBg / waiterBgOpacity are extra columns — save via raw SQL
   if (waiterBg !== undefined) {
     await prisma.$executeRawUnsafe(
       `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`
@@ -27,6 +27,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await prisma.$executeRawUnsafe(
       `UPDATE "Restaurant" SET "waiterBg" = $1 WHERE id = $2`,
       waiterBg ?? null, id
+    );
+  }
+  if (waiterBgOpacity !== undefined) {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBgOpacity" DOUBLE PRECISION`
+    ).catch(() => {});
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Restaurant" SET "waiterBgOpacity" = $1 WHERE id = $2`,
+      waiterBgOpacity ?? null, id
     );
   }
   const data = Object.fromEntries(

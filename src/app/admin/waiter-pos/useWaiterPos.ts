@@ -5,7 +5,7 @@ import { idbSet, idbGet } from "@/lib/waiter-db";
 import type { OrderDetail } from "./TableOverlay";
 
 // ── Exported types ────────────────────────────────────────────────────
-export type Restaurant = { id: string; name: string; waiterBg?: string | null };
+export type Restaurant = { id: string; name: string; waiterBg?: string | null; waiterBgOpacity?: number | null };
 
 export type TableData = {
   tableNum: string;

@@ -29,6 +29,7 @@ type Restaurant = {
   welcomeText: string | null;
   splashImage: string | null;
   waiterBg: string | null;
+  waiterBgOpacity: number | null;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   instagram: string | null;
@@ -72,6 +73,7 @@ const emptyForm = {
   welcomeText: "",
   splashImage: "",
   waiterBg: "",
+  waiterBgOpacity: 0.78,
   instagram: "",
   facebook: "",
   whatsapp: "",
@@ -216,6 +218,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       welcomeText: r.welcomeText ?? "",
       splashImage: r.splashImage ?? "",
       waiterBg: r.waiterBg ?? "",
+      waiterBgOpacity: r.waiterBgOpacity ?? 0.78,
       instagram: r.instagram ?? "",
       facebook: r.facebook ?? "",
       whatsapp: r.whatsapp ?? "",
@@ -266,6 +269,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       welcomeText: form.welcomeText || null,
       splashImage: form.splashImage || null,
       waiterBg: form.waiterBg || null,
+      waiterBgOpacity: form.waiterBgOpacity,
       instagram: form.instagram || null,
       facebook: form.facebook || null,
       whatsapp: form.whatsapp || null,
@@ -594,7 +598,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                               backgroundImage: `url('${form.waiterBg}')`,
                               backgroundSize: "cover", backgroundPosition: "center",
                             }} />
-                            <div style={{ position: "absolute", inset: 0, background: "rgba(8,8,20,0.7)" }} />
+                            <div style={{ position: "absolute", inset: 0, background: `rgba(8,8,20,${form.waiterBgOpacity})`, transition: "background 0.2s" }} />
                             <div style={{
                               position: "absolute", inset: 0,
                               display: "flex", alignItems: "center", justifyContent: "center",
@@ -604,6 +608,25 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                             </div>
                           </div>
                         )}
+                        {/* Opacity slider */}
+                        <div style={{ marginTop: 14 }}>
+                          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.sub, marginBottom: 8 }}>
+                            🌓 שקיפות רקע (מסך מלצר חכם 2)
+                          </label>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>כהה</span>
+                            <input
+                              type="range" min={0.3} max={0.95} step={0.05}
+                              value={form.waiterBgOpacity}
+                              onChange={e => setForm(f => ({ ...f, waiterBgOpacity: parseFloat(e.target.value) }))}
+                              style={{ flex: 1, accentColor: "#D97706", cursor: "pointer" }}
+                            />
+                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>בהיר</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: T.gold, minWidth: 40, textAlign: "center" }}>
+                              {Math.round((1 - form.waiterBgOpacity) * 100)}%
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Welcome text */}
