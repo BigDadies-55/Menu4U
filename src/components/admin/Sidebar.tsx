@@ -111,6 +111,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/settings",    label: "הגדרות",        I: Ic.Settings,  waiterHide: true, displayHide: true },
       { href: "/admin/appearance",  label: "מראה",           I: Ic.Settings,  ownerOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/2fa-setup",   label: "אימות דו-שלבי", I: Ic.Settings,  adminOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/sitemap",     label: "מפת ניווט",      I: Ic.Dashboard, waiterHide: true, displayHide: true },
     ],
   },
   // ── תפריט וקטלוג ─────────────────────────────────────────────────────────
