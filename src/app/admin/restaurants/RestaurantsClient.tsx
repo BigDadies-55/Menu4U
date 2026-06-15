@@ -1215,7 +1215,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
               const members = restaurants.filter(r => r.groupId === gid);
               const isCollapsed = collapsedGroups[gid] ?? false;
               return (
-                <div key={gid} style={{ border: "1px solid rgba(245,158,11,0.18)", borderRadius: 16, overflow: "hidden" }}>
+                <div key={gid} style={{ border: "1px solid rgba(245,158,11,0.18)", borderRadius: 16 }}>
                   {/* Network header */}
                   <div
                     style={{
@@ -1248,7 +1248,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
 
             {/* Ungrouped section */}
             {ungrouped.length > 0 && (
-              <div style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, overflow: "hidden" }}>
+              <div style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16 }}>
                 <div style={{ background: "rgba(255,255,255,0.04)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>ללא רשת</span>
                   <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>· {ungrouped.length} בתי עסק</span>
