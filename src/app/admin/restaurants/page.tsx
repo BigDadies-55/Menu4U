@@ -60,6 +60,7 @@ export default async function RestaurantsPage() {
       googleReview: true,
       showPhonePublic: true,
       showAddressPublic: true,
+      groupId: true,
       createdAt: true,
       _count: { select: { menus: true, orders: true, restaurantUsers: true } },
     },
@@ -81,5 +82,9 @@ export default async function RestaurantsPage() {
     subscriptionTo: r.subscriptionTo ? r.subscriptionTo.toISOString() : null,
   }));
 
-  return <RestaurantsClient restaurants={restaurants} />;
+  const groupRows = await prisma.$queryRawUnsafe<Array<{ id: string; name: string; description: string | null; logo: string | null }>>(
+    `SELECT id, name, NULL::text AS description, logo FROM "RestaurantGroup" ORDER BY name`
+  ).catch(() => [] as Array<{ id: string; name: string; description: string | null; logo: string | null }>);
+
+  return <RestaurantsClient restaurants={restaurants} groups={groupRows} />;
 }

@@ -120,8 +120,7 @@ const GROUPS: NavGroup[] = [
     waiterHide: true, displayHide: true,
     items: [
       { href: "/admin/menus",       label: "תפריטים",  I: Ic.Menus,       waiterHide: true, displayHide: true },
-      { href: "/admin/restaurants", label: "מסעדות",   I: Ic.Restaurant,  superAdmin: true, waiterHide: true, displayHide: true },
-      { href: "/admin/groups",      label: "רשתות",     I: Ic.Restaurant,  superAdmin: true, waiterHide: true, displayHide: true },
+      { href: "/admin/restaurants", label: "בתי עסק",  I: Ic.Restaurant,  superAdmin: true, waiterHide: true, displayHide: true },
     ],
   },
   // ── הזמנות ושירות ────────────────────────────────────────────────────────
