@@ -1083,7 +1083,6 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                 flex: 1, display: "grid",
                 gridTemplateColumns: "44px 220px 190px 1fr 290px 150px 120px 44px",
                 alignItems: "center", gap: 0, padding: "10px 12px",
-                direction: "ltr",
               }}>
                 {/* Avatar */}
                 <div>
@@ -1113,7 +1112,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                     { icon: "🛒", key: "O", val: r._count.orders },
                     { icon: "👥", key: "U", val: r._count.restaurantUsers },
                   ].map(({ icon, key, val }) => (
-                    <span key={key} style={{
+                    <span key={key} dir="ltr" style={{
                       background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
                       borderRadius: 8, padding: "4px 12px", fontSize: 11, color: "rgba(255,255,255,0.65)",
                       display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap",
