@@ -212,16 +212,16 @@ function DonutChart({ statusCounts }: { statusCounts: Record<string, number> }) 
   });
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-      <svg viewBox="0 0 150 150" width={90} height={90} style={{ flexShrink: 0 }}>
-        <circle cx="75" cy="75" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="12"/>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+      <svg viewBox="0 0 150 150" style={{ width: "100%", maxWidth: 130, height: "auto" }}>
+        <circle cx="75" cy="75" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="14"/>
         {total === 0 ? (
-          <circle cx="75" cy="75" r={R} fill="none" stroke={G.amber} strokeWidth="12"
+          <circle cx="75" cy="75" r={R} fill="none" stroke={G.amber} strokeWidth="14"
             strokeDasharray={`${CIRC} 0`} transform="rotate(-90 75 75)" />
         ) : (
           segments.map(seg => seg.count > 0 && (
             <circle key={seg.key} cx="75" cy="75" r={R} fill="none"
-              stroke={seg.color} strokeWidth="12" strokeLinecap="round"
+              stroke={seg.color} strokeWidth="14" strokeLinecap="round"
               strokeDasharray={`${seg.dash} ${seg.gap}`}
               strokeDashoffset={-seg.offset}
               transform="rotate(-90 75 75)" />
@@ -231,7 +231,7 @@ function DonutChart({ statusCounts }: { statusCounts: Record<string, number> }) 
           {total}
         </text>
       </svg>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4 }}>
         {statuses.map(k => {
           const count = statusCounts[k] ?? 0;
           if (!count) return null;
