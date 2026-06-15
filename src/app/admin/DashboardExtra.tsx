@@ -256,7 +256,7 @@ function RevenueChart({ data, chartPeriod }: { data: DayPoint[]; chartPeriod: "7
   const visible = chartPeriod === "7" ? data.slice(-7) : data;
   const maxRev = Math.max(...visible.map(d => d.revenue), 1);
   const maxOrd = Math.max(...visible.map(d => d.orders), 1);
-  const W = 700; const H = 220; const PL = 0; const PR = 10; const PT = 20; const PB = 30;
+  const W = 700; const H = 150; const PL = 0; const PR = 10; const PT = 14; const PB = 26;
   const cW = W - PL - PR; const cH = H - PT - PB;
 
   const [hovered, setHovered] = useState<number | null>(null);
@@ -361,8 +361,8 @@ function GlassSkeleton() {
         ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 25, marginBottom: 25 }}>
-        <div style={{ background: G.card, borderRadius: 28, height: 300, animation: "shimmer 1.5s ease-in-out infinite" }} />
-        <div style={{ background: G.card, borderRadius: 28, height: 300, animation: "shimmer 1.5s ease-in-out infinite" }} />
+        <div style={{ background: G.card, borderRadius: 28, height: 200, animation: "shimmer 1.5s ease-in-out infinite" }} />
+        <div style={{ background: G.card, borderRadius: 28, height: 200, animation: "shimmer 1.5s ease-in-out infinite" }} />
       </div>
     </div>
   );
