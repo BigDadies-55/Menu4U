@@ -57,7 +57,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     activeRestaurant?.waiterBg ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070"
   );
   const [bgOpacity, setBgOpacity] = useState(
-    Math.max(0, Math.min(1, Number(activeRestaurant?.waiterBgOpacity ?? 0.78)))
+    Math.max(0, Math.min(1, Number(activeRestaurant?.waiterBgOpacity ?? 0)))
   );
 
   useEffect(() => {

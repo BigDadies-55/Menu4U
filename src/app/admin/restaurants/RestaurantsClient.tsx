@@ -73,7 +73,7 @@ const emptyForm = {
   welcomeText: "",
   splashImage: "",
   waiterBg: "",
-  waiterBgOpacity: 0.78,
+  waiterBgOpacity: 0,
   instagram: "",
   facebook: "",
   whatsapp: "",
@@ -218,7 +218,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       welcomeText: r.welcomeText ?? "",
       splashImage: r.splashImage ?? "",
       waiterBg: r.waiterBg ?? "",
-      waiterBgOpacity: r.waiterBgOpacity ?? 0.78,
+      waiterBgOpacity: r.waiterBgOpacity ?? 0,
       instagram: r.instagram ?? "",
       facebook: r.facebook ?? "",
       whatsapp: r.whatsapp ?? "",
@@ -614,16 +614,16 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                             🌓 שקיפות רקע (מסך מלצר חכם 2)
                           </label>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>כהה</span>
+                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>ללא כיסוי</span>
                             <input
-                              type="range" min={0.3} max={0.95} step={0.05}
+                              type="range" min={0} max={1} step={0.05}
                               value={form.waiterBgOpacity}
                               onChange={e => setForm(f => ({ ...f, waiterBgOpacity: parseFloat(e.target.value) }))}
-                              style={{ flex: 1, accentColor: "#D97706", cursor: "pointer" }}
+                              style={{ flex: 1, accentColor: "#D97706", cursor: "pointer", direction: "ltr" }}
                             />
-                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>בהיר</span>
+                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>כהה מלא</span>
                             <span style={{ fontSize: 12, fontWeight: 700, color: T.gold, minWidth: 40, textAlign: "center" }}>
-                              {Math.round((1 - form.waiterBgOpacity) * 100)}%
+                              {Math.round(form.waiterBgOpacity * 100)}%
                             </span>
                           </div>
                         </div>
