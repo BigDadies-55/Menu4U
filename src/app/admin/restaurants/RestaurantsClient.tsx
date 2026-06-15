@@ -97,8 +97,8 @@ const emptyForm = {
 
 /* ── Solid primary button style ── */
 const BTN_PRIMARY = {
-  background: T.gold,
-  color: "#fff",
+  background: "linear-gradient(135deg,#D97706,#F59E0B)",
+  color: "#000",
 } as const;
 
 /* ── Dark input style ── */
@@ -106,8 +106,8 @@ const DARK_INPUT: React.CSSProperties = {
   background: "rgba(255,255,255,0.07)",
   border: "1px solid rgba(255,255,255,0.12)",
   color: "#fff",
-  borderRadius: 8,
-  padding: "8px 12px",
+  borderRadius: 12,
+  padding: "10px 14px",
   fontSize: 14,
   width: "100%",
   outline: "none",
@@ -118,8 +118,8 @@ const DARK_SELECT: React.CSSProperties = {
   background: "rgba(255,255,255,0.07)",
   border: "1px solid rgba(255,255,255,0.12)",
   color: "#fff",
-  borderRadius: 8,
-  padding: "8px 12px",
+  borderRadius: 12,
+  padding: "10px 14px",
   fontSize: 14,
   width: "100%",
   outline: "none",
@@ -311,7 +311,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) { setError("שגיאה ביצירת המסעדה"); setLoading(false); return; }
+      if (!res.ok) { setError("שגיאה ביצירת בית העסק"); setLoading(false); return; }
       const created = await res.json();
       setRestaurants([{ ...created, _count: { menus: 0, orders: 0, restaurantUsers: 0 } }, ...restaurants]);
     }
@@ -339,7 +339,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
 
   const field = (label: string, key: keyof typeof form, opts?: { type?: string; dir?: string; placeholder?: string }) => (
     <div>
-      <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>{label}</label>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{label}</label>
       <input
         type={opts?.type ?? "text"}
         value={form[key] as string}
@@ -415,12 +415,12 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       {showForm && (
         <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="flex min-h-full items-start justify-center p-4 py-6">
-            <div className="shadow-xl w-full max-w-2xl" style={{ background: "rgba(10,10,18,0.96)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, backdropFilter: "blur(24px)" }}>
+            <div className="shadow-xl w-full max-w-2xl" style={{ background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, backdropFilter: "blur(20px)" }}>
 
               {/* Modal header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                 <h2 className="text-lg font-bold" style={{ color: "#fff" }}>
-                  {editTarget ? `עריכת מסעדה — ${editTarget.name}` : "מסעדה חדשה"}
+                  {editTarget ? `עריכת בית עסק — ${editTarget.name}` : "בית עסק חדש"}
                 </h2>
                 <button onClick={() => setShowForm(false)}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-lg transition-colors"
@@ -475,7 +475,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                         </div>
                       )}
                       <ImageUpload
-                        label="לוגו מסעדה"
+                        label="לוגו בית העסק"
                         value={form.logo}
                         onChange={url => setForm({ ...form, logo: url })}
                       />
@@ -489,7 +489,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                         {field("טלפון הזמנות", "orderPhone", { dir: "ltr" })}
                       </div>
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
                           📍 לינק מיקום (Google Maps)
                         </label>
                         <input
@@ -502,7 +502,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                         />
                       </div>
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>תיאור</label>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>תיאור</label>
                         <textarea
                           value={form.description}
                           onChange={e => setForm({ ...form, description: e.target.value })}
@@ -647,7 +647,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                               color: "#F59E0B", fontWeight: 700, letterSpacing: 2,
                               textShadow: "0 2px 12px rgba(0,0,0,0.8)",
                             }}>
-                              {form.name || "שם המסעדה"}
+                              {form.name || "שם בית העסק"}
                             </div>
                           </div>
                         )}
@@ -656,7 +656,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                       {/* Welcome text */}
                       <div>
                         <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>💬 טקסט ברוכים הבאים</label>
-                        <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.45)" }}>יוצג בתפריט הציבורי מתחת לשם המסעדה</p>
+                        <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.45)" }}>יוצג בתפריט הציבורי מתחת לשם בית העסק</p>
                         <textarea value={form.welcomeText}
                           onChange={e => setForm(f => ({ ...f, welcomeText: e.target.value }))}
                           rows={4}
@@ -842,7 +842,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                           {([
                             { key: "showPhonePublic",   label: "מספר טלפון",  desc: "כפתורי WhatsApp וחיוג" },
-                            { key: "showAddressPublic", label: "כתובת",       desc: "כתובת המסעדה בדף הנחיתה" },
+                            { key: "showAddressPublic", label: "כתובת",       desc: "כתובת בית העסק בדף הנחיתה" },
                           ] as const).map(({ key, label, desc }) => (
                             <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                               <div>
@@ -922,7 +922,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                   <button type="submit" disabled={loading}
                     className="flex-1 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-50 transition-opacity hover:opacity-80"
                     style={BTN_PRIMARY}>
-                    {loading ? "שומר..." : editTarget ? "שמור שינויים" : "צור מסעדה"}
+                    {loading ? "שומר..." : editTarget ? "שמור שינויים" : "צור בית עסק"}
                   </button>
                   <button type="button" onClick={() => setShowForm(false)}
                     className="flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors"
@@ -942,12 +942,12 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
           <div className="shadow-2xl w-full max-w-sm p-6" style={{ background: "rgba(10,10,18,0.96)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, backdropFilter: "blur(24px)" }}>
             <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"
               style={{ background: "rgba(255,107,107,0.15)" }}>🗑️</div>
-            <h3 className="text-lg font-bold text-center mb-1" style={{ color: "#fff" }}>מחיקת מסעדה</h3>
+            <h3 className="text-lg font-bold text-center mb-1" style={{ color: "#fff" }}>מחיקת בית עסק</h3>
             <p className="text-sm text-center mb-4" style={{ color: "rgba(255,255,255,0.65)" }}>
               פעולה זו תמחק לצמיתות את <strong style={{ color: "#fff" }}>{deleteConfirm.name}</strong> עם כל התפריטים, הפריטים וההזמנות שלה.
             </p>
             <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.65)" }}>
-              כדי לאשר, הקלד את שם המסעדה:
+              כדי לאשר, הקלד את שם בית העסק:
             </p>
             <input
               type="text"
