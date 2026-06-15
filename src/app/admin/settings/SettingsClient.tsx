@@ -1404,6 +1404,47 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               })}
             </div>
 
+            {/* ── Background gradient picker ── */}
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: G_ACCENT, marginBottom: 4 }}>ערכת רקע</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 18 }}>בחר את צבע הרקע הגלובלי של ממשק הניהול</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {[
+                  { label: "לילה",    bg: "linear-gradient(135deg,#0a0a12 0%,#0f0818 50%,#0a0a12 100%)" },
+                  { label: "אוקיינוס",bg: "linear-gradient(135deg,#001a2c 0%,#030712 100%)" },
+                  { label: "גחלים",   bg: "linear-gradient(135deg,#1c0a00 0%,#0c0c0c 100%)" },
+                  { label: "יער",     bg: "linear-gradient(135deg,#0a1a00 0%,#001a0a 100%)" },
+                  { label: "גלקסיה", bg: "linear-gradient(135deg,#1a0533 0%,#0a0412 100%)" },
+                  { label: "ויסקי",   bg: "linear-gradient(135deg,#12100e 0%,#2c1810 100%)" },
+                  { label: "אבן",     bg: "linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 100%)" },
+                  { label: "קטיפה",   bg: "linear-gradient(135deg,#1a001a 0%,#0a000a 100%)" },
+                ].map(({ label, bg }) => {
+                  const isActive = form.adminBg === bg && !form.adminBgImage;
+                  return (
+                    <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                      <button
+                        type="button"
+                        onClick={() => { update("adminBg", bg); update("adminBgImage", null); }}
+                        title={label}
+                        style={{
+                          width: 52, height: 52, borderRadius: 14, background: bg, cursor: "pointer",
+                          border: isActive ? "2px solid #fff" : "2px solid transparent",
+                          boxShadow: isActive ? "0 0 0 3px rgba(245,158,11,0.5)" : "0 2px 8px rgba(0,0,0,0.4)",
+                          transform: isActive ? "scale(1.12)" : "scale(1)",
+                          transition: "all 0.15s", position: "relative",
+                        }}
+                      >
+                        {isActive && (
+                          <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#fff" }}>✓</span>
+                        )}
+                      </button>
+                      <span style={{ fontSize: 10, color: isActive ? "#F59E0B" : "rgba(255,255,255,0.4)", fontWeight: isActive ? 700 : 400 }}>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* ── Template selector ── */}
             <div style={{ marginBottom: 32 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: G_ACCENT, marginBottom: 4 }}>תבנית ממשק</div>
