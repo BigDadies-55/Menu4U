@@ -15,10 +15,10 @@ export default async function WaiterPage() {
     `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterScreen" INTEGER`
   ).catch(() => {});
 
-  // Get the first restaurant accessible to this user
+  // Get the most recently updated restaurant accessible to this user
   const restaurantId =
     role === "SUPER_ADMIN"
-      ? (await prisma.restaurant.findFirst({ orderBy: { name: "asc" }, select: { id: true } }))?.id
+      ? (await prisma.restaurant.findFirst({ orderBy: { updatedAt: "desc" }, select: { id: true } }))?.id
       : (await prisma.restaurantUser.findFirst({
           where: { userId: session.user.id },
           include: { restaurant: { select: { id: true } } },
