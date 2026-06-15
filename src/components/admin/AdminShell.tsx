@@ -39,8 +39,9 @@ export default function AdminShell({
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d) return;
-        if (d.adminBg    != null) setLiveBg(d.adminBg);
-        if (d.adminBgImage !== undefined) setLiveBgImg(d.adminBgImage);
+        // Only apply gradient values — plain hex defaults are handled server-side
+        if (d.adminBg?.includes("gradient")) setLiveBg(d.adminBg);
+        if (d.adminBgImage) setLiveBgImg(d.adminBgImage);
       })
       .catch(() => {});
   }, []);
