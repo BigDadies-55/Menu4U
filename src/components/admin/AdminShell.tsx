@@ -1,6 +1,6 @@
 "use client";
 import { T } from "@/lib/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar, { useFavorites } from "./Sidebar";
 import PageTitle from "./PageTitle";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
@@ -31,6 +31,20 @@ export default function AdminShell({
   adminContentTextColor = T.text,
   children,
 }: Props) {
+  const [liveBg,    setLiveBg]    = useState(adminBg);
+  const [liveBgImg, setLiveBgImg] = useState(adminBgImage);
+
+  useEffect(() => {
+    fetch("/api/admin/site-config")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return;
+        if (d.adminBg    != null) setLiveBg(d.adminBg);
+        if (d.adminBgImage !== undefined) setLiveBgImg(d.adminBgImage);
+      })
+      .catch(() => {});
+  }, []);
+
   const [favorites, toggleFavorite] = useFavorites();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pwForm,    setPwForm]    = useState({ current: "", next: "" });
@@ -69,11 +83,11 @@ export default function AdminShell({
     <div
       className="min-h-screen"
       style={{
-        background: adminBgImage
-          ? `url(${adminBgImage}) center/cover no-repeat fixed`
-          : (adminBg === "var(--c-bg)" || adminBg === "var(--c-panel)")
+        background: liveBgImg
+          ? `url(${liveBgImg}) center/cover no-repeat fixed`
+          : (liveBg === "var(--c-bg)" || liveBg === "var(--c-panel)" || !liveBg)
             ? `linear-gradient(rgba(0,0,0,0.72),rgba(0,0,0,0.72)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') center/cover no-repeat fixed`
-            : adminBg,
+            : liveBg,
       }}
       dir="rtl"
     >
