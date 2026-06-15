@@ -246,23 +246,23 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
     (item.allergens ?? []).filter(a => tableAllergens.includes(a)).map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#f4f1ed", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(10,10,18,0.98)", display: "flex", flexDirection: "column" }}>
 
       {/* Top bar */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #e8e2da", height: 56, padding: "0 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 1px 6px rgba(26,22,18,.06)" }}>
-        <button onClick={onClose} style={{ background: "#f4f1ed", border: "1.5px solid #e8e2da", borderRadius: 99, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1a1612", fontFamily: "inherit" }}>← חזור</button>
-        <span style={{ fontSize: 15, fontWeight: 900, flex: 1 }}>שולחן {tableNum}{orderId ? ` · הזמנה #${order?.orderNumber}` : " · הזמנה חדשה"}</span>
+      <div style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.1)", height: 56, padding: "0 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(12px)" }}>
+        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#fff", fontFamily: "inherit" }}>← חזור</button>
+        <span style={{ fontSize: 15, fontWeight: 900, flex: 1, color: "#ffffff" }}>שולחן {tableNum}{orderId ? ` · הזמנה #${order?.orderNumber}` : " · הזמנה חדשה"}</span>
         {tableAllergens.length > 0 && (
-          <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, background: "#fdf2f0", border: "1.5px solid #f5c4bc", color: "#8b2e22", display: "flex", alignItems: "center", gap: 3 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)", color: "#FCA5A5", display: "flex", alignItems: "center", gap: 3 }}>
             ⚠️ {tableAllergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}
           </span>
         )}
       </div>
 
       {/* Category bar */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #e8e2da", padding: "8px 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 7, overflowX: "auto" }}>
+      <div style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "8px 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 7, overflowX: "auto", backdropFilter: "blur(8px)" }}>
         {categories.map(c => (
-          <button key={c.id} onClick={() => setActiveCat(c.id)} style={{ padding: "6px 16px", borderRadius: 99, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit", background: activeCat === c.id ? "#1a1612" : "#f4f1ed", color: activeCat === c.id ? "#fff" : "#4a4540", transition: "all .12s" }}>
+          <button key={c.id} onClick={() => setActiveCat(c.id)} style={{ padding: "6px 16px", borderRadius: 99, border: activeCat === c.id ? "none" : "1px solid rgba(255,255,255,0.12)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit", background: activeCat === c.id ? "linear-gradient(135deg,#D97706,#F59E0B)" : "rgba(255,255,255,0.07)", color: activeCat === c.id ? "#fff" : "rgba(255,255,255,0.7)", transition: "all .12s" }}>
             {c.name}
           </button>
         ))}
@@ -274,28 +274,28 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
         {/* Menu column */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {/* Search + course selector */}
-          <div style={{ padding: "9px 12px", borderBottom: "1px solid #e8e2da", background: "#fff", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ width: "60%", flexShrink: 0, background: "#f4f1ed", border: "1.5px solid #e8e2da", borderRadius: 99, padding: "8px 14px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#1a1612" }} />
+          <div style={{ padding: "9px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ width: "60%", flexShrink: 0, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "8px 14px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#fff" }} />
             {/* Course selector */}
             <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8480" }}>קורס:</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.38)" }}>קורס:</span>
               {Array.from({ length: maxCourse }, (_, i) => i + 1).map(c => (
-                <button key={c} onClick={() => setActiveCourse(c)} style={{ minWidth: 28, height: 28, padding: "0 7px", borderRadius: 8, border: "1.5px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: activeCourse === c ? "#1a1612" : "#f4f1ed", color: activeCourse === c ? "#fff" : "#4a4540", borderColor: activeCourse === c ? "#1a1612" : "#e8e2da", transition: "all .12s" }}>
+                <button key={c} onClick={() => setActiveCourse(c)} style={{ minWidth: 28, height: 28, padding: "0 7px", borderRadius: 8, border: "1.5px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: activeCourse === c ? "linear-gradient(135deg,#D97706,#F59E0B)" : "rgba(255,255,255,0.07)", color: activeCourse === c ? "#fff" : "rgba(255,255,255,0.65)", borderColor: activeCourse === c ? "transparent" : "rgba(255,255,255,0.1)", transition: "all .12s" }}>
                   {toRoman(c)}
                 </button>
               ))}
-              <button onClick={() => setActiveCourse(maxCourse + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: "1.5px dashed #e8e2da", fontSize: 14, fontWeight: 700, cursor: "pointer", background: "transparent", color: "#8a8480", fontFamily: "inherit" }}>+</button>
+              <button onClick={() => setActiveCourse(maxCourse + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: "1.5px dashed rgba(255,255,255,0.2)", fontSize: 14, fontWeight: 700, cursor: "pointer", background: "transparent", color: "rgba(255,255,255,0.38)", fontFamily: "inherit" }}>+</button>
             </div>
           </div>
 
           {/* Items grid */}
           <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 9, alignContent: "start" }}>
             {loadingMenu ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888", padding: 30, fontSize: 13 }}>טוען תפריט...</div>
+              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "rgba(255,255,255,0.38)", padding: 30, fontSize: 13 }}>טוען תפריט...</div>
             ) : menuError ? (
               <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 30 }}>
-                <div style={{ fontSize: 13, color: "#b91c1c", fontWeight: 700, marginBottom: 8 }}>⚠️ {menuError}</div>
-                <div style={{ fontSize: 11, color: "#888" }}>restaurantId: {restaurantId}</div>
+                <div style={{ fontSize: 13, color: "#F87171", fontWeight: 700, marginBottom: 8 }}>⚠️ {menuError}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)" }}>restaurantId: {restaurantId}</div>
               </div>
             ) : filteredItems.map(item => {
               const qty    = cartQtyForItem(item.id);
@@ -305,27 +305,27 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
               // find the last cart entry for this item (to remove one at a time)
               const lastKey = [...cart].reverse().find(i => i.itemId === item.id)?.key;
               return (
-                <div key={item.id} onClick={() => addItem(item)} style={{ background: "#fff", border: `1.5px solid ${qty > 0 ? "#1a1612" : "#e8e2da"}`, borderRadius: 16, cursor: "pointer", position: "relative", transition: "transform .1s, box-shadow .1s", boxShadow: qty > 0 ? "0 2px 10px rgba(26,22,18,.1)" : "0 1px 4px rgba(26,22,18,.05)" }}>
+                <div key={item.id} onClick={() => addItem(item)} style={{ background: "rgba(255,255,255,0.06)", border: `1.5px solid ${qty > 0 ? "#D97706" : "rgba(255,255,255,0.1)"}`, borderRadius: 16, cursor: "pointer", position: "relative", transition: "transform .1s, box-shadow .1s", boxShadow: qty > 0 ? "0 0 0 1px rgba(217,119,6,0.3), 0 4px 16px rgba(0,0,0,0.3)" : "none" }}>
                   {/* quantity badge (left) */}
                   {qty > 0 && (
-                    <div style={{ position: "absolute", top: 6, left: 6, background: "#1a1612", color: "#fff", borderRadius: 99, minWidth: 20, height: 20, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>
+                    <div style={{ position: "absolute", top: 6, left: 6, background: "#D97706", color: "#fff", borderRadius: 99, minWidth: 20, height: 20, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>
                   )}
                   {/* remove one — red X (right) */}
                   {qty > 0 && lastKey && (
                     <div onClick={e => { e.stopPropagation(); changeQty(lastKey, cart.find(i => i.key === lastKey)!.quantity - 1); }} style={{ position: "absolute", top: 6, right: 6, background: "#e53e3e", color: "#fff", borderRadius: 99, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, zIndex: 2, cursor: "pointer", lineHeight: 1 }}>✕</div>
                   )}
-                  <div style={{ height: 90, background: "#f4f1ed", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative", borderRadius: "14px 14px 0 0", overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ height: 90, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative", borderRadius: "14px 14px 0 0", overflow: "hidden", flexShrink: 0 }}>
                     {item.image ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🍽️"}
                     {warn && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13 }}>⚠️</span>}
                     {safe && !qty && <span style={{ position: "absolute", top: 3, right: 4, fontSize: 18, color: "#16a34a", textShadow: "0 0 4px #fff", lineHeight: 1 }}>★</span>}
                   </div>
                   <div style={{ padding: "7px 9px 9px" }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1612", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
-                    {item.description && <div style={{ fontSize: 9, color: "#8a8480", marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#ffffff", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
+                    {item.description && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.38)", marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1612" }}>₪{Number(item.price).toFixed(0)}</span>
-                      {warn && <span style={{ fontSize: 9, fontWeight: 800, color: "#8b2e22", background: "#fdf2f0", borderRadius: 5, padding: "1px 5px" }}>{wLabel}</span>}
-                      {safe && <span style={{ fontSize: 9, fontWeight: 800, color: "#15803d", background: "#f0fdf4", borderRadius: 5, padding: "1px 5px" }}>★ מותר</span>}
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "#ffffff" }}>₪{Number(item.price).toFixed(0)}</span>
+                      {warn && <span style={{ fontSize: 9, fontWeight: 800, color: "#FCA5A5", background: "rgba(248,113,113,0.15)", borderRadius: 5, padding: "1px 5px" }}>{wLabel}</span>}
+                      {safe && <span style={{ fontSize: 9, fontWeight: 800, color: "#34D399", background: "rgba(52,211,153,0.12)", borderRadius: 5, padding: "1px 5px" }}>★ מותר</span>}
                     </div>
                   </div>
                 </div>
@@ -342,16 +342,16 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           {/* FAB */}
           <button onClick={() => setCartOpen(true)} style={{
             position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-            zIndex: 510, background: "#1a1612", color: "#fff",
+            zIndex: 510, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff",
             border: "none", borderRadius: 99, padding: "14px 28px",
             fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
             display: "flex", alignItems: "center", gap: 10,
-            boxShadow: "0 4px 20px rgba(26,22,18,.35)",
+            boxShadow: "0 4px 20px rgba(217,119,6,0.4)",
             minWidth: 220, justifyContent: "center",
           }}>
             🛒 סל
             {cart.length > 0 && (
-              <span style={{ background: "#e07060", borderRadius: 99, minWidth: 22, height: 22, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>
+              <span style={{ background: "rgba(248,113,113,0.9)", borderRadius: 99, minWidth: 22, height: 22, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>
                 {cart.reduce((s, i) => s + i.quantity, 0)}
               </span>
             )}
@@ -366,12 +366,12 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
           {cartOpen && (
             <div style={{ position: "fixed", inset: 0, zIndex: 520, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
               {/* Backdrop */}
-              <div onClick={() => setCartOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(26,22,18,.45)" }} />
+              <div onClick={() => setCartOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)" }} />
               {/* Sheet */}
-              <div style={{ position: "relative", background: "#fff", borderRadius: "20px 20px 0 0", maxHeight: "80dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ position: "relative", background: "rgba(15,15,24,0.97)", borderRadius: "20px 20px 0 0", maxHeight: "80dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
                 {/* Handle */}
                 <div style={{ padding: "12px 0 4px", display: "flex", justifyContent: "center", flexShrink: 0 }}>
-                  <div style={{ width: 40, height: 4, borderRadius: 99, background: "#e8e2da" }} />
+                  <div style={{ width: 40, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.2)" }} />
                 </div>
                 <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", width: "100%" }}>
                   <OrderPanel
@@ -388,8 +388,8 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                     onItemActioned={refreshOrder}
                   />
                 </div>
-                <div style={{ padding: "12px 16px 28px", borderTop: "1px solid #e8e2da", flexShrink: 0 }}>
-                  <button onClick={() => { setCartOpen(false); handleSubmit(); }} disabled={cart.length === 0 || submitting} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: cart.length === 0 ? "#e8e2da" : "#1a1612", color: cart.length === 0 ? "#8a8480" : "#fff", fontSize: 15, fontWeight: 900, cursor: cart.length === 0 ? "default" : "pointer", fontFamily: "inherit" }}>
+                <div style={{ padding: "12px 16px 28px", borderTop: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }}>
+                  <button onClick={() => { setCartOpen(false); handleSubmit(); }} disabled={cart.length === 0 || submitting} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: cart.length === 0 ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#D97706,#F59E0B)", color: cart.length === 0 ? "rgba(255,255,255,0.38)" : "#fff", fontSize: 15, fontWeight: 900, cursor: cart.length === 0 ? "default" : "pointer", fontFamily: "inherit" }}>
                     {submitting ? "שולח..." : orderId ? `📤 הוסף להזמנה #${order?.orderNumber}` : "📤 צור הזמנה"}
                   </button>
                 </div>
@@ -400,16 +400,16 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
       )}
     {/* ── Modifier picker popup ── */}
     {modifierItem && (
-      <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(26,22,18,.5)" }}
+      <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)" }}
         onClick={() => setModifierItem(null)}>
-        <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 20, width: "min(96vw,420px)", maxHeight: "85dvh", overflowY: "auto", direction: "rtl", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,24,0.97)", borderRadius: 20, padding: 20, width: "min(96vw,420px)", maxHeight: "85dvh", overflowY: "auto", direction: "rtl", display: "flex", flexDirection: "column", gap: 16, border: "1px solid rgba(255,255,255,0.12)" }}>
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1612" }}>{modifierItem.name}</div>
-              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>בחר אפשרויות</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>{modifierItem.name}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 2 }}>בחר אפשרויות</div>
             </div>
-            <button onClick={() => setModifierItem(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#888", lineHeight: 1 }}>✕</button>
+            <button onClick={() => setModifierItem(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "rgba(255,255,255,0.38)", lineHeight: 1 }}>✕</button>
           </div>
 
           {/* Groups */}
@@ -418,18 +418,18 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
             const allSatisfied = !group.required || sel.length > 0;
             return (
               <div key={group.id}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1612", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
                   {group.name}
-                  {group.required && <span style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>חובה</span>}
-                  {group.maxSelect > 1 && <span style={{ fontSize: 10, color: "#888" }}>עד {group.maxSelect}</span>}
-                  {!allSatisfied && <span style={{ fontSize: 10, color: "#dc2626" }}>← נא לבחור</span>}
+                  {group.required && <span style={{ fontSize: 10, color: "#F87171", fontWeight: 600 }}>חובה</span>}
+                  {group.maxSelect > 1 && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.38)" }}>עד {group.maxSelect}</span>}
+                  {!allSatisfied && <span style={{ fontSize: 10, color: "#F87171" }}>← נא לבחור</span>}
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {group.options.map(opt => {
                     const active = sel.includes(opt.id);
                     return (
                       <button key={opt.id} onClick={() => toggleModOption(group.id, opt.id, group.maxSelect)}
-                        style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${active ? "#1a1612" : "#e8e2da"}`, background: active ? "#1a1612" : "#f9f7f4", color: active ? "#fff" : "#1a1612", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
+                        style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${active ? "#D97706" : "rgba(255,255,255,0.1)"}`, background: active ? "rgba(217,119,6,0.15)" : "rgba(255,255,255,0.06)", color: active ? "#fff" : "#ffffff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
                         {opt.label}
                         {opt.priceAdd > 0 && <span style={{ fontSize: 10, opacity: .75 }}>+₪{opt.priceAdd}</span>}
                       </button>
@@ -449,7 +449,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
             }).reduce((s, v) => s + v, 0);
             return (
               <button onClick={confirmModifiers} disabled={!allOk}
-                style={{ background: allOk ? "#1a1612" : "#ccc", color: "#fff", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 800, cursor: allOk ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                style={{ background: allOk ? "linear-gradient(135deg,#D97706,#F59E0B)" : "rgba(255,255,255,0.1)", color: "#fff", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 800, cursor: allOk ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
                 הוסף לסל — ₪{(Number(modifierItem.price) + extraPrice).toFixed(0)}
               </button>
             );
