@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { TableOverlay } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
@@ -53,9 +53,24 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
   const activeRestaurant = restaurants.find(r => r.id === restaurantId);
-  const bgUrl = activeRestaurant?.waiterBg
-    ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070";
-  const bgOpacity = Math.max(0, Math.min(1, Number(activeRestaurant?.waiterBgOpacity ?? 0.78)));
+  const [bgUrl, setBgUrl] = useState(
+    activeRestaurant?.waiterBg ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070"
+  );
+  const [bgOpacity, setBgOpacity] = useState(
+    Math.max(0, Math.min(1, Number(activeRestaurant?.waiterBgOpacity ?? 0.78)))
+  );
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/waiter-pos/bg-settings?restaurantId=${restaurantId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return;
+        if (d.waiterBg != null) setBgUrl(d.waiterBg);
+        if (d.waiterBgOpacity != null) setBgOpacity(Math.max(0, Math.min(1, Number(d.waiterBgOpacity))));
+      })
+      .catch(() => {});
+  }, [restaurantId]);
 
   // ── Glass design tokens ───────────────────────────────────────────
   const G_CARD       = "rgba(255,255,255,0.08)";
