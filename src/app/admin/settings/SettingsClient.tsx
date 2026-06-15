@@ -1410,14 +1410,28 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 18 }}>בחר את צבע הרקע הגלובלי של ממשק הניהול</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                 {[
-                  { label: "לילה",    bg: "linear-gradient(135deg,#0a0a12 0%,#0f0818 50%,#0a0a12 100%)" },
-                  { label: "אוקיינוס",bg: "linear-gradient(135deg,#001a2c 0%,#030712 100%)" },
-                  { label: "גחלים",   bg: "linear-gradient(135deg,#1c0a00 0%,#0c0c0c 100%)" },
-                  { label: "יער",     bg: "linear-gradient(135deg,#0a1a00 0%,#001a0a 100%)" },
-                  { label: "גלקסיה", bg: "linear-gradient(135deg,#1a0533 0%,#0a0412 100%)" },
-                  { label: "ויסקי",   bg: "linear-gradient(135deg,#12100e 0%,#2c1810 100%)" },
-                  { label: "אבן",     bg: "linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 100%)" },
-                  { label: "קטיפה",   bg: "linear-gradient(135deg,#1a001a 0%,#0a000a 100%)" },
+                  // ── כהים קלאסיים ──
+                  { label: "לילה",     bg: "linear-gradient(135deg,#0a0a12 0%,#0f0818 50%,#0a0a12 100%)" },
+                  { label: "אוקיינוס", bg: "linear-gradient(135deg,#001a2c 0%,#030712 100%)" },
+                  { label: "גחלים",    bg: "linear-gradient(135deg,#1c0a00 0%,#0c0c0c 100%)" },
+                  { label: "יער",      bg: "linear-gradient(135deg,#0a1a00 0%,#001a0a 100%)" },
+                  { label: "גלקסיה",  bg: "linear-gradient(135deg,#1a0533 0%,#0a0412 100%)" },
+                  { label: "ויסקי",    bg: "linear-gradient(135deg,#12100e 0%,#2c1810 100%)" },
+                  { label: "אבן",      bg: "linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 100%)" },
+                  { label: "קטיפה",    bg: "linear-gradient(135deg,#1a001a 0%,#0a000a 100%)" },
+                  // ── נועזים ומודרניים ──
+                  { label: "אורורה",   bg: "linear-gradient(135deg,#0d0221 0%,#0a1628 40%,#001a0a 100%)" },
+                  { label: "Cyberpunk",bg: "linear-gradient(135deg,#0d0221 0%,#1a0030 50%,#002040 100%)" },
+                  { label: "Neon City",bg: "linear-gradient(160deg,#0a0015 0%,#0d0030 35%,#001020 100%)" },
+                  { label: "Lava",     bg: "linear-gradient(135deg,#1a0000 0%,#2d0a00 40%,#1a0010 100%)" },
+                  { label: "Deep Sea", bg: "linear-gradient(180deg,#000d1a 0%,#001428 50%,#000a1a 100%)" },
+                  { label: "Storm",    bg: "linear-gradient(135deg,#0a0a1e 0%,#1a1a2e 50%,#0d0d20 100%)" },
+                  { label: "Volcanic", bg: "linear-gradient(135deg,#150500 0%,#2a0800 45%,#0d0500 100%)" },
+                  { label: "Midnight", bg: "linear-gradient(160deg,#05051a 0%,#0a0a28 50%,#080818 100%)" },
+                  { label: "Jade",     bg: "linear-gradient(135deg,#000f08 0%,#001a10 50%,#000d08 100%)" },
+                  { label: "Noir",     bg: "linear-gradient(160deg,#080808 0%,#111111 50%,#0a0a0a 100%)" },
+                  { label: "Arctic",   bg: "linear-gradient(135deg,#001428 0%,#002040 45%,#000d1a 100%)" },
+                  { label: "Eclipse",  bg: "linear-gradient(135deg,#0a0010 0%,#100020 45%,#050010 100%)" },
                 ].map(({ label, bg }) => {
                   const isActive = form.adminBg === bg && !form.adminBgImage;
                   return (
