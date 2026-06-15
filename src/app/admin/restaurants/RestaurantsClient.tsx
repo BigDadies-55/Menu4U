@@ -335,16 +335,39 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
     </div>
   );
 
+  // Dropdown open state for 3-dot menus
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!openDropdown) return;
+    function handleOutside() { setOpenDropdown(null); }
+    document.addEventListener("click", handleOutside);
+    return () => document.removeEventListener("click", handleOutside);
+  }, [openDropdown]);
+
   return (
     <PageShell>
-      <div className="flex items-center justify-between mb-6">
+      {/* ── Fleet header ── */}
+      <div style={{
+        background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: "15px 25px",
+        display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20,
+      }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: T.text }}>ניהול מסעדות</h1>
-          <p className="mt-1" style={{ color: T.muted }}>{restaurants.length} מסעדות במערכת</p>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#fff" }}>ניהול מסעדות</h1>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+            {restaurants.length} מסעדות רשומות במערכת
+          </p>
         </div>
-        <button onClick={openCreate}
-          className="text-black px-5 py-2.5 rounded-lg font-semibold text-sm transition-opacity hover:opacity-80"
-          style={BTN_PRIMARY}>
+        <button onClick={openCreate} style={{
+          background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
+          padding: "10px 20px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+          cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+          boxShadow: "0 4px 15px rgba(217,119,6,0.3)", transition: "all 0.2s",
+        }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(217,119,6,0.45)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 15px rgba(217,119,6,0.3)"; }}>
           + הוסף מסעדה
         </button>
       </div>
@@ -943,138 +966,155 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
         </div>
       )}
 
-      {/* ── Restaurants table ── */}
-      <div className="overflow-hidden" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 12 }}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-right" style={{ background: T.surface }}>
-                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: T.muted }}>מסעדה</th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: T.muted }}>פרטי קשר</th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: T.muted }}>סטטיסטיקות</th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: T.muted }}>נוצר</th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: T.muted }}>סטטוס</th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: T.muted }}>מנוי</th>
-                <th className="px-6 py-3 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: T.muted }}>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {restaurants.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center">
-                    <div className="text-4xl mb-3">🍽️</div>
-                    <div className="font-medium mb-1" style={{ color: T.sub }}>אין מסעדות עדיין</div>
-                    <div className="text-sm mb-4" style={{ color: T.muted }}>לחץ על &quot;הוסף מסעדה&quot; כדי להתחיל</div>
-                    <button onClick={openCreate}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
-                      style={BTN_PRIMARY}>
-                      + הוסף מסעדה ראשונה
-                    </button>
-                  </td>
-                </tr>
-              ) : (
-                restaurants.map(r => (
-                  <tr key={r.id} className="transition-colors"
-                    style={{ borderTop: "1px solid #2d3239", background: T.panel }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = T.raised; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = T.panel; }}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {r.logo ? (
-                          <img src={r.logo} alt={r.name} className="w-10 h-10 rounded-xl object-cover shrink-0"
-                            style={{ border: "1px solid #2d3239" }} />
-                        ) : (
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0"
-                            style={{ background: "linear-gradient(135deg, #fcc419, #e67700)", color: "#fff" }}>
-                            {r.name[0]}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium" style={{ color: T.text }}>{r.name}</div>
-                          {r.address && <div className="text-xs" style={{ color: T.muted }}>{r.address}</div>}
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {r.website && (
-                              <a href={r.website} target="_blank" rel="noopener noreferrer"
-                                className="text-xs transition-colors" dir="ltr" style={{ color: T.blue }}>🌐 אתר</a>
-                            )}
-                            {r.locationUrl && (
-                              <a href={r.locationUrl} target="_blank" rel="noopener noreferrer"
-                                className="text-xs font-medium transition-colors" style={{ color: T.gold }}>📍 מיקום</a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm space-y-0.5" style={{ color: T.sub }}>
-                      {r.email && <div dir="ltr">{r.email}</div>}
-                      {r.phone && <div dir="ltr">📞 {r.phone}</div>}
-                      {r.phone2 && <div dir="ltr">📞 {r.phone2}</div>}
-                      {r.orderPhone && <div dir="ltr">🛒 {r.orderPhone}</div>}
-                    </td>
-                    <td className="px-6 py-4 text-sm" style={{ color: T.sub }}>
-                      <div>{r._count.menus} תפריטים</div>
-                      <div>{r._count.orders} הזמנות</div>
-                      <div>{r._count.restaurantUsers} משתמשים</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap" style={{ color: T.sub }}>{formatDate(r.createdAt)}</td>
-                    <td className="px-6 py-4">
-                      <span style={{
-                        ...(r.isActive
-                          ? { background: "rgba(81,207,102,0.15)", color: T.green }
-                          : { background: "rgba(108,117,125,0.15)", color: T.muted }),
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}>
-                        {r.isActive ? "פעיל" : "לא פעיל"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {(() => {
-                        const s = getSubscriptionStatus(r);
-                        return (
-                          <span style={{ ...s.style, fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 999 }}>
-                            {s.label}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openEdit(r)} title="ערוך" style={ACTION_BTN}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = T.gold; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = T.sub; }}>
-                          ✏️
-                        </button>
-                        <a href={`/menu/${r.id}`} target="_blank" rel="noopener noreferrer"
-                          title="תפריט ציבורי"
-                          style={{ ...ACTION_BTN, textDecoration: "none" } as React.CSSProperties}
-                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = T.blue; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = T.sub; }}>
-                          🌐
-                        </a>
-                        <button onClick={() => toggleActive(r.id, r.isActive)} title={r.isActive ? "השבת" : "הפעל"}
-                          style={ACTION_BTN}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = T.gold; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = T.sub; }}>
-                          {r.isActive ? "⏸️" : "▶️"}
-                        </button>
-                        <button
-                          onClick={() => { setDeleteConfirm({ id: r.id, name: r.name }); setDeleteInput(""); }}
-                          title="מחק" style={ACTION_BTN}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = T.red; (e.currentTarget as HTMLButtonElement).style.borderColor = T.red; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = T.sub; (e.currentTarget as HTMLButtonElement).style.borderColor = T.overlay; }}>
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* ── Restaurants list (glass cards) ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {restaurants.length === 0 ? (
+          <div style={{
+            background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 20, padding: "48px 24px", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🍽️</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>אין מסעדות עדיין</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>לחץ על &quot;הוסף מסעדה&quot; כדי להתחיל</div>
+            <button onClick={openCreate} style={{
+              background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
+              padding: "10px 24px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer",
+            }}>+ הוסף מסעדה ראשונה</button>
+          </div>
+        ) : restaurants.map(r => {
+          const subStatus = getSubscriptionStatus(r);
+          const hasData = r._count.menus > 0 || r._count.orders > 0 || r._count.restaurantUsers > 0;
+          const isOpen = openDropdown === r.id;
+          return (
+            <div key={r.id} style={{
+              background: "rgba(255,255,255,0.07)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)",
+              border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20,
+              padding: "10px 18px",
+              display: "grid",
+              gridTemplateColumns: "1.4fr 1.2fr 1.6fr 0.9fr 0.8fr 52px",
+              alignItems: "center", gap: 8,
+              transition: "all 0.25s",
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = "translateX(-3px)"; el.style.background = "rgba(255,255,255,0.13)"; el.style.borderColor = "rgba(255,255,255,0.25)"; el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.2)"; }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = ""; el.style.background = "rgba(255,255,255,0.07)"; el.style.borderColor = "rgba(255,255,255,0.15)"; el.style.boxShadow = ""; }}>
+
+              {/* Identity */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {r.logo ? (
+                  <img src={r.logo} alt={r.name} style={{ width: 38, height: 38, borderRadius: 10, objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,0.15)" }} />
+                ) : (
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 10px rgba(217,119,6,0.25)" }}>
+                    {r.name[0]}
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{r.name}</div>
+                  {r.address && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>{r.address}</div>}
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {r.email && <div style={{ fontSize: 12, color: "#fff", display: "flex", alignItems: "center", gap: 5 }}>✉️ <span dir="ltr">{r.email}</span></div>}
+                {r.phone && <div style={{ fontSize: 12, color: "#60A5FA", display: "flex", alignItems: "center", gap: 5 }}>📞 <span dir="ltr">{r.phone}</span></div>}
+                {!r.email && !r.phone && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>—</div>}
+              </div>
+
+              {/* Stats badges */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {[
+                  { icon: "📋", label: "תפריטים", val: r._count.menus },
+                  { icon: "🛒", label: "הזמנות",  val: r._count.orders },
+                  { icon: "👥", label: "משתמשים", val: r._count.restaurantUsers },
+                ].map(({ icon, label, val }) => {
+                  const lit = hasData && val > 0;
+                  return (
+                    <span key={label} style={{
+                      background: lit ? "rgba(59,130,246,0.1)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${lit ? "rgba(59,130,246,0.25)" : "rgba(255,255,255,0.08)"}`,
+                      padding: "3px 8px", borderRadius: 7, fontSize: 11,
+                      display: "flex", alignItems: "center", gap: 4,
+                      color: lit ? "#93C5FD" : "rgba(255,255,255,0.5)",
+                    }}>
+                      {icon} {label}: <strong style={{ color: lit ? "#3B82F6" : "#fff", marginRight: 1 }}>{val}</strong>
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* Date */}
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                נוצר<br /><span style={{ color: "#fff", fontWeight: 500 }}>{formatDate(r.createdAt)}</span>
+              </div>
+
+              {/* Status + subscription */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                <span style={{
+                  background: r.isActive ? "rgba(16,185,129,0.15)" : "rgba(108,117,125,0.15)",
+                  color: r.isActive ? "#34D399" : "rgba(255,255,255,0.45)",
+                  border: `1px solid ${r.isActive ? "rgba(16,185,129,0.25)" : "rgba(108,117,125,0.2)"}`,
+                  padding: "2px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+                }}>{r.isActive ? "פעיל" : "לא פעיל"}</span>
+                <span style={{
+                  ...subStatus.style,
+                  background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)",
+                  padding: "2px 8px", borderRadius: 6, fontSize: 11,
+                }}>{subStatus.label}</span>
+              </div>
+
+              {/* 3-dot actions */}
+              <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+                <button
+                  onClick={e => { e.stopPropagation(); setOpenDropdown(isOpen ? null : r.id); }}
+                  style={{
+                    background: isOpen ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)",
+                    border: `1px solid ${isOpen ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.15)"}`,
+                    color: isOpen ? "#fff" : "rgba(255,255,255,0.55)",
+                    width: 34, height: 34, borderRadius: 9, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 18, transition: "all 0.15s", fontFamily: "inherit",
+                  }}
+                  onMouseEnter={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.15)"; b.style.color = "#fff"; } }}
+                  onMouseLeave={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.05)"; b.style.color = "rgba(255,255,255,0.55)"; } }}>
+                  ⋮
+                </button>
+
+                {isOpen && (
+                  <div onClick={e => e.stopPropagation()} style={{
+                    position: "absolute", top: 40, left: 0,
+                    background: "rgba(20,20,28,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14,
+                    padding: 6, minWidth: 165,
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.5)", zIndex: 200,
+                    display: "flex", flexDirection: "column", gap: 2,
+                    animation: "fadeInDrop 0.15s ease",
+                  }}>
+                    <style>{`@keyframes fadeInDrop { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }`}</style>
+                    {[
+                      { icon: "✏️", label: "עריכה", onClick: () => { openEdit(r); setOpenDropdown(null); }, danger: false },
+                      { icon: "🌐", label: "תפריט ציבורי", onClick: () => { window.open(`/menu/${r.id}`, "_blank"); setOpenDropdown(null); }, danger: false },
+                      { icon: r.isActive ? "⏸️" : "▶️", label: r.isActive ? "השהייה" : "הפעל", onClick: () => { toggleActive(r.id, r.isActive); setOpenDropdown(null); }, danger: false },
+                      { icon: "🗑️", label: "מחיקה", onClick: () => { setDeleteConfirm({ id: r.id, name: r.name }); setDeleteInput(""); setOpenDropdown(null); }, danger: true },
+                    ].map(item => (
+                      <button key={item.label} onClick={item.onClick} style={{
+                        background: "none", border: "none",
+                        color: item.danger ? "#FCA5A5" : "rgba(255,255,255,0.8)",
+                        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                        padding: "9px 12px", borderRadius: 8, cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 9, width: "100%",
+                        textAlign: "right", direction: "rtl", transition: "all 0.12s",
+                      }}
+                        onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = item.danger ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.08)"; b.style.color = "#fff"; }}
+                        onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "none"; b.style.color = item.danger ? "#FCA5A5" : "rgba(255,255,255,0.8)"; }}>
+                        <span>{item.icon}</span> {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </PageShell>
   );
