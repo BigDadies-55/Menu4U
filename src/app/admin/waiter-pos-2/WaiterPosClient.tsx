@@ -90,8 +90,12 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   };
 
   return (
+    <>
+      {/* Full-screen background layers — positive z-index so they paint above AdminShell's background */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 1, backgroundImage: `url('${bgUrl}')`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 2, background: `rgba(12,12,18,${bgOpacity})`, transition: "background 0.3s" }} />
     <div dir="rtl" style={{
-      ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
+      ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { position: "relative" as const, zIndex: 3, minHeight: "calc(100vh - 64px)" }),
       fontFamily: "'Heebo', sans-serif",
       overflowX: "hidden",
       display: "flex", flexDirection: "column",
@@ -99,9 +103,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       background: "transparent",
       color: "#fff",
     }}>
-      {/* Full-screen background layers — always cover the entire viewport */}
-      <div style={{ position: "fixed", inset: 0, zIndex: -2, backgroundImage: `url('${bgUrl}')`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
-      <div style={{ position: "fixed", inset: 0, zIndex: -1, background: `rgba(12,12,18,${bgOpacity})`, transition: "background 0.3s" }} />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes insightPulse { 0%,100% { box-shadow:0 0 0 0 rgba(251,191,36,0); } 50% { box-shadow:0 0 0 7px rgba(251,191,36,0.4); } }
@@ -676,6 +677,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         </div>
       )}
     </div>
+    </>
   );
 }
 
