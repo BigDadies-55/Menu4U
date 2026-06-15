@@ -44,52 +44,67 @@ export async function PATCH(req: Request) {
     privacyUrl, termsUrl,
     showPrivacyPolicy, enableLoyaltyPoints, enableOnlineOrders, showPrices,
   } = body;
+  const vals = [
+    siteName ?? "Menu4U", logo ?? null, domain ?? null,
+    copyright ?? null, adminPalette ?? "dark",
+    adminBg ?? "#f0ece3", adminBgImage ?? null,
+    adminSidebarBg ?? null, adminSidebarAccent ?? null,
+    adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827",
+    adminTopBarBg ?? null, adminTopBarTextColor ?? "#374151",
+    contactEmail ?? null, contactPhone ?? null, address ?? null,
+    timezone ?? "Asia/Jerusalem", currency ?? "ILS", interfaceLanguage ?? "he",
+    privacyUrl ?? null, termsUrl ?? null,
+    showPrivacyPolicy ?? true, enableLoyaltyPoints ?? true,
+    enableOnlineOrders ?? false, showPrices ?? true,
+  ];
   try {
     await prisma.$executeRawUnsafe(`
-      UPDATE "SiteConfig" SET
-        "siteName"               = $1,
-        "logo"                   = $2,
-        "domain"                 = $3,
-        "copyright"              = $4,
-        "adminPalette"           = $5,
-        "adminBg"                = $6,
-        "adminBgImage"           = $7,
-        "adminSidebarBg"         = $8,
-        "adminSidebarAccent"     = $9,
-        "adminSidebarTextColor"  = $10,
-        "adminContentTextColor"  = $11,
-        "adminTopBarBg"          = $12,
-        "adminTopBarTextColor"   = $13,
-        "contactEmail"           = $14,
-        "contactPhone"           = $15,
-        "address"                = $16,
-        "timezone"               = $17,
-        "currency"               = $18,
-        "interfaceLanguage"      = $19,
-        "privacyUrl"             = $20,
-        "termsUrl"               = $21,
-        "showPrivacyPolicy"      = $22,
-        "enableLoyaltyPoints"    = $23,
-        "enableOnlineOrders"     = $24,
-        "showPrices"             = $25,
-        "updatedAt"              = NOW()
-      WHERE id = 'default'
-    `,
-      siteName ?? "Menu4U", logo ?? null, domain ?? null,
-      copyright ?? null, adminPalette ?? "dark",
-      adminBg ?? "#f0ece3", adminBgImage ?? null,
-      adminSidebarBg ?? null, adminSidebarAccent ?? null,
-      adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827",
-      adminTopBarBg ?? null, adminTopBarTextColor ?? "#374151",
-      contactEmail ?? null, contactPhone ?? null, address ?? null,
-      timezone ?? "Asia/Jerusalem", currency ?? "ILS", interfaceLanguage ?? "he",
-      privacyUrl ?? null, termsUrl ?? null,
-      showPrivacyPolicy ?? true, enableLoyaltyPoints ?? true,
-      enableOnlineOrders ?? false, showPrices ?? true,
-    );
+      INSERT INTO "SiteConfig" (
+        id, "siteName", "logo", "domain", "copyright",
+        "adminPalette", "adminBg", "adminBgImage",
+        "adminSidebarBg", "adminSidebarAccent", "adminSidebarTextColor", "adminContentTextColor",
+        "adminTopBarBg", "adminTopBarTextColor",
+        "contactEmail", "contactPhone", "address",
+        "timezone", "currency", "interfaceLanguage",
+        "privacyUrl", "termsUrl",
+        "showPrivacyPolicy", "enableLoyaltyPoints", "enableOnlineOrders", "showPrices",
+        "updatedAt"
+      ) VALUES (
+        'default', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, NOW()
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        "siteName"              = EXCLUDED."siteName",
+        "logo"                  = EXCLUDED."logo",
+        "domain"                = EXCLUDED."domain",
+        "copyright"             = EXCLUDED."copyright",
+        "adminPalette"          = EXCLUDED."adminPalette",
+        "adminBg"               = EXCLUDED."adminBg",
+        "adminBgImage"          = EXCLUDED."adminBgImage",
+        "adminSidebarBg"        = EXCLUDED."adminSidebarBg",
+        "adminSidebarAccent"    = EXCLUDED."adminSidebarAccent",
+        "adminSidebarTextColor" = EXCLUDED."adminSidebarTextColor",
+        "adminContentTextColor" = EXCLUDED."adminContentTextColor",
+        "adminTopBarBg"         = EXCLUDED."adminTopBarBg",
+        "adminTopBarTextColor"  = EXCLUDED."adminTopBarTextColor",
+        "contactEmail"          = EXCLUDED."contactEmail",
+        "contactPhone"          = EXCLUDED."contactPhone",
+        "address"               = EXCLUDED."address",
+        "timezone"              = EXCLUDED."timezone",
+        "currency"              = EXCLUDED."currency",
+        "interfaceLanguage"     = EXCLUDED."interfaceLanguage",
+        "privacyUrl"            = EXCLUDED."privacyUrl",
+        "termsUrl"              = EXCLUDED."termsUrl",
+        "showPrivacyPolicy"     = EXCLUDED."showPrivacyPolicy",
+        "enableLoyaltyPoints"   = EXCLUDED."enableLoyaltyPoints",
+        "enableOnlineOrders"    = EXCLUDED."enableOnlineOrders",
+        "showPrices"            = EXCLUDED."showPrices",
+        "updatedAt"             = NOW()
+    `, ...vals);
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Table not found – run /api/migrate first" }, { status: 500 });
+  } catch (e) {
+    console.error("[site-config PATCH]", e);
+    return NextResponse.json({ error: "DB error – run /api/migrate first" }, { status: 500 });
   }
 }
