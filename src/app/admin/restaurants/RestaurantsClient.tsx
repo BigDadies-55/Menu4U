@@ -352,6 +352,10 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   // Collapsed state for network blocks (groupId => bool)
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  // New group modal
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [creatingGroup, setCreatingGroup] = useState(false);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -375,16 +379,27 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
             {restaurants.length} בתי עסק רשומים במערכת
           </p>
         </div>
-        <button onClick={openCreate} style={{
-          background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
-          padding: "10px 20px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700,
-          cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-          boxShadow: "0 4px 15px rgba(217,119,6,0.3)", transition: "all 0.2s",
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(217,119,6,0.45)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 15px rgba(217,119,6,0.3)"; }}>
-          + הוסף מסעדה
-        </button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => setShowGroupModal(true)} style={{
+            background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)",
+            padding: "10px 20px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+            cursor: "pointer", transition: "all 0.2s",
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.14)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; }}>
+            + רשת חדשה
+          </button>
+          <button onClick={openCreate} style={{
+            background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
+            padding: "10px 20px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+            boxShadow: "0 4px 15px rgba(217,119,6,0.3)", transition: "all 0.2s",
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(217,119,6,0.45)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 15px rgba(217,119,6,0.3)"; }}>
+            + הוסף בית עסק
+          </button>
+        </div>
       </div>
 
       {/* ── Form modal ── */}
@@ -1027,7 +1042,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
         }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🏪</div>
           <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>אין בתי עסק עדיין</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>לחץ על &quot;הוסף מסעדה&quot; כדי להתחיל</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>לחץ על &quot;הוסף בית עסק&quot; כדי להתחיל</div>
           <button onClick={openCreate} style={{
             background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
             padding: "10px 24px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer",
@@ -1228,6 +1243,58 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
           </div>
         );
       })()}
+
+      {/* ── Create group modal ── */}
+      {showGroupModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+          <div style={{ background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 400 }}>
+            <h2 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 800, color: "#fff" }}>רשת חדשה</h2>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>שם הרשת</label>
+              <input
+                autoFocus
+                value={newGroupName}
+                onChange={e => setNewGroupName(e.target.value)}
+                onKeyDown={async e => {
+                  if (e.key === "Enter") {
+                    if (!newGroupName.trim() || creatingGroup) return;
+                    setCreatingGroup(true);
+                    await fetch("/api/admin/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newGroupName.trim() }) });
+                    setCreatingGroup(false);
+                    setShowGroupModal(false);
+                    setNewGroupName("");
+                    window.location.reload();
+                  }
+                  if (e.key === "Escape") setShowGroupModal(false);
+                }}
+                placeholder="למשל: רשת בורגר המלך"
+                style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                disabled={!newGroupName.trim() || creatingGroup}
+                onClick={async () => {
+                  if (!newGroupName.trim() || creatingGroup) return;
+                  setCreatingGroup(true);
+                  await fetch("/api/admin/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newGroupName.trim() }) });
+                  setCreatingGroup(false);
+                  setShowGroupModal(false);
+                  setNewGroupName("");
+                  window.location.reload();
+                }}
+                style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#000", padding: "11px 0", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: !newGroupName.trim() || creatingGroup ? 0.5 : 1 }}>
+                {creatingGroup ? "יוצר..." : "צור רשת"}
+              </button>
+              <button
+                onClick={() => { setShowGroupModal(false); setNewGroupName(""); }}
+                style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", padding: "11px 0", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
