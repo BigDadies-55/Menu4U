@@ -99,7 +99,7 @@ export default function AdminShell({
           adminPalette={adminPalette}
           siteLogo={siteLogo}
           siteName={siteName}
-          adminSidebarBg={adminSidebarBg}
+          adminSidebarBg={liveBg?.includes("gradient") && !adminSidebarBg ? "rgba(0,0,0,0.28)" : adminSidebarBg}
           adminSidebarAccent={adminSidebarAccent}
           adminSidebarTextColor={adminSidebarTextColor}
           favorites={favorites}
