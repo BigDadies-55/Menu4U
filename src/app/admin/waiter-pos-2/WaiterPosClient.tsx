@@ -1,536 +1,56 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React from "react";
 import { signOut } from "next-auth/react";
-import { TableOverlay, type OrderDetail } from "./TableOverlay";
+import { TableOverlay } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
 import Receipt from "./Receipt";
-import { useOffline } from "@/hooks/useOffline";
-import { idbSet, idbGet } from "@/lib/waiter-db";
-
-// ── Types ──────────────────────────────────────────────────────────────
-type Restaurant = { id: string; name: string; waiterBg?: string | null };
-
-type TableData = {
-  tableNum: string;
-  seats: number;
-  availStatus: "free" | "occupied" | "reserved" | "inactive" | "bill_requested" | "paid";
-  sittingStart: string | null;
-  guests: number;
-  orderStatus: string | null;
-  minutesSitting: number;
-  activeOrderIds: string[];
-  totalAmount: number;
-  orderCount: number;
-  minutesSinceLastOrder: number;
-  readyItemCount?: number;
-  heldCourseNums?: number[];
-};
-
-type Notification = {
-  id: string;
-  tableNum: string;
-  type: "ready" | "held";
-  text: string;
-  at: number;
-  read: boolean;
-};
-
-type Insight = {
-  tableNum: string;
-  type: "alert" | "tip" | "info";
-  text: string;
-};
-
-type LayoutTable = {
-  num: number | string; name?: string; shape?: string;
-  x: number; y: number; w: number; h: number; seats?: number; rot?: number;
-};
-type LayoutRoom = { id: string; name: string; tables: LayoutTable[]; bgImg?: string; bgOpacity?: number };
-type LayoutV2 = { version: 2; rooms: LayoutRoom[] };
-
-// ── Color maps ───────────────────────────────────────────────────────
-const STATUS_BORDER: Record<string, string> = {
-  occupied: "#f87171", reserved: "#93c5fd", free: "#6ee7b7", inactive: "#d1d5db",
-  bill_requested: "#fb923c", paid: "#34d399",
-};
-const STATUS_LABEL: Record<string, string> = {
-  occupied: "תפוס", reserved: "מוזמן", free: "פנוי", inactive: "לא פעיל",
-  bill_requested: "מבקש חשבון", paid: "שולם",
-};
-const STATUS_BADGE_BG: Record<string, string> = {
-  occupied: "#fca5a5", reserved: "#bfdbfe", free: "#a7f3d0", inactive: "#e5e7eb",
-  bill_requested: "#fed7aa", paid: "#a7f3d0",
-};
-const STATUS_BADGE_TEXT: Record<string, string> = {
-  occupied: "#b91c1c", reserved: "#1d4ed8", free: "#065f46", inactive: "#6b7280",
-  bill_requested: "#c2410c", paid: "#065f46",
-};
-const ORDER_STATUS_HE: Record<string, string> = {
-  PENDING: "ממתין", CONFIRMED: "הזמנה נלקחה", PREPARING: "מכין",
-  READY: "מוכן!", DELIVERED: "הוגש", PAID: "שולם", CANCELLED: "בוטל",
-};
-const ORDER_STATUS_COLOR: Record<string, string> = {
-  PENDING: "#a7f3d0", CONFIRMED: "#fca5a5", PREPARING: "#bfdbfe",
-  READY: "#bfdbfe", DELIVERED: "#fde68a", PAID: "#e5e7eb", CANCELLED: "#e5e7eb",
-};
-const ORDER_STATUS_TEXT_COLOR: Record<string, string> = {
-  PENDING: "#065f46", CONFIRMED: "#b91c1c", PREPARING: "#1d4ed8",
-  READY: "#1d4ed8", DELIVERED: "#92400e", PAID: "#6b7280", CANCELLED: "#6b7280",
-};
-const INSIGHT_TYPE_COLOR: Record<string, string> = {
-  alert: "#ff4444", tip: "#fbbf24", info: "#22d3ee",
-};
-const INSIGHT_TYPE_DIM: Record<string, string> = {
-  alert: "#ff9999", tip: "#fde68a", info: "#a5f3fc",
-};
-
-function fmtTimer(sittingStart: string | null): string {
-  if (!sittingStart) return "00:00";
-  const s = Math.max(0, Math.floor((Date.now() - new Date(sittingStart).getTime()) / 1000));
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-}
-function fmtAgo(minutes: number): string {
-  if (minutes < 1) return "—";
-  if (minutes < 60) return `${minutes} דק'`;
-  return `${Math.floor(minutes / 60)}ש' ${minutes % 60}′`;
-}
-
-const LS_REST_KEY = "menu4u_active_restaurant";
+import {
+  useWaiterPos,
+  type Restaurant,
+  type Insight,
+  STATUS_BORDER, STATUS_LABEL, STATUS_BADGE_BG, STATUS_BADGE_TEXT,
+  ORDER_STATUS_HE, ORDER_STATUS_COLOR, ORDER_STATUS_TEXT_COLOR,
+  fmtTimer, fmtAgo,
+} from "../waiter-pos/useWaiterPos";
 
 // ── Main ─────────────────────────────────────────────────────────────
 export default function WaiterPosClient({ restaurants, waiterName, isWaiter = false, waiterId: _w }: {
   restaurants: Restaurant[]; waiterName: string; isWaiter?: boolean; waiterId?: string;
 }) {
-  const [restaurantId, setRestaurantId] = useState(() => {
-    if (typeof window !== "undefined") {
-      const s = localStorage.getItem(LS_REST_KEY);
-      if (s && restaurants.some(r => r.id === s)) return s;
-    }
-    return restaurants[0]?.id ?? "";
-  });
-
-  const [tables, setTables]           = useState<TableData[]>([]);
-  const [insights, setInsights]       = useState<Insight[]>([]);
-  // key → { until: timestamp, tableStatus at snooze time }
-  const [snoozed, setSnoozed]         = useState<Map<string, { until: number; status: string }>>(new Map());
-  const [loadingTables, setLoading]   = useState(true);
-  const [insightLoading, setILoading] = useState(false);
-  const [tick, setTick]               = useState(0);
-  const [insightIdx, setInsightIdx]   = useState(0);
-  const [insightFade, setInsightFade] = useState(true);
-  const [allInsightsOpen, setAllInsightsOpen] = useState(false);
-  const [tableOverlay, setTableOverlay]       = useState<string | null>(null);
-  const [toastMsg, setToastMsg]               = useState("");
-  type ReceiptData = { order: import("./TableOverlay").OrderDetail; tableNum: string; restaurantName: string; waiterName: string };
-  const [receiptData, setReceiptData]         = useState<ReceiptData | null>(null);
-  const [clock, setClock]                     = useState("");
-  const [isMobile, setIsMobile]               = useState(false);
-  const [isFullscreen, setIsFullscreen]       = useState(false);
-  const [showFsBanner, setShowFsBanner]       = useState(false);
-  const [viewMode, setViewMode]               = useState<"grid" | "floor">("grid");
-  const [layout, setLayout]                   = useState<LayoutV2 | null>(null);
-  const [roomIdx, setRoomIdx]                 = useState(0);
-  const [refreshing, setRefreshing]           = useState(false);
-  const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
-  const [myTableNums, setMyTableNums]         = useState<Set<string> | null>(null); // null = no restriction
-  const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
-  const [notifications, setNotifications]     = useState<Notification[]>([]);
-  const [notifOpen, setNotifOpen]             = useState(false);
-  const prevReadyRef = useRef<Record<string, number>>({});
-  const prevHeldRef  = useRef<Record<string, string>>({});
-
-  // Offline state
-  const isOffline = useOffline();
-  const [offlineSince, setOfflineSince] = useState<Date | null>(null);
-  const [usingCachedData, setUsingCachedData] = useState(false);
-  useEffect(() => {
-    if (isOffline) { setOfflineSince(prev => prev ?? new Date()); }
-    else { setOfflineSince(null); setUsingCachedData(false); }
-  }, [isOffline]);
-
-  // Order flow state
-  const [orderScreenData, setOrderScreenData] = useState<{
-    orderId: string | null;
-    tableNum: string;
-    allergens: string[];
-    guestCount: number;
-    existingOrder: OrderDetail | null;
-  } | null>(null);
-
-  const floorRef = useRef<HTMLDivElement>(null);
-  const [floorSize, setFloorSize] = useState({ w: 600, h: 400 });
-
-  // PWA install prompt
-  const [installPrompt, setInstallPrompt] = useState<Event & { prompt?: () => Promise<void> } | null>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [isIos, setIsIos] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  useEffect(() => {
-    const standalone = window.matchMedia("(display-mode: standalone)").matches ||
-      ("standalone" in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true);
-    setIsStandalone(standalone);
-    if (standalone) return; // already installed — don't show banner
-
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    setIsIos(ios);
-
-    if (ios) {
-      // show iOS manual instructions after 3 seconds
-      const t = setTimeout(() => setShowInstallBanner(true), 3000);
-      return () => clearTimeout(t);
-    }
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as Event & { prompt?: () => Promise<void> });
-      setShowInstallBanner(true);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  async function triggerInstall() {
-    if (!installPrompt?.prompt) return;
-    await installPrompt.prompt();
-    setShowInstallBanner(false);
-    setInstallPrompt(null);
-  }
-
-  useEffect(() => {
-    function check() { setIsMobile(window.innerWidth < 640); }
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  useEffect(() => {
-    function onFsChange() {
-      setIsFullscreen(!!document.fullscreenElement);
-      if (document.fullscreenElement) setShowFsBanner(false);
-    }
-    document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, []);
-
-  useEffect(() => {
-    if (!isWaiter) return;
-    const t = setTimeout(() => {
-      if (!document.fullscreenElement)
-        document.documentElement.requestFullscreen().catch(() => setShowFsBanner(true));
-    }, 300);
-    return () => clearTimeout(t);
-  }, [isWaiter]);
-
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
-    else document.exitFullscreen().catch(() => {});
-  }
-
-  useEffect(() => {
-    if (restaurantId) localStorage.setItem(LS_REST_KEY, restaurantId);
-  }, [restaurantId]);
-
-  // 1s ticker
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Clock
-  useEffect(() => {
-    function upd() {
-      const n = new Date();
-      setClock(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`);
-    }
-    upd(); const id = setInterval(upd, 1000); return () => clearInterval(id);
-  }, []);
-
-  // Floor container size
-  useEffect(() => {
-    if (!floorRef.current) return;
-    const obs = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect;
-      setFloorSize({ w: width, h: height });
-    });
-    obs.observe(floorRef.current);
-    return () => obs.disconnect();
-  }, [viewMode]);
-
-  // SSE — re-fetch on kitchen updates
-  useEffect(() => {
-    if (!restaurantId) return;
-    const es = new EventSource(`/api/admin/orders/stream?restaurantId=${restaurantId}`);
-    es.onmessage = () => fetchAll(true);
-    return () => es.close();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantId]);
-
-  // Track notifications from table data changes
-  useEffect(() => {
-    const newNotifs: Notification[] = [];
-    const now = Date.now();
-
-    for (const t of tables) {
-      const ready = t.readyItemCount ?? 0;
-      const prev  = prevReadyRef.current[t.tableNum] ?? 0;
-      if (ready > 0 && ready > prev) {
-        newNotifs.push({
-          id: `ready-${t.tableNum}-${now}`,
-          tableNum: t.tableNum,
-          type: "ready",
-          text: `שולחן ${t.tableNum}: ${ready} מנות מוכנות להגשה`,
-          at: now,
-          read: false,
-        });
-      }
-      prevReadyRef.current[t.tableNum] = ready;
-
-      const held = (t.heldCourseNums ?? []).join(",");
-      const prevHeld = prevHeldRef.current[t.tableNum] ?? "";
-      if (held && held !== prevHeld) {
-        const newCourses = (t.heldCourseNums ?? []).filter(c => !prevHeld.split(",").includes(String(c)));
-        for (const c of newCourses) {
-          newNotifs.push({
-            id: `held-${t.tableNum}-${c}-${now}`,
-            tableNum: t.tableNum,
-            type: "held",
-            text: `שולחן ${t.tableNum}: קורס ${c} ממתין לשחרור`,
-            at: now,
-            read: false,
-          });
-        }
-      }
-      prevHeldRef.current[t.tableNum] = held;
-    }
-
-    if (newNotifs.length > 0) {
-      setNotifications(prev => [...newNotifs, ...prev].slice(0, 50));
-    }
-  }, [tables]);
-
-  // Fetch layout (with IDB fallback)
-  const fetchLayout = useCallback(async () => {
-    if (!restaurantId) return;
-    try {
-      const r = await fetch(`/api/admin/restaurants/${restaurantId}/layout`);
-      if (r.ok) {
-        const d = await r.json();
-        const raw = d?.tableLayoutJson;
-        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-        const layout = parsed?.version === 2 ? parsed : null;
-        setLayout(layout);
-        setRoomIdx(0);
-        if (layout) idbSet("layout", restaurantId, layout).catch(() => {});
-        return;
-      }
-    } catch { /* fall through to cache */ }
-    // Offline fallback
-    const cached = await idbGet<LayoutV2>("layout", restaurantId).catch(() => undefined);
-    if (cached) { setLayout(cached); setRoomIdx(0); }
-    else setLayout(null);
-  }, [restaurantId]);
-
-  useEffect(() => { fetchLayout(); }, [fetchLayout]);
-
-  // Fetch my station assignment (which tables I'm responsible for)
-  useEffect(() => {
-    if (!restaurantId) return;
-    fetch(`/api/admin/waiter-stations?restaurantId=${restaurantId}&userId=me`)
-      .then(r => r.ok ? r.json() : null)
-      .then((stations: Array<{ tableNumbers: string[] }> | null) => {
-        if (!stations || stations.length === 0 || stations[0]?.tableNumbers?.length === 0) {
-          setMyTableNums(null); // manager or no assignment — see all
-        } else {
-          setMyTableNums(new Set(stations[0].tableNumbers));
-        }
-      })
-      .catch(() => setMyTableNums(null));
-  }, [restaurantId]);
-  const fetchAll = useCallback(async (quiet = false) => {
-    if (!restaurantId) return;
-    if (!quiet) setLoading(true);
-    try {
-      const r = await fetch(`/api/admin/waiter-pos/tables?restaurantId=${restaurantId}`);
-      if (r.ok) {
-        const data: TableData[] = await r.json();
-        setTables(prev => {
-          // Clear snoozes for tables whose status changed
-          setSnoozed(s => {
-            const next = new Map(s);
-            for (const [key, v] of next) {
-              const tNum = key.split("|")[0];
-              const newT = data.find(t => t.tableNum === tNum);
-              if (newT && newT.availStatus !== v.status) next.delete(key);
-            }
-            return next;
-          });
-          return data;
-        });
-        setUsingCachedData(false);
-        // Persist tables to IDB for offline use
-        idbSet("tables", restaurantId, { data, savedAt: new Date().toISOString() }).catch(() => {});
-        // Pre-fetch and cache each active order
-        const orderIds = data.flatMap(t => t.activeOrderIds);
-        for (const oid of orderIds) {
-          fetch(`/api/admin/orders/${oid}`)
-            .then(r => r.ok ? r.json() : null)
-            .then(d => { if (d) idbSet("orders", oid, d).catch(() => {}); })
-            .catch(() => {});
-        }
-        // Fetch insights right after with fresh table data
-        setILoading(true);
-        fetch("/api/admin/waiter-pos/insights", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ restaurantId, tables: data }),
-        }).then(ir => ir.ok ? ir.json() : { insights: [] })
-          .then(d => {
-            setInsights(Array.isArray(d.insights) ? d.insights : []);
-            setInsightIdx(0);
-          })
-          .finally(() => setILoading(false));
-        return;
-      }
-    } catch { /* fall through to cache */ }
-    finally { setLoading(false); }
-
-    // Offline fallback — load from IDB
-    const cached = await idbGet<{ data: TableData[]; savedAt: string }>("tables", restaurantId).catch(() => undefined);
-    if (cached?.data) {
-      setTables(cached.data);
-      setUsingCachedData(true);
-    }
-  }, [restaurantId]);
-
-  useEffect(() => {
-    fetchAll();
-    const id = setInterval(() => fetchAll(true), 15_000);
-    return () => clearInterval(id);
-  }, [fetchAll]);
-
-  // Manual refresh
-  async function manualRefresh() {
-    setRefreshing(true);
-    await fetchAll(true);
-    setRefreshing(false);
-  }
-
-  // Insight rotator every 10s
-  useEffect(() => {
-    if (insights.length <= 1) return;
-    const id = setInterval(() => {
-      setInsightFade(false);
-      setTimeout(() => { setInsightIdx(i => (i + 1) % insights.length); setInsightFade(true); }, 400);
-    }, 10_000);
-    return () => clearInterval(id);
-  }, [insights]);
-
-  function showToast(msg: string) { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); }
-
-  async function quickFireCourse(orderId: string, course: number, tableNum: string) {
-    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ course }),
-    });
-    showToast(`🔥 קורס ${course} שולחן ${tableNum} — יצא למטבח`);
-    fetchAll(true);
-  }
-
-  async function patchStatus(tableNum: string, status: "reserved" | "inactive" | "free" | "bill_requested") {
-    await fetch("/api/admin/waiter-pos/tables", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restaurantId, tableNum, status }),
-    });
-    setTableOverlay(null);
-    showToast(`שולחן ${tableNum} עודכן`);
-    fetchAll(true);
-  }
-
-  // ── KPIs
-  const occupiedCount = tables.filter(t => t.availStatus === "occupied").length;
-  const reservedCount = tables.filter(t => t.availStatus === "reserved").length;
-  const freeCount     = tables.filter(t => t.availStatus === "free").length;
-  const inactiveCount = tables.filter(t => t.availStatus === "inactive").length;
-  const totalDiners   = tables.filter(t => t.availStatus === "occupied").reduce((s, t) => s + t.guests, 0);
-  const alertsCount   = insights.filter(i => i.type === "alert").length;
-
-  const occupiedTables = tables.filter(t => t.availStatus === "occupied");
-  const avgSittingMin  = occupiedTables.length > 0 && occupiedTables.some(t => t.minutesSitting > 0)
-    ? Math.round(occupiedTables.filter(t => t.minutesSitting > 0).reduce((s, t) => s + t.minutesSitting, 0) /
-        occupiedTables.filter(t => t.minutesSitting > 0).length)
-    : 0;
-  const tablesWithCost = occupiedTables.filter(t => t.totalAmount > 0);
-  const avgCost        = tablesWithCost.length > 0
-    ? Math.round(tablesWithCost.reduce((s, t) => s + t.totalAmount, 0) / tablesWithCost.length)
-    : 0;
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const currentInsight = insights[insightIdx] ?? null;
-  const overlayTable   = tables.find(t => t.tableNum === tableOverlay) ?? null;
-  const overlayInsights = insights.filter(i => i.tableNum === tableOverlay);
-
-  // ── Status filter
-  const filteredTables = useMemo(() => {
-    let result = tables;
-    if (myTableNums !== null) result = result.filter(t => myTableNums.has(t.tableNum));
-    if (statusFilter.size > 0) result = result.filter(t => statusFilter.has(t.availStatus));
-    return result;
-  }, [tables, statusFilter, myTableNums]);
-
-  function toggleFilter(s: string) {
-    setStatusFilter(prev => {
-      const n = new Set(prev);
-      n.has(s) ? n.delete(s) : n.add(s);
-      return n;
-    });
-  }
-
-  // ── Floor map scale + rotation
-  const activeRoom = layout?.rooms[roomIdx];
-
-  const rotatedFloor = useMemo(() => {
-    if (!activeRoom?.tables.length) return { tables: [], maxX: 0, maxY: 0 };
-    const origMaxY = Math.max(...activeRoom.tables.map(t => t.y + t.h));
-    const origMaxX = Math.max(...activeRoom.tables.map(t => t.x + t.w));
-    if (layoutRotation === 0) {
-      return { tables: activeRoom.tables, maxX: origMaxX, maxY: origMaxY };
-    }
-    // 90° clockwise: x' = origMaxY - (y+h), y' = x, w' = h, h' = w
-    const rotated = activeRoom.tables.map(lt => ({
-      ...lt,
-      x: origMaxY - (lt.y + lt.h),
-      y: lt.x,
-      w: lt.h,
-      h: lt.w,
-    }));
-    const newMaxX = Math.max(...rotated.map(t => t.x + t.w));
-    const newMaxY = Math.max(...rotated.map(t => t.y + t.h));
-    return { tables: rotated, maxX: newMaxX, maxY: newMaxY };
-  }, [activeRoom, layoutRotation]);
-
-  const { floorScale, floorOffsetX, floorOffsetY } = useMemo(() => {
-    if (!rotatedFloor.maxX || !rotatedFloor.maxY || !floorSize.w || !floorSize.h)
-      return { floorScale: 1, floorOffsetX: 0, floorOffsetY: 0 };
-    const scale = Math.min(floorSize.w / rotatedFloor.maxX, floorSize.h / rotatedFloor.maxY);
-    // center the layout in the canvas
-    const offsetX = Math.max(0, (floorSize.w - rotatedFloor.maxX * scale) / 2);
-    const offsetY = Math.max(0, (floorSize.h - rotatedFloor.maxY * scale) / 2);
-    return { floorScale: scale, floorOffsetX: offsetX, floorOffsetY: offsetY };
-  }, [rotatedFloor, floorSize]);
-
-  void tick;
-  // ── Insight snooze helpers ────────────────────────────────────────
-  function insightKey(ins: Insight) { return `${ins.tableNum}|${ins.type}|${ins.text.slice(0, 30)}`; }
-  function snoozeInsight(ins: Insight, minutes: number) {
-    const tStatus = tables.find(t => t.tableNum === ins.tableNum)?.availStatus ?? "";
-    setSnoozed(s => new Map(s).set(insightKey(ins), { until: Date.now() + minutes * 60_000, status: tStatus }));
-  }
-  const visibleInsights = insights.filter(ins => {
-    const entry = snoozed.get(insightKey(ins));
-    return !entry || Date.now() > entry.until;
-  });
+  const {
+    restaurantId, setRestaurantId,
+    tables, insights, visibleInsights,
+    loadingTables, insightLoading,
+    allInsightsOpen, setAllInsightsOpen,
+    tableOverlay, setTableOverlay,
+    toastMsg,
+    receiptData, setReceiptData,
+    clock, isMobile,
+    isFullscreen, showFsBanner, setShowFsBanner,
+    viewMode, setViewMode,
+    layout, roomIdx, setRoomIdx,
+    refreshing,
+    statusFilter, setStatusFilter,
+    myTableNums,
+    layoutRotation, setLayoutRotation,
+    notifications, setNotifications,
+    notifOpen, setNotifOpen,
+    isOffline, offlineSince, usingCachedData,
+    orderScreenData, setOrderScreenData,
+    floorRef,
+    showInstallBanner, setShowInstallBanner,
+    isIos, isStandalone,
+    occupiedCount, reservedCount, freeCount, inactiveCount,
+    totalDiners, alertsCount, avgSittingMin, avgCost,
+    unreadCount, overlayTable, overlayInsights,
+    filteredTables, rotatedFloor, floorScale, floorOffsetX, floorOffsetY,
+    fetchAll, manualRefresh,
+    showToast,
+    quickFireCourse, patchStatus,
+    toggleFilter, toggleFullscreen, triggerInstall,
+    snoozeInsight,
+  } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
   // ── Glass design tokens ───────────────────────────────────────────
   const G_CARD       = "rgba(255,255,255,0.08)";
@@ -538,8 +58,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const G_BORDER_C   = "rgba(255,255,255,0.15)";
   const G_NAV        = "rgba(255,255,255,0.05)";
   const G_MUTED_C    = "rgba(255,255,255,0.6)";
+  void G_NAV;
 
-  // Status → table-number font color (replaces side-border-strip)
   const STATUS_NUM_COLOR: Record<string, string> = {
     occupied: "#EF4444", reserved: "#3B82F6", free: "#10B981",
     inactive: "rgba(255,255,255,0.25)", bill_requested: "#F97316", paid: "#34d399",
@@ -576,7 +96,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         padding: "0 20px", height: 60, flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        {/* Logo + name */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#7c3aed,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽️</div>
           <div>
@@ -585,19 +104,16 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           </div>
           {restaurants.length > 1 && (
             <select value={restaurantId}
-              onChange={e => { setRestaurantId(e.target.value); setTables([]); setInsights([]); }}
+              onChange={e => { setRestaurantId(e.target.value); }}
               style={{ padding: "5px 10px", borderRadius: 10, border: `1px solid ${G_BORDER_C}`, background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, fontFamily: "inherit" }}>
               {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a1a2e" }}>{r.name}</option>)}
             </select>
           )}
         </div>
 
-        {/* Right controls */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Clock */}
           <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.08)", border: `1px solid ${G_BORDER_C}`, borderRadius: 10, padding: "5px 12px", fontVariantNumeric: "tabular-nums" }}>{clock}</div>
 
-          {/* Notification bell */}
           <button onClick={() => { setNotifOpen(o => !o); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); }} style={{
             position: "relative", background: unreadCount > 0 ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.06)",
             border: `1px solid ${unreadCount > 0 ? "rgba(249,115,22,0.5)" : G_BORDER_C}`,
@@ -609,7 +125,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             )}
           </button>
 
-          {/* Insights */}
           <button onClick={() => setAllInsightsOpen(true)} style={{
             background: "linear-gradient(135deg,rgba(124,58,237,0.4),rgba(79,70,229,0.4))",
             color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 10,
@@ -620,7 +135,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             {insightLoading && <span style={{ fontSize: 10 }}>…</span>}
           </button>
 
-          {/* Fullscreen */}
           <button onClick={toggleFullscreen} title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"} style={{
             background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 10,
             padding: "7px 10px", fontSize: 14, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center",
@@ -633,7 +147,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             </svg>
           </button>
 
-          {/* Sign out */}
           <button onClick={() => signOut({ callbackUrl: "/login" })} style={{
             background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
             borderRadius: 10, padding: "7px 12px", fontSize: 12, fontWeight: 600,
@@ -685,7 +198,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         padding: "8px 16px", display: "flex", alignItems: "center",
         gap: 10, flexShrink: 0, flexWrap: "wrap",
       }}>
-        {/* View toggle */}
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 10, border: `1px solid ${G_BORDER_C}`, overflow: "hidden", flexShrink: 0 }}>
           {(["grid", "floor"] as const).map(m => (
             <button key={m} onClick={() => setViewMode(m)} style={{
@@ -701,7 +213,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
         <div style={{ width: 1, height: 22, background: G_BORDER_C, flexShrink: 0 }} />
 
-        {/* Status filter pills */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {(["occupied","reserved","free","inactive"] as const).map(s => {
             const active = statusFilter.has(s);
@@ -732,7 +243,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           )}
         </div>
 
-        {/* Rotate button — floor only */}
         {viewMode === "floor" && (
           <>
             <div style={{ width: 1, height: 22, background: G_BORDER_C, flexShrink: 0 }} />
