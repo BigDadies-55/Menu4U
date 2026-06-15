@@ -30,6 +30,7 @@ type Restaurant = {
   splashImage: string | null;
   waiterBg: string | null;
   waiterBgOpacity: number | null;
+  waiterScreen: number | null;
   subscriptionFrom: string | null;
   subscriptionTo: string | null;
   instagram: string | null;
@@ -52,11 +53,12 @@ const THEMES = [
 ];
 
 const TABS = [
-  { id: "general",      label: "כללי",     icon: "🏠" },
-  { id: "menu",         label: "תפריט",    icon: "📋" },
-  { id: "orders",       label: "הזמנות",   icon: "🛒" },
-  { id: "social",       label: "סושיאל",   icon: "🌐" },
-  { id: "subscription", label: "מנוי",     icon: "📅" },
+  { id: "general",      label: "כללי",       icon: "🏠" },
+  { id: "menu",         label: "תפריט",      icon: "📋" },
+  { id: "orders",       label: "הזמנות",     icon: "🛒" },
+  { id: "waiter",       label: "מסך מלצר",   icon: "🧑‍🍳" },
+  { id: "social",       label: "סושיאל",     icon: "🌐" },
+  { id: "subscription", label: "מנוי",       icon: "📅" },
 ] as const;
 type TabId = typeof TABS[number]["id"];
 
@@ -74,6 +76,7 @@ const emptyForm = {
   splashImage: "",
   waiterBg: "",
   waiterBgOpacity: 0,
+  waiterScreen: 2,
   instagram: "",
   facebook: "",
   whatsapp: "",
@@ -219,6 +222,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       splashImage: r.splashImage ?? "",
       waiterBg: r.waiterBg ?? "",
       waiterBgOpacity: r.waiterBgOpacity ?? 0,
+      waiterScreen: r.waiterScreen ?? 2,
       instagram: r.instagram ?? "",
       facebook: r.facebook ?? "",
       whatsapp: r.whatsapp ?? "",
@@ -270,6 +274,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
       splashImage: form.splashImage || null,
       waiterBg: form.waiterBg || null,
       waiterBgOpacity: form.waiterBgOpacity,
+      waiterScreen: form.waiterScreen,
       instagram: form.instagram || null,
       facebook: form.facebook || null,
       whatsapp: form.whatsapp || null,
@@ -601,57 +606,6 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         )}
                       </div>
 
-                      {/* Waiter bg */}
-                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>
-                          🍽️ רקע למסך מלצר
-                        </label>
-                        <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
-                          תמונה זו תוצג כרקע במסכי מלצר חכם 1 ו-2. אם לא תוגדר, ייעשה שימוש בתמונת ברירת המחדל.
-                        </p>
-                        <ImageUpload
-                          label=""
-                          value={form.waiterBg}
-                          onChange={url => setForm(f => ({ ...f, waiterBg: url }))}
-                        />
-                        {form.waiterBg && (
-                          <div style={{ marginTop: 10, borderRadius: 10, overflow: "hidden", position: "relative", height: 100 }}>
-                            <div style={{
-                              position: "absolute", inset: 0,
-                              backgroundImage: `url('${form.waiterBg}')`,
-                              backgroundSize: "cover", backgroundPosition: "center",
-                            }} />
-                            <div style={{ position: "absolute", inset: 0, background: `rgba(8,8,20,${form.waiterBgOpacity})`, transition: "background 0.2s" }} />
-                            <div style={{
-                              position: "absolute", inset: 0,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              color: "#fff", fontSize: 12, fontWeight: 600, opacity: 0.8,
-                            }}>
-                              תצוגה מקדימה — מסך מלצר
-                            </div>
-                          </div>
-                        )}
-                        {/* Opacity slider */}
-                        <div style={{ marginTop: 14 }}>
-                          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>
-                            🌓 שקיפות רקע (מסך מלצר חכם 2)
-                          </label>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>ללא כיסוי</span>
-                            <input
-                              type="range" min={0} max={1} step={0.05}
-                              value={form.waiterBgOpacity}
-                              onChange={e => setForm(f => ({ ...f, waiterBgOpacity: parseFloat(e.target.value) }))}
-                              style={{ flex: 1, accentColor: "#D97706", cursor: "pointer", direction: "ltr" }}
-                            />
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>כהה מלא</span>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: "#F59E0B", minWidth: 40, textAlign: "center" }}>
-                              {Math.round(form.waiterBgOpacity * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
                       {/* Welcome text */}
                       <div>
                         <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>💬 טקסט ברוכים הבאים</label>
@@ -713,6 +667,94 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         </div>
                       </div>
                     </>
+                  )}
+
+                  {/* ── Tab: מסך מלצר ── */}
+                  {activeTab === "waiter" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                      {/* Waiter screen version selector */}
+                      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 16 }}>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 12 }}>
+                          🖥 גרסת מסך מלצר פעילה
+                        </label>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          {[
+                            { value: 1, label: "מלצר חכם 1", desc: "מסך קלאסי", icon: "🍽️" },
+                            { value: 2, label: "מלצר חכם 2", desc: "גלאסמורפיזם כהה", icon: "✨" },
+                          ].map(opt => {
+                            const isActive = form.waiterScreen === opt.value;
+                            return (
+                              <button key={opt.value} type="button"
+                                onClick={() => setForm(f => ({ ...f, waiterScreen: opt.value }))}
+                                style={{
+                                  background: isActive ? "rgba(217,119,6,0.15)" : "rgba(255,255,255,0.04)",
+                                  border: `2px solid ${isActive ? "#F59E0B" : "rgba(255,255,255,0.12)"}`,
+                                  borderRadius: 12, padding: "14px 16px", cursor: "pointer",
+                                  display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4,
+                                  transition: "all 0.15s",
+                                }}>
+                                <span style={{ fontSize: 22 }}>{opt.icon}</span>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: isActive ? "#F59E0B" : "#fff" }}>{opt.label}</span>
+                                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{opt.desc}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Waiter bg */}
+                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>
+                          🍽️ רקע למסך מלצר
+                        </label>
+                        <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
+                          תמונה זו תוצג כרקע במסכי מלצר חכם 1 ו-2. אם לא תוגדר, ייעשה שימוש בתמונת ברירת המחדל.
+                        </p>
+                        <ImageUpload
+                          label=""
+                          value={form.waiterBg}
+                          onChange={url => setForm(f => ({ ...f, waiterBg: url }))}
+                        />
+                        {form.waiterBg && (
+                          <div style={{ marginTop: 10, borderRadius: 10, overflow: "hidden", position: "relative", height: 100 }}>
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              backgroundImage: `url('${form.waiterBg}')`,
+                              backgroundSize: "cover", backgroundPosition: "center",
+                            }} />
+                            <div style={{ position: "absolute", inset: 0, background: `rgba(8,8,20,${form.waiterBgOpacity})`, transition: "background 0.2s" }} />
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: "#fff", fontSize: 12, fontWeight: 600, opacity: 0.8,
+                            }}>
+                              תצוגה מקדימה — מסך מלצר
+                            </div>
+                          </div>
+                        )}
+                        {/* Opacity slider */}
+                        <div style={{ marginTop: 14 }}>
+                          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>
+                            🌓 שקיפות רקע (מסך מלצר חכם 2)
+                          </label>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>ללא כיסוי</span>
+                            <input
+                              type="range" min={0} max={1} step={0.05}
+                              value={form.waiterBgOpacity}
+                              onChange={e => setForm(f => ({ ...f, waiterBgOpacity: parseFloat(e.target.value) }))}
+                              style={{ flex: 1, accentColor: "#D97706", cursor: "pointer", direction: "ltr" }}
+                            />
+                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>כהה מלא</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "#F59E0B", minWidth: 40, textAlign: "center" }}>
+                              {Math.round(form.waiterBgOpacity * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
                   )}
 
                   {/* ── Tab: סושיאל ── */}

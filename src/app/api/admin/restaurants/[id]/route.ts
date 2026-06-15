@@ -15,11 +15,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     isActive, ordersEnabled, menuTheme, menuPalette, menuPaletteData,
     kdsView, tableLayoutJson, groupId,
     subscriptionFrom, subscriptionTo,
-    logo, description, website, language, welcomeText, splashImage, waiterBg, waiterBgOpacity,
+    logo, description, website, language, welcomeText, splashImage, waiterBg, waiterBgOpacity, waiterScreen,
     instagram, facebook, whatsapp, tripadvisor, googleReview,
     showPhonePublic, showAddressPublic,
   } = body;
-  // waiterBg / waiterBgOpacity are extra columns — save via raw SQL
+  // waiterBg / waiterBgOpacity / waiterScreen are extra columns — save via raw SQL
+  if (waiterScreen !== undefined) {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterScreen" INTEGER`
+    ).catch(() => {});
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Restaurant" SET "waiterScreen" = $1 WHERE id = $2`,
+      waiterScreen ?? null, id
+    );
+  }
   if (waiterBg !== undefined) {
     await prisma.$executeRawUnsafe(
       `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`
