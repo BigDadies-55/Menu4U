@@ -52,15 +52,16 @@ export async function POST(req: Request) {
   }
 
   await ensureTables();
+  await prisma.$executeRawUnsafe(`ALTER TABLE "RestaurantGroup" ADD COLUMN IF NOT EXISTS "businessType" TEXT`).catch(() => {});
 
-  const { name, logo } = await req.json();
+  const { name, logo, businessType } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
 
   const id = `grp-${Date.now()}`;
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "RestaurantGroup" ("id", "name", "logo") VALUES ($1, $2, $3)`,
-    id, name.trim(), logo ?? null
+    `INSERT INTO "RestaurantGroup" ("id", "name", "logo", "businessType") VALUES ($1, $2, $3, $4)`,
+    id, name.trim(), logo ?? null, businessType ?? null
   );
 
-  return NextResponse.json({ id, name: name.trim(), logo: logo ?? null }, { status: 201 });
+  return NextResponse.json({ id, name: name.trim(), logo: logo ?? null, businessType: businessType ?? null }, { status: 201 });
 }

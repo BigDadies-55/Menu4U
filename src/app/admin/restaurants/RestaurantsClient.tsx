@@ -355,7 +355,13 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
   // New group modal
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupLogo, setNewGroupLogo] = useState("");
+  const [newGroupType, setNewGroupType] = useState("");
   const [creatingGroup, setCreatingGroup] = useState(false);
+
+  function resetGroupForm() {
+    setNewGroupName(""); setNewGroupLogo(""); setNewGroupType("");
+  }
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -1242,47 +1248,74 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       {/* ── Create group modal ── */}
       {showGroupModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
-          <div style={{ background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 400 }}>
-            <h2 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 800, color: "#fff" }}>רשת חדשה</h2>
+          <div style={{ background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 460 }}>
+            <h2 style={{ margin: "0 0 24px", fontSize: 20, fontWeight: 800, color: "#fff" }}>רשת חדשה</h2>
+
+            {/* Logo upload */}
             <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>תמונת רשת</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                  {newGroupLogo
+                    ? <img src={newGroupLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: 22 }}>🏢</span>
+                  }
+                </div>
+                <ImageUpload value={newGroupLogo} onChange={setNewGroupLogo} label="בחר תמונה" />
+              </div>
+            </div>
+
+            {/* Name */}
+            <div style={{ marginBottom: 16 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>שם הרשת</label>
               <input
                 autoFocus
                 value={newGroupName}
                 onChange={e => setNewGroupName(e.target.value)}
-                onKeyDown={async e => {
-                  if (e.key === "Enter") {
-                    if (!newGroupName.trim() || creatingGroup) return;
-                    setCreatingGroup(true);
-                    await fetch("/api/admin/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newGroupName.trim() }) });
-                    setCreatingGroup(false);
-                    setShowGroupModal(false);
-                    setNewGroupName("");
-                    window.location.reload();
-                  }
-                  if (e.key === "Escape") setShowGroupModal(false);
-                }}
+                onKeyDown={e => { if (e.key === "Escape") { setShowGroupModal(false); resetGroupForm(); } }}
                 placeholder="למשל: רשת בורגר המלך"
                 style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }}
               />
             </div>
+
+            {/* Business type */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>סוג בית עסק</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["מסעדה", "קפה", "ברים", "פיצריה", "בורגר", "פיוז'ן", "קייטרינג", "אחר"].map(t => (
+                  <button key={t} onClick={() => setNewGroupType(t === newGroupType ? "" : t)} style={{
+                    padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                    background: newGroupType === t ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${newGroupType === t ? "rgba(245,158,11,0.5)" : "rgba(255,255,255,0.1)"}`,
+                    color: newGroupType === t ? "#F59E0B" : "rgba(255,255,255,0.6)",
+                  }}>{t}</button>
+                ))}
+              </div>
+              <input
+                value={newGroupType}
+                onChange={e => setNewGroupType(e.target.value)}
+                placeholder="או הקלד סוג מותאם..."
+                style={{ marginTop: 10, width: "100%", padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none" }}
+              />
+            </div>
+
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 disabled={!newGroupName.trim() || creatingGroup}
                 onClick={async () => {
                   if (!newGroupName.trim() || creatingGroup) return;
                   setCreatingGroup(true);
-                  await fetch("/api/admin/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newGroupName.trim() }) });
+                  await fetch("/api/admin/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newGroupName.trim(), logo: newGroupLogo || null, businessType: newGroupType || null }) });
                   setCreatingGroup(false);
                   setShowGroupModal(false);
-                  setNewGroupName("");
+                  resetGroupForm();
                   window.location.reload();
                 }}
                 style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#000", padding: "11px 0", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: !newGroupName.trim() || creatingGroup ? 0.5 : 1 }}>
                 {creatingGroup ? "יוצר..." : "צור רשת"}
               </button>
               <button
-                onClick={() => { setShowGroupModal(false); setNewGroupName(""); }}
+                onClick={() => { setShowGroupModal(false); resetGroupForm(); }}
                 style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", padding: "11px 0", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
                 ביטול
               </button>
