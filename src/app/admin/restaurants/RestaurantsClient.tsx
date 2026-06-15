@@ -12,6 +12,7 @@ type Group = {
   name: string;
   description: string | null;
   logo: string | null;
+  businessType?: string | null;
 };
 
 type Restaurant = {
@@ -361,6 +362,21 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
   const [newGroupLogo, setNewGroupLogo] = useState("");
   const [newGroupType, setNewGroupType] = useState("");
   const [creatingGroup, setCreatingGroup] = useState(false);
+
+  // Edit group modal
+  const [editGroupTarget, setEditGroupTarget] = useState<Group | null>(null);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupLogo, setEditGroupLogo] = useState("");
+  const [editGroupType, setEditGroupType] = useState("");
+  const [savingGroup, setSavingGroup] = useState(false);
+  const [localGroups, setLocalGroups] = useState(groups);
+
+  function openEditGroup(g: Group) {
+    setEditGroupTarget(g);
+    setEditGroupName(g.name);
+    setEditGroupLogo(g.logo ?? "");
+    setEditGroupType(g.businessType ?? "");
+  }
 
   function resetGroupForm() {
     setNewGroupName(""); setNewGroupLogo(""); setNewGroupType("");
@@ -1203,7 +1219,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
         };
 
         // Build group map
-        const groupMap = Object.fromEntries(groups.map(g => [g.id, g]));
+        const groupMap = Object.fromEntries(localGroups.map(g => [g.id, g]));
         // Groups that have at least one restaurant
         const usedGroupIds = [...new Set(restaurants.filter(r => r.groupId).map(r => r.groupId as string))];
         const ungrouped = restaurants.filter(r => !r.groupId);
@@ -1215,11 +1231,11 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
               const members = restaurants.filter(r => r.groupId === gid);
               const isCollapsed = collapsedGroups[gid] ?? false;
               return (
-                <div key={gid} style={{ border: "1px solid rgba(245,158,11,0.18)", borderRadius: 16 }}>
+                <div key={gid} style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16 }}>
                   {/* Network header */}
                   <div
                     style={{
-                      background: "rgba(245,158,11,0.07)", padding: "10px 16px",
+                      background: "rgba(255,255,255,0.04)", padding: "10px 16px",
                       display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
                     }}
                     onClick={() => setCollapsedGroups(prev => ({ ...prev, [gid]: !isCollapsed }))}
@@ -1227,16 +1243,16 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                     {group?.logo ? (
                       <img src={group.logo} alt={group.name} style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
                     ) : (
-                      <div style={{ width: 28, height: 28, borderRadius: 6, background: "rgba(245,158,11,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#F59E0B", fontWeight: 900, flexShrink: 0 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "rgba(255,255,255,0.6)", fontWeight: 900, flexShrink: 0 }}>
                         {(group?.name ?? "?")[0]}
                       </div>
                     )}
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#F59E0B" }}>{group?.name ?? gid}</span>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>· {members.length} בתי עסק</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{group?.name ?? gid}</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>· {members.length} בתי עסק</span>
                     <div style={{ flex: 1 }} />
                     <button
-                      onClick={e => { e.stopPropagation(); openEdit({ id: gid } as Restaurant); }}
-                      style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 7, padding: "3px 10px", color: "#F59E0B", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+                      onClick={e => { e.stopPropagation(); if (group) openEditGroup(group); }}
+                      style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 7, padding: "3px 10px", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
                     >✏️</button>
                     <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 14, transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.2s" }}>▼</span>
                   </div>
@@ -1259,6 +1275,87 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
           </div>
         );
       })()}
+
+      {/* ── Edit group modal ── */}
+      {editGroupTarget && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+          <div style={{ background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 460 }}>
+            <h2 style={{ margin: "0 0 24px", fontSize: 20, fontWeight: 800, color: "#fff" }}>עריכת רשת — {editGroupTarget.name}</h2>
+
+            {/* Logo */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>תמונת רשת</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                  {editGroupLogo
+                    ? <img src={editGroupLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: 22 }}>🏢</span>
+                  }
+                </div>
+                <ImageUpload value={editGroupLogo} onChange={setEditGroupLogo} label="בחר תמונה" />
+              </div>
+            </div>
+
+            {/* Name */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>שם הרשת</label>
+              <input
+                autoFocus
+                value={editGroupName}
+                onChange={e => setEditGroupName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Escape") setEditGroupTarget(null); }}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }}
+              />
+            </div>
+
+            {/* Business type */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>סוג בית עסק</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["מסעדה", "קפה", "ברים", "פיצריה", "בורגר", "פיוז'ן", "קייטרינג", "אחר"].map(t => (
+                  <button key={t} onClick={() => setEditGroupType(t === editGroupType ? "" : t)} style={{
+                    padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                    background: editGroupType === t ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${editGroupType === t ? "rgba(245,158,11,0.5)" : "rgba(255,255,255,0.1)"}`,
+                    color: editGroupType === t ? "#F59E0B" : "rgba(255,255,255,0.6)",
+                  }}>{t}</button>
+                ))}
+              </div>
+              <input
+                value={editGroupType}
+                onChange={e => setEditGroupType(e.target.value)}
+                placeholder="או הקלד סוג מותאם..."
+                style={{ marginTop: 10, width: "100%", padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                disabled={!editGroupName.trim() || savingGroup}
+                onClick={async () => {
+                  if (!editGroupName.trim() || savingGroup) return;
+                  setSavingGroup(true);
+                  await fetch(`/api/admin/groups/${editGroupTarget.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: editGroupName.trim(), logo: editGroupLogo || null, businessType: editGroupType || null }),
+                  });
+                  setLocalGroups(prev => prev.map(g => g.id === editGroupTarget.id ? { ...g, name: editGroupName.trim(), logo: editGroupLogo || null } : g));
+                  setSavingGroup(false);
+                  setEditGroupTarget(null);
+                }}
+                style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#000", padding: "11px 0", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: !editGroupName.trim() || savingGroup ? 0.5 : 1 }}>
+                {savingGroup ? "שומר..." : "שמור שינויים"}
+              </button>
+              <button
+                onClick={() => setEditGroupTarget(null)}
+                style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", padding: "11px 0", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Create group modal ── */}
       {showGroupModal && (
