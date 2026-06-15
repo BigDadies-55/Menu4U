@@ -55,7 +55,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const activeRestaurant = restaurants.find(r => r.id === restaurantId);
   const bgUrl = activeRestaurant?.waiterBg
     ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070";
-  const bgOpacity = activeRestaurant?.waiterBgOpacity ?? 0.78;
+  const bgOpacity = Math.max(0, Math.min(1, Number(activeRestaurant?.waiterBgOpacity ?? 0.78)));
 
   // ── Glass design tokens ───────────────────────────────────────────
   const G_CARD       = "rgba(255,255,255,0.08)";
@@ -83,7 +83,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       padding: "16px 20px 115px", gap: 10,
       background: "transparent",
       color: "#fff",
-      position: "relative",
     }}>
       {/* Full-screen background layers — always cover the entire viewport */}
       <div style={{ position: "fixed", inset: 0, zIndex: -2, backgroundImage: `url('${bgUrl}')`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />

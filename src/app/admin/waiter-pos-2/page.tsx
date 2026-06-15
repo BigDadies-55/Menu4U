@@ -27,7 +27,14 @@ export default async function WaiterPosPage() {
   const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null }>>(
     `SELECT id, "waiterBg", "waiterBgOpacity" FROM "Restaurant" WHERE id = ANY($1::text[])`,
     baseRestaurants.map(r => r.id)
-  ).catch(() => [] as Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null }>);
+  ).catch(async () => {
+    // Column might not exist yet — fall back to query without it
+    const rows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null }>>(
+      `SELECT id, "waiterBg" FROM "Restaurant" WHERE id = ANY($1::text[])`,
+      baseRestaurants.map(r => r.id)
+    ).catch(() => [] as Array<{ id: string; waiterBg: string | null }>);
+    return rows.map(r => ({ ...r, waiterBgOpacity: null as null }));
+  });
 
   const bgMap = Object.fromEntries(bgRows.map(r => [r.id, r]));
   const restaurants = baseRestaurants.map(r => ({
