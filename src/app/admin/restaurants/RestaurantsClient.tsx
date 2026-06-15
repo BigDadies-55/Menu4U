@@ -92,6 +92,7 @@ const emptyForm = {
   googleReview: "",
   showPhonePublic: true,
   showAddressPublic: true,
+  groupId: "" as string | null,
 };
 
 /* ── Solid primary button style ── */
@@ -238,6 +239,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       googleReview: r.googleReview ?? "",
       showPhonePublic: r.showPhonePublic ?? true,
       showAddressPublic: r.showAddressPublic ?? true,
+      groupId: r.groupId ?? null,
     });
     setActiveTab("general");
     setShowForm(true);
@@ -290,6 +292,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       googleReview: form.googleReview || null,
       showPhonePublic: form.showPhonePublic,
       showAddressPublic: form.showAddressPublic,
+      groupId: form.groupId || null,
     };
 
     if (editTarget) {
@@ -455,9 +458,22 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                   {activeTab === "general" && (
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {field("שם המסעדה *", "name")}
+                        {field("שם בית העסק *", "name")}
                         {field("כתובת", "address")}
                       </div>
+                      {/* Network assignment */}
+                      {groups.length > 0 && (
+                        <div>
+                          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>שיוך לרשת</label>
+                          <select
+                            value={form.groupId ?? ""}
+                            onChange={e => setForm({ ...form, groupId: e.target.value || null })}
+                            style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }}>
+                            <option value="">ללא רשת</option>
+                            {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                          </select>
+                        </div>
+                      )}
                       <ImageUpload
                         label="לוגו מסעדה"
                         value={form.logo}
@@ -1153,7 +1169,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                     }}>⋮</button>
                   {isOpen && (
                     <div onClick={e => e.stopPropagation()} style={{
-                      position: "absolute", top: 38, right: 0,
+                      position: "absolute", top: 38, left: 0,
                       background: "rgba(20,20,28,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
                       border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14,
                       padding: 6, minWidth: 165, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", zIndex: 200,
