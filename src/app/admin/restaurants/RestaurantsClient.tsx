@@ -91,9 +91,9 @@ const BTN_PRIMARY = {
 
 /* ── Dark input style ── */
 const DARK_INPUT: React.CSSProperties = {
-  background: T.raised,
-  border: "1px solid #3a3f47",
-  color: T.text,
+  background: "rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  color: "#fff",
   borderRadius: 8,
   padding: "8px 12px",
   fontSize: 14,
@@ -103,9 +103,9 @@ const DARK_INPUT: React.CSSProperties = {
 
 /* ── Dark select style ── */
 const DARK_SELECT: React.CSSProperties = {
-  background: T.raised,
-  border: "1px solid #3a3f47",
-  color: T.text,
+  background: "rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  color: "#fff",
   borderRadius: 8,
   padding: "8px 12px",
   fontSize: 14,
@@ -323,7 +323,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
   const field = (label: string, key: keyof typeof form, opts?: { type?: string; dir?: string; placeholder?: string }) => (
     <div>
-      <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: T.sub, marginBottom: 4 }}>{label}</label>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>{label}</label>
       <input
         type={opts?.type ?? "text"}
         value={form[key] as string}
@@ -374,26 +374,26 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
       {/* ── Form modal ── */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="flex min-h-full items-start justify-center p-4 py-6">
-            <div className="shadow-xl w-full max-w-2xl" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 16 }}>
+            <div className="shadow-xl w-full max-w-2xl" style={{ background: "rgba(10,10,18,0.96)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, backdropFilter: "blur(24px)" }}>
 
               {/* Modal header */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid #2d3239" }}>
-                <h2 className="text-lg font-bold" style={{ color: T.text }}>
+              <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                <h2 className="text-lg font-bold" style={{ color: "#fff" }}>
                   {editTarget ? `עריכת מסעדה — ${editTarget.name}` : "מסעדה חדשה"}
                 </h2>
                 <button onClick={() => setShowForm(false)}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-lg transition-colors"
-                  style={{ color: T.muted, background: "transparent" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = T.raised; (e.currentTarget as HTMLButtonElement).style.color = T.text; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = T.muted; }}>
+                  style={{ color: "rgba(255,255,255,0.5)", background: "transparent" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.15)"; (e.currentTarget as HTMLButtonElement).style.color = "#fff"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.5)"; }}>
                   ✕
                 </button>
               </div>
 
               {/* Tabs */}
-              <div className="flex px-4" style={{ borderBottom: "1px solid #2d3239" }}>
+              <div className="flex px-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 {TABS.map(tab => (
                   <button
                     key={tab.id}
@@ -401,8 +401,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     onClick={() => setActiveTab(tab.id)}
                     className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors"
                     style={{
-                      borderBottom: activeTab === tab.id ? "2px solid #fcc419" : "2px solid transparent",
-                      color: activeTab === tab.id ? T.gold : T.muted,
+                      borderBottom: activeTab === tab.id ? "2px solid #D97706" : "2px solid transparent",
+                      color: activeTab === tab.id ? "#F59E0B" : "rgba(255,255,255,0.45)",
                       background: "transparent",
                     }}
                   >
@@ -437,7 +437,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         {field("טלפון הזמנות", "orderPhone", { dir: "ltr" })}
                       </div>
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: T.sub, marginBottom: 4 }}>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>
                           📍 לינק מיקום (Google Maps)
                         </label>
                         <input
@@ -450,7 +450,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         />
                       </div>
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: T.sub, marginBottom: 4 }}>תיאור</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>תיאור</label>
                         <textarea
                           value={form.description}
                           onChange={e => setForm({ ...form, description: e.target.value })}
@@ -466,7 +466,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     <>
                       {/* Theme selector */}
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 8 }}>עיצוב תפריט</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>עיצוב תפריט</label>
                         <div className="grid grid-cols-5 gap-2 mb-3">
                           {THEMES.map(t => {
                             const isActive = form.menuTheme === t.value;
@@ -489,7 +489,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                         {/* Palette row */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-medium pl-1" style={{ color: T.muted }}>פלטה:</span>
+                          <span className="text-xs font-medium pl-1" style={{ color: "rgba(255,255,255,0.45)" }}>פלטה:</span>
                           {(MENU_PALETTES[form.menuTheme] ?? []).map((p, i) => {
                             const pid = String(i);
                             const isActive = form.menuPalette === pid;
@@ -510,30 +510,30 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                             className="flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium transition-all"
                             style={form.menuPalette === "custom"
                               ? { borderColor: T.gold, background: "rgba(252,196,25,0.1)", color: T.gold }
-                              : { borderColor: T.overlay, color: T.muted, background: "transparent" }}>
+                              : { borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.45)", background: "transparent" }}>
                             🎨 מותאם
                           </button>
                         </div>
 
                         {form.menuPalette === "custom" && (
-                          <div className="mt-3 flex gap-4 p-3 rounded-xl" style={{ background: T.surface, border: "1px solid #2d3239" }}>
+                          <div className="mt-3 flex gap-4 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
                             <div className="flex items-center gap-2">
-                              <label className="text-xs font-medium whitespace-nowrap" style={{ color: T.muted }}>צבע ראשי</label>
+                              <label className="text-xs font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.45)" }}>צבע ראשי</label>
                               <input type="color" value={form.menuCustomAc}
                                 onChange={e => setForm(f => ({ ...f, menuCustomAc: e.target.value }))}
                                 className="w-8 h-8 rounded cursor-pointer p-0.5"
-                                style={{ border: "1px solid #3a3f47" }}
+                                style={{ border: "1px solid rgba(255,255,255,0.12)" }}
                               />
-                              <span className="text-xs font-mono" style={{ color: T.muted }}>{form.menuCustomAc}</span>
+                              <span className="text-xs font-mono" style={{ color: "rgba(255,255,255,0.45)" }}>{form.menuCustomAc}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <label className="text-xs font-medium whitespace-nowrap" style={{ color: T.muted }}>רקע</label>
+                              <label className="text-xs font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.45)" }}>רקע</label>
                               <input type="color" value={form.menuCustomBg}
                                 onChange={e => setForm(f => ({ ...f, menuCustomBg: e.target.value }))}
                                 className="w-8 h-8 rounded cursor-pointer p-0.5"
-                                style={{ border: "1px solid #3a3f47" }}
+                                style={{ border: "1px solid rgba(255,255,255,0.12)" }}
                               />
-                              <span className="text-xs font-mono" style={{ color: T.muted }}>{form.menuCustomBg}</span>
+                              <span className="text-xs font-mono" style={{ color: "rgba(255,255,255,0.45)" }}>{form.menuCustomBg}</span>
                             </div>
                           </div>
                         )}
@@ -541,9 +541,9 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         {editTarget && (
                           <button type="button" onClick={() => setPreviewOpen(true)}
                             className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed text-sm font-medium transition-all"
-                            style={{ borderColor: T.overlay, color: T.muted }}
+                            style={{ borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.45)" }}
                             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = T.gold; (e.currentTarget as HTMLButtonElement).style.color = T.gold; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = T.overlay; (e.currentTarget as HTMLButtonElement).style.color = T.muted; }}>
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)"; }}>
                             👁 תצוגה מקדימה של התפריט
                           </button>
                         )}
@@ -551,7 +551,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                       {/* Language */}
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: T.sub, marginBottom: 8 }}>🌐 שפת תפריט ציבורי</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>🌐 שפת תפריט ציבורי</label>
                         <select value={form.language}
                           onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
                           style={DARK_SELECT}>
@@ -563,11 +563,11 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                       </div>
 
                       {/* Splash / Landing background image */}
-                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid #2d3239", background: T.surface }}>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 4 }}>
+                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>
                           🖼 תמונת רקע לדף הנחיתה
                         </label>
-                        <p className="text-xs mb-3" style={{ color: T.muted }}>
+                        <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
                           תמונה זו תוצג כרקע מלא-מסך בדף הפתיחה של התפריט הציבורי.
                           אם לא תועלה, ייאספו תמונות מהקטגוריות אוטומטית.
                         </p>
@@ -592,7 +592,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                               position: "absolute", inset: 0,
                               display: "flex", alignItems: "center", justifyContent: "center",
                               fontFamily: "'Cinzel', serif", fontSize: 18, fontStyle: "italic",
-                              color: T.gold, fontWeight: 700, letterSpacing: 2,
+                              color: "#F59E0B", fontWeight: 700, letterSpacing: 2,
                               textShadow: "0 2px 12px rgba(0,0,0,0.8)",
                             }}>
                               {form.name || "שם המסעדה"}
@@ -602,11 +602,11 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                       </div>
 
                       {/* Waiter bg */}
-                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid #2d3239", background: T.surface }}>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 4 }}>
+                      <div style={{ padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>
                           🍽️ רקע למסך מלצר
                         </label>
-                        <p className="text-xs mb-3" style={{ color: T.muted }}>
+                        <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
                           תמונה זו תוצג כרקע במסכי מלצר חכם 1 ו-2. אם לא תוגדר, ייעשה שימוש בתמונת ברירת המחדל.
                         </p>
                         <ImageUpload
@@ -633,19 +633,19 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         )}
                         {/* Opacity slider */}
                         <div style={{ marginTop: 14 }}>
-                          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.sub, marginBottom: 8 }}>
+                          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>
                             🌓 שקיפות רקע (מסך מלצר חכם 2)
                           </label>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>ללא כיסוי</span>
+                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>ללא כיסוי</span>
                             <input
                               type="range" min={0} max={1} step={0.05}
                               value={form.waiterBgOpacity}
                               onChange={e => setForm(f => ({ ...f, waiterBgOpacity: parseFloat(e.target.value) }))}
                               style={{ flex: 1, accentColor: "#D97706", cursor: "pointer", direction: "ltr" }}
                             />
-                            <span style={{ fontSize: 11, color: T.muted, whiteSpace: "nowrap" }}>כהה מלא</span>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: T.gold, minWidth: 40, textAlign: "center" }}>
+                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>כהה מלא</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "#F59E0B", minWidth: 40, textAlign: "center" }}>
                               {Math.round(form.waiterBgOpacity * 100)}%
                             </span>
                           </div>
@@ -654,8 +654,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                       {/* Welcome text */}
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: T.sub, marginBottom: 8 }}>💬 טקסט ברוכים הבאים</label>
-                        <p className="text-xs mb-2" style={{ color: T.muted }}>יוצג בתפריט הציבורי מתחת לשם המסעדה</p>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>💬 טקסט ברוכים הבאים</label>
+                        <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.45)" }}>יוצג בתפריט הציבורי מתחת לשם המסעדה</p>
                         <textarea value={form.welcomeText}
                           onChange={e => setForm(f => ({ ...f, welcomeText: e.target.value }))}
                           rows={4}
@@ -671,10 +671,10 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   {activeTab === "orders" && (
                     <>
                       {/* Orders toggle */}
-                      <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: T.surface, border: "1px solid #2d3239" }}>
+                      <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
                         <div>
-                          <div className="font-semibold text-sm" style={{ color: T.text }}>הזמנות מהתפריט</div>
-                          <div className="text-xs mt-0.5" style={{ color: T.muted }}>לקוחות יוכלו להזמין ישירות מהתפריט</div>
+                          <div className="font-semibold text-sm" style={{ color: "#fff" }}>הזמנות מהתפריט</div>
+                          <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>לקוחות יוכלו להזמין ישירות מהתפריט</div>
                         </div>
                         <button type="button"
                           onClick={() => setForm(f => ({ ...f, ordersEnabled: !f.ordersEnabled }))}
@@ -687,7 +687,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                       {/* KDS View */}
                       <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: T.sub, marginBottom: 8 }}>תצוגת מטבח מועדפת (KDS)</label>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>תצוגת מטבח מועדפת (KDS)</label>
                         <div className="grid grid-cols-2 gap-2">
                           {[
                             { value: "DASHBOARD",    label: "תצוגת שולחן", icon: "📺", desc: "קלאסי, לפי שולחן" },
@@ -701,12 +701,12 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                                 onClick={() => setForm(f => ({ ...f, kdsView: opt.value }))}
                                 className="flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all"
                                 style={{
-                                  background: isActive ? T.bg : T.surface,
-                                  borderColor: isActive ? T.gold : T.raised,
+                                  background: isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
+                                  borderColor: isActive ? "#F59E0B" : "rgba(255,255,255,0.12)",
                                 }}>
                                 <span className="text-xl mb-1">{opt.icon}</span>
-                                <span className="text-sm font-semibold" style={{ color: isActive ? T.gold : T.text }}>{opt.label}</span>
-                                <span className="text-xs mt-0.5" style={{ color: T.muted }}>{opt.desc}</span>
+                                <span className="text-sm font-semibold" style={{ color: isActive ? "#F59E0B" : "#fff" }}>{opt.label}</span>
+                                <span className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>{opt.desc}</span>
                               </button>
                             );
                           })}
@@ -720,8 +720,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
                       {/* Social links */}
-                      <div style={{ background: T.surface, border: "1px solid #2d3239", borderRadius: 12, padding: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 14 }}>🔗 קישורים סושיאל</div>
+                      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 14 }}>🔗 קישורים סושיאל</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                           {([
                             { key: "instagram",   icon: "📸", label: "Instagram", placeholder: "https://instagram.com/yourpage" },
@@ -731,7 +731,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                             { key: "googleReview",icon: "⭐", label: "Google Review", placeholder: "https://g.page/r/..." },
                           ] as const).map(({ key, icon, label, placeholder }) => (
                             <div key={key}>
-                              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500, color: T.sub, marginBottom: 4 }}>
+                              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>
                                 <span>{icon}</span> {label}
                               </label>
                               <input
@@ -748,8 +748,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                       </div>
 
                       {/* Public visibility */}
-                      <div style={{ background: T.surface, border: "1px solid #2d3239", borderRadius: 12, padding: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 14 }}>👁 מה מוצג בדף הציבורי</div>
+                      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 14 }}>👁 מה מוצג בדף הציבורי</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                           {([
                             { key: "showPhonePublic",   label: "מספר טלפון",  desc: "כפתורי WhatsApp וחיוג" },
@@ -757,8 +757,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                           ] as const).map(({ key, label, desc }) => (
                             <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                               <div>
-                                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{label}</div>
-                                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{desc}</div>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{desc}</div>
                               </div>
                               <button type="button"
                                 onClick={() => setForm(f => ({ ...f, [key]: !f[key] }))}
@@ -785,9 +785,9 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
                   {/* ── Tab: מנוי ── */}
                   {activeTab === "subscription" && (
-                    <div className="rounded-xl p-4 space-y-3" style={{ background: T.surface, border: "1px solid #2d3239", borderRadius: 12 }}>
+                    <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12 }}>
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold" style={{ color: T.sub }}>📅 תוקף מנוי</label>
+                        <label className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>📅 תוקף מנוי</label>
                         <button type="button" onClick={setTrial}
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg border-2 transition-colors"
                           style={{ borderColor: T.gold, color: T.gold, background: "transparent" }}
@@ -798,14 +798,14 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4 }}>מתאריך</label>
+                          <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>מתאריך</label>
                           <input type="date" value={form.subscriptionFrom}
                             onChange={e => setForm({ ...form, subscriptionFrom: e.target.value })}
                             style={DARK_INPUT}
                           />
                         </div>
                         <div>
-                          <label style={{ display: "block", fontSize: 12, color: T.muted, marginBottom: 4 }}>עד תאריך</label>
+                          <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>עד תאריך</label>
                           <input type="date" value={form.subscriptionTo}
                             onChange={e => setForm({ ...form, subscriptionTo: e.target.value })}
                             style={DARK_INPUT}
@@ -816,9 +816,9 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                         <button type="button"
                           onClick={() => setForm({ ...form, subscriptionFrom: "", subscriptionTo: "" })}
                           className="text-xs underline transition-colors"
-                          style={{ color: T.muted }}
+                          style={{ color: "rgba(255,255,255,0.45)" }}
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = T.red; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = T.muted; }}>
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)"; }}>
                           הסר תאריכים (ללא הגבלת תוקף)
                         </button>
                       )}
@@ -828,7 +828,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                 </div>
 
                 {/* Form footer */}
-                <div className="px-6 pb-5 flex gap-3">
+                <div className="px-6 pb-5 pt-4 flex gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                   {error && <p className="text-sm flex-1" style={{ color: T.red }}>{error}</p>}
                   <button type="submit" disabled={loading}
                     className="flex-1 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-50 transition-opacity hover:opacity-80"
@@ -837,7 +837,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
                   </button>
                   <button type="button" onClick={() => setShowForm(false)}
                     className="flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors"
-                    style={{ background: T.raised, color: T.text, border: "1px solid #3a3f47" }}>
+                    style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)" }}>
                     ביטול
                   </button>
                 </div>
@@ -849,15 +849,15 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
       {/* ── Delete confirmation modal ── */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-          <div className="shadow-2xl w-full max-w-sm p-6" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 16 }}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
+          <div className="shadow-2xl w-full max-w-sm p-6" style={{ background: "rgba(10,10,18,0.96)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, backdropFilter: "blur(24px)" }}>
             <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"
               style={{ background: "rgba(255,107,107,0.15)" }}>🗑️</div>
-            <h3 className="text-lg font-bold text-center mb-1" style={{ color: T.text }}>מחיקת מסעדה</h3>
-            <p className="text-sm text-center mb-4" style={{ color: T.sub }}>
-              פעולה זו תמחק לצמיתות את <strong style={{ color: T.text }}>{deleteConfirm.name}</strong> עם כל התפריטים, הפריטים וההזמנות שלה.
+            <h3 className="text-lg font-bold text-center mb-1" style={{ color: "#fff" }}>מחיקת מסעדה</h3>
+            <p className="text-sm text-center mb-4" style={{ color: "rgba(255,255,255,0.65)" }}>
+              פעולה זו תמחק לצמיתות את <strong style={{ color: "#fff" }}>{deleteConfirm.name}</strong> עם כל התפריטים, הפריטים וההזמנות שלה.
             </p>
-            <p className="text-xs font-semibold mb-2" style={{ color: T.sub }}>
+            <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.65)" }}>
               כדי לאשר, הקלד את שם המסעדה:
             </p>
             <input
@@ -882,7 +882,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
               <button
                 onClick={() => { setDeleteConfirm(null); setDeleteInput(""); }}
                 className="flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors"
-                style={{ background: T.raised, color: T.text, border: "1px solid #3a3f47" }}>
+                style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)" }}>
                 ביטול
               </button>
             </div>
@@ -994,6 +994,7 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
               gridTemplateColumns: "1.4fr 1.2fr 1.6fr 0.9fr 0.8fr 52px",
               alignItems: "center", gap: 8,
               transition: "all 0.25s",
+              position: "relative" as const, zIndex: isOpen ? 10 : 1,
             }}
               onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = "translateX(-3px)"; el.style.background = "rgba(255,255,255,0.13)"; el.style.borderColor = "rgba(255,255,255,0.25)"; el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.2)"; }}
               onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = ""; el.style.background = "rgba(255,255,255,0.07)"; el.style.borderColor = "rgba(255,255,255,0.15)"; el.style.boxShadow = ""; }}>
