@@ -88,12 +88,12 @@ function GlassPanel({ title, icon, children, extra }: { title: string; icon?: Re
       backdropFilter: G.blurHeavy,
       WebkitBackdropFilter: G.blurHeavy,
       border: `1px solid ${G.border}`,
-      borderRadius: 28,
-      padding: 25,
-      boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+      borderRadius: 20,
+      padding: 16,
+      boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
     }}>
       <div style={{
-        fontSize: 16, fontWeight: 700, marginBottom: 20,
+        fontSize: 13, fontWeight: 700, marginBottom: 12,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         letterSpacing: "0.5px", color: G.text,
       }}>
@@ -129,40 +129,46 @@ function KpiCard({ color, label, value, lucideIcon }: { color: NeonColor; label:
         backdropFilter: G.blur,
         WebkitBackdropFilter: G.blur,
         border: `1px solid ${hovered ? c.hex : G.border}`,
-        borderRadius: 10,
-        padding: "6px 10px",
-        display: "flex", alignItems: "center", gap: 8,
-        transform: hovered ? "translateY(-2px)" : "translateY(0)",
-        boxShadow: hovered ? `0 0 12px ${c.glow}` : "none",
-        transition: "all 0.25s ease",
+        borderRadius: 24,
+        padding: 22,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        transform: hovered ? "translateY(-4px)" : "translateY(0)",
+        boxShadow: hovered ? `0 0 25px ${c.glow}` : "none",
+        transition: "all 0.3s ease",
         cursor: "default",
       }}
     >
-      <span style={{ color: c.hex, opacity: 0.85, flexShrink: 0 }}>{lucideIcon}</span>
-      <span style={{ fontSize: 10, color: G.muted, fontWeight: 500, flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: 15, fontWeight: 900, color: c.hex, lineHeight: 1, marginRight: "auto" }}>{value}</span>
+      <div>
+        <span style={{ fontSize: 14, color: G.muted, fontWeight: 500, display: "block", marginBottom: 6 }}>
+          {label}
+        </span>
+        <span style={{ fontSize: 32, fontWeight: 900, color: c.hex, lineHeight: 1 }}>
+          {value}
+        </span>
+      </div>
+      <span style={{ color: c.hex, opacity: 0.9 }}>{lucideIcon}</span>
     </div>
   );
 }
 
 /* ─── SVG Icons ──────────────────────────────────────────────── */
 const EyeIcon = ({ color }: { color: string }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
   </svg>
 );
 const ClockIcon = ({ color }: { color: string }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
   </svg>
 );
 const DollarIcon = ({ color }: { color: string }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
   </svg>
 );
 const CartIcon = ({ color }: { color: string }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
   </svg>
@@ -206,8 +212,8 @@ function DonutChart({ statusCounts }: { statusCounts: Record<string, number> }) 
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-      <svg viewBox="0 0 150 150" width={150} height={150}>
+    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <svg viewBox="0 0 150 150" width={90} height={90} style={{ flexShrink: 0 }}>
         <circle cx="75" cy="75" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="12"/>
         {total === 0 ? (
           <circle cx="75" cy="75" r={R} fill="none" stroke={G.amber} strokeWidth="12"
@@ -225,15 +231,15 @@ function DonutChart({ statusCounts }: { statusCounts: Record<string, number> }) 
           {total}
         </text>
       </svg>
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 7 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
         {statuses.map(k => {
           const count = statusCounts[k] ?? 0;
           if (!count) return null;
           const cfg = STATUS_CFG[k];
           return (
-            <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: G.muted }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: cfg.dot, display: "inline-block", flexShrink: 0 }} />
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: G.muted }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: cfg.dot, display: "inline-block", flexShrink: 0 }} />
                 {cfg.label}
               </span>
               <span style={{ color: G.text, fontWeight: 700 }}>{count}</span>
@@ -250,7 +256,7 @@ function RevenueChart({ data, chartPeriod }: { data: DayPoint[]; chartPeriod: "7
   const visible = chartPeriod === "7" ? data.slice(-7) : data;
   const maxRev = Math.max(...visible.map(d => d.revenue), 1);
   const maxOrd = Math.max(...visible.map(d => d.orders), 1);
-  const W = 700; const H = 150; const PL = 0; const PR = 10; const PT = 14; const PB = 26;
+  const W = 700; const H = 100; const PL = 0; const PR = 10; const PT = 10; const PB = 20;
   const cW = W - PL - PR; const cH = H - PT - PB;
 
   const [hovered, setHovered] = useState<number | null>(null);
