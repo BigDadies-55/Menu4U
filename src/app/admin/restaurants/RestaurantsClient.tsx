@@ -1058,95 +1058,101 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
               key={r.id}
               style={{
                 position: "relative", zIndex: isOpen ? 10 : 1,
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "10px 16px 10px 0",
+                display: "flex", alignItems: "center",
                 background: "rgba(255,255,255,0.03)",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
                 transition: "background 0.15s",
-                cursor: "default",
-                overflow: "visible",
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.07)"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)"; }}
             >
-              {/* Amber indent bar for grouped rows */}
-              {inGroup && (
-                <div style={{ width: 3, alignSelf: "stretch", background: "#F59E0B", borderRadius: 2, flexShrink: 0, marginRight: 4 }} />
-              )}
-              {!inGroup && <div style={{ width: 16, flexShrink: 0 }} />}
+              {/* Amber indent bar (right side in RTL) */}
+              {inGroup
+                ? <div style={{ width: 4, alignSelf: "stretch", background: "rgba(245,158,11,0.5)", flexShrink: 0 }} />
+                : <div style={{ width: 4, flexShrink: 0 }} />
+              }
 
-              {/* Avatar */}
-              {r.logo ? (
-                <img src={r.logo} alt={r.name} style={{ width: 36, height: 36, borderRadius: 9, objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,0.15)" }} />
-              ) : (
-                <div style={{ width: 36, height: 36, borderRadius: 9, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", fontWeight: 900, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {r.name[0]}
+              {/* Row content — forced LTR grid so columns align */}
+              <div style={{
+                flex: 1, display: "grid",
+                gridTemplateColumns: "44px 220px 190px 1fr 290px 150px 120px 44px",
+                alignItems: "center", gap: 0, padding: "10px 12px",
+                direction: "ltr",
+              }}>
+                {/* Avatar */}
+                <div>
+                  {r.logo
+                    ? <img src={r.logo} alt={r.name} style={{ width: 36, height: 36, borderRadius: 9, objectFit: "cover", border: "1px solid rgba(255,255,255,0.15)" }} />
+                    : <div style={{ width: 36, height: 36, borderRadius: 9, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#000", fontWeight: 900, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>{r.name[0]}</div>
+                  }
                 </div>
-              )}
 
-              {/* Name */}
-              <div style={{ width: 220, flexShrink: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-              </div>
+                {/* Name */}
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: 8, direction: "rtl" }}>
+                  {r.name}
+                </div>
 
-              {/* Email */}
-              <div style={{ width: 180, flexShrink: 0, fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} dir="ltr">
-                {r.email ?? "—"}
-              </div>
+                {/* Email */}
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.42)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: 8 }}>
+                  {r.email ?? "—"}
+                </div>
 
-              {/* Spacer */}
-              <div style={{ flex: 1 }} />
+                {/* Spacer */}
+                <div />
 
-              {/* Stats chips */}
-              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                {[
-                  { icon: "📋", short: "M", val: r._count.menus },
-                  { icon: "🛒", short: "O", val: r._count.orders },
-                  { icon: "👥", short: "U", val: r._count.restaurantUsers },
-                ].map(({ icon, short, val }) => (
-                  <span key={short} style={{
-                    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 8, padding: "5px 14px", fontSize: 11, color: "rgba(255,255,255,0.7)",
-                    display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
-                  }}>
-                    {icon} {short}: <strong style={{ color: "#fff" }}>{val}</strong>
-                  </span>
-                ))}
-              </div>
+                {/* Stats chips */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {[
+                    { icon: "📋", key: "M", val: r._count.menus },
+                    { icon: "🛒", key: "O", val: r._count.orders },
+                    { icon: "👥", key: "U", val: r._count.restaurantUsers },
+                  ].map(({ icon, key, val }) => (
+                    <span key={key} style={{
+                      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 8, padding: "4px 12px", fontSize: 11, color: "rgba(255,255,255,0.65)",
+                      display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap",
+                    }}>
+                      {icon} {key}: <strong style={{ color: "#fff", fontWeight: 700 }}>{val}</strong>
+                    </span>
+                  ))}
+                </div>
 
-              {/* Date created */}
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.4, flexShrink: 0, marginRight: 8, marginLeft: 8, textAlign: "center" }}>
-                <div>נוצר</div>
-                <div style={{ color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{formatDate(r.createdAt)}</div>
-              </div>
+                {/* Date */}
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "center", lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", marginBottom: 2 }}>נוצר</div>
+                  <div style={{ color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{formatDate(r.createdAt)}</div>
+                </div>
 
-              {/* Status + sub label + 3-dot */}
-              <div style={{ display: "flex", flexDirection: "row-reverse", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                {/* 3-dot menu */}
-                <div style={{ position: "relative" }}>
+                {/* Status */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{
+                    display: "inline-block", padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                    background: r.isActive ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.07)",
+                    color: r.isActive ? "#34D399" : "rgba(255,255,255,0.4)",
+                    border: `1px solid ${r.isActive ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.1)"}`,
+                  }}>{r.isActive ? "פעיל" : "לא פעיל"}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>{subStatus.label}</div>
+                </div>
+
+                {/* 3-dot */}
+                <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
                   <button
                     onClick={e => { e.stopPropagation(); setOpenDropdown(isOpen ? null : r.id); }}
                     style={{
-                      background: isOpen ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)",
-                      border: `1px solid ${isOpen ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.15)"}`,
-                      color: isOpen ? "#fff" : "rgba(255,255,255,0.55)",
+                      background: isOpen ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)",
+                      border: `1px solid ${isOpen ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)"}`,
+                      color: isOpen ? "#fff" : "rgba(255,255,255,0.5)",
                       width: 32, height: 32, borderRadius: 8, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 18, transition: "all 0.15s", fontFamily: "inherit",
-                    }}
-                    onMouseEnter={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.15)"; b.style.color = "#fff"; } }}
-                    onMouseLeave={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.05)"; b.style.color = "rgba(255,255,255,0.55)"; } }}>
-                    ⋮
-                  </button>
+                      fontSize: 18, fontFamily: "inherit",
+                    }}>⋮</button>
                   {isOpen && (
                     <div onClick={e => e.stopPropagation()} style={{
-                      position: "absolute", top: 38, left: 0,
+                      position: "absolute", top: 38, right: 0,
                       background: "rgba(20,20,28,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
                       border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14,
-                      padding: 6, minWidth: 165,
-                      boxShadow: "0 10px 25px rgba(0,0,0,0.5)", zIndex: 200,
-                      display: "flex", flexDirection: "column", gap: 2,
-                      animation: "fadeInDrop 0.15s ease",
+                      padding: 6, minWidth: 165, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", zIndex: 200,
+                      display: "flex", flexDirection: "column", gap: 2, animation: "fadeInDrop 0.15s ease",
                     }}>
                       {[
                         { icon: "✏️", label: "עריכה", onClick: () => { openEdit(r); setOpenDropdown(null); }, danger: false },
@@ -1169,17 +1175,6 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                       ))}
                     </div>
                   )}
-                </div>
-
-                {/* Status badge + sub label */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-                  <span style={{
-                    background: r.isActive ? "rgba(16,185,129,0.15)" : "rgba(108,117,125,0.15)",
-                    color: r.isActive ? "#34D399" : "rgba(255,255,255,0.45)",
-                    border: `1px solid ${r.isActive ? "rgba(16,185,129,0.25)" : "rgba(108,117,125,0.2)"}`,
-                    padding: "2px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                  }}>{r.isActive ? "פעיל" : "לא פעיל"}</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{subStatus.label}</span>
                 </div>
               </div>
             </div>
