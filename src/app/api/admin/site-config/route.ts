@@ -44,67 +44,87 @@ export async function PATCH(req: Request) {
     privacyUrl, termsUrl,
     showPrivacyPolicy, enableLoyaltyPoints, enableOnlineOrders, showPrices,
   } = body;
-  const vals = [
-    siteName ?? "Menu4U", logo ?? null, domain ?? null,
-    copyright ?? null, adminPalette ?? "dark",
-    adminBg ?? "#f0ece3", adminBgImage ?? null,
-    adminSidebarBg ?? null, adminSidebarAccent ?? null,
-    adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827",
-    adminTopBarBg ?? null, adminTopBarTextColor ?? "#374151",
-    contactEmail ?? null, contactPhone ?? null, address ?? null,
-    timezone ?? "Asia/Jerusalem", currency ?? "ILS", interfaceLanguage ?? "he",
-    privacyUrl ?? null, termsUrl ?? null,
-    showPrivacyPolicy ?? true, enableLoyaltyPoints ?? true,
-    enableOnlineOrders ?? false, showPrices ?? true,
-  ];
   try {
+    // Ensure all optional columns exist before writing
+    await Promise.allSettled([
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminBg" TEXT NOT NULL DEFAULT '#f7f5f2'`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminBgImage" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarBg" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarAccent" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminSidebarTextColor" TEXT NOT NULL DEFAULT '#9ca3af'`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminContentTextColor" TEXT NOT NULL DEFAULT '#111827'`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminTopBarBg" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "adminTopBarTextColor" TEXT NOT NULL DEFAULT '#374151'`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "logo" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "domain" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "copyright" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "contactEmail" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "contactPhone" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "address" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "timezone" TEXT NOT NULL DEFAULT 'Asia/Jerusalem'`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'ILS'`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "interfaceLanguage" TEXT NOT NULL DEFAULT 'he'`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "privacyUrl" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "termsUrl" TEXT`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "showPrivacyPolicy" BOOLEAN NOT NULL DEFAULT true`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "enableLoyaltyPoints" BOOLEAN NOT NULL DEFAULT true`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "enableOnlineOrders" BOOLEAN NOT NULL DEFAULT false`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "showPrices" BOOLEAN NOT NULL DEFAULT true`),
+    ]);
+
+    // Ensure the row exists
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SiteConfig" (id, "updatedAt") VALUES ('default', NOW()) ON CONFLICT (id) DO NOTHING`
+    );
+
+    // Now update all fields
     await prisma.$executeRawUnsafe(`
-      INSERT INTO "SiteConfig" (
-        id, "siteName", "logo", "domain", "copyright",
-        "adminPalette", "adminBg", "adminBgImage",
-        "adminSidebarBg", "adminSidebarAccent", "adminSidebarTextColor", "adminContentTextColor",
-        "adminTopBarBg", "adminTopBarTextColor",
-        "contactEmail", "contactPhone", "address",
-        "timezone", "currency", "interfaceLanguage",
-        "privacyUrl", "termsUrl",
-        "showPrivacyPolicy", "enableLoyaltyPoints", "enableOnlineOrders", "showPrices",
-        "updatedAt"
-      ) VALUES (
-        'default', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, NOW()
-      )
-      ON CONFLICT (id) DO UPDATE SET
-        "siteName"              = EXCLUDED."siteName",
-        "logo"                  = EXCLUDED."logo",
-        "domain"                = EXCLUDED."domain",
-        "copyright"             = EXCLUDED."copyright",
-        "adminPalette"          = EXCLUDED."adminPalette",
-        "adminBg"               = EXCLUDED."adminBg",
-        "adminBgImage"          = EXCLUDED."adminBgImage",
-        "adminSidebarBg"        = EXCLUDED."adminSidebarBg",
-        "adminSidebarAccent"    = EXCLUDED."adminSidebarAccent",
-        "adminSidebarTextColor" = EXCLUDED."adminSidebarTextColor",
-        "adminContentTextColor" = EXCLUDED."adminContentTextColor",
-        "adminTopBarBg"         = EXCLUDED."adminTopBarBg",
-        "adminTopBarTextColor"  = EXCLUDED."adminTopBarTextColor",
-        "contactEmail"          = EXCLUDED."contactEmail",
-        "contactPhone"          = EXCLUDED."contactPhone",
-        "address"               = EXCLUDED."address",
-        "timezone"              = EXCLUDED."timezone",
-        "currency"              = EXCLUDED."currency",
-        "interfaceLanguage"     = EXCLUDED."interfaceLanguage",
-        "privacyUrl"            = EXCLUDED."privacyUrl",
-        "termsUrl"              = EXCLUDED."termsUrl",
-        "showPrivacyPolicy"     = EXCLUDED."showPrivacyPolicy",
-        "enableLoyaltyPoints"   = EXCLUDED."enableLoyaltyPoints",
-        "enableOnlineOrders"    = EXCLUDED."enableOnlineOrders",
-        "showPrices"            = EXCLUDED."showPrices",
-        "updatedAt"             = NOW()
-    `, ...vals);
+      UPDATE "SiteConfig" SET
+        "siteName"               = $1,
+        "logo"                   = $2,
+        "domain"                 = $3,
+        "copyright"              = $4,
+        "adminPalette"           = $5,
+        "adminBg"                = $6,
+        "adminBgImage"           = $7,
+        "adminSidebarBg"         = $8,
+        "adminSidebarAccent"     = $9,
+        "adminSidebarTextColor"  = $10,
+        "adminContentTextColor"  = $11,
+        "adminTopBarBg"          = $12,
+        "adminTopBarTextColor"   = $13,
+        "contactEmail"           = $14,
+        "contactPhone"           = $15,
+        "address"                = $16,
+        "timezone"               = $17,
+        "currency"               = $18,
+        "interfaceLanguage"      = $19,
+        "privacyUrl"             = $20,
+        "termsUrl"               = $21,
+        "showPrivacyPolicy"      = $22,
+        "enableLoyaltyPoints"    = $23,
+        "enableOnlineOrders"     = $24,
+        "showPrices"             = $25,
+        "updatedAt"              = NOW()
+      WHERE id = 'default'
+    `,
+      siteName ?? "Menu4U", logo ?? null, domain ?? null,
+      copyright ?? null, adminPalette ?? "dark",
+      adminBg ?? "#f0ece3", adminBgImage ?? null,
+      adminSidebarBg ?? null, adminSidebarAccent ?? null,
+      adminSidebarTextColor ?? "#9ca3af", adminContentTextColor ?? "#111827",
+      adminTopBarBg ?? null, adminTopBarTextColor ?? "#374151",
+      contactEmail ?? null, contactPhone ?? null, address ?? null,
+      timezone ?? "Asia/Jerusalem", currency ?? "ILS", interfaceLanguage ?? "he",
+      privacyUrl ?? null, termsUrl ?? null,
+      showPrivacyPolicy ?? true, enableLoyaltyPoints ?? true,
+      enableOnlineOrders ?? false, showPrices ?? true,
+    );
+
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("[site-config PATCH]", e);
-    return NextResponse.json({ error: "DB error – run /api/migrate first" }, { status: 500 });
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
