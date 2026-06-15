@@ -342,11 +342,11 @@ function StatusBadge({ status }: { status: string }) {
 
 /* ─── Premium Table ───────────────────────────────────────────── */
 const thStyle: React.CSSProperties = {
-  padding: "12px 12px", color: G.muted, fontSize: 13, fontWeight: 700,
+  padding: "6px 8px", color: G.muted, fontSize: 11, fontWeight: 700,
   borderBottom: `1px solid ${G.border}`, textAlign: "right",
 };
 const tdStyle: React.CSSProperties = {
-  padding: "16px 12px", fontSize: 15, color: G.text,
+  padding: "5px 8px", fontSize: 12, color: G.text,
   borderBottom: `1px solid rgba(255,255,255,0.05)`,
 };
 
