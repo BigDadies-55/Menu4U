@@ -96,8 +96,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     if (rows[0]) {
       adminPalette           = rows[0].adminPalette           ?? "dark";
       const rawBg            = rows[0].adminBg                ?? "";
-      // Use T.bg unless the user explicitly set a CUSTOM (non-system-default) background
-      const isCustomBg = rawBg && !LEGACY_SYSTEM_BGS.has(rawBg) && !isLightBg(rawBg);
+      // Gradients are always valid custom backgrounds; legacy hex values fall back to the theme default
+      const isCustomBg = rawBg && (rawBg.includes("gradient") || (!LEGACY_SYSTEM_BGS.has(rawBg) && !isLightBg(rawBg)));
       adminBg                = isCustomBg ? rawBg : "var(--c-bg)";
       adminBgImage           = rows[0].adminBgImage           ?? null;
       siteLogo               = rows[0].logo                   ?? null;
