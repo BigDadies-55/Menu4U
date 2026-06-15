@@ -130,7 +130,6 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/orders",       label: "הזמנות",          I: Ic.Orders,      displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
       { href: "/admin/cashier",      label: "קאשייר",           I: Ic.Cashier,     displayHide: true },
-      { href: "/admin/waiter",       label: "הזמנת מלצר 🍽️",  I: Ic.Orders,      displayHide: true },
       { href: "/admin/waiter",       label: "מלצר חכם",         I: Ic.SmartWaiter, displayHide: true, waiterHide: false },
       { href: "/admin/shift-manager",label: "מנהל משמרת",       I: Ic.Stats,       displayHide: true, waiterHide: true },
       { href: "/admin/shifts",       label: "ניהול משמרות",      I: Ic.Calendar,    displayHide: true, waiterHide: false },
