@@ -1,36 +1,25 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function WaiterPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+export default function WaiterPage() {
+  const router = useRouter();
 
-  const role = session.user.role;
-  if (role === "DISPLAY") redirect("/admin");
+  useEffect(() => {
+    const restaurantId = localStorage.getItem("menu4u_active_restaurant");
+    if (!restaurantId) {
+      router.replace("/admin/waiter-pos-2");
+      return;
+    }
+    fetch(`/api/admin/waiter-pos/bg-settings?restaurantId=${restaurantId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const screen = d?.waiterScreen ?? 2;
+        router.replace(screen === 1 ? "/admin/waiter-pos" : "/admin/waiter-pos-2");
+      })
+      .catch(() => router.replace("/admin/waiter-pos-2"));
+  }, [router]);
 
-  await prisma.$executeRawUnsafe(
-    `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterScreen" INTEGER`
-  ).catch(() => {});
-
-  // Get the most recently updated restaurant accessible to this user
-  const restaurantId =
-    role === "SUPER_ADMIN"
-      ? (await prisma.restaurant.findFirst({ orderBy: { updatedAt: "desc" }, select: { id: true } }))?.id
-      : (await prisma.restaurantUser.findFirst({
-          where: { userId: session.user.id },
-          include: { restaurant: { select: { id: true } } },
-        }))?.restaurant.id;
-
-  if (!restaurantId) redirect("/admin");
-
-  const rows = await prisma.$queryRawUnsafe<Array<{ waiterScreen: number | null }>>(
-    `SELECT "waiterScreen" FROM "Restaurant" WHERE id = $1`,
-    restaurantId
-  ).catch(() => [] as Array<{ waiterScreen: number | null }>);
-
-  const screen = rows[0]?.waiterScreen ?? 2;
-  redirect(screen === 1 ? "/admin/waiter-pos" : "/admin/waiter-pos-2");
+  return null;
 }
