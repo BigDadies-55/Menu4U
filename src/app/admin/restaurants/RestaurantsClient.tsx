@@ -7,8 +7,16 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import { MENU_PALETTES } from "@/lib/menuPalettes";
 import PageShell from "@/components/admin/PageShell";
 
+type Group = {
+  id: string;
+  name: string;
+  description: string | null;
+  logo: string | null;
+};
+
 type Restaurant = {
   id: string;
+  groupId?: string | null;
   name: string;
   description: string | null;
   logo: string | null;
@@ -155,7 +163,7 @@ function getSubscriptionStatus(r: Restaurant): { label: string; style: React.CSS
   return { label: "פעיל", style: { background: "rgba(81,207,102,0.15)", color: T.green } };
 }
 
-export default function RestaurantsClient({ restaurants: initial }: { restaurants: Restaurant[] }) {
+export default function RestaurantsClient({ restaurants: initial, groups = [] }: { restaurants: Restaurant[]; groups?: Group[] }) {
   const [restaurants, setRestaurants] = useState(initial);
   const [showForm,    setShowForm]    = useState(false);
   const [editTarget,  setEditTarget]  = useState<Restaurant | null>(null);
@@ -342,6 +350,8 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
 
   // Dropdown open state for 3-dot menus
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  // Collapsed state for network blocks (groupId => bool)
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -360,9 +370,9 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
         display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20,
       }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#fff" }}>ניהול מסעדות</h1>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#fff" }}>ניהול בתי עסק</h1>
           <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
-            {restaurants.length} מסעדות רשומות במערכת
+            {restaurants.length} בתי עסק רשומים במערכת
           </p>
         </div>
         <button onClick={openCreate} style={{
@@ -1008,157 +1018,216 @@ export default function RestaurantsClient({ restaurants: initial }: { restaurant
         </div>
       )}
 
-      {/* ── Restaurants list (glass cards) ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {restaurants.length === 0 ? (
-          <div style={{
-            background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
-            borderRadius: 20, padding: "48px 24px", textAlign: "center",
-          }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🍽️</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>אין מסעדות עדיין</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>לחץ על &quot;הוסף מסעדה&quot; כדי להתחיל</div>
-            <button onClick={openCreate} style={{
-              background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
-              padding: "10px 24px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer",
-            }}>+ הוסף מסעדה ראשונה</button>
-          </div>
-        ) : restaurants.map(r => {
+      {/* ── Restaurants list (grouped by network) ── */}
+      <style>{`@keyframes fadeInDrop { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }`}</style>
+      {restaurants.length === 0 ? (
+        <div style={{
+          background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+          borderRadius: 20, padding: "48px 24px", textAlign: "center",
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🏪</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>אין בתי עסק עדיין</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>לחץ על &quot;הוסף מסעדה&quot; כדי להתחיל</div>
+          <button onClick={openCreate} style={{
+            background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
+            padding: "10px 24px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer",
+          }}>+ הוסף בית עסק ראשון</button>
+        </div>
+      ) : (() => {
+        // Helper: render a single restaurant row
+        const BizRow = ({ r, inGroup }: { r: Restaurant; inGroup: boolean }) => {
           const subStatus = getSubscriptionStatus(r);
-          const hasData = r._count.menus > 0 || r._count.orders > 0 || r._count.restaurantUsers > 0;
           const isOpen = openDropdown === r.id;
           return (
-            <div key={r.id} style={{
-              background: "rgba(255,255,255,0.07)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)",
-              border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20,
-              padding: "10px 18px",
-              display: "grid",
-              gridTemplateColumns: "1.4fr 1.2fr 1.6fr 0.9fr 0.8fr 52px",
-              alignItems: "center", gap: 8,
-              transition: "all 0.25s",
-              position: "relative" as const, zIndex: isOpen ? 10 : 1,
-            }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = "translateX(-3px)"; el.style.background = "rgba(255,255,255,0.13)"; el.style.borderColor = "rgba(255,255,255,0.25)"; el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.2)"; }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = ""; el.style.background = "rgba(255,255,255,0.07)"; el.style.borderColor = "rgba(255,255,255,0.15)"; el.style.boxShadow = ""; }}>
+            <div
+              key={r.id}
+              style={{
+                position: "relative", zIndex: isOpen ? 10 : 1,
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 16px 10px 0",
+                background: "rgba(255,255,255,0.03)",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                transition: "background 0.15s",
+                cursor: "default",
+                overflow: "visible",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)"; }}
+            >
+              {/* Amber indent bar for grouped rows */}
+              {inGroup && (
+                <div style={{ width: 3, alignSelf: "stretch", background: "#F59E0B", borderRadius: 2, flexShrink: 0, marginRight: 4 }} />
+              )}
+              {!inGroup && <div style={{ width: 16, flexShrink: 0 }} />}
 
-              {/* Identity */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                {r.logo ? (
-                  <img src={r.logo} alt={r.name} style={{ width: 38, height: 38, borderRadius: 10, objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,0.15)" }} />
-                ) : (
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 10px rgba(217,119,6,0.25)" }}>
-                    {r.name[0]}
-                  </div>
-                )}
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{r.name}</div>
-                  {r.address && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>{r.address}</div>}
+              {/* Avatar */}
+              {r.logo ? (
+                <img src={r.logo} alt={r.name} style={{ width: 36, height: 36, borderRadius: 9, objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,0.15)" }} />
+              ) : (
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", fontWeight: 900, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {r.name[0]}
                 </div>
+              )}
+
+              {/* Name */}
+              <div style={{ width: 220, flexShrink: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
               </div>
 
-              {/* Contact */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {r.email && <div style={{ fontSize: 12, color: "#fff", display: "flex", alignItems: "center", gap: 5 }}>✉️ <span dir="ltr">{r.email}</span></div>}
-                {r.phone && <div style={{ fontSize: 12, color: "#60A5FA", display: "flex", alignItems: "center", gap: 5 }}>📞 <span dir="ltr">{r.phone}</span></div>}
-                {!r.email && !r.phone && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>—</div>}
+              {/* Email */}
+              <div style={{ width: 180, flexShrink: 0, fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} dir="ltr">
+                {r.email ?? "—"}
               </div>
 
-              {/* Stats badges */}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {/* Spacer */}
+              <div style={{ flex: 1 }} />
+
+              {/* Stats chips */}
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 {[
-                  { icon: "📋", label: "תפריטים", val: r._count.menus },
-                  { icon: "🛒", label: "הזמנות",  val: r._count.orders },
-                  { icon: "👥", label: "משתמשים", val: r._count.restaurantUsers },
-                ].map(({ icon, label, val }) => {
-                  const lit = hasData && val > 0;
-                  return (
-                    <span key={label} style={{
-                      background: lit ? "rgba(59,130,246,0.1)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${lit ? "rgba(59,130,246,0.25)" : "rgba(255,255,255,0.08)"}`,
-                      padding: "3px 8px", borderRadius: 7, fontSize: 11,
-                      display: "flex", alignItems: "center", gap: 4,
-                      color: lit ? "#93C5FD" : "rgba(255,255,255,0.5)",
-                    }}>
-                      {icon} {label}: <strong style={{ color: lit ? "#3B82F6" : "#fff", marginRight: 1 }}>{val}</strong>
-                    </span>
-                  );
-                })}
-              </div>
-
-              {/* Date */}
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
-                נוצר<br /><span style={{ color: "#fff", fontWeight: 500 }}>{formatDate(r.createdAt)}</span>
-              </div>
-
-              {/* Status + subscription */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                <span style={{
-                  background: r.isActive ? "rgba(16,185,129,0.15)" : "rgba(108,117,125,0.15)",
-                  color: r.isActive ? "#34D399" : "rgba(255,255,255,0.45)",
-                  border: `1px solid ${r.isActive ? "rgba(16,185,129,0.25)" : "rgba(108,117,125,0.2)"}`,
-                  padding: "2px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-                }}>{r.isActive ? "פעיל" : "לא פעיל"}</span>
-                <span style={{
-                  ...subStatus.style,
-                  background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)",
-                  padding: "2px 8px", borderRadius: 6, fontSize: 11,
-                }}>{subStatus.label}</span>
-              </div>
-
-              {/* 3-dot actions */}
-              <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
-                <button
-                  onClick={e => { e.stopPropagation(); setOpenDropdown(isOpen ? null : r.id); }}
-                  style={{
-                    background: isOpen ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${isOpen ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.15)"}`,
-                    color: isOpen ? "#fff" : "rgba(255,255,255,0.55)",
-                    width: 34, height: 34, borderRadius: 9, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 18, transition: "all 0.15s", fontFamily: "inherit",
-                  }}
-                  onMouseEnter={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.15)"; b.style.color = "#fff"; } }}
-                  onMouseLeave={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.05)"; b.style.color = "rgba(255,255,255,0.55)"; } }}>
-                  ⋮
-                </button>
-
-                {isOpen && (
-                  <div onClick={e => e.stopPropagation()} style={{
-                    position: "absolute", top: 40, left: 0,
-                    background: "rgba(20,20,28,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14,
-                    padding: 6, minWidth: 165,
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.5)", zIndex: 200,
-                    display: "flex", flexDirection: "column", gap: 2,
-                    animation: "fadeInDrop 0.15s ease",
+                  { icon: "📋", short: "M", val: r._count.menus },
+                  { icon: "🛒", short: "O", val: r._count.orders },
+                  { icon: "👥", short: "U", val: r._count.restaurantUsers },
+                ].map(({ icon, short, val }) => (
+                  <span key={short} style={{
+                    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 8, padding: "5px 14px", fontSize: 11, color: "rgba(255,255,255,0.7)",
+                    display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
                   }}>
-                    <style>{`@keyframes fadeInDrop { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }`}</style>
-                    {[
-                      { icon: "✏️", label: "עריכה", onClick: () => { openEdit(r); setOpenDropdown(null); }, danger: false },
-                      { icon: "🌐", label: "תפריט ציבורי", onClick: () => { window.open(`/menu/${r.id}`, "_blank"); setOpenDropdown(null); }, danger: false },
-                      { icon: r.isActive ? "⏸️" : "▶️", label: r.isActive ? "השהייה" : "הפעל", onClick: () => { toggleActive(r.id, r.isActive); setOpenDropdown(null); }, danger: false },
-                      { icon: "🗑️", label: "מחיקה", onClick: () => { setDeleteConfirm({ id: r.id, name: r.name }); setDeleteInput(""); setOpenDropdown(null); }, danger: true },
-                    ].map(item => (
-                      <button key={item.label} onClick={item.onClick} style={{
-                        background: "none", border: "none",
-                        color: item.danger ? "#FCA5A5" : "rgba(255,255,255,0.8)",
-                        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                        padding: "9px 12px", borderRadius: 8, cursor: "pointer",
-                        display: "flex", alignItems: "center", gap: 9, width: "100%",
-                        textAlign: "right", direction: "rtl", transition: "all 0.12s",
-                      }}
-                        onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = item.danger ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.08)"; b.style.color = "#fff"; }}
-                        onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "none"; b.style.color = item.danger ? "#FCA5A5" : "rgba(255,255,255,0.8)"; }}>
-                        <span>{item.icon}</span> {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                    {icon} {short}: <strong style={{ color: "#fff" }}>{val}</strong>
+                  </span>
+                ))}
+              </div>
+
+              {/* Date created */}
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.4, flexShrink: 0, marginRight: 8, marginLeft: 8, textAlign: "center" }}>
+                <div>נוצר</div>
+                <div style={{ color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{formatDate(r.createdAt)}</div>
+              </div>
+
+              {/* Status + sub label + 3-dot */}
+              <div style={{ display: "flex", flexDirection: "row-reverse", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                {/* 3-dot menu */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setOpenDropdown(isOpen ? null : r.id); }}
+                    style={{
+                      background: isOpen ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)",
+                      border: `1px solid ${isOpen ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.15)"}`,
+                      color: isOpen ? "#fff" : "rgba(255,255,255,0.55)",
+                      width: 32, height: 32, borderRadius: 8, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 18, transition: "all 0.15s", fontFamily: "inherit",
+                    }}
+                    onMouseEnter={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.15)"; b.style.color = "#fff"; } }}
+                    onMouseLeave={e => { if (!isOpen) { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.05)"; b.style.color = "rgba(255,255,255,0.55)"; } }}>
+                    ⋮
+                  </button>
+                  {isOpen && (
+                    <div onClick={e => e.stopPropagation()} style={{
+                      position: "absolute", top: 38, left: 0,
+                      background: "rgba(20,20,28,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+                      border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14,
+                      padding: 6, minWidth: 165,
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.5)", zIndex: 200,
+                      display: "flex", flexDirection: "column", gap: 2,
+                      animation: "fadeInDrop 0.15s ease",
+                    }}>
+                      {[
+                        { icon: "✏️", label: "עריכה", onClick: () => { openEdit(r); setOpenDropdown(null); }, danger: false },
+                        { icon: "🌐", label: "תפריט ציבורי", onClick: () => { window.open(`/menu/${r.id}`, "_blank"); setOpenDropdown(null); }, danger: false },
+                        { icon: r.isActive ? "⏸️" : "▶️", label: r.isActive ? "השהייה" : "הפעל", onClick: () => { toggleActive(r.id, r.isActive); setOpenDropdown(null); }, danger: false },
+                        { icon: "🗑️", label: "מחיקה", onClick: () => { setDeleteConfirm({ id: r.id, name: r.name }); setDeleteInput(""); setOpenDropdown(null); }, danger: true },
+                      ].map(item => (
+                        <button key={item.label} onClick={item.onClick} style={{
+                          background: "none", border: "none",
+                          color: item.danger ? "#FCA5A5" : "rgba(255,255,255,0.8)",
+                          fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                          padding: "9px 12px", borderRadius: 8, cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 9, width: "100%",
+                          textAlign: "right", direction: "rtl", transition: "all 0.12s",
+                        }}
+                          onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = item.danger ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.08)"; b.style.color = "#fff"; }}
+                          onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "none"; b.style.color = item.danger ? "#FCA5A5" : "rgba(255,255,255,0.8)"; }}>
+                          <span>{item.icon}</span> {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Status badge + sub label */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                  <span style={{
+                    background: r.isActive ? "rgba(16,185,129,0.15)" : "rgba(108,117,125,0.15)",
+                    color: r.isActive ? "#34D399" : "rgba(255,255,255,0.45)",
+                    border: `1px solid ${r.isActive ? "rgba(16,185,129,0.25)" : "rgba(108,117,125,0.2)"}`,
+                    padding: "2px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                  }}>{r.isActive ? "פעיל" : "לא פעיל"}</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{subStatus.label}</span>
+                </div>
               </div>
             </div>
           );
-        })}
-      </div>
+        };
+
+        // Build group map
+        const groupMap = Object.fromEntries(groups.map(g => [g.id, g]));
+        // Groups that have at least one restaurant
+        const usedGroupIds = [...new Set(restaurants.filter(r => r.groupId).map(r => r.groupId as string))];
+        const ungrouped = restaurants.filter(r => !r.groupId);
+
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {usedGroupIds.map(gid => {
+              const group = groupMap[gid];
+              const members = restaurants.filter(r => r.groupId === gid);
+              const isCollapsed = collapsedGroups[gid] ?? false;
+              return (
+                <div key={gid} style={{ border: "1px solid rgba(245,158,11,0.18)", borderRadius: 16, overflow: "hidden" }}>
+                  {/* Network header */}
+                  <div
+                    style={{
+                      background: "rgba(245,158,11,0.07)", padding: "10px 16px",
+                      display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
+                    }}
+                    onClick={() => setCollapsedGroups(prev => ({ ...prev, [gid]: !isCollapsed }))}
+                  >
+                    {group?.logo ? (
+                      <img src={group.logo} alt={group.name} style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: "rgba(245,158,11,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#F59E0B", fontWeight: 900, flexShrink: 0 }}>
+                        {(group?.name ?? "?")[0]}
+                      </div>
+                    )}
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#F59E0B" }}>{group?.name ?? gid}</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>· {members.length} בתי עסק</span>
+                    <div style={{ flex: 1 }} />
+                    <button
+                      onClick={e => { e.stopPropagation(); openEdit({ id: gid } as Restaurant); }}
+                      style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 7, padding: "3px 10px", color: "#F59E0B", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+                    >✏️</button>
+                    <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 14, transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.2s" }}>▼</span>
+                  </div>
+                  {/* Restaurant rows */}
+                  {!isCollapsed && members.map(r => <BizRow key={r.id} r={r} inGroup={true} />)}
+                </div>
+              );
+            })}
+
+            {/* Ungrouped section */}
+            {ungrouped.length > 0 && (
+              <div style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, overflow: "hidden" }}>
+                <div style={{ background: "rgba(255,255,255,0.04)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>ללא רשת</span>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>· {ungrouped.length} בתי עסק</span>
+                </div>
+                {ungrouped.map(r => <BizRow key={r.id} r={r} inGroup={false} />)}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </PageShell>
   );
 }
