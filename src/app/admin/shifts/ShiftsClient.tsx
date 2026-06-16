@@ -1013,6 +1013,15 @@ export default function ShiftsClient({
     );
   }
 
+  // ── Excel export helper ────────────────────────────────────────────────────
+  function exportCsv(rows: string[][], filename: string) {
+    const csv = "﻿" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    a.download = filename;
+    a.click();
+  }
+
   // ── Tab: Summary ───────────────────────────────────────────────────────────
   function SummaryTab() {
     const srcShifts = summaryMode === "weekly" ? shifts : summaryShifts;
@@ -1064,6 +1073,17 @@ export default function ShiftsClient({
               style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           </>)}
           {summaryLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
+          <button
+            onClick={() => {
+              const header = ["עובד", ...Object.values(SHIFT_CFG).map(c => c.label), 'סה"כ שעות'];
+              const dataRows = summaries.map(s => [s.name, ...Object.keys(SHIFT_CFG).map(k => s.byType[k] ? s.byType[k].toFixed(1) : "0"), s.hours.toFixed(1)]);
+              const totals = ["סה\"כ", ...Object.keys(SHIFT_CFG).map(k => summaries.reduce((a,s)=>a+(s.byType[k]??0),0).toFixed(1)), summaries.reduce((a,s)=>a+s.hours,0).toFixed(1)];
+              exportCsv([header, ...dataRows, totals], `סיכום-שעות-${summaryMode === "monthly" ? summaryMonth : summaryFrom + "_" + summaryTo}.csv`);
+            }}
+            style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
+          >
+            📊 ייצא Excel
+          </button>
         </div>
 
         {summaries.length === 0 ? (
@@ -1186,6 +1206,30 @@ export default function ShiftsClient({
               style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           </>)}
           {attLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
+          <button
+            onClick={() => {
+              const header = ["עובד", "תאריך", "כניסה", "יציאה", "בפועל (ש׳)", "מתוכנן (ש׳)", "הפרש (ש׳)"];
+              const rows: string[][] = [];
+              for (const member of summaries) {
+                const diff = member.actualHours !== null ? member.actualHours - member.plannedHours : null;
+                member.dates.forEach((d, di) => {
+                  rows.push([
+                    di === 0 ? member.name : "",
+                    d.date,
+                    d.in ?? "",
+                    d.out ?? "",
+                    d.hours !== null ? d.hours.toFixed(1) : "",
+                    di === 0 ? member.plannedHours.toFixed(1) : "",
+                    di === 0 && diff !== null ? diff.toFixed(1) : "",
+                  ]);
+                });
+              }
+              exportCsv([header, ...rows], `נוכחות-${attMode === "monthly" ? attMonth : attFrom + "_" + attTo}.csv`);
+            }}
+            style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
+          >
+            📊 ייצא Excel
+          </button>
         </div>
 
         {summaries.length === 0 ? (
