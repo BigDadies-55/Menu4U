@@ -61,14 +61,13 @@ const Ic = {
 export type Favorite = { href: string; label: string };
 
 export function useFavorites(): [Favorite[], (href: string, label: string) => void] {
-  const [favs, setFavs] = useState<Favorite[]>([]);
-
-  useEffect(() => {
+  const [favs, setFavs] = useState<Favorite[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem(FAV_KEY);
-      if (stored) setFavs(JSON.parse(stored));
-    } catch { /* ignore */ }
-  }, []);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
 
   function toggle(href: string, label: string) {
     setFavs(prev => {
