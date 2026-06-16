@@ -12,7 +12,10 @@ export default async function WaiterPosPage() {
   const role = session.user.role;
   if (role === "DISPLAY") redirect("/admin");
 
-  await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`).catch(() => {});
+  await Promise.allSettled([
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBgOpacity" DOUBLE PRECISION`),
+  ]);
 
   const baseRestaurants =
     role === "SUPER_ADMIN"
@@ -21,13 +24,24 @@ export default async function WaiterPosPage() {
           .findMany({ where: { userId: session.user.id }, include: { restaurant: { select: { id: true, name: true } } } })
           .then(rs => rs.map(r => r.restaurant));
 
-  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null }>>(
-    `SELECT id, "waiterBg" FROM "Restaurant" WHERE id = ANY($1::text[])`,
+  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null }>>(
+    `SELECT id, "waiterBg", "waiterBgOpacity" FROM "Restaurant" WHERE id = ANY($1::text[])`,
     baseRestaurants.map(r => r.id)
-  ).catch(() => [] as Array<{ id: string; waiterBg: string | null }>);
+  ).catch(async () => {
+    // Column might not exist yet — fall back to query without it
+    const rows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null }>>(
+      `SELECT id, "waiterBg" FROM "Restaurant" WHERE id = ANY($1::text[])`,
+      baseRestaurants.map(r => r.id)
+    ).catch(() => [] as Array<{ id: string; waiterBg: string | null }>);
+    return rows.map(r => ({ ...r, waiterBgOpacity: null as null }));
+  });
 
-  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, r.waiterBg]));
-  const restaurants = baseRestaurants.map(r => ({ ...r, waiterBg: bgMap[r.id] ?? null }));
+  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, r]));
+  const restaurants = baseRestaurants.map(r => ({
+    ...r,
+    waiterBg: bgMap[r.id]?.waiterBg ?? null,
+    waiterBgOpacity: bgMap[r.id]?.waiterBgOpacity ?? null,
+  }));
 
   if (restaurants.length === 0) redirect("/admin");
 

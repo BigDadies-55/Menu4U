@@ -126,7 +126,7 @@ export function TableOverlay({
       i.itemStatus !== "SERVED" && !i.servedAt
     );
     if (openItems.length > 0) { setBillWarning(true); return; }
-    router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1&returnTo=/admin/waiter-pos`);
+    router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`);
   }
 
   async function toggleComp(itemId: string) {
@@ -578,7 +578,7 @@ export function TableOverlay({
                     ביטול
                   </button>
                   {!hardBlock && (
-                    <button onClick={() => { setBillWarning(false); router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1&returnTo=/admin/waiter-pos`); }}
+                    <button onClick={() => { setBillWarning(false); router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1`); }}
                       style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "1.5px solid #f5c4bc", background: "#fdf2f0", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c0392b", fontFamily: "inherit" }}>
                       סגור בכל זאת
                     </button>
