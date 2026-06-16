@@ -5,7 +5,7 @@ import { ROLE_LABELS } from "@/lib/permissions";
 import { AssistantWidget } from "@/components/admin/AssistantWidget";
 import { formatDate } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/client";
-import { T, btn, inp } from "@/lib/ui";
+import { T } from "@/lib/ui";
 import PageShell from "@/components/admin/PageShell";
 
 type RestaurantUser = {
@@ -35,40 +35,42 @@ interface Props {
 
 const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "EDITOR", "WAITER", "VIEWER", "DISPLAY"];
 
-// ── Theme alias (dark theme via T tokens) ───────────────────────────────────
-const L = {
-  bg:      "transparent",
-  card:    T.surface,
-  border:  T.border,
-  border2: T.border,
-  text:    T.text,
-  sub:     T.sub,
-  muted:   T.muted,
-  primary: T.blue,
-  orange:  T.orange,
-  green:   T.green,
-  red:     T.red,
-  gold:    T.gold,
-};
-
 const ROLE_BADGE: Record<string, React.CSSProperties> = {
-  SUPER_ADMIN:   { background: "rgba(255,107,107,0.12)", color: "#c92a2a" },
-  ADMIN:         { background: "rgba(51,154,240,0.12)",  color: "#1971c2" },
-  OWNER:         { background: "rgba(252,196,25,0.14)",  color: "#b07d00" },
-  SHIFT_MANAGER: { background: "rgba(255,146,43,0.12)",  color: "#e8590c" },
-  EDITOR:        { background: "rgba(190,75,219,0.12)",  color: "#6741d9" },
-  WAITER:        { background: "rgba(81,207,102,0.12)",  color: "#2f9e44" },
-  VIEWER:        { background: "rgba(108,117,125,0.12)", color: "#6b7280" },
-  DISPLAY:       { background: "rgba(34,184,207,0.12)",  color: "#0c8599" },
+  SUPER_ADMIN:   { background: "rgba(255,107,107,0.2)",  color: "#ff6b6b" },
+  ADMIN:         { background: "rgba(51,154,240,0.2)",   color: "#74c0fc" },
+  OWNER:         { background: "rgba(252,196,25,0.2)",   color: "#fcc419" },
+  SHIFT_MANAGER: { background: "rgba(255,146,43,0.2)",   color: "#ff922b" },
+  EDITOR:        { background: "rgba(190,75,219,0.2)",   color: "#da77f2" },
+  WAITER:        { background: "rgba(81,207,102,0.2)",   color: "#51cf66" },
+  VIEWER:        { background: "rgba(108,117,125,0.2)",  color: "#adb5bd" },
+  DISPLAY:       { background: "rgba(34,184,207,0.2)",   color: "#22b8cf" },
 };
 
-// kept for modals (dark)
 const DARK_INPUT: React.CSSProperties = {
-  background: T.overlay, border: `1px solid ${T.border}`,
-  color: T.text, borderRadius: 10, padding: "10px 14px",
-  fontSize: 14, width: "100%", outline: "none",
+  background: "rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  color: "#fff",
+  borderRadius: 12,
+  padding: "10px 14px",
+  fontSize: 14,
+  width: "100%",
+  outline: "none",
 };
 const DARK_SELECT: React.CSSProperties = { ...DARK_INPUT, cursor: "pointer" };
+
+const MODAL_OVERLAY: React.CSSProperties = {
+  position: "fixed", inset: 0, zIndex: 50,
+  background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)",
+  display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+};
+const MODAL_BOX: React.CSSProperties = {
+  background: "rgba(20,20,28,0.98)",
+  border: "1px solid rgba(255,255,255,0.15)",
+  borderRadius: 20,
+  backdropFilter: "blur(20px)",
+  width: "100%",
+  boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+};
 
 export default function UsersClient({ users: initial, restaurants, currentUserRole }: Props) {
   const [users, setUsers]   = useState(initial);
@@ -78,7 +80,6 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [menuPos, setMenuPos]       = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // close dropdown on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
@@ -277,213 +278,246 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     ? restaurants.filter(r => !managingUser.restaurantUsers.some(ru => ru.restaurantId === r.id))
     : [];
 
-  const Label = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: ".6px", marginBottom: 6 }}>
+  function statusText(u: UserWithRestaurants) {
+    if (!u.emailVerified)      return { label: "ממתין לאימות",      color: "rgba(255,255,255,0.4)" };
+    if (u.mustChangePassword)  return { label: "נדרש שינוי סיסמא", color: "#fcc419" };
+    return                            { label: "מאומת ✓",           color: "#51cf66" };
+  }
+
+  function shortId(id: string) { return "#" + id.slice(-6).toUpperCase(); }
+
+  const FieldLabel = ({ children }: { children: React.ReactNode }) => (
+    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
       {children}
     </div>
   );
 
-  // ── status text ─────────────────────────────────────────────────────────────
-  function statusText(u: UserWithRestaurants) {
-    if (!u.emailVerified)      return { label: "ממתין לאימות",      color: L.muted };
-    if (u.mustChangePassword)  return { label: "נדרש שינוי סיסמא", color: L.gold  };
-    return                            { label: "מאומת ✓",           color: L.green };
-  }
-
-  // ── short uid (last 6 chars) ─────────────────────────────────────────────
-  function shortId(id: string) { return "#" + id.slice(-6).toUpperCase(); }
-
   return (
     <PageShell>
-      <div style={{ fontFamily: "'Rubik', sans-serif", minHeight: "100vh" }}>
-
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: L.text }}>ניהול משתמשים</div>
-          <button onClick={() => setShowForm(true)} style={{ ...btn("warning"), fontFamily: "inherit" }}>
-            + הוסף משתמש
-          </button>
+      {/* ── Glass header ── */}
+      <div style={{
+        background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: "15px 25px",
+        display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20,
+      }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#fff" }}>ניהול משתמשים</h1>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+            {users.length} משתמשים רשומים במערכת
+          </p>
         </div>
+        <button
+          onClick={() => setShowForm(true)}
+          style={{
+            background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
+            padding: "10px 20px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+            boxShadow: "0 4px 15px rgba(217,119,6,0.3)", transition: "all 0.2s",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(217,119,6,0.45)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 15px rgba(217,119,6,0.3)"; }}
+        >
+          + הוסף משתמש
+        </button>
+      </div>
 
-        {/* Filter bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", background: T.overlay, borderRadius: T.rFull, padding: 3, gap: 2 }}>
-            {([
-              { key: "all",        label: "כל המשתמשים" },
-              { key: "ADMIN",      label: "ADMIN" },
-              { key: "WAITER",     label: "WAITER" },
-              { key: "unverified", label: "ממתין לאימות" },
-            ] as const).map(tab => (
-              <button key={tab.key} onClick={() => setRoleFilter(tab.key)}
-                style={{ padding: "5px 14px", borderRadius: T.rFull, fontSize: 12, fontWeight: 500, cursor: "pointer", border: "none", fontFamily: "inherit", transition: "all 0.15s",
-                  background: roleFilter === tab.key ? T.orange : "transparent",
-                  color:      roleFilter === tab.key ? "#fff"   : T.muted,
+      {/* ── Filter bar ── */}
+      <div style={{
+        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 16, padding: "12px 16px", marginBottom: 16,
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
+      }}>
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 40, padding: 3, gap: 2 }}>
+          {([
+            { key: "all",        label: "כל המשתמשים" },
+            { key: "ADMIN",      label: "מנהלים" },
+            { key: "WAITER",     label: "מלצרים" },
+            { key: "unverified", label: "ממתין לאימות" },
+          ] as const).map(tab => (
+            <button key={tab.key} onClick={() => setRoleFilter(tab.key)}
+              style={{
+                padding: "5px 14px", borderRadius: 40, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                border: "none", fontFamily: "inherit", transition: "all 0.15s",
+                background: roleFilter === tab.key ? "linear-gradient(135deg,#D97706,#F59E0B)" : "transparent",
+                color: roleFilter === tab.key ? "#fff" : "rgba(255,255,255,0.5)",
+              }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <input
+          type="search" placeholder="חיפוש לפי שם / מייל…"
+          value={search} onChange={e => setSearch(e.target.value)}
+          style={{
+            ...DARK_INPUT, width: 220, padding: "8px 14px", fontSize: 13,
+            borderRadius: 10, fontFamily: "inherit",
+          }}
+        />
+      </div>
+
+      {/* ── Users list ── */}
+      <div style={{
+        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.15)",
+        borderRadius: 20, overflow: "hidden",
+      }}>
+        {filtered.length === 0 ? (
+          <div style={{ padding: "60px 24px", textAlign: "center" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>לא נמצאו משתמשים</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>נסה לשנות את הסינון</div>
+          </div>
+        ) : (
+          filtered.map(user => {
+            const status   = statusText(user);
+            const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
+            const isOpen   = openMenuId === user.id;
+            return (
+              <div
+                key={user.id}
+                style={{
+                  position: "relative", zIndex: isOpen ? 10 : 1,
+                  display: "flex", alignItems: "center", gap: 14, padding: "12px 20px",
+                  background: "rgba(255,255,255,0.03)",
+                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                  transition: "background 0.15s", flexWrap: "wrap",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                  background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 700, color: "#fff",
                 }}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ position: "relative" }}>
-            <input
-              type="search" placeholder="חיפוש לפי שם / מייל…"
-              value={search} onChange={e => setSearch(e.target.value)}
-              style={{ ...inp, borderRadius: T.rMd, padding: "8px 14px", fontSize: 13, width: 220, fontFamily: "inherit" }}
-            />
-          </div>
-        </div>
+                  {initials}
+                </div>
 
-        {/* Table card */}
-        <div style={{ background: T.bg, borderRadius: T.rLg, border: `1px solid ${T.border}`, overflow: "hidden" }}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: T.bg, borderBottom: `1px solid ${T.border}` }}>
-                  {["מזהה", "תאריך הצטרפות", "משתמש", "תפקיד", "מסעדות", "טלפון", "סטטוס", ""].map(h => (
-                    <th key={h} style={{ padding: "8px 16px", textAlign: "right", fontSize: 12, fontWeight: 700, color: L.text, whiteSpace: "nowrap" }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} style={{ padding: "60px 24px", textAlign: "center", color: L.muted, fontSize: 14 }}>לא נמצאו משתמשים</td>
-                  </tr>
-                ) : (
-                  filtered.map(user => {
-                    const status = statusText(user);
-                    const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
-                    return (
-                      <tr key={user.id}
-                        style={{ borderBottom: `1px solid ${T.border}` }}
-                        onMouseEnter={e => (e.currentTarget.style.background = T.surface)}
-                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                      >
-                        {/* ID */}
-                        <td style={{ padding: "2px 12px", fontSize: 12, color: L.muted, fontWeight: 500, whiteSpace: "nowrap" }}>
-                          {shortId(user.id)}
-                        </td>
-                        {/* Date */}
-                        <td style={{ padding: "2px 12px", fontSize: 12, color: L.muted, whiteSpace: "nowrap" }}>
-                          {formatDate(user.createdAt)}
-                        </td>
-                        {/* User */}
-                        <td style={{ padding: "2px 12px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: T.overlay, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: L.muted, flexShrink: 0 }}>
-                              {initials}
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 600, fontSize: 14, color: L.text }}>{user.name ?? "—"}</div>
-                              <div style={{ fontSize: 12, color: L.muted }} dir="ltr">{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        {/* Role */}
-                        <td style={{ padding: "2px 12px" }}>
-                          <span style={{ ...ROLE_BADGE[user.role], borderRadius: T.rFull, padding: "2px 8px", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "inline-block" }}>
-                            {ROLE_LABELS[user.role] ?? user.role}
-                          </span>
-                        </td>
-                        {/* Restaurants */}
-                        <td style={{ padding: "2px 12px" }}>
-                          {user.restaurantUsers.length === 0 ? (
-                            <span style={{ fontSize: 12, color: L.muted }}>ללא שיוך</span>
-                          ) : (
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                              {user.restaurantUsers.map(ru => (
-                                <span key={ru.restaurantId} style={{ background: T.overlay, color: T.muted, borderRadius: T.rSm, padding: "2px 8px", fontSize: 12, fontWeight: 500, border: `1px solid ${T.border}` }}>
-                                  {ru.restaurant.name}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        {/* Phone */}
-                        <td style={{ padding: "2px 12px", fontSize: 12, color: L.muted, whiteSpace: "nowrap" }}>
-                          {user.phone ?? "—"}
-                        </td>
-                        {/* Status */}
-                        <td style={{ padding: "2px 12px", fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
-                          {status.label}
-                        </td>
-                        {/* 3-dot menu */}
-                        <td style={{ padding: "2px 8px" }}>
-                          <button
-                            onClick={e => {
-                              const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                              const menuW = 200;
-                              const left  = rect.right + menuW > window.innerWidth
-                                ? rect.left - menuW          // not enough room to the right → open left
-                                : rect.left;                 // open to the right of the button
-                              setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
-                              setOpenMenuId(openMenuId === user.id ? null : user.id);
-                            }}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, padding: "2px 6px", borderRadius: T.rSm, lineHeight: 1, fontFamily: "inherit" }}
-                            onMouseEnter={e => (e.currentTarget.style.background = T.overlay)}
-                            onMouseLeave={e => (e.currentTarget.style.background = "none")}
-                          >⋮</button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          {/* Pagination stub */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderTop: `1px solid ${T.border}` }}>
-            <span style={{ fontSize: 12, color: L.muted }}>מציג {filtered.length} מתוך {users.length} משתמשים</span>
-          </div>
-        </div>
+                {/* Name + email */}
+                <div style={{ flex: "2 1 160px", minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {user.name ?? "—"}
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }} dir="ltr">
+                    {user.email}
+                  </div>
+                </div>
 
+                {/* Role badge */}
+                <div style={{ flexShrink: 0 }}>
+                  <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "3px 10px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
+                    {ROLE_LABELS[user.role] ?? user.role}
+                  </span>
+                </div>
+
+                {/* Restaurants */}
+                <div style={{ flex: "2 1 140px", display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}>
+                  {user.restaurantUsers.length === 0 ? (
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>ללא שיוך</span>
+                  ) : (
+                    user.restaurantUsers.map(ru => (
+                      <span key={ru.restaurantId} style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 500, border: "1px solid rgba(255,255,255,0.1)" }}>
+                        {ru.restaurant.name}
+                      </span>
+                    ))
+                  )}
+                </div>
+
+                {/* Status */}
+                <div style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
+                  {status.label}
+                </div>
+
+                {/* ID + date (hidden on small) */}
+                <div style={{ flexShrink: 0, textAlign: "left" }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>{shortId(user.id)}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>{formatDate(user.createdAt)}</div>
+                </div>
+
+                {/* 3-dot menu */}
+                <button
+                  onClick={e => {
+                    const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                    const menuW = 210;
+                    const left  = rect.right + menuW > window.innerWidth ? rect.left - menuW : rect.left;
+                    setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
+                    setOpenMenuId(openMenuId === user.id ? null : user.id);
+                  }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 18, padding: "4px 10px", borderRadius: 8, lineHeight: 1, fontFamily: "inherit", flexShrink: 0, transition: "0.15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                >⋮</button>
+              </div>
+            );
+          })
+        )}
+
+        {/* Footer count */}
+        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>מציג {filtered.length} מתוך {users.length} משתמשים</span>
+        </div>
       </div>
 
       {/* ── Create User Modal ─────────────────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth: 480, padding: 28, maxHeight: "90vh", overflowY: "auto" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 24 }}>הוסף משתמש חדש</h2>
-            <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div><Label>שם מלא</Label>
-                <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={DARK_INPUT} autoFocus /></div>
-              <div><Label>אימייל *</Label>
-                <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
-              <div style={{ background: "rgba(51,154,240,0.07)", border: "1px solid rgba(51,154,240,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#74c0fc" }}>
+        <div style={MODAL_OVERLAY}>
+          <div style={{ ...MODAL_BOX, maxWidth: 500, maxHeight: "90vh", overflowY: "auto" }}>
+            {/* Modal header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>משתמש חדש</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>הזמנה תישלח לאימייל</p>
+              </div>
+              <button onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleCreate} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <FieldLabel>שם מלא</FieldLabel>
+                <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={DARK_INPUT} autoFocus />
+              </div>
+              <div>
+                <FieldLabel>אימייל *</FieldLabel>
+                <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={DARK_INPUT} dir="ltr" />
+              </div>
+              <div style={{ background: "rgba(51,154,240,0.08)", border: "1px solid rgba(51,154,240,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#74c0fc" }}>
                 📧 קישור הזמנה יישלח לאימייל — המשתמש יגדיר סיסמה בעצמו
               </div>
-              <div><Label>הרשאה</Label>
+              <div>
+                <FieldLabel>הרשאה</FieldLabel>
                 <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value as Role })} style={DARK_SELECT}>
-                  {availableRoles.map(r => <option key={r} value={r} style={{ background: T.surface }}>{ROLE_LABELS[r]}</option>)}
+                  {availableRoles.map(r => <option key={r} value={r} style={{ background: "#14141c" }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               {restaurants.length > 0 && (
                 <div>
-                  <Label>מסעדות משויכות</Label>
+                  <FieldLabel>מסעדות משויכות</FieldLabel>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 180, overflowY: "auto", padding: "2px 0" }}>
                     {restaurants.map(r => {
                       const checked = formRestaurantIds.includes(r.id);
                       return (
-                        <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, cursor: "pointer", background: checked ? "rgba(252,196,25,0.08)" : T.overlay, border: `1px solid ${checked ? "rgba(252,196,25,0.3)" : T.border}` }}>
+                        <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, cursor: "pointer", background: checked ? "rgba(217,119,6,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${checked ? "rgba(217,119,6,0.3)" : "rgba(255,255,255,0.1)"}` }}>
                           <input type="checkbox" checked={checked}
                             onChange={() => setFormRestaurantIds(prev => checked ? prev.filter(id => id !== r.id) : [...prev, r.id])}
-                            style={{ accentColor: T.gold, width: 15, height: 15, cursor: "pointer" }} />
-                          <span style={{ fontSize: 13, color: checked ? T.gold : T.text, fontWeight: checked ? 600 : 400 }}>{r.name}</span>
+                            style={{ accentColor: "#D97706", width: 15, height: 15, cursor: "pointer" }} />
+                          <span style={{ fontSize: 13, color: checked ? "#F59E0B" : "#fff", fontWeight: checked ? 600 : 400 }}>{r.name}</span>
                         </label>
                       );
                     })}
                   </div>
-                  {formRestaurantIds.length > 0 && <div style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>{formRestaurantIds.length} מסעדות נבחרו</div>}
+                  {formRestaurantIds.length > 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 5 }}>{formRestaurantIds.length} מסעדות נבחרו</div>}
                 </div>
               )}
               {error && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{error}</p>}
-              <div className="flex gap-3" style={{ marginTop: 4 }}>
-                <button type="submit" disabled={loading} style={{ flex: 1, background: T.gold, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
+              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <button type="submit" disabled={loading} style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}>
                   {loading ? "יוצר..." : "✉️ צור משתמש ושלח הזמנה"}
                 </button>
                 <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
-                  style={{ flex: 1, background: T.overlay, color: T.sub, border: `1px solid ${T.border}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   ביטול
                 </button>
               </div>
@@ -494,73 +528,75 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
       {/* ── Manage Restaurants Modal ─────────────────────────────────────── */}
       {managingUser && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth: 460, padding: 28 }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
+        <div style={MODAL_OVERLAY}>
+          <div style={{ ...MODAL_BOX, maxWidth: 460 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: T.text }}>מסעדות משויכות</h2>
-                <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{managingUser.name ?? managingUser.email}</p>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>מסעדות משויכות</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{managingUser.name ?? managingUser.email}</p>
               </div>
-              <button onClick={() => setManagingUser(null)} style={{ color: T.muted, background: "none", border: "none", fontSize: 22, cursor: "pointer" }}>×</button>
+              <button onClick={() => setManagingUser(null)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
-            <div style={{ marginBottom: 20, minHeight: 60, display: "flex", flexDirection: "column", gap: 8 }}>
-              {managingUser.restaurantUsers.length === 0 ? (
-                <p style={{ fontSize: 13, color: T.muted, textAlign: "center", padding: "16px 0" }}>אין מסעדות משויכות</p>
-              ) : (
-                managingUser.restaurantUsers.map(ru => (
-                  <div key={ru.restaurantId} className="flex items-center justify-between" style={{ background: "rgba(252,196,25,0.08)", border: "1px solid rgba(252,196,25,0.2)", borderRadius: 10, padding: "10px 14px" }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{ru.restaurant.name}</span>
-                    <button onClick={() => handleRemoveRestaurant(ru.restaurantId)} disabled={restLoading}
-                      style={{ color: T.red, fontSize: 12, fontWeight: 700, background: "none", border: "none", cursor: "pointer", opacity: restLoading ? 0.4 : 1 }}>הסר</button>
+            <div style={{ padding: "20px 24px" }}>
+              <div style={{ marginBottom: 16, minHeight: 60, display: "flex", flexDirection: "column", gap: 8 }}>
+                {managingUser.restaurantUsers.length === 0 ? (
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", textAlign: "center", padding: "16px 0" }}>אין מסעדות משויכות</p>
+                ) : (
+                  managingUser.restaurantUsers.map(ru => (
+                    <div key={ru.restaurantId} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)", borderRadius: 10, padding: "10px 14px" }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{ru.restaurant.name}</span>
+                      <button onClick={() => handleRemoveRestaurant(ru.restaurantId)} disabled={restLoading}
+                        style={{ color: T.red, fontSize: 12, fontWeight: 700, background: "none", border: "none", cursor: "pointer", opacity: restLoading ? 0.4 : 1 }}>הסר</button>
+                    </div>
+                  ))
+                )}
+              </div>
+              {unassignedRestaurants.length > 0 && (
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, marginBottom: 16 }}>
+                  <FieldLabel>הוסף מסעדה</FieldLabel>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <select value={addRestaurantId} onChange={e => setAddRestaurantId(e.target.value)} style={{ ...DARK_SELECT, flex: 1 }}>
+                      <option value="" style={{ background: "#14141c" }}>בחר מסעדה...</option>
+                      {unassignedRestaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#14141c" }}>{r.name}</option>)}
+                    </select>
+                    <button onClick={handleAddRestaurant} disabled={!addRestaurantId || restLoading}
+                      style={{ background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: "0 18px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!addRestaurantId || restLoading) ? 0.4 : 1 }}>
+                      הוסף
+                    </button>
                   </div>
-                ))
-              )}
-            </div>
-            {unassignedRestaurants.length > 0 && (
-              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 20, marginBottom: 16 }}>
-                <Label>הוסף מסעדה</Label>
-                <div className="flex gap-2">
-                  <select value={addRestaurantId} onChange={e => setAddRestaurantId(e.target.value)} style={{ ...DARK_SELECT, flex: 1 }}>
-                    <option value="" style={{ background: T.surface }}>בחר מסעדה...</option>
-                    {unassignedRestaurants.map(r => <option key={r.id} value={r.id} style={{ background: T.surface }}>{r.name}</option>)}
-                  </select>
-                  <button onClick={handleAddRestaurant} disabled={!addRestaurantId || restLoading}
-                    style={{ background: T.gold, color: "#fff", border: "none", padding: "0 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!addRestaurantId || restLoading) ? 0.4 : 1 }}>
-                    הוסף
-                  </button>
                 </div>
-              </div>
-            )}
-            <button onClick={() => setManagingUser(null)} style={{ width: "100%", background: T.overlay, color: T.sub, border: `1px solid ${T.border}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-              סגור
-            </button>
+              )}
+              <button onClick={() => setManagingUser(null)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 11, borderRadius: 12, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                סגור
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* ── Invite Link Fallback Modal ───────────────────────────────────── */}
       {pendingInviteLink && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth: 440, padding: 28, textAlign: "center" }}>
+        <div style={MODAL_OVERLAY}>
+          <div style={{ ...MODAL_BOX, maxWidth: 440, padding: 28, textAlign: "center" }}>
             <div style={{ width: 52, height: 52, background: "rgba(255,146,43,0.15)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24 }}>⚠️</div>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>האימייל לא נשלח</h2>
-            <p style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>שלח למשתמש את קישור ההזמנה הבא ידנית:</p>
-            <div style={{ background: "rgba(201,164,82,0.08)", border: "1px solid rgba(201,164,82,0.3)", borderRadius: 12, padding: "14px 16px", marginBottom: 8, textAlign: "right" }}>
-              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>אימייל</div>
-              <div style={{ fontSize: 13, color: T.sub, marginBottom: 14 }} dir="ltr">{pendingInviteLink.email}</div>
-              <div style={{ fontSize: 11, color: "#6b6070", letterSpacing: 1, marginBottom: 6 }}>קישור הזמנה</div>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 8 }}>האימייל לא נשלח</h2>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>שלח למשתמש את קישור ההזמנה הבא ידנית:</p>
+            <div style={{ background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)", borderRadius: 12, padding: "14px 16px", marginBottom: 8, textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: 1, marginBottom: 6 }}>אימייל</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 14 }} dir="ltr">{pendingInviteLink.email}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: 1, marginBottom: 6 }}>קישור הזמנה</div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <div style={{ flex: 1, fontSize: 11, color: T.gold, fontFamily: "monospace", wordBreak: "break-all", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "8px 10px" }} dir="ltr">
+                <div style={{ flex: 1, fontSize: 11, color: "#F59E0B", fontFamily: "monospace", wordBreak: "break-all", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "8px 10px" }} dir="ltr">
                   {pendingInviteLink.link}
                 </div>
                 <button onClick={() => navigator.clipboard.writeText(pendingInviteLink!.link)}
-                  style={{ flexShrink: 0, background: "rgba(201,164,82,0.15)", border: "1px solid rgba(201,164,82,0.3)", color: T.gold, borderRadius: 8, padding: "2px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  style={{ flexShrink: 0, background: "rgba(217,119,6,0.15)", border: "1px solid rgba(217,119,6,0.3)", color: "#F59E0B", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   📋 העתק
                 </button>
               </div>
             </div>
-            <p style={{ fontSize: 11, color: T.muted, marginBottom: 20, textAlign: "right" }}>⏱ הקישור תקף ל-72 שעות.</p>
-            <button onClick={() => setPendingInviteLink(null)} style={{ width: "100%", background: T.gold, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 20, textAlign: "right" }}>⏱ הקישור תקף ל-72 שעות.</p>
+            <button onClick={() => setPendingInviteLink(null)} style={{ width: "100%", background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               הבנתי
             </button>
           </div>
@@ -569,51 +605,56 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
       {/* ── Edit User Modal ───────────────────────────────────────────────── */}
       {editTarget && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth: 460, padding: 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 4 }}>עריכת משתמש</h2>
-            <p style={{ fontSize: 13, color: T.muted, marginBottom: 24 }} dir="ltr">{editTarget.email}</p>
-            <form onSubmit={handleEdit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div><Label>שם מלא</Label>
+        <div style={MODAL_OVERLAY}>
+          <div style={{ ...MODAL_BOX, maxWidth: 460 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>עריכת משתמש</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }} dir="ltr">{editTarget.email}</p>
+              </div>
+              <button onClick={() => setEditTarget(null)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            </div>
+            <form onSubmit={handleEdit} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div><FieldLabel>שם מלא</FieldLabel>
                 <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} style={DARK_INPUT} /></div>
-              <div><Label>טלפון נייד</Label>
+              <div><FieldLabel>טלפון נייד</FieldLabel>
                 <input type="tel" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} placeholder="05X-XXXXXXX" style={DARK_INPUT} dir="ltr" /></div>
-              <div><Label>אימייל *</Label>
+              <div><FieldLabel>אימייל *</FieldLabel>
                 <input required type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
-              <div><Label>הרשאה</Label>
+              <div><FieldLabel>הרשאה</FieldLabel>
                 <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value as Role })} style={DARK_SELECT}>
-                  {ALL_ROLES.map(r => <option key={r} value={r} style={{ background: T.surface }}>{ROLE_LABELS[r]}</option>)}
+                  {ALL_ROLES.map(r => <option key={r} value={r} style={{ background: "#14141c" }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               {["ADMIN","OWNER","SHIFT_MANAGER"].includes(editForm.role) && (
-                <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 14 }}>
-                  <Label>🔐 PIN מנהל {hasPin ? <span style={{ color: T.green, fontSize: 11 }}>(מוגדר ✓)</span> : <span style={{ color: T.muted, fontSize: 11 }}>(לא מוגדר)</span>}</Label>
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}>
+                  <FieldLabel>🔐 PIN מנהל {hasPin ? <span style={{ color: "#51cf66", fontSize: 11 }}>(מוגדר ✓)</span> : <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>(לא מוגדר)</span>}</FieldLabel>
                   <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                     <input type="password" inputMode="numeric" maxLength={8}
                       value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,""))}
                       placeholder="4–8 ספרות"
                       style={{ ...DARK_INPUT, flex: 1, letterSpacing: 4, textAlign: "center" }} />
                     <button type="button" onClick={savePin} disabled={pinSaving || !pinInput}
-                      style={{ padding: "0 14px", background: T.gold, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: (!pinInput || pinSaving) ? 0.5 : 1 }}>
+                      style={{ padding: "0 14px", background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: (!pinInput || pinSaving) ? 0.5 : 1 }}>
                       שמור
                     </button>
                     {hasPin && (
                       <button type="button" onClick={deletePin} disabled={pinSaving}
-                        style={{ padding: "0 12px", background: "transparent", color: T.red, border: `1px solid ${T.red}55`, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                        style={{ padding: "0 12px", background: "transparent", color: T.red, border: `1px solid ${T.red}55`, borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
                         מחק
                       </button>
                     )}
                   </div>
-                  {pinMsg && <p style={{ fontSize: 12, color: pinMsg.startsWith("✓") ? T.green : T.red, marginTop: 6 }}>{pinMsg}</p>}
+                  {pinMsg && <p style={{ fontSize: 12, color: pinMsg.startsWith("✓") ? "#51cf66" : T.red, marginTop: 6 }}>{pinMsg}</p>}
                 </div>
               )}
               {editError && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{editError}</p>}
-              <div className="flex gap-3" style={{ marginTop: 4 }}>
-                <button type="submit" disabled={editLoading} style={{ flex: 1, background: T.blue, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: editLoading ? 0.6 : 1 }}>
+              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <button type="submit" disabled={editLoading} style={{ flex: 1, background: "linear-gradient(135deg,#1971c2,#339af0)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: editLoading ? 0.6 : 1, fontFamily: "inherit" }}>
                   {editLoading ? "שומר..." : "שמור שינויים"}
                 </button>
                 <button type="button" onClick={() => setEditTarget(null)}
-                  style={{ flex: 1, background: T.overlay, color: T.sub, border: `1px solid ${T.border}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   ביטול
                 </button>
               </div>
@@ -624,20 +665,25 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
       {/* ── Password Reset Modal ──────────────────────────────────────────── */}
       {resetTarget && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth: 380, padding: 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 4 }}>איפוס סיסמה</h2>
-            <p style={{ fontSize: 13, color: T.muted, marginBottom: 24 }}>{resetTarget.name ?? resetTarget.email}</p>
-            <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div><Label>סיסמה חדשה *</Label>
+        <div style={MODAL_OVERLAY}>
+          <div style={{ ...MODAL_BOX, maxWidth: 400 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>איפוס סיסמה</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{resetTarget.name ?? resetTarget.email}</p>
+              </div>
+              <button onClick={() => setResetTarget(null)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            </div>
+            <form onSubmit={handleResetPassword} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div><FieldLabel>סיסמה חדשה *</FieldLabel>
                 <input required type="password" minLength={6} value={resetPassword} onChange={e => setResetPassword(e.target.value)} style={DARK_INPUT} placeholder="מינימום 6 תווים" /></div>
               {resetError && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{resetError}</p>}
-              <div className="flex gap-3" style={{ marginTop: 4 }}>
-                <button type="submit" disabled={resetLoading} style={{ flex: 1, background: T.gold, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: resetLoading ? 0.6 : 1 }}>
+              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <button type="submit" disabled={resetLoading} style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: resetLoading ? 0.6 : 1, fontFamily: "inherit" }}>
                   {resetLoading ? "מאפס..." : "אפס סיסמה"}
                 </button>
                 <button type="button" onClick={() => setResetTarget(null)}
-                  style={{ flex: 1, background: T.overlay, color: T.sub, border: `1px solid ${T.border}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   ביטול
                 </button>
               </div>
@@ -646,12 +692,17 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </div>
       )}
 
-      {/* ── Fixed dropdown (outside table overflow) ──────────────────────── */}
+      {/* ── Fixed dropdown ────────────────────────────────────────────────── */}
       {openMenuId && (() => {
         const user = filtered.find(u => u.id === openMenuId);
         if (!user) return null;
         return (
-          <div ref={menuRef} style={{ position: "fixed", top: menuPos.top, left: menuPos.left, background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, boxShadow: "0 4px 20px rgba(0,0,0,0.14)", width: 200, zIndex: 9999, overflow: "hidden" }}>
+          <div ref={menuRef} style={{
+            position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999,
+            background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 16, backdropFilter: "blur(20px)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)", width: 210, overflow: "hidden",
+          }}>
             {currentUserRole === "SUPER_ADMIN" && (
               <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />
             )}
@@ -671,7 +722,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 disabled={resendingId === user.id}
               />
             )}
-            <div style={{ borderTop: `1px solid ${L.border}` }} />
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }} />
             <MenuAction icon="🗑️" label="מחק משתמש" onClick={() => { handleDelete(user.id); setOpenMenuId(null); }} danger />
           </div>
         );
@@ -691,11 +742,11 @@ function MenuAction({ icon, label, onClick, danger, disabled }: { icon: string; 
       style={{
         width: "100%", textAlign: "right", padding: "9px 14px", background: "none", border: "none",
         cursor: disabled ? "not-allowed" : "pointer", fontSize: 13,
-        color: danger ? T.red : T.text,
+        color: danger ? "#ff6b6b" : "#fff",
         display: "flex", alignItems: "center", gap: 8,
         opacity: disabled ? 0.5 : 1, fontFamily: "inherit",
       }}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(239,68,68,0.08)" : T.overlay; }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.07)"; }}
       onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
     >
       <span style={{ fontSize: 14 }}>{icon}</span>
