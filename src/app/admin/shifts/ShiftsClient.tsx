@@ -1627,7 +1627,13 @@ export default function ShiftsClient({
                   ⚙️ הגדרות
                 </button>
                 <button
-                  onClick={() => loadShifts()}
+                  onClick={() => {
+                    if (activeTab === "schedule" || activeTab === "myshifts") loadShifts();
+                    else if (activeTab === "summary") loadSummaryShifts();
+                    else if (activeTab === "attendance") loadAttendance();
+                    else if (activeTab === "requests") loadRequests();
+                    else if (activeTab === "ops") loadOps();
+                  }}
                   style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
                   🔄 רענון
