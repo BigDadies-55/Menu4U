@@ -173,7 +173,7 @@ export default function ShiftsClient({
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "summary" | "attendance" | "ops">("schedule");
+  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "monthly" | "summary" | "attendance" | "ops">("schedule");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -224,6 +224,14 @@ export default function ShiftsClient({
   const [attFrom, setAttFrom] = useState("");
   const [attTo,   setAttTo]   = useState("");
   const [attLoading, setAttLoading] = useState(false);
+
+  // Monthly tab
+  const [monthlyMonth, setMonthlyMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [monthlyShifts, setMonthlyShifts] = useState<ShiftRow[]>([]);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
 
   // Summary tab
   const [summaryMode, setSummaryMode] = useState<"weekly" | "monthly" | "range">("weekly");
@@ -333,6 +341,24 @@ export default function ShiftsClient({
 
   useEffect(() => { if (activeTab === "summary") loadSummaryShifts(); }, [activeTab, loadSummaryShifts]);
 
+  // Load monthly shifts
+  const loadMonthlyShifts = useCallback(async () => {
+    if (!restaurantId) return;
+    const [y, m] = monthlyMonth.split("-").map(Number);
+    const last = new Date(y, m, 0).getDate();
+    const from = `${monthlyMonth}-01`;
+    const to   = `${monthlyMonth}-${String(last).padStart(2, "0")}`;
+    setMonthlyLoading(true);
+    try {
+      const res = await fetch(`/api/admin/shifts?restaurantId=${restaurantId}&from=${from}&to=${to}`);
+      const data = await res.json();
+      setMonthlyShifts(data.shifts ?? []);
+    } catch { setMonthlyShifts([]); }
+    finally { setMonthlyLoading(false); }
+  }, [restaurantId, monthlyMonth]);
+
+  useEffect(() => { if (activeTab === "monthly") loadMonthlyShifts(); }, [activeTab, loadMonthlyShifts]);
+
   // Load attendance
   const loadAttendance = useCallback(async () => {
     if (!restaurantId) return;
@@ -388,7 +414,7 @@ export default function ShiftsClient({
     const res = await fetch(`/api/admin/shifts/${id}`, { method: "DELETE" });
     if (res.ok) {
       showToast("✓ משמרת נמחקה");
-      loadShifts();
+      if (activeTab === "monthly") loadMonthlyShifts(); else loadShifts();
     } else {
       showToast("שגיאה במחיקה");
     }
@@ -412,7 +438,7 @@ export default function ShiftsClient({
       if (res.ok) {
         showToast("✓ משמרת נוספה");
         setAddModal(null);
-        loadShifts();
+        if (activeTab === "monthly") loadMonthlyShifts(); else loadShifts();
       } else {
         const err = await res.json();
         showToast(err.error ?? "שגיאה בהוספה");
@@ -807,9 +833,23 @@ export default function ShiftsClient({
           <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 26, width: 340, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
               <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>הוסף משמרת</div>
-              <div style={{ fontSize: 13, color: GM, marginBottom: 20 }}>
-                {addModal.userName} — {addModal.date.split("-").reverse().join("/")}
+              <div style={{ fontSize: 13, color: GM, marginBottom: addModal.userId ? 20 : 10 }}>
+                {addModal.userId ? addModal.userName : addModal.date.split("-").reverse().join("/")}
+                {addModal.userId ? ` — ${addModal.date.split("-").reverse().join("/")}` : ""}
               </div>
+              {!addModal.userId && (
+                <select
+                  value={addModal.userId}
+                  onChange={e => {
+                    const sel = staff.find(s => s.id === e.target.value);
+                    if (sel) setAddModal(prev => prev ? { ...prev, userId: sel.id, userName: sel.name } : prev);
+                  }}
+                  style={{ width: "100%", marginBottom: 16, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
+                >
+                  <option value="">— בחר עובד —</option>
+                  {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}</option>)}
+                </select>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {Object.entries(SHIFT_CFG).map(([key, cfg]) => {
                   const gs = glassShift(cfg.color);
@@ -1020,6 +1060,142 @@ export default function ShiftsClient({
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     a.download = filename;
     a.click();
+  }
+
+  // ── Tab: Monthly ───────────────────────────────────────────────────────────
+  function MonthlyTab() {
+    const [y, m] = monthlyMonth.split("-").map(Number);
+    const firstDay = new Date(y, m - 1, 1);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const todayIso = formatDateISO(new Date());
+    const activeRest = restaurants.find(r => r.id === restaurantId);
+
+    // Build weeks (rows of 7, starting Sunday)
+    const startOffset = firstDay.getDay(); // 0=Sun
+    const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    const cells: (Date | null)[] = [];
+    for (let i = 0; i < totalCells; i++) {
+      const dayNum = i - startOffset + 1;
+      cells.push(dayNum >= 1 && dayNum <= daysInMonth ? new Date(y, m - 1, dayNum) : null);
+    }
+
+    const navBtnStyle: React.CSSProperties = {
+      background: "none", border: "none", color: GM, cursor: "pointer",
+      padding: "4px 8px", borderRadius: 7, fontSize: 16, display: "flex", alignItems: "center", transition: "0.15s",
+    };
+
+    return (
+      <div>
+        {/* Month navigator */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <button
+            style={navBtnStyle}
+            onClick={() => {
+              const [cy, cm] = monthlyMonth.split("-").map(Number);
+              const prev = new Date(cy, cm - 2, 1);
+              setMonthlyMonth(`${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`);
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+          >‹</button>
+          <span style={{ fontSize: 15, fontWeight: 800, minWidth: 130, textAlign: "center" }}>
+            {MONTHS_HE[m - 1]} {y}
+          </span>
+          <button
+            style={navBtnStyle}
+            onClick={() => {
+              const [cy, cm] = monthlyMonth.split("-").map(Number);
+              const next = new Date(cy, cm, 1);
+              setMonthlyMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`);
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+          >›</button>
+          {monthlyLoading && <span style={{ fontSize: 11, color: GM, marginRight: 4 }}>טוען...</span>}
+        </div>
+
+        {/* Day headers */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 4 }}>
+          {DAYS_HE.map((d, i) => (
+            <div key={d} style={{
+              textAlign: "center", fontSize: 11, fontWeight: 700, padding: "4px 0",
+              color: i === 5 ? "rgba(248,113,113,0.65)" : i === 6 ? "rgba(148,163,184,0.4)" : GM,
+              letterSpacing: "0.3px",
+            }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
+          {cells.map((date, idx) => {
+            if (!date) return <div key={idx} />;
+            const iso = formatDateISO(date);
+            const dayStatus = getDayStatus(activeRest?.openingHours, date);
+            const isClosed = dayStatus.closed;
+            const isToday = iso === todayIso;
+            const dayShifts = monthlyShifts.filter(s => s.date.slice(0, 10) === iso);
+
+            return (
+              <div key={iso} style={{
+                background: isClosed ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.04)",
+                border: isToday
+                  ? "2px solid #60A5FA"
+                  : `1px solid ${isClosed ? "rgba(255,255,255,0.05)" : GB}`,
+                borderRadius: 10,
+                minHeight: 80,
+                padding: "6px 5px",
+                boxShadow: isToday ? "0 0 14px rgba(96,165,250,0.18)" : "none",
+                cursor: isClosed ? "not-allowed" : "default",
+                transition: "background 0.12s",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: isToday ? "#60A5FA" : isClosed ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.65)" }}>
+                    {date.getDate()}
+                  </span>
+                  {isClosed && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.22)" }}>סגור</span>}
+                </div>
+
+                {dayShifts.map(sh => {
+                  const cfg = SHIFT_CFG[sh.shiftType] ?? { label: sh.shiftType, time: `${sh.startTime}–${sh.endTime}`, color: "#6b7280" };
+                  const gs = glassShift(cfg.color);
+                  return (
+                    <div
+                      key={sh.id}
+                      title={`${sh.userName} — ${cfg.label} ${sh.startTime.slice(0,5)}–${sh.endTime.slice(0,5)}`}
+                      onClick={() => isManager && deleteShift(sh.id)}
+                      style={{
+                        fontSize: 9, fontWeight: 600, borderRadius: 4, padding: "2px 4px",
+                        marginBottom: 2, display: "flex", alignItems: "center", gap: 2,
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        background: gs.bg, color: gs.text, border: `1px solid ${gs.border}`,
+                        cursor: isManager ? "pointer" : "default",
+                      }}
+                    >
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {sh.userName.split(" ")[0]} {sh.startTime.slice(0,5)}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {isManager && !isClosed && (
+                  <button
+                    onClick={() => setAddModal({ userId: "", userName: "", date: iso })}
+                    style={{
+                      width: "100%", marginTop: 2, padding: "2px 0", borderRadius: 4, fontSize: 9,
+                      background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.25)", cursor: "pointer", fontFamily: "inherit",
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(217,119,6,0.1)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(217,119,6,0.35)"; (e.currentTarget as HTMLButtonElement).style.color = "#FCD34D"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.03)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.1)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.25)"; }}
+                  >+ הוסף</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   }
 
   // ── Tab: Summary ───────────────────────────────────────────────────────────
@@ -1629,6 +1805,7 @@ export default function ShiftsClient({
                 <button
                   onClick={() => {
                     if (activeTab === "schedule" || activeTab === "myshifts") loadShifts();
+                    else if (activeTab === "monthly") loadMonthlyShifts();
                     else if (activeTab === "summary") loadSummaryShifts();
                     else if (activeTab === "attendance") loadAttendance();
                     else if (activeTab === "requests") loadRequests();
@@ -1661,6 +1838,7 @@ export default function ShiftsClient({
           overflowX: "auto",
         }}>
           {tabBtn("schedule", "📅 שבועי")}
+          {isManager && tabBtn("monthly", "📆 חודשי")}
           {tabBtn("myshifts", "👤 המשמרות שלי")}
           {tabBtn("requests", (
             <>
@@ -1689,6 +1867,7 @@ export default function ShiftsClient({
           minHeight: 300,
         }}>
           {activeTab === "schedule"  && <ScheduleTab />}
+          {activeTab === "monthly"   && <MonthlyTab />}
           {activeTab === "myshifts"  && <MyShiftsTab />}
           {activeTab === "requests"  && <RequestsTab />}
           {activeTab === "summary"    && <SummaryTab />}
