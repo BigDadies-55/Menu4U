@@ -51,6 +51,17 @@ export default async function ShiftsPage() {
     });
   }
 
+  // Fetch openingHours via raw SQL (column not in Prisma schema)
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "openingHours" TEXT`);
+    const ohRows = await prisma.$queryRawUnsafe<{ id: string; openingHours: string | null }[]>(
+      `SELECT id, "openingHours" FROM "Restaurant" WHERE id = ANY($1::text[])`,
+      restaurants.map(r => r.id)
+    );
+    const ohMap = Object.fromEntries(ohRows.map(r => [r.id, r.openingHours]));
+    restaurants = restaurants.map(r => ({ ...r, openingHours: ohMap[r.id] ?? null }));
+  } catch { /* ignore */ }
+
   const currentUserName =
     session.user.name ?? session.user.email ?? "";
 
