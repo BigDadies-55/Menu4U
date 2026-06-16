@@ -15,6 +15,7 @@ export async function POST(req: Request) {
   const migrations = [
     `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`,
     `ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`,
+    `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "openingHours" TEXT`,
   ];
 
   for (const sql of migrations) {

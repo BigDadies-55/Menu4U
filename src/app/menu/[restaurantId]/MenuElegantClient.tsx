@@ -185,9 +185,11 @@ function getItemBadges(item: Item, t: Translations): string[] {
 export default function MenuElegantClient({
   restaurant,
   tableNumber,
+  openStatus,
 }: {
   restaurant: Restaurant;
   tableNumber?: string | null;
+  openStatus?: { open: boolean; label: string };
 }) {
   // Elegant theme view state
   const [elegantView, setElegantView] = useState<"landing" | "clubwelcome" | "categories" | "items">("landing");
@@ -1067,6 +1069,20 @@ export default function MenuElegantClient({
             }}>
               {restaurant.name}
             </h1>
+
+            {openStatus && openStatus.label && (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                background: openStatus.open ? "rgba(74,222,128,0.15)" : "rgba(255,107,107,0.15)",
+                border: `1px solid ${openStatus.open ? "rgba(74,222,128,0.4)" : "rgba(255,107,107,0.4)"}`,
+                color: openStatus.open ? "#4ade80" : "#ff6b6b",
+                borderRadius: 999, padding: "4px 12px", fontSize: 13, fontWeight: 600,
+                marginTop: 8,
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: openStatus.open ? "#4ade80" : "#ff6b6b", display: "inline-block" }} />
+                {openStatus.label}
+              </div>
+            )}
 
             {/* Gold ornament divider */}
             <div style={{

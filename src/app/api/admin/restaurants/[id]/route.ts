@@ -18,6 +18,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     logo, description, website, language, welcomeText, splashImage, waiterBg, waiterBgOpacity, waiterScreen,
     instagram, facebook, whatsapp, tripadvisor, googleReview,
     showPhonePublic, showAddressPublic,
+    openingHours,
   } = body;
   // waiterBg / waiterBgOpacity / waiterScreen are extra columns — save via raw SQL
   if (waiterScreen !== undefined) {
@@ -53,7 +54,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       kdsView, tableLayoutJson, groupId, subscriptionFrom, subscriptionTo,
       logo, description, website, language, welcomeText, splashImage,
       instagram, facebook, whatsapp, tripadvisor, googleReview,
-      showPhonePublic, showAddressPublic })
+      showPhonePublic, showAddressPublic,
+      openingHours })
     .filter(([, v]) => v !== undefined)
   );
   const restaurant = await prisma.restaurant.update({ where: { id }, data });

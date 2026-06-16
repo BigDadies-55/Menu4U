@@ -49,6 +49,7 @@ type Restaurant = {
   googleReview: string | null;
   showPhonePublic: boolean;
   showAddressPublic: boolean;
+  openingHours?: string | null;
   createdAt: string;
   _count: { menus: number; orders: number; restaurantUsers: number };
 };
@@ -68,6 +69,7 @@ const TABS = [
   { id: "waiter",       label: "מסך מלצר",   icon: "🧑‍🍳" },
   { id: "social",       label: "סושיאל",     icon: "🌐" },
   { id: "subscription", label: "מנוי",       icon: "📅" },
+  { id: "hours",        label: "שעות פתיחה", icon: "⏰" },
 ] as const;
 type TabId = typeof TABS[number]["id"];
 
@@ -94,6 +96,7 @@ const emptyForm = {
   showPhonePublic: true,
   showAddressPublic: true,
   groupId: "" as string | null,
+  openingHours: "",
 };
 
 /* ── Solid primary button style ── */
@@ -177,6 +180,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
   // Custom delete confirmation: stores the restaurant to delete
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const [deleteInput,   setDeleteInput]   = useState("");
+  const [openingHoursData, setOpeningHoursData] = useState<Record<string, {open:string;close:string}|null> & {holidays: {date:string;reason:string}[]}>({ sun:null,mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,holidays:[] });
 
   /* ── Run pending DB migrations silently on mount ── */
   useEffect(() => {
@@ -208,6 +212,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
   function openCreate() {
     setEditTarget(null);
     setForm(emptyForm);
+    setOpeningHoursData({ sun:null,mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,holidays:[] });
     setActiveTab("general");
     setShowForm(true);
   }
@@ -241,7 +246,18 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       showPhonePublic: r.showPhonePublic ?? true,
       showAddressPublic: r.showAddressPublic ?? true,
       groupId: r.groupId ?? null,
+      openingHours: "",
     });
+    try {
+      const parsed = JSON.parse((r as Restaurant & {openingHours?: string|null}).openingHours ?? "{}");
+      setOpeningHoursData({
+        sun: parsed.sun ?? null, mon: parsed.mon ?? null, tue: parsed.tue ?? null,
+        wed: parsed.wed ?? null, thu: parsed.thu ?? null, fri: parsed.fri ?? null,
+        sat: parsed.sat ?? null, holidays: parsed.holidays ?? [],
+      });
+    } catch {
+      setOpeningHoursData({ sun:null,mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,holidays:[] });
+    }
     setActiveTab("general");
     setShowForm(true);
   }
@@ -294,6 +310,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       showPhonePublic: form.showPhonePublic,
       showAddressPublic: form.showAddressPublic,
       groupId: form.groupId || null,
+      openingHours: JSON.stringify(openingHoursData),
     };
 
     if (editTarget) {
@@ -927,6 +944,113 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                           הסר תאריכים (ללא הגבלת תוקף)
                         </button>
                       )}
+                    </div>
+                  )}
+
+                  {/* ── Tab: שעות פתיחה ── */}
+                  {activeTab === "hours" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 14 }}>🗓 ימי פעילות ושעות</div>
+                        {([
+                          { key: "sun", label: "ראשון" },
+                          { key: "mon", label: "שני" },
+                          { key: "tue", label: "שלישי" },
+                          { key: "wed", label: "רביעי" },
+                          { key: "thu", label: "חמישי" },
+                          { key: "fri", label: "שישי" },
+                          { key: "sat", label: "שבת" },
+                        ] as const).map(({ key, label }) => {
+                          const dayData = openingHoursData[key];
+                          const isOpen = dayData !== null;
+                          return (
+                            <div key={key} style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 10, marginBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                              <div style={{ width: 60, fontSize: 13, fontWeight: 600, color: T.text }}>{label}</div>
+                              <button
+                                type="button"
+                                onClick={() => setOpeningHoursData(d => ({ ...d, [key]: isOpen ? null : { open: "09:00", close: "22:00" } }))}
+                                style={{
+                                  position: "relative", display: "inline-flex", height: 24, width: 44,
+                                  alignItems: "center", borderRadius: 999, border: "none", cursor: "pointer",
+                                  background: isOpen ? "#F59E0B" : "rgba(255,255,255,0.15)", transition: "background 150ms",
+                                  flexShrink: 0,
+                                }}>
+                                <span style={{
+                                  display: "inline-block", height: 16, width: 16, borderRadius: "50%", background: "#fff",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                                  transform: isOpen ? "translateX(24px)" : "translateX(4px)",
+                                  transition: "transform 150ms",
+                                }} />
+                              </button>
+                              <span style={{ fontSize: 12, color: T.muted, width: 40 }}>{isOpen ? "פתוח" : "סגור"}</span>
+                              {isOpen && (
+                                <>
+                                  <input
+                                    type="time"
+                                    value={dayData?.open ?? "09:00"}
+                                    onChange={e => setOpeningHoursData(d => ({ ...d, [key]: { open: e.target.value, close: (d[key] as {open:string;close:string})?.close ?? "22:00" } }))}
+                                    style={{ ...DARK_INPUT, width: 110, direction: "ltr" } as React.CSSProperties}
+                                  />
+                                  <span style={{ color: T.muted, fontSize: 13 }}>–</span>
+                                  <input
+                                    type="time"
+                                    value={dayData?.close ?? "22:00"}
+                                    onChange={e => setOpeningHoursData(d => ({ ...d, [key]: { open: (d[key] as {open:string;close:string})?.open ?? "09:00", close: e.target.value } }))}
+                                    style={{ ...DARK_INPUT, width: 110, direction: "ltr" } as React.CSSProperties}
+                                  />
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Holiday overrides */}
+                      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: T.sub }}>🎌 חגים וסגירות מיוחדות</div>
+                          <button
+                            type="button"
+                            onClick={() => setOpeningHoursData(d => ({ ...d, holidays: [...(d.holidays ?? []), { date: new Date().toISOString().slice(0,10), reason: "" }] }))}
+                            style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#F59E0B", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                            + הוסף
+                          </button>
+                        </div>
+                        {(openingHoursData.holidays ?? []).length === 0 && (
+                          <div style={{ fontSize: 12, color: T.muted, textAlign: "center", padding: "8px 0" }}>אין חגים מוגדרים</div>
+                        )}
+                        {(openingHoursData.holidays ?? []).map((h, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <input
+                              type="date"
+                              value={h.date}
+                              onChange={e => setOpeningHoursData(d => {
+                                const hols = [...d.holidays];
+                                hols[i] = { ...hols[i], date: e.target.value };
+                                return { ...d, holidays: hols };
+                              })}
+                              style={{ ...DARK_INPUT, width: 140 } as React.CSSProperties}
+                            />
+                            <input
+                              type="text"
+                              value={h.reason}
+                              placeholder="סיבה (למשל: ראש השנה)"
+                              onChange={e => setOpeningHoursData(d => {
+                                const hols = [...d.holidays];
+                                hols[i] = { ...hols[i], reason: e.target.value };
+                                return { ...d, holidays: hols };
+                              })}
+                              style={DARK_INPUT}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setOpeningHoursData(d => ({ ...d, holidays: d.holidays.filter((_, j) => j !== i) }))}
+                              style={{ background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.4)", color: T.red, borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 

@@ -106,6 +106,41 @@ export async function POST(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Check if restaurant is open
+  const restaurantData = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { openingHours: true } as { openingHours: true },
+  });
+  const ohStr = (restaurantData as { openingHours?: string | null } | null)?.openingHours ?? null;
+  if (ohStr) {
+    const ohData = (() => { try { return JSON.parse(ohStr); } catch { return null; } })();
+    if (ohData) {
+      const nowIL = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+      const days = ["sun","mon","tue","wed","thu","fri","sat"];
+      const todayKey = days[nowIL.getDay()];
+      const todayIso = nowIL.toISOString().slice(0,10);
+      let closed = false;
+      if (ohData.holidays?.some((h: {date:string}) => h.date === todayIso)) {
+        closed = true;
+      } else {
+        const dayHours = ohData[todayKey];
+        if (!dayHours) {
+          closed = true;
+        } else {
+          const [oh2, om2] = dayHours.open.split(":").map(Number);
+          const [ch2, cm2] = dayHours.close.split(":").map(Number);
+          const nowMins2 = nowIL.getHours() * 60 + nowIL.getMinutes();
+          if (nowMins2 < oh2 * 60 + om2 || nowMins2 >= ch2 * 60 + cm2) {
+            closed = true;
+          }
+        }
+      }
+      if (closed) {
+        return NextResponse.json({ error: "המסעדה סגורה כרגע" }, { status: 422 });
+      }
+    }
+  }
+
   // Validate items
   type CartItem = { itemId: string; quantity: number; notes?: string; course?: number; modifiers?: { groupName: string; label: string; priceAdd: number }[] };
   const itemIds = items.map((i: CartItem) => i.itemId);
