@@ -216,6 +216,16 @@ export default function ShiftsClient({
   const [opsFrom, setOpsFrom] = useState("");
   const [opsTo,   setOpsTo]   = useState("");
 
+  // Summary tab
+  const [summaryMode, setSummaryMode] = useState<"weekly" | "monthly" | "range">("weekly");
+  const [summaryMonth, setSummaryMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [summaryFrom, setSummaryFrom] = useState("");
+  const [summaryTo,   setSummaryTo]   = useState("");
+  const [summaryShifts, setSummaryShifts] = useState<ShiftRow[]>([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   function applyPreset(preset: OpsPreset) {
     setOpsPreset(preset);
     const now = new Date();
@@ -285,6 +295,34 @@ export default function ShiftsClient({
   }, [restaurantId, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadShifts(); }, [loadShifts]);
+
+  // Load summary shifts (separate range from weekly view)
+  const loadSummaryShifts = useCallback(async () => {
+    if (!restaurantId) return;
+    let from = "", to = "";
+    if (summaryMode === "weekly") {
+      from = formatDateISO(weekDates[0]);
+      to   = formatDateISO(weekDates[6]);
+    } else if (summaryMode === "monthly") {
+      const [y, m] = summaryMonth.split("-").map(Number);
+      const last = new Date(y, m, 0).getDate();
+      from = `${summaryMonth}-01`;
+      to   = `${summaryMonth}-${String(last).padStart(2, "0")}`;
+    } else {
+      if (!summaryFrom || !summaryTo) return;
+      from = summaryFrom;
+      to   = summaryTo;
+    }
+    setSummaryLoading(true);
+    try {
+      const res = await fetch(`/api/admin/shifts?restaurantId=${restaurantId}&from=${from}&to=${to}`);
+      const data = await res.json();
+      setSummaryShifts(data.shifts ?? []);
+    } catch { setSummaryShifts([]); }
+    finally { setSummaryLoading(false); }
+  }, [restaurantId, summaryMode, summaryMonth, summaryFrom, summaryTo, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (activeTab === "summary") loadSummaryShifts(); }, [activeTab, loadSummaryShifts]);
 
   // Load requests
   const loadRequests = useCallback(async () => {
@@ -941,20 +979,15 @@ export default function ShiftsClient({
 
   // ── Tab: Summary ───────────────────────────────────────────────────────────
   function SummaryTab() {
+    const srcShifts = summaryMode === "weekly" ? shifts : summaryShifts;
     const displayStaff = staff.length > 0 ? staff : Array.from(
-      new Map(shifts.map(s => [s.userId, { id: s.userId, name: s.userName }])).values()
+      new Map(srcShifts.map(s => [s.userId, { id: s.userId, name: s.userName }])).values()
     );
 
-    type MemberSummary = {
-      id: string;
-      name: string;
-      count: number;
-      hours: number;
-      byType: Record<string, number>;
-    };
+    type MemberSummary = { id: string; name: string; count: number; hours: number; byType: Record<string, number> };
 
     const summaries: MemberSummary[] = displayStaff.map(member => {
-      const memberShifts = shifts.filter(s => s.userId === member.id);
+      const memberShifts = srcShifts.filter(s => s.userId === member.id);
       let totalHours = 0;
       const byType: Record<string, number> = {};
       for (const sh of memberShifts) {
@@ -967,61 +1000,82 @@ export default function ShiftsClient({
 
     const grandTotal = summaries.reduce((a, s) => a + s.hours, 0);
 
-    if (summaries.length === 0) {
-      return <div style={{ textAlign: "center", padding: 60, color: GM, fontSize: 16 }}>אין נתונים לשבוע זה</div>;
-    }
+    const modeBtn = (mode: typeof summaryMode, label: string) => (
+      <button onClick={() => setSummaryMode(mode)} style={{
+        padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8,
+        background: summaryMode === mode ? "rgba(245,158,11,0.2)" : "transparent",
+        border: summaryMode === mode ? "1px solid rgba(245,158,11,0.45)" : `1px solid ${GB}`,
+        color: summaryMode === mode ? "#FBBF24" : GM, transition: "0.15s", fontFamily: "inherit",
+      }}>{label}</button>
+    );
 
     return (
       <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM, marginBottom: 12 }}>
-          סיכום שעות שבועי
+        {/* Controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+          {modeBtn("weekly",  "שבועי")}
+          {modeBtn("monthly", "חודשי")}
+          {modeBtn("range",   "טווח")}
+          {summaryMode === "monthly" && (
+            <input type="month" value={summaryMonth} onChange={e => setSummaryMonth(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }} />
+          )}
+          {summaryMode === "range" && (<>
+            <input type="date" value={summaryFrom} onChange={e => setSummaryFrom(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+            <span style={{ color: GM, fontSize: 12 }}>—</span>
+            <input type="date" value={summaryTo} onChange={e => setSummaryTo(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+          </>)}
+          {summaryLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
         </div>
-        <div>
+
+        {summaries.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 14 }}>אין נתונים לתקופה זו</div>
+        ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={{ fontSize: 12, fontWeight: 700, color: GM, textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
                 {Object.entries(SHIFT_CFG).map(([key, cfg]) => {
                   const gs = glassShift(cfg.color);
-                  return (
-                    <th key={key} style={{ fontSize: 12, fontWeight: 700, color: gs.text, textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{cfg.label}</th>
-                  );
+                  return <th key={key} style={{ fontSize: 11, fontWeight: 700, color: gs.text, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{cfg.label}</th>;
                 })}
-                <th style={{ fontSize: 12, fontWeight: 700, color: GM, textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>סה"כ שעות</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>סה"כ</th>
               </tr>
             </thead>
             <tbody>
               {summaries.map(s => (
-                <tr key={s.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <td style={{ padding: "12px 12px", fontSize: 14, color: "#fff", fontWeight: 700 }}>{s.name}</td>
+                <tr key={s.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700 }}>{s.name}</td>
                   {Object.keys(SHIFT_CFG).map(key => (
-                    <td key={key} style={{ padding: "12px 12px", fontSize: 14, color: "rgba(255,255,255,0.75)" }}>
+                    <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center" }}>
                       {s.byType[key] ? s.byType[key].toFixed(1) : "–"}
                     </td>
                   ))}
-                  <td style={{ padding: "12px 12px" }}>
-                    <span style={{ display: "inline-block", background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 8, padding: "3px 10px", fontWeight: 700, fontSize: 13 }}>
+                  <td style={{ padding: "5px 10px", textAlign: "center" }}>
+                    <span style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 6, padding: "2px 8px", fontWeight: 700, fontSize: 12 }}>
                       {s.hours.toFixed(1)} ש׳
                     </span>
                   </td>
                 </tr>
               ))}
-              <tr style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                <td style={{ padding: "12px 12px", fontSize: 14, color: "#fff", fontWeight: 800 }}>סה"כ</td>
+              <tr style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 800 }}>סה"כ</td>
                 {Object.keys(SHIFT_CFG).map(key => (
-                  <td key={key} style={{ padding: "12px 12px", fontSize: 14, color: GM }}>
+                  <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center" }}>
                     {summaries.reduce((a, s) => a + (s.byType[key] ?? 0), 0).toFixed(1)}
                   </td>
                 ))}
-                <td style={{ padding: "12px 12px" }}>
-                  <span style={{ display: "inline-block", background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 8, padding: "3px 10px", fontWeight: 800, fontSize: 15 }}>
+                <td style={{ padding: "5px 10px", textAlign: "center" }}>
+                  <span style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 6, padding: "2px 8px", fontWeight: 800, fontSize: 13 }}>
                     {grandTotal.toFixed(1)} ש׳
                   </span>
                 </td>
               </tr>
             </tbody>
           </table>
-        </div>
+        )}
       </div>
     );
   }
