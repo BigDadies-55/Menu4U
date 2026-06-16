@@ -247,19 +247,8 @@ export default function Sidebar({
   const userBtnRef     = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  /* ── Accordion groups — auto-open the group containing the active path ── */
+  /* ── Accordion groups — all closed by default ── */
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  useEffect(() => {
-    setOpenGroups(prev => {
-      const next = { ...prev };
-      for (const g of GROUPS) {
-        if (g.items.some(item => pathname === item.href || pathname.startsWith(item.href + "/"))) {
-          next[g.id] = true;
-        }
-      }
-      return next;
-    });
-  }, [pathname]);
 
   /* ── Search state ── */
   const [searchQuery,   setSearchQuery]   = useState("");
