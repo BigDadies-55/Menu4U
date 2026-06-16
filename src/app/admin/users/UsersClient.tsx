@@ -372,13 +372,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
             <colgroup>
-              <col style={{ width: 64 }} />    {/* avatar */}
-              <col style={{ width: "22%" }} /> {/* name+email */}
-              <col style={{ width: 150 }} />   {/* role */}
-              <col />                           {/* restaurants — takes remaining */}
-              <col style={{ width: 120 }} />   {/* status */}
-              <col style={{ width: 100 }} />   {/* id+date */}
-              <col style={{ width: 52 }} />    {/* 3-dot */}
+              <col style={{ width: 56 }} />    {/* avatar */}
+              <col style={{ width: "20%" }} /> {/* name+email */}
+              <col style={{ width: "20%" }} /> {/* role — same as name */}
+              <col style={{ width: "24%" }} /> {/* restaurants — slightly wider */}
+              <col style={{ width: 110 }} />   {/* status */}
+              <col style={{ width: 88 }} />    {/* id+date */}
+              <col style={{ width: 48 }} />    {/* 3-dot */}
             </colgroup>
             <tbody>
               {filtered.map(user => {
@@ -408,7 +408,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     </td>
 
                     {/* Name + email */}
-                    <td style={tdBase}>
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
                       <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3 }}>
                         {user.name ?? "—"}
                       </div>
@@ -418,14 +418,14 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     </td>
 
                     {/* Role badge */}
-                    <td style={{ ...tdBase, paddingRight: 24, paddingLeft: 24 }}>
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
                       <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "4px 12px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
                         {ROLE_LABELS[user.role] ?? user.role}
                       </span>
                     </td>
 
                     {/* Restaurants */}
-                    <td style={{ ...tdBase, paddingRight: 24, paddingLeft: 24 }}>
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                         {user.restaurantUsers.length === 0 ? (
                           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>ללא שיוך</span>
