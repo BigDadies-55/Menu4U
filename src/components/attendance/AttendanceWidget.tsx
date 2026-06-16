@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useModuleEnabled } from "@/hooks/useModuleEnabled";
 
 type AttRec = { id: string; type: string; timestamp: string };
@@ -80,10 +81,10 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
       </button>
 
       {/* ── Panel modal ── */}
-      {panelOpen && (
+      {panelOpen && createPortal(
         <div
           onClick={() => setPanelOpen(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -130,14 +131,15 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
               ביטול
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Note popup ── */}
-      {noteOpen && (
+      {noteOpen && createPortal(
         <div
           onClick={() => setNoteOpen(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -174,7 +176,8 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
