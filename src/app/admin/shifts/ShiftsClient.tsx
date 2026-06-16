@@ -1716,7 +1716,6 @@ export default function ShiftsClient({
     `}</style>
     <div style={{
       minHeight: "100vh",
-      background: BG_PAGE,
       color: "#fff",
       fontFamily: "'Heebo', sans-serif",
       direction: "rtl",
@@ -2004,9 +2003,9 @@ export default function ShiftsClient({
               {/* Period selector */}
               {emailPeriodType === "weekly" ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, background: "rgba(255,255,255,0.04)", border: `1px solid ${GB}`, borderRadius: 9, padding: "8px 12px" }}>
-                  <button onClick={() => setEmailWeekOffset(w => w - 1)} style={{ background: "none", border: "none", color: GM, cursor: "pointer", fontSize: 16, padding: "0 4px", fontFamily: "inherit" }}>‹</button>
+                  <button onClick={() => setEmailWeekOffset(w => w + 1)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${GB}`, color: "#fff", cursor: "pointer", fontSize: 18, padding: "2px 10px", borderRadius: 7, fontFamily: "inherit", lineHeight: 1 }}>→</button>
                   <span style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#fff", fontWeight: 600 }}>{weekLabel(getWeekDates(emailWeekOffset))}</span>
-                  <button onClick={() => setEmailWeekOffset(w => w + 1)} style={{ background: "none", border: "none", color: GM, cursor: "pointer", fontSize: 16, padding: "0 4px", fontFamily: "inherit" }}>›</button>
+                  <button onClick={() => setEmailWeekOffset(w => w - 1)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${GB}`, color: "#fff", cursor: "pointer", fontSize: 18, padding: "2px 10px", borderRadius: 7, fontFamily: "inherit", lineHeight: 1 }}>←</button>
                 </div>
               ) : (
                 <div style={{ marginBottom: 16 }}>
