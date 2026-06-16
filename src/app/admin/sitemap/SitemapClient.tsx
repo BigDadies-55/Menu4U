@@ -5,38 +5,39 @@ import { usePathname } from "next/navigation";
 
 const TREE = [
   {
-    label: "ניהול בתי עסק",
+    label: "ניהול עסק",
     icon: "🏪",
     color: "#F59E0B",
     href: "/admin/restaurants",
     children: [
-      { icon: "📋", label: "תפריטים", href: "/admin/menus", sub: "קטגוריות · פריטים · אלרגנים" },
-      { icon: "👥", label: "משתמשים", href: "/admin/users", sub: "תפקידים · הרשאות" },
+      { icon: "📋", label: "תפריטים", href: "/admin/menus",  sub: "קטגוריות · פריטים · אלרגנים" },
+      { icon: "👥", label: "משתמשים", href: "/admin/users",  sub: "תפקידים · הרשאות" },
     ],
   },
   {
-    label: "שירות ותפעול",
+    label: "ניהול ושירות",
     icon: "🧑‍🍳",
     color: "#60A5FA",
     href: "/admin/waiter",
     children: [
-      { icon: "🛒", label: "הזמנות",         href: "/admin/orders",       sub: "רשימה · סטטוס" },
-      { icon: "💰", label: "קאשייר",          href: "/admin/cashier",      sub: "תשלום · סגירה" },
-      { icon: "📅", label: "משמרות",          href: "/admin/shifts",       sub: "לוח שבועי" },
-      { icon: "🗺️", label: "רצפת שירות",     href: "/admin/floor",        sub: "שולחנות חיים" },
-      { icon: "📐", label: "פריסת שולחנות",  href: "/admin/table-layout", sub: "עורך Layout" },
-      { icon: "🕐", label: "ציר זמן",         href: "/admin/timeline",     sub: "Timeline" },
+      { icon: "🤵", label: "מלצר חכם",         href: "/admin/waiter",         sub: "הזמנות שולחן" },
+      { icon: "🛒", label: "הזמנות",            href: "/admin/orders",         sub: "רשימה · סטטוס" },
+      { icon: "💰", label: "קאשייר",            href: "/admin/cashier",        sub: "תשלום · סגירה" },
+      { icon: "📅", label: "ניהול משמרות",      href: "/admin/shifts",         sub: "לוח שבועי" },
+      { icon: "👨‍💼", label: "מנהל משמרת",       href: "/admin/shift-manager",  sub: "ניהול צוות" },
+      { icon: "📐", label: "פריסת שולחנות",    href: "/admin/layout-builder", sub: "עורך Layout" },
+      { icon: "🗺️", label: "מפת שולחנות חיה",  href: "/admin/live-floor",     sub: "Live Map" },
     ],
   },
   {
     label: "מטבח (KDS)",
     icon: "🍳",
     color: "#34D399",
-    href: "/admin/kds",
+    href: "/admin/kitchen-kanban",
     children: [
-      { icon: "📋", label: "Kanban",        href: "/admin/kds/kanban",  sub: "לפי סטטוס" },
-      { icon: "🎫", label: "Ticket Board",  href: "/admin/kds/tickets", sub: "כרטיסיות" },
-      { icon: "📺", label: "תצוגת שולחן",  href: "/admin/kds/table",   sub: "קלאסי" },
+      { icon: "📋", label: "Kanban",        href: "/admin/kitchen-kanban",  sub: "לפי סטטוס" },
+      { icon: "🎫", label: "Ticket Board",  href: "/admin/kitchen-tickets", sub: "כרטיסיות" },
+      { icon: "📺", label: "תצוגת שולחן",  href: "/admin/kitchen-table",   sub: "קלאסי" },
     ],
   },
   {
@@ -45,17 +46,19 @@ const TREE = [
     color: "#A78BFA",
     href: "/admin/loyalty",
     children: [
-      { icon: "📞", label: "CRM",             href: "/admin/crm",      sub: "קשרי לקוחות" },
+      { icon: "📞", label: "קשרי לקוחות (CRM)", href: "/admin/crm", sub: "קשרי לקוחות" },
     ],
   },
   {
     label: "AI ואנליטיקה",
     icon: "📈",
     color: "#FB7185",
-    href: "/admin/stats",
+    href: "/admin/orders/stats",
     children: [
-      { icon: "🤖", label: "תובנות AI",  href: "/admin/insights",  sub: "Insights" },
-      { icon: "💬", label: "עוזר אישי",  href: "/admin/assistant", sub: "AI Chat" },
+      { icon: "📊", label: "סטטיסטיקות", href: "/admin/orders/stats",   sub: "ביצועים" },
+      { icon: "🤖", label: "תובנות AI",   href: "/admin/insight-rules",  sub: "Insights" },
+      { icon: "💬", label: "עוזר אישי",   href: "/admin/assistant",      sub: "AI Chat" },
+      { icon: "🕐", label: "ציר זמן",     href: "/admin/table-timeline", sub: "Timeline" },
     ],
   },
   {
@@ -64,8 +67,9 @@ const TREE = [
     color: "#94A3B8",
     href: "/admin/settings",
     children: [
-      { icon: "📜", label: "לוגים",    href: "/admin/logs",    sub: "Audit Log" },
-      { icon: "🗺",  label: "מפת ניווט", href: "/admin/sitemap", sub: "Sitemap" },
+      { icon: "🔒", label: "אימות דו-שלבי", href: "/admin/2fa-setup", sub: "2FA" },
+      { icon: "📜", label: "לוגים",          href: "/admin/logs",      sub: "Audit Log" },
+      { icon: "🗺",  label: "מפת ניווט",     href: "/admin/sitemap",   sub: "Sitemap" },
     ],
   },
 ];
