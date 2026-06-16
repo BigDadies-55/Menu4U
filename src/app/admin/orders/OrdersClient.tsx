@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { T } from "@/lib/ui";
+import { AssistantWidget } from "@/components/admin/AssistantWidget";
 
 type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
 
@@ -1183,6 +1184,7 @@ export default function OrdersClient({
       {showDateFilter && (
         <div style={{ position: "fixed", inset: 0, zIndex: 10 }} onClick={() => setShowDateFilter(false)} />
       )}
+      <AssistantWidget page="orders" />
     </div>
   );
 }

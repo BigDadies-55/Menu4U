@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu4U - מלצר חכם 2 (מוקאפ)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-card: rgba(255, 255, 255, 0.08);
+            --glass-card-hover: rgba(255, 255, 255, 0.14);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text-main: #FFFFFF;
+            --text-muted: rgba(255, 255, 255, 0.6);
+
+            /* סטטוסים — ניצבע את מספר השולחן בלבד */
+            --color-free:          #10B981;
+            --color-occupied:      #EF4444;
+            --color-reserved:      #3B82F6;
+            --color-inactive:      rgba(255,255,255,0.25);
+            --color-bill:          #F97316;
+            --color-paid:          #34d399;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            background:
+                linear-gradient(rgba(12,12,18,0.78), rgba(12,12,18,0.78)),
+                url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px 10px;
+            gap: 10px;
+        }
+
+        /* ═══════════════════════════════════════════
+           NAV — סרגל עליון
+        ═══════════════════════════════════════════ */
+        .top-navbar {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 10px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-left  { display: flex; align-items: center; gap: 8px; }
+
+        /* לוגו — ימין קיצוני */
+        .app-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 19px;
+            font-weight: 900;
+            letter-spacing: -0.3px;
+            white-space: nowrap;
+        }
+        .app-logo .logo-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: linear-gradient(135deg, #D97706, #F59E0B);
+            box-shadow: 0 0 8px rgba(217,119,6,0.6);
+        }
+        .app-logo .m4u { color: #F59E0B; }
+
+        .logo-divider {
+            width: 1px; height: 28px;
+            background: var(--glass-border);
+            margin: 0 4px;
+        }
+
+        .restaurant-select {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 7px 12px;
+            border-radius: 10px;
+            font-family: 'Heebo';
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .waiter-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .waiter-name i { color: #93c5fd; }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-family: 'Heebo';
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.14); }
+        .nav-btn-icon { padding: 8px; }
+
+        .btn-insights {
+            background: linear-gradient(135deg, #8B5CF6, #6366F1);
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(139,92,246,0.35);
+        }
+        .btn-insights:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(139,92,246,0.45); }
+
+        .btn-exit { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.35); color: #fca5a5; }
+        .btn-exit:hover { background: rgba(239,68,68,0.28); }
+
+        .time-chip {
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--glass-border);
+            padding: 7px 13px;
+            border-radius: 10px;
+        }
+
+        .notif-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .notif-dot {
+            position: absolute;
+            top: 6px; left: 6px;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #F59E0B;
+            border: 1.5px solid #0f0f14;
+        }
+
+        /* ═══════════════════════════════════════════
+           CONTROLS ROW
+        ═══════════════════════════════════════════ */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: rgba(0,0,0,0.25);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+        .toggle-tab {
+            background: none; border: none;
+            color: var(--text-muted);
+            padding: 6px 16px;
+            font-family: 'Heebo'; font-size: 13px;
+            cursor: pointer; border-radius: 8px;
+            display: flex; align-items: center; gap: 6px;
+            transition: 0.2s;
+        }
+        .toggle-tab.active { background: rgba(255,255,255,0.14); color: white; font-weight: 700; }
+
+        .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .filter-pill:hover { background: rgba(255,255,255,0.09); color: white; }
+        .filter-pill.f-free   { border-color: rgba(16,185,129,0.5); color: #34d399; background: rgba(16,185,129,0.08); }
+        .filter-pill.f-occ    { border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+        .filter-pill.f-res    { border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+        .filter-pill.f-off    { color: rgba(255,255,255,0.35); }
+
+        /* ═══════════════════════════════════════════
+           TABLE GRID
+        ═══════════════════════════════════════════ */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+            gap: 18px;
+            flex: 1;
+            align-content: flex-start;
+        }
+
+        /* כרטיס שולחן — מספר מוגדל שצבעו = סטטוס */
+        .table-card {
+            background: var(--glass-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 16px 18px;
+            height: 130px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
+            overflow: hidden;
+        }
+        .table-card:hover {
+            transform: translateY(-4px);
+            background: var(--glass-card-hover);
+            border-color: rgba(255,255,255,0.25);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+        }
+        .table-card.inactive {
+            opacity: 0.42;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .table-label { font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 1px; }
+
+        /* ← זה השינוי המרכזי: צבע המספר = צבע הסטטוס */
+        .table-num {
+            font-size: 38px;
+            font-weight: 900;
+            line-height: 1;
+            /* נגדיר per-card ב CSS classes */
+        }
+        .num-free          { color: var(--color-free); text-shadow: 0 0 18px rgba(16,185,129,0.45); }
+        .num-occupied      { color: var(--color-occupied); text-shadow: 0 0 18px rgba(239,68,68,0.45); }
+        .num-reserved      { color: var(--color-reserved); text-shadow: 0 0 18px rgba(59,130,246,0.45); }
+        .num-inactive      { color: var(--color-inactive); }
+        .num-bill          { color: var(--color-bill); text-shadow: 0 0 18px rgba(249,115,22,0.45); }
+
+        .sitting-time { font-size: 11px; color: var(--text-muted); text-align: left; }
+        .sitting-time span { display: block; font-weight: 700; color: white; margin-top: 2px; font-size: 13px; }
+
+        .card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .seats-info { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+
+        /* עיגול סטטוס קטן — ללא פס צדדי */
+        .status-pill {
+            font-size: 11px; font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .sp-free     { background: rgba(16,185,129,0.14); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+        .sp-occupied { background: rgba(239,68,68,0.14);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .sp-reserved { background: rgba(59,130,246,0.14); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .sp-inactive { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .sp-bill     { background: rgba(249,115,22,0.14); color: #fdba74; border: 1px solid rgba(249,115,22,0.3); }
+
+        /* אינדיקטור הזמנה פעילה (פינת כרטיס) */
+        .order-dot {
+            position: absolute;
+            top: 12px; left: 12px;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .od-preparing { background: #93c5fd; box-shadow: 0 0 6px rgba(59,130,246,0.8); }
+        .od-ready     { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.8); }
+        .od-bill      { background: #fdba74; box-shadow: 0 0 6px rgba(249,115,22,0.8); }
+
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.4); }
+        }
+
+        /* ═══════════════════════════════════════════
+           BOTTOM BAR
+        ═══════════════════════════════════════════ */
+        .bottom-bar {
+            background: rgba(8,8,12,0.92);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 -8px 35px rgba(0,0,0,0.5);
+        }
+
+        .metrics { display: flex; gap: 10px; flex-wrap: wrap; }
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 6px 14px;
+            border-radius: 12px;
+        }
+        .metric .val { font-size: 18px; font-weight: 900; }
+        .metric .lbl { font-size: 11px; color: var(--text-muted); }
+
+        .btn-refresh {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 9px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .btn-refresh:hover { background: rgba(255,255,255,0.12); transform: rotate(30deg); }
+
+        /* ═══════════════════════════════════════════
+           INSIGHTS STRIP — פס תובנות צף
+        ═══════════════════════════════════════════ */
+        .insights-strip {
+            background: rgba(8,8,14,0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(139,92,246,0.25);
+            border-radius: 16px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .strip-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #a78bfa;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .strip-divider {
+            width: 1px; height: 22px;
+            background: rgba(139,92,246,0.3);
+            flex-shrink: 0;
+        }
+
+        /* גלגלת בועות */
+        .strip-track {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            height: 28px;
+        }
+
+        .strip-scroller {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            white-space: nowrap;
+            animation: scrollInsights 22s linear infinite;
+        }
+        .strip-scroller:hover { animation-play-state: paused; }
+
+        @keyframes scrollInsights {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .insight-bubble {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .insight-bubble:hover { filter: brightness(1.2); transform: scale(1.04); }
+
+        .ib-alert {
+            background: rgba(239,68,68,0.14);
+            border: 1px solid rgba(239,68,68,0.35);
+            color: #fca5a5;
+        }
+        .ib-warn {
+            background: rgba(249,115,22,0.14);
+            border: 1px solid rgba(249,115,22,0.35);
+            color: #fdba74;
+        }
+        .ib-tip {
+            background: rgba(139,92,246,0.14);
+            border: 1px solid rgba(139,92,246,0.35);
+            color: #c4b5fd;
+        }
+        .ib-info {
+            background: rgba(59,130,246,0.14);
+            border: 1px solid rgba(59,130,246,0.3);
+            color: #93c5fd;
+        }
+        .ib-ok {
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #6ee7b7;
+        }
+
+        .bubble-table {
+            font-weight: 900;
+            font-size: 11px;
+            background: rgba(255,255,255,0.12);
+            padding: 1px 6px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══ TOP NAV ═══════════════════════════════════════════════════ -->
+    <nav class="top-navbar">
+        <div class="nav-right">
+            <!-- לוגו — ימין קיצוני, מובחן -->
+            <div class="app-logo">
+                <div class="logo-dot"></div>
+                מלצר חכם <span class="m4u">Menu4U</span>
+            </div>
+            <div class="logo-divider"></div>
+            <!-- בחירת מסעדה -->
+            <select class="restaurant-select">
+                <option>מסעדה איטלקית</option>
+                <option>מסעדה מזרחית</option>
+            </select>
+        </div>
+
+        <div class="nav-left">
+            <!-- שם מלצר -->
+            <div class="waiter-name">
+                <i data-lucide="user-circle" size="15"></i>
+                Admin
+            </div>
+            <!-- תובנות -->
+            <button class="nav-btn btn-insights">
+                <i data-lucide="sparkles" size="14"></i> תובנות
+            </button>
+            <!-- פעמון -->
+            <button class="nav-btn nav-btn-icon notif-badge">
+                <i data-lucide="bell" size="14" style="color:#F59E0B"></i>
+                <span class="notif-dot"></span>
+            </button>
+            <!-- שעה -->
+            <div class="time-chip">11:37</div>
+            <!-- מסך מלא -->
+            <button class="nav-btn nav-btn-icon">
+                <i data-lucide="maximize" size="14"></i>
+            </button>
+            <!-- יציאה -->
+            <button class="nav-btn btn-exit">
+                <i data-lucide="log-out" size="14"></i> יציאה
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══ CONTROLS ══════════════════════════════════════════════════ -->
+    <div class="controls-row">
+        <div class="view-toggle">
+            <button class="toggle-tab active">
+                <i data-lucide="layout-grid" size="14"></i> כרטיסים
+            </button>
+            <button class="toggle-tab">
+                <i data-lucide="map" size="14"></i> לייאאוט
+            </button>
+        </div>
+        <div class="filter-group">
+            <button class="filter-pill f-free">פנוי (7)</button>
+            <button class="filter-pill f-occ">תפוס (1)</button>
+            <button class="filter-pill f-res">מוזמן (1)</button>
+            <button class="filter-pill">מבקש חשבון (1)</button>
+            <button class="filter-pill f-off">לא פעיל (2)</button>
+        </div>
+    </div>
+
+    <!-- ═══ TABLES GRID ════════════════════════════════════════════ -->
+    <main class="tables-grid">
+
+        <!-- פנוי — מספר ירוק -->
+        <div class="table-card">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-free">1</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 2 מקומות</div>
+                <span class="status-pill sp-free">פנוי</span>
+            </div>
+        </div>
+
+        <!-- פנוי -->
+        <div class="table-card">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-free">2</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 3 מקומות</div>
+                <span class="status-pill sp-free">פנוי</span>
+            </div>
+        </div>
+
+        <!-- לא פעיל — מספר אפור דהוי -->
+        <div class="table-card inactive">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-inactive">3</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 4 מקומות</div>
+                <span class="status-pill sp-inactive">לא פעיל</span>
+            </div>
+        </div>
+
+        <!-- תפוס — מספר אדום + אינדיקטור מכין -->
+        <div class="table-card">
+            <span class="order-dot od-preparing"></span>
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-occupied">4</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>00:42</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 4 מקומות</div>
+                <span class="status-pill sp-occupied">תפוס</span>
+            </div>
+        </div>
+
+        <!-- פנוי -->
+        <div class="table-card">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-free">5</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 4 מקומות</div>
+                <span class="status-pill sp-free">פנוי</span>
+            </div>
+        </div>
+
+        <!-- מוזמן — מספר כחול -->
+        <div class="table-card">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-reserved">6</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 4 מקומות</div>
+                <span class="status-pill sp-reserved">מוזמן</span>
+            </div>
+        </div>
+
+        <!-- פנוי -->
+        <div class="table-card">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-free">7</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 2 מקומות</div>
+                <span class="status-pill sp-free">פנוי</span>
+            </div>
+        </div>
+
+        <!-- מבקש חשבון — מספר כתום + אינדיקטור -->
+        <div class="table-card">
+            <span class="order-dot od-bill"></span>
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-bill">8</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>01:10</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 2 מקומות</div>
+                <span class="status-pill sp-bill">מבקש חשבון</span>
+            </div>
+        </div>
+
+        <!-- פנוי -->
+        <div class="table-card">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-free">9</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 2 מקומות</div>
+                <span class="status-pill sp-free">פנוי</span>
+            </div>
+        </div>
+
+        <!-- לא פעיל -->
+        <div class="table-card inactive">
+            <div class="card-top">
+                <div>
+                    <span class="table-label">שולחן</span>
+                    <span class="table-num num-inactive">10</span>
+                </div>
+                <div class="sitting-time">זמן ישיבה<span>--:--</span></div>
+            </div>
+            <div class="card-bottom">
+                <div class="seats-info"><i data-lucide="users" size="13"></i> 6 מקומות</div>
+                <span class="status-pill sp-inactive">לא פעיל</span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ═══ BOTTOM SECTION (insights + KPI) ════════════════════════ -->
+    <div style="display:flex; flex-direction:column; gap:1px; margin-top:auto;">
+    <!-- ═══ INSIGHTS STRIP ══════════════════════════════════════════ -->
+    <div class="insights-strip">
+        <div class="strip-label">
+            <i data-lucide="sparkles" size="13"></i> תובנות
+        </div>
+        <div class="strip-divider"></div>
+        <div class="strip-track">
+            <!-- הבועות מוכפלות כדי שהגלגלת תיראה רציפה -->
+            <div class="strip-scroller" id="scroller">
+
+                <span class="insight-bubble ib-alert">
+                    <span class="bubble-table">8</span>
+                    ⚠️ שולחן 8 מחכה לחשבון כ-10 דקות
+                </span>
+                <span class="insight-bubble ib-warn">
+                    <span class="bubble-table">4</span>
+                    🕐 שולחן 4 ישב 42 דקות — עדיין לא הוזמן קינוח
+                </span>
+                <span class="insight-bubble ib-tip">
+                    <span class="bubble-table">6</span>
+                    💡 שולחן 6 מוזמן בעוד 15 דקות — הכן
+                </span>
+                <span class="insight-bubble ib-info">
+                    <span class="bubble-table">4</span>
+                    🍽️ שולחן 4 — מנה עיקרית מוכנה למסירה
+                </span>
+                <span class="insight-bubble ib-ok">
+                    ✅ כל ההזמנות הפעילות בסדר
+                </span>
+                <span class="insight-bubble ib-tip">
+                    📈 שעת שיא עוד 30 דקות — 3 הזמנות ממתינות
+                </span>
+
+                <!-- שכפול לגלגלת חלקה -->
+                <span class="insight-bubble ib-alert">
+                    <span class="bubble-table">8</span>
+                    ⚠️ שולחן 8 מחכה לחשבון כ-10 דקות
+                </span>
+                <span class="insight-bubble ib-warn">
+                    <span class="bubble-table">4</span>
+                    🕐 שולחן 4 ישב 42 דקות — עדיין לא הוזמן קינוח
+                </span>
+                <span class="insight-bubble ib-tip">
+                    <span class="bubble-table">6</span>
+                    💡 שולחן 6 מוזמן בעוד 15 דקות — הכן
+                </span>
+                <span class="insight-bubble ib-info">
+                    <span class="bubble-table">4</span>
+                    🍽️ שולחן 4 — מנה עיקרית מוכנה למסירה
+                </span>
+                <span class="insight-bubble ib-ok">
+                    ✅ כל ההזמנות הפעילות בסדר
+                </span>
+                <span class="insight-bubble ib-tip">
+                    📈 שעת שיא עוד 30 דקות — 3 הזמנות ממתינות
+                </span>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ BOTTOM BAR ════════════════════════════════════════════════ -->
+    <footer class="bottom-bar">
+        <div class="metrics">
+            <div class="metric">
+                <span class="val" style="color:#3B82F6">1</span>
+                <span class="lbl">מוזמן</span>
+            </div>
+            <div class="metric">
+                <span class="val" style="color:#10B981">7</span>
+                <span class="lbl">פנוי</span>
+            </div>
+            <div class="metric">
+                <span class="val" style="color:#EF4444">1</span>
+                <span class="lbl">תפוס</span>
+            </div>
+            <div class="metric">
+                <span class="val" style="color:rgba(255,255,255,0.3)">2</span>
+                <span class="lbl">לא פעיל</span>
+            </div>
+            <div class="metric">
+                <span class="val">4</span>
+                <span class="lbl">סועדים</span>
+            </div>
+            <div class="metric">
+                <span class="val" style="color:#F97316">1</span>
+                <span class="lbl">דורשים תשומת לב</span>
+            </div>
+            <div class="metric">
+                <span class="val">00:42</span>
+                <span class="lbl">זמן ממוצע</span>
+            </div>
+            <div class="metric">
+                <span class="val">₪86</span>
+                <span class="lbl">עלות ממוצעת</span>
+            </div>
+        </div>
+        <button class="btn-refresh"><i data-lucide="refresh-cw" size="16"></i></button>
+    </footer>
+
+    </div><!-- end bottom section -->
+
+    <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Menu4U",
   description: "מערכת ניהול תפריטים ומסעדות",
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport = {
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -56,6 +61,9 @@ export default function RootLayout({
           --c-font-mono: ${T.fontMono};
         }
       `}</style>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));` }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

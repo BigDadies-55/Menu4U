@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { OrderPanel, CartItem, CartItemModifier } from "./OrderPanel";
 import type { OrderDetail, OrderItemDetail } from "./TableOverlay";
 import { ALLERGEN_LIST } from "@/lib/allergens";
+import { idbSet, idbGet } from "@/lib/waiter-db";
 
 type ModifierOption = { id: string; label: string; priceAdd: number };
 type ModifierGroup  = { id: string; name: string; required: boolean; maxSelect: number; options: ModifierOption[] };
@@ -69,7 +70,7 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
       });
   }, [restaurantId]);
 
-  // Load menu
+  // Load menu (with IDB fallback for offline)
   useEffect(() => {
     fetch(`/api/admin/waiter-pos/menu?restaurantId=${restaurantId}`)
       .then(async r => {
@@ -81,8 +82,20 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
         setCategories(cats);
         if (cats.length > 0) setActiveCat(cats[0].id);
         else setMenuError("אין קטגוריות פעילות בתפריט");
+        // Persist to IDB
+        idbSet("menu", restaurantId, cats).catch(() => {});
       })
-      .catch(e => setMenuError(String(e)))
+      .catch(async () => {
+        // Offline fallback
+        const cached = await idbGet<MenuCategory[]>("menu", restaurantId).catch(() => undefined);
+        if (cached?.length) {
+          setCategories(cached);
+          setActiveCat(cached[0].id);
+          setMenuError("");
+        } else {
+          setMenuError("אין חיבור לאינטרנט ואין תפריט שמור");
+        }
+      })
       .finally(() => setLoadingMenu(false));
   }, [restaurantId]);
 

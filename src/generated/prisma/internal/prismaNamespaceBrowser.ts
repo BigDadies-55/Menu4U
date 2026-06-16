@@ -79,7 +79,10 @@ export const ModelName = {
   LoyaltyTransaction: 'LoyaltyTransaction',
   LoyaltyCoupon: 'LoyaltyCoupon',
   WaiterStation: 'WaiterStation',
-  LoyaltySettings: 'LoyaltySettings'
+  LoyaltySettings: 'LoyaltySettings',
+  PushSubscription: 'PushSubscription',
+  Shift: 'Shift',
+  ShiftRequest: 'ShiftRequest'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -562,6 +565,52 @@ export const LoyaltySettingsScalarFieldEnum = {
 } as const
 
 export type LoyaltySettingsScalarFieldEnum = (typeof LoyaltySettingsScalarFieldEnum)[keyof typeof LoyaltySettingsScalarFieldEnum]
+
+
+export const PushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  events: 'events',
+  createdAt: 'createdAt'
+} as const
+
+export type PushSubscriptionScalarFieldEnum = (typeof PushSubscriptionScalarFieldEnum)[keyof typeof PushSubscriptionScalarFieldEnum]
+
+
+export const ShiftScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  userId: 'userId',
+  date: 'date',
+  shiftType: 'shiftType',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  role: 'role',
+  notes: 'notes',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ShiftScalarFieldEnum = (typeof ShiftScalarFieldEnum)[keyof typeof ShiftScalarFieldEnum]
+
+
+export const ShiftRequestScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  shiftId: 'shiftId',
+  fromUserId: 'fromUserId',
+  toUserId: 'toUserId',
+  type: 'type',
+  reason: 'reason',
+  status: 'status',
+  createdAt: 'createdAt'
+} as const
+
+export type ShiftRequestScalarFieldEnum = (typeof ShiftRequestScalarFieldEnum)[keyof typeof ShiftRequestScalarFieldEnum]
 
 
 export const SortOrder = {

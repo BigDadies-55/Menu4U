@@ -13,6 +13,27 @@ export async function generateMetadata(
   return { title: r?.name ?? "תפריט" };
 }
 
+function getOpenStatus(openingHours: string | null | undefined): { open: boolean; label: string } | null {
+  if (!openingHours) return null;
+  try {
+    const data = JSON.parse(openingHours);
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+    const days = ["sun","mon","tue","wed","thu","fri","sat"];
+    const todayKey = days[now.getDay()];
+    const todayIso = now.toISOString().slice(0, 10);
+    if (data.holidays?.some((h: { date: string }) => h.date === todayIso)) return { open: false, label: "סגור היום" };
+    const hours = data[todayKey];
+    if (!hours) return { open: false, label: "סגור היום" };
+    const [oh, om] = hours.open.split(":").map(Number);
+    const [ch, cm] = hours.close.split(":").map(Number);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (nowMins < oh * 60 + om) return { open: false, label: `נפתח ב-${hours.open}` };
+    if (nowMins >= ch * 60 + cm) return { open: false, label: `נסגר ב-${hours.close}` };
+    if (ch * 60 + cm - nowMins <= 30) return { open: true, label: `נסגר בעוד ${ch * 60 + cm - nowMins} דק׳` };
+    return { open: true, label: `פתוח עד ${hours.close}` };
+  } catch { return null; }
+}
+
 function isMenuScheduledNow(menu: {
   scheduleDays: string[];
   scheduleFrom: string | null;
@@ -32,6 +53,7 @@ function isMenuScheduledNow(menu: {
   return true;
 }
 
+
 export default async function PublicMenuPage(
   { params, searchParams }: {
     params: Promise<{ restaurantId: string }>;
@@ -44,6 +66,7 @@ export default async function PublicMenuPage(
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "openingHours" TEXT`);
   } catch { /* ignore */ }
 
   const restaurant = await prisma.restaurant.findUnique({
@@ -82,6 +105,8 @@ export default async function PublicMenuPage(
 
   if (!restaurant) notFound();
 
+  const openingHours = (restaurant as typeof restaurant & { openingHours?: string | null }).openingHours ?? null;
+
   // Subscription check
   const now = new Date();
   if (restaurant.subscriptionFrom && now < restaurant.subscriptionFrom) {
@@ -116,11 +141,14 @@ export default async function PublicMenuPage(
     menuTheme: effectiveTheme,
     menuPalette: effectivePalette,
     menuPaletteData: effectivePaletteData ?? null,
+    openingHours: (restaurant as typeof restaurant & { openingHours?: string | null }).openingHours ?? null,
   };
 
+  const openStatus = getOpenStatus(openingHours);
+
   if (effectiveTheme === "elegant") {
-    return <MenuElegantClient restaurant={restaurantData} tableNumber={sp.table || null} />;
+    return <MenuElegantClient restaurant={restaurantData} tableNumber={sp.table || null} openStatus={openStatus} />;
   }
 
-  return <MenuPublicClient restaurant={restaurantData} tableNumber={sp.table || null} />;
+  return <MenuPublicClient restaurant={restaurantData} tableNumber={sp.table || null} openStatus={openStatus} />;
 }

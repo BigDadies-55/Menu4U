@@ -20,6 +20,7 @@ const PAGE_MAP: Array<{ pattern: RegExp; name: string; group?: string }> = [
   { pattern: /^\/admin\/cashier/,         name: "קאשייר",          group: "שירות"  },
   { pattern: /^\/admin\/waiter-floor/,    name: "רצפת שירות",     group: "שירות"  },
   { pattern: /^\/admin\/shift-manager/,   name: "מנהל משמרת",     group: "שירות"  },
+  { pattern: /^\/admin\/shifts/,          name: "ניהול משמרות",   group: "שירות"  },
   { pattern: /^\/admin\/waiter/,          name: "הזמנת מלצר",     group: "שירות"  },
   { pattern: /^\/admin\/layout-builder/,  name: "פריסת שולחנות",  group: "שירות"  },
   { pattern: /^\/admin\/loyalty/,         name: "מועדון לקוחות",  group: "שירות"  },

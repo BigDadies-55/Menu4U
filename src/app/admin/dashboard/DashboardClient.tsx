@@ -2,6 +2,7 @@
 
 import { T } from "@/lib/ui";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { AssistantWidget } from "@/components/admin/AssistantWidget";
 
 type OrderItemModifier = { groupName: string; label: string; priceAdd: number };
 
@@ -482,6 +483,7 @@ export default function DashboardClient({
         </div>
         <div className="text-gray-600">{new Date().toLocaleTimeString("he-IL")}</div>
       </div>
+      <AssistantWidget page="dashboard" />
     </div>
   );
 }

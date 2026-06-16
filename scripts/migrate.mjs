@@ -162,6 +162,109 @@ const sqls = [
   `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "allergens" TEXT[] DEFAULT '{}';`,
   // manager PIN for void/comp
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "managerPin" TEXT;`,
+  // Push subscriptions
+  `CREATE TABLE IF NOT EXISTS "PushSubscription" (
+    "id"        TEXT NOT NULL,
+    "userId"    TEXT NOT NULL,
+    "endpoint"  TEXT NOT NULL,
+    "p256dh"    TEXT NOT NULL,
+    "auth"      TEXT NOT NULL,
+    "events"    TEXT[] NOT NULL DEFAULT ARRAY['ORDER_CREATED','COURSE_DONE','TABLE_PAYMENT','ITEM_VOID']::TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PushSubscription_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "PushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "PushSubscription_userId_endpoint_key" ON "PushSubscription"("userId","endpoint");`,
+  // Shifts
+  `CREATE TABLE IF NOT EXISTS "Shift" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "userId"       TEXT NOT NULL,
+    "date"         TEXT NOT NULL,
+    "shiftType"    TEXT NOT NULL,
+    "startTime"    TEXT NOT NULL,
+    "endTime"      TEXT NOT NULL,
+    "role"         TEXT,
+    "notes"        TEXT,
+    "status"       TEXT NOT NULL DEFAULT 'SCHEDULED',
+    "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Shift_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "Shift_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE,
+    CONSTRAINT "Shift_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+  );`,
+  `CREATE TABLE IF NOT EXISTS "ShiftRequest" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "shiftId"      TEXT NOT NULL,
+    "fromUserId"   TEXT NOT NULL,
+    "toUserId"     TEXT,
+    "type"         TEXT NOT NULL,
+    "reason"       TEXT,
+    "status"       TEXT NOT NULL DEFAULT 'PENDING',
+    "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ShiftRequest_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "ShiftRequest_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE,
+    CONSTRAINT "ShiftRequest_shiftId_fkey" FOREIGN KEY ("shiftId") REFERENCES "Shift"("id") ON DELETE CASCADE,
+    CONSTRAINT "ShiftRequest_fromUserId_fkey" FOREIGN KEY ("fromUserId") REFERENCES "User"("id") ON DELETE CASCADE,
+    CONSTRAINT "ShiftRequest_toUserId_fkey" FOREIGN KEY ("toUserId") REFERENCES "User"("id") ON DELETE SET NULL
+  );`,
+  `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "shiftConfig" TEXT;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;`,
+  `CREATE TABLE IF NOT EXISTS "ShiftSmsLog" (
+    "id"           TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "sentByUserId" TEXT,
+    "weekFrom"     TEXT NOT NULL,
+    "weekTo"       TEXT NOT NULL,
+    "recipientId"  TEXT,
+    "recipientName" TEXT,
+    "phone"        TEXT NOT NULL,
+    "message"      TEXT NOT NULL,
+    "status"       TEXT NOT NULL DEFAULT 'SENT',
+    "sentAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ShiftSmsLog_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "ShiftSmsLog_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE
+  );`,
+  `CREATE INDEX IF NOT EXISTS "ShiftSmsLog_restaurantId_sentAt_idx" ON "ShiftSmsLog"("restaurantId","sentAt" DESC);`,
+  `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "charCount" INTEGER;`,
+  `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "smsCount" INTEGER;`,
+  `ALTER TABLE "ShiftSmsLog" ADD COLUMN IF NOT EXISTS "restaurantName" TEXT;`,
+  // Assistant knowledge base
+  `CREATE TABLE IF NOT EXISTS "AssistantEntry" (
+    "id"        TEXT NOT NULL,
+    "page"      TEXT NOT NULL,
+    "question"  TEXT NOT NULL,
+    "answer"    TEXT NOT NULL,
+    "tags"      TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "score"     INTEGER NOT NULL DEFAULT 0,
+    "isDefault" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AssistantEntry_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE INDEX IF NOT EXISTS "AssistantEntry_page_idx" ON "AssistantEntry"("page");`,
+  `CREATE TABLE IF NOT EXISTS "AssistantFeedback" (
+    "id"         TEXT NOT NULL,
+    "entryId"    TEXT,
+    "page"       TEXT NOT NULL,
+    "question"   TEXT NOT NULL,
+    "answerId"   TEXT,
+    "rating"     INTEGER NOT NULL,
+    "createdAt"  TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AssistantFeedback_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE TABLE IF NOT EXISTS "AssistantUnanswered" (
+    "id"        TEXT NOT NULL,
+    "page"      TEXT NOT NULL,
+    "question"  TEXT NOT NULL,
+    "count"     INTEGER NOT NULL DEFAULT 1,
+    "resolved"  BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AssistantUnanswered_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE INDEX IF NOT EXISTS "AssistantUnanswered_resolved_idx" ON "AssistantUnanswered"("resolved","createdAt" DESC);`,
 ];
 
 async function run() {

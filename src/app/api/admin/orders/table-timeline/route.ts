@@ -20,6 +20,8 @@ export async function GET(req: Request) {
   const restaurantId = searchParams.get("restaurantId");
   const tableNumber  = searchParams.get("tableNumber") ?? undefined;
   const days         = Math.min(30, Math.max(1, parseInt(searchParams.get("days") ?? "7", 10)));
+  const fromParam    = searchParams.get("from");
+  const toParam      = searchParams.get("to");
 
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
 
@@ -30,17 +32,18 @@ export async function GET(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const since = new Date(Date.now() - days * 86_400_000);
+  const since = fromParam ? new Date(fromParam) : new Date(Date.now() - days * 86_400_000);
+  const until = toParam   ? new Date(toParam)   : undefined;
 
   // ── 1. Fetch table sessions (closed tables) ──
   const sessions = await prisma.tableSession.findMany({
     where: {
       restaurantId,
       ...(tableNumber ? { tableNumber } : {}),
-      closedAt: { gte: since },
+      closedAt: { gte: since, ...(until ? { lte: until } : {}) },
     },
     orderBy: { closedAt: "desc" },
-    take: 100,
+    take: 200,
   });
 
   // ── 2. Fetch orders in the same window ──
@@ -48,7 +51,7 @@ export async function GET(req: Request) {
     where: {
       restaurantId,
       ...(tableNumber ? { tableNumber } : {}),
-      createdAt: { gte: since },
+      createdAt: { gte: since, ...(until ? { lte: until } : {}) },
     },
     include: {
       items: {
@@ -270,6 +273,7 @@ export async function GET(req: Request) {
       cancellationRatePercent,
       busiestHour,
       topWaiters,
+      hourCounts,
     },
   });
 }

@@ -1,8 +1,9 @@
 "use client";
 import { T } from "@/lib/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar, { useFavorites } from "./Sidebar";
 import PageTitle from "./PageTitle";
+import PushNotificationToggle from "@/components/PushNotificationToggle";
 import type { Role } from "@/generated/prisma/client";
 
 interface Props {
@@ -30,6 +31,21 @@ export default function AdminShell({
   adminContentTextColor = T.text,
   children,
 }: Props) {
+  const [liveBg,    setLiveBg]    = useState(adminBg);
+  const [liveBgImg, setLiveBgImg] = useState(adminBgImage);
+
+  useEffect(() => {
+    fetch("/api/admin/site-config")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return;
+        // Only apply gradient values — plain hex defaults are handled server-side
+        if (d.adminBg?.includes("gradient")) setLiveBg(d.adminBg);
+        if (d.adminBgImage) setLiveBgImg(d.adminBgImage);
+      })
+      .catch(() => {});
+  }, []);
+
   const [favorites, toggleFavorite] = useFavorites();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pwForm,    setPwForm]    = useState({ current: "", next: "" });
@@ -68,9 +84,11 @@ export default function AdminShell({
     <div
       className="min-h-screen"
       style={{
-        background: adminBgImage
-          ? `url(${adminBgImage}) center/cover no-repeat fixed`
-          : adminBg,
+        background: liveBgImg
+          ? `url(${liveBgImg}) center/cover no-repeat fixed`
+          : (liveBg === "var(--c-bg)" || liveBg === "var(--c-panel)" || !liveBg)
+            ? `linear-gradient(rgba(0,0,0,0.72),rgba(0,0,0,0.72)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') center/cover no-repeat fixed`
+            : liveBg,
       }}
       dir="rtl"
     >
@@ -81,7 +99,7 @@ export default function AdminShell({
           adminPalette={adminPalette}
           siteLogo={siteLogo}
           siteName={siteName}
-          adminSidebarBg={adminSidebarBg}
+          adminSidebarBg={liveBg?.includes("gradient") && !adminSidebarBg ? "rgba(0,0,0,0.28)" : adminSidebarBg}
           adminSidebarAccent={adminSidebarAccent}
           adminSidebarTextColor={adminSidebarTextColor}
           favorites={favorites}
@@ -94,9 +112,16 @@ export default function AdminShell({
         style={{
           marginRight: isWaiter ? 0 : "var(--sidebar-w, 52px)",
           color: adminContentTextColor,
+          paddingLeft: 24,
+          paddingRight: 24,
         }}
       >
-        <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; } }`}</style>
+        <style>{`@media (max-width: 767px) { main { margin-right: 0 !important; padding-left: 12px !important; } }`}</style>
+
+        {/* Top action bar — push bell */}
+        <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", padding: "8px 18px 0", gap: 8 }}>
+          <PushNotificationToggle />
+        </div>
 
         <div className="flex-1">
           {children}

@@ -106,6 +106,32 @@ export async function POST(req: Request) {
     if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Check opening hours (raw SQL — column not in Prisma schema)
+  type OHRow = { openingHours: string | null };
+  const ohRows = await prisma.$queryRawUnsafe<OHRow[]>(
+    `SELECT "openingHours" FROM "Restaurant" WHERE id = $1`, restaurantId
+  ).catch(() => [] as OHRow[]);
+  const oh = ohRows[0]?.openingHours;
+  if (oh) {
+    try {
+      const data = JSON.parse(oh);
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+      const days = ["sun","mon","tue","wed","thu","fri","sat"];
+      const todayIso = now.toISOString().slice(0, 10);
+      const isHoliday = data.holidays?.some((h: { date: string }) => h.date === todayIso);
+      const hours = !isHoliday && data[days[now.getDay()]];
+      if (isHoliday || !hours) {
+        return NextResponse.json({ error: "המסעדה סגורה כרגע" }, { status: 422 });
+      }
+      const [oh2, om] = hours.open.split(":").map(Number);
+      const [ch, cm] = hours.close.split(":").map(Number);
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      if (nowMins < oh2 * 60 + om || nowMins >= ch * 60 + cm) {
+        return NextResponse.json({ error: "המסעדה סגורה כרגע" }, { status: 422 });
+      }
+    } catch { /* ignore parse errors */ }
+  }
+
   // Validate items
   type CartItem = { itemId: string; quantity: number; notes?: string; course?: number; modifiers?: { groupName: string; label: string; priceAdd: number }[] };
   const itemIds = items.map((i: CartItem) => i.itemId);
@@ -188,6 +214,23 @@ export async function POST(req: Request) {
         });
       }
     }
+  }
+
+  // Clear bill_requested / free override so table shows "occupied"
+  if (tableNumber) {
+    try {
+      const rows = await prisma.$queryRawUnsafe<Array<{ tableStatusOverridesJson: string | null }>>(
+        `SELECT "tableStatusOverridesJson" FROM "Restaurant" WHERE id = $1`, restaurantId
+      );
+      const overrides: Record<string, string> = JSON.parse(rows[0]?.tableStatusOverridesJson ?? "{}");
+      if (overrides[tableNumber] === "bill_requested" || overrides[tableNumber] === "free") {
+        delete overrides[tableNumber];
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Restaurant" SET "tableStatusOverridesJson" = $1 WHERE id = $2`,
+          JSON.stringify(overrides), restaurantId
+        );
+      }
+    } catch { /* ignore — non-critical */ }
   }
 
   await logAudit({

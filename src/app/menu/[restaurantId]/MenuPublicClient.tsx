@@ -207,9 +207,11 @@ function GuestRegistrationModal({
 export default function MenuPublicClient({
   restaurant,
   tableNumber,
+  openStatus,
 }: {
   restaurant: Restaurant;
   tableNumber?: string | null;
+  openStatus?: { open: boolean; label: string } | null;
 }) {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
@@ -735,6 +737,21 @@ export default function MenuPublicClient({
             >
               {restaurant.name}
             </div>
+
+            {/* Open/closed badge */}
+            {openStatus && (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                marginBottom: 12,
+                padding: "4px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+                background: openStatus.open ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+                border: `1px solid ${openStatus.open ? "rgba(16,185,129,0.45)" : "rgba(239,68,68,0.45)"}`,
+                color: openStatus.open ? "#34D399" : "#FCA5A5",
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: openStatus.open ? "#34D399" : "#FCA5A5", display: "inline-block" }} />
+                {openStatus.label}
+              </div>
+            )}
 
             {/* Ornament divider */}
             <div

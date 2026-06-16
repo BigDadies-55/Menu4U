@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Menu4U – Glass Template Mockup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent:  #D97706;
+      --accent2: #F59E0B;
+      --glow:    rgba(217,119,6,0.4);
+      --glass:   rgba(255,255,255,0.06);
+      --border:  rgba(255,255,255,0.14);
+      --muted:   rgba(255,255,255,0.5);
+      --sub:     rgba(255,255,255,0.7);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      background:
+        linear-gradient(rgba(0,0,0,0.68), rgba(0,0,0,0.68)),
+        url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070')
+        center/cover no-repeat fixed;
+      color: #fff;
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    /* ── Page title bar ── */
+    .page-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px 18px;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .page-title-right { display: flex; align-items: center; gap: 14px; }
+    .title-accent-bars { display: flex; flex-direction: column; gap: 5px; }
+    .title-accent-bars span:nth-child(1) {
+      display: block; width: 30px; height: 3px; border-radius: 2px;
+      background: linear-gradient(to right, transparent, var(--accent2));
+    }
+    .title-accent-bars span:nth-child(2) {
+      display: block; width: 20px; height: 3px; border-radius: 2px;
+      background: linear-gradient(to right, transparent, var(--accent));
+    }
+    .page-title-text h1 {
+      font-size: 26px; font-weight: 900; color: #fff;
+      letter-spacing: -0.3px; line-height: 1;
+    }
+    .page-title-text p {
+      font-size: 12px; color: var(--muted); margin-top: 3px;
+    }
+    .title-actions { display: flex; gap: 10px; align-items: center; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-family: 'Heebo', sans-serif;
+      font-size: 14px; font-weight: 700;
+      padding: 11px 22px; border-radius: 12px;
+      border: none; cursor: pointer;
+      box-shadow: 0 6px 18px var(--glow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 24px var(--glow); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.06);
+      color: var(--sub); font-family: 'Heebo', sans-serif;
+      font-size: 14px; font-weight: 600;
+      padding: 11px 18px; border-radius: 12px;
+      border: 1px solid var(--border); cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #fff; }
+
+    .btn-icon {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: background 0.2s;
+    }
+    .btn-icon:hover { background: rgba(255,255,255,0.12); }
+
+    /* ── Glass Panel ── */
+    .glass-panel {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    }
+
+    /* ── Search + filter bar ── */
+    .filter-bar {
+      display: flex; gap: 12px; align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-wrap: wrap;
+    }
+    .search-box {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 9px 14px;
+      flex: 1; min-width: 200px;
+    }
+    .search-box input {
+      background: transparent; border: none; outline: none;
+      color: #fff; font-family: 'Heebo', sans-serif;
+      font-size: 14px; width: 100%;
+    }
+    .search-box input::placeholder { color: var(--muted); }
+    .search-icon { color: var(--muted); font-size: 15px; }
+
+    .filter-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted); transition: all 0.2s;
+    }
+    .filter-pill.active {
+      background: rgba(217,119,6,0.18);
+      border-color: rgba(217,119,6,0.5);
+      color: var(--accent2);
+    }
+    .filter-pill:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 13px 18px;
+      font-size: 12px; font-weight: 700;
+      color: var(--muted); text-align: right;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td {
+      padding: 15px 18px;
+      font-size: 14px; color: #fff;
+    }
+    .td-muted { color: var(--muted); font-size: 13px; }
+
+    /* ── Status badges ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+    }
+    .badge-green  { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .badge-amber  { background: rgba(217,119,6,0.15);  color: #fbbf24; border: 1px solid rgba(217,119,6,0.3); }
+    .badge-red    { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+    .badge-blue   { background: rgba(59,130,246,0.15);  color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .badge-gray   { background: rgba(255,255,255,0.08); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Row actions — kebab menu ── */
+    .row-actions { display: flex; justify-content: flex-end; }
+    .kebab-btn {
+      width: 34px; height: 34px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); transition: background 0.15s;
+      color: var(--muted); font-size: 18px; letter-spacing: 1px;
+    }
+    .kebab-btn:hover, .kebab-btn.open {
+      background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.25);
+    }
+    /* dropdown rendered in a portal div, positioned via JS */
+    #kebab-portal {
+      position: fixed; z-index: 9999;
+      background: rgba(18,12,6,0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      min-width: 158px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+      display: none;
+    }
+    .drop-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px; font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.75); cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .drop-item:last-child { border-bottom: none; }
+    .drop-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+    .drop-item.danger:hover { background: rgba(248,113,113,0.12); color: #f87171; }
+    .drop-item svg { width: 15px; height: 15px; stroke-width: 2; opacity: 0.75; flex-shrink: 0; }
+
+    /* ── Avatar ── */
+    .avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .pagination-info { font-size: 13px; color: var(--muted); }
+    .page-btns { display: flex; gap: 6px; }
+    .page-btn {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); color: var(--muted);
+      transition: all 0.15s;
+    }
+    .page-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: transparent; color: #fff;
+      box-shadow: 0 4px 12px var(--glow);
+    }
+    .page-btn:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* ── Info cards row ── */
+    .info-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .info-card {
+      background: rgba(0,0,0,0.38);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 18px; padding: 18px 20px;
+      display: flex; align-items: center; gap: 14px;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .info-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.28); box-shadow: 0 12px 30px rgba(0,0,0,0.3); }
+    .info-icon {
+      width: 46px; height: 46px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0; flex-shrink: 0;
+    }
+    .info-icon svg { width: 22px; height: 22px; stroke-width: 2; }
+    .info-icon.amber { background: rgba(217,119,6,0.22); box-shadow: 0 0 18px rgba(217,119,6,0.18); }
+    .info-icon.amber svg { stroke: #F59E0B; }
+    .info-icon.green { background: rgba(16,185,129,0.20); box-shadow: 0 0 18px rgba(16,185,129,0.15); }
+    .info-icon.green svg { stroke: #34d399; }
+    .info-icon.blue  { background: rgba(59,130,246,0.20); box-shadow: 0 0 18px rgba(59,130,246,0.15); }
+    .info-icon.blue  svg { stroke: #60a5fa; }
+    .info-icon.red   { background: rgba(248,113,113,0.20); box-shadow: 0 0 18px rgba(248,113,113,0.15); }
+    .info-icon.red   svg { stroke: #f87171; }
+    .info-label { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+    .info-value { font-size: 22px; font-weight: 900; color: #fff; }
+    .info-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Modal example ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-card {
+      background: rgba(20,14,8,0.82);
+      backdrop-filter: blur(30px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      padding: 32px 36px;
+      width: 480px; max-width: 94vw;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.55);
+    }
+    .modal-title {
+      font-size: 20px; font-weight: 900; color: #fff;
+      margin-bottom: 6px;
+    }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .form-row { margin-bottom: 18px; }
+    .form-label { font-size: 13px; font-weight: 700; color: var(--sub); margin-bottom: 7px; display: block; }
+    .form-input {
+      width: 100%; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 16px; color: #fff;
+      font-family: 'Heebo', sans-serif; font-size: 14px; outline: none;
+    }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 14px var(--glow); }
+    .modal-footer { display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 14px; padding-right: 4px;
+    }
+
+    .layout { display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── PAGE TITLE BAR ── -->
+  <div class="page-title-bar">
+    <div class="page-title-right">
+      <div class="title-accent-bars">
+        <span></span><span></span>
+      </div>
+      <div class="page-title-text">
+        <h1>מסעדות</h1>
+        <p>ניהול · 6 מסעדות פעילות</p>
+      </div>
+    </div>
+    <div class="title-actions">
+      <button class="btn-icon" title="יצוא">⬇️</button>
+      <button class="btn-icon" title="רענן">🔄</button>
+      <button class="btn-ghost">📋 ייבוא CSV</button>
+      <button class="btn-primary">➕ מסעדה חדשה</button>
+    </div>
+  </div>
+
+  <!-- ── INFO CARDS ── -->
+  <div class="info-cards">
+    <div class="info-card">
+      <div class="info-icon amber">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div>
+        <div class="info-label">סה״כ מסעדות</div>
+        <div class="info-value">6</div>
+        <div class="info-sub">3 רשתות</div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-icon green">
+        <svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <div class="info-label">פעילות</div>
+        <div class="info-value">5</div>
+        <div class="info-sub">83% מהסה״כ</div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-icon blue">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div class="info-label">משתמשים</div>
+        <div class="info-value">24</div>
+        <div class="info-sub">ב-6 מסעדות</div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-icon red">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div>
+        <div class="info-label">לא פעילות</div>
+        <div class="info-value">1</div>
+        <div class="info-sub">ממתינה להפעלה</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN TABLE PANEL ── -->
+  <div class="glass-panel">
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="חיפוש מסעדה, כתובת, מנהל...">
+      </div>
+      <button class="filter-pill active">הכל</button>
+      <button class="filter-pill">פעילות</button>
+      <button class="filter-pill">לא פעילות</button>
+      <button class="filter-pill">🌐 רשת</button>
+      <div style="flex:1"></div>
+      <button class="btn-icon" style="font-size:14px">⚙️</button>
+    </div>
+
+    <!-- Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>מסעדה</th>
+          <th>מנהל</th>
+          <th>תפריטים</th>
+          <th>הזמנות היום</th>
+          <th>סטטוס</th>
+          <th style="text-align:left">פעולות</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="avatar" style="background:rgba(217,119,6,0.15)">🍕</div>
+              <div>
+                <div style="font-weight:700">פיצה רומא</div>
+                <div class="td-muted">תל אביב — דיזנגוף 42</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div>מוטי כהן</div>
+            <div class="td-muted">moti@pizza.co.il</div>
+          </td>
+          <td><span class="badge badge-blue">3 תפריטים</span></td>
+          <td><span style="font-weight:700;color:#34d399">₪3,290</span> <span class="td-muted">· 42 הזמ׳</span></td>
+          <td><span class="badge badge-green">● פעיל</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="kebab-btn" onclick="openKebab(event, this)">⋮</button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="avatar" style="background:rgba(59,130,246,0.12)">🍣</div>
+              <div>
+                <div style="font-weight:700">סושי בר</div>
+                <div class="td-muted">ירושלים — יפו 11</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div>דינה לוי</div>
+            <div class="td-muted">dina@sushi.co.il</div>
+          </td>
+          <td><span class="badge badge-blue">2 תפריטים</span></td>
+          <td><span style="font-weight:700;color:#34d399">₪1,840</span> <span class="td-muted">· 28 הזמ׳</span></td>
+          <td><span class="badge badge-green">● פעיל</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="kebab-btn" onclick="openKebab(event, this)">⋮</button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="avatar" style="background:rgba(16,185,129,0.12)">🥗</div>
+              <div>
+                <div style="font-weight:700">גרין בול</div>
+                <div class="td-muted">חיפה — הנמל 3</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div>אריק שמיר</div>
+            <div class="td-muted">arik@green.co.il</div>
+          </td>
+          <td><span class="badge badge-blue">1 תפריט</span></td>
+          <td><span style="font-weight:700;color:#fbbf24">₪640</span> <span class="td-muted">· 9 הזמ׳</span></td>
+          <td><span class="badge badge-amber">⏸ מושהה</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="kebab-btn" onclick="openKebab(event, this)">⋮</button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="avatar" style="background:rgba(248,113,113,0.12)">🍔</div>
+              <div>
+                <div style="font-weight:700">בורגר הארץ</div>
+                <div class="td-muted">רמת גן — ביאליק 18</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div>ליאת נחום</div>
+            <div class="td-muted">liat@burger.co.il</div>
+          </td>
+          <td><span class="badge badge-blue">2 תפריטים</span></td>
+          <td><span class="td-muted">—</span></td>
+          <td><span class="badge badge-red">✗ לא פעיל</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="kebab-btn" onclick="openKebab(event, this)">⋮</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-info">מציג 1–4 מתוך 6 מסעדות</div>
+      <div class="page-btns">
+        <button class="page-btn">›</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">‹</button>
+      </div>
+    </div>
+
+  </div><!-- /glass-panel -->
+
+  <!-- ── MODAL EXAMPLE ── -->
+  <div class="section-label" style="margin-top:8px">דוגמת מודל / טופס</div>
+  <div class="glass-panel" style="padding:0">
+    <div style="padding:28px 32px 32px">
+      <div class="modal-title">➕ מסעדה חדשה</div>
+      <div class="modal-sub">הוסף מסעדה חדשה למערכת</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-row">
+          <label class="form-label">שם המסעדה</label>
+          <input class="form-input" type="text" placeholder="לדוגמה: פיצה רומא">
+        </div>
+        <div class="form-row">
+          <label class="form-label">כתובת</label>
+          <input class="form-input" type="text" placeholder="רחוב, עיר">
+        </div>
+        <div class="form-row">
+          <label class="form-label">אימייל מנהל</label>
+          <input class="form-input" type="email" placeholder="manager@rest.co.il" style="direction:ltr">
+        </div>
+        <div class="form-row">
+          <label class="form-label">טלפון</label>
+          <input class="form-input" type="tel" placeholder="+972-50-..." style="direction:ltr">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary">💾 שמור מסעדה</button>
+        <button class="btn-ghost">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /layout -->
+
+  <!-- Kebab portal -->
+  <div id="kebab-portal">
+    <div class="drop-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2;opacity:.75;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      עריכה
+    </div>
+    <div class="drop-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2;opacity:.75;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      צפייה
+    </div>
+    <div class="drop-item danger">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2;opacity:.75;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      מחיקה
+    </div>
+  </div>
+
+  <script>
+    let activeBtn = null;
+    const portal = document.getElementById('kebab-portal');
+
+    function openKebab(e, btn) {
+      e.stopPropagation();
+      if (activeBtn === btn) { closeKebab(); return; }
+      closeKebab();
+      activeBtn = btn;
+      btn.classList.add('open');
+      const rect = btn.getBoundingClientRect();
+      portal.style.display = 'block';
+      // align left edge of dropdown with left edge of button (opens rightward)
+      const pw = portal.offsetWidth;
+      let left = rect.left;
+      let top  = rect.bottom + 6;
+      // keep inside viewport
+      if (left < 8) left = 8;
+      if (top + portal.offsetHeight > window.innerHeight - 8)
+        top = rect.top - portal.offsetHeight - 6;
+      portal.style.left = left + 'px';
+      portal.style.top  = top  + 'px';
+    }
+
+    function closeKebab() {
+      portal.style.display = 'none';
+      if (activeBtn) { activeBtn.classList.remove('open'); activeBtn = null; }
+    }
+
+    document.addEventListener('click', closeKebab);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeKebab(); });
+  </script>
+
+</body>
+</html>

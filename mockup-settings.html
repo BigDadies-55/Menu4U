@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu4U - Settings Mockup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.12);
+            --input-bg: rgba(255,255,255,0.04);
+            --accent: #D97706;
+            --accent-grad: linear-gradient(135deg, #D97706, #F59E0B);
+            --accent-glow: rgba(217,119,6,0.4);
+            --text: #ffffff;
+            --muted: rgba(255,255,255,0.55);
+            --sep: rgba(255,255,255,0.08);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(rgba(0,0,0,0.68), rgba(0,0,0,0.68)),
+                        url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') center/cover fixed;
+            color: var(--text);
+            padding: 40px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(30px) saturate(190%);
+            -webkit-backdrop-filter: blur(30px) saturate(190%);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--sep);
+            padding-bottom: 16px;
+            margin-bottom: 36px;
+        }
+        .tab {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-family: 'Heebo', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 9px 22px;
+            cursor: pointer;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s;
+            position: relative;
+        }
+        .tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+        .tab.active {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            box-shadow: inset 0 0 0 1px var(--glass-border);
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -17px; left: 10%; width: 80%; height: 3px;
+            background: var(--accent-grad);
+            border-radius: 10px;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        .form-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--sep);
+        }
+        .fields-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .fields-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+        .field { display: flex; flex-direction: column; gap: 8px; }
+        .field label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            letter-spacing: 0.3px;
+        }
+        .field label i { color: var(--accent); }
+        .field .sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
+        input.fi, select.fi {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            color: #fff;
+            font-family: 'Heebo', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.25s;
+        }
+        input.fi::placeholder { color: var(--muted); }
+        input.fi:hover, select.fi:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.25); }
+        input.fi:focus, select.fi:focus { background: rgba(0,0,0,0.2); border-color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+        select.fi option { background: #1a1a1a; color: #fff; }
+        .upload-zone {
+            border: 2px dashed var(--glass-border);
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            transition: all 0.25s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .upload-zone:hover { border-color: var(--accent); background: rgba(217,119,6,0.06); }
+        .upload-icon {
+            width: 42px; height: 42px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent);
+        }
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--sep);
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-info { display: flex; flex-direction: column; gap: 3px; }
+        .toggle-info span { font-size: 14px; font-weight: 600; color: var(--text); }
+        .toggle-info small { font-size: 11px; color: var(--muted); }
+        .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.12);
+            border-radius: 24px;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid var(--glass-border);
+        }
+        .slider::before {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            right: 3px; top: 2px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        input:checked + .slider { background: var(--accent-grad); border-color: var(--accent); }
+        input:checked + .slider::before { right: 23px; background: #fff; }
+        .footer {
+            border-top: 1px solid var(--sep);
+            padding-top: 28px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 12px;
+        }
+        .save-btn {
+            background: var(--accent-grad);
+            color: white;
+            border: none;
+            font-family: 'Heebo', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 13px 36px;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 9px;
+            box-shadow: 0 10px 25px var(--accent-glow);
+            transition: all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+        }
+        .save-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(217,119,6,0.6); }
+        .cancel-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--glass-border);
+            color: var(--muted);
+            font-family: 'Heebo', sans-serif;
+            font-size: 14px;
+            padding: 13px 24px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cancel-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <nav class="tabs">
+        <button class="tab active"><i data-lucide="sliders" size="16"></i> הגדרות</button>
+        <button class="tab"><i data-lucide="palette" size="16"></i> מראה</button>
+        <button class="tab"><i data-lucide="shield-check" size="16"></i> אבטחה</button>
+        <button class="tab"><i data-lucide="cpu" size="16"></i> מתקדם</button>
+    </nav>
+
+    <div class="form-panel">
+
+        <!-- 1. כללי -->
+        <div class="section-title"><i data-lucide="settings-2" size="13"></i> כללי</div>
+        <div class="fields-grid">
+            <div class="field">
+                <label><i data-lucide="pencil-line" size="15"></i> שם האתר</label>
+                <input class="fi" type="text" value="Menu4U">
+                <span class="sub">מוצג בסיידבר לצד הלוגו</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="globe" size="15"></i> דומיין ראשי</label>
+                <input class="fi" type="text" value="app.mysite.co.il">
+                <span class="sub">הדומיין הראשי של הפלטפורמה</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="copyright" size="15"></i> זכויות יוצרים</label>
+                <input class="fi" type="text" value="© Menu4U 2026 · כל הזכויות שמורות">
+                <span class="sub">מוצג בתחתית הפאנל ובדפי הלקוח</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="image" size="15"></i> לוגו האתר</label>
+                <div class="upload-zone">
+                    <div class="upload-icon"><i data-lucide="upload-cloud" size="20"></i></div>
+                    <span style="font-size:13px;font-weight:600">לחץ או גרור קובץ</span>
+                    <span class="sub">PNG/SVG שקוף, 200px+</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. יצירת קשר -->
+        <div class="section-title"><i data-lucide="contact" size="13"></i> יצירת קשר</div>
+        <div class="fields-grid three">
+            <div class="field">
+                <label><i data-lucide="mail" size="15"></i> אימייל יצירת קשר</label>
+                <input class="fi" type="email" placeholder="contact@mysite.co.il">
+                <span class="sub">מוצג לאורחים בדפי הלקוח</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="phone" size="15"></i> טלפון</label>
+                <input class="fi" type="tel" placeholder="03-0000000">
+                <span class="sub">מוצג בתפריט הלקוח</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="map-pin" size="15"></i> כתובת</label>
+                <input class="fi" type="text" placeholder="רחוב, עיר">
+                <span class="sub">לגוגל מאפס ודפי הלקוח</span>
+            </div>
+        </div>
+
+        <!-- 3. אזור ומטבע -->
+        <div class="section-title"><i data-lucide="globe-2" size="13"></i> אזור ומטבע</div>
+        <div class="fields-grid three">
+            <div class="field">
+                <label><i data-lucide="clock" size="15"></i> אזור זמן</label>
+                <select class="fi">
+                    <option selected>Asia/Jerusalem (UTC+3)</option>
+                    <option>Europe/London (UTC+0)</option>
+                    <option>America/New_York (UTC-5)</option>
+                </select>
+                <span class="sub">לחישוב שעות משמרות והזמנות</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="coins" size="15"></i> מטבע</label>
+                <select class="fi">
+                    <option selected>₪ שקל (ILS)</option>
+                    <option>$ דולר (USD)</option>
+                    <option>€ אירו (EUR)</option>
+                </select>
+                <span class="sub">מוצג בכל מחירי המערכת</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="languages" size="15"></i> שפת ממשק</label>
+                <select class="fi">
+                    <option selected>עברית</option>
+                    <option>English</option>
+                    <option>العربية</option>
+                </select>
+                <span class="sub">שפת פאנל הניהול</span>
+            </div>
+        </div>
+
+        <!-- 4. פרטיות ותנאים -->
+        <div class="section-title"><i data-lucide="shield" size="13"></i> פרטיות ותנאים</div>
+        <div class="fields-grid">
+            <div class="field">
+                <label><i data-lucide="lock" size="15"></i> קישור מדיניות פרטיות</label>
+                <input class="fi" type="url" placeholder="https://mysite.co.il/privacy">
+                <span class="sub">מוצג בדפי הלקוח ובטפסי ההרשמה</span>
+            </div>
+            <div class="field">
+                <label><i data-lucide="scroll-text" size="15"></i> קישור תנאי שימוש</label>
+                <input class="fi" type="url" placeholder="https://mysite.co.il/terms">
+                <span class="sub">מוצג בדפי הלקוח ובטפסי ההרשמה</span>
+            </div>
+        </div>
+
+        <!-- 5. פיצ'רים -->
+        <div class="section-title" style="margin-bottom:14px"><i data-lucide="toggle-right" size="13"></i> פיצ'רים פעילים</div>
+        <div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <span>הצג מדיניות פרטיות ללקוחות</span>
+                    <small>מציג כפתור "מדיניות פרטיות" בתפריט הלקוח</small>
+                </div>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <span>צבירת נקודות מועדון לקוחות</span>
+                    <small>מאפשר צבירת נקודות בכל הזמנה</small>
+                </div>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <span>הזמנות אונליין</span>
+                    <small>לקוחות יכולים להזמין ישירות מהתפריט</small>
+                </div>
+                <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <span>הצגת מחירים בתפריט</span>
+                    <small>כיבוי מסתיר מחירים — שימושי לתפריטי תצוגה</small>
+                </div>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <button class="save-btn"><i data-lucide="save" size="16"></i> שמור שינויים</button>
+        <button class="cancel-btn">ביטול</button>
+    </div>
+
+</div>
+<script>
+    lucide.createIcons();
+    document.querySelectorAll('.tab').forEach(t => {
+        t.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+        });
+    });
+</script>
+</body>
+</html>

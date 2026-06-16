@@ -1,442 +1,68 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React from "react";
 import { signOut } from "next-auth/react";
-import { TableOverlay, type OrderDetail } from "./TableOverlay";
+import { TableOverlay } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
-
-// ── Types ──────────────────────────────────────────────────────────────
-type Restaurant = { id: string; name: string };
-
-type TableData = {
-  tableNum: string;
-  seats: number;
-  availStatus: "free" | "occupied" | "reserved" | "inactive" | "bill_requested" | "paid";
-  sittingStart: string | null;
-  guests: number;
-  orderStatus: string | null;
-  minutesSitting: number;
-  activeOrderIds: string[];
-  totalAmount: number;
-  orderCount: number;
-  minutesSinceLastOrder: number;
-  readyItemCount?: number;
-  heldCourseNums?: number[];
-};
-
-type Notification = {
-  id: string;
-  tableNum: string;
-  type: "ready" | "held";
-  text: string;
-  at: number;
-  read: boolean;
-};
-
-type Insight = {
-  tableNum: string;
-  type: "alert" | "tip" | "info";
-  text: string;
-};
-
-type LayoutTable = {
-  num: number | string; name?: string; shape?: string;
-  x: number; y: number; w: number; h: number; seats?: number; rot?: number;
-};
-type LayoutRoom = { id: string; name: string; tables: LayoutTable[]; bgImg?: string; bgOpacity?: number };
-type LayoutV2 = { version: 2; rooms: LayoutRoom[] };
-
-// ── Color maps ───────────────────────────────────────────────────────
-const STATUS_BORDER: Record<string, string> = {
-  occupied: "#f87171", reserved: "#93c5fd", free: "#6ee7b7", inactive: "#d1d5db",
-  bill_requested: "#fb923c", paid: "#34d399",
-};
-const STATUS_LABEL: Record<string, string> = {
-  occupied: "תפוס", reserved: "מוזמן", free: "פנוי", inactive: "לא פעיל",
-  bill_requested: "מבקש חשבון", paid: "שולם",
-};
-const STATUS_BADGE_BG: Record<string, string> = {
-  occupied: "#fca5a5", reserved: "#bfdbfe", free: "#a7f3d0", inactive: "#e5e7eb",
-  bill_requested: "#fed7aa", paid: "#a7f3d0",
-};
-const STATUS_BADGE_TEXT: Record<string, string> = {
-  occupied: "#b91c1c", reserved: "#1d4ed8", free: "#065f46", inactive: "#6b7280",
-  bill_requested: "#c2410c", paid: "#065f46",
-};
-const ORDER_STATUS_HE: Record<string, string> = {
-  PENDING: "ממתין", CONFIRMED: "הזמנה נלקחה", PREPARING: "מכין",
-  READY: "מוכן!", DELIVERED: "הוגש", PAID: "שולם", CANCELLED: "בוטל",
-};
-const ORDER_STATUS_COLOR: Record<string, string> = {
-  PENDING: "#a7f3d0", CONFIRMED: "#fca5a5", PREPARING: "#bfdbfe",
-  READY: "#bfdbfe", DELIVERED: "#fde68a", PAID: "#e5e7eb", CANCELLED: "#e5e7eb",
-};
-const ORDER_STATUS_TEXT_COLOR: Record<string, string> = {
-  PENDING: "#065f46", CONFIRMED: "#b91c1c", PREPARING: "#1d4ed8",
-  READY: "#1d4ed8", DELIVERED: "#92400e", PAID: "#6b7280", CANCELLED: "#6b7280",
-};
-const INSIGHT_TYPE_COLOR: Record<string, string> = {
-  alert: "#ff4444", tip: "#fbbf24", info: "#22d3ee",
-};
-const INSIGHT_TYPE_DIM: Record<string, string> = {
-  alert: "#ff9999", tip: "#fde68a", info: "#a5f3fc",
-};
-
-function fmtTimer(sittingStart: string | null): string {
-  if (!sittingStart) return "00:00";
-  const s = Math.max(0, Math.floor((Date.now() - new Date(sittingStart).getTime()) / 1000));
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-}
-function fmtAgo(minutes: number): string {
-  if (minutes < 1) return "—";
-  if (minutes < 60) return `${minutes} דק'`;
-  return `${Math.floor(minutes / 60)}ש' ${minutes % 60}′`;
-}
-
-const LS_REST_KEY = "menu4u_active_restaurant";
+import Receipt from "./Receipt";
+import {
+  useWaiterPos,
+  type Restaurant,
+  type Insight,
+  STATUS_BORDER, STATUS_LABEL, STATUS_BADGE_BG, STATUS_BADGE_TEXT,
+  ORDER_STATUS_HE, ORDER_STATUS_COLOR, ORDER_STATUS_TEXT_COLOR,
+  INSIGHT_TYPE_COLOR, INSIGHT_TYPE_DIM,
+  fmtTimer, fmtAgo,
+} from "./useWaiterPos";
 
 // ── Main ─────────────────────────────────────────────────────────────
 export default function WaiterPosClient({ restaurants, waiterName, isWaiter = false, waiterId: _w }: {
   restaurants: Restaurant[]; waiterName: string; isWaiter?: boolean; waiterId?: string;
 }) {
-  const [restaurantId, setRestaurantId] = useState(() => {
-    if (typeof window !== "undefined") {
-      const s = localStorage.getItem(LS_REST_KEY);
-      if (s && restaurants.some(r => r.id === s)) return s;
-    }
-    return restaurants[0]?.id ?? "";
-  });
-
-  const [tables, setTables]           = useState<TableData[]>([]);
-  const [insights, setInsights]       = useState<Insight[]>([]);
-  const [loadingTables, setLoading]   = useState(true);
-  const [insightLoading, setILoading] = useState(false);
-  const [tick, setTick]               = useState(0);
-  const [insightIdx, setInsightIdx]   = useState(0);
-  const [insightFade, setInsightFade] = useState(true);
-  const [allInsightsOpen, setAllInsightsOpen] = useState(false);
-  const [tableOverlay, setTableOverlay]       = useState<string | null>(null);
-  const [toastMsg, setToastMsg]               = useState("");
-  const [clock, setClock]                     = useState("");
-  const [isMobile, setIsMobile]               = useState(false);
-  const [isFullscreen, setIsFullscreen]       = useState(false);
-  const [showFsBanner, setShowFsBanner]       = useState(false);
-  const [viewMode, setViewMode]               = useState<"grid" | "floor">("grid");
-  const [layout, setLayout]                   = useState<LayoutV2 | null>(null);
-  const [roomIdx, setRoomIdx]                 = useState(0);
-  const [refreshing, setRefreshing]           = useState(false);
-  const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
-  const [myTableNums, setMyTableNums]         = useState<Set<string> | null>(null); // null = no restriction
-  const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
-  const [notifications, setNotifications]     = useState<Notification[]>([]);
-  const [notifOpen, setNotifOpen]             = useState(false);
-  const prevReadyRef = useRef<Record<string, number>>({});
-  const prevHeldRef  = useRef<Record<string, string>>({});
-
-  // Order flow state
-  const [orderScreenData, setOrderScreenData] = useState<{
-    orderId: string | null;
-    tableNum: string;
-    allergens: string[];
-    guestCount: number;
-    existingOrder: OrderDetail | null;
-  } | null>(null);
-
-  const floorRef = useRef<HTMLDivElement>(null);
-  const [floorSize, setFloorSize] = useState({ w: 600, h: 400 });
-
-  useEffect(() => {
-    function check() { setIsMobile(window.innerWidth < 640); }
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  useEffect(() => {
-    function onFsChange() {
-      setIsFullscreen(!!document.fullscreenElement);
-      if (document.fullscreenElement) setShowFsBanner(false);
-    }
-    document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, []);
-
-  useEffect(() => {
-    if (!isWaiter) return;
-    const t = setTimeout(() => {
-      if (!document.fullscreenElement)
-        document.documentElement.requestFullscreen().catch(() => setShowFsBanner(true));
-    }, 300);
-    return () => clearTimeout(t);
-  }, [isWaiter]);
-
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
-    else document.exitFullscreen().catch(() => {});
-  }
-
-  useEffect(() => {
-    if (restaurantId) localStorage.setItem(LS_REST_KEY, restaurantId);
-  }, [restaurantId]);
-
-  // 1s ticker
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Clock
-  useEffect(() => {
-    function upd() {
-      const n = new Date();
-      setClock(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`);
-    }
-    upd(); const id = setInterval(upd, 1000); return () => clearInterval(id);
-  }, []);
-
-  // Floor container size
-  useEffect(() => {
-    if (!floorRef.current) return;
-    const obs = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect;
-      setFloorSize({ w: width, h: height });
-    });
-    obs.observe(floorRef.current);
-    return () => obs.disconnect();
-  }, [viewMode]);
-
-  // SSE — re-fetch on kitchen updates
-  useEffect(() => {
-    if (!restaurantId) return;
-    const es = new EventSource(`/api/admin/orders/stream?restaurantId=${restaurantId}`);
-    es.onmessage = () => fetchAll(true);
-    return () => es.close();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantId]);
-
-  // Track notifications from table data changes
-  useEffect(() => {
-    const newNotifs: Notification[] = [];
-    const now = Date.now();
-
-    for (const t of tables) {
-      const ready = t.readyItemCount ?? 0;
-      const prev  = prevReadyRef.current[t.tableNum] ?? 0;
-      if (ready > 0 && ready > prev) {
-        newNotifs.push({
-          id: `ready-${t.tableNum}-${now}`,
-          tableNum: t.tableNum,
-          type: "ready",
-          text: `שולחן ${t.tableNum}: ${ready} מנות מוכנות להגשה`,
-          at: now,
-          read: false,
-        });
-      }
-      prevReadyRef.current[t.tableNum] = ready;
-
-      const held = (t.heldCourseNums ?? []).join(",");
-      const prevHeld = prevHeldRef.current[t.tableNum] ?? "";
-      if (held && held !== prevHeld) {
-        const newCourses = (t.heldCourseNums ?? []).filter(c => !prevHeld.split(",").includes(String(c)));
-        for (const c of newCourses) {
-          newNotifs.push({
-            id: `held-${t.tableNum}-${c}-${now}`,
-            tableNum: t.tableNum,
-            type: "held",
-            text: `שולחן ${t.tableNum}: קורס ${c} ממתין לשחרור`,
-            at: now,
-            read: false,
-          });
-        }
-      }
-      prevHeldRef.current[t.tableNum] = held;
-    }
-
-    if (newNotifs.length > 0) {
-      setNotifications(prev => [...newNotifs, ...prev].slice(0, 50));
-    }
-  }, [tables]);
-
-  // Fetch layout
-  const fetchLayout = useCallback(async () => {
-    if (!restaurantId) return;
-    try {
-      const r = await fetch(`/api/admin/restaurants/${restaurantId}/layout`);
-      if (r.ok) {
-        const d = await r.json();
-        // API returns { tableLayoutJson: string }
-        const raw = d?.tableLayoutJson;
-        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-        setLayout(parsed?.version === 2 ? parsed : null);
-        setRoomIdx(0);
-      }
-    } catch { setLayout(null); }
-  }, [restaurantId]);
-
-  useEffect(() => { fetchLayout(); }, [fetchLayout]);
-
-  // Fetch my station assignment (which tables I'm responsible for)
-  useEffect(() => {
-    if (!restaurantId) return;
-    fetch(`/api/admin/waiter-stations?restaurantId=${restaurantId}&userId=me`)
-      .then(r => r.ok ? r.json() : null)
-      .then((stations: Array<{ tableNumbers: string[] }> | null) => {
-        if (!stations || stations.length === 0 || stations[0]?.tableNumbers?.length === 0) {
-          setMyTableNums(null); // manager or no assignment — see all
-        } else {
-          setMyTableNums(new Set(stations[0].tableNumbers));
-        }
-      })
-      .catch(() => setMyTableNums(null));
-  }, [restaurantId]);
-  const fetchAll = useCallback(async (quiet = false) => {
-    if (!restaurantId) return;
-    if (!quiet) setLoading(true);
-    try {
-      const r = await fetch(`/api/admin/waiter-pos/tables?restaurantId=${restaurantId}`);
-      if (r.ok) {
-        const data: TableData[] = await r.json();
-        setTables(data);
-        // Fetch insights right after with fresh table data
-        setILoading(true);
-        fetch("/api/admin/waiter-pos/insights", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ restaurantId, tables: data }),
-        }).then(ir => ir.ok ? ir.json() : { insights: [] })
-          .then(d => {
-            setInsights(Array.isArray(d.insights) ? d.insights : []);
-            setInsightIdx(0);
-          })
-          .finally(() => setILoading(false));
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [restaurantId]);
-
-  useEffect(() => {
-    fetchAll();
-    const id = setInterval(() => fetchAll(true), 15_000);
-    return () => clearInterval(id);
-  }, [fetchAll]);
-
-  // Manual refresh
-  async function manualRefresh() {
-    setRefreshing(true);
-    await fetchAll(true);
-    setRefreshing(false);
-  }
-
-  // Insight rotator every 10s
-  useEffect(() => {
-    if (insights.length <= 1) return;
-    const id = setInterval(() => {
-      setInsightFade(false);
-      setTimeout(() => { setInsightIdx(i => (i + 1) % insights.length); setInsightFade(true); }, 400);
-    }, 10_000);
-    return () => clearInterval(id);
-  }, [insights]);
-
-  function showToast(msg: string) { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); }
-
-  async function quickFireCourse(orderId: string, course: number, tableNum: string) {
-    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ course }),
-    });
-    showToast(`🔥 קורס ${course} שולחן ${tableNum} — יצא למטבח`);
-    fetchAll(true);
-  }
-
-  async function patchStatus(tableNum: string, status: "reserved" | "inactive" | "free" | "bill_requested") {
-    await fetch("/api/admin/waiter-pos/tables", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restaurantId, tableNum, status }),
-    });
-    setTableOverlay(null);
-    showToast(`שולחן ${tableNum} עודכן`);
-    fetchAll(true);
-  }
-
-  // ── KPIs
-  const occupiedCount = tables.filter(t => t.availStatus === "occupied").length;
-  const reservedCount = tables.filter(t => t.availStatus === "reserved").length;
-  const freeCount     = tables.filter(t => t.availStatus === "free").length;
-  const inactiveCount = tables.filter(t => t.availStatus === "inactive").length;
-  const totalDiners   = tables.filter(t => t.availStatus === "occupied").reduce((s, t) => s + t.guests, 0);
-  const alertsCount   = insights.filter(i => i.type === "alert").length;
-
-  const occupiedTables = tables.filter(t => t.availStatus === "occupied");
-  const avgSittingMin  = occupiedTables.length > 0 && occupiedTables.some(t => t.minutesSitting > 0)
-    ? Math.round(occupiedTables.filter(t => t.minutesSitting > 0).reduce((s, t) => s + t.minutesSitting, 0) /
-        occupiedTables.filter(t => t.minutesSitting > 0).length)
-    : 0;
-  const tablesWithCost = occupiedTables.filter(t => t.totalAmount > 0);
-  const avgCost        = tablesWithCost.length > 0
-    ? Math.round(tablesWithCost.reduce((s, t) => s + t.totalAmount, 0) / tablesWithCost.length)
-    : 0;
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const currentInsight = insights[insightIdx] ?? null;
-  const overlayTable   = tables.find(t => t.tableNum === tableOverlay) ?? null;
-  const overlayInsights = insights.filter(i => i.tableNum === tableOverlay);
-
-  // ── Status filter
-  const filteredTables = useMemo(() => {
-    let result = tables;
-    if (myTableNums !== null) result = result.filter(t => myTableNums.has(t.tableNum));
-    if (statusFilter.size > 0) result = result.filter(t => statusFilter.has(t.availStatus));
-    return result;
-  }, [tables, statusFilter, myTableNums]);
-
-  function toggleFilter(s: string) {
-    setStatusFilter(prev => {
-      const n = new Set(prev);
-      n.has(s) ? n.delete(s) : n.add(s);
-      return n;
-    });
-  }
-
-  // ── Floor map scale + rotation
-  const activeRoom = layout?.rooms[roomIdx];
-
-  const rotatedFloor = useMemo(() => {
-    if (!activeRoom?.tables.length) return { tables: [], maxX: 0, maxY: 0 };
-    const origMaxY = Math.max(...activeRoom.tables.map(t => t.y + t.h));
-    const origMaxX = Math.max(...activeRoom.tables.map(t => t.x + t.w));
-    if (layoutRotation === 0) {
-      return { tables: activeRoom.tables, maxX: origMaxX, maxY: origMaxY };
-    }
-    // 90° clockwise: x' = origMaxY - (y+h), y' = x, w' = h, h' = w
-    const rotated = activeRoom.tables.map(lt => ({
-      ...lt,
-      x: origMaxY - (lt.y + lt.h),
-      y: lt.x,
-      w: lt.h,
-      h: lt.w,
-    }));
-    const newMaxX = Math.max(...rotated.map(t => t.x + t.w));
-    const newMaxY = Math.max(...rotated.map(t => t.y + t.h));
-    return { tables: rotated, maxX: newMaxX, maxY: newMaxY };
-  }, [activeRoom, layoutRotation]);
-
-  const { floorScale, floorOffsetX, floorOffsetY } = useMemo(() => {
-    if (!rotatedFloor.maxX || !rotatedFloor.maxY || !floorSize.w || !floorSize.h)
-      return { floorScale: 1, floorOffsetX: 0, floorOffsetY: 0 };
-    const scale = Math.min(floorSize.w / rotatedFloor.maxX, floorSize.h / rotatedFloor.maxY);
-    // center the layout in the canvas
-    const offsetX = Math.max(0, (floorSize.w - rotatedFloor.maxX * scale) / 2);
-    const offsetY = Math.max(0, (floorSize.h - rotatedFloor.maxY * scale) / 2);
-    return { floorScale: scale, floorOffsetX: offsetX, floorOffsetY: offsetY };
-  }, [rotatedFloor, floorSize]);
-
-  void tick;
+  const {
+    restaurantId, setRestaurantId,
+    tables, insights,
+    loadingTables, insightLoading,
+    insightIdx, insightFade,
+    allInsightsOpen, setAllInsightsOpen,
+    tableOverlay, setTableOverlay,
+    toastMsg,
+    receiptData, setReceiptData,
+    clock, isMobile,
+    isFullscreen, showFsBanner, setShowFsBanner,
+    viewMode, setViewMode,
+    layout, roomIdx, setRoomIdx,
+    refreshing,
+    statusFilter, setStatusFilter,
+    myTableNums,
+    layoutRotation, setLayoutRotation,
+    notifications, setNotifications,
+    notifOpen, setNotifOpen,
+    isOffline, offlineSince, usingCachedData,
+    orderScreenData, setOrderScreenData,
+    floorRef,
+    showInstallBanner, setShowInstallBanner,
+    isIos, isStandalone,
+    occupiedCount, reservedCount, freeCount, inactiveCount,
+    totalDiners, alertsCount, avgSittingMin, avgCost,
+    unreadCount, currentInsight, overlayTable, overlayInsights,
+    filteredTables, rotatedFloor, floorScale, floorOffsetX, floorOffsetY,
+    fetchAll, manualRefresh,
+    showToast,
+    quickFireCourse, patchStatus,
+    toggleFilter, toggleFullscreen, triggerInstall,
+  } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
   return (
     <div dir="rtl" style={{
       ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
-      background: "#f0f2f5", color: "#111", fontFamily: "inherit",
+      background: (() => {
+        const bg = restaurants.find(r => r.id === restaurantId)?.waiterBg;
+        return bg
+          ? `linear-gradient(rgba(12,12,18,0.72),rgba(12,12,18,0.72)), url('${bg}') no-repeat center center / cover fixed`
+          : "#f0f2f5";
+      })(),
+      color: "#111", fontFamily: "inherit",
       overflowY: viewMode === "floor" ? "hidden" : "auto",
       paddingBottom: viewMode === "floor" ? 0 : 140,
       display: "flex", flexDirection: "column",
@@ -457,7 +83,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           }}>{waiterName}</span>
           {restaurants.length > 1 && (
             <select value={restaurantId}
-              onChange={e => { setRestaurantId(e.target.value); setTables([]); setInsights([]); }}
+              onChange={e => { setRestaurantId(e.target.value); }}
               style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #dde1e8", background: "#f5f5f7", color: "#333", fontSize: 12 }}>
               {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
@@ -522,6 +148,44 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           </button>
         </div>
       </div>
+
+      {/* Offline banner */}
+      {isOffline && (
+        <div style={{ background: "#7c3aed", color: "#fff", padding: "8px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0, fontSize: 13 }}>
+          <span>
+            📴 <strong>מצב offline</strong>
+            {usingCachedData && offlineSince
+              ? ` — מציג נתונים מ-${offlineSince.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}`
+              : " — ממתין לחיבור"}
+          </span>
+          <span style={{ fontSize: 12, opacity: 0.8 }}>יצירת הזמנות אינה זמינה</span>
+        </div>
+      )}
+
+      {/* PWA install banner */}
+      {showInstallBanner && !isStandalone && (
+        <div style={{ background: "#1a1612", color: "#fff", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0, direction: "rtl" }}>
+          {isIos ? (
+            <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+              📲 להתקנה: לחץ <strong>שתף</strong> <span style={{ fontSize: 16 }}>⎋</span> ← <strong>הוסף למסך הבית</strong>
+            </span>
+          ) : (
+            <span style={{ fontSize: 13, fontWeight: 600 }}>📲 התקן כאפליקציה למסך הבית</span>
+          )}
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {!isIos && (
+              <button onClick={triggerInstall}
+                style={{ background: "#d4a840", border: "none", borderRadius: 8, color: "#1a1208", fontSize: 13, fontWeight: 800, padding: "7px 16px", cursor: "pointer", fontFamily: "inherit" }}>
+                התקן
+              </button>
+            )}
+            <button onClick={() => setShowInstallBanner(false)}
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, color: "rgba(255,255,255,0.7)", fontSize: 13, padding: "7px 12px", cursor: "pointer", fontFamily: "inherit" }}>
+              לא עכשיו
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen banner */}
       {showFsBanner && (
@@ -682,7 +346,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     </div>
                   </div>
 
-                  {/* Status row — no dot, no HR */}
+                  {/* Status row */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 10px 6px" }}>
                     <span style={{
                       background: statusBadgeBg, color: statusBadgeFg,
@@ -692,8 +356,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                       {t.availStatus === "occupied" && t.minutesSitting > 0 ? fmtAgo(t.minutesSitting) : "—"}
                     </div>
                   </div>
-
-
 
                   {/* 🔥 Fire course quick button */}
                   {(t.heldCourseNums ?? []).length > 0 && t.activeOrderIds.length > 0 && (
@@ -729,7 +391,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     </div>
                   )}
 
-                  {/* AI row — only if there are insights for this table */}
+                  {/* AI row */}
                   {tableInsights.length > 0 && (
                     <div style={{ padding: "4px 10px 7px", borderTop: "1px solid #f0f2f5" }}>
                       <button
@@ -766,13 +428,13 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               const tNum      = String(lt.num);
               const tData     = tables.find(t => t.tableNum === tNum);
               const status    = tData?.availStatus ?? "free";
-              // apply status filter
               if (statusFilter.size > 0 && !statusFilter.has(status)) return null;
-              const color     = STATUS_BORDER[status];
+              const isMyTable = myTableNums === null || myTableNums.has(tNum);
+              const color     = isMyTable ? (STATUS_BORDER[status] ?? "#9ca3af") : "#c8cdd6";
               const isRound   = lt.shape === "round" || lt.shape === "oval";
-              const tInsights = insights.filter(i => i.tableNum === tNum);
+              const tInsights = isMyTable ? insights.filter(i => i.tableNum === tNum) : [];
               const topIns    = tInsights[0];
-              const isWarn    = status === "occupied" && (tData?.minutesSitting ?? 0) > 20;
+              const isWarn    = isMyTable && status === "occupied" && (tData?.minutesSitting ?? 0) > 20;
 
               const W = lt.w * floorScale;
               const H = lt.h * floorScale;
@@ -782,24 +444,28 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               const showInfo  = W > 58 && H > 52;
               const showBadge = W > 68 && H > 64;
 
-              const statusBadgeBg   = ORDER_STATUS_COLOR[tData?.orderStatus ?? ""] ?? STATUS_BADGE_BG[status];
-              const statusBadgeFg   = tData?.orderStatus ? (ORDER_STATUS_TEXT_COLOR[tData.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[status] ?? "#374151");
-              const statusBadgeText = status === "occupied"
-                ? (ORDER_STATUS_HE[tData?.orderStatus ?? ""] ?? STATUS_LABEL[status])
+              const statusBadgeBg   = isMyTable ? (ORDER_STATUS_COLOR[tData?.orderStatus ?? ""] ?? STATUS_BADGE_BG[status]) : "#e5e7eb";
+              const statusBadgeFg   = isMyTable ? (tData?.orderStatus ? (ORDER_STATUS_TEXT_COLOR[tData.orderStatus] ?? "#374151") : (STATUS_BADGE_TEXT[status] ?? "#374151")) : "#9ca3af";
+              const statusBadgeText = isMyTable
+                ? (status === "occupied" ? (ORDER_STATUS_HE[tData?.orderStatus ?? ""] ?? STATUS_LABEL[status]) : STATUS_LABEL[status])
                 : STATUS_LABEL[status];
 
               return (
-                <div key={`${lt.num}-${layoutRotation}`} onClick={() => setTableOverlay(tNum)}
+                <div key={`${lt.num}-${layoutRotation}`}
+                  onClick={() => isMyTable && setTableOverlay(tNum)}
                   style={{
                     position: "absolute",
                     left: lt.x * floorScale + floorOffsetX,
                     top:  lt.y * floorScale + floorOffsetY,
                     width: W, height: H,
                     borderRadius: isRound ? "50%" : lt.shape === "banquet" ? 12 : 6,
-                    background: status === "occupied" ? color + "18" : color + "12",
+                    background: isMyTable
+                      ? (status === "occupied" ? color + "18" : color + "12")
+                      : "#f0f1f3",
                     border: `2.5px solid ${color}`,
+                    opacity: isMyTable ? 1 : 0.45,
                     animation: tInsights.length > 0 ? "insightPulse 2.5s ease-in-out infinite" : undefined,
-                    cursor: "pointer",
+                    cursor: isMyTable ? "pointer" : "not-allowed",
                     display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center",
                     padding: "3px 4px",
@@ -808,13 +474,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     boxSizing: "border-box",
                     transition: "box-shadow 0.12s",
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 18px ${color}55`}
+                  onMouseEnter={e => isMyTable && ((e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 18px ${color}55`)}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = ""}
                 >
-                  {/* Table number */}
                   <span style={{ fontSize: numFs, fontWeight: 800, color: "#111", lineHeight: 1 }}>{tNum}</span>
-
-                  {/* Timer + guests */}
                   {showInfo && status === "occupied" && tData && (
                     <span style={{ fontSize: infoFs, fontWeight: 500, color: isWarn ? "#ef4444" : "#555", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
                       {fmtTimer(tData.sittingStart)}
@@ -828,8 +491,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                       {lt.seats ?? tData?.seats ?? ""}מק'
                     </span>
                   )}
-
-                  {/* Status / order badge */}
                   {showBadge && (
                     <span style={{
                       background: statusBadgeBg, color: statusBadgeFg,
@@ -840,8 +501,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                       {statusBadgeText}
                     </span>
                   )}
-
-                  {/* Insight icon */}
                   {topIns && (
                     <span style={{ fontSize: Math.max(9, infoFs), lineHeight: 1 }}>
                       {topIns.type === "alert" ? "⚠️" : topIns.type === "tip" ? "💡" : "ℹ️"}
@@ -933,16 +592,38 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           isMobile={isMobile}
           freeTables={tables.filter(t => t.availStatus === "free").map(t => t.tableNum)}
           restaurantId={restaurantId}
+          restaurantName={restaurants.find(r => r.id === restaurantId)?.name ?? "המסעדה"}
+          waiterName={waiterName}
           onClose={() => setTableOverlay(null)}
           onAddItems={(order) => {
+            if (isOffline) { showToast("📴 לא ניתן לערוך הזמנה במצב offline"); return; }
             setOrderScreenData({ orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });
             setTableOverlay(null);
           }}
           onNewOrder={(guestCount, allergens) => {
+            if (isOffline) { showToast("📴 לא ניתן ליצור הזמנה במצב offline"); return; }
             setOrderScreenData({ orderId: null, tableNum: overlayTable.tableNum, allergens, guestCount, existingOrder: null });
             setTableOverlay(null);
           }}
           onStatusChange={(status) => patchStatus(overlayTable.tableNum, status)}
+          onRequestBill={(order) => setReceiptData({
+            order,
+            tableNum: overlayTable.tableNum,
+            restaurantName: restaurants.find(r => r.id === restaurantId)?.name ?? "המסעדה",
+            waiterName,
+          })}
+        />
+      )}
+
+      {/* ══ RECEIPT PREVIEW ══ */}
+      {receiptData && (
+        <Receipt
+          order={receiptData.order}
+          tableNum={receiptData.tableNum}
+          restaurantName={receiptData.restaurantName}
+          waiterName={receiptData.waiterName}
+          autoPrint={false}
+          onClose={() => setReceiptData(null)}
         />
       )}
 
@@ -975,7 +656,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           <div style={{ flex: Math.max(inactiveCount, 0.01),   background: "#e5e7eb", transition: "flex 0.4s" }} />
         </div>
 
-        {/* Insight ticker — black, on top */}
+        {/* Insight ticker */}
         <div style={{
           background: "#0d0d0d",
           padding: isMobile ? "6px 12px" : "8px 20px",
@@ -1015,7 +696,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           )}
         </div>
 
-        {/* KPI row — below insights */}
+        {/* KPI row */}
         <div style={{
           display: "flex", alignItems: "center", gap: isMobile ? 4 : 8,
           padding: isMobile ? "6px 10px" : "8px 16px",
@@ -1030,7 +711,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           <KpiCard label="דורשים תשומת לב" value={alertsCount} color="#f59e0b" bg="#fffbeb" small={isMobile} />
           <KpiCard label="זמן ממוצע"   value={avgSittingMin > 0 ? fmtAgo(avgSittingMin) : "—"} color="#6366f1" bg="#eef2ff" small={isMobile} />
           <KpiCard label="עלות ממוצעת" value={avgCost > 0 ? `₪${avgCost}` : "—"}             color="#059669" bg="#ecfdf5" small={isMobile} />
-          {/* Refresh — far left (last in RTL row) */}
           <button onClick={manualRefresh} title="רענן נתונים" style={{
             marginRight: "auto",
             background: "#f5f5f7", border: "1px solid #dde1e8",
@@ -1051,8 +731,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes insightPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
-          50%       { box-shadow: 0 0 0 8px rgba(124,58,237,0.35); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+          50%       { box-shadow: 0 0 0 7px rgba(251,191,36,0.4); }
         }
       `}</style>
 

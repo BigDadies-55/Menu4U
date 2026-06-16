@@ -79,6 +79,8 @@ export async function GET(req: Request) {
       updatedAt: true,
       coversCount: true,
       totalAmount: true,
+      tableAllergens: true,
+      loyaltyMemberId: true,
       items: { select: { itemStatus: true, voidedAt: true, course: true, heldUntilFired: true, firedAt: true } },
     },
     orderBy: { createdAt: "asc" },
@@ -140,6 +142,24 @@ export async function GET(req: Request) {
       ? Math.floor((now - new Date(latestAny.updatedAt).getTime()) / 60000)
       : 0;
 
+    const billRequested = availStatus === "bill_requested";
+    const billAtStr = overrides[`${tableNum}_bill_at`];
+    const minutesSinceBillRequested = billRequested && billAtStr
+      ? Math.floor((now - new Date(billAtStr).getTime()) / 60000)
+      : 0;
+
+    const hasAllergen = activeOrders.some(o =>
+      Array.isArray((o as { tableAllergens?: string[] }).tableAllergens) &&
+      (o as { tableAllergens?: string[] }).tableAllergens!.length > 0
+    );
+    const isLoyaltyMember = activeOrders.some(o =>
+      !!(o as { loyaltyMemberId?: string | null }).loyaltyMemberId
+    );
+    const voidsCount = activeOrders.reduce((sum, o) =>
+      sum + o.items.filter(i => i.voidedAt !== null && i.voidedAt !== undefined).length, 0
+    );
+    const spendPerSeat = guests > 0 ? totalAmount / guests : 0;
+
     return {
       tableNum,
       seats: t.seats,
@@ -152,6 +172,12 @@ export async function GET(req: Request) {
       totalAmount,
       orderCount,
       minutesSinceLastOrder,
+      billRequested,
+      minutesSinceBillRequested,
+      hasAllergen,
+      isLoyaltyMember,
+      voidsCount,
+      spendPerSeat,
       readyItemCount: activeOrders.reduce((sum, o) =>
         sum + o.items.filter(i => i.itemStatus === "DONE" && !i.voidedAt).length, 0),
       heldCourseNums: Array.from(new Set(
@@ -198,8 +224,14 @@ export async function PATCH(req: Request) {
 
   if (status === "free") {
     delete overrides[tableNum];
+    delete overrides[`${tableNum}_bill_at`];
   } else {
     overrides[tableNum] = status;
+    if (status === "bill_requested") {
+      overrides[`${tableNum}_bill_at`] = new Date().toISOString();
+    } else {
+      delete overrides[`${tableNum}_bill_at`];
+    }
   }
 
   await prisma.$executeRawUnsafe(

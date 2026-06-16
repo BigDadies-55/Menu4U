@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מוקאפ — ניהול משתמשים</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Rubik', sans-serif; background: #f4f6f9; color: #1a1a2e; min-height: 100vh; padding: 32px; }
+
+  /* ── Page header ── */
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .page-title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .btn-add {
+    background: #f97316; color: #fff; border: none; border-radius: 10px;
+    padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; font-family: 'Rubik', sans-serif;
+  }
+  .btn-add:hover { background: #ea6c0a; }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; gap: 12px;
+  }
+  .filter-tabs { display: flex; gap: 8px; align-items: center; }
+  .tab {
+    padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none; background: transparent; color: #6b7280;
+    font-family: 'Rubik', sans-serif; transition: all 0.15s;
+  }
+  .tab:hover { background: #f0f0f0; }
+  .tab.active { background: #f97316; color: #fff; font-weight: 600; }
+  .tab-secondary.active { background: #4f46e5; color: #fff; }
+  .tab-secondary-2.active { background: #10b981; color: #fff; }
+  .tab-secondary-3.active { background: #ef4444; color: #fff; }
+
+  .filter-right { display: flex; gap: 10px; align-items: center; }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 9px 36px 9px 14px; font-size: 14px; width: 220px; outline: none;
+    color: #374151; font-family: 'Rubik', sans-serif; transition: border 0.15s;
+  }
+  .search-wrap input:focus { border-color: #4f46e5; }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 14px; }
+  .btn-sort {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 9px 16px; font-size: 14px; color: #374151; cursor: pointer;
+    font-family: 'Rubik', sans-serif; display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ── Table card ── */
+  .table-card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #f9fafb; border-bottom: 1px solid #f0f0f0; }
+  thead th {
+    padding: 14px 18px; font-size: 13px; font-weight: 600; color: #6b7280;
+    text-align: right; white-space: nowrap;
+  }
+  thead th:first-child { width: 44px; }
+
+  tbody tr { border-bottom: 1px solid #f4f5f7; transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafbff; }
+  td { padding: 10px 18px; font-size: 12px; color: #6b7280; vertical-align: middle; }
+
+  /* checkbox */
+  .cb { width: 17px; height: 17px; accent-color: #4f46e5; cursor: pointer; }
+
+  /* user id */
+  .uid { font-size: 12px; color: #9ca3af; font-weight: 500; }
+
+  /* date */
+  .date-cell { font-size: 12px; color: #6b7280; white-space: nowrap; }
+
+  /* avatar + name */
+  .user-cell { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 10px; display: flex;
+    align-items: center; justify-content: center; font-size: 13px;
+    font-weight: 700; color: #6b7280; flex-shrink: 0;
+    background: #f0f2f5; border: 1px solid #e5e7eb; border-radius: 50%;
+  }
+  .user-name { font-weight: 600; font-size: 14px; color: #1a1a2e; }
+  .user-email { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+
+  /* role badge */
+  .role-badge {
+    display: inline-flex; align-items: center; padding: 3px 8px;
+    border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .role-super  { background: rgba(255,107,107,0.12); color: #c92a2a; }
+  .role-admin  { background: rgba(51,154,240,0.12);  color: #1971c2; }
+  .role-owner  { background: rgba(252,196,25,0.14);  color: #b07d00; }
+  .role-shift  { background: rgba(255,146,43,0.12);  color: #e8590c; }
+  .role-editor { background: rgba(190,75,219,0.12);  color: #6741d9; }
+  .role-waiter { background: rgba(81,207,102,0.12);  color: #2f9e44; }
+  .role-viewer { background: rgba(108,117,125,0.12); color: #6b7280; }
+  .role-display{ background: rgba(34,184,207,0.12);  color: #0c8599; }
+
+  /* restaurants */
+  .rest-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+  .rest-pill {
+    background: #f0f2f5; color: #6b7280; border-radius: 6px;
+    padding: 2px 8px; font-size: 12px; font-weight: 500;
+  }
+
+  /* phone */
+  .phone-cell { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #6b7280; white-space: nowrap; }
+  .phone-icon { font-size: 12px; }
+
+  /* status */
+  .status-badge {
+    display: inline-flex; align-items: center;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+  }
+  .s-verified   { color: #10b981; }
+  .s-pending    { color: #9ca3af; }
+  .s-mustchange { color: #b07d00; }
+  .s-inactive   { color: #9ca3af; }
+
+  /* actions menu */
+  .menu-btn {
+    background: none; border: none; cursor: pointer; color: #9ca3af;
+    font-size: 18px; padding: 4px 8px; border-radius: 6px; transition: all 0.12s;
+  }
+  .menu-btn:hover { background: #f4f5f7; color: #374151; }
+
+  /* pagination */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px; border-top: 1px solid #f0f0f0; background: #fff;
+    border-radius: 0 0 16px 16px;
+  }
+  .pagination-info { font-size: 13px; color: #9ca3af; }
+  .pagination-btns { display: flex; gap: 6px; }
+  .page-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
+    background: #fff; cursor: pointer; font-size: 13px; color: #374151;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rubik', sans-serif;
+  }
+  .page-btn.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .page-btn:hover:not(.active) { background: #f4f5f7; }
+
+  /* notice bar */
+  .notice {
+    background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px;
+    padding: 10px 16px; margin-bottom: 16px; font-size: 13px; color: #4338ca;
+    display: flex; align-items: center; gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Page header -->
+<div class="page-header">
+  <div class="page-title">👥 ניהול משתמשים</div>
+  <button class="btn-add">＋ הוסף משתמש</button>
+</div>
+
+<!-- Notice -->
+<div class="notice">
+  ℹ️ מוקאפ ויזואלי בלבד — ללא פונקציונליות. לאישור העיצוב לפני פיתוח.
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <div class="filter-tabs">
+    <button class="tab active">כל הסטטוסים</button>
+    <button class="tab tab-secondary">ADMIN</button>
+    <button class="tab tab-secondary-2">WAITER</button>
+    <button class="tab tab-secondary-3">ממתין לאימות</button>
+  </div>
+  <div class="filter-right">
+    <div class="search-wrap">
+      <input type="text" placeholder="חיפוש לפי שם / מייל…" />
+      <span class="search-icon">🔍</span>
+    </div>
+    <button class="btn-sort">מיון: חדש קודם ▾</button>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th><input type="checkbox" class="cb"></th>
+        <th>מזהה</th>
+        <th>תאריך הצטרפות</th>
+        <th>משתמש</th>
+        <th>תפקיד</th>
+        <th>מסעדות</th>
+        <th>טלפון</th>
+        <th>סטטוס</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- Row 1 -->
+      <tr>
+        <td><input type="checkbox" class="cb"></td>
+        <td><span class="uid">#000001</span></td>
+        <td><span class="date-cell">21 נוב 2024 09:21</span></td>
+        <td>
+          <div class="user-cell">
+            <div class="avatar">יל</div>
+            <div>
+              <div class="user-name">ירון לוי</div>
+              <div class="user-email">yaron@example.com</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge role-super">SUPER ADMIN</span></td>
+        <td><span class="date-cell" style="color:#9ca3af">— כולן —</span></td>
+        <td><span class="phone-cell">050-123-4567</span></td>
+        <td><span class="status-badge s-verified">מאומת ✓</span></td>
+        <td><button class="menu-btn">⋮</button></td>
+      </tr>
+
+      <!-- Row 2 -->
+      <tr>
+        <td><input type="checkbox" class="cb"></td>
+        <td><span class="uid">#000002</span></td>
+        <td><span class="date-cell">15 ינו 2025 14:03</span></td>
+        <td>
+          <div class="user-cell">
+            <div class="avatar">שכ</div>
+            <div>
+              <div class="user-name">שרה כהן</div>
+              <div class="user-email">sara@bubbles.co.il</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge role-admin">ADMIN</span></td>
+        <td>
+          <div class="rest-pills">
+            <span class="rest-pill">Bubbles Studios</span>
+            <span class="rest-pill">Kelon Team</span>
+          </div>
+        </td>
+        <td><span class="phone-cell">052-987-6543</span></td>
+        <td><span class="status-badge s-verified">מאומת ✓</span></td>
+        <td><button class="menu-btn">⋮</button></td>
+      </tr>
+
+      <!-- Row 3 -->
+      <tr>
+        <td><input type="checkbox" class="cb"></td>
+        <td><span class="uid">#000003</span></td>
+        <td><span class="date-cell">03 מרץ 2025 11:45</span></td>
+        <td>
+          <div class="user-cell">
+            <div class="avatar">מנ</div>
+            <div>
+              <div class="user-name">משה נחמן</div>
+              <div class="user-email">moshe@kripton.co.il</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge role-shift">SHIFT MANAGER</span></td>
+        <td>
+          <div class="rest-pills">
+            <span class="rest-pill">Kripton Inc.</span>
+          </div>
+        </td>
+        <td><span class="phone-cell">054-321-0987</span></td>
+        <td><span class="status-badge s-mustchange">נדרש שינוי סיסמא</span></td>
+        <td><button class="menu-btn">⋮</button></td>
+      </tr>
+
+      <!-- Row 4 -->
+      <tr>
+        <td><input type="checkbox" class="cb"></td>
+        <td><span class="uid">#000004</span></td>
+        <td><span class="date-cell">07 אפר 2025 08:30</span></td>
+        <td>
+          <div class="user-cell">
+            <div class="avatar">רב</div>
+            <div>
+              <div class="user-name">רחל בן-דוד</div>
+              <div class="user-email">rachel@bubbles.co.il</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge role-waiter">WAITER</span></td>
+        <td>
+          <div class="rest-pills">
+            <span class="rest-pill">Bubbles Studios</span>
+          </div>
+        </td>
+        <td><span class="phone-cell">055-654-3210</span></td>
+        <td><span class="status-badge s-verified">מאומת ✓</span></td>
+        <td><button class="menu-btn">⋮</button></td>
+      </tr>
+
+      <!-- Row 5 -->
+      <tr>
+        <td><input type="checkbox" class="cb"></td>
+        <td><span class="uid">#000005</span></td>
+        <td><span class="date-cell">12 מאי 2025 17:22</span></td>
+        <td>
+          <div class="user-cell">
+            <div class="avatar">אמ</div>
+            <div>
+              <div class="user-name">אורן מלכה</div>
+              <div class="user-email">oren@kelon.co.il</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge role-editor">EDITOR</span></td>
+        <td>
+          <div class="rest-pills">
+            <span class="rest-pill">Kelon Team</span>
+          </div>
+        </td>
+        <td><span class="phone-cell" style="color:#d1d5db">— אין —</span></td>
+        <td><span class="status-badge s-pending">ממתין לאימות</span></td>
+        <td><button class="menu-btn">⋮</button></td>
+      </tr>
+
+      <!-- Row 6 -->
+      <tr>
+        <td><input type="checkbox" class="cb"></td>
+        <td><span class="uid">#000006</span></td>
+        <td><span class="date-cell">01 יוני 2025 09:10</span></td>
+        <td>
+          <div class="user-cell">
+            <div class="avatar">דצ</div>
+            <div>
+              <div class="user-name">דנה צור</div>
+              <div class="user-email">dana@kripton.co.il</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge role-viewer">VIEWER</span></td>
+        <td>
+          <div class="rest-pills">
+            <span class="rest-pill">Kripton Inc.</span>
+            <span class="rest-pill">Bubbles Studios</span>
+            <span class="rest-pill">Kelon Team</span>
+          </div>
+        </td>
+        <td><span class="phone-cell">053-111-2222</span></td>
+        <td><span class="status-badge s-inactive">לא פעיל</span></td>
+        <td><button class="menu-btn">⋮</button></td>
+      </tr>
+
+      <!-- Row 7 -->
+      <tr>
+        <td><input type="checkbox" class="cb"></td>
+        <td><span class="uid">#000007</span></td>
+        <td><span class="date-cell">10 יוני 2025 13:55</span></td>
+        <td>
+          <div class="user-cell">
+            <div class="avatar">נר</div>
+            <div>
+              <div class="user-name">נועם ריבקין</div>
+              <div class="user-email">noam@bubbles.co.il</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge role-owner">OWNER</span></td>
+        <td>
+          <div class="rest-pills">
+            <span class="rest-pill">Bubbles Studios</span>
+          </div>
+        </td>
+        <td><span class="phone-cell">056-333-4444</span></td>
+        <td><span class="status-badge s-verified">מאומת ✓</span></td>
+        <td><button class="menu-btn">⋮</button></td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <span class="pagination-info">מציג 1–7 מתוך 7 משתמשים</span>
+    <div class="pagination-btns">
+      <button class="page-btn">‹</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">›</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

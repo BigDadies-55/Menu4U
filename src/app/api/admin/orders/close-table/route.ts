@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { logAudit, getIp } from "@/lib/audit";
 import { getGroupId, scopeWhere } from "@/lib/loyalty-scope";
+import { notifyRestaurant } from "@/lib/push";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -157,6 +158,13 @@ export async function POST(req: Request) {
     entityName: `שולחן ${tableNumber ?? "ללא שולחן"} · ₪${totalAmount.toFixed(0)} · ${openOrders.length} הזמנות`,
     meta: { tableNumber, restaurantId, orderIds: openOrders.map(o => o.id), totalAmount, tipAmount, payMethod },
     ip: getIp(req),
+  });
+
+  notifyRestaurant(restaurantId, "TABLE_PAYMENT", {
+    title: "💳 שולחן שולם",
+    body: `שולחן ${tableNumber ?? "—"} · ₪${totalAmount.toFixed(0)}`,
+    url: "/admin/orders",
+    tag: `payment-${restaurantId}-${tableNumber}`,
   });
 
   return NextResponse.json({ closed: openOrders.length, totalAmount });

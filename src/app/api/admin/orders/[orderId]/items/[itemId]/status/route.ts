@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sseNotify } from "@/lib/sse";
+import { notifyRestaurant } from "@/lib/push";
 import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
@@ -187,5 +188,15 @@ export async function PATCH(
   }
 
   sseNotify(order.restaurantId);
+
+  if (nextItemStatus === "DONE") {
+    notifyRestaurant(order.restaurantId, "COURSE_DONE", {
+      title: "✅ פריט מוכן להגשה",
+      body: `${orderItem.item.name} ×${orderItem.quantity} — שולחן ${order.tableNumber ?? "—"}`,
+      url: "/admin/waiter-pos",
+      tag: `done-${itemId}`,
+    });
+  }
+
   return NextResponse.json({ itemStatus: nextItemStatus, orderReady: allDone });
 }

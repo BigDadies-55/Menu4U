@@ -15,6 +15,8 @@ export default async function RestaurantsPage() {
   // Apply pending migrations so new columns exist before querying
   await Promise.allSettled([
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "splashImage" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBg" TEXT`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterBgOpacity" DOUBLE PRECISION`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "instagram" TEXT`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "facebook" TEXT`),
@@ -23,6 +25,7 @@ export default async function RestaurantsPage() {
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "googleReview" TEXT`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "showPhonePublic" BOOLEAN NOT NULL DEFAULT true`),
     prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "showAddressPublic" BOOLEAN NOT NULL DEFAULT true`),
+    prisma.$executeRawUnsafe(`ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "waiterScreen" INTEGER`),
   ]);
 
   const rows = await prisma.restaurant.findMany({
@@ -57,18 +60,32 @@ export default async function RestaurantsPage() {
       googleReview: true,
       showPhonePublic: true,
       showAddressPublic: true,
+      groupId: true,
       createdAt: true,
       _count: { select: { menus: true, orders: true, restaurantUsers: true } },
     },
   });
 
+  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null; waiterScreen: number | null; openingHours: string | null }>>(
+    `SELECT id, "waiterBg", "waiterBgOpacity", "waiterScreen", "openingHours" FROM "Restaurant"`
+  ).catch(() => [] as Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null; waiterScreen: number | null; openingHours: string | null }>);
+  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, { waiterBg: r.waiterBg, waiterBgOpacity: r.waiterBgOpacity, waiterScreen: r.waiterScreen, openingHours: r.openingHours }]));
+
   // Convert Date fields to ISO strings for client component serialization
   const restaurants = rows.map(r => ({
     ...r,
+    waiterBg: bgMap[r.id]?.waiterBg ?? null,
+    waiterBgOpacity: bgMap[r.id]?.waiterBgOpacity ?? null,
+    waiterScreen: bgMap[r.id]?.waiterScreen ?? null,
+    openingHours: bgMap[r.id]?.openingHours ?? null,
     createdAt: r.createdAt.toISOString(),
     subscriptionFrom: r.subscriptionFrom ? r.subscriptionFrom.toISOString() : null,
     subscriptionTo: r.subscriptionTo ? r.subscriptionTo.toISOString() : null,
   }));
 
-  return <RestaurantsClient restaurants={restaurants} />;
+  const groupRows = await prisma.$queryRawUnsafe<Array<{ id: string; name: string; description: string | null; logo: string | null }>>(
+    `SELECT id, name, NULL::text AS description, logo FROM "RestaurantGroup" ORDER BY name`
+  ).catch(() => [] as Array<{ id: string; name: string; description: string | null; logo: string | null }>);
+
+  return <RestaurantsClient restaurants={restaurants} groups={groupRows} />;
 }
