@@ -35,20 +35,20 @@ interface Props {
 
 const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "EDITOR", "WAITER", "VIEWER", "DISPLAY"];
 
-// ── Light theme tokens ──────────────────────────────────────────────────────
+// ── Theme alias (dark theme via T tokens) ───────────────────────────────────
 const L = {
-  bg:      "#f4f6f9",
-  card:    "#fff",
-  border:  "#f0f0f0",
-  border2: "#e5e7eb",
-  text:    "#1a1a2e",
-  sub:     "#374151",
-  muted:   "#6b7280",
-  primary: "#4f46e5",
-  orange:  "#f97316",
-  green:   "#10b981",
-  red:     "#ef4444",
-  gold:    "#b07d00",
+  bg:      "transparent",
+  card:    T.surface,
+  border:  T.border,
+  border2: T.border,
+  text:    T.text,
+  sub:     T.sub,
+  muted:   T.muted,
+  primary: T.blue,
+  orange:  T.orange,
+  green:   T.green,
+  red:     T.red,
+  gold:    T.gold,
 };
 
 const ROLE_BADGE: Record<string, React.CSSProperties> = {
@@ -371,7 +371,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         {/* User */}
                         <td style={{ padding: "2px 12px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#f0f2f5", border: `1px solid ${L.border2}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: L.muted, flexShrink: 0 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: T.overlay, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: L.muted, flexShrink: 0 }}>
                               {initials}
                             </div>
                             <div>
@@ -691,7 +691,7 @@ function MenuAction({ icon, label, onClick, danger, disabled }: { icon: string; 
       style={{
         width: "100%", textAlign: "right", padding: "9px 14px", background: "none", border: "none",
         cursor: disabled ? "not-allowed" : "pointer", fontSize: 13,
-        color: danger ? "#ef4444" : "#374151",
+        color: danger ? T.red : T.text,
         display: "flex", alignItems: "center", gap: 8,
         opacity: disabled ? 0.5 : 1, fontFamily: "inherit",
       }}
