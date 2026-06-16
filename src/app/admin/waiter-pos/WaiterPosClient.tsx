@@ -53,23 +53,25 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
   // ── Attendance state ──────────────────────────────────────────────
-  const [attCheckedIn,  setAttCheckedIn]  = useState<string | null>(null);
-  const [attCheckedOut, setAttCheckedOut] = useState<string | null>(null);
-  const [attLoading,    setAttLoading]    = useState(false);
-  const [attNote,       setAttNote]       = useState("");
-  const [attNoteOpen,   setAttNoteOpen]   = useState<"IN" | "OUT" | null>(null);
-  const [attPanelOpen,  setAttPanelOpen]  = useState(false);
+  type AttRec = { id: string; type: string; timestamp: string };
+  const [attRecords,   setAttRecords]   = useState<AttRec[]>([]);
+  const [attLoading,   setAttLoading]   = useState(false);
+  const [attNote,      setAttNote]      = useState("");
+  const [attNoteOpen,  setAttNoteOpen]  = useState<"IN" | "OUT" | null>(null);
+  const [attPanelOpen, setAttPanelOpen] = useState(false);
+
+  const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+  const attIns  = attRecords.filter(r => r.type === "IN");
+  const attOuts = attRecords.filter(r => r.type === "OUT");
+  const lastIn  = attIns.at(-1);
+  const lastOut = attOuts.at(-1);
 
   const loadTodayAttendance = useCallback(async () => {
     if (!waiterId) return;
     try {
       const res = await fetch(`/api/admin/attendance?userId=${waiterId}`);
       const data = await res.json();
-      for (const r of (data.records ?? [])) {
-        const t = new Date(r.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-        if (r.type === "IN")  setAttCheckedIn(t);
-        if (r.type === "OUT") setAttCheckedOut(t);
-      }
+      setAttRecords((data.records ?? []).filter((r: AttRec) => r.type !== "DELETED"));
     } catch { /* ignore */ }
   }, [waiterId]);
 
@@ -85,9 +87,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         body: JSON.stringify({ restaurantId, type, note: attNote || undefined }),
       });
       if (res.ok) {
-        const t = new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-        if (type === "IN")  setAttCheckedIn(t);
-        if (type === "OUT") setAttCheckedOut(t);
+        const data = await res.json();
+        setAttRecords(prev => [...prev, { id: data.id, type, timestamp: data.timestamp }]);
       }
     } finally { setAttLoading(false); setAttNote(""); setAttNoteOpen(null); }
   }
@@ -178,13 +179,13 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               style={{
                 display: "flex", alignItems: "center", gap: 5,
                 padding: "5px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                background: attCheckedIn ? (attCheckedOut ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.15)") : G_CARD,
-                border: `1px solid ${attCheckedIn ? (attCheckedOut ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.4)") : G_BORDER_C}`,
-                color: attCheckedIn ? (attCheckedOut ? "#F87171" : "#34D399") : "#fff",
+                background: lastIn ? (lastOut ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.15)") : G_CARD,
+                border: `1px solid ${lastIn ? (lastOut ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.4)") : G_BORDER_C}`,
+                color: lastIn ? (lastOut ? "#F87171" : "#34D399") : "#fff",
                 transition: "0.15s",
               }}
             >
-              ⏱ {attCheckedIn ? (attCheckedOut ? attCheckedOut : attCheckedIn) : "נוכחות"}
+              ⏱ {lastIn ? (lastOut ? fmtT(lastOut.timestamp) : fmtT(lastIn.timestamp)) : "נוכחות"}
             </button>
           )}
         </div>
@@ -519,32 +520,38 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         <div onClick={() => setAttPanelOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,30,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 28, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ fontSize: 17, fontWeight: 800, textAlign: "center", color: "#fff", marginBottom: 4 }}>⏱ נוכחות</div>
+            {attRecords.length > 0 && (
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textAlign: "center", marginBottom: 4, lineHeight: 1.6 }}>
+                {attRecords.map(r => (
+                  <span key={r.id} style={{ marginLeft: 6, color: r.type === "IN" ? "#34D399" : "#F87171" }}>
+                    {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
+                  </span>
+                ))}
+              </div>
+            )}
             <button
-              disabled={!!attCheckedIn || attLoading}
+              disabled={attLoading}
               onClick={() => { setAttPanelOpen(false); setAttNoteOpen("IN"); }}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: attCheckedIn ? "default" : "pointer", border: "none",
-                background: attCheckedIn ? "rgba(52,211,153,0.15)" : "rgba(52,211,153,0.2)",
-                color: "#34D399", opacity: attCheckedIn ? 0.5 : 1, fontFamily: "inherit",
+                cursor: "pointer", border: "none",
+                background: "rgba(52,211,153,0.2)", color: "#34D399", fontFamily: "inherit",
               }}
             >
-              ✅ כניסה {attCheckedIn && <span style={{ fontSize: 12, opacity: 0.7 }}>({attCheckedIn})</span>}
+              ✅ כניסה {attIns.length > 0 && <span style={{ fontSize: 11, opacity: 0.7 }}>×{attIns.length} — {fmtT(lastIn!.timestamp)}</span>}
             </button>
             <button
-              disabled={!attCheckedIn || !!attCheckedOut || attLoading}
+              disabled={attLoading}
               onClick={() => { setAttPanelOpen(false); setAttNoteOpen("OUT"); }}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: (!attCheckedIn || attCheckedOut) ? "default" : "pointer", border: "none",
-                background: attCheckedOut ? "rgba(248,113,113,0.15)" : (!attCheckedIn ? "rgba(255,255,255,0.05)" : "rgba(248,113,113,0.2)"),
-                color: attCheckedOut ? "#F87171" : (!attCheckedIn ? "rgba(255,255,255,0.3)" : "#F87171"),
-                opacity: (!attCheckedIn || attCheckedOut) ? 0.5 : 1, fontFamily: "inherit",
+                cursor: "pointer", border: "none",
+                background: "rgba(248,113,113,0.2)", color: "#F87171", fontFamily: "inherit",
               }}
             >
-              🚪 יציאה {attCheckedOut && <span style={{ fontSize: 12, opacity: 0.7 }}>({attCheckedOut})</span>}
+              🚪 יציאה {attOuts.length > 0 && <span style={{ fontSize: 11, opacity: 0.7 }}>×{attOuts.length} — {fmtT(lastOut!.timestamp)}</span>}
             </button>
             <button
               onClick={() => setAttPanelOpen(false)}

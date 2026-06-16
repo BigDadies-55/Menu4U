@@ -1314,45 +1314,63 @@ export default function ShiftsClient({
 
   // ── Tab: Attendance ────────────────────────────────────────────────────────
   function AttendanceTab() {
-    const displayStaff = staff.length > 0 ? staff : Array.from(
-      new Map(attRecords.map(r => [r.userId, { id: r.userId, name: r.userId }])).values()
-    );
+    const [deleteConfirm, setDeleteConfirm] = React.useState<{ id: string; label: string } | null>(null);
+    const [deleteNote, setDeleteNote] = React.useState("");
 
-    // Build per-user attendance summary
-    type AttSummary = { id: string; name: string; checkIn: string | null; checkOut: string | null; actualHours: number | null; plannedHours: number; dates: { date: string; in: string | null; out: string | null; hours: number | null; note: string | null }[] };
-
-    // Group attRecords by userId → date
-    const byUserDate: Record<string, Record<string, { in: string | null; out: string | null; inNote: string | null; outNote: string | null }>> = {};
-    for (const r of attRecords) {
-      const t = new Date(r.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-      if (!byUserDate[r.userId]) byUserDate[r.userId] = {};
-      if (!byUserDate[r.userId][r.date]) byUserDate[r.userId][r.date] = { in: null, out: null, inNote: null, outNote: null };
-      if (r.type === "IN")  { byUserDate[r.userId][r.date].in  = t; byUserDate[r.userId][r.date].inNote  = r.note; }
-      if (r.type === "OUT") { byUserDate[r.userId][r.date].out = t; byUserDate[r.userId][r.date].outNote = r.note; }
+    async function deleteRecord(id: string) {
+      await fetch(`/api/admin/attendance?id=${encodeURIComponent(id)}&note=${encodeURIComponent(deleteNote || "תוקן ע\"י מנהל")}`, { method: "DELETE" });
+      setDeleteConfirm(null); setDeleteNote("");
+      loadAttendance();
     }
 
-    // Determine date range for planned shifts
+    const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+
+    const displayStaff = staff.length > 0 ? staff : Array.from(
+      new Map(attRecords.filter(r => r.type !== "DELETED").map(r => [r.userId, { id: r.userId, name: r.userId }])).values()
+    );
+
+    // Group all records by userId → date → sorted list
+    const activeRecords = attRecords.filter(r => r.type !== "DELETED");
+    type DayRecs = { id: string; type: string; timestamp: string; note: string | null }[];
+    const byUserDate: Record<string, Record<string, DayRecs>> = {};
+    for (const r of activeRecords) {
+      if (!byUserDate[r.userId]) byUserDate[r.userId] = {};
+      if (!byUserDate[r.userId][r.date]) byUserDate[r.userId][r.date] = [];
+      byUserDate[r.userId][r.date].push(r);
+    }
+
+    // Calculate actual hours as sum of IN/OUT pairs per day
+    function calcPairHours(recs: DayRecs): number {
+      const ins  = recs.filter(r => r.type === "IN").sort((a,b) => a.timestamp.localeCompare(b.timestamp));
+      const outs = recs.filter(r => r.type === "OUT").sort((a,b) => a.timestamp.localeCompare(b.timestamp));
+      let total = 0;
+      ins.forEach((inRec, i) => {
+        const outRec = outs[i];
+        if (!outRec) return;
+        const diff = (new Date(outRec.timestamp).getTime() - new Date(inRec.timestamp).getTime()) / 3600000;
+        if (diff > 0 && diff < 24) total += diff;
+      });
+      return total;
+    }
+
+    // Determine date range
     let fromDate = "", toDate = "";
     if (attMode === "weekly") { fromDate = formatDateISO(weekDates[0]); toDate = formatDateISO(weekDates[6]); }
     else if (attMode === "monthly") { const [y,m]=attMonth.split("-").map(Number); fromDate=`${attMonth}-01`; toDate=`${attMonth}-${String(new Date(y,m,0).getDate()).padStart(2,"0")}`; }
     else { fromDate = attFrom; toDate = attTo; }
 
+    type AttSummary = { id: string; name: string; actualHours: number; plannedHours: number; dates: { date: string; recs: DayRecs; hours: number }[] };
     const summaries: AttSummary[] = displayStaff.map(member => {
       const memberShifts = (attMode === "weekly" ? shifts : summaryShifts).filter(s => s.userId === member.id);
       const plannedHours = memberShifts.reduce((a, s) => a + calcHours(s.startTime, s.endTime), 0);
       const userDates = byUserDate[member.id] ?? {};
       let totalActual = 0;
-      const dates = Object.entries(userDates).sort(([a],[b]) => a.localeCompare(b)).map(([date, rec]) => {
-        let hours: number | null = null;
-        if (rec.in && rec.out) {
-          const [ih, im] = rec.in.split(":").map(Number);
-          const [oh, om] = rec.out.split(":").map(Number);
-          hours = (oh * 60 + om - ih * 60 - im) / 60;
-          totalActual += hours;
-        }
-        return { date, in: rec.in, out: rec.out, hours, note: rec.inNote ?? rec.outNote };
+      const dates = Object.entries(userDates).sort(([a],[b]) => a.localeCompare(b)).map(([date, recs]) => {
+        const hours = calcPairHours(recs);
+        totalActual += hours;
+        return { date, recs, hours };
       });
-      return { id: member.id, name: member.name, checkIn: null, checkOut: null, actualHours: totalActual || null, plannedHours, dates };
+      return { id: member.id, name: member.name, actualHours: totalActual, plannedHours, dates };
     }).filter(s => s.dates.length > 0 || s.plannedHours > 0);
 
     const modeBtn = (mode: typeof attMode, label: string) => (
@@ -1384,28 +1402,21 @@ export default function ShiftsClient({
           {attLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
             onClick={() => {
-              const header = ["עובד", "תאריך", "כניסה", "יציאה", "בפועל (ש׳)", "מתוכנן (ש׳)", "הפרש (ש׳)"];
+              const header = ["עובד", "תאריך", "רשומות", "שעות בפועל", "מתוכנן", "הפרש"];
               const rows: string[][] = [];
               for (const member of summaries) {
-                const diff = member.actualHours !== null ? member.actualHours - member.plannedHours : null;
+                const diff = member.actualHours - member.plannedHours;
                 member.dates.forEach((d, di) => {
-                  rows.push([
-                    di === 0 ? member.name : "",
-                    d.date,
-                    d.in ?? "",
-                    d.out ?? "",
-                    d.hours !== null ? d.hours.toFixed(1) : "",
+                  const recs = d.recs.map(r => `${r.type === "IN" ? "▶" : "■"}${fmtT(r.timestamp)}`).join(" ");
+                  rows.push([di === 0 ? member.name : "", d.date, recs, d.hours.toFixed(1),
                     di === 0 ? member.plannedHours.toFixed(1) : "",
-                    di === 0 && diff !== null ? diff.toFixed(1) : "",
-                  ]);
+                    di === 0 ? (diff >= 0 ? "+" : "") + diff.toFixed(1) : ""]);
                 });
               }
               exportCsv([header, ...rows], `נוכחות-${attMode === "monthly" ? attMonth : attFrom + "_" + attTo}.csv`);
             }}
             style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
-          >
-            📊 ייצא Excel
-          </button>
+          >📊 ייצא Excel</button>
         </div>
 
         {summaries.length === 0 ? (
@@ -1416,8 +1427,7 @@ export default function ShiftsClient({
               <tr>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>תאריך</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#34D399", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>כניסה</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#F87171", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>יציאה</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>רשומות</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: "#FBBF24", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>בפועל</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>מתוכנן</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>הפרש</th>
@@ -1425,8 +1435,7 @@ export default function ShiftsClient({
             </thead>
             <tbody>
               {summaries.map(member => {
-                const diff = member.actualHours !== null ? member.actualHours - member.plannedHours : null;
-                const isMultiDay = member.dates.length > 1;
+                const diff = member.actualHours - member.plannedHours;
                 return (
                   <React.Fragment key={member.id}>
                     {member.dates.map((d, di) => (
@@ -1434,30 +1443,50 @@ export default function ShiftsClient({
                         {di === 0 && (
                           <td rowSpan={member.dates.length} style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700, verticalAlign: "middle", borderLeft: "2px solid rgba(255,255,255,0.08)" }}>
                             {member.name}
-                            {isMultiDay && member.actualHours !== null && (
+                            {member.dates.length > 1 && (
                               <div style={{ fontSize: 10, color: GM, marginTop: 2 }}>סה"כ: {member.actualHours.toFixed(1)} ש׳</div>
                             )}
                           </td>
                         )}
-                        <td style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center" }}>{d.date.slice(5).replace("-","/")}</td>
-                        <td style={{ padding: "5px 8px", fontSize: 12, color: "#34D399", textAlign: "center", fontWeight: 600 }}>{d.in ?? "—"}</td>
-                        <td style={{ padding: "5px 8px", fontSize: 12, color: "#F87171", textAlign: "center", fontWeight: 600 }}>{d.out ?? "—"}</td>
-                        <td style={{ padding: "5px 8px", textAlign: "center" }}>
-                          {d.hours !== null
+                        <td style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center", whiteSpace: "nowrap" }}>{d.date.slice(5).replace("-","/")}</td>
+                        <td style={{ padding: "5px 8px", fontSize: 11 }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {d.recs.sort((a,b) => a.timestamp.localeCompare(b.timestamp)).map(r => (
+                              <span key={r.id} style={{
+                                display: "inline-flex", alignItems: "center", gap: 3,
+                                background: r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
+                                color: r.type === "IN" ? "#34D399" : "#F87171",
+                                border: `1px solid ${r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
+                                borderRadius: 5, padding: "1px 6px", fontWeight: 600,
+                              }}>
+                                {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
+                                {isManager && (
+                                  <button
+                                    onClick={() => setDeleteConfirm({ id: r.id, label: `${r.type === "IN" ? "כניסה" : "יציאה"} ${fmtT(r.timestamp)}` })}
+                                    title="מחק רשומה"
+                                    style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 10, padding: "0 0 0 2px", lineHeight: 1, fontFamily: "inherit" }}
+                                    onMouseEnter={e => (e.currentTarget.style.color = "#F87171")}
+                                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+                                  >✕</button>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td style={{ padding: "5px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          {d.hours > 0
                             ? <span style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{d.hours.toFixed(1)} ש׳</span>
                             : <span style={{ color: GM, fontSize: 11 }}>—</span>}
                         </td>
                         {di === 0 && (
                           <>
-                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle" }}>
+                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle", whiteSpace: "nowrap" }}>
                               <span style={{ background: "rgba(255,255,255,0.06)", color: GM, borderRadius: 6, padding: "2px 7px", fontSize: 11 }}>{member.plannedHours.toFixed(1)} ש׳</span>
                             </td>
-                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle" }}>
-                              {diff !== null
-                                ? <span style={{ background: diff >= 0 ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)", color: diff >= 0 ? "#34D399" : "#F87171", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>
-                                    {diff >= 0 ? "+" : ""}{diff.toFixed(1)} ש׳
-                                  </span>
-                                : <span style={{ color: GM, fontSize: 11 }}>—</span>}
+                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle", whiteSpace: "nowrap" }}>
+                              <span style={{ background: diff >= 0 ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)", color: diff >= 0 ? "#34D399" : "#F87171", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>
+                                {diff >= 0 ? "+" : ""}{diff.toFixed(1)} ש׳
+                              </span>
                             </td>
                           </>
                         )}
@@ -1470,6 +1499,25 @@ export default function ShiftsClient({
           </table>
         )}
         {fromDate && <div style={{ fontSize: 10, color: GM, marginTop: 10, textAlign: "center" }}>{fromDate} — {toDate}</div>}
+
+        {/* Manager delete confirmation */}
+        {deleteConfirm && (
+          <div onClick={() => setDeleteConfirm(null)} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "rgba(18,17,28,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 16, padding: 24, width: 320, maxWidth: "92vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>מחיקת רשומת נוכחות</div>
+              <div style={{ fontSize: 13, color: GM, marginBottom: 14 }}>{deleteConfirm.label}</div>
+              <input
+                type="text" value={deleteNote} onChange={e => setDeleteNote(e.target.value)}
+                placeholder="סיבת תיקון (אופציונלי)"
+                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => deleteRecord(deleteConfirm.id)} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>אשר מחיקה</button>
+                <button onClick={() => setDeleteConfirm(null)} style={{ padding: "9px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
