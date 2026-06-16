@@ -231,7 +231,7 @@ export default function Sidebar({
 
   /* ── Drawer state ── */
   const [drawerOpen,   setDrawerOpen]   = useState(false);
-  const [drawerW,      setDrawerW]      = useState(320);
+  const [drawerW,      setDrawerW]      = useState(222);
   const drawerDragging = useRef(false);
 
   /* ── Floating panels ── */
