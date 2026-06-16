@@ -386,7 +386,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
                 const isOpen   = openMenuId === user.id;
                 const tdBase: React.CSSProperties = {
-                  padding: "0 14px", height: 64, verticalAlign: "middle",
+                  padding: "0 14px", height: 72, verticalAlign: "middle",
                   background: "rgba(255,255,255,0.03)",
                   borderTop: "1px solid rgba(255,255,255,0.06)",
                   transition: "background 0.15s",
@@ -409,11 +409,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
                     {/* Name + email */}
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3 }}>
-                        {user.name ?? "—"}
-                      </div>
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3, marginTop: 2 }} dir="ltr">
-                        {user.email}
+                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 5 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {user.name ?? "—"}
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} dir="ltr">
+                          {user.email}
+                        </div>
                       </div>
                     </td>
 
