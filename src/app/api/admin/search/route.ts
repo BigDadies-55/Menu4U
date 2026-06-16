@@ -28,6 +28,7 @@ const PAGES = [
   { label: "אימות דו-שלבי",       sub: "דף",  href: "/admin/2fa-setup",        keywords: ["2fa","אימות","security"] },
   { label: "לוגים",               sub: "דף",  href: "/admin/logs",             keywords: ["לוגים","לוג","log","audit"] },
   { label: "מפת ניווט",           sub: "דף",  href: "/admin/sitemap",          keywords: ["sitemap","navigation","מפה","ניווט"] },
+  { label: "עץ הרשאות",           sub: "דף",  href: "/admin/permissions",      keywords: ["permissions","הרשאות","תפקידים","roles"] },
 ];
 
 function matchPages(q: string) {

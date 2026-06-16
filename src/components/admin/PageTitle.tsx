@@ -14,6 +14,7 @@ const PAGE_MAP: Array<{ pattern: RegExp; name: string; group?: string }> = [
   { pattern: /^\/admin\/menus/,           name: "תפריטים",         group: "ניהול"  },
   { pattern: /^\/admin\/users/,           name: "משתמשים",         group: "ניהול"  },
   { pattern: /^\/admin\/logs/,            name: "לוגים",           group: "ניהול"  },
+  { pattern: /^\/admin\/permissions/,    name: "עץ הרשאות",       group: "ניהול"  },
   { pattern: /^\/admin\/settings/,        name: "הגדרות",          group: "ניהול"  },
   { pattern: /^\/admin\/orders\/stats/,   name: "סטטיסטיקות",     group: "שירות"  },
   { pattern: /^\/admin\/orders/,          name: "הזמנות",          group: "שירות"  },

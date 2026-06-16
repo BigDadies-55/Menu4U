@@ -162,8 +162,9 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/settings",  label: "הגדרות",        I: Ic.Settings,  waiterHide: true, displayHide: true },
       { href: "/admin/2fa-setup", label: "אימות דו-שלבי", I: Ic.Settings,  adminOnly: true,  waiterHide: true, displayHide: true },
-      { href: "/admin/logs",      label: "לוגים",          I: Ic.Logs,      adminOnly: true,  waiterHide: true, displayHide: true },
-      { href: "/admin/sitemap",   label: "מפת ניווט",      I: Ic.Dashboard, waiterHide: true, displayHide: true },
+      { href: "/admin/logs",        label: "לוגים",          I: Ic.Logs,      adminOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/permissions", label: "עץ הרשאות",    I: Ic.Logs,      adminOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/sitemap",     label: "מפת ניווט",    I: Ic.Dashboard, waiterHide: true, displayHide: true },
     ],
   },
 ];
