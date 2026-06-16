@@ -376,48 +376,51 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 key={user.id}
                 style={{
                   position: "relative", zIndex: isOpen ? 10 : 1,
-                  display: "flex", alignItems: "center", gap: 14, padding: "12px 20px",
+                  display: "grid",
+                  gridTemplateColumns: "44px 1fr 120px minmax(100px,1.5fr) 110px 90px 36px",
+                  alignItems: "center",
+                  gap: 12, padding: "0 20px", height: 64,
                   background: "rgba(255,255,255,0.03)",
                   borderTop: "1px solid rgba(255,255,255,0.06)",
-                  transition: "background 0.15s", flexWrap: "wrap",
+                  transition: "background 0.15s",
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
               >
                 {/* Avatar */}
                 <div style={{
-                  width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                  width: 40, height: 40, borderRadius: "50%",
                   background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 13, fontWeight: 700, color: "#fff",
+                  fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
                 }}>
                   {initials}
                 </div>
 
                 {/* Name + email */}
-                <div style={{ flex: "2 1 160px", minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.2 }}>
                     {user.name ?? "—"}
                   </div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }} dir="ltr">
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.2 }} dir="ltr">
                     {user.email}
                   </div>
                 </div>
 
                 {/* Role badge */}
-                <div style={{ flexShrink: 0 }}>
-                  <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "3px 10px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "3px 10px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
                     {ROLE_LABELS[user.role] ?? user.role}
                   </span>
                 </div>
 
                 {/* Restaurants */}
-                <div style={{ flex: "2 1 140px", display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, overflow: "hidden", maxHeight: 46 }}>
                   {user.restaurantUsers.length === 0 ? (
                     <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>ללא שיוך</span>
                   ) : (
                     user.restaurantUsers.map(ru => (
-                      <span key={ru.restaurantId} style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 500, border: "1px solid rgba(255,255,255,0.1)" }}>
+                      <span key={ru.restaurantId} style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 500, border: "1px solid rgba(255,255,255,0.1)", whiteSpace: "nowrap" }}>
                         {ru.restaurant.name}
                       </span>
                     ))
@@ -425,14 +428,14 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 </div>
 
                 {/* Status */}
-                <div style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
+                <div style={{ display: "flex", alignItems: "center", fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
                   {status.label}
                 </div>
 
-                {/* ID + date (hidden on small) */}
-                <div style={{ flexShrink: 0, textAlign: "left" }}>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>{shortId(user.id)}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>{formatDate(user.createdAt)}</div>
+                {/* ID + date */}
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", lineHeight: 1.2 }}>{shortId(user.id)}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", lineHeight: 1.2 }}>{formatDate(user.createdAt)}</div>
                 </div>
 
                 {/* 3-dot menu */}
@@ -444,7 +447,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
                     setOpenMenuId(openMenuId === user.id ? null : user.id);
                   }}
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 18, padding: "4px 10px", borderRadius: 8, lineHeight: 1, fontFamily: "inherit", flexShrink: 0, transition: "0.15s" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 18, padding: "4px 8px", borderRadius: 8, lineHeight: 1, fontFamily: "inherit", transition: "0.15s", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
                 >⋮</button>
