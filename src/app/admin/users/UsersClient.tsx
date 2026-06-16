@@ -409,12 +409,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
                     {/* Name + email */}
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {user.name ?? "—"}
-                      </div>
-                      <div style={{ height: 6 }} />
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} dir="ltr">
-                        {user.email}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {user.name ?? "—"}
+                        </span>
+                        <span style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} dir="ltr">
+                          {user.email}
+                        </span>
                       </div>
                     </td>
 
