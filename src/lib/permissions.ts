@@ -38,6 +38,11 @@ export function isShiftManager(role: Role): boolean {
   return hasPermission(role, "OWNER") || role === "SHIFT_MANAGER";
 }
 
+// canViewUsers: can see the users list (read-only for OWNER/SHIFT_MANAGER, full management for ADMIN+)
+export function canViewUsers(role: Role): boolean {
+  return isAdmin(role) || role === "OWNER" || role === "SHIFT_MANAGER";
+}
+
 export const ROLE_LABELS: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
   ADMIN: "מנהל",

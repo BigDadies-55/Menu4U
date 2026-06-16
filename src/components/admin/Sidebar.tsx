@@ -109,7 +109,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/restaurants", label: "בתי עסק",  I: Ic.Restaurant, superAdmin: true, waiterHide: true, displayHide: true },
       { href: "/admin/menus",       label: "תפריטים",  I: Ic.Menus,      waiterHide: true, displayHide: true },
-      { href: "/admin/users",       label: "משתמשים",  I: Ic.Users,      adminOnly: true,  waiterHide: true, displayHide: true },
+      { href: "/admin/users",       label: "משתמשים",  I: Ic.Users,      ownerOnly: true,  waiterHide: true, displayHide: true },
     ],
   },
   // ── ניהול ושירות ─────────────────────────────────────────────────────────

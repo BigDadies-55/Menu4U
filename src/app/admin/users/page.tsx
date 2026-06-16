@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/permissions";
+import { canViewUsers } from "@/lib/permissions";
 import UsersClient from "./UsersClient";
 
 export const metadata = { title: "👥 משתמשים | Menu4U" };
@@ -9,7 +9,7 @@ export const metadata = { title: "👥 משתמשים | Menu4U" };
 export default async function UsersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (!isAdmin(session.user.role)) redirect("/admin");
+  if (!canViewUsers(session.user.role)) redirect("/admin");
 
   const rawUsers = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
