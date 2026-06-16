@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/permissions";
+import { isAdmin, canViewUsers } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 import { logAudit, getIp } from "@/lib/audit";
 import { sendInviteEmail } from "@/lib/email";
@@ -10,7 +10,7 @@ import crypto from "crypto";
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) {
+  if (!session?.user || !canViewUsers(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -19,6 +19,11 @@ export async function POST(req: Request) {
 
   if (!email) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  }
+
+  // OWNER / SHIFT_MANAGER cannot assign ADMIN or SUPER_ADMIN roles
+  if (!isAdmin(session.user.role) && ["ADMIN", "SUPER_ADMIN"].includes(role)) {
+    return NextResponse.json({ error: "אין הרשאה לשייך תפקיד מנהל" }, { status: 403 });
   }
 
   if (role === "SUPER_ADMIN") {

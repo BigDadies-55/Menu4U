@@ -33,7 +33,7 @@ const MATRIX: Group[] = [
     features: [
       { label: "דשבורד",             sub: "/admin",              check: ALL   },
       { label: "בתי עסק",            sub: "/admin/restaurants",  check: SA    },
-      { label: "משתמשים",            sub: "/admin/users",        check: r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER"].includes(r) },
+      { label: "משתמשים (צפייה+יצירה)", sub: "/admin/users",     check: r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER"].includes(r) },
       { label: "הגדרות",             sub: "/admin/settings",     check: OWNER },
       { label: "לוגים",              sub: "/admin/logs",         check: ADMIN },
       { label: "תובנות AI",          sub: "/admin/insight-rules",check: ADMIN },

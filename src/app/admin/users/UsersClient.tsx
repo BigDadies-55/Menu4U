@@ -159,7 +159,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     })
     .sort((a, b) => (ROLE_ORDER[a.role] ?? 5) - (ROLE_ORDER[b.role] ?? 5));
 
-  const availableRoles = currentUserRole === "SUPER_ADMIN" ? ALL_ROLES : ALL_ROLES.filter(r => r !== "SUPER_ADMIN");
+  const availableRoles = currentUserRole === "SUPER_ADMIN"
+    ? ALL_ROLES
+    : currentUserRole === "ADMIN"
+      ? ALL_ROLES.filter(r => r !== "SUPER_ADMIN")
+      : ALL_ROLES.filter(r => !["SUPER_ADMIN", "ADMIN"].includes(r)); // OWNER/SHIFT_MANAGER cannot assign admin roles
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -644,7 +648,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <input required type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
               <div><FieldLabel>הרשאה</FieldLabel>
                 <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value as Role })} style={DARK_SELECT}>
-                  {ALL_ROLES.map(r => <option key={r} value={r} style={{ background: "#14141c" }}>{ROLE_LABELS[r]}</option>)}
+                  {availableRoles.map(r => <option key={r} value={r} style={{ background: "#14141c" }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               {["ADMIN","OWNER","SHIFT_MANAGER"].includes(editForm.role) && (
