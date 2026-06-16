@@ -577,11 +577,19 @@ export default function ShiftsClient({
                     const isToday = iso === todayIso;
                     return (
                       <th key={i} style={{ padding: "8px 4px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center", width: "12.57%" }}>
-                        <span style={{ fontSize: 15, fontWeight: 900, color: isToday ? "#60A5FA" : "#fff", display: "block" }}>{DAYS_HE[i]}</span>
-                        <span style={{ fontSize: 11, opacity: isToday ? 0.9 : 0.65, color: isToday ? "#60A5FA" : "inherit", display: "block", marginTop: 1 }}>{formatDate(d)}</span>
-                        {isToday && (
-                          <span style={{ display: "block", width: 28, height: 2, background: "#60A5FA", borderRadius: 99, margin: "4px auto 0", boxShadow: "0 0 8px #60A5FA88" }} />
-                        )}
+                        <div style={{
+                          display: "inline-flex", flexDirection: "column", alignItems: "center",
+                          padding: isToday ? "6px 10px" : "6px 10px",
+                          borderRadius: isToday ? 999 : 0,
+                          background: isToday ? "rgba(96,165,250,0.15)" : "transparent",
+                          border: isToday ? "2px solid #60A5FA" : "2px solid transparent",
+                          minWidth: isToday ? 52 : "unset",
+                          boxShadow: isToday ? "0 0 14px rgba(96,165,250,0.2)" : "none",
+                          transition: "all 0.2s",
+                        }}>
+                          <span style={{ fontSize: 15, fontWeight: 900, color: isToday ? "#60A5FA" : "#fff", lineHeight: 1 }}>{DAYS_HE[i]}</span>
+                          <span style={{ fontSize: 11, color: isToday ? "#93C5FD" : "rgba(255,255,255,0.65)", marginTop: 3, lineHeight: 1 }}>{formatDate(d)}</span>
+                        </div>
                       </th>
                     );
                   })}
