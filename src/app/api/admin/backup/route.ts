@@ -63,6 +63,12 @@ export async function GET(req: Request) {
     loyaltyTransactions,
     loyaltyCoupons,
     orderCounters,
+    shifts,
+    shiftRequests,
+    waiterStations,
+    restaurantGroups,
+    passwordPolicy,
+    siteConfig,
   ] = await Promise.all([
     prisma.restaurant.findMany({ where: { id: { in: allowedIds } } }),
 
@@ -148,11 +154,42 @@ export async function GET(req: Request) {
     }),
 
     prisma.orderCounter.findMany({ where: { restaurantId: { in: allowedIds } } }),
+
+    // Staff & Scheduling
+    prisma.$queryRawUnsafe<unknown[]>(
+      `SELECT * FROM "Shift" WHERE "restaurantId" = ANY($1::text[]) ORDER BY date ASC`,
+      allowedIds
+    ).catch(() => []),
+
+    prisma.$queryRawUnsafe<unknown[]>(
+      `SELECT sr.* FROM "ShiftRequest" sr JOIN "Shift" s ON sr."shiftId" = s.id WHERE s."restaurantId" = ANY($1::text[])`,
+      allowedIds
+    ).catch(() => []),
+
+    prisma.$queryRawUnsafe<unknown[]>(
+      `SELECT * FROM "WaiterStation" WHERE "restaurantId" = ANY($1::text[])`,
+      allowedIds
+    ).catch(() => []),
+
+    // Groups (only relevant groups)
+    prisma.$queryRawUnsafe<unknown[]>(
+      `SELECT rg.* FROM "RestaurantGroup" rg WHERE rg.id IN (SELECT DISTINCT "groupId" FROM "Restaurant" WHERE id = ANY($1::text[]) AND "groupId" IS NOT NULL)`,
+      allowedIds
+    ).catch(() => []),
+
+    // Password policy & site config (SUPER_ADMIN only)
+    role === "SUPER_ADMIN"
+      ? prisma.$queryRawUnsafe<unknown[]>(`SELECT * FROM "PasswordPolicy" LIMIT 1`).catch(() => [])
+      : Promise.resolve([]),
+
+    role === "SUPER_ADMIN"
+      ? prisma.$queryRawUnsafe<unknown[]>(`SELECT * FROM "SiteConfig" LIMIT 1`).catch(() => [])
+      : Promise.resolve([]),
   ]);
 
   const backup = {
     _meta: {
-      version: 3,
+      version: 4,
       exportedAt: new Date().toISOString(),
       exportedBy: session.user.email,
       restaurantIds: allowedIds,
@@ -173,6 +210,10 @@ export async function GET(req: Request) {
         auditLogs: auditLogs.length,
         tableSessions: tableSessions.length,
         menuViews: menuViews.length,
+        shifts: (shifts as unknown[]).length,
+        shiftRequests: (shiftRequests as unknown[]).length,
+        waiterStations: (waiterStations as unknown[]).length,
+        restaurantGroups: (restaurantGroups as unknown[]).length,
       },
     },
     restaurants,
@@ -196,6 +237,12 @@ export async function GET(req: Request) {
     loyaltyTransactions,
     loyaltyCoupons,
     orderCounters,
+    shifts,
+    shiftRequests,
+    waiterStations,
+    restaurantGroups,
+    passwordPolicy,
+    siteConfig,
   };
 
   const json = JSON.stringify(backup, null, 2);

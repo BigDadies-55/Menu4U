@@ -410,6 +410,7 @@ function RestoreSection() {
   const [restoreResult, setRestoreResult] = useState<{ created: number; updated: number } | null>(null);
   const [error,         setError]         = useState("");
   const [showAllDiff,   setShowAllDiff]   = useState(false);
+  const [restoreScope,  setRestoreScope]  = useState<"menus" | "full">("menus");
   const inputRef = useRef<HTMLInputElement>(null);
 
   function parseFile(f: File) {
@@ -435,7 +436,7 @@ function RestoreSection() {
       const res = await fetch("/api/admin/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backup: backupData, scope: "menus", mode: "preview" }),
+        body: JSON.stringify({ backup: backupData, scope: restoreScope, mode: "preview" }),
       });
       const data = await res.json() as DiffResult & { error?: string };
       if (!res.ok) throw new Error(data.error ?? `שגיאה ${res.status}`);
@@ -454,7 +455,7 @@ function RestoreSection() {
       const res = await fetch("/api/admin/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backup: backupData, scope: "menus", mode: "restore" }),
+        body: JSON.stringify({ backup: backupData, scope: restoreScope, mode: "restore" }),
       });
       const data = await res.json() as { created?: number; updated?: number; error?: string };
       if (!res.ok) throw new Error(data.error ?? `שגיאה ${res.status}`);
@@ -550,15 +551,36 @@ function RestoreSection() {
             </div>
           )}
           {!diff && (
-            <button onClick={previewDiff} disabled={previewing} style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "linear-gradient(135deg,#6366f1,#818cf8)",
-              color: "#fff", fontSize: 13, fontWeight: 700,
-              padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
-              opacity: previewing ? 0.6 : 1,
-            }}>
-              {previewing ? "בודק..." : "🔍 בדוק שינויים לפני שחזור"}
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* Scope selector */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>היקף שחזור:</span>
+                {(["menus", "full"] as const).map(s => (
+                  <button key={s} onClick={() => setRestoreScope(s)} style={{
+                    padding: "4px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none",
+                    background: restoreScope === s ? (s === "full" ? "rgba(239,68,68,0.25)" : "rgba(99,102,241,0.25)") : "rgba(255,255,255,0.07)",
+                    color: restoreScope === s ? (s === "full" ? "#f87171" : "#818cf8") : "rgba(255,255,255,0.45)",
+                    outline: restoreScope === s ? `1px solid ${s === "full" ? "rgba(239,68,68,0.5)" : "rgba(99,102,241,0.5)"}` : "none",
+                  }}>
+                    {s === "menus" ? "🍽️ תפריטים בלבד" : "⚠️ שחזור מלא (כולל הזמנות, משמרות, לקוחות)"}
+                  </button>
+                ))}
+              </div>
+              {restoreScope === "full" && (
+                <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#fca5a5" }}>
+                  ⚠️ שחזור מלא יכתוב על הזמנות, לקוחות, נאמנות ומשמרות קיימים. לא ניתן לבטל.
+                </div>
+              )}
+              <button onClick={previewDiff} disabled={previewing} style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: restoreScope === "full" ? "linear-gradient(135deg,#dc2626,#ef4444)" : "linear-gradient(135deg,#6366f1,#818cf8)",
+                color: "#fff", fontSize: 13, fontWeight: 700,
+                padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
+                opacity: previewing ? 0.6 : 1,
+              }}>
+                {previewing ? "בודק..." : "🔍 בדוק שינויים לפני שחזור"}
+              </button>
+            </div>
           )}
         </div>
       )}
