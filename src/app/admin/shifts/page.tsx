@@ -14,7 +14,7 @@ export default async function ShiftsPage() {
   const role = session.user.role;
   const isSuperAdmin = role === "SUPER_ADMIN";
 
-  let restaurants: { id: string; name: string }[] = [];
+  let restaurants: { id: string; name: string; openingHours?: string | null }[] = [];
 
   if (isSuperAdmin) {
     restaurants = await prisma.restaurant.findMany({

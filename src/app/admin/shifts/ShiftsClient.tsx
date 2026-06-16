@@ -30,7 +30,7 @@ type RequestRow = {
 };
 
 interface Props {
-  restaurants: { id: string; name: string }[];
+  restaurants: { id: string; name: string; openingHours?: string | null }[];
   currentUserId: string;
   currentUserRole: string;
   currentUserName: string;
@@ -96,6 +96,20 @@ function cfgToDisplay(cfg: ShiftTypeCfg[]): Record<string, { label: string; time
 
 const DAYS_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "שבת"];
 const MONTHS_HE = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+
+// ── Opening hours helpers ─────────────────────────────────────────────────────
+const DAY_KEYS = ["sun","mon","tue","wed","thu","fri","sat"];
+function getDayStatus(openingHours: string | null | undefined, date: Date): { closed: boolean; holiday?: string } {
+  if (!openingHours) return { closed: false };
+  try {
+    const data = JSON.parse(openingHours);
+    const iso = date.toISOString().slice(0, 10);
+    const holiday = data.holidays?.find((h: { date: string; reason: string }) => h.date === iso);
+    if (holiday) return { closed: true, holiday: holiday.reason };
+    const key = DAY_KEYS[date.getDay()];
+    return { closed: !data[key] };
+  } catch { return { closed: false }; }
+}
 
 // ── Week helpers ──────────────────────────────────────────────────────────────
 function getWeekDates(offset: number): Date[] {
@@ -575,11 +589,13 @@ export default function ShiftsClient({
                   {weekDates.map((d, i) => {
                     const iso = formatDateISO(d);
                     const isToday = iso === todayIso;
+                    const selectedRestaurant = restaurants.find(r => r.id === restaurantId);
+                    const dayStatus = getDayStatus(selectedRestaurant?.openingHours, d);
                     return (
                       <th key={i} style={{ padding: "8px 4px", color: GM, fontWeight: 500, fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center", width: "12.57%" }}>
                         <div style={{
                           display: "inline-flex", flexDirection: "column", alignItems: "center",
-                          padding: isToday ? "6px 10px" : "6px 10px",
+                          padding: "6px 10px",
                           borderRadius: isToday ? 999 : 0,
                           background: isToday ? "rgba(96,165,250,0.15)" : "transparent",
                           border: isToday ? "2px solid #60A5FA" : "2px solid transparent",
@@ -589,6 +605,11 @@ export default function ShiftsClient({
                         }}>
                           <span style={{ fontSize: 15, fontWeight: 900, color: isToday ? "#60A5FA" : "#fff", lineHeight: 1 }}>{DAYS_HE[i]}</span>
                           <span style={{ fontSize: 11, color: isToday ? "#93C5FD" : "rgba(255,255,255,0.65)", marginTop: 3, lineHeight: 1 }}>{formatDate(d)}</span>
+                          {dayStatus.closed && (
+                            <span style={{ fontSize: 9, color: dayStatus.holiday ? "#FBBF24" : "rgba(248,113,113,0.8)", marginTop: 3, lineHeight: 1 }}>
+                              {dayStatus.holiday ? `חג` : "סגור"}
+                            </span>
+                          )}
                         </div>
                       </th>
                     );

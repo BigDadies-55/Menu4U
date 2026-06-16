@@ -7,6 +7,17 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import { MENU_PALETTES } from "@/lib/menuPalettes";
 import PageShell from "@/components/admin/PageShell";
 
+type DayHours = { open: string; close: string } | null;
+type OpeningHoursData = {
+  sun: DayHours; mon: DayHours; tue: DayHours; wed: DayHours;
+  thu: DayHours; fri: DayHours; sat: DayHours;
+  holidays: { date: string; reason: string }[];
+};
+const DEFAULT_OPENING_HOURS: OpeningHoursData = {
+  sun: null, mon: null, tue: null, wed: null, thu: null, fri: null, sat: null,
+  holidays: [],
+};
+
 type Group = {
   id: string;
   name: string;
@@ -18,6 +29,7 @@ type Group = {
 type Restaurant = {
   id: string;
   groupId?: string | null;
+  openingHours?: string | null;
   name: string;
   description: string | null;
   logo: string | null;
@@ -49,7 +61,6 @@ type Restaurant = {
   googleReview: string | null;
   showPhonePublic: boolean;
   showAddressPublic: boolean;
-  openingHours?: string | null;
   createdAt: string;
   _count: { menus: number; orders: number; restaurantUsers: number };
 };
@@ -96,7 +107,7 @@ const emptyForm = {
   showPhonePublic: true,
   showAddressPublic: true,
   groupId: "" as string | null,
-  openingHours: "",
+  openingHoursData: DEFAULT_OPENING_HOURS as OpeningHoursData,
 };
 
 /* ── Solid primary button style ── */
@@ -180,8 +191,6 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
   // Custom delete confirmation: stores the restaurant to delete
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const [deleteInput,   setDeleteInput]   = useState("");
-  const [openingHoursData, setOpeningHoursData] = useState<Record<string, {open:string;close:string}|null> & {holidays: {date:string;reason:string}[]}>({ sun:null,mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,holidays:[] });
-
   /* ── Run pending DB migrations silently on mount ── */
   useEffect(() => {
     fetch("/api/admin/run-migration", { method: "POST" }).catch(() => {});
@@ -212,7 +221,6 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
   function openCreate() {
     setEditTarget(null);
     setForm(emptyForm);
-    setOpeningHoursData({ sun:null,mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,holidays:[] });
     setActiveTab("general");
     setShowForm(true);
   }
@@ -246,18 +254,11 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       showPhonePublic: r.showPhonePublic ?? true,
       showAddressPublic: r.showAddressPublic ?? true,
       groupId: r.groupId ?? null,
-      openingHours: "",
+      openingHoursData: (() => {
+        try { return r.openingHours ? { ...DEFAULT_OPENING_HOURS, ...JSON.parse(r.openingHours) } : DEFAULT_OPENING_HOURS; }
+        catch { return DEFAULT_OPENING_HOURS; }
+      })(),
     });
-    try {
-      const parsed = JSON.parse((r as Restaurant & {openingHours?: string|null}).openingHours ?? "{}");
-      setOpeningHoursData({
-        sun: parsed.sun ?? null, mon: parsed.mon ?? null, tue: parsed.tue ?? null,
-        wed: parsed.wed ?? null, thu: parsed.thu ?? null, fri: parsed.fri ?? null,
-        sat: parsed.sat ?? null, holidays: parsed.holidays ?? [],
-      });
-    } catch {
-      setOpeningHoursData({ sun:null,mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,holidays:[] });
-    }
     setActiveTab("general");
     setShowForm(true);
   }
@@ -310,7 +311,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       showPhonePublic: form.showPhonePublic,
       showAddressPublic: form.showAddressPublic,
       groupId: form.groupId || null,
-      openingHours: JSON.stringify(openingHoursData),
+      openingHours: JSON.stringify(form.openingHoursData),
     };
 
     if (editTarget) {
@@ -949,107 +950,58 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
 
                   {/* ── Tab: שעות פתיחה ── */}
                   {activeTab === "hours" && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T.sub, marginBottom: 14 }}>🗓 ימי פעילות ושעות</div>
-                        {([
-                          { key: "sun", label: "ראשון" },
-                          { key: "mon", label: "שני" },
-                          { key: "tue", label: "שלישי" },
-                          { key: "wed", label: "רביעי" },
-                          { key: "thu", label: "חמישי" },
-                          { key: "fri", label: "שישי" },
-                          { key: "sat", label: "שבת" },
-                        ] as const).map(({ key, label }) => {
-                          const dayData = openingHoursData[key];
-                          const isOpen = dayData !== null;
-                          return (
-                            <div key={key} style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 10, marginBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                              <div style={{ width: 60, fontSize: 13, fontWeight: 600, color: T.text }}>{label}</div>
-                              <button
-                                type="button"
-                                onClick={() => setOpeningHoursData(d => ({ ...d, [key]: isOpen ? null : { open: "09:00", close: "22:00" } }))}
-                                style={{
-                                  position: "relative", display: "inline-flex", height: 24, width: 44,
-                                  alignItems: "center", borderRadius: 999, border: "none", cursor: "pointer",
-                                  background: isOpen ? "#F59E0B" : "rgba(255,255,255,0.15)", transition: "background 150ms",
-                                  flexShrink: 0,
-                                }}>
-                                <span style={{
-                                  display: "inline-block", height: 16, width: 16, borderRadius: "50%", background: "#fff",
-                                  boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                                  transform: isOpen ? "translateX(24px)" : "translateX(4px)",
-                                  transition: "transform 150ms",
-                                }} />
-                              </button>
-                              <span style={{ fontSize: 12, color: T.muted, width: 40 }}>{isOpen ? "פתוח" : "סגור"}</span>
-                              {isOpen && (
-                                <>
-                                  <input
-                                    type="time"
-                                    value={dayData?.open ?? "09:00"}
-                                    onChange={e => setOpeningHoursData(d => ({ ...d, [key]: { open: e.target.value, close: (d[key] as {open:string;close:string})?.close ?? "22:00" } }))}
-                                    style={{ ...DARK_INPUT, width: 110, direction: "ltr" } as React.CSSProperties}
-                                  />
-                                  <span style={{ color: T.muted, fontSize: 13 }}>–</span>
-                                  <input
-                                    type="time"
-                                    value={dayData?.close ?? "22:00"}
-                                    onChange={e => setOpeningHoursData(d => ({ ...d, [key]: { open: (d[key] as {open:string;close:string})?.open ?? "09:00", close: e.target.value } }))}
-                                    style={{ ...DARK_INPUT, width: 110, direction: "ltr" } as React.CSSProperties}
-                                  />
-                                </>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
 
-                      {/* Holiday overrides */}
-                      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 16 }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: T.sub }}>🎌 חגים וסגירות מיוחדות</div>
-                          <button
-                            type="button"
-                            onClick={() => setOpeningHoursData(d => ({ ...d, holidays: [...(d.holidays ?? []), { date: new Date().toISOString().slice(0,10), reason: "" }] }))}
-                            style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#F59E0B", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                            + הוסף
-                          </button>
-                        </div>
-                        {(openingHoursData.holidays ?? []).length === 0 && (
-                          <div style={{ fontSize: 12, color: T.muted, textAlign: "center", padding: "8px 0" }}>אין חגים מוגדרים</div>
-                        )}
-                        {(openingHoursData.holidays ?? []).map((h, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                            <input
-                              type="date"
-                              value={h.date}
-                              onChange={e => setOpeningHoursData(d => {
-                                const hols = [...d.holidays];
-                                hols[i] = { ...hols[i], date: e.target.value };
-                                return { ...d, holidays: hols };
-                              })}
-                              style={{ ...DARK_INPUT, width: 140 } as React.CSSProperties}
-                            />
-                            <input
-                              type="text"
-                              value={h.reason}
-                              placeholder="סיבה (למשל: ראש השנה)"
-                              onChange={e => setOpeningHoursData(d => {
-                                const hols = [...d.holidays];
-                                hols[i] = { ...hols[i], reason: e.target.value };
-                                return { ...d, holidays: hols };
-                              })}
-                              style={DARK_INPUT}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setOpeningHoursData(d => ({ ...d, holidays: d.holidays.filter((_, j) => j !== i) }))}
-                              style={{ background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.4)", color: T.red, borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
-                              ✕
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 4 }}>ימי ושעות פתיחה</div>
+                      {(["sun","mon","tue","wed","thu","fri","sat"] as const).map((day, i) => {
+                        const labels = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+                        const val = form.openingHoursData[day];
+                        const isOpen = val !== null && val !== undefined;
+                        return (
+                          <div key={day} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: `1px solid ${isOpen ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.08)"}` }}>
+                            <button type="button"
+                              onClick={() => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, [day]: isOpen ? null : { open: "09:00", close: "22:00" } } }))}
+                              style={{ position: "relative", display: "inline-flex", height: 24, width: 44, alignItems: "center", borderRadius: 999, border: "none", cursor: "pointer", background: isOpen ? "#D97706" : "rgba(255,255,255,0.15)", transition: "background 150ms", flexShrink: 0 }}>
+                              <span style={{ display: "inline-block", height: 16, width: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transform: isOpen ? "translateX(24px)" : "translateX(4px)", transition: "transform 150ms" }} />
                             </button>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: isOpen ? "#fff" : "rgba(255,255,255,0.4)", width: 52, flexShrink: 0 }}>{labels[i]}</span>
+                            {isOpen ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                                <input type="time" value={val!.open}
+                                  onChange={e => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, [day]: { ...f.openingHoursData[day]!, open: e.target.value } } }))}
+                                  dir="ltr" style={{ ...DARK_INPUT, width: "auto", flex: 1 }} />
+                                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>—</span>
+                                <input type="time" value={val!.close}
+                                  onChange={e => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, [day]: { ...f.openingHoursData[day]!, close: e.target.value } } }))}
+                                  dir="ltr" style={{ ...DARK_INPUT, width: "auto", flex: 1 }} />
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>סגור</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>סגירות חריגות (חגים)</div>
+                        {(form.openingHoursData.holidays ?? []).map((h, idx) => (
+                          <div key={idx} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                            <input type="date" value={h.date}
+                              onChange={e => { const arr = [...form.openingHoursData.holidays]; arr[idx] = { ...arr[idx], date: e.target.value }; setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, holidays: arr } })); }}
+                              style={{ ...DARK_INPUT, flex: 1 }} />
+                            <input type="text" value={h.reason} placeholder="סיבה (ראש השנה, פסח...)"
+                              onChange={e => { const arr = [...form.openingHoursData.holidays]; arr[idx] = { ...arr[idx], reason: e.target.value }; setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, holidays: arr } })); }}
+                              style={{ ...DARK_INPUT, flex: 2 }} />
+                            <button type="button"
+                              onClick={() => { const arr = form.openingHoursData.holidays.filter((_, i2) => i2 !== idx); setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, holidays: arr } })); }}
+                              style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", color: "#F87171", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontSize: 14, flexShrink: 0 }}>✕</button>
                           </div>
                         ))}
+                        <button type="button"
+                          onClick={() => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, holidays: [...(f.openingHoursData.holidays ?? []), { date: "", reason: "" }] } }))}
+                          style={{ background: "rgba(255,255,255,0.06)", border: "1px dashed rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.6)", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontSize: 13, fontFamily: "inherit", width: "100%" }}>
+                          + הוסף סגירה חריגה
+                        </button>
+
                       </div>
                     </div>
                   )}

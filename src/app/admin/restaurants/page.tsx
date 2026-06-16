@@ -66,10 +66,10 @@ export default async function RestaurantsPage() {
     },
   });
 
-  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null; waiterScreen: number | null }>>(
-    `SELECT id, "waiterBg", "waiterBgOpacity", "waiterScreen" FROM "Restaurant"`
-  ).catch(() => [] as Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null; waiterScreen: number | null }>);
-  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, { waiterBg: r.waiterBg, waiterBgOpacity: r.waiterBgOpacity, waiterScreen: r.waiterScreen }]));
+  const bgRows = await prisma.$queryRawUnsafe<Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null; waiterScreen: number | null; openingHours: string | null }>>(
+    `SELECT id, "waiterBg", "waiterBgOpacity", "waiterScreen", "openingHours" FROM "Restaurant"`
+  ).catch(() => [] as Array<{ id: string; waiterBg: string | null; waiterBgOpacity: number | null; waiterScreen: number | null; openingHours: string | null }>);
+  const bgMap = Object.fromEntries(bgRows.map(r => [r.id, { waiterBg: r.waiterBg, waiterBgOpacity: r.waiterBgOpacity, waiterScreen: r.waiterScreen, openingHours: r.openingHours }]));
 
   // Convert Date fields to ISO strings for client component serialization
   const restaurants = rows.map(r => ({
@@ -77,6 +77,7 @@ export default async function RestaurantsPage() {
     waiterBg: bgMap[r.id]?.waiterBg ?? null,
     waiterBgOpacity: bgMap[r.id]?.waiterBgOpacity ?? null,
     waiterScreen: bgMap[r.id]?.waiterScreen ?? null,
+    openingHours: bgMap[r.id]?.openingHours ?? null,
     createdAt: r.createdAt.toISOString(),
     subscriptionFrom: r.subscriptionFrom ? r.subscriptionFrom.toISOString() : null,
     subscriptionTo: r.subscriptionTo ? r.subscriptionTo.toISOString() : null,

@@ -13,6 +13,27 @@ export async function generateMetadata(
   return { title: r?.name ?? "תפריט" };
 }
 
+function getOpenStatus(openingHours: string | null | undefined): { open: boolean; label: string } | null {
+  if (!openingHours) return null;
+  try {
+    const data = JSON.parse(openingHours);
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+    const days = ["sun","mon","tue","wed","thu","fri","sat"];
+    const todayKey = days[now.getDay()];
+    const todayIso = now.toISOString().slice(0, 10);
+    if (data.holidays?.some((h: { date: string }) => h.date === todayIso)) return { open: false, label: "סגור היום" };
+    const hours = data[todayKey];
+    if (!hours) return { open: false, label: "סגור היום" };
+    const [oh, om] = hours.open.split(":").map(Number);
+    const [ch, cm] = hours.close.split(":").map(Number);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (nowMins < oh * 60 + om) return { open: false, label: `נפתח ב-${hours.open}` };
+    if (nowMins >= ch * 60 + cm) return { open: false, label: `נסגר ב-${hours.close}` };
+    if (ch * 60 + cm - nowMins <= 30) return { open: true, label: `נסגר בעוד ${ch * 60 + cm - nowMins} דק׳` };
+    return { open: true, label: `פתוח עד ${hours.close}` };
+  } catch { return null; }
+}
+
 function isMenuScheduledNow(menu: {
   scheduleDays: string[];
   scheduleFrom: string | null;
@@ -32,41 +53,6 @@ function isMenuScheduledNow(menu: {
   return true;
 }
 
-function isOpenNow(openingHours: string | null): { open: boolean; label: string } {
-  if (!openingHours) return { open: true, label: "" };
-  try {
-    const data = JSON.parse(openingHours);
-    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
-    const days = ["sun","mon","tue","wed","thu","fri","sat"];
-    const todayKey = days[now.getDay()];
-
-    const todayIso = now.toISOString().slice(0,10);
-    if (data.holidays?.some((h: {date:string}) => h.date === todayIso)) {
-      return { open: false, label: "סגור היום (חג)" };
-    }
-
-    const hours = data[todayKey];
-    if (!hours) return { open: false, label: "סגור היום" };
-
-    const [oh, om] = hours.open.split(":").map(Number);
-    const [ch, cm] = hours.close.split(":").map(Number);
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-    const openMins = oh * 60 + om;
-    const closeMins = ch * 60 + cm;
-
-    if (nowMins < openMins) {
-      return { open: false, label: `נפתח ב-${hours.open}` };
-    }
-    if (nowMins >= closeMins - 30) {
-      const minsLeft = closeMins - nowMins;
-      if (minsLeft <= 0) return { open: false, label: `נסגר ב-${hours.close}` };
-      return { open: true, label: `נסגר בעוד ${minsLeft} דקות` };
-    }
-    return { open: true, label: `פתוח עד ${hours.close}` };
-  } catch {
-    return { open: true, label: "" };
-  }
-}
 
 export default async function PublicMenuPage(
   { params, searchParams }: {
@@ -89,7 +75,6 @@ export default async function PublicMenuPage(
       id: true, name: true, logo: true, address: true,
       phone: true, orderPhone: true, website: true, locationUrl: true, menuTheme: true, menuPalette: true, menuPaletteData: true, ordersEnabled: true,
       language: true, welcomeText: true, splashImage: true,
-      openingHours: true,
       subscriptionFrom: true, subscriptionTo: true,
       instagram: true, facebook: true, whatsapp: true, tripadvisor: true, googleReview: true,
       showPhonePublic: true, showAddressPublic: true,
@@ -119,6 +104,8 @@ export default async function PublicMenuPage(
   });
 
   if (!restaurant) notFound();
+
+  const openingHours = (restaurant as typeof restaurant & { openingHours?: string | null }).openingHours ?? null;
 
   // Subscription check
   const now = new Date();
@@ -157,7 +144,7 @@ export default async function PublicMenuPage(
     openingHours: (restaurant as typeof restaurant & { openingHours?: string | null }).openingHours ?? null,
   };
 
-  const openStatus = isOpenNow((restaurant as typeof restaurant & { openingHours?: string | null }).openingHours ?? null);
+  const openStatus = getOpenStatus(openingHours);
 
   if (effectiveTheme === "elegant") {
     return <MenuElegantClient restaurant={restaurantData} tableNumber={sp.table || null} openStatus={openStatus} />;

@@ -189,7 +189,7 @@ export default function MenuElegantClient({
 }: {
   restaurant: Restaurant;
   tableNumber?: string | null;
-  openStatus?: { open: boolean; label: string };
+  openStatus?: { open: boolean; label: string } | null;
 }) {
   // Elegant theme view state
   const [elegantView, setElegantView] = useState<"landing" | "clubwelcome" | "categories" | "items">("landing");
@@ -1070,16 +1070,18 @@ export default function MenuElegantClient({
               {restaurant.name}
             </h1>
 
-            {openStatus && openStatus.label && (
+            {/* Open/closed badge */}
+            {openStatus && (
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
-                background: openStatus.open ? "rgba(74,222,128,0.15)" : "rgba(255,107,107,0.15)",
-                border: `1px solid ${openStatus.open ? "rgba(74,222,128,0.4)" : "rgba(255,107,107,0.4)"}`,
-                color: openStatus.open ? "#4ade80" : "#ff6b6b",
-                borderRadius: 999, padding: "4px 12px", fontSize: 13, fontWeight: 600,
-                marginTop: 8,
+                marginTop: 12,
+                padding: "4px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+                background: openStatus.open ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+                border: `1px solid ${openStatus.open ? "rgba(16,185,129,0.45)" : "rgba(239,68,68,0.45)"}`,
+                color: openStatus.open ? "#34D399" : "#FCA5A5",
+                backdropFilter: "blur(8px)",
               }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: openStatus.open ? "#4ade80" : "#ff6b6b", display: "inline-block" }} />
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: openStatus.open ? "#34D399" : "#FCA5A5", display: "inline-block", boxShadow: openStatus.open ? "0 0 6px #34D399" : "none" }} />
                 {openStatus.label}
               </div>
             )}
