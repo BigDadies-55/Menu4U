@@ -958,25 +958,28 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                         const val = form.openingHoursData[day];
                         const isOpen = val !== null && val !== undefined;
                         return (
-                          <div key={day} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: `1px solid ${isOpen ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.08)"}` }}>
-                            <button type="button"
-                              onClick={() => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, [day]: isOpen ? null : { open: "09:00", close: "22:00" } } }))}
-                              style={{ position: "relative", display: "inline-flex", height: 24, width: 44, alignItems: "center", borderRadius: 999, border: "none", cursor: "pointer", background: isOpen ? "#D97706" : "rgba(255,255,255,0.15)", transition: "background 150ms", flexShrink: 0 }}>
-                              <span style={{ display: "inline-block", height: 16, width: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transform: isOpen ? "translateX(24px)" : "translateX(4px)", transition: "transform 150ms" }} />
-                            </button>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: isOpen ? "#fff" : "rgba(255,255,255,0.4)", width: 52, flexShrink: 0 }}>{labels[i]}</span>
-                            {isOpen ? (
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                          <div key={day} style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: `1px solid ${isOpen ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.08)"}` }}>
+                            {/* Row 1: toggle + day name */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <button type="button"
+                                onClick={() => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, [day]: isOpen ? null : { open: "09:00", close: "22:00" } } }))}
+                                style={{ position: "relative", display: "inline-flex", height: 24, width: 44, alignItems: "center", borderRadius: 999, border: "none", cursor: "pointer", background: isOpen ? "#D97706" : "rgba(255,255,255,0.15)", transition: "background 150ms", flexShrink: 0 }}>
+                                <span style={{ display: "inline-block", height: 16, width: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transform: isOpen ? "translateX(24px)" : "translateX(4px)", transition: "transform 150ms" }} />
+                              </button>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: isOpen ? "#fff" : "rgba(255,255,255,0.4)" }}>{labels[i]}</span>
+                              {!isOpen && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginRight: "auto" }}>סגור</span>}
+                            </div>
+                            {/* Row 2: time inputs (only when open) */}
+                            {isOpen && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
                                 <input type="time" value={val!.open}
                                   onChange={e => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, [day]: { ...f.openingHoursData[day]!, open: e.target.value } } }))}
-                                  dir="ltr" style={{ ...DARK_INPUT, width: "auto", flex: 1 }} />
-                                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>—</span>
+                                  dir="ltr" style={{ ...DARK_INPUT, flex: 1, minWidth: 0 }} />
+                                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, flexShrink: 0 }}>—</span>
                                 <input type="time" value={val!.close}
                                   onChange={e => setForm(f => ({ ...f, openingHoursData: { ...f.openingHoursData, [day]: { ...f.openingHoursData[day]!, close: e.target.value } } }))}
-                                  dir="ltr" style={{ ...DARK_INPUT, width: "auto", flex: 1 }} />
+                                  dir="ltr" style={{ ...DARK_INPUT, flex: 1, minWidth: 0 }} />
                               </div>
-                            ) : (
-                              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>סגור</span>
                             )}
                           </div>
                         );
