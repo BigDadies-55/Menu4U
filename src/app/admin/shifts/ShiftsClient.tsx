@@ -640,12 +640,15 @@ export default function ShiftsClient({
                     {weekDates.map((d, di) => {
                       const iso = formatDateISO(d);
                       const isPast  = iso < todayIso;
+                      const selectedRestaurant = restaurants.find(r => r.id === restaurantId);
+                      const dayStatus = getDayStatus(selectedRestaurant?.openingHours, d);
+                      const isClosed = dayStatus.closed;
                       const dayShifts = shifts.filter(s => s.userId === member.id && String(s.date).slice(0, 10) === iso);
-                      const canAdd = isManager && !isPast;
+                      const canAdd = isManager && !isPast && !isClosed;
                       return (
                         <td
                           key={di}
-                          style={{ padding: "4px 3px", verticalAlign: "middle", cursor: canAdd && dayShifts.length === 0 ? "pointer" : "default" }}
+                          style={{ padding: "4px 3px", verticalAlign: "middle", cursor: canAdd && dayShifts.length === 0 ? "pointer" : "default", background: isClosed ? "rgba(255,255,255,0.02)" : "transparent" }}
                           onClick={() => {
                             if (canAdd && dayShifts.length === 0) {
                               setAddModal({ userId: member.id, userName: member.name, date: iso });
@@ -698,7 +701,9 @@ export default function ShiftsClient({
                             </div>
                           ) : (
                             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 42 }}>
-                              {canAdd && (
+                              {isClosed ? (
+                                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", userSelect: "none" }}>—</span>
+                              ) : canAdd ? (
                                 <button
                                   style={{
                                     background: "none", border: "1px dashed rgba(255,255,255,0.12)",
@@ -710,7 +715,7 @@ export default function ShiftsClient({
                                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)"; (e.currentTarget as HTMLButtonElement).style.color = GM; }}
                                   onClick={e => { e.stopPropagation(); setAddModal({ userId: member.id, userName: member.name, date: iso }); }}
                                 >+</button>
-                              )}
+                              ) : null}
                             </div>
                           )}
                         </td>
