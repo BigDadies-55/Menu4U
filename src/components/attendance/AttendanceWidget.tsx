@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useModuleEnabled } from "@/hooks/useModuleEnabled";
 
 type AttRec = { id: string; type: string; timestamp: string };
 
 interface Props {
   restaurantId: string;
   userId: string;
-  /** When false the widget renders nothing — used by the module system */
-  enabled?: boolean;
 }
 
 const G_CARD     = "rgba(255,255,255,0.06)";
@@ -18,7 +17,8 @@ function fmtT(ts: string) {
   return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function AttendanceWidget({ restaurantId, userId, enabled = true }: Props) {
+export default function AttendanceWidget({ restaurantId, userId }: Props) {
+  const moduleOn = useModuleEnabled(restaurantId, "attendance");
   const [records,    setRecords]    = useState<AttRec[]>([]);
   const [loading,    setLoading]    = useState(false);
   const [note,       setNote]       = useState("");
@@ -57,7 +57,7 @@ export default function AttendanceWidget({ restaurantId, userId, enabled = true 
     } finally { setLoading(false); setNote(""); setNoteOpen(null); }
   }
 
-  if (!enabled) return null;
+  if (!moduleOn) return null;
 
   return (
     <>

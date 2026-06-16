@@ -29,6 +29,7 @@ const PAGES = [
   { label: "לוגים",               sub: "דף",  href: "/admin/logs",             keywords: ["לוגים","לוג","log","audit"] },
   { label: "מפת ניווט",           sub: "דף",  href: "/admin/sitemap",          keywords: ["sitemap","navigation","מפה","ניווט"] },
   { label: "עץ הרשאות",           sub: "דף",  href: "/admin/permissions",      keywords: ["permissions","הרשאות","תפקידים","roles"] },
+  { label: "מודולים",              sub: "דף",  href: "/admin/modules",          keywords: ["modules","מודולים","feature flags","הפעלה","כיבוי"] },
 ];
 
 function matchPages(q: string) {

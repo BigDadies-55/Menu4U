@@ -70,6 +70,7 @@ const TREE = [
       { icon: "🔒", label: "אימות דו-שלבי", href: "/admin/2fa-setup", sub: "2FA" },
       { icon: "📜", label: "לוגים",          href: "/admin/logs",      sub: "Audit Log" },
       { icon: "🗺",  label: "מפת ניווט",     href: "/admin/sitemap",   sub: "Sitemap" },
+      { icon: "⚙️", label: "מודולים",        href: "/admin/modules",   sub: "Feature Flags" },
     ],
   },
 ];

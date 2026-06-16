@@ -165,6 +165,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/logs",        label: "לוגים",          I: Ic.Logs,      adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/permissions", label: "עץ הרשאות",    I: Ic.Logs,      adminOnly: true,  waiterHide: true, displayHide: true },
       { href: "/admin/sitemap",     label: "מפת ניווט",    I: Ic.Dashboard, waiterHide: true, displayHide: true },
+      { href: "/admin/modules",     label: "מודולים",       I: Ic.Settings,  superAdmin: true, waiterHide: true, displayHide: true },
     ],
   },
 ];
