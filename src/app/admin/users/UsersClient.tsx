@@ -356,6 +356,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       </div>
 
       {/* ── Users list ── */}
+      <style>{`
+        .user-row:hover td { background: rgba(255,255,255,0.07) !important; }
+      `}</style>
       <div style={{
         background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.15)",
         borderRadius: 20, overflow: "hidden",
@@ -367,97 +370,110 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>נסה לשנות את הסינון</div>
           </div>
         ) : (
-          filtered.map(user => {
-            const status   = statusText(user);
-            const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
-            const isOpen   = openMenuId === user.id;
-            return (
-              <div
-                key={user.id}
-                style={{
-                  position: "relative", zIndex: isOpen ? 10 : 1,
-                  display: "grid",
-                  gridTemplateColumns: "44px 1fr 120px minmax(100px,1.5fr) 110px 90px 36px",
-                  alignItems: "center",
-                  gap: 12, padding: "0 20px", height: 64,
+          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: 60 }} />   {/* avatar */}
+              <col />                           {/* name+email — takes remaining space */}
+              <col style={{ width: 130 }} />   {/* role */}
+              <col style={{ width: "28%" }} /> {/* restaurants */}
+              <col style={{ width: 120 }} />   {/* status */}
+              <col style={{ width: 100 }} />   {/* id+date */}
+              <col style={{ width: 48 }} />    {/* 3-dot */}
+            </colgroup>
+            <tbody>
+              {filtered.map(user => {
+                const status   = statusText(user);
+                const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
+                const isOpen   = openMenuId === user.id;
+                const tdBase: React.CSSProperties = {
+                  padding: "0 10px", height: 64, verticalAlign: "middle",
                   background: "rgba(255,255,255,0.03)",
                   borderTop: "1px solid rgba(255,255,255,0.06)",
                   transition: "background 0.15s",
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-              >
-                {/* Avatar */}
-                <div style={{
-                  width: 40, height: 40, borderRadius: "50%",
-                  background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
-                }}>
-                  {initials}
-                </div>
+                  position: isOpen ? "relative" : undefined,
+                  zIndex: isOpen ? 10 : undefined,
+                };
+                return (
+                  <tr key={user.id} className="user-row">
+                    {/* Avatar */}
+                    <td style={{ ...tdBase, paddingRight: 20, width: 60 }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: "50%",
+                        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 13, fontWeight: 700, color: "#fff",
+                      }}>
+                        {initials}
+                      </div>
+                    </td>
 
-                {/* Name + email */}
-                <div style={{ minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.2 }}>
-                    {user.name ?? "—"}
-                  </div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.2 }} dir="ltr">
-                    {user.email}
-                  </div>
-                </div>
+                    {/* Name + email */}
+                    <td style={tdBase}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3 }}>
+                        {user.name ?? "—"}
+                      </div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3, marginTop: 2 }} dir="ltr">
+                        {user.email}
+                      </div>
+                    </td>
 
-                {/* Role badge */}
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "3px 10px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
-                    {ROLE_LABELS[user.role] ?? user.role}
-                  </span>
-                </div>
-
-                {/* Restaurants */}
-                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, overflow: "hidden", maxHeight: 46 }}>
-                  {user.restaurantUsers.length === 0 ? (
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>ללא שיוך</span>
-                  ) : (
-                    user.restaurantUsers.map(ru => (
-                      <span key={ru.restaurantId} style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 500, border: "1px solid rgba(255,255,255,0.1)", whiteSpace: "nowrap" }}>
-                        {ru.restaurant.name}
+                    {/* Role badge */}
+                    <td style={tdBase}>
+                      <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "3px 10px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
+                        {ROLE_LABELS[user.role] ?? user.role}
                       </span>
-                    ))
-                  )}
-                </div>
+                    </td>
 
-                {/* Status */}
-                <div style={{ display: "flex", alignItems: "center", fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
-                  {status.label}
-                </div>
+                    {/* Restaurants */}
+                    <td style={tdBase}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                        {user.restaurantUsers.length === 0 ? (
+                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>ללא שיוך</span>
+                        ) : (
+                          user.restaurantUsers.map(ru => (
+                            <span key={ru.restaurantId} style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 500, border: "1px solid rgba(255,255,255,0.1)", whiteSpace: "nowrap" }}>
+                              {ru.restaurant.name}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </td>
 
-                {/* ID + date */}
-                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", lineHeight: 1.2 }}>{shortId(user.id)}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", lineHeight: 1.2 }}>{formatDate(user.createdAt)}</div>
-                </div>
+                    {/* Status */}
+                    <td style={{ ...tdBase, fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
+                      {status.label}
+                    </td>
 
-                {/* 3-dot menu */}
-                <button
-                  onClick={e => {
-                    const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                    const menuW = 210;
-                    const left  = rect.right + menuW > window.innerWidth ? rect.left - menuW : rect.left;
-                    setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
-                    setOpenMenuId(openMenuId === user.id ? null : user.id);
-                  }}
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 18, padding: "4px 8px", borderRadius: 8, lineHeight: 1, fontFamily: "inherit", transition: "0.15s", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-                >⋮</button>
-              </div>
-            );
-          })
+                    {/* ID + date */}
+                    <td style={tdBase}>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", lineHeight: 1.3 }}>{shortId(user.id)}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 2, lineHeight: 1.3 }}>{formatDate(user.createdAt)}</div>
+                    </td>
+
+                    {/* 3-dot menu */}
+                    <td style={{ ...tdBase, paddingLeft: 12, textAlign: "center" }}>
+                      <button
+                        onClick={e => {
+                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                          const menuW = 210;
+                          const left  = rect.right + menuW > window.innerWidth ? rect.left - menuW : rect.left;
+                          setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
+                          setOpenMenuId(openMenuId === user.id ? null : user.id);
+                        }}
+                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 18, borderRadius: 8, lineHeight: 1, fontFamily: "inherit", transition: "0.15s", width: 34, height: 34, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                      >⋮</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
 
         {/* Footer count */}
-        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>מציג {filtered.length} מתוך {users.length} משתמשים</span>
         </div>
       </div>
