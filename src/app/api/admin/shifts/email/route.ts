@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   const results: { email: string; ok: boolean; error?: string }[] = [];
 
   for (const target of targets) {
-    const userShifts = shifts.filter(s => mode === "all" ? s.userId === target.userId : true);
+    const userShifts = shifts.filter(s => s.userId === target.userId);
     const shiftRows = userShifts.map(s => {
       const d = new Date(s.date);
       const cfg = cfgMap[s.shiftType];
