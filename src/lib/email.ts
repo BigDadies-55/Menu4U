@@ -346,6 +346,90 @@ export async function sendTempPasswordEmail(email: string, tempPassword: string,
   });
 }
 
+export async function sendShiftsEmail(
+  email: string,
+  name: string,
+  restaurantName: string,
+  periodLabel: string,
+  shifts: { date: string; dayName: string; shiftLabel: string; startTime: string; endTime: string }[]
+) {
+  const totalHours = shifts.reduce((acc, s) => {
+    const [sh, sm] = s.startTime.split(":").map(Number);
+    const [eh, em] = s.endTime.split(":").map(Number);
+    let mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins < 0) mins += 24 * 60;
+    return acc + mins / 60;
+  }, 0);
+
+  const rows = shifts.map(s => `
+    <tr>
+      <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:#d8cfc0;font-weight:600;">${s.date}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(201,164,82,0.9);">${s.dayName}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:#c4b5fd;">${s.shiftLabel}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:#93C5FD;font-family:'Courier New',monospace;" dir="ltr">${s.startTime.slice(0,5)} – ${s.endTime.slice(0,5)}</td>
+    </tr>`).join("");
+
+  await createTransport().sendMail({
+    from: `"Menu4U" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: `📅 לוח משמרות — ${periodLabel} | ${restaurantName}`,
+    html: `
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d0b0e;font-family:Arial,sans-serif;direction:rtl;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0b0e;padding:40px 0;">
+    <tr><td align="center">
+      <table width="540" cellpadding="0" cellspacing="0" style="background:#110f12;border:1px solid rgba(201,164,82,0.18);border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#0a0804,#1c1205,#3d2b00);padding:32px;text-align:center;border-bottom:1px solid rgba(201,164,82,0.15);">
+            <div style="font-size:26px;font-weight:900;color:#C9A84C;letter-spacing:3px;">Menu4U</div>
+            <div style="font-size:12px;color:rgba(201,164,82,0.55);margin-top:4px;letter-spacing:1.5px;">לוח משמרות</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 32px 16px;">
+            <p style="font-size:16px;color:#d8cfc0;margin:0 0 4px;">שלום ${name},</p>
+            <p style="font-size:13px;color:#6b6070;margin:0 0 20px;">להלן לוח המשמרות שלך — <strong style="color:#C9A84C;">${periodLabel}</strong> | ${restaurantName}</p>
+            ${shifts.length === 0
+              ? `<p style="font-size:13px;color:#6b6070;padding:20px;text-align:center;">אין משמרות מתוכננות לתקופה זו.</p>`
+              : `<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-bottom:20px;">
+                  <thead>
+                    <tr style="background:rgba(255,255,255,0.05);">
+                      <th style="padding:10px 16px;font-size:11px;font-weight:700;color:#6b6070;text-align:right;letter-spacing:1px;">תאריך</th>
+                      <th style="padding:10px 16px;font-size:11px;font-weight:700;color:#6b6070;text-align:right;letter-spacing:1px;">יום</th>
+                      <th style="padding:10px 16px;font-size:11px;font-weight:700;color:#6b6070;text-align:right;letter-spacing:1px;">משמרת</th>
+                      <th style="padding:10px 16px;font-size:11px;font-weight:700;color:#6b6070;text-align:right;letter-spacing:1px;">שעות</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+                <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(201,164,82,0.07);border:1px solid rgba(201,164,82,0.2);border-radius:10px;margin-bottom:20px;">
+                  <tr>
+                    <td style="padding:14px 20px;">
+                      <span style="font-size:13px;color:#6b6070;">סה"כ: </span>
+                      <strong style="font-size:15px;color:#C9A84C;">${shifts.length} משמרות</strong>
+                      <span style="font-size:13px;color:#6b6070;margin-right:12px;">| </span>
+                      <strong style="font-size:15px;color:#C9A84C;">${totalHours.toFixed(1)} שעות</strong>
+                    </td>
+                  </tr>
+                </table>`
+            }
+          </td>
+        </tr>
+        <tr>
+          <td style="background:rgba(0,0,0,0.3);padding:18px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+            <p style="font-size:11px;color:#4a4050;margin:0;">הודעה זו נשלחה מ-Menu4U · לשאלות פנה למנהל המשמרות</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+}
+
 export async function sendOtpEmail(email: string, otp: string, name?: string | null) {
   const displayName = name ?? email;
 

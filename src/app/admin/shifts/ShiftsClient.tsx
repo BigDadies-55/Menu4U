@@ -196,6 +196,47 @@ export default function ShiftsClient({
   const [swapReason, setSwapReason] = useState("");
   const [swapLoading, setSwapLoading] = useState(false);
 
+  // Email modal
+  const [emailModal, setEmailModal] = useState(false);
+  const [emailMode, setEmailMode] = useState<"all" | "single">("all");
+  const [emailUserId, setEmailUserId] = useState("");
+  const [emailOverride, setEmailOverride] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailResult, setEmailResult] = useState<string | null>(null);
+
+  async function sendShiftsEmail() {
+    if (emailSending) return;
+    setEmailSending(true); setEmailResult(null);
+    const isMonthly = activeTab === "monthly";
+    let from = "", to = "", periodLabel = "";
+    if (isMonthly) {
+      const [y, m] = monthlyMonth.split("-").map(Number);
+      const last = new Date(y, m, 0).getDate();
+      from = `${monthlyMonth}-01`;
+      to   = `${monthlyMonth}-${String(last).padStart(2,"0")}`;
+      const MONTHS = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+      periodLabel = `${MONTHS[m-1]} ${y}`;
+    } else {
+      from = formatDateISO(weekDates[0]);
+      to   = formatDateISO(weekDates[6]);
+      periodLabel = weekLabel(weekDates);
+    }
+    try {
+      const res = await fetch("/api/admin/shifts/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, from, to, periodLabel, mode: emailMode, userId: emailUserId || undefined, overrideEmail: emailOverride || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEmailResult(`✅ נשלח ל-${data.sent} נמען${data.failed > 0 ? ` | ❌ נכשל: ${data.failed}` : ""}`);
+      } else {
+        setEmailResult(`❌ שגיאה: ${data.error ?? "unknown"}`);
+      }
+    } catch { setEmailResult("❌ שגיאת רשת"); }
+    finally { setEmailSending(false); }
+  }
+
   // SMS modal
   const [smsModal, setSmsModal] = useState(false);
   const [smsTarget, setSmsTarget] = useState<"all" | string>("all");
@@ -1863,6 +1904,14 @@ export default function ShiftsClient({
                 >
                   🔄 רענון
                 </button>
+                {(activeTab === "schedule" || activeTab === "monthly") && (
+                  <button
+                    onClick={() => { setEmailModal(true); setEmailResult(null); }}
+                    style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.35)", color: "#93C5FD", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                  >
+                    ✉️ שלח מייל
+                  </button>
+                )}
                 <button
                   onClick={() => setSmsModal(true)}
                   style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.35)", color: "#93C5FD", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
@@ -1922,6 +1971,76 @@ export default function ShiftsClient({
           {activeTab === "attendance" && <AttendanceTab />}
           {activeTab === "ops"        && <OpsTab />}
         </div>
+
+        {/* ── Email Modal ── */}
+        {emailModal && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 28, width: 420, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>✉️ שלח מייל משמרות</div>
+              <div style={{ fontSize: 13, color: GM, marginBottom: 18 }}>
+                {activeTab === "monthly"
+                  ? (() => { const [y,m]=monthlyMonth.split("-").map(Number); return `${["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"][m-1]} ${y}`; })()
+                  : weekLabel(weekDates)}
+              </div>
+
+              {/* Mode selector */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                {(["all","single"] as const).map(m => (
+                  <button key={m} onClick={() => setEmailMode(m)} style={{
+                    flex: 1, padding: "9px", borderRadius: 9, cursor: "pointer", fontFamily: "inherit",
+                    border: `1px solid ${emailMode === m ? "rgba(59,130,246,0.45)" : GB}`,
+                    background: emailMode === m ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.05)",
+                    color: emailMode === m ? "#93C5FD" : GM, fontWeight: 600, fontSize: 13,
+                  }}>
+                    {m === "all" ? "👥 כל העובדים" : "👤 עובד ספציפי"}
+                  </button>
+                ))}
+              </div>
+
+              {emailMode === "all" && (
+                <div style={{ padding: "10px 14px", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 9, fontSize: 12, color: "#93C5FD", marginBottom: 16 }}>
+                  📨 כל עובד יקבל מייל עם המשמרות שלו בלבד
+                </div>
+              )}
+
+              {emailMode === "single" && (
+                <>
+                  <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>בחר עובד</label>
+                  <select value={emailUserId} onChange={e => setEmailUserId(e.target.value)}
+                    style={{ width: "100%", marginBottom: 12, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }}>
+                    <option value="">— בחר עובד —</option>
+                    {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}</option>)}
+                  </select>
+                  <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>או הזן מייל ידנית</label>
+                  <input type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)}
+                    placeholder="example@email.com"
+                    style={{ width: "100%", marginBottom: 16, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                </>
+              )}
+
+              {emailResult && (
+                <div style={{ padding: "9px 14px", borderRadius: 9, marginBottom: 14, fontSize: 13,
+                  background: emailResult.startsWith("✅") ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)",
+                  border: `1px solid ${emailResult.startsWith("✅") ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
+                  color: emailResult.startsWith("✅") ? "#34D399" : "#F87171" }}>
+                  {emailResult}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={sendShiftsEmail} disabled={emailSending || (emailMode === "single" && !emailUserId && !emailOverride)}
+                  style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", opacity: emailSending ? 0.6 : 1 }}>
+                  {emailSending ? "שולח..." : "✉️ שלח עכשיו"}
+                </button>
+                <button onClick={() => { setEmailModal(false); setEmailResult(null); setEmailOverride(""); setEmailUserId(""); }}
+                  style={{ padding: "10px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                  סגור
+                </button>
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 10, textAlign: "center" }}>נשלח מ-{process.env.NEXT_PUBLIC_GMAIL_USER ?? "menu4u"}</div>
+            </div>
+          </div>
+        )}
 
         {/* ── SMS Modal ── */}
         {smsModal && (
