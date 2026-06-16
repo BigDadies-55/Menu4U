@@ -372,13 +372,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
             <colgroup>
-              <col style={{ width: 60 }} />   {/* avatar */}
-              <col />                           {/* name+email — takes remaining space */}
-              <col style={{ width: 130 }} />   {/* role */}
-              <col style={{ width: "28%" }} /> {/* restaurants */}
+              <col style={{ width: 64 }} />    {/* avatar */}
+              <col style={{ width: "22%" }} /> {/* name+email */}
+              <col style={{ width: 150 }} />   {/* role */}
+              <col />                           {/* restaurants — takes remaining */}
               <col style={{ width: 120 }} />   {/* status */}
               <col style={{ width: 100 }} />   {/* id+date */}
-              <col style={{ width: 48 }} />    {/* 3-dot */}
+              <col style={{ width: 52 }} />    {/* 3-dot */}
             </colgroup>
             <tbody>
               {filtered.map(user => {
@@ -386,7 +386,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
                 const isOpen   = openMenuId === user.id;
                 const tdBase: React.CSSProperties = {
-                  padding: "0 10px", height: 64, verticalAlign: "middle",
+                  padding: "0 14px", height: 64, verticalAlign: "middle",
                   background: "rgba(255,255,255,0.03)",
                   borderTop: "1px solid rgba(255,255,255,0.06)",
                   transition: "background 0.15s",
@@ -396,7 +396,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 return (
                   <tr key={user.id} className="user-row">
                     {/* Avatar */}
-                    <td style={{ ...tdBase, paddingRight: 20, width: 60 }}>
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 6 }}>
                       <div style={{
                         width: 40, height: 40, borderRadius: "50%",
                         background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
@@ -418,15 +418,15 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     </td>
 
                     {/* Role badge */}
-                    <td style={tdBase}>
-                      <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "3px 10px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
+                    <td style={{ ...tdBase, paddingRight: 24, paddingLeft: 24 }}>
+                      <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "4px 12px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
                         {ROLE_LABELS[user.role] ?? user.role}
                       </span>
                     </td>
 
                     {/* Restaurants */}
-                    <td style={tdBase}>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    <td style={{ ...tdBase, paddingRight: 24, paddingLeft: 24 }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                         {user.restaurantUsers.length === 0 ? (
                           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>ללא שיוך</span>
                         ) : (
