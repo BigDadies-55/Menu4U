@@ -172,61 +172,20 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
           {/* ── Attendance clock button ── */}
           {waiterId && (
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setAttPanelOpen(o => !o)}
-                title="נוכחות"
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  padding: "5px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: attCheckedIn ? (attCheckedOut ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.15)") : G_CARD,
-                  border: `1px solid ${attCheckedIn ? (attCheckedOut ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.4)") : G_BORDER_C}`,
-                  color: attCheckedIn ? (attCheckedOut ? "#F87171" : "#34D399") : "#fff",
-                  transition: "0.15s",
-                }}
-              >
-                ⏱ {attCheckedIn ? (attCheckedOut ? attCheckedOut : attCheckedIn) : "נוכחות"}
-              </button>
-
-              {attPanelOpen && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 8px)", right: 0,
-                  background: "rgba(15,15,30,0.95)", backdropFilter: "blur(12px)",
-                  border: `1px solid ${G_BORDER_C}`, borderRadius: 14,
-                  padding: 12, display: "flex", flexDirection: "column", gap: 8,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)", zIndex: 200, minWidth: 180,
-                  direction: "rtl",
-                }}>
-                  <button
-                    disabled={!!attCheckedIn || attLoading}
-                    onClick={() => { setAttPanelOpen(false); setAttNoteOpen("IN"); }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 8,
-                      padding: "9px 12px", borderRadius: 9, fontSize: 13, fontWeight: 700,
-                      cursor: attCheckedIn ? "default" : "pointer", border: "none",
-                      background: attCheckedIn ? "rgba(52,211,153,0.15)" : "rgba(52,211,153,0.2)",
-                      color: "#34D399", opacity: attCheckedIn ? 0.5 : 1,
-                    }}
-                  >
-                    ✅ כניסה {attCheckedIn && <span style={{ fontSize: 11, opacity: 0.7 }}>({attCheckedIn})</span>}
-                  </button>
-                  <button
-                    disabled={!attCheckedIn || !!attCheckedOut || attLoading}
-                    onClick={() => { setAttPanelOpen(false); setAttNoteOpen("OUT"); }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 8,
-                      padding: "9px 12px", borderRadius: 9, fontSize: 13, fontWeight: 700,
-                      cursor: (!attCheckedIn || attCheckedOut) ? "default" : "pointer", border: "none",
-                      background: attCheckedOut ? "rgba(248,113,113,0.15)" : (!attCheckedIn ? "rgba(255,255,255,0.05)" : "rgba(248,113,113,0.2)"),
-                      color: attCheckedOut ? "#F87171" : (!attCheckedIn ? "rgba(255,255,255,0.3)" : "#F87171"),
-                      opacity: (!attCheckedIn || attCheckedOut) ? 0.5 : 1,
-                    }}
-                  >
-                    🚪 יציאה {attCheckedOut && <span style={{ fontSize: 11, opacity: 0.7 }}>({attCheckedOut})</span>}
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => setAttPanelOpen(true)}
+              title="נוכחות"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "5px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                background: attCheckedIn ? (attCheckedOut ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.15)") : G_CARD,
+                border: `1px solid ${attCheckedIn ? (attCheckedOut ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.4)") : G_BORDER_C}`,
+                color: attCheckedIn ? (attCheckedOut ? "#F87171" : "#34D399") : "#fff",
+                transition: "0.15s",
+              }}
+            >
+              ⏱ {attCheckedIn ? (attCheckedOut ? attCheckedOut : attCheckedIn) : "נוכחות"}
+            </button>
           )}
         </div>
 
@@ -551,6 +510,48 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ══ ATTENDANCE PANEL POPUP ══ */}
+      {attPanelOpen && (
+        <div onClick={() => setAttPanelOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,30,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 28, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, textAlign: "center", color: "#fff", marginBottom: 4 }}>⏱ נוכחות</div>
+            <button
+              disabled={!!attCheckedIn || attLoading}
+              onClick={() => { setAttPanelOpen(false); setAttNoteOpen("IN"); }}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
+                cursor: attCheckedIn ? "default" : "pointer", border: "none",
+                background: attCheckedIn ? "rgba(52,211,153,0.15)" : "rgba(52,211,153,0.2)",
+                color: "#34D399", opacity: attCheckedIn ? 0.5 : 1, fontFamily: "inherit",
+              }}
+            >
+              ✅ כניסה {attCheckedIn && <span style={{ fontSize: 12, opacity: 0.7 }}>({attCheckedIn})</span>}
+            </button>
+            <button
+              disabled={!attCheckedIn || !!attCheckedOut || attLoading}
+              onClick={() => { setAttPanelOpen(false); setAttNoteOpen("OUT"); }}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
+                cursor: (!attCheckedIn || attCheckedOut) ? "default" : "pointer", border: "none",
+                background: attCheckedOut ? "rgba(248,113,113,0.15)" : (!attCheckedIn ? "rgba(255,255,255,0.05)" : "rgba(248,113,113,0.2)"),
+                color: attCheckedOut ? "#F87171" : (!attCheckedIn ? "rgba(255,255,255,0.3)" : "#F87171"),
+                opacity: (!attCheckedIn || attCheckedOut) ? 0.5 : 1, fontFamily: "inherit",
+              }}
+            >
+              🚪 יציאה {attCheckedOut && <span style={{ fontSize: 12, opacity: 0.7 }}>({attCheckedOut})</span>}
+            </button>
+            <button
+              onClick={() => setAttPanelOpen(false)}
+              style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              ביטול
+            </button>
           </div>
         </div>
       )}
