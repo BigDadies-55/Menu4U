@@ -203,23 +203,34 @@ export default function ShiftsClient({
   const [emailOverride, setEmailOverride] = useState("");
   const [emailSending, setEmailSending] = useState(false);
   const [emailResult, setEmailResult] = useState<string | null>(null);
+  // period selection inside modal
+  const [emailPeriodType, setEmailPeriodType] = useState<"weekly" | "monthly">("weekly");
+  const [emailWeekOffset, setEmailWeekOffset] = useState(0);
+  const [emailMonth, setEmailMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`; });
+
+  function openEmailModal() {
+    setEmailPeriodType(activeTab === "monthly" ? "monthly" : "weekly");
+    setEmailWeekOffset(weekOffset);
+    setEmailMonth(monthlyMonth);
+    setEmailResult(null); setEmailOverride(""); setEmailUserId("");
+    setEmailModal(true);
+  }
 
   async function sendShiftsEmail() {
     if (emailSending) return;
     setEmailSending(true); setEmailResult(null);
-    const isMonthly = activeTab === "monthly";
+    const emailWeekDates = getWeekDates(emailWeekOffset);
     let from = "", to = "", periodLabel = "";
-    if (isMonthly) {
-      const [y, m] = monthlyMonth.split("-").map(Number);
+    if (emailPeriodType === "monthly") {
+      const [y, m] = emailMonth.split("-").map(Number);
       const last = new Date(y, m, 0).getDate();
-      from = `${monthlyMonth}-01`;
-      to   = `${monthlyMonth}-${String(last).padStart(2,"0")}`;
-      const MONTHS = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
-      periodLabel = `${MONTHS[m-1]} ${y}`;
+      from = `${emailMonth}-01`;
+      to   = `${emailMonth}-${String(last).padStart(2,"0")}`;
+      periodLabel = `${MONTHS_HE[m-1]} ${y}`;
     } else {
-      from = formatDateISO(weekDates[0]);
-      to   = formatDateISO(weekDates[6]);
-      periodLabel = weekLabel(weekDates);
+      from = formatDateISO(emailWeekDates[0]);
+      to   = formatDateISO(emailWeekDates[6]);
+      periodLabel = weekLabel(emailWeekDates);
     }
     try {
       const res = await fetch("/api/admin/shifts/email", {
@@ -1906,7 +1917,7 @@ export default function ShiftsClient({
                 </button>
                 {(activeTab === "schedule" || activeTab === "monthly") && (
                   <button
-                    onClick={() => { setEmailModal(true); setEmailResult(null); }}
+                    onClick={openEmailModal}
                     style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.35)", color: "#93C5FD", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                   >
                     ✉️ שלח מייל
@@ -1976,12 +1987,33 @@ export default function ShiftsClient({
         {emailModal && (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 28, width: 420, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>✉️ שלח מייל משמרות</div>
-              <div style={{ fontSize: 13, color: GM, marginBottom: 18 }}>
-                {activeTab === "monthly"
-                  ? (() => { const [y,m]=monthlyMonth.split("-").map(Number); return `${["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"][m-1]} ${y}`; })()
-                  : weekLabel(weekDates)}
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✉️ שלח מייל משמרות</div>
+
+              {/* Period type toggle */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                {(["weekly","monthly"] as const).map(pt => (
+                  <button key={pt} onClick={() => setEmailPeriodType(pt)} style={{
+                    flex: 1, padding: "7px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 600,
+                    border: `1px solid ${emailPeriodType === pt ? "rgba(245,158,11,0.45)" : GB}`,
+                    background: emailPeriodType === pt ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.04)",
+                    color: emailPeriodType === pt ? "#FBBF24" : GM,
+                  }}>{pt === "weekly" ? "📅 שבועי" : "📆 חודשי"}</button>
+                ))}
               </div>
+
+              {/* Period selector */}
+              {emailPeriodType === "weekly" ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, background: "rgba(255,255,255,0.04)", border: `1px solid ${GB}`, borderRadius: 9, padding: "8px 12px" }}>
+                  <button onClick={() => setEmailWeekOffset(w => w - 1)} style={{ background: "none", border: "none", color: GM, cursor: "pointer", fontSize: 16, padding: "0 4px", fontFamily: "inherit" }}>‹</button>
+                  <span style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#fff", fontWeight: 600 }}>{weekLabel(getWeekDates(emailWeekOffset))}</span>
+                  <button onClick={() => setEmailWeekOffset(w => w + 1)} style={{ background: "none", border: "none", color: GM, cursor: "pointer", fontSize: 16, padding: "0 4px", fontFamily: "inherit" }}>›</button>
+                </div>
+              ) : (
+                <div style={{ marginBottom: 16 }}>
+                  <input type="month" value={emailMonth} onChange={e => setEmailMonth(e.target.value)}
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }} />
+                </div>
+              )}
 
               {/* Mode selector */}
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -2036,7 +2068,7 @@ export default function ShiftsClient({
                   style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", opacity: emailSending ? 0.6 : 1 }}>
                   {emailSending ? "שולח..." : "✉️ שלח עכשיו"}
                 </button>
-                <button onClick={() => { setEmailModal(false); setEmailResult(null); setEmailOverride(""); setEmailUserId(""); }}
+                <button onClick={() => setEmailModal(false)}
                   style={{ padding: "10px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   סגור
                 </button>

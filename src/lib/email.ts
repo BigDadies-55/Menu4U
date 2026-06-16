@@ -351,8 +351,11 @@ export async function sendShiftsEmail(
   name: string,
   restaurantName: string,
   periodLabel: string,
-  shifts: { date: string; dayName: string; shiftLabel: string; startTime: string; endTime: string }[]
+  shifts: { date: string; dayName: string; shiftLabel: string; startTime: string; endTime: string }[],
+  appUrl?: string
 ) {
+  const baseUrl = appUrl ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
+  const myShiftsUrl = `${baseUrl}/admin/shifts`;
   const totalHours = shifts.reduce((acc, s) => {
     const [sh, sm] = s.startTime.split(":").map(Number);
     const [eh, em] = s.endTime.split(":").map(Number);
@@ -415,6 +418,13 @@ export async function sendShiftsEmail(
                   </tr>
                 </table>`
             }
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 28px;text-align:center;">
+            <a href="${myShiftsUrl}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#6b470d,#C9A452);color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:10px;letter-spacing:0.3px;">
+              📅 לצפייה במשמרות שלי ←
+            </a>
           </td>
         </tr>
         <tr>
