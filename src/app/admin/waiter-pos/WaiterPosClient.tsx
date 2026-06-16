@@ -61,10 +61,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [attPanelOpen, setAttPanelOpen] = useState(false);
 
   const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-  const attIns  = attRecords.filter(r => r.type === "IN");
-  const attOuts = attRecords.filter(r => r.type === "OUT");
-  const lastIn  = attIns.at(-1);
-  const lastOut = attOuts.at(-1);
+  const firstIn  = attRecords.find(r => r.type === "IN");
+  const firstOut = attRecords.find(r => r.type === "OUT");
+  const hasIn    = !!firstIn;
+  const hasOut   = !!firstOut;
 
   const loadTodayAttendance = useCallback(async () => {
     if (!waiterId) return;
@@ -179,13 +179,13 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               style={{
                 display: "flex", alignItems: "center", gap: 5,
                 padding: "5px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                background: lastIn ? (lastOut ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.15)") : G_CARD,
-                border: `1px solid ${lastIn ? (lastOut ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.4)") : G_BORDER_C}`,
-                color: lastIn ? (lastOut ? "#F87171" : "#34D399") : "#fff",
+                background: hasOut ? "rgba(248,113,113,0.15)" : hasIn ? "rgba(52,211,153,0.15)" : G_CARD,
+                border: `1px solid ${hasOut ? "rgba(248,113,113,0.4)" : hasIn ? "rgba(52,211,153,0.4)" : G_BORDER_C}`,
+                color: hasOut ? "#F87171" : hasIn ? "#34D399" : "#fff",
                 transition: "0.15s",
               }}
             >
-              ⏱ {lastIn ? (lastOut ? fmtT(lastOut.timestamp) : fmtT(lastIn.timestamp)) : "נוכחות"}
+              ⏱ {hasOut ? fmtT(firstOut!.timestamp) : hasIn ? fmtT(firstIn!.timestamp) : "נוכחות"}
             </button>
           )}
         </div>
@@ -520,39 +520,41 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         <div onClick={() => setAttPanelOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,30,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 28, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ fontSize: 17, fontWeight: 800, textAlign: "center", color: "#fff", marginBottom: 4 }}>⏱ נוכחות</div>
-            {attRecords.length > 0 && (
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textAlign: "center", marginBottom: 4, lineHeight: 1.6 }}>
-                {attRecords.map(r => (
-                  <span key={r.id} style={{ marginLeft: 6, color: r.type === "IN" ? "#34D399" : "#F87171" }}>
-                    {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
-                  </span>
-                ))}
-              </div>
-            )}
+
+            {/* כניסה */}
             <button
-              disabled={attLoading}
+              disabled={hasIn}
               onClick={() => { setAttPanelOpen(false); setAttNoteOpen("IN"); }}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: "pointer", border: "none",
-                background: "rgba(52,211,153,0.2)", color: "#34D399", fontFamily: "inherit",
+                cursor: hasIn ? "default" : "pointer", border: "none", fontFamily: "inherit",
+                background: hasIn ? "rgba(52,211,153,0.08)" : "rgba(52,211,153,0.2)",
+                color: hasIn ? "rgba(52,211,153,0.45)" : "#34D399",
+                opacity: hasIn ? 0.7 : 1,
               }}
             >
-              ✅ כניסה {attIns.length > 0 && <span style={{ fontSize: 11, opacity: 0.7 }}>×{attIns.length} — {fmtT(lastIn!.timestamp)}</span>}
+              ✅ כניסה
+              {hasIn && <span style={{ fontSize: 12, marginRight: 4 }}>{fmtT(firstIn!.timestamp)}</span>}
             </button>
+
+            {/* יציאה */}
             <button
-              disabled={attLoading}
+              disabled={!hasIn || hasOut}
               onClick={() => { setAttPanelOpen(false); setAttNoteOpen("OUT"); }}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: "pointer", border: "none",
-                background: "rgba(248,113,113,0.2)", color: "#F87171", fontFamily: "inherit",
+                cursor: (!hasIn || hasOut) ? "default" : "pointer", border: "none", fontFamily: "inherit",
+                background: hasOut ? "rgba(248,113,113,0.08)" : !hasIn ? "rgba(255,255,255,0.04)" : "rgba(248,113,113,0.2)",
+                color: hasOut ? "rgba(248,113,113,0.45)" : !hasIn ? "rgba(255,255,255,0.25)" : "#F87171",
+                opacity: (!hasIn || hasOut) ? 0.7 : 1,
               }}
             >
-              🚪 יציאה {attOuts.length > 0 && <span style={{ fontSize: 11, opacity: 0.7 }}>×{attOuts.length} — {fmtT(lastOut!.timestamp)}</span>}
+              🚪 יציאה
+              {hasOut && <span style={{ fontSize: 12, marginRight: 4 }}>{fmtT(firstOut!.timestamp)}</span>}
             </button>
+
             <button
               onClick={() => setAttPanelOpen(false)}
               style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
