@@ -449,7 +449,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
       {showForm && (
         <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}>
           <div className="flex min-h-full items-start justify-center p-4 py-6">
-            <div className="shadow-xl w-full max-w-2xl" style={{ background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, backdropFilter: "blur(20px)" }}>
+            <div className="shadow-xl w-full max-w-3xl" style={{ background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, backdropFilter: "blur(20px)" }}>
 
               {/* Modal header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
@@ -466,17 +466,18 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
               </div>
 
               {/* Tabs */}
-              <div className="flex px-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex px-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", overflowX: "auto", scrollbarWidth: "none" }}>
                 {TABS.map(tab => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors"
+                    className="flex items-center gap-1 px-3 py-3 text-sm font-medium whitespace-nowrap transition-colors"
                     style={{
                       borderBottom: activeTab === tab.id ? "2px solid #D97706" : "2px solid transparent",
                       color: activeTab === tab.id ? "#F59E0B" : "rgba(255,255,255,0.45)",
                       background: "transparent",
+                      fontSize: 12,
                     }}
                   >
                     <span>{tab.icon}</span>
