@@ -1583,10 +1583,10 @@ export default function ShiftsClient({
                   ⚙️ הגדרות
                 </button>
                 <button
-                  onClick={clearWeek}
+                  onClick={() => loadShifts()}
                   style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
-                  🗑️ נקה שבוע
+                  🔄 רענון
                 </button>
                 <button
                   onClick={() => setSmsModal(true)}
