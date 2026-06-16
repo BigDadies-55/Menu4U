@@ -178,7 +178,7 @@ export default function ShiftsClient({
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [requestsLoading, setRequestsLoading] = useState(false);
-  const [staff, setStaff] = useState<{ id: string; name: string }[]>([]);
+  const [staff, setStaff] = useState<{ id: string; name: string; email?: string }[]>([]);
   const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
   const SHIFT_CFG = cfgToDisplay(shiftCfgList);
 
@@ -330,7 +330,7 @@ export default function ShiftsClient({
       .then(r => r.json())
       .then(data => {
         const items: { user: { id: string; name: string | null; email: string } }[] = Array.isArray(data) ? data : [];
-        setStaff(items.map(ru => ({ id: ru.user.id, name: ru.user.name || ru.user.email })));
+        setStaff(items.map(ru => ({ id: ru.user.id, name: ru.user.name || ru.user.email, email: ru.user.email })));
       })
       .catch(() => setStaff([]));
   }, [restaurantId]);
@@ -2006,12 +2006,16 @@ export default function ShiftsClient({
               {emailMode === "single" && (
                 <>
                   <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>בחר עובד</label>
-                  <select value={emailUserId} onChange={e => setEmailUserId(e.target.value)}
+                  <select value={emailUserId} onChange={e => {
+                      setEmailUserId(e.target.value);
+                      const sel = staff.find(s => s.id === e.target.value);
+                      setEmailOverride(sel?.email ?? "");
+                    }}
                     style={{ width: "100%", marginBottom: 12, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }}>
                     <option value="">— בחר עובד —</option>
-                    {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}</option>)}
+                    {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}{s.email ? ` (${s.email})` : ""}</option>)}
                   </select>
-                  <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>או הזן מייל ידנית</label>
+                  <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>מייל (ניתן לשינוי)</label>
                   <input type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)}
                     placeholder="example@email.com"
                     style={{ width: "100%", marginBottom: 16, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
