@@ -173,7 +173,7 @@ export default function ShiftsClient({
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "summary" | "ops">("schedule");
+  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "summary" | "attendance" | "ops">("schedule");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -215,6 +215,15 @@ export default function ShiftsClient({
   const [opsPreset, setOpsPreset] = useState<OpsPreset>("all");
   const [opsFrom, setOpsFrom] = useState("");
   const [opsTo,   setOpsTo]   = useState("");
+
+  // Attendance tab
+  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null };
+  const [attRecords, setAttRecords] = useState<AttRecord[]>([]);
+  const [attMode, setAttMode] = useState<"weekly" | "monthly" | "range">("weekly");
+  const [attMonth, setAttMonth] = useState(() => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`; });
+  const [attFrom, setAttFrom] = useState("");
+  const [attTo,   setAttTo]   = useState("");
+  const [attLoading, setAttLoading] = useState(false);
 
   // Summary tab
   const [summaryMode, setSummaryMode] = useState<"weekly" | "monthly" | "range">("weekly");
@@ -323,6 +332,33 @@ export default function ShiftsClient({
   }, [restaurantId, summaryMode, summaryMonth, summaryFrom, summaryTo, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (activeTab === "summary") loadSummaryShifts(); }, [activeTab, loadSummaryShifts]);
+
+  // Load attendance
+  const loadAttendance = useCallback(async () => {
+    if (!restaurantId) return;
+    let from = "", to = "";
+    if (attMode === "weekly") {
+      from = formatDateISO(weekDates[0]);
+      to   = formatDateISO(weekDates[6]);
+    } else if (attMode === "monthly") {
+      const [y, m] = attMonth.split("-").map(Number);
+      const last = new Date(y, m, 0).getDate();
+      from = `${attMonth}-01`;
+      to   = `${attMonth}-${String(last).padStart(2,"0")}`;
+    } else {
+      if (!attFrom || !attTo) return;
+      from = attFrom; to = attTo;
+    }
+    setAttLoading(true);
+    try {
+      const res = await fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`);
+      const data = await res.json();
+      setAttRecords(data.records ?? []);
+    } catch { setAttRecords([]); }
+    finally { setAttLoading(false); }
+  }, [restaurantId, attMode, attMonth, attFrom, attTo, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (activeTab === "attendance") loadAttendance(); }, [activeTab, loadAttendance]);
 
   // Load requests
   const loadRequests = useCallback(async () => {
@@ -1080,6 +1116,144 @@ export default function ShiftsClient({
     );
   }
 
+  // ── Tab: Attendance ────────────────────────────────────────────────────────
+  function AttendanceTab() {
+    const displayStaff = staff.length > 0 ? staff : Array.from(
+      new Map(attRecords.map(r => [r.userId, { id: r.userId, name: r.userId }])).values()
+    );
+
+    // Build per-user attendance summary
+    type AttSummary = { id: string; name: string; checkIn: string | null; checkOut: string | null; actualHours: number | null; plannedHours: number; dates: { date: string; in: string | null; out: string | null; hours: number | null; note: string | null }[] };
+
+    // Group attRecords by userId → date
+    const byUserDate: Record<string, Record<string, { in: string | null; out: string | null; inNote: string | null; outNote: string | null }>> = {};
+    for (const r of attRecords) {
+      const t = new Date(r.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+      if (!byUserDate[r.userId]) byUserDate[r.userId] = {};
+      if (!byUserDate[r.userId][r.date]) byUserDate[r.userId][r.date] = { in: null, out: null, inNote: null, outNote: null };
+      if (r.type === "IN")  { byUserDate[r.userId][r.date].in  = t; byUserDate[r.userId][r.date].inNote  = r.note; }
+      if (r.type === "OUT") { byUserDate[r.userId][r.date].out = t; byUserDate[r.userId][r.date].outNote = r.note; }
+    }
+
+    // Determine date range for planned shifts
+    let fromDate = "", toDate = "";
+    if (attMode === "weekly") { fromDate = formatDateISO(weekDates[0]); toDate = formatDateISO(weekDates[6]); }
+    else if (attMode === "monthly") { const [y,m]=attMonth.split("-").map(Number); fromDate=`${attMonth}-01`; toDate=`${attMonth}-${String(new Date(y,m,0).getDate()).padStart(2,"0")}`; }
+    else { fromDate = attFrom; toDate = attTo; }
+
+    const summaries: AttSummary[] = displayStaff.map(member => {
+      const memberShifts = (attMode === "weekly" ? shifts : summaryShifts).filter(s => s.userId === member.id);
+      const plannedHours = memberShifts.reduce((a, s) => a + calcHours(s.startTime, s.endTime), 0);
+      const userDates = byUserDate[member.id] ?? {};
+      let totalActual = 0;
+      const dates = Object.entries(userDates).sort(([a],[b]) => a.localeCompare(b)).map(([date, rec]) => {
+        let hours: number | null = null;
+        if (rec.in && rec.out) {
+          const [ih, im] = rec.in.split(":").map(Number);
+          const [oh, om] = rec.out.split(":").map(Number);
+          hours = (oh * 60 + om - ih * 60 - im) / 60;
+          totalActual += hours;
+        }
+        return { date, in: rec.in, out: rec.out, hours, note: rec.inNote ?? rec.outNote };
+      });
+      return { id: member.id, name: member.name, checkIn: null, checkOut: null, actualHours: totalActual || null, plannedHours, dates };
+    }).filter(s => s.dates.length > 0 || s.plannedHours > 0);
+
+    const modeBtn = (mode: typeof attMode, label: string) => (
+      <button onClick={() => setAttMode(mode)} style={{
+        padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8,
+        background: attMode === mode ? "rgba(245,158,11,0.2)" : "transparent",
+        border: attMode === mode ? "1px solid rgba(245,158,11,0.45)" : `1px solid ${GB}`,
+        color: attMode === mode ? "#FBBF24" : GM, transition: "0.15s", fontFamily: "inherit",
+      }}>{label}</button>
+    );
+
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+          {modeBtn("weekly",  "שבועי")}
+          {modeBtn("monthly", "חודשי")}
+          {modeBtn("range",   "טווח")}
+          {attMode === "monthly" && (
+            <input type="month" value={attMonth} onChange={e => setAttMonth(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+          )}
+          {attMode === "range" && (<>
+            <input type="date" value={attFrom} onChange={e => setAttFrom(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+            <span style={{ color: GM, fontSize: 12 }}>—</span>
+            <input type="date" value={attTo} onChange={e => setAttTo(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+          </>)}
+          {attLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
+        </div>
+
+        {summaries.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 14 }}>אין נתוני נוכחות לתקופה זו</div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>תאריך</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#34D399", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>כניסה</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#F87171", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>יציאה</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#FBBF24", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>בפועל</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>מתוכנן</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>הפרש</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summaries.map(member => {
+                const diff = member.actualHours !== null ? member.actualHours - member.plannedHours : null;
+                const isMultiDay = member.dates.length > 1;
+                return (
+                  <React.Fragment key={member.id}>
+                    {member.dates.map((d, di) => (
+                      <tr key={d.date} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        {di === 0 && (
+                          <td rowSpan={member.dates.length} style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700, verticalAlign: "middle", borderLeft: "2px solid rgba(255,255,255,0.08)" }}>
+                            {member.name}
+                            {isMultiDay && member.actualHours !== null && (
+                              <div style={{ fontSize: 10, color: GM, marginTop: 2 }}>סה"כ: {member.actualHours.toFixed(1)} ש׳</div>
+                            )}
+                          </td>
+                        )}
+                        <td style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center" }}>{d.date.slice(5).replace("-","/")}</td>
+                        <td style={{ padding: "5px 8px", fontSize: 12, color: "#34D399", textAlign: "center", fontWeight: 600 }}>{d.in ?? "—"}</td>
+                        <td style={{ padding: "5px 8px", fontSize: 12, color: "#F87171", textAlign: "center", fontWeight: 600 }}>{d.out ?? "—"}</td>
+                        <td style={{ padding: "5px 8px", textAlign: "center" }}>
+                          {d.hours !== null
+                            ? <span style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{d.hours.toFixed(1)} ש׳</span>
+                            : <span style={{ color: GM, fontSize: 11 }}>—</span>}
+                        </td>
+                        {di === 0 && (
+                          <>
+                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle" }}>
+                              <span style={{ background: "rgba(255,255,255,0.06)", color: GM, borderRadius: 6, padding: "2px 7px", fontSize: 11 }}>{member.plannedHours.toFixed(1)} ש׳</span>
+                            </td>
+                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle" }}>
+                              {diff !== null
+                                ? <span style={{ background: diff >= 0 ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)", color: diff >= 0 ? "#34D399" : "#F87171", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>
+                                    {diff >= 0 ? "+" : ""}{diff.toFixed(1)} ש׳
+                                  </span>
+                                : <span style={{ color: GM, fontSize: 11 }}>—</span>}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        {fromDate && <div style={{ fontSize: 10, color: GM, marginTop: 10, textAlign: "center" }}>{fromDate} — {toDate}</div>}
+      </div>
+    );
+  }
+
   // ── Tab: Ops ───────────────────────────────────────────────────────────────
   function OpsTab() {
     if (opsLoading) return <div style={{ textAlign: "center", padding: 40, color: GM }}>טוען...</div>;
@@ -1449,6 +1623,7 @@ export default function ShiftsClient({
             </>
           ))}
           {tabBtn("summary", "📊 סיכום שעות")}
+          {isManager && tabBtn("attendance", "🕐 נוכחות")}
           {isManager && tabBtn("ops", "📱 תפעולי")}
         </div>
 
@@ -1466,8 +1641,9 @@ export default function ShiftsClient({
           {activeTab === "schedule"  && <ScheduleTab />}
           {activeTab === "myshifts"  && <MyShiftsTab />}
           {activeTab === "requests"  && <RequestsTab />}
-          {activeTab === "summary"   && <SummaryTab />}
-          {activeTab === "ops"       && <OpsTab />}
+          {activeTab === "summary"    && <SummaryTab />}
+          {activeTab === "attendance" && <AttendanceTab />}
+          {activeTab === "ops"        && <OpsTab />}
         </div>
 
         {/* ── SMS Modal ── */}

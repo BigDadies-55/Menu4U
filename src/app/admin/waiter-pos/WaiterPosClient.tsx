@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { signOut } from "next-auth/react";
 import { TableOverlay } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
@@ -16,7 +16,7 @@ import {
 } from "./useWaiterPos";
 
 // ── Main ─────────────────────────────────────────────────────────────
-export default function WaiterPosClient({ restaurants, waiterName, isWaiter = false, waiterId: _w }: {
+export default function WaiterPosClient({ restaurants, waiterName, isWaiter = false, waiterId }: {
   restaurants: Restaurant[]; waiterName: string; isWaiter?: boolean; waiterId?: string;
 }) {
   const {
@@ -53,6 +53,45 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     toggleFilter, toggleFullscreen, triggerInstall,
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
+  // ── Attendance state ──────────────────────────────────────────────
+  const [attCheckedIn,  setAttCheckedIn]  = useState<string | null>(null); // time string "HH:MM"
+  const [attCheckedOut, setAttCheckedOut] = useState<string | null>(null);
+  const [attLoading,    setAttLoading]    = useState(false);
+  const [attNote,       setAttNote]       = useState("");
+  const [attNoteOpen,   setAttNoteOpen]   = useState<"IN" | "OUT" | null>(null);
+
+  const loadTodayAttendance = useCallback(async () => {
+    if (!waiterId) return;
+    try {
+      const res = await fetch(`/api/admin/attendance?userId=${waiterId}`);
+      const data = await res.json();
+      for (const r of (data.records ?? [])) {
+        const t = new Date(r.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+        if (r.type === "IN")  setAttCheckedIn(t);
+        if (r.type === "OUT") setAttCheckedOut(t);
+      }
+    } catch { /* ignore */ }
+  }, [waiterId]);
+
+  useEffect(() => { loadTodayAttendance(); }, [loadTodayAttendance]);
+
+  async function recordAttendance(type: "IN" | "OUT") {
+    if (!waiterId || !restaurantId || attLoading) return;
+    setAttLoading(true);
+    try {
+      const res = await fetch("/api/admin/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, type, note: attNote || undefined }),
+      });
+      if (res.ok) {
+        const t = new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+        if (type === "IN")  setAttCheckedIn(t);
+        if (type === "OUT") setAttCheckedOut(t);
+      }
+    } finally { setAttLoading(false); setAttNote(""); setAttNoteOpen(null); }
+  }
+
   return (
     <div dir="rtl" style={{
       ...(isWaiter ? { position: "fixed" as const, inset: 0, zIndex: 400 } : { minHeight: "calc(100vh - 64px)" }),
@@ -81,6 +120,42 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             background: "#f0f2f5", border: "1px solid #dde1e8",
             borderRadius: 20, fontSize: 12, fontWeight: 600, color: "#555", padding: "2px 10px",
           }}>{waiterName}</span>
+
+          {/* ── Attendance buttons ── */}
+          {waiterId && (<>
+            <button
+              disabled={!!attCheckedIn || attLoading}
+              onClick={() => setAttNoteOpen("IN")}
+              title="רישום כניסה"
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: attCheckedIn ? "default" : "pointer",
+                background: attCheckedIn ? "#f0fdf4" : "#dcfce7",
+                border: `1px solid ${attCheckedIn ? "#86efac" : "#22c55e"}`,
+                color: attCheckedIn ? "#16a34a" : "#15803d",
+                opacity: attCheckedIn ? 0.7 : 1, transition: "0.15s",
+              }}
+            >
+              ✅ {attCheckedIn ? attCheckedIn : "כניסה"}
+            </button>
+            <button
+              disabled={!attCheckedIn || !!attCheckedOut || attLoading}
+              onClick={() => setAttNoteOpen("OUT")}
+              title="רישום יציאה"
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                cursor: (!attCheckedIn || attCheckedOut) ? "default" : "pointer",
+                background: attCheckedOut ? "#fef2f2" : (!attCheckedIn ? "#f5f5f7" : "#fee2e2"),
+                border: `1px solid ${attCheckedOut ? "#fca5a5" : (!attCheckedIn ? "#e0e0e0" : "#ef4444")}`,
+                color: attCheckedOut ? "#dc2626" : (!attCheckedIn ? "#aaa" : "#b91c1c"),
+                opacity: (!attCheckedIn || attCheckedOut) ? 0.6 : 1, transition: "0.15s",
+              }}
+            >
+              🚪 {attCheckedOut ? attCheckedOut : "יציאה"}
+            </button>
+          </>)}
+
           {restaurants.length > 1 && (
             <select value={restaurantId}
               onChange={e => { setRestaurantId(e.target.value); }}
@@ -509,6 +584,35 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ══ ATTENDANCE NOTE POPUP ══ */}
+      {attNoteOpen && (
+        <div onClick={() => setAttNoteOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 24, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.2)" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>
+              {attNoteOpen === "IN" ? "✅ רישום כניסה" : "🚪 רישום יציאה"}
+            </div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
+              {new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+            </div>
+            <input
+              type="text" value={attNote} onChange={e => setAttNote(e.target.value)}
+              placeholder="הערה (אופציונלי)"
+              autoFocus
+              onKeyDown={e => { if (e.key === "Enter") recordAttendance(attNoteOpen); }}
+              style={{ width: "100%", padding: "9px 12px", border: "1px solid #dde1e8", borderRadius: 9, fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 14 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => recordAttendance(attNoteOpen)} disabled={attLoading} style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", background: attNoteOpen === "IN" ? "#22c55e" : "#ef4444", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                {attLoading ? "..." : "אישור"}
+              </button>
+              <button onClick={() => setAttNoteOpen(null)} style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "1px solid #dde1e8", background: "#f5f5f7", color: "#555", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                ביטול
+              </button>
+            </div>
           </div>
         </div>
       )}
