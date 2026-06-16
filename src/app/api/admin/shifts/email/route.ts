@@ -6,7 +6,18 @@ import { sendShiftsEmail } from "@/lib/email";
 const DAYS_HE = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const MONTHS_HE = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
 
-type ShiftCfg = { key: string; label: string; startTime: string; endTime: string };
+type ShiftCfg = { key: string; label: string; startTime: string; endTime: string; color?: string };
+
+const GLASS_SHIFT: Record<string, { bg: string; text: string }> = {
+  "#f59e0b": { bg: "rgba(245,158,11,0.18)",  text: "#FCD34D" },
+  "#3b82f6": { bg: "rgba(59,130,246,0.18)",  text: "#60A5FA" },
+  "#a855f7": { bg: "rgba(168,85,247,0.18)",  text: "#C084FC" },
+  "#6b7280": { bg: "rgba(107,114,128,0.18)", text: "#9CA3AF" },
+  "#ef4444": { bg: "rgba(239,68,68,0.18)",   text: "#F87171" },
+  "#10b981": { bg: "rgba(16,185,129,0.18)",  text: "#34D399" },
+  "#f97316": { bg: "rgba(249,115,22,0.18)",  text: "#FB923C" },
+  "#ec4899": { bg: "rgba(236,72,153,0.18)",  text: "#F472B6" },
+};
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -74,12 +85,16 @@ export async function POST(req: Request) {
     const shiftRows = userShifts.map(s => {
       const d = new Date(s.date);
       const cfg = cfgMap[s.shiftType];
+      const color = cfg?.color ?? "#6b7280";
+      const gs = GLASS_SHIFT[color] ?? { bg: "rgba(255,255,255,0.08)", text: "#fff" };
       return {
         date: s.date.slice(5).replace("-", "/"),
         dayName: DAYS_HE[d.getDay()],
         shiftLabel: cfg?.label ?? s.shiftType,
         startTime: cfg?.startTime ?? s.startTime,
         endTime: cfg?.endTime ?? s.endTime,
+        shiftBg: gs.bg,
+        shiftColor: gs.text,
       };
     });
 
