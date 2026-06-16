@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import AttendanceWidget from "@/components/attendance/AttendanceWidget";
 import { signOut } from "next-auth/react";
 import { TableOverlay } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
@@ -52,46 +53,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     snoozeInsight,
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
-  // ── Attendance state ──────────────────────────────────────────────
-  type AttRec = { id: string; type: string; timestamp: string };
-  const [attRecords,   setAttRecords]   = useState<AttRec[]>([]);
-  const [attLoading,   setAttLoading]   = useState(false);
-  const [attNote,      setAttNote]      = useState("");
-  const [attNoteOpen,  setAttNoteOpen]  = useState<"IN" | "OUT" | null>(null);
-  const [attPanelOpen, setAttPanelOpen] = useState(false);
-
-  const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-  const firstIn  = attRecords.find(r => r.type === "IN");
-  const firstOut = attRecords.find(r => r.type === "OUT");
-  const hasIn    = !!firstIn;
-  const hasOut   = !!firstOut;
-
-  const loadTodayAttendance = useCallback(async () => {
-    if (!waiterId) return;
-    try {
-      const res = await fetch(`/api/admin/attendance?userId=${waiterId}`);
-      const data = await res.json();
-      setAttRecords((data.records ?? []).filter((r: AttRec) => r.type !== "DELETED"));
-    } catch { /* ignore */ }
-  }, [waiterId]);
-
-  useEffect(() => { loadTodayAttendance(); }, [loadTodayAttendance]);
-
-  async function recordAttendance(type: "IN" | "OUT") {
-    if (!waiterId || !restaurantId || attLoading) return;
-    setAttLoading(true);
-    try {
-      const res = await fetch("/api/admin/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId, type, note: attNote || undefined }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAttRecords(prev => [...prev, { id: data.id, type, timestamp: data.timestamp }]);
-      }
-    } finally { setAttLoading(false); setAttNote(""); setAttNoteOpen(null); }
-  }
+  // Attendance is now handled by <AttendanceWidget /> below
 
   const activeRestaurant = restaurants.find(r => r.id === restaurantId);
   const [bgUrl, setBgUrl] = useState(
@@ -172,21 +134,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           )}
 
           {/* ── Attendance clock button ── */}
-          {waiterId && (
-            <button
-              onClick={() => setAttPanelOpen(true)}
-              title="נוכחות"
-              style={{
-                display: "flex", alignItems: "center", gap: 5,
-                padding: "5px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                background: hasOut ? "rgba(248,113,113,0.15)" : hasIn ? "rgba(52,211,153,0.15)" : G_CARD,
-                border: `1px solid ${hasOut ? "rgba(248,113,113,0.4)" : hasIn ? "rgba(52,211,153,0.4)" : G_BORDER_C}`,
-                color: hasOut ? "#F87171" : hasIn ? "#34D399" : "#fff",
-                transition: "0.15s",
-              }}
-            >
-              ⏱ {hasOut ? fmtT(firstOut!.timestamp) : hasIn ? fmtT(firstIn!.timestamp) : "נוכחות"}
-            </button>
+          {waiterId && restaurantId && (
+            <AttendanceWidget restaurantId={restaurantId} userId={waiterId} />
           )}
         </div>
 
@@ -516,83 +465,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       )}
 
       {/* ══ ATTENDANCE PANEL POPUP ══ */}
-      {attPanelOpen && (
-        <div onClick={() => setAttPanelOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,30,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 28, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ fontSize: 17, fontWeight: 800, textAlign: "center", color: "#fff", marginBottom: 4 }}>⏱ נוכחות</div>
-
-            {/* כניסה */}
-            <button
-              disabled={hasIn}
-              onClick={() => { setAttPanelOpen(false); setAttNoteOpen("IN"); }}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: hasIn ? "default" : "pointer", border: "none", fontFamily: "inherit",
-                background: hasIn ? "rgba(52,211,153,0.08)" : "rgba(52,211,153,0.2)",
-                color: hasIn ? "rgba(52,211,153,0.45)" : "#34D399",
-                opacity: hasIn ? 0.7 : 1,
-              }}
-            >
-              ✅ כניסה
-              {hasIn && <span style={{ fontSize: 12, marginRight: 4 }}>{fmtT(firstIn!.timestamp)}</span>}
-            </button>
-
-            {/* יציאה */}
-            <button
-              disabled={!hasIn || hasOut}
-              onClick={() => { setAttPanelOpen(false); setAttNoteOpen("OUT"); }}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: (!hasIn || hasOut) ? "default" : "pointer", border: "none", fontFamily: "inherit",
-                background: hasOut ? "rgba(248,113,113,0.08)" : !hasIn ? "rgba(255,255,255,0.04)" : "rgba(248,113,113,0.2)",
-                color: hasOut ? "rgba(248,113,113,0.45)" : !hasIn ? "rgba(255,255,255,0.25)" : "#F87171",
-                opacity: (!hasIn || hasOut) ? 0.7 : 1,
-              }}
-            >
-              🚪 יציאה
-              {hasOut && <span style={{ fontSize: 12, marginRight: 4 }}>{fmtT(firstOut!.timestamp)}</span>}
-            </button>
-
-            <button
-              onClick={() => setAttPanelOpen(false)}
-              style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-            >
-              ביטול
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ══ ATTENDANCE NOTE POPUP ══ */}
-      {attNoteOpen && (
-        <div onClick={() => setAttNoteOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,30,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 16, padding: 24, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.6)" }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4, color: "#fff" }}>
-              {attNoteOpen === "IN" ? "✅ רישום כניסה" : "🚪 רישום יציאה"}
-            </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
-              {new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-            </div>
-            <input
-              type="text" value={attNote} onChange={e => setAttNote(e.target.value)}
-              placeholder="הערה (אופציונלי)"
-              autoFocus
-              onKeyDown={e => { if (e.key === "Enter") recordAttendance(attNoteOpen); }}
-              style={{ width: "100%", padding: "9px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 9, fontSize: 13, outline: "none", background: "rgba(255,255,255,0.07)", color: "#fff", boxSizing: "border-box", marginBottom: 14 }}
-            />
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => recordAttendance(attNoteOpen)} disabled={attLoading} style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", background: attNoteOpen === "IN" ? "#22c55e" : "#ef4444", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                {attLoading ? "..." : "אישור"}
-              </button>
-              <button onClick={() => setAttNoteOpen(null)} style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ══ NOTIFICATION CENTER ══ */}
       {notifOpen && (
