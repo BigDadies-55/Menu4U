@@ -110,6 +110,12 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [resendingId, setResendingId]   = useState<string | null>(null);
   const [resentId, setResentId]         = useState<string | null>(null);
   const [forcingId, setForcingId]       = useState<string | null>(null);
+  const [toast, setToast]               = useState<{ msg: string; ok: boolean } | null>(null);
+
+  function showToast(msg: string, ok = true) {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3500);
+  }
 
   const [editTarget, setEditTarget]     = useState<UserWithRestaurants | null>(null);
   const [editForm, setEditForm]         = useState({ name: "", username: "", email: "", role: "VIEWER" as Role, phone: "" });
@@ -153,7 +159,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   const filtered = users
     .filter(u => {
-      const matchSearch = (u.name?.toLowerCase().includes(search.toLowerCase()) ?? false) || (u.email?.toLowerCase().includes(search.toLowerCase()) ?? false);
+      const q = search.toLowerCase();
+      const matchSearch = (u.name?.toLowerCase().includes(q) ?? false) || (u.email?.toLowerCase().includes(q) ?? false) || u.username.toLowerCase().includes(q);
       if (!matchSearch) return false;
       if (roleFilter === "ADMIN")      return u.role === "ADMIN" || u.role === "SUPER_ADMIN";
       if (roleFilter === "WAITER")     return u.role === "WAITER";
@@ -189,18 +196,29 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   async function handleForcePasswordChange(userId: string, currentValue: boolean) {
     setForcingId(userId);
-    await fetch(`/api/admin/users/${userId}`, {
+    const res = await fetch(`/api/admin/users/${userId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mustChangePassword: !currentValue }),
     });
-    setUsers(users.map(u => u.id === userId ? { ...u, mustChangePassword: !currentValue } : u));
+    if (res.ok) {
+      setUsers(users.map(u => u.id === userId ? { ...u, mustChangePassword: !currentValue } : u));
+      showToast(!currentValue ? "כפיית שינוי סיסמה הופעלה" : "כפיית שינוי סיסמה בוטלה");
+    } else {
+      showToast("שגיאה בעדכון הגדרת הסיסמה", false);
+    }
     setForcingId(null);
   }
 
   async function handleDelete(userId: string) {
     if (!confirm("האם אתה בטוח שברצונך למחוק את המשתמש?")) return;
-    await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
-    setUsers(users.filter(u => u.id !== userId));
+    const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+    if (res.ok) {
+      setUsers(users.filter(u => u.id !== userId));
+      showToast("המשתמש נמחק בהצלחה");
+    } else {
+      try { const d = await res.json(); showToast(d.error ?? "שגיאה במחיקת המשתמש", false); }
+      catch { showToast("שגיאה במחיקת המשתמש", false); }
+    }
   }
 
   async function handleAddRestaurant() {
@@ -260,12 +278,23 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   async function handleResendVerification(userId: string) {
     setResendingId(userId);
-    await fetch("/api/admin/users/resend-verification", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-    setResendingId(null); setResentId(userId);
-    setTimeout(() => setResentId(null), 3000);
+    try {
+      const res = await fetch("/api/admin/users/resend-verification", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (res.ok) {
+        setResentId(userId);
+        setTimeout(() => setResentId(null), 3000);
+        showToast("הזמנה נשלחה מחדש בהצלחה");
+      } else {
+        const d = await res.json().catch(() => ({}));
+        showToast(d.error ?? "שגיאה בשליחת ההזמנה", false);
+      }
+    } catch {
+      showToast("שגיאת רשת בשליחת ההזמנה", false);
+    }
+    setResendingId(null);
   }
 
   async function handleResetPassword(e: React.FormEvent) {
@@ -368,7 +397,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
           ))}
         </div>
         <input
-          type="search" placeholder="חיפוש לפי שם / מייל…"
+          type="search" placeholder="חיפוש לפי שם / שם משתמש / מייל…"
           value={search} onChange={e => setSearch(e.target.value)}
           style={{
             ...DARK_INPUT, width: 220, padding: "8px 14px", fontSize: 13,
@@ -755,7 +784,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             borderRadius: 16, backdropFilter: "blur(20px)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.5)", width: 210, overflow: "hidden",
           }}>
-            {currentUserRole === "SUPER_ADMIN" && (
+            {["SUPER_ADMIN","ADMIN"].includes(currentUserRole) && (
               <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />
             )}
             <MenuAction icon="🏪" label="ניהול מסעדות" onClick={() => { setManagingUser(user); setAddRestaurantId(""); setOpenMenuId(null); }} />
@@ -766,7 +795,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               onClick={() => { handleForcePasswordChange(user.id, user.mustChangePassword); setOpenMenuId(null); }}
               disabled={forcingId === user.id}
             />
-            {!user.emailVerified && (
+            {!user.emailVerified && user.email && (
               <MenuAction
                 icon={resentId === user.id ? "✓" : "📨"}
                 label={resendingId === user.id ? "שולח..." : resentId === user.id ? "נשלח!" : "שלח הזמנה מחדש"}
@@ -782,6 +811,21 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
       <AssistantWidget page="users" />
       </> /* end mainTab === "users" */}
+
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+          zIndex: 10000, background: toast.ok ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+          border: `1px solid ${toast.ok ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
+          color: toast.ok ? "#6ee7b7" : "#fca5a5",
+          borderRadius: 12, padding: "12px 20px", fontSize: 14, fontWeight: 600,
+          backdropFilter: "blur(12px)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+          display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+          animation: "fadeInUp 0.2s ease",
+        }}>
+          {toast.ok ? "✓" : "✕"} {toast.msg}
+        </div>
+      )}
     </PageShell>
   );
 }
