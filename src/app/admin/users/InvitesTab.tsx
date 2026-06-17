@@ -3,6 +3,52 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Role } from "@/generated/prisma/client";
 
+type CsvRow = {
+  firstName: string; lastName: string;
+  email?: string; phone?: string;
+  role: Role; restaurantId?: string;
+};
+type ImportResult = {
+  ok: number; failed: number;
+  results: { row: number; status: "ok"|"error"; name: string; error?: string }[];
+};
+
+const CSV_ALLOWED_ROLES: Role[] = ["WAITER","EDITOR","VIEWER"];
+const CSV_COLUMNS = ["firstName","lastName","email","phone","role","restaurantId"];
+
+function parseCsv(text: string): { rows: CsvRow[]; errors: string[] } {
+  const lines  = text.trim().split(/\r?\n/);
+  const errors: string[] = [];
+  const rows:   CsvRow[] = [];
+
+  if (lines.length < 2) { errors.push("הקובץ ריק או חסר שורת כותרת"); return { rows, errors }; }
+
+  const header = lines[0].split(",").map(h => h.trim().toLowerCase());
+  const idx = (name: string) => header.indexOf(name.toLowerCase());
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const cols = line.split(",").map(c => c.trim());
+
+    const firstName = cols[idx("firstname")] ?? "";
+    const lastName  = cols[idx("lastname")]  ?? "";
+    const email     = cols[idx("email")]     ?? "";
+    const phone     = cols[idx("phone")]     ?? "";
+    const role      = (cols[idx("role")] ?? "").toUpperCase() as Role;
+    const restaurantId = cols[idx("restaurantid")] ?? "";
+
+    if (!firstName || !lastName) { errors.push(`שורה ${i+1}: שם חסר`); continue; }
+    if (!email && !phone)        { errors.push(`שורה ${i+1}: נדרש אימייל או טלפון`); continue; }
+    if (!CSV_ALLOWED_ROLES.includes(role)) {
+      errors.push(`שורה ${i+1}: תפקיד לא חוקי "${role}" (מותר: WAITER, EDITOR, VIEWER)`);
+      continue;
+    }
+    rows.push({ firstName, lastName, email: email||undefined, phone: phone||undefined, role, restaurantId: restaurantId||undefined });
+  }
+  return { rows, errors };
+}
+
 type Invite = {
   id: string;
   firstName: string;
@@ -61,6 +107,13 @@ export default function InvitesTab({ currentUserRole, restaurants }: Props) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast,         setToast]         = useState<{ msg: string; ok: boolean } | null>(null);
 
+  // CSV import state
+  const [csvRows,      setCsvRows]      = useState<CsvRow[] | null>(null);
+  const [csvErrors,    setCsvErrors]    = useState<string[]>([]);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResults,   setCsvResults]   = useState<ImportResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", phone: "", role: "WAITER" as Role,
   });
@@ -99,6 +152,39 @@ export default function InvitesTab({ currentUserRole, restaurants }: Props) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const { rows, errors } = parseCsv(ev.target?.result as string);
+      setCsvRows(rows);
+      setCsvErrors(errors);
+      setCsvResults(null);
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
+  }
+
+  async function handleCsvImport() {
+    if (!csvRows?.length) return;
+    setCsvImporting(true);
+    try {
+      const res  = await fetch("/api/admin/invites/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: csvRows }),
+      });
+      const data: ImportResult = await res.json();
+      setCsvResults(data);
+      setCsvRows(null);
+      if (data.ok > 0) {
+        await load();
+        showToast(`יובאו ${data.ok} הזמנות בהצלחה${data.failed ? `, ${data.failed} נכשלו` : ""}`, true);
+      }
+    } finally { setCsvImporting(false); }
+  }
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -200,19 +286,95 @@ export default function InvitesTab({ currentUserRole, restaurants }: Props) {
       )}
 
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>
           {invites.filter(i => i.status === "PENDING").length} הזמנות פתוחות
         </div>
         {availableRoles.length > 0 && (
-          <button
-            onClick={() => { setShowForm(v => !v); setFormError(""); }}
-            style={{ padding: "8px 16px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
-          >
-            {showForm ? "ביטול" : "+ הזמנה חדשה"}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {/* CSV import */}
+            <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleCsvFile} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{ padding: "8px 14px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              📥 ייבוא CSV
+            </button>
+            <a href="/invite-template.csv" download style={{ padding: "8px 14px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.45)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit", textDecoration: "none", display: "flex", alignItems: "center" }}>
+              📄 קובץ דוגמא
+            </a>
+            <button
+              onClick={() => { setShowForm(v => !v); setFormError(""); setCsvRows(null); setCsvResults(null); }}
+              style={{ padding: "8px 16px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              {showForm ? "ביטול" : "+ הזמנה חדשה"}
+            </button>
+          </div>
         )}
       </div>
+
+      {/* ── CSV Preview ── */}
+      {csvRows && csvRows.length > 0 && (
+        <div style={{ ...card, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+              תצוגה מקדימה — {csvRows.length} שורות
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => { setCsvRows(null); setCsvErrors([]); }}
+                style={{ padding: "6px 12px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                ביטול
+              </button>
+              <button onClick={handleCsvImport} disabled={csvImporting}
+                style={{ padding: "6px 16px", borderRadius: 7, border: "none", background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                {csvImporting ? "מייבא..." : `ייבא ${csvRows.length} משתמשים`}
+              </button>
+            </div>
+          </div>
+          {csvErrors.length > 0 && (
+            <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 8, padding: "10px 14px" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#f87171", marginBottom: 4 }}>⚠️ שגיאות ({csvErrors.length})</div>
+              {csvErrors.map((e, i) => <div key={i} style={{ fontSize: 11, color: "#fca5a5" }}>{e}</div>)}
+            </div>
+          )}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr>{["שם פרטי","שם משפחה","אימייל","טלפון","תפקיד"].map(h => (
+                  <th key={h} style={{ padding: "6px 10px", textAlign: "right", color: "rgba(255,255,255,0.5)", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {csvRows.slice(0, 10).map((r, i) => (
+                  <tr key={i}>
+                    {[r.firstName, r.lastName, r.email ?? "—", r.phone ?? "—", r.role].map((v, j) => (
+                      <td key={j} style={{ padding: "6px 10px", color: "#fff", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{v}</td>
+                    ))}
+                  </tr>
+                ))}
+                {csvRows.length > 10 && (
+                  <tr><td colSpan={5} style={{ padding: "6px 10px", color: "rgba(255,255,255,0.4)", fontSize: 11 }}>...ועוד {csvRows.length - 10} שורות</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── CSV Results ── */}
+      {csvResults && (
+        <div style={{ ...card }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 10 }}>תוצאות ייבוא</div>
+          <div style={{ display: "flex", gap: 16, marginBottom: 10 }}>
+            <span style={{ color: "#34d399", fontWeight: 700 }}>✅ הצליחו: {csvResults.ok}</span>
+            {csvResults.failed > 0 && <span style={{ color: "#f87171", fontWeight: 700 }}>❌ נכשלו: {csvResults.failed}</span>}
+          </div>
+          {csvResults.results.filter(r => r.status === "error").map((r, i) => (
+            <div key={i} style={{ fontSize: 12, color: "#fca5a5", marginBottom: 2 }}>שורה {r.row} ({r.name}): {r.error}</div>
+          ))}
+          <button onClick={() => setCsvResults(null)} style={{ marginTop: 8, padding: "6px 14px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>סגור</button>
+        </div>
+      )}
 
       {/* ── New Invite Form ── */}
       {showForm && (
