@@ -57,6 +57,7 @@ export async function POST(req: Request) {
       role: invite.role,
       mustChangePassword: false,
       passwordChangedAt: new Date(),
+      emailVerified: invite.email ? new Date() : null,
     },
   });
 
