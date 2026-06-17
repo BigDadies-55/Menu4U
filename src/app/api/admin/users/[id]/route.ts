@@ -43,15 +43,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     updateData.passwordChangedAt = null;
   }
   if (body.mustChangePassword !== undefined) updateData.mustChangePassword = body.mustChangePassword;
-  if (body.name !== undefined) updateData.name = body.name || null;
-  if (body.email) {
-    if (session.user.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Only Super Admin can change email" }, { status: 403 });
-    }
-    const conflict = await prisma.user.findFirst({ where: { email: body.email, NOT: { id } } });
-    if (conflict) return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
-    updateData.email = body.email;
-    updateData.emailVerified = null;
+  if (body.name     !== undefined) updateData.name  = body.name  || null;
+  if (body.phone    !== undefined) updateData.phone = body.phone || null;
+  if (body.email    !== undefined) updateData.email = body.email || null;
+  if (body.username !== undefined) {
+    const uname = (body.username as string).toLowerCase().trim();
+    if (!/^[a-z0-9._-]{3,30}$/.test(uname))
+      return NextResponse.json({ error: "שם משתמש לא תקין (3-30 תווים, a-z 0-9 . _ -)" }, { status: 400 });
+    const conflict = await prisma.user.findUnique({ where: { username: uname } });
+    if (conflict && conflict.id !== id)
+      return NextResponse.json({ error: "שם המשתמש תפוס" }, { status: 409 });
+    updateData.username = uname;
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -61,12 +63,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const user = await prisma.user.update({
     where: { id },
     data: updateData,
-    select: { id: true, name: true, email: true, role: true, emailVerified: true, createdAt: true },
+    select: { id: true, username: true, name: true, email: true, phone: true, role: true, emailVerified: true, createdAt: true },
   });
-  if (body.phone !== undefined) {
-    await prisma.$executeRawUnsafe(`UPDATE "User" SET phone=$1 WHERE id=$2`, body.phone || null, id);
-  }
-  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email, meta: { changed: [...Object.keys(updateData), ...(body.phone !== undefined ? ["phone"] : [])] }, ip: getIp(req) });
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email ?? user.username, meta: { changed: Object.keys(updateData) }, ip: getIp(req) });
 
   if (body.email) {
     const otp = generateOtp();

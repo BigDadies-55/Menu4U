@@ -15,8 +15,10 @@ export default async function UsersPage() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      username: true,
       name: true,
       email: true,
+      phone: true,
       role: true,
       emailVerified: true,
       mustChangePassword: true,
@@ -25,15 +27,7 @@ export default async function UsersPage() {
       restaurantUsers: { include: { restaurant: { select: { id: true, name: true } } } },
     },
   });
-  // phone column may not exist in older DBs — fail-safe
-  let phoneMap: Record<string, string | null> = {};
-  try {
-    const phones = await prisma.$queryRawUnsafe<{ id: string; phone: string | null }[]>(
-      `SELECT id, phone FROM "User"`
-    );
-    phoneMap = Object.fromEntries(phones.map(p => [p.id, p.phone]));
-  } catch { /* column doesn't exist yet */ }
-  const users = rawUsers.map(u => ({ ...u, phone: phoneMap[u.id] ?? null }));
+  const users = rawUsers.map(u => ({ ...u }));
 
   const restaurants = await prisma.restaurant.findMany({
     where: { isActive: true },

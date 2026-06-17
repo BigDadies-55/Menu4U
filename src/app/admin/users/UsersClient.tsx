@@ -17,6 +17,7 @@ type RestaurantUser = {
 
 type UserWithRestaurants = {
   id: string;
+  username: string;
   name: string | null;
   email: string | null;
   role: Role;
@@ -111,7 +112,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   const [forcingId, setForcingId]       = useState<string | null>(null);
 
   const [editTarget, setEditTarget]     = useState<UserWithRestaurants | null>(null);
-  const [editForm, setEditForm]         = useState({ name: "", email: "", role: "VIEWER" as Role, phone: "" });
+  const [editForm, setEditForm]         = useState({ name: "", username: "", email: "", role: "VIEWER" as Role, phone: "" });
   const [editLoading, setEditLoading]   = useState(false);
   const [editError, setEditError]       = useState("");
   const [pinInput, setPinInput]         = useState("");
@@ -233,7 +234,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   function openEdit(user: UserWithRestaurants) {
     setEditTarget(user);
-    setEditForm({ name: user.name ?? "", email: user.email ?? "", role: user.role, phone: user.phone ?? "" });
+    setEditForm({ name: user.name ?? "", username: user.username, email: user.email ?? "", role: user.role, phone: user.phone ?? "" });
     setEditError(""); setPinInput(""); setPinMsg(""); setHasPin(false);
     loadPinStatus(user.id);
   }
@@ -244,7 +245,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     setEditLoading(true); setEditError("");
     const res = await fetch(`/api/admin/users/${editTarget.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editForm.name, email: editForm.email, role: editForm.role, phone: editForm.phone || null }),
+      body: JSON.stringify({ name: editForm.name, username: editForm.username, email: editForm.email, role: editForm.role, phone: editForm.phone || null }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -428,15 +429,20 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                       </div>
                     </td>
 
-                    {/* Name + email */}
+                    {/* Name + username + email */}
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                         <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {user.name ?? "—"}
                         </span>
-                        <span style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "right" }}>
-                          {user.email ?? "—"}
+                        <span style={{ display: "block", fontSize: 11, color: "#818cf8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} dir="ltr">
+                          @{user.username}
                         </span>
+                        {user.email && (
+                          <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {user.email}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -652,17 +658,21 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>עריכת משתמש</h2>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }} dir="ltr">{editTarget.email}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#818cf8" }} dir="ltr">@{editTarget.username}</p>
               </div>
               <button onClick={() => setEditTarget(null)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
             <form onSubmit={handleEdit} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
               <div><FieldLabel>שם מלא</FieldLabel>
                 <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} style={DARK_INPUT} /></div>
+              <div><FieldLabel>שם משתמש</FieldLabel>
+                <input value={editForm.username} onChange={e => setEditForm({ ...editForm, username: e.target.value.toLowerCase() })} style={DARK_INPUT} dir="ltr" placeholder="username" />
+                <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(255,255,255,0.3)" }}>3-30 תווים, אותיות לטיניות קטנות, ספרות, . _ -</p>
+              </div>
               <div><FieldLabel>טלפון נייד</FieldLabel>
                 <input type="tel" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} placeholder="05X-XXXXXXX" style={DARK_INPUT} dir="ltr" /></div>
-              <div><FieldLabel>אימייל *</FieldLabel>
-                <input required type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
+              <div><FieldLabel>אימייל</FieldLabel>
+                <input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
               <div><FieldLabel>הרשאה</FieldLabel>
                 <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value as Role })} style={DARK_SELECT}>
                   {availableRoles.map(r => <option key={r} value={r} style={{ background: "#14141c" }}>{ROLE_LABELS[r]}</option>)}
