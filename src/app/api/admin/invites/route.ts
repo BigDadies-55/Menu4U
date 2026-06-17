@@ -65,7 +65,8 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[invites] createInvite failed:", err);
-    return NextResponse.json({ error: "שגיאה ביצירת ההזמנה" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `שגיאה ביצירת ההזמנה: ${msg}` }, { status: 500 });
   }
 
   try {
