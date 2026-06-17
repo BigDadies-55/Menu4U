@@ -21,5 +21,5 @@ npx prisma migrate resolve --applied 20260610200000_manager_pin_void_comp
 npx prisma migrate resolve --applied 20260611000000_order_item_served_by
 npx prisma migrate resolve --applied 20260611100000_add_waiter_station
 npx prisma migrate resolve --applied 20260614120000_siteconfig_extended
-npx prisma migrate deploy --skip-advisory-lock
+PRISMA_MIGRATE_SKIP_ADVISORY_LOCK=1 npx prisma migrate deploy
 next build
