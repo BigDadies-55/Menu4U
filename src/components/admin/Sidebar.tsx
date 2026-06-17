@@ -842,7 +842,7 @@ export default function Sidebar({
 
                   {/* Group items */}
                   <div className={`group-items-inner${isGroupOpen ? " open" : ""}`}>
-                    <div style={{ padding: "4px 0 3px" }}>
+                    <div style={{ padding: "2px 0 2px" }}>
                       {visItems.map(item => {
                         const active = isLeafActive(item, pathname);
                         const isFav  = favSet.has(item.href);
@@ -850,28 +850,28 @@ export default function Sidebar({
                           <div
                             key={item.href}
                             className="nav-item-row"
-                            style={{ display: "flex", alignItems: "center", position: "relative", margin: "2px 0" }}
+                            style={{ display: "flex", alignItems: "center", position: "relative", margin: "1px 0" }}
                           >
                             <Link
                               href={item.href}
                               onClick={closeDrawer}
                               className={active ? undefined : "nav-item-link"}
                               style={{
-                                display: "flex", alignItems: "center", gap: 12,
-                                padding: "11px 14px", fontSize: 14,
+                                display: "flex", alignItems: "center", gap: 8,
+                                padding: "7px 12px", fontSize: 13,
                                 color: active ? "#fff" : "rgba(255,255,255,0.8)",
-                                textDecoration: "none", borderRadius: 14,
+                                textDecoration: "none", borderRadius: 10,
                                 background: active
                                   ? `linear-gradient(135deg, ${GLASS_ACCENT}, ${GLASS_ACCENT2})`
                                   : "transparent",
-                                boxShadow: active ? `0 6px 16px ${GLASS_GLOW}` : "none",
+                                boxShadow: active ? `0 4px 12px ${GLASS_GLOW}` : "none",
                                 fontWeight: active ? 700 : 400,
                                 flex: 1,
                                 transition: "all 0.2s",
                               }}
                             >
                               <span style={{
-                                width: 22, height: 22, borderRadius: 8,
+                                width: 20, height: 20, borderRadius: 6,
                                 background: active ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 flexShrink: 0,
@@ -883,9 +883,9 @@ export default function Sidebar({
                               {/* Live dot for הזמנות */}
                               {item.href === "/admin/orders" && (
                                 <span style={{
-                                  marginRight: "auto", width: 8, height: 8, borderRadius: "50%",
+                                  marginRight: "auto", width: 7, height: 7, borderRadius: "50%",
                                   background: "#10b981", flexShrink: 0,
-                                  boxShadow: "0 0 8px #10b981",
+                                  boxShadow: "0 0 6px #10b981",
                                   animation: "glass-pulse 2s infinite",
                                   display: "inline-block",
                                 }} />
