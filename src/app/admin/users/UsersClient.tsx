@@ -464,9 +464,6 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                         <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {user.name ?? "—"}
                         </span>
-                        <span style={{ display: "block", fontSize: 11, color: "#818cf8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} dir="ltr">
-                          @{user.username}
-                        </span>
                         {user.email && (
                           <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                             {user.email}
