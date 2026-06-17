@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     select: { email: true, name: true, emailVerified: true },
   });
 
-  if (!user) return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
+  if (!user || !user.email) return NextResponse.json({ error: "משתמש לא נמצא או אין אימייל" }, { status: 404 });
   if (user.emailVerified) return NextResponse.json({ success: true });
 
   const hashed = hashOtp(otp.trim());

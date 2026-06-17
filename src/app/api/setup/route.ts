@@ -5,7 +5,7 @@ import crypto from "crypto";
 
 async function runSetup() {
   const existing = await prisma.user.findUnique({
-    where: { email: "admin@menu4u.com" },
+    where: { username: "admin" },
   });
 
   if (existing) {
@@ -17,12 +17,14 @@ async function runSetup() {
 
   await prisma.user.create({
     data: {
+      username: "admin",
       email: "admin@menu4u.com",
       name: "Super Admin",
+      firstName: "Super",
+      lastName: "Admin",
       password,
       role: "SUPER_ADMIN",
       mustChangePassword: true,
-      emailVerified: new Date(),
     },
   });
 
@@ -41,7 +43,7 @@ async function runSetup() {
   }
 
   // Return password only via this one-time call — store it immediately
-  return { success: true, email: "admin@menu4u.com", tempPassword };
+  return { success: true, username: "admin", email: "admin@menu4u.com", tempPassword };
 }
 
 function checkSecret(secret: string | null): boolean {

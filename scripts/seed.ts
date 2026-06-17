@@ -9,17 +9,20 @@ async function main() {
   const password = await bcrypt.hash("admin123", 12);
 
   const superAdmin = await prisma.user.upsert({
-    where: { email: "admin@menu4u.com" },
+    where: { username: "admin" },
     update: {},
     create: {
+      username: "admin",
       email: "admin@menu4u.com",
       name: "Super Admin",
+      firstName: "Super",
+      lastName: "Admin",
       password,
       role: "SUPER_ADMIN",
     },
   });
 
-  console.log("✅ Super Admin created:", superAdmin.email);
+  console.log("✅ Super Admin created:", superAdmin.username);
 
   const restaurant = await prisma.restaurant.upsert({
     where: { id: "demo-restaurant" },
@@ -84,7 +87,7 @@ async function main() {
 
   console.log("✅ Demo menu, category and items created");
   console.log("\n🚀 Login credentials:");
-  console.log("   Email: admin@menu4u.com");
+  console.log("   Username: admin");
   console.log("   Password: admin123");
 }
 

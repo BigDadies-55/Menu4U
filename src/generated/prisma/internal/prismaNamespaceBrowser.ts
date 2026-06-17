@@ -52,6 +52,8 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  UserInvite: 'UserInvite',
+  OtpCode: 'OtpCode',
   PasswordHistory: 'PasswordHistory',
   PasswordPolicy: 'PasswordPolicy',
   Account: 'Account',
@@ -103,9 +105,13 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const UserScalarFieldEnum = {
   id: 'id',
+  username: 'username',
   name: 'name',
+  firstName: 'firstName',
+  lastName: 'lastName',
   email: 'email',
   emailVerified: 'emailVerified',
+  phone: 'phone',
   image: 'image',
   password: 'password',
   role: 'role',
@@ -127,6 +133,37 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const UserInviteScalarFieldEnum = {
+  id: 'id',
+  token: 'token',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  email: 'email',
+  phone: 'phone',
+  role: 'role',
+  restaurantIds: 'restaurantIds',
+  invitedById: 'invitedById',
+  status: 'status',
+  expiresAt: 'expiresAt',
+  reminderSentAt: 'reminderSentAt',
+  createdAt: 'createdAt'
+} as const
+
+export type UserInviteScalarFieldEnum = (typeof UserInviteScalarFieldEnum)[keyof typeof UserInviteScalarFieldEnum]
+
+
+export const OtpCodeScalarFieldEnum = {
+  id: 'id',
+  identifier: 'identifier',
+  channel: 'channel',
+  code: 'code',
+  expires: 'expires',
+  attempts: 'attempts'
+} as const
+
+export type OtpCodeScalarFieldEnum = (typeof OtpCodeScalarFieldEnum)[keyof typeof OtpCodeScalarFieldEnum]
 
 
 export const PasswordHistoryScalarFieldEnum = {
@@ -226,6 +263,7 @@ export const RestaurantScalarFieldEnum = {
   language: 'language',
   welcomeText: 'welcomeText',
   splashImage: 'splashImage',
+  waiterBg: 'waiterBg',
   subscriptionFrom: 'subscriptionFrom',
   subscriptionTo: 'subscriptionTo',
   instagram: 'instagram',

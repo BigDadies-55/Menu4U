@@ -28,14 +28,13 @@ export async function POST(req: Request) {
     where: { email: email.toLowerCase().trim() },
     select: { id: true, email: true, name: true },
   });
-  if (!user) return genericOk;
+  if (!user || !user.email) return genericOk;
 
-  // Delete any existing reset tokens for this email before creating a new one
   await prisma.verificationToken.deleteMany({ where: { identifier: user.email } });
 
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = hashOtp(rawToken);
-  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.verificationToken.create({
     data: { identifier: user.email, token: hashedToken, expires },

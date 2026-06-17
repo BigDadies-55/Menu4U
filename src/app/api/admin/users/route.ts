@@ -36,21 +36,25 @@ export async function POST(req: Request) {
     }
   }
 
-  const existing = await prisma.user.findFirst({ where: { email } });
-  if (existing) {
-    return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
+  // Generate unique username from email prefix
+  const baseUsername = email.split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g, "_");
+  let username = baseUsername;
+  let suffix = 2;
+  while (await prisma.user.findUnique({ where: { username } })) {
+    username = `${baseUsername}_${suffix++}`;
   }
 
   let user;
   try {
     user = await prisma.user.create({
       data: {
+        username,
         name: name || null,
         email,
-        password: null,         // set by the user when they accept the invite
+        password: null,
         role: (role as Role) ?? "VIEWER",
         mustChangePassword: false,
-        emailVerified: null,    // set only after invite is accepted
+        emailVerified: null,
         ...(restaurantIds.length > 0 ? {
           restaurantUsers: {
             create: (restaurantIds as string[]).map((rid) => ({ restaurantId: rid })),
@@ -83,7 +87,7 @@ export async function POST(req: Request) {
     action: "CREATE_USER",
     entity: "user",
     entityId: user.id,
-    entityName: user.email,
+    entityName: user.email ?? user.id,
     meta: { role: user.role },
     ip: getIp(req),
   });

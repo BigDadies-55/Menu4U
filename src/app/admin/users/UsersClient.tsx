@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/client";
 import { T } from "@/lib/ui";
 import PageShell from "@/components/admin/PageShell";
+import InvitesTab from "./InvitesTab";
 
 type RestaurantUser = {
   restaurantId: string;
@@ -17,7 +18,7 @@ type RestaurantUser = {
 type UserWithRestaurants = {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
   role: Role;
   phone: string | null;
   emailVerified: Date | null;
@@ -88,6 +89,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const [mainTab, setMainTab]           = useState<"users" | "invites">("users");
   const [showForm, setShowForm]         = useState(false);
   const [form, setForm]                 = useState({ name: "", email: "", role: "VIEWER" as Role });
   const [formRestaurantIds, setFormRestaurantIds] = useState<string[]>([]);
@@ -150,7 +152,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   const filtered = users
     .filter(u => {
-      const matchSearch = (u.name?.toLowerCase().includes(search.toLowerCase()) ?? false) || u.email.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = (u.name?.toLowerCase().includes(search.toLowerCase()) ?? false) || (u.email?.toLowerCase().includes(search.toLowerCase()) ?? false);
       if (!matchSearch) return false;
       if (roleFilter === "ADMIN")      return u.role === "ADMIN" || u.role === "SUPER_ADMIN";
       if (roleFilter === "WAITER")     return u.role === "WAITER";
@@ -231,7 +233,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   function openEdit(user: UserWithRestaurants) {
     setEditTarget(user);
-    setEditForm({ name: user.name ?? "", email: user.email, role: user.role, phone: user.phone ?? "" });
+    setEditForm({ name: user.name ?? "", email: user.email ?? "", role: user.role, phone: user.phone ?? "" });
     setEditError(""); setPinInput(""); setPinMsg(""); setHasPin(false);
     loadPinStatus(user.id);
   }
@@ -325,6 +327,21 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         </button>
       </div>
 
+      {/* ── Main tabs ── */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, width: "fit-content", border: "1px solid rgba(255,255,255,0.08)" }}>
+        {(["users","invites"] as const).map(t => (
+          <button key={t} onClick={() => setMainTab(t)} style={{ padding: "7px 18px", borderRadius: 9, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer", background: mainTab === t ? "rgba(255,255,255,0.1)" : "transparent", color: mainTab === t ? "#fff" : "rgba(255,255,255,0.45)", transition: "all 0.15s" }}>
+            {t === "users" ? "משתמשים" : "הזמנות"}
+          </button>
+        ))}
+      </div>
+
+      {mainTab === "invites" && (
+        <InvitesTab currentUserRole={currentUserRole} restaurants={restaurants} />
+      )}
+
+      {mainTab === "users" && <>
+
       {/* ── Filter bar ── */}
       <div style={{
         background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
@@ -387,7 +404,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             <tbody>
               {filtered.map(user => {
                 const status   = statusText(user);
-                const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
+                const initials = (user.name ?? user.email ?? "?").slice(0, 2).toUpperCase();
                 const isOpen   = openMenuId === user.id;
                 const tdBase: React.CSSProperties = {
                   padding: "0 14px", height: 52, verticalAlign: "middle",
@@ -418,7 +435,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           {user.name ?? "—"}
                         </span>
                         <span style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "right" }}>
-                          {user.email}
+                          {user.email ?? "—"}
                         </span>
                       </div>
                     </td>
@@ -754,6 +771,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       })()}
 
       <AssistantWidget page="users" />
+      </> /* end mainTab === "users" */}
     </PageShell>
   );
 }

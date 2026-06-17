@@ -20,6 +20,7 @@ export async function POST(req: Request) {
   });
 
   if (!user) return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
+  if (!user.email) return NextResponse.json({ error: "למשתמש אין אימייל" }, { status: 400 });
   if (user.emailVerified) return NextResponse.json({ success: true });
 
   const otp = generateOtp();

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isOwner } from "@/lib/permissions";
 import { logAudit, getIp } from "@/lib/audit";
 import { NextResponse } from "next/server";
-import type { Role } from "@/generated/prisma";
+import type { Role } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 

@@ -16,26 +16,25 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email:    { label: "Email",    type: "email" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
         totpCode: { label: "TOTP",     type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.username || !credentials?.password) return null;
 
-        const user = await prisma.user.findFirst({
-          where: { email: credentials.email as string },
-          orderBy: { createdAt: "asc" },
+        const user = await prisma.user.findUnique({
+          where: { username: credentials.username as string },
         });
 
         if (!user || !user.password) {
-          await logAudit({ action: "LOGIN_FAILED", meta: { email: credentials.email } });
+          await logAudit({ action: "LOGIN_FAILED", meta: { username: credentials.username } });
           return null;
         }
 
         // Account lockout check
         if (user.lockedUntil && user.lockedUntil > new Date()) {
-          await logAudit({ action: "LOGIN_FAILED", userId: user.id, userEmail: user.email, meta: { reason: "account_locked" } });
+          await logAudit({ action: "LOGIN_FAILED", userId: user.id, userEmail: user.email ?? undefined, meta: { reason: "account_locked" } });
           return null;
         }
 
@@ -53,7 +52,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
             where: { id: user.id },
             data: { failedLoginAttempts: attempts, ...(lockedUntil ? { lockedUntil } : {}) },
           });
-          await logAudit({ action: "LOGIN_FAILED", userId: user.id, userEmail: user.email, meta: { reason: "bad_password", attempts } });
+          await logAudit({ action: "LOGIN_FAILED", userId: user.id, userEmail: user.email ?? undefined, meta: { reason: "bad_password", attempts } });
           return null;
         }
 
@@ -94,7 +93,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
             };
           }
           if (!verifyTotpCode(user.totpSecret!, totpCode)) {
-            await logAudit({ action: "LOGIN_FAILED", userId: user.id, userEmail: user.email, meta: { reason: "bad_totp" } });
+            await logAudit({ action: "LOGIN_FAILED", userId: user.id, userEmail: user.email ?? undefined, meta: { reason: "bad_totp" } });
             return null;
           }
         }

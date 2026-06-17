@@ -30,9 +30,13 @@ enum OrderStatus {
 
 model User {
   id            String    @id @default(cuid())
+  username      String    @unique
   name          String?
-  email         String    @unique
+  firstName     String?
+  lastName      String?
+  email         String?
   emailVerified DateTime?
+  phone         String?
   image         String?
   password      String?
   role          Role      @default(VIEWER)
@@ -53,16 +57,56 @@ model User {
   lockedUntil          DateTime?
   totpSecret           String?
   totpEnabled          Boolean   @default(false)
-  managerPin           String?   // bcrypt hash of 4-digit PIN for void/comp authorization
-  accounts         Account[]
-  sessions         Session[]
-  restaurantUsers  RestaurantUser[]
-  passwordHistory  PasswordHistory[]
+  managerPin           String?
+
+  accounts          Account[]
+  sessions          Session[]
+  restaurantUsers   RestaurantUser[]
+  passwordHistory   PasswordHistory[]
   waiterStations    WaiterStation[]
   pushSubscriptions PushSubscription[]
   shifts            Shift[]
   shiftRequestsFrom ShiftRequest[] @relation("ShiftRequestFrom")
   shiftRequestsTo   ShiftRequest[] @relation("ShiftRequestTo")
+  invitesSent       UserInvite[]   @relation("InvitedBy")
+}
+
+enum InviteStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+model UserInvite {
+  id            String       @id @default(cuid())
+  token         String       @unique
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String?
+  role          Role
+  restaurantIds String[]
+  invitedById   String
+  invitedBy     User         @relation("InvitedBy", fields: [invitedById], references: [id])
+  status        InviteStatus @default(PENDING)
+  expiresAt     DateTime
+  reminderSentAt DateTime?
+  createdAt     DateTime     @default(now())
+
+  @@index([token])
+  @@index([status])
+}
+
+model OtpCode {
+  id         String   @id @default(cuid())
+  identifier String
+  channel    String
+  code       String
+  expires    DateTime
+  attempts   Int      @default(0)
+
+  @@index([identifier])
 }
 
 model PasswordHistory {
