@@ -103,25 +103,39 @@ export default function InvitesTab({ currentUserRole, restaurants }: Props) {
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     setFormError("");
-    if (!form.email && !form.phone) { setFormError("נדרש אימייל או טלפון"); return; }
+    if (!form.firstName.trim()) { setFormError("שם פרטי חובה"); return; }
+    if (!form.lastName.trim())  { setFormError("שם משפחה חובה"); return; }
+    if (!form.email.trim() && !form.phone.trim()) { setFormError("נדרש אימייל או טלפון"); return; }
     setFormLoading(true);
     try {
+      const payload = {
+        firstName:     form.firstName.trim(),
+        lastName:      form.lastName.trim(),
+        email:         form.email.trim()  || undefined,
+        phone:         form.phone.trim()  || undefined,
+        role:          form.role,
+        restaurantIds: formRestaurantIds,
+      };
       const res = await fetch("/api/admin/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, restaurantIds: formRestaurantIds }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch { /* empty body */ }
       if (!res.ok) {
-        setFormError(data.error ?? "שגיאה בשליחת ההזמנה");
+        setFormError((data.error as string) ?? `שגיאה (${res.status})`);
         return;
       }
-      setInvites(prev => [{ ...data, invitedBy: { name: null, username: "" } }, ...prev]);
+      setInvites(prev => [{ ...data, invitedBy: { name: null, username: "" } } as Invite, ...prev]);
       setShowForm(false);
       setForm({ firstName: "", lastName: "", email: "", phone: "", role: "WAITER" });
       setFormRestaurantIds([]);
       setRestSearch("");
-      showToast(`ההזמנה ל-${data.firstName} ${data.lastName} נשלחה`, true);
+      showToast(`ההזמנה ל-${form.firstName} ${form.lastName} נשלחה ✉️`, true);
+    } catch (err) {
+      setFormError("שגיאת רשת — בדוק את החיבור");
+      console.error("[invite send]", err);
     } finally { setFormLoading(false); }
   }
 
@@ -232,29 +246,12 @@ export default function InvitesTab({ currentUserRole, restaurants }: Props) {
             * נדרש לפחות אחד מהשניים
           </p>
 
-          {/* Role — pill buttons */}
+          {/* Role — dropdown */}
           <div>
-            <label style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", display: "block", marginBottom: 8 }}>תפקיד *</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {availableRoles.map(r => {
-                const sel = form.role === r;
-                const badge = ROLE_BADGE[r];
-                return (
-                  <button key={r} type="button"
-                    onClick={() => setForm({ ...form, role: r })}
-                    style={{
-                      padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                      cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-                      border: `1px solid ${sel ? (badge.color as string) : "rgba(255,255,255,0.12)"}`,
-                      background: sel ? badge.background : "transparent",
-                      color: sel ? (badge.color as string) : "rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    {ROLE_LABELS[r]}
-                  </button>
-                );
-              })}
-            </div>
+            <label style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", display: "block", marginBottom: 4 }}>תפקיד *</label>
+            <select style={DARK_INPUT} value={form.role} onChange={e => setForm({ ...form, role: e.target.value as Role })}>
+              {availableRoles.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+            </select>
           </div>
 
           {/* Restaurants — searchable dropdown */}

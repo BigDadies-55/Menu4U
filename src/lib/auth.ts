@@ -83,7 +83,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
             // First step: password ok, 2FA still needed — signal to client
             return {
               id: user.id,
-              email: user.email,
+              email: user.email ?? "",
               name: user.name,
               image: user.image,
               role: user.role,
@@ -100,7 +100,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 
         return {
           id: user.id,
-          email: user.email,
+          email: user.email ?? "",
           name: user.name,
           image: user.image,
           role: user.role,

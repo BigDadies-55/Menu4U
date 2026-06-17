@@ -55,14 +55,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "מסעדה לא מורשית" }, { status: 403 });
   }
 
-  const invite = await createInvite({
-    firstName, lastName, email, phone,
-    role: role as Role,
-    restaurantIds: restaurantIds ?? [],
-    invitedById: session.user.id,
-  });
+  let invite;
+  try {
+    invite = await createInvite({
+      firstName, lastName, email, phone,
+      role: role as Role,
+      restaurantIds: restaurantIds ?? [],
+      invitedById: session.user.id,
+    });
+  } catch (err) {
+    console.error("[invites] createInvite failed:", err);
+    return NextResponse.json({ error: "שגיאה ביצירת ההזמנה" }, { status: 500 });
+  }
 
-  await sendInviteNotifications(invite);
+  try {
+    await sendInviteNotifications(invite);
+  } catch (err) {
+    console.error("[invites] sendInviteNotifications failed:", err);
+  }
 
   return NextResponse.json(invite, { status: 201 });
 }
