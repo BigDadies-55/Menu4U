@@ -45,10 +45,10 @@ const TH_BORDER  = "rgba(52,211,153,0.35)";
 const ROW_BORDER = "rgba(255,255,255,0.07)";
 
 const DATE_INPUT: React.CSSProperties = {
-  width: "100%", padding: "3px 5px", borderRadius: 6,
+  width: "100%", padding: "2px 2px", borderRadius: 5,
   border: "1px solid rgba(255,255,255,0.12)",
   background: "rgba(255,255,255,0.06)", color: TEXT_MAIN,
-  fontSize: 11, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+  fontSize: 10, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
   textAlign: "center",
 };
 
@@ -149,7 +149,7 @@ function ModuleTableRow({
       </td>
 
       {/* From date */}
-      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 110 }}>
+      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 90 }}>
         <input
           type="date"
           value={isoToDate(state.enabledFrom)}
@@ -160,7 +160,7 @@ function ModuleTableRow({
       </td>
 
       {/* To date */}
-      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 110 }}>
+      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 90 }}>
         <input
           type="date"
           value={isoToDate(state.enabledTo)}
