@@ -38,20 +38,20 @@ interface Props {
 const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "EDITOR", "WAITER", "VIEWER", "DISPLAY"];
 
 const ROLE_BADGE: Record<string, React.CSSProperties> = {
-  SUPER_ADMIN:   { background: "rgba(255,107,107,0.2)",  color: "#ff6b6b" },
-  ADMIN:         { background: "rgba(51,154,240,0.2)",   color: "#74c0fc" },
-  OWNER:         { background: "rgba(252,196,25,0.2)",   color: "#fcc419" },
-  SHIFT_MANAGER: { background: "rgba(255,146,43,0.2)",   color: "#ff922b" },
-  EDITOR:        { background: "rgba(190,75,219,0.2)",   color: "#da77f2" },
-  WAITER:        { background: "rgba(81,207,102,0.2)",   color: "#51cf66" },
-  VIEWER:        { background: "rgba(108,117,125,0.2)",  color: "#adb5bd" },
-  DISPLAY:       { background: "rgba(34,184,207,0.2)",   color: "#22b8cf" },
+  SUPER_ADMIN:   { background: T.redSub,    color: T.red    },
+  ADMIN:         { background: T.blueSub,   color: T.blue   },
+  OWNER:         { background: T.yellowSub, color: T.yellow },
+  SHIFT_MANAGER: { background: T.orangeSub, color: T.orange },
+  EDITOR:        { background: T.purpleSub, color: T.purple },
+  WAITER:        { background: T.greenSub,  color: T.green  },
+  VIEWER:        { background: T.surface,   color: T.muted  },
+  DISPLAY:       { background: T.cyanSub,   color: T.cyan   },
 };
 
 const DARK_INPUT: React.CSSProperties = {
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#fff",
+  background: T.surface,
+  border: `1px solid ${T.border}`,
+  color: T.text,
   borderRadius: 12,
   padding: "10px 14px",
   fontSize: 14,
@@ -66,8 +66,8 @@ const MODAL_OVERLAY: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
 };
 const MODAL_BOX: React.CSSProperties = {
-  background: "rgba(20,20,28,0.98)",
-  border: "1px solid rgba(255,255,255,0.15)",
+  background: T.panel,
+  border: `1px solid ${T.border}`,
   borderRadius: 20,
   backdropFilter: "blur(20px)",
   width: "100%",
@@ -315,15 +315,15 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     : [];
 
   function statusText(u: UserWithRestaurants) {
-    if (!u.emailVerified)      return { label: "ממתין לאימות",      color: "rgba(255,255,255,0.4)" };
-    if (u.mustChangePassword)  return { label: "נדרש שינוי סיסמא", color: "#fcc419" };
-    return                            { label: "מאומת ✓",           color: "#51cf66" };
+    if (!u.emailVerified)      return { label: "ממתין לאימות",      color: T.muted   };
+    if (u.mustChangePassword)  return { label: "נדרש שינוי סיסמא", color: T.yellow  };
+    return                            { label: "מאומת ✓",           color: T.green   };
   }
 
   function shortId(id: string) { return "#" + id.slice(-6).toUpperCase(); }
 
   const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
+    <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
       {children}
     </div>
   );
@@ -332,35 +332,35 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     <PageShell>
       {/* ── Glass header ── */}
       <div style={{
-        background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: "15px 25px",
+        background: T.surface, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+        border: `1px solid ${T.border}`, borderRadius: 20, padding: "15px 25px",
         display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20,
       }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#fff" }}>ניהול משתמשים</h1>
-          <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: T.text }}>ניהול משתמשים</h1>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: T.sub }}>
             {users.length} משתמשים רשומים במערכת
           </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
           style={{
-            background: "linear-gradient(135deg,#D97706,#F59E0B)", border: "none", color: "#fff",
+            background: `linear-gradient(135deg,${T.gold},${T.amber})`, border: "none", color: "#000",
             padding: "10px 20px", borderRadius: 12, fontFamily: "inherit", fontSize: 14, fontWeight: 700,
             cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-            boxShadow: "0 4px 15px rgba(217,119,6,0.3)", transition: "all 0.2s",
+            boxShadow: `0 4px 15px ${T.amberGlow}`, transition: "all 0.2s",
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(217,119,6,0.45)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 15px rgba(217,119,6,0.3)"; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 6px 20px ${T.amberGlow}`; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 15px ${T.amberGlow}`; }}
         >
           + הוסף משתמש
         </button>
       </div>
 
       {/* ── Main tabs ── */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, width: "fit-content", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: T.surface, borderRadius: 12, padding: 4, width: "fit-content", border: `1px solid ${T.borderSub}` }}>
         {(["users","invites"] as const).map(t => (
-          <button key={t} onClick={() => setMainTab(t)} style={{ padding: "7px 18px", borderRadius: 9, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer", background: mainTab === t ? "rgba(255,255,255,0.1)" : "transparent", color: mainTab === t ? "#fff" : "rgba(255,255,255,0.45)", transition: "all 0.15s" }}>
+          <button key={t} onClick={() => setMainTab(t)} style={{ padding: "7px 18px", borderRadius: 9, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer", background: mainTab === t ? T.raised : "transparent", color: mainTab === t ? T.text : T.muted, transition: "all 0.15s" }}>
             {t === "users" ? "משתמשים" : "הזמנות"}
           </button>
         ))}
@@ -374,11 +374,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
       {/* ── Filter bar ── */}
       <div style={{
-        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+        background: T.surface, border: `1px solid ${T.border}`,
         borderRadius: 16, padding: "12px 16px", marginBottom: 16,
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
       }}>
-        <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 40, padding: 3, gap: 2 }}>
+        <div style={{ display: "flex", background: T.raised, borderRadius: 40, padding: 3, gap: 2 }}>
           {([
             { key: "all",        label: "כל המשתמשים" },
             { key: "ADMIN",      label: "מנהלים" },
@@ -389,8 +389,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               style={{
                 padding: "5px 14px", borderRadius: 40, fontSize: 12, fontWeight: 600, cursor: "pointer",
                 border: "none", fontFamily: "inherit", transition: "all 0.15s",
-                background: roleFilter === tab.key ? "linear-gradient(135deg,#D97706,#F59E0B)" : "transparent",
-                color: roleFilter === tab.key ? "#fff" : "rgba(255,255,255,0.5)",
+                background: roleFilter === tab.key ? `linear-gradient(135deg,${T.gold},${T.amber})` : "transparent",
+                color: roleFilter === tab.key ? "#000" : T.muted,
               }}>
               {tab.label}
             </button>
@@ -408,17 +408,17 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
       {/* ── Users list ── */}
       <style>{`
-        .user-row:hover td { background: rgba(255,255,255,0.07) !important; }
+        .user-row:hover td { background: var(--c-raised) !important; }
       `}</style>
       <div style={{
-        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.15)",
+        background: T.surface, border: `1px solid ${T.border}`,
         borderRadius: 20, overflow: "hidden",
       }}>
         {filtered.length === 0 ? (
           <div style={{ padding: "60px 24px", textAlign: "center" }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>לא נמצאו משתמשים</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>נסה לשנות את הסינון</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.sub, marginBottom: 6 }}>לא נמצאו משתמשים</div>
+            <div style={{ fontSize: 13, color: T.muted }}>נסה לשנות את הסינון</div>
           </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
@@ -438,8 +438,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 const isOpen   = openMenuId === user.id;
                 const tdBase: React.CSSProperties = {
                   padding: "0 14px", height: 52, verticalAlign: "middle",
-                  background: "rgba(255,255,255,0.03)",
-                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                  background: T.surface,
+                  borderTop: `1px solid ${T.borderSub}`,
                   transition: "background 0.15s",
                   position: isOpen ? "relative" : undefined,
                   zIndex: isOpen ? 10 : undefined,
@@ -450,9 +450,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 6 }}>
                       <div style={{
                         width: 40, height: 40, borderRadius: "50%",
-                        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
+                        background: T.raised, border: `1px solid ${T.border}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 13, fontWeight: 700, color: "#fff",
+                        fontSize: 13, fontWeight: 700, color: T.text,
                       }}>
                         {initials}
                       </div>
@@ -461,11 +461,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     {/* Name + username + email */}
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {user.name ?? "—"}
                         </span>
                         {user.email && (
-                          <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          <span style={{ display: "block", fontSize: 11, color: T.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                             {user.email}
                           </span>
                         )}
@@ -483,10 +483,10 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                         {user.restaurantUsers.length === 0 ? (
-                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>ללא שיוך</span>
+                          <span style={{ fontSize: 12, color: T.muted }}>ללא שיוך</span>
                         ) : (
                           user.restaurantUsers.map(ru => (
-                            <span key={ru.restaurantId} style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 500, border: "1px solid rgba(255,255,255,0.1)", whiteSpace: "nowrap" }}>
+                            <span key={ru.restaurantId} style={{ background: T.raised, color: T.sub, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 500, border: `1px solid ${T.borderSub}`, whiteSpace: "nowrap" }}>
                               {ru.restaurant.name}
                             </span>
                           ))
@@ -501,8 +501,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
                     {/* ID + date */}
                     <td style={tdBase}>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", lineHeight: 1.3 }}>{shortId(user.id)}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 2, lineHeight: 1.3 }}>{formatDate(user.createdAt)}</div>
+                      <div style={{ fontSize: 11, color: T.muted, fontFamily: "monospace", lineHeight: 1.3 }}>{shortId(user.id)}</div>
+                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2, lineHeight: 1.3 }}>{formatDate(user.createdAt)}</div>
                     </td>
 
                     {/* 3-dot menu */}
@@ -515,9 +515,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
                           setOpenMenuId(openMenuId === user.id ? null : user.id);
                         }}
-                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 18, borderRadius: 8, lineHeight: 1, fontFamily: "inherit", transition: "0.15s", width: 34, height: 34, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
-                        onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                        style={{ background: T.raised, border: `1px solid ${T.borderSub}`, cursor: "pointer", color: T.sub, fontSize: 18, borderRadius: 8, lineHeight: 1, fontFamily: "inherit", transition: "0.15s", width: 34, height: 34, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = T.overlay)}
+                        onMouseLeave={e => (e.currentTarget.style.background = T.raised)}
                       >⋮</button>
                     </td>
                   </tr>
@@ -528,8 +528,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         )}
 
         {/* Footer count */}
-        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>מציג {filtered.length} מתוך {users.length} משתמשים</span>
+        <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.borderSub}` }}>
+          <span style={{ fontSize: 12, color: T.muted }}>מציג {filtered.length} מתוך {users.length} משתמשים</span>
         </div>
       </div>
 
@@ -538,13 +538,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         <div style={MODAL_OVERLAY}>
           <div style={{ ...MODAL_BOX, maxWidth: 500, maxHeight: "90vh", overflowY: "auto" }}>
             {/* Modal header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: `1px solid ${T.borderSub}` }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>משתמש חדש</h2>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>הזמנה תישלח לאימייל</p>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.text }}>משתמש חדש</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: T.muted }}>הזמנה תישלח לאימייל</p>
               </div>
               <button onClick={() => { setShowForm(false); setForm({ name: "", email: "", phone: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
-                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.sub, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 ✕
               </button>
             </div>
@@ -561,13 +561,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <FieldLabel>טלפון *</FieldLabel>
                 <input required type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} style={DARK_INPUT} dir="ltr" placeholder="050-0000000" />
               </div>
-              <div style={{ background: "rgba(51,154,240,0.08)", border: "1px solid rgba(51,154,240,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#74c0fc" }}>
+              <div style={{ background: T.blueSub, border: `1px solid ${T.blue}44`, borderRadius: 10, padding: "10px 14px", fontSize: 12, color: T.blue }}>
                 📧 קישור הזמנה יישלח לאימייל — קוד OTP יישלח לטלפון לאימות
               </div>
               <div>
                 <FieldLabel>הרשאה</FieldLabel>
                 <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value as Role })} style={DARK_SELECT}>
-                  {availableRoles.map(r => <option key={r} value={r} style={{ background: "#14141c" }}>{ROLE_LABELS[r]}</option>)}
+                  {availableRoles.map(r => <option key={r} value={r} style={{ background: T.bg }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               {restaurants.length > 0 && (
@@ -577,25 +577,25 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                     {restaurants.map(r => {
                       const checked = formRestaurantIds.includes(r.id);
                       return (
-                        <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, cursor: "pointer", background: checked ? "rgba(217,119,6,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${checked ? "rgba(217,119,6,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+                        <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, cursor: "pointer", background: checked ? T.goldSub : T.surface, border: `1px solid ${checked ? T.gold : T.border}` }}>
                           <input type="checkbox" checked={checked}
                             onChange={() => setFormRestaurantIds(prev => checked ? prev.filter(id => id !== r.id) : [...prev, r.id])}
-                            style={{ accentColor: "#D97706", width: 15, height: 15, cursor: "pointer" }} />
-                          <span style={{ fontSize: 13, color: checked ? "#F59E0B" : "#fff", fontWeight: checked ? 600 : 400 }}>{r.name}</span>
+                            style={{ accentColor: T.gold, width: 15, height: 15, cursor: "pointer" }} />
+                          <span style={{ fontSize: 13, color: checked ? T.gold : T.text, fontWeight: checked ? 600 : 400 }}>{r.name}</span>
                         </label>
                       );
                     })}
                   </div>
-                  {formRestaurantIds.length > 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 5 }}>{formRestaurantIds.length} מסעדות נבחרו</div>}
+                  {formRestaurantIds.length > 0 && <div style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>{formRestaurantIds.length} מסעדות נבחרו</div>}
                 </div>
               )}
-              {error && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{error}</p>}
-              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                <button type="submit" disabled={loading} style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}>
+              {error && <p style={{ color: T.red, fontSize: 13, background: T.redSub, padding: "8px 12px", borderRadius: 8 }}>{error}</p>}
+              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: `1px solid ${T.borderSub}` }}>
+                <button type="submit" disabled={loading} style={{ flex: 1, background: `linear-gradient(135deg,${T.gold},${T.amber})`, color: "#000", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}>
                   {loading ? "יוצר..." : "✉️ צור משתמש ושלח הזמנה"}
                 </button>
                 <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", phone: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
-                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                  style={{ flex: 1, background: T.raised, color: T.sub, border: `1px solid ${T.border}`, padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   ביטול
                 </button>
               </div>
@@ -608,21 +608,21 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       {managingUser && (
         <div style={MODAL_OVERLAY}>
           <div style={{ ...MODAL_BOX, maxWidth: 460 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: `1px solid ${T.borderSub}` }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>מסעדות משויכות</h2>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{managingUser.name ?? managingUser.email}</p>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.text }}>מסעדות משויכות</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: T.muted }}>{managingUser.name ?? managingUser.email}</p>
               </div>
-              <button onClick={() => setManagingUser(null)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+              <button onClick={() => setManagingUser(null)} style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.sub, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
             <div style={{ padding: "20px 24px" }}>
               <div style={{ marginBottom: 16, minHeight: 60, display: "flex", flexDirection: "column", gap: 8 }}>
                 {managingUser.restaurantUsers.length === 0 ? (
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", textAlign: "center", padding: "16px 0" }}>אין מסעדות משויכות</p>
+                  <p style={{ fontSize: 13, color: T.muted, textAlign: "center", padding: "16px 0" }}>אין מסעדות משויכות</p>
                 ) : (
                   managingUser.restaurantUsers.map(ru => (
-                    <div key={ru.restaurantId} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)", borderRadius: 10, padding: "10px 14px" }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{ru.restaurant.name}</span>
+                    <div key={ru.restaurantId} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: T.goldSub, border: `1px solid ${T.gold}44`, borderRadius: 10, padding: "10px 14px" }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{ru.restaurant.name}</span>
                       <button onClick={() => handleRemoveRestaurant(ru.restaurantId)} disabled={restLoading}
                         style={{ color: T.red, fontSize: 12, fontWeight: 700, background: "none", border: "none", cursor: "pointer", opacity: restLoading ? 0.4 : 1 }}>הסר</button>
                     </div>
@@ -630,21 +630,21 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 )}
               </div>
               {unassignedRestaurants.length > 0 && (
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, marginBottom: 16 }}>
+                <div style={{ borderTop: `1px solid ${T.borderSub}`, paddingTop: 16, marginBottom: 16 }}>
                   <FieldLabel>הוסף מסעדה</FieldLabel>
                   <div style={{ display: "flex", gap: 8 }}>
                     <select value={addRestaurantId} onChange={e => setAddRestaurantId(e.target.value)} style={{ ...DARK_SELECT, flex: 1 }}>
-                      <option value="" style={{ background: "#14141c" }}>בחר מסעדה...</option>
-                      {unassignedRestaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#14141c" }}>{r.name}</option>)}
+                      <option value="" style={{ background: "var(--c-bg)" }}>בחר מסעדה...</option>
+                      {unassignedRestaurants.map(r => <option key={r.id} value={r.id} style={{ background: "var(--c-bg)" }}>{r.name}</option>)}
                     </select>
                     <button onClick={handleAddRestaurant} disabled={!addRestaurantId || restLoading}
-                      style={{ background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: "0 18px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!addRestaurantId || restLoading) ? 0.4 : 1 }}>
+                      style={{ background: `linear-gradient(135deg,${T.gold},${T.amber})`, color: "#000", border: "none", padding: "0 18px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!addRestaurantId || restLoading) ? 0.4 : 1 }}>
                       הוסף
                     </button>
                   </div>
                 </div>
               )}
-              <button onClick={() => setManagingUser(null)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 11, borderRadius: 12, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => setManagingUser(null)} style={{ width: "100%", background: T.raised, color: T.sub, border: `1px solid ${T.border}`, padding: 11, borderRadius: 12, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
                 סגור
               </button>
             </div>
@@ -656,25 +656,25 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       {pendingInviteLink && (
         <div style={MODAL_OVERLAY}>
           <div style={{ ...MODAL_BOX, maxWidth: 440, padding: 28, textAlign: "center" }}>
-            <div style={{ width: 52, height: 52, background: "rgba(255,146,43,0.15)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24 }}>⚠️</div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 8 }}>האימייל לא נשלח</h2>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>שלח למשתמש את קישור ההזמנה הבא ידנית:</p>
-            <div style={{ background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)", borderRadius: 12, padding: "14px 16px", marginBottom: 8, textAlign: "right" }}>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: 1, marginBottom: 6 }}>אימייל</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 14 }} dir="ltr">{pendingInviteLink.email}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: 1, marginBottom: 6 }}>קישור הזמנה</div>
+            <div style={{ width: 52, height: 52, background: T.orangeSub, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24 }}>⚠️</div>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 8 }}>האימייל לא נשלח</h2>
+            <p style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>שלח למשתמש את קישור ההזמנה הבא ידנית:</p>
+            <div style={{ background: T.goldSub, border: `1px solid ${T.gold}44`, borderRadius: 12, padding: "14px 16px", marginBottom: 8, textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: T.muted, letterSpacing: 1, marginBottom: 6 }}>אימייל</div>
+              <div style={{ fontSize: 13, color: T.sub, marginBottom: 14 }} dir="ltr">{pendingInviteLink.email}</div>
+              <div style={{ fontSize: 11, color: T.muted, letterSpacing: 1, marginBottom: 6 }}>קישור הזמנה</div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <div style={{ flex: 1, fontSize: 11, color: "#F59E0B", fontFamily: "monospace", wordBreak: "break-all", background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "8px 10px" }} dir="ltr">
+                <div style={{ flex: 1, fontSize: 11, color: T.gold, fontFamily: "monospace", wordBreak: "break-all", background: T.bg, borderRadius: 6, padding: "8px 10px" }} dir="ltr">
                   {pendingInviteLink.link}
                 </div>
                 <button onClick={() => navigator.clipboard.writeText(pendingInviteLink!.link)}
-                  style={{ flexShrink: 0, background: "rgba(217,119,6,0.15)", border: "1px solid rgba(217,119,6,0.3)", color: "#F59E0B", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  style={{ flexShrink: 0, background: T.goldSub, border: `1px solid ${T.gold}4d`, color: T.gold, borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   📋 העתק
                 </button>
               </div>
             </div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 20, textAlign: "right" }}>⏱ הקישור תקף ל-72 שעות.</p>
-            <button onClick={() => setPendingInviteLink(null)} style={{ width: "100%", background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+            <p style={{ fontSize: 11, color: T.muted, marginBottom: 20, textAlign: "right" }}>⏱ הקישור תקף ל-72 שעות.</p>
+            <button onClick={() => setPendingInviteLink(null)} style={{ width: "100%", background: `linear-gradient(135deg,${T.gold},${T.amber})`, color: "#000", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               הבנתי
             </button>
           </div>
@@ -685,19 +685,19 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       {editTarget && (
         <div style={MODAL_OVERLAY}>
           <div style={{ ...MODAL_BOX, maxWidth: 460 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: `1px solid ${T.borderSub}` }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>עריכת משתמש</h2>
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#818cf8" }} dir="ltr">@{editTarget.username}</p>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.text }}>עריכת משתמש</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: T.purple }} dir="ltr">@{editTarget.username}</p>
               </div>
-              <button onClick={() => setEditTarget(null)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+              <button onClick={() => setEditTarget(null)} style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.sub, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
             <form onSubmit={handleEdit} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
               <div><FieldLabel>שם מלא</FieldLabel>
                 <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} style={DARK_INPUT} /></div>
               <div><FieldLabel>שם משתמש</FieldLabel>
                 <input value={editForm.username} onChange={e => setEditForm({ ...editForm, username: e.target.value.toLowerCase() })} style={DARK_INPUT} dir="ltr" placeholder="username" />
-                <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(255,255,255,0.3)" }}>3-30 תווים, אותיות לטיניות קטנות, ספרות, . _ -</p>
+                <p style={{ margin: "3px 0 0", fontSize: 11, color: T.muted }}>3-30 תווים, אותיות לטיניות קטנות, ספרות, . _ -</p>
               </div>
               <div><FieldLabel>טלפון נייד</FieldLabel>
                 <input type="tel" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} placeholder="05X-XXXXXXX" style={DARK_INPUT} dir="ltr" /></div>
@@ -705,19 +705,19 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
               <div><FieldLabel>הרשאה</FieldLabel>
                 <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value as Role })} style={DARK_SELECT}>
-                  {availableRoles.map(r => <option key={r} value={r} style={{ background: "#14141c" }}>{ROLE_LABELS[r]}</option>)}
+                  {availableRoles.map(r => <option key={r} value={r} style={{ background: T.bg }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               {["ADMIN","OWNER","SHIFT_MANAGER"].includes(editForm.role) && (
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}>
-                  <FieldLabel>🔐 PIN מנהל {hasPin ? <span style={{ color: "#51cf66", fontSize: 11 }}>(מוגדר ✓)</span> : <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>(לא מוגדר)</span>}</FieldLabel>
+                <div style={{ borderTop: `1px solid ${T.borderSub}`, paddingTop: 14 }}>
+                  <FieldLabel>🔐 PIN מנהל {hasPin ? <span style={{ color: T.green, fontSize: 11 }}>(מוגדר ✓)</span> : <span style={{ color: T.muted, fontSize: 11 }}>(לא מוגדר)</span>}</FieldLabel>
                   <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                     <input type="password" inputMode="numeric" maxLength={8}
                       value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,""))}
                       placeholder="4–8 ספרות"
                       style={{ ...DARK_INPUT, flex: 1, letterSpacing: 4, textAlign: "center" }} />
                     <button type="button" onClick={savePin} disabled={pinSaving || !pinInput}
-                      style={{ padding: "0 14px", background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: (!pinInput || pinSaving) ? 0.5 : 1 }}>
+                      style={{ padding: "0 14px", background: `linear-gradient(135deg,${T.gold},${T.amber})`, color: "#000", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: (!pinInput || pinSaving) ? 0.5 : 1 }}>
                       שמור
                     </button>
                     {hasPin && (
@@ -727,16 +727,16 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                       </button>
                     )}
                   </div>
-                  {pinMsg && <p style={{ fontSize: 12, color: pinMsg.startsWith("✓") ? "#51cf66" : T.red, marginTop: 6 }}>{pinMsg}</p>}
+                  {pinMsg && <p style={{ fontSize: 12, color: pinMsg.startsWith("✓") ? T.green : T.red, marginTop: 6 }}>{pinMsg}</p>}
                 </div>
               )}
-              {editError && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{editError}</p>}
-              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                <button type="submit" disabled={editLoading} style={{ flex: 1, background: "linear-gradient(135deg,#1971c2,#339af0)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: editLoading ? 0.6 : 1, fontFamily: "inherit" }}>
+              {editError && <p style={{ color: T.red, fontSize: 13, background: T.redSub, padding: "8px 12px", borderRadius: 8 }}>{editError}</p>}
+              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: `1px solid ${T.borderSub}` }}>
+                <button type="submit" disabled={editLoading} style={{ flex: 1, background: `linear-gradient(135deg,${T.blue}cc,${T.blue})`, color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: editLoading ? 0.6 : 1, fontFamily: "inherit" }}>
                   {editLoading ? "שומר..." : "שמור שינויים"}
                 </button>
                 <button type="button" onClick={() => setEditTarget(null)}
-                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                  style={{ flex: 1, background: T.raised, color: T.sub, border: `1px solid ${T.border}`, padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   ביטול
                 </button>
               </div>
@@ -749,23 +749,23 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       {resetTarget && (
         <div style={MODAL_OVERLAY}>
           <div style={{ ...MODAL_BOX, maxWidth: 400 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: `1px solid ${T.borderSub}` }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>איפוס סיסמה</h2>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{resetTarget.name ?? resetTarget.email}</p>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.text }}>איפוס סיסמה</h2>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: T.muted }}>{resetTarget.name ?? resetTarget.email}</p>
               </div>
-              <button onClick={() => setResetTarget(null)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+              <button onClick={() => setResetTarget(null)} style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.sub, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
             <form onSubmit={handleResetPassword} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
               <div><FieldLabel>סיסמה חדשה *</FieldLabel>
                 <input required type="password" minLength={6} value={resetPassword} onChange={e => setResetPassword(e.target.value)} style={DARK_INPUT} placeholder="מינימום 6 תווים" /></div>
-              {resetError && <p style={{ color: T.red, fontSize: 13, background: "rgba(255,107,107,0.1)", padding: "8px 12px", borderRadius: 8 }}>{resetError}</p>}
-              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                <button type="submit" disabled={resetLoading} style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: resetLoading ? 0.6 : 1, fontFamily: "inherit" }}>
+              {resetError && <p style={{ color: T.red, fontSize: 13, background: T.redSub, padding: "8px 12px", borderRadius: 8 }}>{resetError}</p>}
+              <div style={{ display: "flex", gap: 10, marginTop: 4, paddingTop: 16, borderTop: `1px solid ${T.borderSub}` }}>
+                <button type="submit" disabled={resetLoading} style={{ flex: 1, background: `linear-gradient(135deg,${T.gold},${T.amber})`, color: "#000", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: resetLoading ? 0.6 : 1, fontFamily: "inherit" }}>
                   {resetLoading ? "מאפס..." : "אפס סיסמה"}
                 </button>
                 <button type="button" onClick={() => setResetTarget(null)}
-                  style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                  style={{ flex: 1, background: T.raised, color: T.sub, border: `1px solid ${T.border}`, padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   ביטול
                 </button>
               </div>
@@ -781,7 +781,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
         return (
           <div ref={menuRef} style={{
             position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999,
-            background: "rgba(20,20,28,0.98)", border: "1px solid rgba(255,255,255,0.15)",
+            background: T.panel, border: `1px solid ${T.border}`,
             borderRadius: 16, backdropFilter: "blur(20px)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.5)", width: 210, overflow: "hidden",
           }}>
@@ -804,7 +804,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 disabled={resendingId === user.id}
               />
             )}
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }} />
+            <div style={{ borderTop: `1px solid ${T.borderSub}` }} />
             <MenuAction icon="🗑️" label="מחק משתמש" onClick={() => { handleDelete(user.id); setOpenMenuId(null); }} danger />
           </div>
         );
@@ -816,9 +816,9 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
       {toast && (
         <div style={{
           position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-          zIndex: 10000, background: toast.ok ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
-          border: `1px solid ${toast.ok ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
-          color: toast.ok ? "#6ee7b7" : "#fca5a5",
+          zIndex: 10000, background: toast.ok ? T.emeraldSub : T.redSub,
+          border: `1px solid ${toast.ok ? `${T.emerald}66` : `${T.red}66`}`,
+          color: toast.ok ? T.emerald : T.red,
           borderRadius: 12, padding: "12px 20px", fontSize: 14, fontWeight: 600,
           backdropFilter: "blur(12px)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
           display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
@@ -840,11 +840,11 @@ function MenuAction({ icon, label, onClick, danger, disabled }: { icon: string; 
       style={{
         width: "100%", textAlign: "right", padding: "9px 14px", background: "none", border: "none",
         cursor: disabled ? "not-allowed" : "pointer", fontSize: 13,
-        color: danger ? "#ff6b6b" : "#fff",
+        color: danger ? T.red : T.text,
         display: "flex", alignItems: "center", gap: 8,
         opacity: disabled ? 0.5 : 1, fontFamily: "inherit",
       }}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.07)"; }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = danger ? T.redSub : T.raised; }}
       onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
     >
       <span style={{ fontSize: 14 }}>{icon}</span>
