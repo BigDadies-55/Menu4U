@@ -107,7 +107,7 @@ function ModuleTableRow({
       transition: "background 0.2s",
     }}>
       {/* Status toggle */}
-      <td style={{ padding: "10px 14px", textAlign: "center", verticalAlign: "middle" }}>
+      <td style={{ padding: "5px 12px", textAlign: "center", verticalAlign: "middle" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
           <Toggle
             on={effective}
@@ -123,18 +123,18 @@ function ModuleTableRow({
       </td>
 
       {/* Icon */}
-      <td style={{ padding: "10px 10px", textAlign: "center", verticalAlign: "middle" }}>
+      <td style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle" }}>
         <span style={{ fontSize: 22 }}>{mod.icon}</span>
       </td>
 
       {/* Name + description */}
-      <td style={{ padding: "10px 14px", verticalAlign: "middle", minWidth: 150 }}>
+      <td style={{ padding: "5px 12px", verticalAlign: "middle", minWidth: 150 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT_MAIN }}>{mod.label}</div>
         <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>{mod.description}</div>
       </td>
 
       {/* 30-day trial button */}
-      <td style={{ padding: "10px 8px", verticalAlign: "middle", textAlign: "center" }}>
+      <td style={{ padding: "5px 6px", verticalAlign: "middle", textAlign: "center" }}>
         <button
           onClick={() => {
             const t = new Date(); const e = new Date(t); e.setDate(e.getDate() + 30);
@@ -148,7 +148,7 @@ function ModuleTableRow({
       </td>
 
       {/* From date */}
-      <td style={{ padding: "10px 6px", verticalAlign: "middle", minWidth: 118 }}>
+      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 118 }}>
         <input
           type="date"
           value={isoToDate(state.enabledFrom)}
@@ -159,7 +159,7 @@ function ModuleTableRow({
       </td>
 
       {/* To date */}
-      <td style={{ padding: "10px 6px", verticalAlign: "middle", minWidth: 118 }}>
+      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 118 }}>
         <input
           type="date"
           value={isoToDate(state.enabledTo)}
@@ -170,7 +170,7 @@ function ModuleTableRow({
       </td>
 
       {/* Clear dates */}
-      <td style={{ padding: "10px 6px", verticalAlign: "middle", textAlign: "center" }}>
+      <td style={{ padding: "5px 5px", verticalAlign: "middle", textAlign: "center" }}>
         <button
           onClick={() => { onChange({ enabledFrom: "", enabledTo: "", dirty: true }); setTimeout(onSave, 0); }}
           title="נקה תאריכים"
@@ -180,7 +180,7 @@ function ModuleTableRow({
       </td>
 
       {/* Note */}
-      <td style={{ padding: "10px 10px", verticalAlign: "middle" }}>
+      <td style={{ padding: "5px 8px", verticalAlign: "middle" }}>
         <input
           type="text"
           value={state.note}
@@ -192,7 +192,7 @@ function ModuleTableRow({
       </td>
 
       {/* Save indicator */}
-      <td style={{ padding: "10px 10px", verticalAlign: "middle", width: 60, textAlign: "center" }}>
+      <td style={{ padding: "5px 8px", verticalAlign: "middle", width: 60, textAlign: "center" }}>
         {state.saving && <span style={{ fontSize: 11, color: GOLD_TEXT }}>שומר...</span>}
         {!state.saving && state.dirty && (
           <button onClick={onSave} style={{
@@ -362,7 +362,7 @@ export default function ModulesClient({ restaurants }: Props) {
           <select
             value={selectedRestaurant}
             onChange={e => setSelectedRestaurant(e.target.value)}
-            style={{ width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
+            style={{ width: "100%", padding: "5px 12px", borderRadius: 10, fontSize: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
           >
             {restaurants.map(r => (
               <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>{r.name}</option>
