@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { MODULES, ModuleKey } from "@/lib/modules";
+import { T } from "@/lib/ui";
 
 /* ─── Types ──────────────────────────────────────────────────── */
 interface Restaurant {
@@ -31,23 +32,14 @@ interface ModuleState {
   saving: boolean;
 }
 
-/* ─── Palette (unchanged from master) ───────────────────────── */
-const GLASS_BG   = "rgba(15,15,30,0.85)";
-const GOLD       = "#D97706";
-const GOLD_TEXT  = "#f59e0b";
-const TEXT_MAIN  = "#ffffff";
-const TEXT_MUTED = "rgba(255,255,255,0.5)";
-const TEXT_SUB   = "rgba(255,255,255,0.35)";
-const GREEN      = "#34D399";
-const RED        = "#F87171";
-const TH_BG      = "rgba(52,211,153,0.18)";
-const TH_BORDER  = "rgba(52,211,153,0.35)";
-const ROW_BORDER = "rgba(255,255,255,0.07)";
+/* ─── Palette — single source of truth via T ────────────────── */
+const GREEN = T.emerald;
+const RED   = T.red;
 
 const DATE_INPUT: React.CSSProperties = {
-  width: "100%", padding: "5px 8px", borderRadius: 7,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.06)", color: TEXT_MAIN,
+  width: "100%", padding: "5px 8px", borderRadius: T.rMd,
+  border: `1px solid ${T.border}`,
+  background: T.surface, color: T.text,
   fontSize: 12, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
 };
 
@@ -68,7 +60,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
       style={{
         position: "relative", width: 40, height: 22, borderRadius: 11,
         border: "none", cursor: "pointer", flexShrink: 0,
-        background: on ? GREEN : "rgba(255,255,255,0.15)",
+        background: on ? GREEN : T.raised,
         transition: "background 0.2s",
       }}
     >
@@ -101,9 +93,9 @@ function ModuleTableRow({
   return (
     <tr style={{
       background: expired
-        ? "rgba(248,113,113,0.06)"
-        : effective ? "rgba(52,211,153,0.04)" : "transparent",
-      borderBottom: `1px solid ${ROW_BORDER}`,
+        ? T.redSub
+        : effective ? T.emeraldSub : "transparent",
+      borderBottom: `1px solid ${T.borderSub}`,
       transition: "background 0.2s",
     }}>
       {/* Status toggle */}
@@ -115,7 +107,7 @@ function ModuleTableRow({
           />
           <span style={{
             fontSize: 10, fontWeight: 600,
-            color: effective ? GREEN : expired ? RED : TEXT_MUTED,
+            color: effective ? GREEN : expired ? RED : T.muted,
           }}>
             {expired ? "פג תוקף" : effective ? "פעיל" : "כבוי"}
           </span>
@@ -129,8 +121,8 @@ function ModuleTableRow({
 
       {/* Name + description */}
       <td style={{ padding: "5px 12px", verticalAlign: "middle", minWidth: 150 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT_MAIN }}>{mod.label}</div>
-        <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>{mod.description}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{mod.label}</div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{mod.description}</div>
       </td>
 
       {/* 30-day trial button */}
@@ -142,7 +134,7 @@ function ModuleTableRow({
             setTimeout(onSave, 0);
           }}
           title="30 ימי ניסיון"
-          style={{ padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD}`, background: "transparent", color: GOLD_TEXT, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+          style={{ padding: "4px 8px", borderRadius: 7, border: `1px solid ${T.gold}`, background: "transparent", color: T.gold, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
           🎁 30י׳
         </button>
       </td>
@@ -165,7 +157,7 @@ function ModuleTableRow({
           value={isoToDate(state.enabledTo)}
           onChange={e => onChange({ enabledTo: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
           onBlur={handleBlur}
-          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px", borderColor: expired ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.12)", color: expired ? RED : TEXT_MAIN }}
+          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px", borderColor: expired ? `${T.red}66` : T.border, color: expired ? RED : T.text }}
         />
       </td>
 
@@ -174,7 +166,7 @@ function ModuleTableRow({
         <button
           onClick={() => { onChange({ enabledFrom: "", enabledTo: "", dirty: true }); setTimeout(onSave, 0); }}
           title="נקה תאריכים"
-          style={{ padding: "4px 8px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.18)", background: "transparent", color: TEXT_MUTED, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+          style={{ padding: "4px 8px", borderRadius: 7, border: `1px solid ${T.border}`, background: "transparent", color: T.muted, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
           נקה
         </button>
       </td>
@@ -193,11 +185,11 @@ function ModuleTableRow({
 
       {/* Save indicator */}
       <td style={{ padding: "5px 8px", verticalAlign: "middle", width: 60, textAlign: "center" }}>
-        {state.saving && <span style={{ fontSize: 11, color: GOLD_TEXT }}>שומר...</span>}
+        {state.saving && <span style={{ fontSize: 11, color: T.gold }}>שומר...</span>}
         {!state.saving && state.dirty && (
           <button onClick={onSave} style={{
             fontSize: 11, padding: "4px 10px", borderRadius: 7, border: "none",
-            background: `linear-gradient(110deg,#7a3c04,${GOLD})`,
+            background: `linear-gradient(110deg,#7a3c04,${T.gold})`,
             color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
           }}>שמור</button>
         )}
@@ -345,12 +337,12 @@ export default function ModulesClient({ restaurants }: Props) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: GLASS_BG, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "24px 20px", direction: "rtl", fontFamily: "inherit" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "24px 20px", direction: "rtl", fontFamily: "inherit" }}>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: GOLD_TEXT, margin: 0, letterSpacing: -0.5 }}>⚙️ ניהול מודולים</h1>
-        <p style={{ fontSize: 13, color: TEXT_MUTED, marginTop: 6 }}>הפעלה וכיבוי של מודולים לכל מסעדה</p>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: T.gold, margin: 0, letterSpacing: -0.5 }}>⚙️ ניהול מודולים</h1>
+        <p style={{ fontSize: 13, color: T.muted, marginTop: 6 }}>הפעלה וכיבוי של מודולים לכל מסעדה</p>
       </div>
 
       {/* Top bar: selector + subscription */}
@@ -358,51 +350,51 @@ export default function ModulesClient({ restaurants }: Props) {
 
         {/* Restaurant selector */}
         <div style={{ minWidth: 220, maxWidth: 300, flex: "0 0 auto" }}>
-          <label style={{ fontSize: 12, color: TEXT_MUTED, display: "block", marginBottom: 6, fontWeight: 600 }}>בחר מסעדה</label>
+          <label style={{ fontSize: 12, color: T.muted, display: "block", marginBottom: 6, fontWeight: 600 }}>בחר מסעדה</label>
           <select
             value={selectedRestaurant}
             onChange={e => setSelectedRestaurant(e.target.value)}
-            style={{ width: "100%", padding: "5px 12px", borderRadius: 10, fontSize: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
+            style={{ width: "100%", padding: "5px 12px", borderRadius: 10, fontSize: 14, background: T.surface, border: "1px solid var(--c-border)", color: T.text, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
           >
             {restaurants.map(r => (
-              <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>{r.name}</option>
+              <option key={r.id} value={r.id} style={{ background: T.bg, color: T.text }}>{r.name}</option>
             ))}
           </select>
         </div>
 
         {/* Subscription */}
         {selectedRestaurant && (
-          <div style={{ flex: 1, minWidth: 300, padding: "14px 18px", borderRadius: 14, border: `1px solid rgba(217,119,6,0.3)`, background: "rgba(217,119,6,0.06)" }}>
+          <div style={{ flex: 1, minWidth: 300, padding: "14px 18px", borderRadius: 14, border: `1px solid ${T.goldSub}`, background: T.goldSub }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: GOLD_TEXT }}>📅 תוקף מנוי</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.gold }}>📅 תוקף מנוי</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => { const t = new Date(); const e = new Date(t); e.setDate(e.getDate() + 30); setSubFrom(t.toISOString().slice(0, 10)); setSubTo(e.toISOString().slice(0, 10)); }}
-                  style={{ padding: "4px 11px", borderRadius: 8, border: `1px solid ${GOLD}`, background: "transparent", color: GOLD_TEXT, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  style={{ padding: "4px 11px", borderRadius: 8, border: `1px solid ${T.gold}`, background: "transparent", color: T.gold, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                   🎁 30 ימי ניסיון
                 </button>
                 <button onClick={() => { setSubFrom(""); setSubTo(""); }}
-                  style={{ padding: "4px 11px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "transparent", color: RED, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  style={{ padding: "4px 11px", borderRadius: 8, border: `1px solid ${T.red}66`, background: "transparent", color: RED, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                   ✕ לא פעיל
                 </button>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 130 }}>
-                <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 3 }}>מתאריך</label>
+                <label style={{ display: "block", fontSize: 11, color: T.muted, marginBottom: 3 }}>מתאריך</label>
                 <input type="date" value={subFrom} onChange={e => setSubFrom(e.target.value)}
-                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface, color: T.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
               </div>
               <div style={{ flex: 1, minWidth: 130 }}>
-                <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 3 }}>עד תאריך</label>
+                <label style={{ display: "block", fontSize: 11, color: T.muted, marginBottom: 3 }}>עד תאריך</label>
                 <input type="date" value={subTo} onChange={e => setSubTo(e.target.value)}
-                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface, color: T.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
               </div>
               <button onClick={saveSub} disabled={subSaving}
-                style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${GOLD} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${T.gold} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
                 {subSaving ? "שומר..." : "שמור מנוי"}
               </button>
             </div>
-            <div style={{ marginTop: 8, fontSize: 11, color: (!subFrom && !subTo) ? RED : TEXT_SUB }}>
+            <div style={{ marginTop: 8, fontSize: 11, color: (!subFrom && !subTo) ? RED : T.sub }}>
               {(!subFrom && !subTo) ? "⛔ לא פעיל — אין מנוי" : !subTo ? "✓ פעיל ללא הגבלת תוקף" :
                new Date() > new Date(subTo) ? `⚠️ פג תוקף: ${new Date(subTo).toLocaleDateString("he-IL")}` :
                `✓ פעיל עד ${new Date(subTo).toLocaleDateString("he-IL")}`}
@@ -412,18 +404,18 @@ export default function ModulesClient({ restaurants }: Props) {
       </div>
 
       {/* Loading */}
-      {loading && <div style={{ color: TEXT_MUTED, fontSize: 14, marginBottom: 20 }}>טוען...</div>}
+      {loading && <div style={{ color: T.muted, fontSize: 14, marginBottom: 20 }}>טוען...</div>}
 
       {/* Modules table */}
       {!loading && selectedRestaurant && (
-        <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${TH_BORDER}` }}>
+        <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}` }}>
           <table style={{ width: "100%", borderCollapse: "collapse", direction: "rtl" }}>
             <thead>
-              <tr style={{ background: TH_BG }}>
+              <tr style={{ background: T.goldSub }}>
                 {["סטטוס", "אייקון", "שם מודול", "", "מתאריך", "עד תאריך", "נקה", "הערות", ""].map(h => (
                   <th key={h} style={{
                     padding: "11px 14px", fontSize: 12, fontWeight: 700,
-                    color: GREEN, textAlign: "right", borderBottom: `1px solid ${TH_BORDER}`,
+                    color: GREEN, textAlign: "right", borderBottom: `1px solid ${T.border}`,
                     whiteSpace: "nowrap",
                   }}>{h}</th>
                 ))}
@@ -445,7 +437,7 @@ export default function ModulesClient({ restaurants }: Props) {
       )}
 
       {!loading && restaurants.length === 0 && (
-        <div style={{ color: TEXT_MUTED, fontSize: 14 }}>לא נמצאו מסעדות פעילות.</div>
+        <div style={{ color: T.muted, fontSize: 14 }}>לא נמצאו מסעדות פעילות.</div>
       )}
 
       {/* Toast */}
@@ -453,8 +445,8 @@ export default function ModulesClient({ restaurants }: Props) {
         <div style={{
           position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
           zIndex: 9999, padding: "12px 24px", borderRadius: 12,
-          background: toast.ok ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
-          border: `1px solid ${toast.ok ? "rgba(52,211,153,0.4)" : "rgba(248,113,113,0.4)"}`,
+          background: toast.ok ? T.emeraldSub : T.redSub,
+          border: `1px solid ${toast.ok ? `${T.emerald}66` : `${T.red}66`}`,
           color: toast.ok ? GREEN : RED, fontSize: 13, fontWeight: 600, direction: "rtl",
           backdropFilter: "blur(12px)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
         }}>
