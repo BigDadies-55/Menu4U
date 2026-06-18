@@ -87,5 +87,5 @@ export default async function RestaurantsPage() {
     `SELECT id, name, NULL::text AS description, logo FROM "RestaurantGroup" ORDER BY name`
   ).catch(() => [] as Array<{ id: string; name: string; description: string | null; logo: string | null }>);
 
-  return <RestaurantsClient restaurants={restaurants} groups={groupRows} />;
+  return <RestaurantsClient restaurants={restaurants} groups={groupRows} role={session.user.role} />;
 }

@@ -36,11 +36,17 @@ export default async function ModulesPage() {
     );
   } catch { /* ignore — table already exists */ }
 
-  const restaurants = await prisma.restaurant.findMany({
+  const rows = await prisma.restaurant.findMany({
     where: { isActive: true },
-    select: { id: true, name: true },
+    select: { id: true, name: true, subscriptionFrom: true, subscriptionTo: true },
     orderBy: { name: "asc" },
   });
+
+  const restaurants = rows.map(r => ({
+    ...r,
+    subscriptionFrom: r.subscriptionFrom ? r.subscriptionFrom.toISOString() : null,
+    subscriptionTo:   r.subscriptionTo   ? r.subscriptionTo.toISOString()   : null,
+  }));
 
   return (
     <ModulesClient

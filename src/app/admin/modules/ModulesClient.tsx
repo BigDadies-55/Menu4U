@@ -7,6 +7,8 @@ import { MODULES, ModuleKey } from "@/lib/modules";
 interface Restaurant {
   id: string;
   name: string;
+  subscriptionFrom: string | null;
+  subscriptionTo: string | null;
 }
 
 interface ModuleRow {
@@ -237,6 +239,31 @@ export default function ModulesClient({ restaurants }: Props) {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
+  const selectedRest = restaurants.find(r => r.id === selectedRestaurant);
+  const [subFrom, setSubFrom] = useState("");
+  const [subTo, setSubTo]     = useState("");
+  const [subSaving, setSubSaving] = useState(false);
+
+  useEffect(() => {
+    const r = restaurants.find(r => r.id === selectedRestaurant);
+    setSubFrom(r?.subscriptionFrom ? r.subscriptionFrom.slice(0, 10) : "");
+    setSubTo(r?.subscriptionTo   ? r.subscriptionTo.slice(0, 10)   : "");
+  }, [selectedRestaurant, restaurants]);
+
+  async function saveSub() {
+    setSubSaving(true);
+    try {
+      const res = await fetch(`/api/admin/restaurants/${selectedRestaurant}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionFrom: subFrom || null, subscriptionTo: subTo || null }),
+      });
+      if (!res.ok) throw new Error("שגיאה");
+      showToast("מנוי נשמר", true);
+    } catch { showToast("שגיאה בשמירת מנוי", false); }
+    finally { setSubSaving(false); }
+  }
+
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 2500);
@@ -368,6 +395,43 @@ export default function ModulesClient({ restaurants }: Props) {
           ))}
         </select>
       </div>
+
+      {/* Subscription section */}
+      {selectedRestaurant && (
+        <div style={{ marginBottom: 28, padding: "16px 20px", borderRadius: 14, border: `1px solid rgba(217,119,6,0.3)`, background: "rgba(217,119,6,0.06)", maxWidth: 560 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: GOLD_TEXT, marginBottom: 12 }}>📅 תוקף מנוי</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 4 }}>מתאריך</label>
+              <input type="date" value={subFrom} onChange={e => setSubFrom(e.target.value)}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 4 }}>עד תאריך</label>
+              <input type="date" value={subTo} onChange={e => setSubTo(e.target.value)}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+            </div>
+            <button onClick={saveSub} disabled={subSaving}
+              style={{ padding: "8px 18px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${GOLD} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+              {subSaving ? "שומר..." : "שמור מנוי"}
+            </button>
+            {(subFrom || subTo) && (
+              <button onClick={() => { setSubFrom(""); setSubTo(""); }}
+                style={{ padding: "8px 12px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                נקה
+              </button>
+            )}
+          </div>
+          {selectedRest && (
+            <div style={{ marginTop: 10, fontSize: 11, color: TEXT_SUB }}>
+              {!selectedRest.subscriptionTo ? "ללא הגבלת תוקף" :
+                new Date() > new Date(selectedRest.subscriptionTo)
+                  ? `⚠️ פג תוקף: ${new Date(selectedRest.subscriptionTo).toLocaleDateString("he-IL")}`
+                  : `✓ פעיל עד ${new Date(selectedRest.subscriptionTo).toLocaleDateString("he-IL")}`}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (

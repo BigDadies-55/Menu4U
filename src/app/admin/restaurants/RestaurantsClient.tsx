@@ -79,7 +79,6 @@ const TABS = [
   { id: "orders",       label: "הזמנות",     icon: "🛒" },
   { id: "waiter",       label: "מסך מלצר",   icon: "🧑‍🍳" },
   { id: "social",       label: "סושיאל",     icon: "🌐" },
-  { id: "subscription", label: "מנוי",       icon: "📅" },
   { id: "hours",        label: "שעות פתיחה", icon: "⏰" },
 ] as const;
 type TabId = typeof TABS[number]["id"];
@@ -179,7 +178,7 @@ function getSubscriptionStatus(r: Restaurant): { label: string; style: React.CSS
   return { label: "פעיל", style: { background: "rgba(81,207,102,0.15)", color: T.green } };
 }
 
-export default function RestaurantsClient({ restaurants: initial, groups = [] }: { restaurants: Restaurant[]; groups?: Group[] }) {
+export default function RestaurantsClient({ restaurants: initial, groups = [], role = "SUPER_ADMIN" }: { restaurants: Restaurant[]; groups?: Group[]; role?: string }) {
   const [restaurants, setRestaurants] = useState(initial);
   const [showForm,    setShowForm]    = useState(false);
   const [editTarget,  setEditTarget]  = useState<Restaurant | null>(null);
@@ -500,13 +499,19 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                       {groups.length > 0 && (
                         <div>
                           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>שיוך לרשת</label>
-                          <select
-                            value={form.groupId ?? ""}
-                            onChange={e => setForm({ ...form, groupId: e.target.value || null })}
-                            style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }}>
-                            <option value="">ללא רשת</option>
-                            {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                          </select>
+                          {role === "SUPER_ADMIN" ? (
+                            <select
+                              value={form.groupId ?? ""}
+                              onChange={e => setForm({ ...form, groupId: e.target.value || null })}
+                              style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }}>
+                              <option value="">ללא רשת</option>
+                              {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                            </select>
+                          ) : (
+                            <div style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
+                              {groups.find(g => g.id === form.groupId)?.name ?? "ללא רשת"}
+                            </div>
+                          )}
                         </div>
                       )}
                       <ImageUpload
@@ -907,48 +912,6 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                     </div>
                   )}
 
-                  {/* ── Tab: מנוי ── */}
-                  {activeTab === "subscription" && (
-                    <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12 }}>
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>📅 תוקף מנוי</label>
-                        <button type="button" onClick={setTrial}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border-2 transition-colors"
-                          style={{ borderColor: T.gold, color: T.gold, background: "transparent" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(252,196,25,0.1)"; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
-                          🎁 30 ימים ניסיון
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>מתאריך</label>
-                          <input type="date" value={form.subscriptionFrom}
-                            onChange={e => setForm({ ...form, subscriptionFrom: e.target.value })}
-                            style={DARK_INPUT}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>עד תאריך</label>
-                          <input type="date" value={form.subscriptionTo}
-                            onChange={e => setForm({ ...form, subscriptionTo: e.target.value })}
-                            style={DARK_INPUT}
-                          />
-                        </div>
-                      </div>
-                      {(form.subscriptionFrom || form.subscriptionTo) && (
-                        <button type="button"
-                          onClick={() => setForm({ ...form, subscriptionFrom: "", subscriptionTo: "" })}
-                          className="text-xs underline transition-colors"
-                          style={{ color: "rgba(255,255,255,0.45)" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = T.red; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)"; }}>
-                          הסר תאריכים (ללא הגבלת תוקף)
-                        </button>
-                      )}
-                    </div>
-                  )}
-
                   {/* ── Tab: שעות פתיחה ── */}
                   {activeTab === "hours" && (
 
@@ -1274,7 +1237,7 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                       {[
                         { icon: "✏️", label: "עריכה", onClick: () => { openEdit(r); setOpenDropdown(null); }, danger: false },
                         { icon: "🌐", label: "תפריט ציבורי", onClick: () => { window.open(`/menu/${r.id}`, "_blank"); setOpenDropdown(null); }, danger: false },
-                        { icon: r.isActive ? "⏸️" : "▶️", label: r.isActive ? "השהייה" : "הפעל", onClick: () => { toggleActive(r.id, r.isActive); setOpenDropdown(null); }, danger: false },
+                        ...(role !== "OWNER" ? [{ icon: r.isActive ? "⏸️" : "▶️", label: r.isActive ? "השהייה" : "הפעל", onClick: () => { toggleActive(r.id, r.isActive); setOpenDropdown(null); }, danger: false }] : []),
                         { icon: "🗑️", label: "מחיקה", onClick: () => { setDeleteConfirm({ id: r.id, name: r.name }); setDeleteInput(""); setOpenDropdown(null); }, danger: true },
                       ].map(item => (
                         <button key={item.label} onClick={item.onClick} style={{
@@ -1330,10 +1293,12 @@ export default function RestaurantsClient({ restaurants: initial, groups = [] }:
                     <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{group?.name ?? gid}</span>
                     <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>· {members.length} בתי עסק</span>
                     <div style={{ flex: 1 }} />
-                    <button
-                      onClick={e => { e.stopPropagation(); if (group) openEditGroup(group); }}
-                      style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 7, padding: "3px 10px", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
-                    >✏️</button>
+                    {role !== "OWNER" && (
+                      <button
+                        onClick={e => { e.stopPropagation(); if (group) openEditGroup(group); }}
+                        style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 7, padding: "3px 10px", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+                      >✏️</button>
+                    )}
                     <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 14, transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {/* Restaurant rows */}
