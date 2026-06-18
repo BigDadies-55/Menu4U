@@ -133,30 +133,50 @@ function ModuleTableRow({
         <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>{mod.description}</div>
       </td>
 
+      {/* 30-day trial button */}
+      <td style={{ padding: "10px 8px", verticalAlign: "middle", textAlign: "center" }}>
+        <button
+          onClick={() => {
+            const t = new Date(); const e = new Date(t); e.setDate(e.getDate() + 30);
+            onChange({ enabledFrom: t.toISOString(), enabledTo: e.toISOString(), dirty: true });
+            setTimeout(onSave, 0);
+          }}
+          title="30 ימי ניסיון"
+          style={{ padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD}`, background: "transparent", color: GOLD_TEXT, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+          🎁 30י׳
+        </button>
+      </td>
+
       {/* From date */}
-      <td style={{ padding: "10px 10px", verticalAlign: "middle", minWidth: 140 }}>
+      <td style={{ padding: "10px 6px", verticalAlign: "middle", minWidth: 118 }}>
         <input
           type="date"
           value={isoToDate(state.enabledFrom)}
           onChange={e => onChange({ enabledFrom: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
           onBlur={handleBlur}
-          style={DATE_INPUT}
+          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px" }}
         />
       </td>
 
       {/* To date */}
-      <td style={{ padding: "10px 10px", verticalAlign: "middle", minWidth: 140 }}>
+      <td style={{ padding: "10px 6px", verticalAlign: "middle", minWidth: 118 }}>
         <input
           type="date"
           value={isoToDate(state.enabledTo)}
           onChange={e => onChange({ enabledTo: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
           onBlur={handleBlur}
-          style={{
-            ...DATE_INPUT,
-            borderColor: expired ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.12)",
-            color: expired ? RED : TEXT_MAIN,
-          }}
+          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px", borderColor: expired ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.12)", color: expired ? RED : TEXT_MAIN }}
         />
+      </td>
+
+      {/* Clear dates */}
+      <td style={{ padding: "10px 6px", verticalAlign: "middle", textAlign: "center" }}>
+        <button
+          onClick={() => { onChange({ enabledFrom: "", enabledTo: "", dirty: true }); setTimeout(onSave, 0); }}
+          title="נקה תאריכים"
+          style={{ padding: "4px 8px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.18)", background: "transparent", color: TEXT_MUTED, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+          נקה
+        </button>
       </td>
 
       {/* Note */}
@@ -400,7 +420,7 @@ export default function ModulesClient({ restaurants }: Props) {
           <table style={{ width: "100%", borderCollapse: "collapse", direction: "rtl" }}>
             <thead>
               <tr style={{ background: TH_BG }}>
-                {["סטטוס", "אייקון", "שם מודול", "מתאריך", "עד תאריך", "הערות", ""].map(h => (
+                {["סטטוס", "אייקון", "שם מודול", "", "מתאריך", "עד תאריך", "נקה", "הערות", ""].map(h => (
                   <th key={h} style={{
                     padding: "11px 14px", fontSize: 12, fontWeight: 700,
                     color: GREEN, textAlign: "right", borderBottom: `1px solid ${TH_BORDER}`,
