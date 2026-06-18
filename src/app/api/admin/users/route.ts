@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, email, role, restaurantIds = [] } = body;
+  const { name, email, phone, role, restaurantIds = [] } = body;
 
   if (!email) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -51,8 +51,10 @@ export async function POST(req: Request) {
         username,
         name: name || null,
         email,
+        phone: phone || null,
         password: null,
         role: (role as Role) ?? "VIEWER",
+        status: "PENDING",
         mustChangePassword: false,
         emailVerified: null,
         ...(restaurantIds.length > 0 ? {
@@ -70,10 +72,10 @@ export async function POST(req: Request) {
     throw err;
   }
 
-  // Generate invite token — 72 h expiry
+  // Generate invite token — 48 h expiry
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = hashOtp(rawToken);
-  const expires = new Date(Date.now() + 72 * 60 * 60 * 1000);
+  const expires = new Date(Date.now() + 48 * 60 * 60 * 1000);
   await prisma.verificationToken.create({
     data: { identifier: email, token: hashedToken, expires },
   });

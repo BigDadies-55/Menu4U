@@ -92,7 +92,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
   const [mainTab, setMainTab]           = useState<"users" | "invites">("users");
   const [showForm, setShowForm]         = useState(false);
-  const [form, setForm]                 = useState({ name: "", email: "", role: "VIEWER" as Role });
+  const [form, setForm]                 = useState({ name: "", email: "", phone: "", role: "VIEWER" as Role });
   const [formRestaurantIds, setFormRestaurantIds] = useState<string[]>([]);
   const [pendingInviteLink, setPendingInviteLink] = useState<{ email: string; link: string } | null>(null);
   const [loading, setLoading]           = useState(false);
@@ -189,7 +189,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     }
     const created = await res.json();
     setUsers([{ ...created, emailVerified: null, restaurantUsers: [], mustChangePassword: false }, ...users]);
-    setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]);
+    setShowForm(false); setForm({ name: "", email: "", phone: "", role: "VIEWER" }); setFormRestaurantIds([]);
     setLoading(false);
     if (!created.emailSent && created.inviteLink) setPendingInviteLink({ email: created.email, link: created.inviteLink });
   }
@@ -543,7 +543,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>משתמש חדש</h2>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>הזמנה תישלח לאימייל</p>
               </div>
-              <button onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
+              <button onClick={() => { setShowForm(false); setForm({ name: "", email: "", phone: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 ✕
               </button>
@@ -557,8 +557,12 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <FieldLabel>אימייל *</FieldLabel>
                 <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={DARK_INPUT} dir="ltr" />
               </div>
+              <div>
+                <FieldLabel>טלפון *</FieldLabel>
+                <input required type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} style={DARK_INPUT} dir="ltr" placeholder="050-0000000" />
+              </div>
               <div style={{ background: "rgba(51,154,240,0.08)", border: "1px solid rgba(51,154,240,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#74c0fc" }}>
-                📧 קישור הזמנה יישלח לאימייל — המשתמש יגדיר סיסמה בעצמו
+                📧 קישור הזמנה יישלח לאימייל — קוד OTP יישלח לטלפון לאימות
               </div>
               <div>
                 <FieldLabel>הרשאה</FieldLabel>
@@ -590,7 +594,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <button type="submit" disabled={loading} style={{ flex: 1, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff", border: "none", padding: 12, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}>
                   {loading ? "יוצר..." : "✉️ צור משתמש ושלח הזמנה"}
                 </button>
-                <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
+                <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", phone: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
                   style={{ flex: 1, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)", padding: 12, borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                   ביטול
                 </button>

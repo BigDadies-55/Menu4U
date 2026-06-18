@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hashOtp } from "@/lib/otp";
 import { logAudit, getIp } from "@/lib/audit";
-import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
@@ -12,9 +11,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Rate limit: 5 attempts per 10 minutes per user
-  const allowed = await checkRateLimit(`otp-verify:${session.user.id}`, 5, 10 * 60 * 1000);
-  if (!allowed) return NextResponse.json({ error: "יותר מדי ניסיונות. נסה שוב בעוד מספר דקות." }, { status: 429 });
+  // Lock after 3 failed attempts within 3 minutes
+  const allowed = await checkRateLimit(`otp-verify:${session.user.id}`, 3, 3 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "יותר מדי ניסיונות שגויים. בקש קוד חדש." },
+      { status: 429 }
+    );
+  }
 
   const { otp } = await req.json();
   if (!otp || typeof otp !== "string") {
@@ -55,13 +59,11 @@ export async function POST(req: Request) {
   await logAudit({
     userId: session.user.id,
     userEmail: user.email,
-    action: "VERIFY_EMAIL",
+    action: "VERIFY_PHONE_OTP",
     entity: "User",
     entityId: session.user.id,
     ip: getIp(req),
   });
-
-  try { await sendWelcomeEmail(user.email, user.name); } catch (err) { console.error("[welcome] Failed to send welcome email:", err); }
 
   return NextResponse.json({ success: true });
 }

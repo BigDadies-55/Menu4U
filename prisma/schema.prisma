@@ -58,6 +58,7 @@ model User {
   totpSecret           String?
   totpEnabled          Boolean   @default(false)
   managerPin           String?
+  status               String    @default("PENDING")
 
   accounts          Account[]
   sessions          Session[]
