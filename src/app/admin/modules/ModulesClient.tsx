@@ -45,11 +45,10 @@ const TH_BORDER  = "rgba(52,211,153,0.35)";
 const ROW_BORDER = "rgba(255,255,255,0.07)";
 
 const DATE_INPUT: React.CSSProperties = {
-  width: "100%", padding: "2px 2px", borderRadius: 5,
+  width: "100%", padding: "5px 8px", borderRadius: 7,
   border: "1px solid rgba(255,255,255,0.12)",
   background: "rgba(255,255,255,0.06)", color: TEXT_MAIN,
-  fontSize: 10, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
-  textAlign: "center",
+  fontSize: 12, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
 };
 
 function isoToDate(iso: string | null): string {
@@ -149,24 +148,24 @@ function ModuleTableRow({
       </td>
 
       {/* From date */}
-      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 90 }}>
+      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 118 }}>
         <input
           type="date"
           value={isoToDate(state.enabledFrom)}
           onChange={e => onChange({ enabledFrom: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
           onBlur={handleBlur}
-          style={DATE_INPUT}
+          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px" }}
         />
       </td>
 
       {/* To date */}
-      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 90 }}>
+      <td style={{ padding: "5px 5px", verticalAlign: "middle", minWidth: 118 }}>
         <input
           type="date"
           value={isoToDate(state.enabledTo)}
           onChange={e => onChange({ enabledTo: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
           onBlur={handleBlur}
-          style={{ ...DATE_INPUT, borderColor: expired ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.12)", color: expired ? RED : TEXT_MAIN }}
+          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px", borderColor: expired ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.12)", color: expired ? RED : TEXT_MAIN }}
         />
       </td>
 
