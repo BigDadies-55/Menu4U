@@ -31,11 +31,14 @@ enum OrderStatus {
 model User {
   id            String    @id @default(cuid())
   name          String?
+  username      String?   @unique
   email         String    @unique
+  phone         String?
   emailVerified DateTime?
   image         String?
   password      String?
   role          Role      @default(VIEWER)
+  status        String    @default("PENDING")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

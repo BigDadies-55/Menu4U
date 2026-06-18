@@ -15,17 +15,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin) {
-    let user: { emailVerified: Date | null; termsAccepted: boolean } | null = null;
+    let user: { emailVerified: Date | null; termsAccepted: boolean; username?: string | null; status?: string } | null = null;
     try {
       user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { emailVerified: true, termsAccepted: true },
+        select: { emailVerified: true, termsAccepted: true, username: true, status: true },
       });
     } catch {
       // DB columns may not exist yet — allow access until migration runs
     }
 
     if (!user?.emailVerified) redirect("/verify-email");
+    if (!(user as { username?: string | null })?.username) redirect("/onboarding/username");
+    if ((user as { status?: string })?.status === "PENDING") redirect("/onboarding/profile");
     if (!user?.termsAccepted) redirect("/terms");
   }
 

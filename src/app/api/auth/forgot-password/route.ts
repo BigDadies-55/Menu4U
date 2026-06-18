@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashOtp } from "@/lib/otp";
-import { sendPasswordResetEmail } from "@/lib/email";
-import { checkRateLimit } from "@/lib/rateLimit";
-import { getIpKey } from "@/lib/rateLimit";
-import crypto from "crypto";
+import { generateOtp, hashOtp } from "@/lib/otp";
+import { sendSms, isSmsConfigured } from "@/lib/sms";
+import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
+
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 7) return "***";
+  return digits.slice(0, 3) + "•".repeat(digits.length - 6) + digits.slice(-3);
+}
 
 export async function POST(req: Request) {
   const ip = getIpKey(req);
@@ -16,39 +20,47 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email } = await req.json();
-  if (!email || typeof email !== "string") {
-    return NextResponse.json({ error: "נדרש אימייל" }, { status: 400 });
+  const { username } = await req.json();
+  if (!username || typeof username !== "string") {
+    return NextResponse.json({ error: "נדרש שם משתמש" }, { status: 400 });
   }
 
-  // Always return the same response to prevent user-enumeration
-  const genericOk = NextResponse.json({ ok: true });
+  // Always show same message to prevent user-enumeration
+  const genericOk = NextResponse.json({
+    ok: true,
+    message: "אם הפרטים נכונים, נשלח קוד",
+  });
 
   const user = await prisma.user.findFirst({
-    where: { email: email.toLowerCase().trim() },
-    select: { id: true, email: true, name: true },
+    where: { username: username.trim().toLowerCase() },
+    select: { id: true, email: true, name: true, phone: true },
   });
-  if (!user) return genericOk;
+  if (!user || !user.phone) return genericOk;
 
-  // Delete any existing reset tokens for this email before creating a new one
-  await prisma.verificationToken.deleteMany({ where: { identifier: user.email } });
+  const otp = generateOtp();
+  const expires = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
 
-  const rawToken = crypto.randomBytes(32).toString("hex");
-  const hashedToken = hashOtp(rawToken);
-  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
+  // Use "fp:{email}" as identifier to avoid collision with login OTPs
+  const identifier = `fp:${user.email}`;
+  await prisma.verificationToken.deleteMany({ where: { identifier } });
   await prisma.verificationToken.create({
-    data: { identifier: user.email, token: hashedToken, expires },
+    data: { identifier, token: hashOtp(otp), expires },
   });
 
-  const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const resetLink = `${baseUrl}/reset-password?token=${rawToken}`;
-
-  try {
-    await sendPasswordResetEmail(user.email, resetLink, user.name);
-  } catch (err) {
-    console.error("[email] Failed to send password reset email:", err);
+  if (isSmsConfigured()) {
+    try {
+      await sendSms(user.phone, `קוד איפוס סיסמה: ${otp}\nתקף ל-3 דקות. אל תשתף קוד זה עם אחרים.`);
+    } catch (err) {
+      console.error("[forgot-pw] SMS send failed:", err);
+    }
+  } else {
+    console.log(`[forgot-pw-dev] OTP for ${user.email}: ${otp}`);
   }
 
-  return genericOk;
+  return NextResponse.json({
+    ok: true,
+    maskedPhone: maskPhone(user.phone),
+    // userId needed by the verify step (non-sensitive — used only to look up the token)
+    userId: user.id,
+  });
 }

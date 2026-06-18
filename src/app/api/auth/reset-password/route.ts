@@ -42,6 +42,8 @@ export async function POST(req: Request) {
       },
     }),
     prisma.verificationToken.deleteMany({ where: { identifier: record.identifier } }),
+    // Invalidate all active sessions so other logged-in devices are signed out
+    prisma.session.deleteMany({ where: { userId: user.id } }),
   ]);
 
   await logAudit({

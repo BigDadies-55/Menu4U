@@ -88,7 +88,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   }, []);
 
   const [showForm, setShowForm]         = useState(false);
-  const [form, setForm]                 = useState({ name: "", email: "", role: "VIEWER" as Role });
+  const [form, setForm]                 = useState({ name: "", email: "", phone: "", role: "VIEWER" as Role });
   const [formRestaurantIds, setFormRestaurantIds] = useState<string[]>([]);
   const [pendingInviteLink, setPendingInviteLink] = useState<{ email: string; link: string } | null>(null);
   const [loading, setLoading]           = useState(false);
@@ -174,7 +174,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     }
     const created = await res.json();
     setUsers([{ ...created, emailVerified: null, restaurantUsers: [], mustChangePassword: false }, ...users]);
-    setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]);
+    setShowForm(false); setForm({ name: "", email: "", phone: "", role: "VIEWER" }); setFormRestaurantIds([]);
     setLoading(false);
     if (!created.emailSent && created.inviteLink) setPendingInviteLink({ email: created.email, link: created.inviteLink });
   }
@@ -450,8 +450,10 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={DARK_INPUT} autoFocus /></div>
               <div><Label>אימייל *</Label>
                 <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={DARK_INPUT} dir="ltr" /></div>
+              <div><Label>טלפון *</Label>
+                <input required type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} style={DARK_INPUT} dir="ltr" placeholder="050-0000000" /></div>
               <div style={{ background: "rgba(51,154,240,0.07)", border: "1px solid rgba(51,154,240,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#74c0fc" }}>
-                📧 קישור הזמנה יישלח לאימייל — המשתמש יגדיר סיסמה בעצמו
+                📧 קישור הזמנה יישלח לאימייל — קוד OTP יישלח לטלפון לאימות
               </div>
               <div><Label>הרשאה</Label>
                 <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value as Role })} style={DARK_SELECT}>
@@ -482,7 +484,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                 <button type="submit" disabled={loading} style={{ flex: 1, background: T.gold, color: "#fff", border: "none", padding: 11, borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
                   {loading ? "יוצר..." : "✉️ צור משתמש ושלח הזמנה"}
                 </button>
-                <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
+                <button type="button" onClick={() => { setShowForm(false); setForm({ name: "", email: "", phone: "", role: "VIEWER" }); setFormRestaurantIds([]); }}
                   style={{ flex: 1, background: T.overlay, color: T.sub, border: `1px solid ${T.border}`, padding: 11, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   ביטול
                 </button>
