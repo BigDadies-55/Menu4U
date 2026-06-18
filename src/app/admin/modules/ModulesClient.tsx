@@ -399,7 +399,26 @@ export default function ModulesClient({ restaurants }: Props) {
       {/* Subscription section */}
       {selectedRestaurant && (
         <div style={{ marginBottom: 28, padding: "16px 20px", borderRadius: 14, border: `1px solid rgba(217,119,6,0.3)`, background: "rgba(217,119,6,0.06)", maxWidth: 560 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: GOLD_TEXT, marginBottom: 12 }}>📅 תוקף מנוי</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD_TEXT }}>📅 תוקף מנוי</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => {
+                  const today = new Date();
+                  const end = new Date(today); end.setDate(end.getDate() + 30);
+                  setSubFrom(today.toISOString().slice(0, 10));
+                  setSubTo(end.toISOString().slice(0, 10));
+                }}
+                style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${GOLD}`, background: "transparent", color: GOLD_TEXT, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                🎁 30 ימי ניסיון
+              </button>
+              <button
+                onClick={() => { setSubFrom(""); setSubTo(""); }}
+                style={{ padding: "5px 12px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "transparent", color: RED, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                ✕ לא פעיל
+              </button>
+            </div>
+          </div>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 140 }}>
               <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 4 }}>מתאריך</label>
@@ -415,19 +434,14 @@ export default function ModulesClient({ restaurants }: Props) {
               style={{ padding: "8px 18px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${GOLD} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
               {subSaving ? "שומר..." : "שמור מנוי"}
             </button>
-            {(subFrom || subTo) && (
-              <button onClick={() => { setSubFrom(""); setSubTo(""); }}
-                style={{ padding: "8px 12px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
-                נקה
-              </button>
-            )}
           </div>
           {selectedRest && (
-            <div style={{ marginTop: 10, fontSize: 11, color: TEXT_SUB }}>
-              {!selectedRest.subscriptionTo ? "ללא הגבלת תוקף" :
-                new Date() > new Date(selectedRest.subscriptionTo)
-                  ? `⚠️ פג תוקף: ${new Date(selectedRest.subscriptionTo).toLocaleDateString("he-IL")}`
-                  : `✓ פעיל עד ${new Date(selectedRest.subscriptionTo).toLocaleDateString("he-IL")}`}
+            <div style={{ marginTop: 10, fontSize: 11, color: (!subFrom && !subTo) ? RED : TEXT_SUB }}>
+              {(!subFrom && !subTo) ? "⛔ לא פעיל — אין מנוי" :
+               !subTo ? "✓ פעיל ללא הגבלת תוקף" :
+               new Date() > new Date(subTo)
+                 ? `⚠️ פג תוקף: ${new Date(subTo).toLocaleDateString("he-IL")}`
+                 : `✓ פעיל עד ${new Date(subTo).toLocaleDateString("he-IL")}`}
             </div>
           )}
         </div>
