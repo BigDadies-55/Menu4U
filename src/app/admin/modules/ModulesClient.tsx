@@ -376,79 +376,82 @@ export default function ModulesClient({ restaurants }: Props) {
         </p>
       </div>
 
-      {/* Restaurant selector */}
-      <div style={{ marginBottom: 24, maxWidth: 340 }}>
-        <label style={{ fontSize: 12, color: TEXT_MUTED, display: "block", marginBottom: 6, fontWeight: 600 }}>
-          בחר מסעדה
-        </label>
-        <select
-          value={selectedRestaurant}
-          onChange={e => setSelectedRestaurant(e.target.value)}
-          style={{
-            width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14,
-            background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)",
-            color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit",
-            direction: "rtl",
-          }}
-        >
-          {restaurants.map(r => (
-            <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Top bar: restaurant selector + subscription */}
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 28 }}>
 
-      {/* Subscription section */}
-      {selectedRestaurant && (
-        <div style={{ marginBottom: 28, padding: "16px 20px", borderRadius: 14, border: `1px solid rgba(217,119,6,0.3)`, background: "rgba(217,119,6,0.06)", maxWidth: 560 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD_TEXT }}>📅 תוקף מנוי</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => {
-                  const today = new Date();
-                  const end = new Date(today); end.setDate(end.getDate() + 30);
-                  setSubFrom(today.toISOString().slice(0, 10));
-                  setSubTo(end.toISOString().slice(0, 10));
-                }}
-                style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${GOLD}`, background: "transparent", color: GOLD_TEXT, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-                🎁 30 ימי ניסיון
+        {/* Restaurant selector */}
+        <div style={{ minWidth: 220, maxWidth: 300, flex: "0 0 auto" }}>
+          <label style={{ fontSize: 12, color: TEXT_MUTED, display: "block", marginBottom: 6, fontWeight: 600 }}>
+            בחר מסעדה
+          </label>
+          <select
+            value={selectedRestaurant}
+            onChange={e => setSelectedRestaurant(e.target.value)}
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14,
+              background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)",
+              color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit",
+              direction: "rtl",
+            }}
+          >
+            {restaurants.map(r => (
+              <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Subscription section */}
+        {selectedRestaurant && (
+          <div style={{ flex: 1, minWidth: 300, padding: "14px 18px", borderRadius: 14, border: `1px solid rgba(217,119,6,0.3)`, background: "rgba(217,119,6,0.06)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: GOLD_TEXT }}>📅 תוקף מנוי</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => {
+                    const today = new Date();
+                    const end = new Date(today); end.setDate(end.getDate() + 30);
+                    setSubFrom(today.toISOString().slice(0, 10));
+                    setSubTo(end.toISOString().slice(0, 10));
+                  }}
+                  style={{ padding: "4px 11px", borderRadius: 8, border: `1px solid ${GOLD}`, background: "transparent", color: GOLD_TEXT, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  🎁 30 ימי ניסיון
+                </button>
+                <button
+                  onClick={() => { setSubFrom(""); setSubTo(""); }}
+                  style={{ padding: "4px 11px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "transparent", color: RED, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  ✕ לא פעיל
+                </button>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 130 }}>
+                <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 3 }}>מתאריך</label>
+                <input type="date" value={subFrom} onChange={e => setSubFrom(e.target.value)}
+                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 130 }}>
+                <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 3 }}>עד תאריך</label>
+                <input type="date" value={subTo} onChange={e => setSubTo(e.target.value)}
+                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+              </div>
+              <button onClick={saveSub} disabled={subSaving}
+                style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${GOLD} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                {subSaving ? "שומר..." : "שמור מנוי"}
               </button>
-              <button
-                onClick={() => { setSubFrom(""); setSubTo(""); }}
-                style={{ padding: "5px 12px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "transparent", color: RED, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-                ✕ לא פעיל
-              </button>
             </div>
-          </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 140 }}>
-              <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 4 }}>מתאריך</label>
-              <input type="date" value={subFrom} onChange={e => setSubFrom(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 140 }}>
-              <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 4 }}>עד תאריך</label>
-              <input type="date" value={subTo} onChange={e => setSubTo(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
-            </div>
-            <button onClick={saveSub} disabled={subSaving}
-              style={{ padding: "8px 18px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${GOLD} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
-              {subSaving ? "שומר..." : "שמור מנוי"}
-            </button>
-          </div>
-          {selectedRest && (
-            <div style={{ marginTop: 10, fontSize: 11, color: (!subFrom && !subTo) ? RED : TEXT_SUB }}>
+            <div style={{ marginTop: 8, fontSize: 11, color: (!subFrom && !subTo) ? RED : TEXT_SUB }}>
               {(!subFrom && !subTo) ? "⛔ לא פעיל — אין מנוי" :
                !subTo ? "✓ פעיל ללא הגבלת תוקף" :
                new Date() > new Date(subTo)
                  ? `⚠️ פג תוקף: ${new Date(subTo).toLocaleDateString("he-IL")}`
                  : `✓ פעיל עד ${new Date(subTo).toLocaleDateString("he-IL")}`}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+      </div>
 
       {/* Loading */}
       {loading && (
