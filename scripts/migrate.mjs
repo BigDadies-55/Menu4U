@@ -211,6 +211,7 @@ const sqls = [
   );`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "shiftConfig" TEXT;`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'PENDING';`,
   `CREATE TABLE IF NOT EXISTS "ShiftSmsLog" (
     "id"           TEXT NOT NULL,
     "restaurantId" TEXT NOT NULL,
