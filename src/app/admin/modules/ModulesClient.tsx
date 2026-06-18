@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { MODULES, ModuleKey } from "@/lib/modules";
 
 /* ─── Types ──────────────────────────────────────────────────── */
@@ -31,224 +31,190 @@ interface ModuleState {
   saving: boolean;
 }
 
-/* ─── Styles ─────────────────────────────────────────────────── */
-const GLASS_BG     = "rgba(15,15,30,0.85)";
-const CARD_BG      = "rgba(255,255,255,0.05)";
-const CARD_BORDER  = "rgba(255,255,255,0.12)";
-const GOLD         = "#D97706";
-const GOLD_MUT     = "rgba(217,119,6,0.18)";
-const GOLD_TEXT    = "#f59e0b";
-const TEXT_MAIN    = "#ffffff";
-const TEXT_MUTED   = "rgba(255,255,255,0.5)";
-const TEXT_SUB     = "rgba(255,255,255,0.35)";
-const GREEN        = "#34D399";
-const RED          = "#F87171";
+/* ─── Palette (unchanged from master) ───────────────────────── */
+const GLASS_BG   = "rgba(15,15,30,0.85)";
+const GOLD       = "#D97706";
+const GOLD_TEXT  = "#f59e0b";
+const TEXT_MAIN  = "#ffffff";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUB   = "rgba(255,255,255,0.35)";
+const GREEN      = "#34D399";
+const RED        = "#F87171";
+const TH_BG      = "rgba(52,211,153,0.18)";
+const TH_BORDER  = "rgba(52,211,153,0.35)";
+const ROW_BORDER = "rgba(255,255,255,0.07)";
 
-function isoToDateInput(iso: string | null): string {
+const DATE_INPUT: React.CSSProperties = {
+  width: "100%", padding: "5px 8px", borderRadius: 7,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255,255,255,0.06)", color: TEXT_MAIN,
+  fontSize: 12, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+};
+
+function isoToDate(iso: string | null): string {
   if (!iso) return "";
-  return iso.slice(0, 16); // "YYYY-MM-DDTHH:mm"
+  return iso.slice(0, 10);
 }
 
-/* ─── ModuleCard ─────────────────────────────────────────────── */
-function ModuleCard({
-  mod,
-  state,
-  onChange,
-  onSave,
-  onReset,
+function isExpired(enabledTo: string): boolean {
+  return !!enabledTo && new Date(enabledTo) < new Date();
+}
+
+/* ─── Toggle ─────────────────────────────────────────────────── */
+function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!on)}
+      style={{
+        position: "relative", width: 40, height: 22, borderRadius: 11,
+        border: "none", cursor: "pointer", flexShrink: 0,
+        background: on ? GREEN : "rgba(255,255,255,0.15)",
+        transition: "background 0.2s",
+      }}
+    >
+      <span style={{
+        position: "absolute", top: 3,
+        right: on ? 3 : "auto", left: on ? "auto" : 3,
+        width: 16, height: 16, borderRadius: "50%", background: "#fff",
+        transition: "left 0.2s, right 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+      }} />
+    </button>
+  );
+}
+
+/* ─── Module table row ───────────────────────────────────────── */
+function ModuleTableRow({
+  mod, state, onChange, onSave,
 }: {
   mod: { key: ModuleKey; label: string; icon: string; description: string };
   state: ModuleState;
   onChange: (patch: Partial<ModuleState>) => void;
   onSave: () => void;
-  onReset: () => void;
 }) {
-  const [showDates, setShowDates] = useState(false);
+  const expired = isExpired(state.enabledTo);
+  const effective = state.isEnabled && !expired;
+
+  function handleBlur() {
+    if (state.dirty) onSave();
+  }
 
   return (
-    <div
-      style={{
-        background: state.isEnabled ? `rgba(52,211,153,0.04)` : CARD_BG,
-        border: `1px solid ${state.isEnabled ? "rgba(52,211,153,0.2)" : CARD_BORDER}`,
-        borderRadius: 14,
-        padding: "16px 18px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        direction: "rtl",
-        transition: "background 0.2s, border 0.2s",
-      }}
-    >
-      {/* Header row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <span style={{ fontSize: 22 }}>{mod.icon}</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: TEXT_MAIN }}>{mod.label}</div>
-            <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 1 }}>{mod.description}</div>
-          </div>
-        </div>
-
-        {/* Toggle */}
-        <button
-          onClick={() => onChange({ isEnabled: !state.isEnabled, dirty: true })}
-          style={{
-            position: "relative",
-            width: 44,
-            height: 24,
-            borderRadius: 12,
-            border: "none",
-            cursor: "pointer",
-            background: state.isEnabled ? GREEN : "rgba(255,255,255,0.12)",
-            transition: "background 0.2s",
-            flexShrink: 0,
-          }}
-          title={state.isEnabled ? "פעיל — לחץ לכיבוי" : "כבוי — לחץ להפעלה"}
-        >
-          <span
-            style={{
-              position: "absolute",
-              top: 3,
-              right: state.isEnabled ? 3 : "auto",
-              left: state.isEnabled ? "auto" : 3,
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              background: "#fff",
-              transition: "left 0.2s, right 0.2s",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
-            }}
+    <tr style={{
+      background: expired
+        ? "rgba(248,113,113,0.06)"
+        : effective ? "rgba(52,211,153,0.04)" : "transparent",
+      borderBottom: `1px solid ${ROW_BORDER}`,
+      transition: "background 0.2s",
+    }}>
+      {/* Status toggle */}
+      <td style={{ padding: "10px 14px", textAlign: "center", verticalAlign: "middle" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <Toggle
+            on={effective}
+            onChange={v => { onChange({ isEnabled: v, dirty: true }); setTimeout(onSave, 0); }}
           />
-        </button>
-      </div>
-
-      {/* Status chip */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{
-          fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20,
-          background: state.isEnabled ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
-          color: state.isEnabled ? GREEN : RED,
-          border: `1px solid ${state.isEnabled ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)"}`,
-        }}>
-          {state.isEnabled ? "פעיל" : "כבוי"}
-        </span>
-        <button
-          onClick={() => setShowDates(p => !p)}
-          style={{
-            fontSize: 11, color: TEXT_MUTED, background: "none", border: "none",
-            cursor: "pointer", padding: "2px 6px", borderRadius: 6,
-            textDecoration: "underline",
-          }}
-        >
-          {showDates ? "הסתר תאריכים" : "הגדר תאריכים"}
-        </button>
-      </div>
-
-      {/* Date range */}
-      {showDates && (
-        <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 10, color: TEXT_SUB, display: "block", marginBottom: 3 }}>פעיל מ-</label>
-              <input
-                type="datetime-local"
-                value={state.enabledFrom}
-                onChange={e => onChange({ enabledFrom: e.target.value, dirty: true })}
-                style={{
-                  width: "100%", padding: "6px 8px", borderRadius: 8, fontSize: 12,
-                  background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
-                  color: TEXT_MAIN, outline: "none", boxSizing: "border-box",
-                }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 10, color: TEXT_SUB, display: "block", marginBottom: 3 }}>פעיל עד</label>
-              <input
-                type="datetime-local"
-                value={state.enabledTo}
-                onChange={e => onChange({ enabledTo: e.target.value, dirty: true })}
-                style={{
-                  width: "100%", padding: "6px 8px", borderRadius: 8, fontSize: 12,
-                  background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
-                  color: TEXT_MAIN, outline: "none", boxSizing: "border-box",
-                }}
-              />
-            </div>
-          </div>
+          <span style={{
+            fontSize: 10, fontWeight: 600,
+            color: effective ? GREEN : expired ? RED : TEXT_MUTED,
+          }}>
+            {expired ? "פג תוקף" : effective ? "פעיל" : "כבוי"}
+          </span>
         </div>
-      )}
+      </td>
+
+      {/* Icon */}
+      <td style={{ padding: "10px 10px", textAlign: "center", verticalAlign: "middle" }}>
+        <span style={{ fontSize: 22 }}>{mod.icon}</span>
+      </td>
+
+      {/* Name + description */}
+      <td style={{ padding: "10px 14px", verticalAlign: "middle", minWidth: 150 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT_MAIN }}>{mod.label}</div>
+        <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>{mod.description}</div>
+      </td>
+
+      {/* From date */}
+      <td style={{ padding: "10px 10px", verticalAlign: "middle", minWidth: 140 }}>
+        <input
+          type="date"
+          value={isoToDate(state.enabledFrom)}
+          onChange={e => onChange({ enabledFrom: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
+          onBlur={handleBlur}
+          style={DATE_INPUT}
+        />
+      </td>
+
+      {/* To date */}
+      <td style={{ padding: "10px 10px", verticalAlign: "middle", minWidth: 140 }}>
+        <input
+          type="date"
+          value={isoToDate(state.enabledTo)}
+          onChange={e => onChange({ enabledTo: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
+          onBlur={handleBlur}
+          style={{
+            ...DATE_INPUT,
+            borderColor: expired ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.12)",
+            color: expired ? RED : TEXT_MAIN,
+          }}
+        />
+      </td>
 
       {/* Note */}
-      <input
-        type="text"
-        value={state.note}
-        onChange={e => onChange({ note: e.target.value, dirty: true })}
-        placeholder="הערה (אופציונלי)"
-        style={{
-          width: "100%", padding: "7px 10px", borderRadius: 8, fontSize: 12,
-          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-          color: TEXT_MAIN, outline: "none", boxSizing: "border-box",
-          fontFamily: "inherit",
-        }}
-      />
+      <td style={{ padding: "10px 10px", verticalAlign: "middle" }}>
+        <input
+          type="text"
+          value={state.note}
+          onChange={e => onChange({ note: e.target.value, dirty: true })}
+          onBlur={handleBlur}
+          placeholder="הערה..."
+          style={{ ...DATE_INPUT, minWidth: 120 }}
+        />
+      </td>
 
-      {/* Save / Reset buttons */}
-      {state.dirty && (
-        <div style={{ display: "flex", gap: 6 }}>
-          <button
-            onClick={onSave}
-            disabled={state.saving}
-            style={{
-              flex: 1, padding: "8px 0", borderRadius: 9, border: "none",
-              background: `linear-gradient(110deg, #7a3c04 0%, ${GOLD} 50%, #e8843a 100%)`,
-              color: "#fff", fontSize: 12, fontWeight: 700, cursor: state.saving ? "default" : "pointer",
-              opacity: state.saving ? 0.6 : 1, fontFamily: "inherit",
-            }}
-          >
-            {state.saving ? "שומר..." : "שמור"}
-          </button>
-          <button
-            onClick={onReset}
-            style={{
-              padding: "8px 14px", borderRadius: 9,
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.06)", color: TEXT_MUTED,
-              fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
-            בטל
-          </button>
-        </div>
-      )}
-    </div>
+      {/* Save indicator */}
+      <td style={{ padding: "10px 10px", verticalAlign: "middle", width: 60, textAlign: "center" }}>
+        {state.saving && <span style={{ fontSize: 11, color: GOLD_TEXT }}>שומר...</span>}
+        {!state.saving && state.dirty && (
+          <button onClick={onSave} style={{
+            fontSize: 11, padding: "4px 10px", borderRadius: 7, border: "none",
+            background: `linear-gradient(110deg,#7a3c04,${GOLD})`,
+            color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+          }}>שמור</button>
+        )}
+      </td>
+    </tr>
   );
 }
 
-/* ─── Main Client ────────────────────────────────────────────── */
-interface Props {
-  restaurants: Restaurant[];
-}
+/* ─── Main ───────────────────────────────────────────────────── */
+interface Props { restaurants: Restaurant[] }
 
 export default function ModulesClient({ restaurants }: Props) {
-  const [selectedRestaurant, setSelectedRestaurant] = useState<string>(restaurants[0]?.id ?? "");
+  const [selectedRestaurant, setSelectedRestaurant] = useState(restaurants[0]?.id ?? "");
   const [moduleStates, setModuleStates] = useState<Record<ModuleKey, ModuleState>>(() =>
     Object.fromEntries(
       MODULES.map(m => [m.key, { dbId: null, isEnabled: true, enabledFrom: "", enabledTo: "", note: "", dirty: false, saving: false }])
     ) as Record<ModuleKey, ModuleState>
   );
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [loading, setLoading]     = useState(false);
+  const [toast, setToast]         = useState<{ msg: string; ok: boolean } | null>(null);
+  const [subFrom, setSubFrom]     = useState("");
+  const [subTo, setSubTo]         = useState("");
+  const [subSaving, setSubSaving] = useState(false);
 
   const selectedRest = restaurants.find(r => r.id === selectedRestaurant);
-  const [subFrom, setSubFrom] = useState("");
-  const [subTo, setSubTo]     = useState("");
-  const [subSaving, setSubSaving] = useState(false);
+  const autoSaveRef = useRef<Record<ModuleKey, boolean>>({} as Record<ModuleKey, boolean>);
 
   useEffect(() => {
     const r = restaurants.find(r => r.id === selectedRestaurant);
     setSubFrom(r?.subscriptionFrom ? r.subscriptionFrom.slice(0, 10) : "");
     setSubTo(r?.subscriptionTo   ? r.subscriptionTo.slice(0, 10)   : "");
   }, [selectedRestaurant, restaurants]);
+
+  const showToast = (msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 2500);
+  };
 
   async function saveSub() {
     setSubSaving(true);
@@ -267,10 +233,39 @@ export default function ModulesClient({ restaurants }: Props) {
     finally { setSubSaving(false); }
   }
 
-  const showToast = (msg: string, ok: boolean) => {
-    setToast({ msg, ok });
-    setTimeout(() => setToast(null), 2500);
-  };
+  const saveModule = useCallback(async (key: ModuleKey, overrideState?: Partial<ModuleState>) => {
+    setModuleStates(prev => {
+      const state = { ...prev[key], ...overrideState };
+      const expired = isExpired(state.enabledTo);
+      const effectiveEnabled = state.isEnabled && !expired;
+
+      (async () => {
+        try {
+          const res = await fetch("/api/admin/modules", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              restaurantId: selectedRestaurant,
+              moduleKey: key,
+              isEnabled: effectiveEnabled,
+              enabledFrom: state.enabledFrom || null,
+              enabledTo: state.enabledTo || null,
+              note: state.note || null,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "שגיאה");
+          setModuleStates(p => ({ ...p, [key]: { ...p[key], dbId: data.id ?? p[key].dbId, dirty: false, saving: false } }));
+          showToast("נשמר", true);
+        } catch (e) {
+          setModuleStates(p => ({ ...p, [key]: { ...p[key], saving: false } }));
+          showToast(String(e), false);
+        }
+      })();
+
+      return { ...prev, [key]: { ...prev[key], ...overrideState, saving: true, dirty: false } };
+    });
+  }, [selectedRestaurant]);
 
   const loadModules = useCallback(async (restaurantId: string) => {
     if (!restaurantId) return;
@@ -279,30 +274,33 @@ export default function ModulesClient({ restaurants }: Props) {
       const res = await fetch(`/api/admin/modules?restaurantId=${restaurantId}`);
       const data = await res.json();
       const rows: ModuleRow[] = data.rows ?? [];
+      const now = new Date();
 
-      setModuleStates(prev => {
-        const next = { ...prev };
-        // Reset all to defaults first
-        for (const m of MODULES) {
-          next[m.key] = { dbId: null, isEnabled: true, enabledFrom: "", enabledTo: "", note: "", dirty: false, saving: false };
+      const next: Record<ModuleKey, ModuleState> = Object.fromEntries(
+        MODULES.map(m => [m.key, { dbId: null, isEnabled: true, enabledFrom: "", enabledTo: "", note: "", dirty: false, saving: false }])
+      ) as Record<ModuleKey, ModuleState>;
+
+      for (const row of rows) {
+        const key = row.moduleKey as ModuleKey;
+        if (!MODULES.some(m => m.key === key)) continue;
+        const enabledTo = isoToDate(row.enabledTo);
+        const expired = enabledTo && new Date(row.enabledTo!) < now;
+        next[key] = {
+          dbId: row.id,
+          isEnabled: expired ? false : row.isEnabled,
+          enabledFrom: isoToDate(row.enabledFrom),
+          enabledTo,
+          note: row.note ?? "",
+          dirty: false,
+          saving: false,
+        };
+        // auto-save expired modules that were still marked active
+        if (expired && row.isEnabled) {
+          autoSaveRef.current[key] = true;
         }
-        // Apply DB rows
-        for (const row of rows) {
-          const key = row.moduleKey as ModuleKey;
-          if (MODULES.some(m => m.key === key)) {
-            next[key] = {
-              dbId: row.id,
-              isEnabled: row.isEnabled,
-              enabledFrom: isoToDateInput(row.enabledFrom),
-              enabledTo: isoToDateInput(row.enabledTo),
-              note: row.note ?? "",
-              dirty: false,
-              saving: false,
-            };
-          }
-        }
-        return next;
-      });
+      }
+
+      setModuleStates(next);
     } catch {
       showToast("שגיאה בטעינת המודולים", false);
     } finally {
@@ -314,112 +312,55 @@ export default function ModulesClient({ restaurants }: Props) {
     if (selectedRestaurant) loadModules(selectedRestaurant);
   }, [selectedRestaurant, loadModules]);
 
+  // Auto-save expired modules after state settles
+  useEffect(() => {
+    const keys = Object.keys(autoSaveRef.current) as ModuleKey[];
+    if (keys.length === 0) return;
+    autoSaveRef.current = {} as Record<ModuleKey, boolean>;
+    keys.forEach(k => saveModule(k));
+  }, [moduleStates, saveModule]);
+
   function handleChange(key: ModuleKey, patch: Partial<ModuleState>) {
     setModuleStates(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }));
   }
 
-  function handleReset(key: ModuleKey) {
-    // Reload from DB by re-running load
-    loadModules(selectedRestaurant);
-  }
-
-  async function handleSave(key: ModuleKey) {
-    const state = moduleStates[key];
-    setModuleStates(prev => ({ ...prev, [key]: { ...prev[key], saving: true } }));
-
-    try {
-      const res = await fetch("/api/admin/modules", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantId: selectedRestaurant,
-          moduleKey: key,
-          isEnabled: state.isEnabled,
-          enabledFrom: state.enabledFrom || null,
-          enabledTo: state.enabledTo || null,
-          note: state.note || null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "שגיאה");
-
-      setModuleStates(prev => ({
-        ...prev,
-        [key]: { ...prev[key], dbId: data.id ?? prev[key].dbId, dirty: false, saving: false },
-      }));
-      showToast("נשמר בהצלחה", true);
-    } catch (e) {
-      setModuleStates(prev => ({ ...prev, [key]: { ...prev[key], saving: false } }));
-      showToast(String(e), false);
-    }
-  }
-
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: GLASS_BG,
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        padding: "24px 20px",
-        direction: "rtl",
-        fontFamily: "inherit",
-      }}
-    >
-      {/* Page header */}
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: GOLD_TEXT, margin: 0, letterSpacing: -0.5 }}>
-          ⚙️ ניהול מודולים
-        </h1>
-        <p style={{ fontSize: 13, color: TEXT_MUTED, marginTop: 6 }}>
-          הפעלה וכיבוי של מודולים לכל מסעדה
-        </p>
+    <div style={{ minHeight: "100vh", background: GLASS_BG, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "24px 20px", direction: "rtl", fontFamily: "inherit" }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: GOLD_TEXT, margin: 0, letterSpacing: -0.5 }}>⚙️ ניהול מודולים</h1>
+        <p style={{ fontSize: 13, color: TEXT_MUTED, marginTop: 6 }}>הפעלה וכיבוי של מודולים לכל מסעדה</p>
       </div>
 
-      {/* Top bar: restaurant selector + subscription */}
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 28 }}>
+      {/* Top bar: selector + subscription */}
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 24 }}>
 
         {/* Restaurant selector */}
         <div style={{ minWidth: 220, maxWidth: 300, flex: "0 0 auto" }}>
-          <label style={{ fontSize: 12, color: TEXT_MUTED, display: "block", marginBottom: 6, fontWeight: 600 }}>
-            בחר מסעדה
-          </label>
+          <label style={{ fontSize: 12, color: TEXT_MUTED, display: "block", marginBottom: 6, fontWeight: 600 }}>בחר מסעדה</label>
           <select
             value={selectedRestaurant}
             onChange={e => setSelectedRestaurant(e.target.value)}
-            style={{
-              width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14,
-              background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)",
-              color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit",
-              direction: "rtl",
-            }}
+            style={{ width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
           >
             {restaurants.map(r => (
-              <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>
-                {r.name}
-              </option>
+              <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>{r.name}</option>
             ))}
           </select>
         </div>
 
-        {/* Subscription section */}
+        {/* Subscription */}
         {selectedRestaurant && (
           <div style={{ flex: 1, minWidth: 300, padding: "14px 18px", borderRadius: 14, border: `1px solid rgba(217,119,6,0.3)`, background: "rgba(217,119,6,0.06)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: GOLD_TEXT }}>📅 תוקף מנוי</div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => {
-                    const today = new Date();
-                    const end = new Date(today); end.setDate(end.getDate() + 30);
-                    setSubFrom(today.toISOString().slice(0, 10));
-                    setSubTo(end.toISOString().slice(0, 10));
-                  }}
+                <button onClick={() => { const t = new Date(); const e = new Date(t); e.setDate(e.getDate() + 30); setSubFrom(t.toISOString().slice(0, 10)); setSubTo(e.toISOString().slice(0, 10)); }}
                   style={{ padding: "4px 11px", borderRadius: 8, border: `1px solid ${GOLD}`, background: "transparent", color: GOLD_TEXT, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                   🎁 30 ימי ניסיון
                 </button>
-                <button
-                  onClick={() => { setSubFrom(""); setSubTo(""); }}
+                <button onClick={() => { setSubFrom(""); setSubTo(""); }}
                   style={{ padding: "4px 11px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "transparent", color: RED, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                   ✕ לא פעיל
                 </button>
@@ -442,67 +383,61 @@ export default function ModulesClient({ restaurants }: Props) {
               </button>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: (!subFrom && !subTo) ? RED : TEXT_SUB }}>
-              {(!subFrom && !subTo) ? "⛔ לא פעיל — אין מנוי" :
-               !subTo ? "✓ פעיל ללא הגבלת תוקף" :
-               new Date() > new Date(subTo)
-                 ? `⚠️ פג תוקף: ${new Date(subTo).toLocaleDateString("he-IL")}`
-                 : `✓ פעיל עד ${new Date(subTo).toLocaleDateString("he-IL")}`}
+              {(!subFrom && !subTo) ? "⛔ לא פעיל — אין מנוי" : !subTo ? "✓ פעיל ללא הגבלת תוקף" :
+               new Date() > new Date(subTo) ? `⚠️ פג תוקף: ${new Date(subTo).toLocaleDateString("he-IL")}` :
+               `✓ פעיל עד ${new Date(subTo).toLocaleDateString("he-IL")}`}
             </div>
           </div>
         )}
-
       </div>
 
       {/* Loading */}
-      {loading && (
-        <div style={{ color: TEXT_MUTED, fontSize: 14, marginBottom: 20 }}>
-          טוען...
-        </div>
-      )}
+      {loading && <div style={{ color: TEXT_MUTED, fontSize: 14, marginBottom: 20 }}>טוען...</div>}
 
-      {/* Module grid */}
+      {/* Modules table */}
       {!loading && selectedRestaurant && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            gap: 14,
-          }}
-        >
-          {MODULES.map(mod => (
-            <ModuleCard
-              key={mod.key}
-              mod={mod}
-              state={moduleStates[mod.key]}
-              onChange={patch => handleChange(mod.key, patch)}
-              onSave={() => handleSave(mod.key)}
-              onReset={() => handleReset(mod.key)}
-            />
-          ))}
+        <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${TH_BORDER}` }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", direction: "rtl" }}>
+            <thead>
+              <tr style={{ background: TH_BG }}>
+                {["סטטוס", "אייקון", "שם מודול", "מתאריך", "עד תאריך", "הערות", ""].map(h => (
+                  <th key={h} style={{
+                    padding: "11px 14px", fontSize: 12, fontWeight: 700,
+                    color: GREEN, textAlign: "right", borderBottom: `1px solid ${TH_BORDER}`,
+                    whiteSpace: "nowrap",
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {MODULES.map(mod => (
+                <ModuleTableRow
+                  key={mod.key}
+                  mod={mod}
+                  state={moduleStates[mod.key]}
+                  onChange={patch => handleChange(mod.key, patch)}
+                  onSave={() => saveModule(mod.key)}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* No restaurants */}
       {!loading && restaurants.length === 0 && (
-        <div style={{ color: TEXT_MUTED, fontSize: 14 }}>
-          לא נמצאו מסעדות פעילות.
-        </div>
+        <div style={{ color: TEXT_MUTED, fontSize: 14 }}>לא נמצאו מסעדות פעילות.</div>
       )}
 
       {/* Toast */}
       {toast && (
-        <div
-          style={{
-            position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-            zIndex: 9999, padding: "12px 24px", borderRadius: 12,
-            background: toast.ok ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
-            border: `1px solid ${toast.ok ? "rgba(52,211,153,0.4)" : "rgba(248,113,113,0.4)"}`,
-            color: toast.ok ? GREEN : RED,
-            fontSize: 13, fontWeight: 600, direction: "rtl",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-          }}
-        >
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+          zIndex: 9999, padding: "12px 24px", borderRadius: 12,
+          background: toast.ok ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
+          border: `1px solid ${toast.ok ? "rgba(52,211,153,0.4)" : "rgba(248,113,113,0.4)"}`,
+          color: toast.ok ? GREEN : RED, fontSize: 13, fontWeight: 600, direction: "rtl",
+          backdropFilter: "blur(12px)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        }}>
           {toast.ok ? "✓" : "✗"} {toast.msg}
         </div>
       )}
