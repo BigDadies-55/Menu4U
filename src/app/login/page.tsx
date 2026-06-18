@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { loginAction } from "./actions";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const result = await loginAction(email, password);
+    const result = await loginAction(username, password);
     if (result?.error) {
       setError(result.error);
       setLoading(false);
@@ -212,14 +212,15 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="login-field">
-                <label>אימייל</label>
+                <label>שם משתמש</label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   required
-                  placeholder="admin@tech4bites.com"
+                  placeholder="username"
                   dir="ltr"
+                  autoComplete="username"
                 />
               </div>
 

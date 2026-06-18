@@ -1,0 +1,4 @@
+firstName,lastName,email,phone,role,restaurantId
+דוד,כהן,david@example.com,0501234567,WAITER,
+רחל,לוי,rachel@example.com,,EDITOR,
+יוסי,גל,,0509876543,VIEWER,

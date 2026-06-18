@@ -60,7 +60,7 @@ export default function VerifyEmailPage() {
       body: JSON.stringify({ otp }),
     });
     if (res.ok) {
-      router.replace("/admin");
+      router.replace("/onboarding/username");
     } else {
       const data = await res.json();
       setError(data.error ?? "קוד שגוי, נסה שנית");
@@ -95,13 +95,13 @@ export default function VerifyEmailPage() {
             className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
             style={{ background: "linear-gradient(135deg,#C9A84C,#8B6914)" }}
           >
-            ✉️
+            📱
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">אימות אימייל</h1>
+          <h1 className="text-2xl font-bold text-gray-900">אימות טלפון</h1>
           <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-            שלחנו קוד אימות בן 6 ספרות לכתובת המייל שלך.
+            שלחנו קוד אימות בן 6 ספרות לטלפון שלך.
             <br />
-            הקוד תקף ל-15 דקות.
+            הקוד תקף ל-3 דקות.
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export default function VerifyEmailPage() {
 
         <div className="text-center">
           {resendSuccess && (
-            <p className="text-green-600 text-sm mb-2">קוד חדש נשלח למייל ✓</p>
+            <p className="text-green-600 text-sm mb-2">קוד חדש נשלח לטלפון ✓</p>
           )}
           <button
             onClick={handleResend}

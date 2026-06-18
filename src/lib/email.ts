@@ -351,7 +351,7 @@ export async function sendShiftsEmail(
   name: string,
   restaurantName: string,
   periodLabel: string,
-  shifts: { date: string; dayName: string; shiftLabel: string; startTime: string; endTime: string }[],
+  shifts: { date: string; dayName: string; shiftLabel: string; startTime: string; endTime: string; shiftBg?: string; shiftColor?: string }[],
   appUrl?: string
 ) {
   const baseUrl = appUrl ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
@@ -364,13 +364,19 @@ export async function sendShiftsEmail(
     return acc + mins / 60;
   }, 0);
 
-  const rows = shifts.map(s => `
+  const rows = shifts.map(s => {
+    const bg    = s.shiftBg    ?? "rgba(255,255,255,0.06)";
+    const color = s.shiftColor ?? "#c4b5fd";
+    return `
     <tr>
       <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:#d8cfc0;font-weight:600;">${s.date}</td>
       <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(201,164,82,0.9);">${s.dayName}</td>
-      <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:#c4b5fd;">${s.shiftLabel}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;">
+        <span style="display:inline-block;padding:3px 10px;border-radius:6px;background:${bg};color:${color};font-weight:700;">${s.shiftLabel}</span>
+      </td>
       <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:#93C5FD;font-family:'Courier New',monospace;" dir="ltr">${s.startTime.slice(0,5)} – ${s.endTime.slice(0,5)}</td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
 
   await createTransport().sendMail({
     from: `"Menu4U" <${process.env.GMAIL_USER}>`,

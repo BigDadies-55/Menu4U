@@ -23,6 +23,16 @@ export * from './enums';
  */
 export type User = Prisma.UserModel
 /**
+ * Model UserInvite
+ * 
+ */
+export type UserInvite = Prisma.UserInviteModel
+/**
+ * Model OtpCode
+ * 
+ */
+export type OtpCode = Prisma.OtpCodeModel
+/**
  * Model PasswordHistory
  * 
  */

@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 import { cookies } from "next/headers";
 import { checkRateLimit } from "@/lib/rateLimit";
 
-export async function loginAction(email: string, password: string) {
+export async function loginAction(username: string, password: string) {
   const h = await headers();
 
   // Rate limit: 10 attempts per 15 minutes per IP
@@ -19,10 +19,10 @@ export async function loginAction(email: string, password: string) {
   const redirectTo = `${appUrl}/admin`;
 
   try {
-    await signIn("credentials", { email, password, redirectTo });
+    await signIn("credentials", { username, password, redirectTo });
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: "אימייל או סיסמה שגויים" };
+      return { error: "שם משתמש או סיסמה שגויים" };
     }
     throw error;
   }

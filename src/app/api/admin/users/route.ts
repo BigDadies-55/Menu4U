@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/permissions";
+import { isAdmin, canViewUsers } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
 import { logAudit, getIp } from "@/lib/audit";
 import { sendInviteEmail } from "@/lib/email";
@@ -10,15 +10,20 @@ import crypto from "crypto";
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) {
+  if (!session?.user || !canViewUsers(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await req.json();
-  const { name, email, role, restaurantIds = [] } = body;
+  const { name, email, phone, role, restaurantIds = [] } = body;
 
   if (!email) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  }
+
+  // OWNER / SHIFT_MANAGER cannot assign ADMIN or SUPER_ADMIN roles
+  if (!isAdmin(session.user.role) && ["ADMIN", "SUPER_ADMIN"].includes(role)) {
+    return NextResponse.json({ error: "אין הרשאה לשייך תפקיד מנהל" }, { status: 403 });
   }
 
   if (role === "SUPER_ADMIN") {
@@ -31,21 +36,27 @@ export async function POST(req: Request) {
     }
   }
 
-  const existing = await prisma.user.findFirst({ where: { email } });
-  if (existing) {
-    return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
+  // Generate unique username from email prefix
+  const baseUsername = email.split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g, "_");
+  let username = baseUsername;
+  let suffix = 2;
+  while (await prisma.user.findUnique({ where: { username } })) {
+    username = `${baseUsername}_${suffix++}`;
   }
 
   let user;
   try {
     user = await prisma.user.create({
       data: {
+        username,
         name: name || null,
         email,
-        password: null,         // set by the user when they accept the invite
+        phone: phone || null,
+        password: null,
         role: (role as Role) ?? "VIEWER",
+        status: "PENDING",
         mustChangePassword: false,
-        emailVerified: null,    // set only after invite is accepted
+        emailVerified: null,
         ...(restaurantIds.length > 0 ? {
           restaurantUsers: {
             create: (restaurantIds as string[]).map((rid) => ({ restaurantId: rid })),
@@ -61,10 +72,10 @@ export async function POST(req: Request) {
     throw err;
   }
 
-  // Generate invite token — 72 h expiry
+  // Generate invite token — 48 h expiry
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = hashOtp(rawToken);
-  const expires = new Date(Date.now() + 72 * 60 * 60 * 1000);
+  const expires = new Date(Date.now() + 48 * 60 * 60 * 1000);
   await prisma.verificationToken.create({
     data: { identifier: email, token: hashedToken, expires },
   });
@@ -78,7 +89,7 @@ export async function POST(req: Request) {
     action: "CREATE_USER",
     entity: "user",
     entityId: user.id,
-    entityName: user.email,
+    entityName: user.email ?? user.id,
     meta: { role: user.role },
     ip: getIp(req),
   });

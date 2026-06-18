@@ -227,31 +227,54 @@ export async function POST(req: Request) {
       // Menus
       for (const m of backup.menus ?? []) {
         const ex = await tx.menu.findUnique({ where: { id: m.id }, select: { id: true } });
-        await tx.menu.upsert({
-          where:  { id: m.id },
-          create: { id: m.id, name: m.name, restaurantId: m.restaurantId, isActive: m.isActive ?? true, sortOrder: m.sortOrder ?? 0 },
-          update: {            name: m.name, restaurantId: m.restaurantId, isActive: m.isActive ?? true, sortOrder: m.sortOrder ?? 0 },
-        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const menuBase: any = {
+          name: m.name, restaurantId: m.restaurantId,
+          isActive: m.isActive ?? true, isPrimary: (m as Record<string,unknown>).isPrimary ?? false,
+          sortOrder: m.sortOrder ?? 0,
+          description:  (m as Record<string,unknown>).description  ?? null,
+          scheduleDays: (m as Record<string,unknown>).scheduleDays ?? null,
+          scheduleFrom: (m as Record<string,unknown>).scheduleFrom ?? null,
+          scheduleTo:   (m as Record<string,unknown>).scheduleTo   ?? null,
+        };
+        await tx.menu.upsert({ where: { id: m.id }, create: { id: m.id, ...menuBase }, update: menuBase });
         ex ? updated++ : created++;
       }
       // Categories
       for (const c of backup.categories ?? []) {
         const ex = await tx.category.findUnique({ where: { id: c.id }, select: { id: true } });
-        await tx.category.upsert({
-          where:  { id: c.id },
-          create: { id: c.id, name: c.name, menuId: c.menuId, sortOrder: c.sortOrder ?? 0, isActive: c.isActive ?? true },
-          update: {            name: c.name, menuId: c.menuId, sortOrder: c.sortOrder ?? 0, isActive: c.isActive ?? true },
-        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const catBase: any = {
+          name: c.name, menuId: c.menuId,
+          sortOrder: c.sortOrder ?? 0, isActive: c.isActive ?? true,
+          description:  (c as Record<string,unknown>).description  ?? null,
+          image:        (c as Record<string,unknown>).image        ?? null,
+          autoReady:    (c as Record<string,unknown>).autoReady    ?? false,
+          translations: (c as Record<string,unknown>).translations ?? undefined,
+        };
+        await tx.category.upsert({ where: { id: c.id }, create: { id: c.id, ...catBase }, update: catBase });
         ex ? updated++ : created++;
       }
       // Items
       for (const item of backup.items ?? []) {
         const ex = await tx.item.findUnique({ where: { id: item.id }, select: { id: true } });
-        await tx.item.upsert({
-          where:  { id: item.id },
-          create: { id: item.id, name: item.name, categoryId: item.categoryId, price: item.price, description: item.description ?? null, isActive: item.isActive ?? true, prepTime: item.prepTime ?? null, sortOrder: item.sortOrder ?? 0 },
-          update: {               name: item.name, categoryId: item.categoryId, price: item.price, description: item.description ?? null, isActive: item.isActive ?? true, prepTime: item.prepTime ?? null, sortOrder: item.sortOrder ?? 0 },
-        });
+        const r = item as Record<string,unknown>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const itemBase: any = {
+          name: item.name, categoryId: item.categoryId, price: item.price,
+          description: item.description ?? null,
+          isActive: item.isActive ?? true,
+          prepTime: item.prepTime ?? null,
+          sortOrder: item.sortOrder ?? 0,
+          image:        r.image        ?? null,
+          isVegetarian: r.isVegetarian ?? false,
+          isVegan:      r.isVegan      ?? false,
+          isGlutenFree: r.isGlutenFree ?? false,
+          allergens:    r.allergens    ?? undefined,
+          tags:         r.tags         ?? undefined,
+          translations: r.translations ?? undefined,
+        };
+        await tx.item.upsert({ where: { id: item.id }, create: { id: item.id, ...itemBase }, update: itemBase });
         ex ? updated++ : created++;
       }
       // ItemModifierGroups
@@ -410,6 +433,37 @@ export async function POST(req: Request) {
           });
           created++;
         }
+      }
+    }
+
+    // ── Phase 4: shifts, waiter stations ──
+    if (scope === "full") {
+      const bkpShifts = (backup as Record<string, unknown>).shifts as Record<string, unknown>[] | undefined ?? [];
+      for (const s of bkpShifts) {
+        const id = s.id as string;
+        const ex = await prisma.$queryRawUnsafe<unknown[]>(`SELECT id FROM "Shift" WHERE id=$1`, id).catch(() => []);
+        if ((ex as unknown[]).length === 0) {
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "Shift" (id, "restaurantId", "userId", date, "shiftType", "startTime", "endTime", notes, status, "createdAt", "updatedAt")
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,COALESCE($10::timestamptz, NOW()),NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            id, s.restaurantId, s.userId, s.date, s.shiftType, s.startTime, s.endTime,
+            s.notes ?? null, s.status ?? "SCHEDULED", s.createdAt ?? null
+          ).catch(() => null);
+          created++;
+        }
+      }
+
+      const bkpStations = (backup as Record<string, unknown>).waiterStations as Record<string, unknown>[] | undefined ?? [];
+      for (const ws of bkpStations) {
+        const id = ws.id as string;
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "WaiterStation" (id, "restaurantId", "userId", tables, "createdAt", "updatedAt")
+           VALUES ($1,$2,$3,$4::jsonb,NOW(),NOW())
+           ON CONFLICT (id) DO UPDATE SET tables=EXCLUDED.tables`,
+          id, ws.restaurantId, ws.userId, JSON.stringify(ws.tables ?? [])
+        ).catch(() => null);
+        created++;
       }
     }
 

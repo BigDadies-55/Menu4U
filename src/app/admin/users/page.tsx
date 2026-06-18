@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/permissions";
+import { canViewUsers } from "@/lib/permissions";
 import UsersClient from "./UsersClient";
 
 export const metadata = { title: "👥 משתמשים | Menu4U" };
@@ -9,14 +9,16 @@ export const metadata = { title: "👥 משתמשים | Menu4U" };
 export default async function UsersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (!isAdmin(session.user.role)) redirect("/admin");
+  if (!canViewUsers(session.user.role)) redirect("/admin");
 
   const rawUsers = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      username: true,
       name: true,
       email: true,
+      phone: true,
       role: true,
       emailVerified: true,
       mustChangePassword: true,
@@ -25,15 +27,7 @@ export default async function UsersPage() {
       restaurantUsers: { include: { restaurant: { select: { id: true, name: true } } } },
     },
   });
-  // phone column may not exist in older DBs — fail-safe
-  let phoneMap: Record<string, string | null> = {};
-  try {
-    const phones = await prisma.$queryRawUnsafe<{ id: string; phone: string | null }[]>(
-      `SELECT id, phone FROM "User"`
-    );
-    phoneMap = Object.fromEntries(phones.map(p => [p.id, p.phone]));
-  } catch { /* column doesn't exist yet */ }
-  const users = rawUsers.map(u => ({ ...u, phone: phoneMap[u.id] ?? null }));
+  const users = rawUsers.map(u => ({ ...u }));
 
   const restaurants = await prisma.restaurant.findMany({
     where: { isActive: true },

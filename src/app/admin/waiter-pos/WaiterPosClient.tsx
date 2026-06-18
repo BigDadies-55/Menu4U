@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import AttendanceWidget from "@/components/attendance/AttendanceWidget";
 import { signOut } from "next-auth/react";
 import { TableOverlay } from "./TableOverlay";
 import { OrderScreen } from "./OrderScreen";
@@ -52,46 +53,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     snoozeInsight,
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
-  // ── Attendance state ──────────────────────────────────────────────
-  type AttRec = { id: string; type: string; timestamp: string };
-  const [attRecords,   setAttRecords]   = useState<AttRec[]>([]);
-  const [attLoading,   setAttLoading]   = useState(false);
-  const [attNote,      setAttNote]      = useState("");
-  const [attNoteOpen,  setAttNoteOpen]  = useState<"IN" | "OUT" | null>(null);
-  const [attPanelOpen, setAttPanelOpen] = useState(false);
-
-  const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-  const attIns  = attRecords.filter(r => r.type === "IN");
-  const attOuts = attRecords.filter(r => r.type === "OUT");
-  const lastIn  = attIns.at(-1);
-  const lastOut = attOuts.at(-1);
-
-  const loadTodayAttendance = useCallback(async () => {
-    if (!waiterId) return;
-    try {
-      const res = await fetch(`/api/admin/attendance?userId=${waiterId}`);
-      const data = await res.json();
-      setAttRecords((data.records ?? []).filter((r: AttRec) => r.type !== "DELETED"));
-    } catch { /* ignore */ }
-  }, [waiterId]);
-
-  useEffect(() => { loadTodayAttendance(); }, [loadTodayAttendance]);
-
-  async function recordAttendance(type: "IN" | "OUT") {
-    if (!waiterId || !restaurantId || attLoading) return;
-    setAttLoading(true);
-    try {
-      const res = await fetch("/api/admin/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId, type, note: attNote || undefined }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAttRecords(prev => [...prev, { id: data.id, type, timestamp: data.timestamp }]);
-      }
-    } finally { setAttLoading(false); setAttNote(""); setAttNoteOpen(null); }
-  }
+  // Attendance is now handled by <AttendanceWidget /> below
 
   const activeRestaurant = restaurants.find(r => r.id === restaurantId);
   const [bgUrl, setBgUrl] = useState(
@@ -172,21 +134,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           )}
 
           {/* ── Attendance clock button ── */}
-          {waiterId && (
-            <button
-              onClick={() => setAttPanelOpen(true)}
-              title="נוכחות"
-              style={{
-                display: "flex", alignItems: "center", gap: 5,
-                padding: "5px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                background: lastIn ? (lastOut ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.15)") : G_CARD,
-                border: `1px solid ${lastIn ? (lastOut ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.4)") : G_BORDER_C}`,
-                color: lastIn ? (lastOut ? "#F87171" : "#34D399") : "#fff",
-                transition: "0.15s",
-              }}
-            >
-              ⏱ {lastIn ? (lastOut ? fmtT(lastOut.timestamp) : fmtT(lastIn.timestamp)) : "נוכחות"}
-            </button>
+          {waiterId && restaurantId && (
+            <AttendanceWidget restaurantId={restaurantId} userId={waiterId} />
           )}
         </div>
 
@@ -516,81 +465,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       )}
 
       {/* ══ ATTENDANCE PANEL POPUP ══ */}
-      {attPanelOpen && (
-        <div onClick={() => setAttPanelOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,30,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 28, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ fontSize: 17, fontWeight: 800, textAlign: "center", color: "#fff", marginBottom: 4 }}>⏱ נוכחות</div>
-            {attRecords.length > 0 && (
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textAlign: "center", marginBottom: 4, lineHeight: 1.6 }}>
-                {attRecords.map(r => (
-                  <span key={r.id} style={{ marginLeft: 6, color: r.type === "IN" ? "#34D399" : "#F87171" }}>
-                    {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
-                  </span>
-                ))}
-              </div>
-            )}
-            <button
-              disabled={attLoading}
-              onClick={() => { setAttPanelOpen(false); setAttNoteOpen("IN"); }}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: "pointer", border: "none",
-                background: "rgba(52,211,153,0.2)", color: "#34D399", fontFamily: "inherit",
-              }}
-            >
-              ✅ כניסה {attIns.length > 0 && <span style={{ fontSize: 11, opacity: 0.7 }}>×{attIns.length} — {fmtT(lastIn!.timestamp)}</span>}
-            </button>
-            <button
-              disabled={attLoading}
-              onClick={() => { setAttPanelOpen(false); setAttNoteOpen("OUT"); }}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "13px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: "pointer", border: "none",
-                background: "rgba(248,113,113,0.2)", color: "#F87171", fontFamily: "inherit",
-              }}
-            >
-              🚪 יציאה {attOuts.length > 0 && <span style={{ fontSize: 11, opacity: 0.7 }}>×{attOuts.length} — {fmtT(lastOut!.timestamp)}</span>}
-            </button>
-            <button
-              onClick={() => setAttPanelOpen(false)}
-              style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-            >
-              ביטול
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ══ ATTENDANCE NOTE POPUP ══ */}
-      {attNoteOpen && (
-        <div onClick={() => setAttNoteOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,30,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 16, padding: 24, width: 300, maxWidth: "90vw", direction: "rtl", boxShadow: "0 16px 48px rgba(0,0,0,0.6)" }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4, color: "#fff" }}>
-              {attNoteOpen === "IN" ? "✅ רישום כניסה" : "🚪 רישום יציאה"}
-            </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
-              {new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-            </div>
-            <input
-              type="text" value={attNote} onChange={e => setAttNote(e.target.value)}
-              placeholder="הערה (אופציונלי)"
-              autoFocus
-              onKeyDown={e => { if (e.key === "Enter") recordAttendance(attNoteOpen); }}
-              style={{ width: "100%", padding: "9px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 9, fontSize: 13, outline: "none", background: "rgba(255,255,255,0.07)", color: "#fff", boxSizing: "border-box", marginBottom: 14 }}
-            />
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => recordAttendance(attNoteOpen)} disabled={attLoading} style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", background: attNoteOpen === "IN" ? "#22c55e" : "#ef4444", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                {attLoading ? "..." : "אישור"}
-              </button>
-              <button onClick={() => setAttNoteOpen(null)} style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ══ NOTIFICATION CENTER ══ */}
       {notifOpen && (
@@ -725,13 +599,14 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       )}
 
       {/* ══ BOTTOM SECTION ══ */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", flexDirection: "column", gap: 1, padding: "0 20px 0" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", flexDirection: "column", gap: 1, padding: "0 20px 8px" }}>
 
         {/* Scrolling insights strip */}
         <div style={{
-          background: "rgba(8,8,14,0.75)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(139,92,246,0.25)", borderRadius: 16,
-          padding: "8px 14px", display: "flex", alignItems: "center", gap: 12, overflow: "hidden",
+          background: "rgba(8,8,12,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
+          border: `1px solid ${G_BORDER_C}`, borderRadius: 22,
+          padding: "10px 20px", display: "flex", alignItems: "center", gap: 12, overflow: "hidden",
+          boxShadow: "0 -8px 35px rgba(0,0,0,0.5)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#a78bfa", whiteSpace: "nowrap", flexShrink: 0 }}>
             ✨ תובנות
@@ -775,40 +650,11 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           </div>
         </div>
 
-        {/* KPI bar */}
-        <div style={{
-          background: "rgba(8,8,12,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
-          border: `1px solid ${G_BORDER_C}`, borderRadius: 22,
-          padding: "10px 20px", display: "flex", justifyContent: "space-between", alignItems: "center",
-          boxShadow: "0 -8px 35px rgba(0,0,0,0.5)",
-        }}>
-          <div style={{ display: "flex", gap: isMobile ? 6 : 10, flexWrap: "wrap", alignItems: "center" }}>
-            <GlassKpi label="מוזמן"           value={reservedCount}                              color="#3B82F6" />
-            <GlassKpi label="פנוי"            value={freeCount}                                  color="#10B981" />
-            <GlassKpi label="תפוס"            value={occupiedCount}                              color="#EF4444" />
-            <GlassKpi label="לא פעיל"         value={inactiveCount}                              color="rgba(255,255,255,0.3)" />
-            <div style={{ width: 1, height: 28, background: G_BORDER_C, flexShrink: 0, margin: "0 4px" }} />
-            <GlassKpi label="סועדים"          value={totalDiners}                                color="#fff" />
-            <GlassKpi label="דורשים תשומת לב" value={alertsCount}                               color="#F59E0B" />
-            <GlassKpi label="זמן ממוצע"       value={avgSittingMin > 0 ? fmtAgo(avgSittingMin) : "—"} color="#a78bfa" />
-            <GlassKpi label="עלות ממוצעת"     value={avgCost > 0 ? `₪${avgCost}` : "—"}         color="#34d399" />
-          </div>
-          <button onClick={manualRefresh} style={{
-            background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`,
-            color: "#fff", padding: 9, borderRadius: 12, cursor: "pointer",
-            display: "flex", alignItems: "center", transition: "0.2s", flexShrink: 0,
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={refreshing ? "#818cf8" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ animation: refreshing ? "spin 0.7s linear infinite" : "none" }}>
-              <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-            </svg>
-          </button>
-        </div>
       </div>
 
       {/* Toast */}
       {toastMsg && (
-        <div style={{ position: "fixed", bottom: 110, right: "50%", transform: "translateX(50%)", background: "#1a2a1a", borderRadius: 8, padding: "10px 20px", color: "#4ade80", fontSize: 13, fontWeight: 600, zIndex: 600, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+        <div style={{ position: "fixed", bottom: 70, right: "50%", transform: "translateX(50%)", background: "#1a2a1a", borderRadius: 8, padding: "10px 20px", color: "#4ade80", fontSize: 13, fontWeight: 600, zIndex: 600, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
           ✓ {toastMsg}
         </div>
       )}
@@ -817,14 +663,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   );
 }
 
-function GlassKpi({ label, value, color }: { label: string; value: number | string; color: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "6px 14px", borderRadius: 12 }}>
-      <span style={{ fontSize: typeof value === "string" ? 14 : 18, fontWeight: 900, color, lineHeight: 1, whiteSpace: "nowrap" }}>{value}</span>
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap" }}>{label}</span>
-    </div>
-  );
-}
 
 function InsightCard({ insight }: { insight: Insight }) {
   const styles: Record<string, { bg: string; border: string; labelColor: string; label: string }> = {
