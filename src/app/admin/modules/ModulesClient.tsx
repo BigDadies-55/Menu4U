@@ -31,23 +31,23 @@ interface ModuleState {
   saving: boolean;
 }
 
-/* ─── Palette (unchanged from master) ───────────────────────── */
-const GLASS_BG   = "rgba(15,15,30,0.85)";
-const GOLD       = "#D97706";
-const GOLD_TEXT  = "#f59e0b";
-const TEXT_MAIN  = "#ffffff";
-const TEXT_MUTED = "rgba(255,255,255,0.5)";
-const TEXT_SUB   = "rgba(255,255,255,0.35)";
+/* ─── Palette — follows admin CSS vars ──────────────────────── */
+const GLASS_BG   = "var(--c-bg)";
+const GOLD       = "var(--c-gold)";
+const GOLD_TEXT  = "var(--c-gold)";
+const TEXT_MAIN  = "var(--c-text)";
+const TEXT_MUTED = "var(--c-muted)";
+const TEXT_SUB   = "var(--c-sub)";
 const GREEN      = "#34D399";
 const RED        = "#F87171";
-const TH_BG      = "rgba(52,211,153,0.18)";
-const TH_BORDER  = "rgba(52,211,153,0.35)";
-const ROW_BORDER = "rgba(255,255,255,0.07)";
+const TH_BG      = "var(--c-gold-sub)";
+const TH_BORDER  = "var(--c-border)";
+const ROW_BORDER = "var(--c-border-sub)";
 
 const DATE_INPUT: React.CSSProperties = {
   width: "100%", padding: "5px 8px", borderRadius: 7,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.06)", color: TEXT_MAIN,
+  border: "1px solid var(--c-border)",
+  background: "var(--c-surface)", color: "var(--c-text)",
   fontSize: 12, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
 };
 
@@ -68,7 +68,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
       style={{
         position: "relative", width: 40, height: 22, borderRadius: 11,
         border: "none", cursor: "pointer", flexShrink: 0,
-        background: on ? GREEN : "rgba(255,255,255,0.15)",
+        background: on ? GREEN : "var(--c-raised)",
         transition: "background 0.2s",
       }}
     >
@@ -165,7 +165,7 @@ function ModuleTableRow({
           value={isoToDate(state.enabledTo)}
           onChange={e => onChange({ enabledTo: e.target.value ? new Date(e.target.value).toISOString() : "", dirty: true })}
           onBlur={handleBlur}
-          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px", borderColor: expired ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.12)", color: expired ? RED : TEXT_MAIN }}
+          style={{ ...DATE_INPUT, fontSize: 11, padding: "4px 6px", borderColor: expired ? "rgba(248,113,113,0.4)" : "var(--c-border)", color: expired ? RED : TEXT_MAIN }}
         />
       </td>
 
@@ -174,7 +174,7 @@ function ModuleTableRow({
         <button
           onClick={() => { onChange({ enabledFrom: "", enabledTo: "", dirty: true }); setTimeout(onSave, 0); }}
           title="נקה תאריכים"
-          style={{ padding: "4px 8px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.18)", background: "transparent", color: TEXT_MUTED, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+          style={{ padding: "4px 8px", borderRadius: 7, border: "1px solid var(--c-border)", background: "transparent", color: TEXT_MUTED, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
           נקה
         </button>
       </td>
@@ -362,10 +362,10 @@ export default function ModulesClient({ restaurants }: Props) {
           <select
             value={selectedRestaurant}
             onChange={e => setSelectedRestaurant(e.target.value)}
-            style={{ width: "100%", padding: "5px 12px", borderRadius: 10, fontSize: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
+            style={{ width: "100%", padding: "5px 12px", borderRadius: 10, fontSize: 14, background: "var(--c-surface)", border: "1px solid var(--c-border)", color: TEXT_MAIN, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
           >
             {restaurants.map(r => (
-              <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>{r.name}</option>
+              <option key={r.id} value={r.id} style={{ background: "var(--c-bg)", color: "#fff" }}>{r.name}</option>
             ))}
           </select>
         </div>
@@ -390,12 +390,12 @@ export default function ModulesClient({ restaurants }: Props) {
               <div style={{ flex: 1, minWidth: 130 }}>
                 <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 3 }}>מתאריך</label>
                 <input type="date" value={subFrom} onChange={e => setSubFrom(e.target.value)}
-                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid var(--c-border)", background: "var(--c-surface)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
               </div>
               <div style={{ flex: 1, minWidth: 130 }}>
                 <label style={{ display: "block", fontSize: 11, color: TEXT_MUTED, marginBottom: 3 }}>עד תאריך</label>
                 <input type="date" value={subTo} onChange={e => setSubTo(e.target.value)}
-                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                  style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "1px solid var(--c-border)", background: "var(--c-surface)", color: TEXT_MAIN, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
               </div>
               <button onClick={saveSub} disabled={subSaving}
                 style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${GOLD} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
