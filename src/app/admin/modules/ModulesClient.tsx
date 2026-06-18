@@ -256,7 +256,10 @@ export default function ModulesClient({ restaurants }: Props) {
       const res = await fetch(`/api/admin/restaurants/${selectedRestaurant}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionFrom: subFrom || null, subscriptionTo: subTo || null }),
+        body: JSON.stringify({
+          subscriptionFrom: subFrom ? new Date(subFrom).toISOString() : null,
+          subscriptionTo:   subTo   ? new Date(subTo).toISOString()   : null,
+        }),
       });
       if (!res.ok) throw new Error("שגיאה");
       showToast("מנוי נשמר", true);
