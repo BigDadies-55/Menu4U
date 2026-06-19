@@ -346,10 +346,10 @@ export default function ModulesClient({ restaurants }: Props) {
       </div>
 
       {/* Top bar: selector + subscription */}
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
 
         {/* Restaurant selector */}
-        <div style={{ minWidth: 220, maxWidth: 300, flex: "0 0 auto" }}>
+        <div style={{ minWidth: 220, maxWidth: 300 }}>
           <label style={{ fontSize: 12, color: T.muted, display: "block", marginBottom: 6, fontWeight: 600 }}>בחר מסעדה</label>
           <select
             value={selectedRestaurant}
@@ -364,7 +364,7 @@ export default function ModulesClient({ restaurants }: Props) {
 
         {/* Subscription */}
         {selectedRestaurant && (
-          <div style={{ flex: 1, minWidth: 300, padding: "14px 18px", borderRadius: 14, border: `1px solid ${T.goldSub}`, background: T.goldSub }}>
+          <div style={{ maxWidth: 560, padding: "14px 18px", borderRadius: 14, border: `1px solid ${T.goldSub}`, background: T.goldSub }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.gold }}>📅 תוקף מנוי</div>
               <div style={{ display: "flex", gap: 8 }}>
