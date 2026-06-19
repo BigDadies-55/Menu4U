@@ -32,7 +32,7 @@ export default async function AdminDashboard() {
   if (!session?.user) redirect("/login");
 
   const role = session.user.role;
-  if (role === "WAITER")  redirect("/admin/waiter-pos");
+  if (role === "WAITER" || role === "BARTENDER")  redirect("/admin/waiter-pos");
   if (role === "DISPLAY") redirect("/admin/kds");
 
   const stats = await getStats(session.user.id, session.user.role);

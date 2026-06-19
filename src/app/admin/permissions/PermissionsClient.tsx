@@ -1,6 +1,6 @@
 "use client";
 
-type Role = "SUPER_ADMIN" | "ADMIN" | "OWNER" | "SHIFT_MANAGER" | "EDITOR" | "WAITER" | "VIEWER" | "DISPLAY";
+type Role = "SUPER_ADMIN" | "ADMIN" | "OWNER" | "SHIFT_MANAGER" | "EDITOR" | "WAITER" | "BARTENDER" | "VIEWER" | "DISPLAY";
 
 const ROLES: { key: Role; label: string; color: string; text: string }[] = [
   { key: "SUPER_ADMIN",   label: "Super Admin",      color: "rgba(239,68,68,0.18)",   text: "#F87171" },
@@ -9,6 +9,7 @@ const ROLES: { key: Role; label: string; color: string; text: string }[] = [
   { key: "SHIFT_MANAGER", label: "מנהל משמרת",       color: "rgba(249,115,22,0.18)",  text: "#FB923C" },
   { key: "EDITOR",        label: "עורך תפריט",       color: "rgba(59,130,246,0.18)",  text: "#60A5FA" },
   { key: "WAITER",        label: "מלצר",             color: "rgba(16,185,129,0.18)",  text: "#34D399" },
+  { key: "BARTENDER",     label: "ברמן",             color: "rgba(168,85,247,0.18)",  text: "#C084FC" },
   { key: "VIEWER",        label: "צופה",             color: "rgba(107,114,128,0.18)", text: "#9CA3AF" },
   { key: "DISPLAY",       label: "תצוגת מטבח",       color: "rgba(6,182,212,0.18)",   text: "#22D3EE" },
 ];
@@ -21,7 +22,7 @@ const ADMIN: Check = r => ["SUPER_ADMIN","ADMIN"].includes(r);
 const OWNER: Check = r => ["SUPER_ADMIN","ADMIN","OWNER"].includes(r);
 const SM:    Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER"].includes(r);
 const ED:    Check = r => ["SUPER_ADMIN","ADMIN","OWNER","EDITOR"].includes(r);
-const WTR:   Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","WAITER"].includes(r);
+const WTR:   Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","WAITER","BARTENDER"].includes(r);
 const KDS:   Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","DISPLAY"].includes(r);
 
 type Feature = { label: string; sub?: string; check: Check };

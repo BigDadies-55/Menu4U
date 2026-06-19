@@ -35,7 +35,7 @@ interface Props {
   currentUserRole: Role;
 }
 
-const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "EDITOR", "WAITER", "VIEWER", "DISPLAY"];
+const ALL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER", "EDITOR", "WAITER", "BARTENDER", "VIEWER", "DISPLAY"];
 
 const ROLE_BADGE: Record<string, React.CSSProperties> = {
   SUPER_ADMIN:   { background: T.redSub,    color: T.red    },
@@ -44,6 +44,7 @@ const ROLE_BADGE: Record<string, React.CSSProperties> = {
   SHIFT_MANAGER: { background: T.orangeSub, color: T.orange },
   EDITOR:        { background: T.purpleSub, color: T.purple },
   WAITER:        { background: T.greenSub,  color: T.green  },
+  BARTENDER:     { background: T.purpleSub, color: T.purple },
   VIEWER:        { background: T.surface,   color: T.muted  },
   DISPLAY:       { background: T.cyanSub,   color: T.cyan   },
 };

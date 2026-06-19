@@ -268,7 +268,21 @@ export default function MyBusinessClient({ restaurants }: Props) {
                   );
                 });
 
-                if (items.length === 0) return null;
+                if (items.length === 0) {
+                  return (
+                    <div style={{ ...card, padding: 18 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8 }}>💡 תובנות מתקדמות</div>
+                      <div style={{ fontSize: 13, color: GM, lineHeight: 1.7 }}>
+                        אין תובנות לתקופה זו. תובנות נוצרות אוטומטית כשיש מספיק נתונים — ודא ש:
+                        <ul style={{ margin: "8px 0 0", paddingInlineStart: 20 }}>
+                          <li>הוגדרו תעריפי ₪/ש׳ לתפקידים (⚙️ תעריפים)</li>
+                          <li>יש מכירות (הזמנות) ושעות נוכחות בטווח שנבחר</li>
+                          <li>יש שיבוצי משמרות להשוואת איחורים/החתמה מוקדמת</li>
+                        </ul>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div style={{ ...card, padding: 18 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>💡 תובנות מתקדמות</div>

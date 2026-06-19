@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createInvite, sendInviteNotifications } from "@/lib/invite";
 import { Role } from "@/generated/prisma/client";
 
-const ALLOWED_ROLES: Role[] = ["WAITER", "EDITOR", "VIEWER"];
+const ALLOWED_ROLES: Role[] = ["WAITER", "BARTENDER", "EDITOR", "VIEWER"];
 
 type CsvRow = {
   firstName:    string;

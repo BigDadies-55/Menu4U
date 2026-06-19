@@ -10,7 +10,7 @@ export default async function InsightRulesPage() {
   if (!session?.user) redirect("/login");
 
   const { role, id: userId } = session.user;
-  if (role === "WAITER" || role === "DISPLAY") redirect("/admin");
+  if (role === "WAITER" || role === "BARTENDER" || role === "DISPLAY") redirect("/admin");
 
   let restaurants: { id: string; name: string }[];
   if (role === "SUPER_ADMIN") {

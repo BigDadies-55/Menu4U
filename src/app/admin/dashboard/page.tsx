@@ -13,8 +13,8 @@ export default async function DashboardPage() {
 
   const role = session.user.role;
 
-  // WAITER and DISPLAY have no access to this dashboard
-  if (role === "WAITER") redirect("/admin/waiter");
+  // WAITER, BARTENDER and DISPLAY have no access to this dashboard
+  if (role === "WAITER" || role === "BARTENDER") redirect("/admin/waiter");
   if (role === "DISPLAY") redirect("/admin/kds");
 
   const isSuperAdmin = role === "SUPER_ADMIN";
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
       restaurants={restaurants}
       defaultRestaurantId={defaultRestaurantId}
       isSuperAdmin={isSuperAdmin}
-      canUpdateStatus={["SUPER_ADMIN", "ADMIN", "OWNER", "WAITER", "DISPLAY"].includes(role)}
+      canUpdateStatus={["SUPER_ADMIN", "ADMIN", "OWNER", "WAITER", "BARTENDER", "DISPLAY"].includes(role)}
     />
   );
 }

@@ -272,7 +272,7 @@ export default function Sidebar({
   const accent    = adminSidebarAccent ?? pal.accent;
 
   /* ── Role checks ── */
-  const isWaiter   = user.role === "WAITER";
+  const isWaiter   = ["WAITER", "BARTENDER"].includes(user.role);
   const isDisplay  = user.role === "DISPLAY";
   const isEditor   = user.role === "EDITOR";
   const isViewer   = user.role === "VIEWER";
