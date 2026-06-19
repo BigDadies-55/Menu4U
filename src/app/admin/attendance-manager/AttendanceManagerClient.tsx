@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { AssistantWidget } from "@/components/admin/AssistantWidget";
+import { computeDailyHours, sumBreakdowns, DEFAULT_HOURS_OPTIONS, type HoursBreakdown } from "@/lib/hours";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ShiftRow = {
@@ -527,39 +528,26 @@ export default function AttendanceManagerClient({
       byUserDate[r.userId][r.date].push(r);
     }
 
-    // Calculate actual hours as sum of IN/OUT pairs per day
-    function calcPairHours(recs: DayRecs): number {
-      const ins  = recs.filter(r => r.type === "IN").sort((a,b) => a.timestamp.localeCompare(b.timestamp));
-      const outs = recs.filter(r => r.type === "OUT").sort((a,b) => a.timestamp.localeCompare(b.timestamp));
-      let total = 0;
-      ins.forEach((inRec, i) => {
-        const outRec = outs[i];
-        if (!outRec) return;
-        const diff = (new Date(outRec.timestamp).getTime() - new Date(inRec.timestamp).getTime()) / 3600000;
-        if (diff > 0 && diff < 24) total += diff;
-      });
-      return total;
-    }
-
     // Determine date range
     let fromDate = "", toDate = "";
     if (attMode === "weekly") { fromDate = formatDateISO(weekDates[0]); toDate = formatDateISO(weekDates[6]); }
     else if (attMode === "monthly") { const [y,m]=attMonth.split("-").map(Number); fromDate=`${attMonth}-01`; toDate=`${attMonth}-${String(new Date(y,m,0).getDate()).padStart(2,"0")}`; }
     else { fromDate = attFrom; toDate = attTo; }
 
-    type AttSummary = { id: string; name: string; actualHours: number; plannedHours: number; dates: { date: string; recs: DayRecs; hours: number }[] };
+    type AttSummary = { id: string; name: string; total: HoursBreakdown; plannedHours: number; dates: { date: string; recs: DayRecs; bd: HoursBreakdown }[] };
     const summaries: AttSummary[] = displayStaff.map(member => {
       const memberShifts = (attMode === "weekly" ? shifts : summaryShifts).filter(s => s.userId === member.id);
       const plannedHours = memberShifts.reduce((a, s) => a + calcHours(s.startTime, s.endTime), 0);
       const userDates = byUserDate[member.id] ?? {};
-      let totalActual = 0;
-      const dates = Object.entries(userDates).sort(([a],[b]) => a.localeCompare(b)).map(([date, recs]) => {
-        const hours = calcPairHours(recs);
-        totalActual += hours;
-        return { date, recs, hours };
-      });
-      return { id: member.id, name: member.name, actualHours: totalActual, plannedHours, dates };
+      // Overtime is computed per day, so each day gets its own breakdown and we sum them.
+      const dates = Object.entries(userDates).sort(([a],[b]) => a.localeCompare(b)).map(([date, recs]) => ({
+        date, recs, bd: computeDailyHours(recs),
+      }));
+      const total = sumBreakdowns(dates.map(d => d.bd));
+      return { id: member.id, name: member.name, total, plannedHours, dates };
     }).filter(s => s.dates.length > 0 || s.plannedHours > 0);
+
+    const fmtH = (n: number) => n.toFixed(1);
 
     const modeBtn = (mode: typeof attMode, label: string) => (
       <button onClick={() => setAttMode(mode)} style={{
@@ -590,15 +578,20 @@ export default function AttendanceManagerClient({
           {attLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
             onClick={() => {
-              const header = ["עובד", "תאריך", "רשומות", "שעות בפועל", "מתוכנן", "הפרש"];
+              const header = ["עובד", "תאריך", "רשומות", "ברוטו", "הפסקה", "נטו", "רגיל 100%", "נוספות 125%", "נוספות 150%", 'סה"כ מחושב', "מתוכנן", "הפרש"];
               const rows: string[][] = [];
               for (const member of summaries) {
-                const diff = member.actualHours - member.plannedHours;
+                const diff = member.total.netHours - member.plannedHours;
                 member.dates.forEach((d, di) => {
                   const recs = d.recs.map(r => `${r.type === "IN" ? "▶" : "■"}${fmtT(r.timestamp)}`).join(" ");
-                  rows.push([di === 0 ? member.name : "", d.date, recs, d.hours.toFixed(1),
-                    di === 0 ? member.plannedHours.toFixed(1) : "",
-                    di === 0 ? (diff >= 0 ? "+" : "") + diff.toFixed(1) : ""]);
+                  rows.push([
+                    di === 0 ? member.name : "", d.date, recs,
+                    fmtH(d.bd.grossHours), fmtH(d.bd.breakHours), fmtH(d.bd.netHours),
+                    fmtH(d.bd.regularHours), fmtH(d.bd.overtime125Hours), fmtH(d.bd.overtime150Hours),
+                    fmtH(d.bd.payableUnits),
+                    di === 0 ? fmtH(member.plannedHours) : "",
+                    di === 0 ? (diff >= 0 ? "+" : "") + fmtH(diff) : "",
+                  ]);
                 });
               }
               exportCsv([header, ...rows], `נוכחות-${attMode === "monthly" ? attMonth : attFrom + "_" + attTo}.csv`);
@@ -616,14 +609,17 @@ export default function AttendanceManagerClient({
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>תאריך</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>רשומות</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#FBBF24", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>בפועל</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#FBBF24", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }} title="נטו (אחרי ניכוי הפסקה)">נטו</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>רגיל</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#FB923C", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }} title="שעות נוספות 125%">125%</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#F87171", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }} title="שעות נוספות 150%">150%</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>מתוכנן</th>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>הפרש</th>
               </tr>
             </thead>
             <tbody>
               {summaries.map(member => {
-                const diff = member.actualHours - member.plannedHours;
+                const diff = member.total.netHours - member.plannedHours;
                 return (
                   <React.Fragment key={member.id}>
                     {member.dates.map((d, di) => (
@@ -631,9 +627,15 @@ export default function AttendanceManagerClient({
                         {di === 0 && (
                           <td rowSpan={member.dates.length} style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700, verticalAlign: "middle", borderLeft: "2px solid rgba(255,255,255,0.08)" }}>
                             {member.name}
-                            {member.dates.length > 1 && (
-                              <div style={{ fontSize: 10, color: GM, marginTop: 2 }}>סה"כ: {member.actualHours.toFixed(1)} ש׳</div>
-                            )}
+                            <div style={{ fontSize: 10, color: GM, marginTop: 3, fontWeight: 400, lineHeight: 1.5 }}>
+                              <div>נטו: {fmtH(member.total.netHours)} ש׳</div>
+                              {(member.total.overtime125Hours > 0 || member.total.overtime150Hours > 0) && (
+                                <div style={{ color: "#FB923C" }}>
+                                  נוספות: {fmtH(member.total.overtime125Hours)} ב-125% · {fmtH(member.total.overtime150Hours)} ב-150%
+                                </div>
+                              )}
+                              <div style={{ color: "#FBBF24" }}>שווה-ערך: {fmtH(member.total.payableUnits)} ש׳</div>
+                            </div>
                           </td>
                         )}
                         <td style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center", whiteSpace: "nowrap" }}>{d.date.slice(5).replace("-","/")}</td>
@@ -671,9 +673,22 @@ export default function AttendanceManagerClient({
                           </div>
                         </td>
                         <td style={{ padding: "5px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
-                          {d.hours > 0
-                            ? <span style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{d.hours.toFixed(1)} ש׳</span>
+                          {d.bd.netHours > 0
+                            ? <span title={`ברוטו ${fmtH(d.bd.grossHours)} ש׳ · הפסקה ${fmtH(d.bd.breakHours)} ש׳`} style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{fmtH(d.bd.netHours)} ש׳</span>
                             : <span style={{ color: GM, fontSize: 11 }}>—</span>}
+                        </td>
+                        <td style={{ padding: "5px 8px", textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.65)", whiteSpace: "nowrap" }}>
+                          {d.bd.regularHours > 0 ? fmtH(d.bd.regularHours) : "–"}
+                        </td>
+                        <td style={{ padding: "5px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          {d.bd.overtime125Hours > 0
+                            ? <span style={{ background: "rgba(249,115,22,0.15)", color: "#FB923C", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{fmtH(d.bd.overtime125Hours)}</span>
+                            : <span style={{ color: GM, fontSize: 11 }}>–</span>}
+                        </td>
+                        <td style={{ padding: "5px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          {d.bd.overtime150Hours > 0
+                            ? <span style={{ background: "rgba(239,68,68,0.15)", color: "#F87171", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{fmtH(d.bd.overtime150Hours)}</span>
+                            : <span style={{ color: GM, fontSize: 11 }}>–</span>}
                         </td>
                         {di === 0 && (
                           <>
@@ -695,7 +710,15 @@ export default function AttendanceManagerClient({
             </tbody>
           </table>
         )}
-        {fromDate && <div style={{ fontSize: 10, color: GM, marginTop: 10, textAlign: "center" }}>{fromDate} — {toDate}</div>}
+        <div style={{ fontSize: 10, color: GM, marginTop: 10, textAlign: "center", lineHeight: 1.7 }}>
+          {fromDate && <div>{fromDate} — {toDate}</div>}
+          <div>
+            חישוב יומי: ניכוי הפסקה {DEFAULT_HOURS_OPTIONS.breakMinutes} דק׳ (מעל {DEFAULT_HOURS_OPTIONS.breakThresholdHours} ש׳) ·
+            {" "}עד {DEFAULT_HOURS_OPTIONS.regularDayHours} ש׳ רגיל ·
+            {" "}{DEFAULT_HOURS_OPTIONS.regularDayHours}–{DEFAULT_HOURS_OPTIONS.regularDayHours + DEFAULT_HOURS_OPTIONS.overtime125Width} ש׳ ב-125% ·
+            {" "}מעבר לכך ב-150%
+          </div>
+        </div>
 
         {/* Manager delete confirmation */}
         {deleteConfirm && (
