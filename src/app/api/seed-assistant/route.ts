@@ -42,7 +42,7 @@ const entries: Entry[] = [
 
   // ── משתמשים ───────────────────────────────────────────────────────────
   { page: "users", question: "איך מוסיפים משתמש חדש?", answer: "לחץ '+ משתמש חדש' ← הזן שם, אימייל ובחר תפקיד ← שייך מסעדות ← לחץ 'צור'. יישלח אימייל הזמנה.", tags: ["משתמש","יצירה","הזמנה"], isDefault: true },
-  { page: "users", question: "מה התפקידים האפשריים?", answer: "SUPER_ADMIN, ADMIN, OWNER, SHIFT_MANAGER, EDITOR, VIEWER, WAITER, DISPLAY. כל תפקיד מעניק הרשאות שונות.", tags: ["תפקיד","הרשאות","role"], isDefault: true },
+  { page: "users", question: "מה התפקידים האפשריים?", answer: "SUPER_ADMIN, ADMIN, OWNER, SHIFT_MANAGER, EDITOR, VIEWER, WAITER, BARTENDER, DISPLAY. כל תפקיד מעניק הרשאות שונות (לברמן הרשאות זהות למלצר).", tags: ["תפקיד","הרשאות","role"], isDefault: true },
   { page: "users", question: "איך משנים תפקיד למשתמש?", answer: "לחץ על המשתמש ← לחץ '✏️ ערוך' ← שנה את שדה התפקיד ← שמור.", tags: ["תפקיד","עריכה","שינוי"], isDefault: true },
   { page: "users", question: "איך מאפסים סיסמה למשתמש?", answer: "בטופס עריכת המשתמש ← לחץ 'איפוס סיסמה' ← הזן סיסמה חדשה.", tags: ["סיסמה","איפוס","שינוי"], isDefault: true },
   { page: "users", question: "מה זה PIN מנהל ולמה צריך?", answer: "PIN מנהל (4-8 ספרות) מאפשר אישור פעולות רגישות במסך מלצר. מיועד לתפקידי ADMIN/OWNER/SHIFT_MANAGER.", tags: ["PIN","מנהל","אישור"], isDefault: true },

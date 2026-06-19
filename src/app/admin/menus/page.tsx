@@ -33,7 +33,7 @@ const RESTAURANT_SELECT = {
 export default async function MenusPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role === "WAITER") redirect("/admin/orders");
+  if (session.user.role === "WAITER" || session.user.role === "BARTENDER") redirect("/admin/orders");
   if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
 
   // Ensure autoReady column exists before querying

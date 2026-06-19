@@ -13,7 +13,7 @@ type ImportResult = {
   results: { row: number; status: "ok"|"error"; name: string; error?: string }[];
 };
 
-const CSV_ALLOWED_ROLES: Role[] = ["WAITER","EDITOR","VIEWER"];
+const CSV_ALLOWED_ROLES: Role[] = ["WAITER","BARTENDER","EDITOR","VIEWER"];
 const CSV_COLUMNS = ["firstName","lastName","email","phone","role","restaurantId"];
 
 function parseCsv(text: string): { rows: CsvRow[]; errors: string[] } {
@@ -41,7 +41,7 @@ function parseCsv(text: string): { rows: CsvRow[]; errors: string[] } {
     if (!firstName || !lastName) { errors.push(`שורה ${i+1}: שם חסר`); continue; }
     if (!email && !phone)        { errors.push(`שורה ${i+1}: נדרש אימייל או טלפון`); continue; }
     if (!CSV_ALLOWED_ROLES.includes(role)) {
-      errors.push(`שורה ${i+1}: תפקיד לא חוקי "${role}" (מותר: WAITER, EDITOR, VIEWER)`);
+      errors.push(`שורה ${i+1}: תפקיד לא חוקי "${role}" (מותר: WAITER, BARTENDER, EDITOR, VIEWER)`);
       continue;
     }
     rows.push({ firstName, lastName, email: email||undefined, phone: phone||undefined, role, restaurantId: restaurantId||undefined });
@@ -66,7 +66,7 @@ type Invite = {
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "סופר אדמין", ADMIN: "אדמין", OWNER: "בעל עסק",
   SHIFT_MANAGER: "מנהל משמרת", EDITOR: "עורך", VIEWER: "צופה",
-  WAITER: "מלצר", DISPLAY: "תצוגה",
+  WAITER: "מלצר", BARTENDER: "ברמן", DISPLAY: "תצוגה",
 };
 
 const ROLE_BADGE: Record<string, React.CSSProperties> = {
@@ -77,6 +77,7 @@ const ROLE_BADGE: Record<string, React.CSSProperties> = {
   EDITOR:        { background: "rgba(32,201,151,0.2)",   color: "#63e6be" },
   VIEWER:        { background: "rgba(134,142,150,0.2)",  color: "#adb5bd" },
   WAITER:        { background: "rgba(255,146,43,0.2)",   color: "#ffa94d" },
+  BARTENDER:     { background: "rgba(132,94,247,0.2)",   color: "#b197fc" },
   DISPLAY:       { background: "rgba(134,142,150,0.15)", color: "#868e96" },
 };
 
@@ -93,7 +94,7 @@ const DARK_INPUT: React.CSSProperties = {
   color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit",
 };
 
-const INVITABLE_ROLES: Role[] = ["OWNER","SHIFT_MANAGER","EDITOR","VIEWER","WAITER","DISPLAY"];
+const INVITABLE_ROLES: Role[] = ["OWNER","SHIFT_MANAGER","EDITOR","VIEWER","WAITER","BARTENDER","DISPLAY"];
 
 interface Props {
   currentUserRole: Role;
@@ -257,7 +258,7 @@ export default function InvitesTab({ currentUserRole, restaurants }: Props) {
   const canInviteRole = (role: Role) => {
     if (["SUPER_ADMIN","ADMIN"].includes(currentUserRole)) return true;
     if (currentUserRole === "OWNER") return !["SUPER_ADMIN","ADMIN","OWNER"].includes(role);
-    if (currentUserRole === "SHIFT_MANAGER") return ["VIEWER","WAITER","DISPLAY"].includes(role);
+    if (currentUserRole === "SHIFT_MANAGER") return ["VIEWER","WAITER","BARTENDER","DISPLAY"].includes(role);
     return false;
   };
 

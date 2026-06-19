@@ -59,7 +59,7 @@ export default async function OrdersPage() {
       select: { restaurantId: true },
     });
     restaurantIds = links.map(l => l.restaurantId);
-    if (restaurantIds.length === 0 && role === "WAITER") {
+    if (restaurantIds.length === 0 && (role === "WAITER" || role === "BARTENDER")) {
       return (
         <div className="p-8 text-center text-gray-500">
           <div className="text-4xl mb-3">🍽</div>

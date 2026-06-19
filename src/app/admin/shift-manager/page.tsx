@@ -9,7 +9,7 @@ export default async function ShiftManagerPage() {
   if (!session?.user) redirect("/login");
 
   const role = session.user.role;
-  if (role === "DISPLAY" || role === "WAITER") redirect("/admin");
+  if (role === "DISPLAY" || role === "WAITER" || role === "BARTENDER") redirect("/admin");
 
   const restaurants =
     role === "SUPER_ADMIN"

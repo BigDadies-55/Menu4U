@@ -15,7 +15,7 @@ type InviteInfo = {
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "סופר אדמין", ADMIN: "אדמין", OWNER: "בעל עסק",
   SHIFT_MANAGER: "מנהל משמרת", EDITOR: "עורך", VIEWER: "צופה",
-  WAITER: "מלצר", DISPLAY: "תצוגה",
+  WAITER: "מלצר", BARTENDER: "ברמן", DISPLAY: "תצוגה",
 };
 
 const inputStyle: React.CSSProperties = {

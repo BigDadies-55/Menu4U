@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function OrderStatsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (["DISPLAY", "WAITER", "EDITOR", "VIEWER"].includes(session.user.role)) redirect("/admin/orders");
+  if (["DISPLAY", "WAITER", "BARTENDER", "EDITOR", "VIEWER"].includes(session.user.role)) redirect("/admin/orders");
 
   const role = session.user.role;
   const isSuperAdmin = role === "SUPER_ADMIN";

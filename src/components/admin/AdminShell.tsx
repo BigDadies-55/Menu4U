@@ -104,7 +104,7 @@ export default function AdminShell({
     setPwLoading(false);
   }
 
-  const isWaiter = user.role === "WAITER";
+  const isWaiter = ["WAITER", "BARTENDER"].includes(user.role);
 
   return (
     <div
