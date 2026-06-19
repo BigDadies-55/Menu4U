@@ -120,6 +120,15 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.idleTimeoutMinutes  = (user as { idleTimeoutMinutes?: number }).idleTimeoutMinutes ?? 0;
         token.requires2fa         = (user as { requires2fa?: boolean }).requires2fa ?? false;
       }
+      // Back-fill idleTimeoutMinutes for tokens that predate the feature
+      if (token.idleTimeoutMinutes === undefined) {
+        try {
+          const policy = await prisma.passwordPolicy.findUnique({ where: { id: "default" } });
+          token.idleTimeoutMinutes = policy?.idleTimeoutMinutes ?? 0;
+        } catch {
+          token.idleTimeoutMinutes = 0;
+        }
+      }
       if (trigger === "update" && session?.requires2fa !== undefined) {
         token.requires2fa = session.requires2fa;
       }
