@@ -67,7 +67,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
       <span style={{
         position: "absolute", top: 3,
         right: on ? 3 : "auto", left: on ? "auto" : 3,
-        width: 16, height: 16, borderRadius: "50%", background: "#fff",
+        width: 16, height: 16, borderRadius: "50%", background: T.panel,
         transition: "left 0.2s, right 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
       }} />
     </button>
@@ -189,8 +189,8 @@ function ModuleTableRow({
         {!state.saving && state.dirty && (
           <button onClick={onSave} style={{
             fontSize: 11, padding: "4px 10px", borderRadius: 7, border: "none",
-            background: `linear-gradient(110deg,#7a3c04,${T.gold})`,
-            color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+            background: `linear-gradient(110deg,${T.gold}99,${T.gold})`,
+            color: T.bg, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
           }}>שמור</button>
         )}
       </td>
@@ -354,7 +354,7 @@ export default function ModulesClient({ restaurants }: Props) {
           <select
             value={selectedRestaurant}
             onChange={e => setSelectedRestaurant(e.target.value)}
-            style={{ width: "100%", padding: "5px 12px", borderRadius: 10, fontSize: 14, background: T.surface, border: "1px solid var(--c-border)", color: T.text, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
+            style={{ width: "100%", padding: "5px 12px", borderRadius: 10, fontSize: 14, background: T.surface, border: `1px solid ${T.border}`, color: T.text, outline: "none", cursor: "pointer", fontFamily: "inherit", direction: "rtl" }}
           >
             {restaurants.map(r => (
               <option key={r.id} value={r.id} style={{ background: T.bg, color: T.text }}>{r.name}</option>
@@ -390,7 +390,7 @@ export default function ModulesClient({ restaurants }: Props) {
                   style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface, color: T.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
               </div>
               <button onClick={saveSub} disabled={subSaving}
-                style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,#7a3c04 0%,${T.gold} 50%,#e8843a 100%)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,${T.gold}99 0%,${T.gold} 50%,${T.gold}dd 100%)`, color: T.bg, fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
                 {subSaving ? "שומר..." : "שמור מנוי"}
               </button>
             </div>
@@ -415,7 +415,7 @@ export default function ModulesClient({ restaurants }: Props) {
                 {["סטטוס", "אייקון", "שם מודול", "", "מתאריך", "עד תאריך", "נקה", "הערות", ""].map(h => (
                   <th key={h} style={{
                     padding: "11px 14px", fontSize: 12, fontWeight: 700,
-                    color: GREEN, textAlign: "right", borderBottom: `1px solid ${T.border}`,
+                    color: T.gold, textAlign: "right", borderBottom: `1px solid ${T.border}`,
                     whiteSpace: "nowrap",
                   }}>{h}</th>
                 ))}
