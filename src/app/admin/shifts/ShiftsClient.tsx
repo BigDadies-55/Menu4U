@@ -173,7 +173,7 @@ export default function ShiftsClient({
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "monthly" | "summary" | "attendance" | "ops">("schedule");
+  const [activeTab, setActiveTab] = useState<"schedule" | "myshifts" | "requests" | "monthly" | "summary" | "ops">("schedule");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -267,15 +267,6 @@ export default function ShiftsClient({
   const [opsPreset, setOpsPreset] = useState<OpsPreset>("all");
   const [opsFrom, setOpsFrom] = useState("");
   const [opsTo,   setOpsTo]   = useState("");
-
-  // Attendance tab
-  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null };
-  const [attRecords, setAttRecords] = useState<AttRecord[]>([]);
-  const [attMode, setAttMode] = useState<"weekly" | "monthly" | "range">("weekly");
-  const [attMonth, setAttMonth] = useState(() => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`; });
-  const [attFrom, setAttFrom] = useState("");
-  const [attTo,   setAttTo]   = useState("");
-  const [attLoading, setAttLoading] = useState(false);
 
   // Monthly tab
   const [monthlyMonth, setMonthlyMonth] = useState(() => {
@@ -410,33 +401,6 @@ export default function ShiftsClient({
   }, [restaurantId, monthlyMonth]);
 
   useEffect(() => { if (activeTab === "monthly") loadMonthlyShifts(); }, [activeTab, loadMonthlyShifts]);
-
-  // Load attendance
-  const loadAttendance = useCallback(async () => {
-    if (!restaurantId) return;
-    let from = "", to = "";
-    if (attMode === "weekly") {
-      from = formatDateISO(weekDates[0]);
-      to   = formatDateISO(weekDates[6]);
-    } else if (attMode === "monthly") {
-      const [y, m] = attMonth.split("-").map(Number);
-      const last = new Date(y, m, 0).getDate();
-      from = `${attMonth}-01`;
-      to   = `${attMonth}-${String(last).padStart(2,"0")}`;
-    } else {
-      if (!attFrom || !attTo) return;
-      from = attFrom; to = attTo;
-    }
-    setAttLoading(true);
-    try {
-      const res = await fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`);
-      const data = await res.json();
-      setAttRecords(data.records ?? []);
-    } catch { setAttRecords([]); }
-    finally { setAttLoading(false); }
-  }, [restaurantId, attMode, attMonth, attFrom, attTo, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => { if (activeTab === "attendance") loadAttendance(); }, [activeTab, loadAttendance]);
 
   // Load requests
   const loadRequests = useCallback(async () => {
@@ -1364,216 +1328,6 @@ export default function ShiftsClient({
     );
   }
 
-  // ── Tab: Attendance ────────────────────────────────────────────────────────
-  function AttendanceTab() {
-    const [deleteConfirm, setDeleteConfirm] = React.useState<{ id: string; label: string } | null>(null);
-    const [deleteNote, setDeleteNote] = React.useState("");
-
-    async function deleteRecord(id: string) {
-      await fetch(`/api/admin/attendance?id=${encodeURIComponent(id)}&note=${encodeURIComponent(deleteNote || "תוקן ע\"י מנהל")}`, { method: "DELETE" });
-      setDeleteConfirm(null); setDeleteNote("");
-      loadAttendance();
-    }
-
-    const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-
-    const displayStaff = staff.length > 0 ? staff : Array.from(
-      new Map(attRecords.filter(r => r.type !== "DELETED").map(r => [r.userId, { id: r.userId, name: r.userId }])).values()
-    );
-
-    // Group all records by userId → date → sorted list
-    const activeRecords = attRecords.filter(r => r.type !== "DELETED");
-    type DayRecs = { id: string; type: string; timestamp: string; note: string | null }[];
-    const byUserDate: Record<string, Record<string, DayRecs>> = {};
-    for (const r of activeRecords) {
-      if (!byUserDate[r.userId]) byUserDate[r.userId] = {};
-      if (!byUserDate[r.userId][r.date]) byUserDate[r.userId][r.date] = [];
-      byUserDate[r.userId][r.date].push(r);
-    }
-
-    // Calculate actual hours as sum of IN/OUT pairs per day
-    function calcPairHours(recs: DayRecs): number {
-      const ins  = recs.filter(r => r.type === "IN").sort((a,b) => a.timestamp.localeCompare(b.timestamp));
-      const outs = recs.filter(r => r.type === "OUT").sort((a,b) => a.timestamp.localeCompare(b.timestamp));
-      let total = 0;
-      ins.forEach((inRec, i) => {
-        const outRec = outs[i];
-        if (!outRec) return;
-        const diff = (new Date(outRec.timestamp).getTime() - new Date(inRec.timestamp).getTime()) / 3600000;
-        if (diff > 0 && diff < 24) total += diff;
-      });
-      return total;
-    }
-
-    // Determine date range
-    let fromDate = "", toDate = "";
-    if (attMode === "weekly") { fromDate = formatDateISO(weekDates[0]); toDate = formatDateISO(weekDates[6]); }
-    else if (attMode === "monthly") { const [y,m]=attMonth.split("-").map(Number); fromDate=`${attMonth}-01`; toDate=`${attMonth}-${String(new Date(y,m,0).getDate()).padStart(2,"0")}`; }
-    else { fromDate = attFrom; toDate = attTo; }
-
-    type AttSummary = { id: string; name: string; actualHours: number; plannedHours: number; dates: { date: string; recs: DayRecs; hours: number }[] };
-    const summaries: AttSummary[] = displayStaff.map(member => {
-      const memberShifts = (attMode === "weekly" ? shifts : summaryShifts).filter(s => s.userId === member.id);
-      const plannedHours = memberShifts.reduce((a, s) => a + calcHours(s.startTime, s.endTime), 0);
-      const userDates = byUserDate[member.id] ?? {};
-      let totalActual = 0;
-      const dates = Object.entries(userDates).sort(([a],[b]) => a.localeCompare(b)).map(([date, recs]) => {
-        const hours = calcPairHours(recs);
-        totalActual += hours;
-        return { date, recs, hours };
-      });
-      return { id: member.id, name: member.name, actualHours: totalActual, plannedHours, dates };
-    }).filter(s => s.dates.length > 0 || s.plannedHours > 0);
-
-    const modeBtn = (mode: typeof attMode, label: string) => (
-      <button onClick={() => setAttMode(mode)} style={{
-        padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8,
-        background: attMode === mode ? "rgba(245,158,11,0.2)" : "transparent",
-        border: attMode === mode ? "1px solid rgba(245,158,11,0.45)" : `1px solid ${GB}`,
-        color: attMode === mode ? "#FBBF24" : GM, transition: "0.15s", fontFamily: "inherit",
-      }}>{label}</button>
-    );
-
-    return (
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-          {modeBtn("weekly",  "שבועי")}
-          {modeBtn("monthly", "חודשי")}
-          {modeBtn("range",   "טווח")}
-          {attMode === "monthly" && (
-            <input type="month" value={attMonth} onChange={e => setAttMonth(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
-          )}
-          {attMode === "range" && (<>
-            <input type="date" value={attFrom} onChange={e => setAttFrom(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
-            <span style={{ color: GM, fontSize: 12 }}>—</span>
-            <input type="date" value={attTo} onChange={e => setAttTo(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
-          </>)}
-          {attLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
-          <button
-            onClick={() => {
-              const header = ["עובד", "תאריך", "רשומות", "שעות בפועל", "מתוכנן", "הפרש"];
-              const rows: string[][] = [];
-              for (const member of summaries) {
-                const diff = member.actualHours - member.plannedHours;
-                member.dates.forEach((d, di) => {
-                  const recs = d.recs.map(r => `${r.type === "IN" ? "▶" : "■"}${fmtT(r.timestamp)}`).join(" ");
-                  rows.push([di === 0 ? member.name : "", d.date, recs, d.hours.toFixed(1),
-                    di === 0 ? member.plannedHours.toFixed(1) : "",
-                    di === 0 ? (diff >= 0 ? "+" : "") + diff.toFixed(1) : ""]);
-                });
-              }
-              exportCsv([header, ...rows], `נוכחות-${attMode === "monthly" ? attMonth : attFrom + "_" + attTo}.csv`);
-            }}
-            style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
-          >📊 ייצא Excel</button>
-        </div>
-
-        {summaries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 14 }}>אין נתוני נוכחות לתקופה זו</div>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>תאריך</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>רשומות</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#FBBF24", textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>בפועל</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>מתוכנן</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>הפרש</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summaries.map(member => {
-                const diff = member.actualHours - member.plannedHours;
-                return (
-                  <React.Fragment key={member.id}>
-                    {member.dates.map((d, di) => (
-                      <tr key={d.date} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                        {di === 0 && (
-                          <td rowSpan={member.dates.length} style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700, verticalAlign: "middle", borderLeft: "2px solid rgba(255,255,255,0.08)" }}>
-                            {member.name}
-                            {member.dates.length > 1 && (
-                              <div style={{ fontSize: 10, color: GM, marginTop: 2 }}>סה"כ: {member.actualHours.toFixed(1)} ש׳</div>
-                            )}
-                          </td>
-                        )}
-                        <td style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center", whiteSpace: "nowrap" }}>{d.date.slice(5).replace("-","/")}</td>
-                        <td style={{ padding: "5px 8px", fontSize: 11 }}>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                            {d.recs.sort((a,b) => a.timestamp.localeCompare(b.timestamp)).map(r => (
-                              <span key={r.id} style={{
-                                display: "inline-flex", alignItems: "center", gap: 3,
-                                background: r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
-                                color: r.type === "IN" ? "#34D399" : "#F87171",
-                                border: `1px solid ${r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
-                                borderRadius: 5, padding: "1px 6px", fontWeight: 600,
-                              }}>
-                                {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
-                                {isManager && (
-                                  <button
-                                    onClick={() => setDeleteConfirm({ id: r.id, label: `${r.type === "IN" ? "כניסה" : "יציאה"} ${fmtT(r.timestamp)}` })}
-                                    title="מחק רשומה"
-                                    style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 10, padding: "0 0 0 2px", lineHeight: 1, fontFamily: "inherit" }}
-                                    onMouseEnter={e => (e.currentTarget.style.color = "#F87171")}
-                                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
-                                  >✕</button>
-                                )}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td style={{ padding: "5px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
-                          {d.hours > 0
-                            ? <span style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{d.hours.toFixed(1)} ש׳</span>
-                            : <span style={{ color: GM, fontSize: 11 }}>—</span>}
-                        </td>
-                        {di === 0 && (
-                          <>
-                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle", whiteSpace: "nowrap" }}>
-                              <span style={{ background: "rgba(255,255,255,0.06)", color: GM, borderRadius: 6, padding: "2px 7px", fontSize: 11 }}>{member.plannedHours.toFixed(1)} ש׳</span>
-                            </td>
-                            <td rowSpan={member.dates.length} style={{ padding: "5px 8px", textAlign: "center", verticalAlign: "middle", whiteSpace: "nowrap" }}>
-                              <span style={{ background: diff >= 0 ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)", color: diff >= 0 ? "#34D399" : "#F87171", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>
-                                {diff >= 0 ? "+" : ""}{diff.toFixed(1)} ש׳
-                              </span>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        {fromDate && <div style={{ fontSize: 10, color: GM, marginTop: 10, textAlign: "center" }}>{fromDate} — {toDate}</div>}
-
-        {/* Manager delete confirmation */}
-        {deleteConfirm && (
-          <div onClick={() => setDeleteConfirm(null)} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "rgba(18,17,28,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 16, padding: 24, width: 320, maxWidth: "92vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>מחיקת רשומת נוכחות</div>
-              <div style={{ fontSize: 13, color: GM, marginBottom: 14 }}>{deleteConfirm.label}</div>
-              <input
-                type="text" value={deleteNote} onChange={e => setDeleteNote(e.target.value)}
-                placeholder="סיבת תיקון (אופציונלי)"
-                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
-              />
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => deleteRecord(deleteConfirm.id)} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>אשר מחיקה</button>
-                <button onClick={() => setDeleteConfirm(null)} style={{ padding: "9px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   // ── Tab: Ops ───────────────────────────────────────────────────────────────
   function OpsTab() {
     if (opsLoading) return <div style={{ textAlign: "center", padding: 40, color: GM }}>טוען...</div>;
@@ -1906,7 +1660,6 @@ export default function ShiftsClient({
                     if (activeTab === "schedule" || activeTab === "myshifts") loadShifts();
                     else if (activeTab === "monthly") loadMonthlyShifts();
                     else if (activeTab === "summary") loadSummaryShifts();
-                    else if (activeTab === "attendance") loadAttendance();
                     else if (activeTab === "requests") loadRequests();
                     else if (activeTab === "ops") loadOps();
                   }}
@@ -1958,7 +1711,6 @@ export default function ShiftsClient({
             </>
           ))}
           {tabBtn("summary", "📊 סיכום שעות")}
-          {isManager && tabBtn("attendance", "🕐 נוכחות")}
           {isManager && tabBtn("ops", "📱 תפעולי")}
         </div>
 
@@ -1978,7 +1730,6 @@ export default function ShiftsClient({
           {activeTab === "myshifts"  && <MyShiftsTab />}
           {activeTab === "requests"  && <RequestsTab />}
           {activeTab === "summary"    && <SummaryTab />}
-          {activeTab === "attendance" && <AttendanceTab />}
           {activeTab === "ops"        && <OpsTab />}
         </div>
 
