@@ -137,7 +137,7 @@ export default function AttendanceManagerClient({
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attendance" | "summary">(isManager ? "attendance" : "summary");
+  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit">(isManager ? "attendance" : "summary");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [staff, setStaff] = useState<{ id: string; name: string; email?: string }[]>([]);
   const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
@@ -156,6 +156,11 @@ export default function AttendanceManagerClient({
   const [attFrom, setAttFrom] = useState("");
   const [attTo,   setAttTo]   = useState("");
   const [attLoading, setAttLoading] = useState(false);
+
+  // Audit trail tab
+  type AuditRecord = { id: string; recordId: string; changedByUserId: string; changedByName: string | null; action: string; oldValue: string | null; newValue: string | null; reason: string; createdAt: string };
+  const [auditRecords, setAuditRecords] = useState<AuditRecord[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   // Summary tab
   const [summaryMode, setSummaryMode] = useState<"weekly" | "monthly" | "range">("weekly");
@@ -272,6 +277,20 @@ export default function AttendanceManagerClient({
   }, [restaurantId, attMode, attMonth, attFrom, attTo, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (activeTab === "attendance") loadAttendance(); }, [activeTab, loadAttendance]);
+
+  // Load audit trail
+  const loadAudit = useCallback(async () => {
+    if (!restaurantId) return;
+    setAuditLoading(true);
+    try {
+      const res = await fetch(`/api/admin/attendance?audit=1&restaurantId=${restaurantId}`);
+      const data = await res.json();
+      setAuditRecords(data.audit ?? []);
+    } catch { setAuditRecords([]); }
+    finally { setAuditLoading(false); }
+  }, [restaurantId]);
+
+  useEffect(() => { if (activeTab === "audit") loadAudit(); }, [activeTab, loadAudit]);
 
   async function saveConfig() {
     setSettingsSaving(true);
@@ -450,14 +469,49 @@ export default function AttendanceManagerClient({
   function AttendanceTab() {
     const [deleteConfirm, setDeleteConfirm] = React.useState<{ id: string; label: string } | null>(null);
     const [deleteNote, setDeleteNote] = React.useState("");
-
-    async function deleteRecord(id: string) {
-      await fetch(`/api/admin/attendance?id=${encodeURIComponent(id)}&note=${encodeURIComponent(deleteNote || "תוקן ע\"י מנהל")}`, { method: "DELETE" });
-      setDeleteConfirm(null); setDeleteNote("");
-      loadAttendance();
-    }
+    const [editTarget, setEditTarget] = React.useState<{ id: string; type: string; timestamp: string } | null>(null);
+    const [editTime, setEditTime] = React.useState("");
+    const [editReason, setEditReason] = React.useState("");
+    const [saving, setSaving] = React.useState(false);
 
     const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+    const typeLabel = (type: string) => (type === "IN" ? "כניסה" : "יציאה");
+
+    async function deleteRecord(id: string, oldValue: string) {
+      const reason = deleteNote.trim();
+      if (!reason) return;
+      setSaving(true);
+      try {
+        const res = await fetch(`/api/admin/attendance?id=${encodeURIComponent(id)}&note=${encodeURIComponent(reason)}&oldValue=${encodeURIComponent(oldValue)}`, { method: "DELETE" });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error ?? "שגיאה במחיקה"); return; }
+        setDeleteConfirm(null); setDeleteNote("");
+        showToast("✓ הרשומה נמחקה ותועדה בלוג");
+        loadAttendance();
+      } finally { setSaving(false); }
+    }
+
+    async function saveEdit() {
+      if (!editTarget) return;
+      const reason = editReason.trim();
+      if (!editTime || !reason) return;
+      const d = new Date(editTarget.timestamp);
+      const [h, m] = editTime.split(":").map(Number);
+      d.setHours(h, m ?? 0, 0, 0);
+      const oldValue = `${typeLabel(editTarget.type)} ${fmtT(editTarget.timestamp)}`;
+      const newValue = `${typeLabel(editTarget.type)} ${editTime}`;
+      setSaving(true);
+      try {
+        const res = await fetch("/api/admin/attendance", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editTarget.id, newTimestamp: d.toISOString(), reason, oldValue, newValue }),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error ?? "שגיאה בעדכון"); return; }
+        setEditTarget(null); setEditTime(""); setEditReason("");
+        showToast("✓ השעה עודכנה ותועדה בלוג");
+        loadAttendance();
+      } finally { setSaving(false); }
+    }
 
     const displayStaff = staff.length > 0 ? staff : Array.from(
       new Map(attRecords.filter(r => r.type !== "DELETED").map(r => [r.userId, { id: r.userId, name: r.userId }])).values()
@@ -595,13 +649,22 @@ export default function AttendanceManagerClient({
                               }}>
                                 {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
                                 {isManager && (
-                                  <button
-                                    onClick={() => setDeleteConfirm({ id: r.id, label: `${r.type === "IN" ? "כניסה" : "יציאה"} ${fmtT(r.timestamp)}` })}
-                                    title="מחק רשומה"
-                                    style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 10, padding: "0 0 0 2px", lineHeight: 1, fontFamily: "inherit" }}
-                                    onMouseEnter={e => (e.currentTarget.style.color = "#F87171")}
-                                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
-                                  >✕</button>
+                                  <>
+                                    <button
+                                      onClick={() => { setEditTarget({ id: r.id, type: r.type, timestamp: r.timestamp }); setEditTime(fmtT(r.timestamp)); setEditReason(""); }}
+                                      title="ערוך שעה"
+                                      style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 10, padding: "0 0 0 2px", lineHeight: 1, fontFamily: "inherit" }}
+                                      onMouseEnter={e => (e.currentTarget.style.color = "#FBBF24")}
+                                      onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+                                    >✎</button>
+                                    <button
+                                      onClick={() => { setDeleteConfirm({ id: r.id, label: `${typeLabel(r.type)} ${fmtT(r.timestamp)}` }); setDeleteNote(""); }}
+                                      title="מחק רשומה"
+                                      style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 10, padding: "0 0 0 2px", lineHeight: 1, fontFamily: "inherit" }}
+                                      onMouseEnter={e => (e.currentTarget.style.color = "#F87171")}
+                                      onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+                                    >✕</button>
+                                  </>
                                 )}
                               </span>
                             ))}
@@ -640,16 +703,99 @@ export default function AttendanceManagerClient({
             <div onClick={e => e.stopPropagation()} style={{ background: "rgba(18,17,28,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 16, padding: 24, width: 320, maxWidth: "92vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>מחיקת רשומת נוכחות</div>
               <div style={{ fontSize: 13, color: GM, marginBottom: 14 }}>{deleteConfirm.label}</div>
+              <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>סיבת השינוי <span style={{ color: "#F87171" }}>*</span></label>
               <input
                 type="text" value={deleteNote} onChange={e => setDeleteNote(e.target.value)}
-                placeholder="סיבת תיקון (אופציונלי)"
+                placeholder="למשל: שכחתי להחתים"
+                autoFocus
                 style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
               />
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => deleteRecord(deleteConfirm.id)} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>אשר מחיקה</button>
+                <button onClick={() => deleteRecord(deleteConfirm.id, deleteConfirm.label)} disabled={saving || !deleteNote.trim()} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: deleteNote.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: saving || !deleteNote.trim() ? 0.5 : 1 }}>אשר מחיקה</button>
                 <button onClick={() => setDeleteConfirm(null)} style={{ padding: "9px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Manager edit (manual time correction) */}
+        {editTarget && (
+          <div onClick={() => setEditTarget(null)} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "rgba(18,17,28,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 16, padding: 24, width: 320, maxWidth: "92vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>עריכת שעת {typeLabel(editTarget.type)}</div>
+              <div style={{ fontSize: 13, color: GM, marginBottom: 14 }}>שעה מקורית: {fmtT(editTarget.timestamp)}</div>
+              <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>שעה חדשה <span style={{ color: "#F87171" }}>*</span></label>
+              <input
+                type="time" value={editTime} onChange={e => setEditTime(e.target.value)}
+                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 12, fontFamily: "inherit", boxSizing: "border-box", colorScheme: "dark" }}
+              />
+              <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>סיבת השינוי <span style={{ color: "#F87171" }}>*</span></label>
+              <input
+                type="text" value={editReason} onChange={e => setEditReason(e.target.value)}
+                placeholder="למשל: שכחתי להחתים"
+                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={saveEdit} disabled={saving || !editTime || !editReason.trim()} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: ACCENT_GRAD, color: "#fff", fontWeight: 700, fontSize: 13, cursor: editTime && editReason.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: saving || !editTime || !editReason.trim() ? 0.5 : 1 }}>{saving ? "שומר..." : "שמור שינוי"}</button>
+                <button onClick={() => setEditTarget(null)} style={{ padding: "9px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Tab: Audit Trail ───────────────────────────────────────────────────────
+  function AuditTab() {
+    const fmtDT = (ts: string) => new Date(ts).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const actionLabel = (a: string) => (a === "DELETE" ? "מחיקה" : a === "EDIT" ? "עריכת שעה" : a);
+    const actionColor = (a: string) => (a === "DELETE" ? "#F87171" : "#FBBF24");
+
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM }}>
+            לוג שינויים — 500 הרשומות האחרונות
+          </div>
+          {auditLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
+          <button
+            onClick={() => {
+              const header = ["מתי", "פעולה", "מי ביצע", "ערך קודם", "ערך חדש", "סיבה", "מזהה רשומה"];
+              const rows = auditRecords.map(a => [fmtDT(a.createdAt), actionLabel(a.action), a.changedByName ?? a.changedByUserId, a.oldValue ?? "", a.newValue ?? "", a.reason, a.recordId]);
+              exportCsv([header, ...rows], `לוג-שינויים-נוכחות.csv`);
+            }}
+            style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
+          >📊 ייצא Excel</button>
+        </div>
+
+        {auditRecords.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 14 }}>לא תועדו שינויים עדיין</div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  {["מתי", "פעולה", "מי ביצע", "ערך קודם", "ערך חדש", "סיבה"].map(h => (
+                    <th key={h} style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {auditRecords.map(a => (
+                  <tr key={a.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: "6px 10px", fontSize: 12, color: GM, whiteSpace: "nowrap" }}>{fmtDT(a.createdAt)}</td>
+                    <td style={{ padding: "6px 10px", whiteSpace: "nowrap" }}>
+                      <span style={{ background: `${actionColor(a.action)}22`, color: actionColor(a.action), borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{actionLabel(a.action)}</span>
+                    </td>
+                    <td style={{ padding: "6px 10px", fontSize: 13, color: "#fff", whiteSpace: "nowrap" }}>{a.changedByName ?? a.changedByUserId}</td>
+                    <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.65)", whiteSpace: "nowrap" }}>{a.oldValue ?? "–"}</td>
+                    <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.65)", whiteSpace: "nowrap" }}>{a.newValue ?? "–"}</td>
+                    <td style={{ padding: "6px 10px", fontSize: 12, color: "#fff" }}>{a.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -845,6 +991,7 @@ export default function AttendanceManagerClient({
                   onClick={() => {
                     if (activeTab === "summary") loadSummaryShifts();
                     else if (activeTab === "attendance") loadAttendance();
+                    else if (activeTab === "audit") loadAudit();
                     loadShifts();
                   }}
                   style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
@@ -869,6 +1016,7 @@ export default function AttendanceManagerClient({
         }}>
           {isManager && tabBtn("attendance", "🕐 נוכחות")}
           {tabBtn("summary", "📊 סיכום שעות")}
+          {isManager && tabBtn("audit", "📜 לוג שינויים")}
         </div>
 
         {/* ── TAB PANEL ── */}
@@ -884,6 +1032,7 @@ export default function AttendanceManagerClient({
         }}>
           {activeTab === "attendance" && <AttendanceTab />}
           {activeTab === "summary"    && <SummaryTab />}
+          {activeTab === "audit"      && <AuditTab />}
         </div>
 
       </div>
