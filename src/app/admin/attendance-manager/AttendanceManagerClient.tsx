@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { AssistantWidget } from "@/components/admin/AssistantWidget";
-import { computeDailyHours, sumBreakdowns, DEFAULT_HOURS_OPTIONS, type HoursBreakdown } from "@/lib/hours";
+import { computeDailyHoursByRole, sumBreakdowns, DEFAULT_HOURS_OPTIONS, type HoursBreakdown, type DailyRoleBreakdown } from "@/lib/hours";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ShiftRow = {
@@ -23,6 +23,9 @@ interface Props {
   currentUserRole: string;
   currentUserName: string;
 }
+
+// Role / pay-code config used at check-in (task 4).
+type AttRoleCfg = { code: string; label: string; payCode: string; color: string };
 
 // ── Shift type config ─────────────────────────────────────────────────────────
 type ShiftTypeCfg = {
@@ -150,13 +153,19 @@ export default function AttendanceManagerClient({
   const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Attendance tab
-  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null };
+  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean };
   const [attRecords, setAttRecords] = useState<AttRecord[]>([]);
   const [attMode, setAttMode] = useState<"weekly" | "monthly" | "range">("weekly");
   const [attMonth, setAttMonth] = useState(() => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`; });
   const [attFrom, setAttFrom] = useState("");
   const [attTo,   setAttTo]   = useState("");
   const [attLoading, setAttLoading] = useState(false);
+
+  // Attendance config: schedule grace window (task 5) + roles/pay-codes (task 4)
+  const [graceMinutes, setGraceMinutes] = useState(10);
+  const [attRoles, setAttRoles] = useState<AttRoleCfg[]>([]);
+  const [editGrace, setEditGrace] = useState(10);
+  const [editRoles, setEditRoles] = useState<AttRoleCfg[]>([]);
 
   // Audit trail tab
   type AuditRecord = { id: string; recordId: string; changedByUserId: string; changedByName: string | null; action: string; oldValue: string | null; newValue: string | null; reason: string; createdAt: string };
@@ -192,6 +201,18 @@ export default function AttendanceManagerClient({
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data.config)) setShiftCfgList(data.config);
+      })
+      .catch(() => {});
+  }, [restaurantId]);
+
+  // Load attendance config (grace window + roles)
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/attendance?config=1&restaurantId=${restaurantId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (typeof data.graceMinutes === "number") setGraceMinutes(data.graceMinutes);
+        if (Array.isArray(data.roles)) setAttRoles(data.roles);
       })
       .catch(() => {});
   }, [restaurantId]);
@@ -296,13 +317,22 @@ export default function AttendanceManagerClient({
   async function saveConfig() {
     setSettingsSaving(true);
     try {
-      const res = await fetch("/api/admin/shifts/config", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId, config: editCfg }),
-      });
-      if (res.ok) {
+      const [shiftRes, attRes] = await Promise.all([
+        fetch("/api/admin/shifts/config", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restaurantId, config: editCfg }),
+        }),
+        fetch("/api/admin/attendance", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ config: true, restaurantId, graceMinutes: editGrace, roles: editRoles }),
+        }),
+      ]);
+      if (shiftRes.ok && attRes.ok) {
         setShiftCfgList(editCfg);
+        setGraceMinutes(editGrace);
+        setAttRoles(editRoles);
         setSettingsOpen(false);
         showToast("✓ הגדרות נשמרו");
       } else {
@@ -518,9 +548,11 @@ export default function AttendanceManagerClient({
       new Map(attRecords.filter(r => r.type !== "DELETED").map(r => [r.userId, { id: r.userId, name: r.userId }])).values()
     );
 
+    const roleByCode: Record<string, AttRoleCfg> = Object.fromEntries(attRoles.map(r => [r.code, r]));
+
     // Group all records by userId → date → sorted list
     const activeRecords = attRecords.filter(r => r.type !== "DELETED");
-    type DayRecs = { id: string; type: string; timestamp: string; note: string | null }[];
+    type DayRecs = { id: string; type: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean }[];
     const byUserDate: Record<string, Record<string, DayRecs>> = {};
     for (const r of activeRecords) {
       if (!byUserDate[r.userId]) byUserDate[r.userId] = {};
@@ -534,17 +566,33 @@ export default function AttendanceManagerClient({
     else if (attMode === "monthly") { const [y,m]=attMonth.split("-").map(Number); fromDate=`${attMonth}-01`; toDate=`${attMonth}-${String(new Date(y,m,0).getDate()).padStart(2,"0")}`; }
     else { fromDate = attFrom; toDate = attTo; }
 
-    type AttSummary = { id: string; name: string; total: HoursBreakdown; plannedHours: number; dates: { date: string; recs: DayRecs; bd: HoursBreakdown }[] };
+    type RoleAgg = { code: string | null; regular: number; ot125: number; ot150: number; total: number };
+    type AttSummary = { id: string; name: string; total: HoursBreakdown; plannedHours: number; roleAgg: RoleAgg[]; dates: { date: string; recs: DayRecs; bd: DailyRoleBreakdown }[] };
     const summaries: AttSummary[] = displayStaff.map(member => {
       const memberShifts = (attMode === "weekly" ? shifts : summaryShifts).filter(s => s.userId === member.id);
       const plannedHours = memberShifts.reduce((a, s) => a + calcHours(s.startTime, s.endTime), 0);
       const userDates = byUserDate[member.id] ?? {};
-      // Overtime is computed per day, so each day gets its own breakdown and we sum them.
+      // Overtime is computed per day (multi-shift aware), so each day gets its own
+      // role-tagged breakdown and we sum them.
       const dates = Object.entries(userDates).sort(([a],[b]) => a.localeCompare(b)).map(([date, recs]) => ({
-        date, recs, bd: computeDailyHours(recs),
+        date, recs, bd: computeDailyHoursByRole(recs),
       }));
       const total = sumBreakdowns(dates.map(d => d.bd));
-      return { id: member.id, name: member.name, total, plannedHours, dates };
+      // Aggregate per-role / per-pay-code allocations across the period.
+      const aggMap = new Map<string, RoleAgg>();
+      for (const d of dates) {
+        for (const a of d.bd.allocations) {
+          const key = a.roleCode ?? "";
+          const cur = aggMap.get(key) ?? { code: a.roleCode, regular: 0, ot125: 0, ot150: 0, total: 0 };
+          if (a.tier === "regular") cur.regular += a.hours;
+          else if (a.tier === "ot125") cur.ot125 += a.hours;
+          else cur.ot150 += a.hours;
+          cur.total += a.hours;
+          aggMap.set(key, cur);
+        }
+      }
+      const roleAgg = Array.from(aggMap.values()).sort((a, b) => b.total - a.total);
+      return { id: member.id, name: member.name, total, plannedHours, roleAgg, dates };
     }).filter(s => s.dates.length > 0 || s.plannedHours > 0);
 
     const fmtH = (n: number) => n.toFixed(1);
@@ -635,13 +683,30 @@ export default function AttendanceManagerClient({
                                 </div>
                               )}
                               <div style={{ color: "#FBBF24" }}>שווה-ערך: {fmtH(member.total.payableUnits)} ש׳</div>
+                              {member.roleAgg.filter(a => a.code).length > 0 && (
+                                <div style={{ marginTop: 3, paddingTop: 3, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                                  {member.roleAgg.filter(a => a.code).map(a => {
+                                    const role = a.code ? roleByCode[a.code] : undefined;
+                                    const ot = a.ot125 + a.ot150;
+                                    return (
+                                      <div key={a.code} style={{ color: role?.color ?? GM }}>
+                                        {role?.label ?? a.code} ({role?.payCode ?? "—"}): {fmtH(a.total)} ש׳{ot > 0.05 ? ` · נוספות ${fmtH(ot)}` : ""}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
                           </td>
                         )}
                         <td style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center", whiteSpace: "nowrap" }}>{d.date.slice(5).replace("-","/")}</td>
                         <td style={{ padding: "5px 8px", fontSize: 11 }}>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                            {d.recs.sort((a,b) => a.timestamp.localeCompare(b.timestamp)).map(r => (
+                            {d.recs.sort((a,b) => a.timestamp.localeCompare(b.timestamp)).map(r => {
+                              const role = r.roleCode ? roleByCode[r.roleCode] : undefined;
+                              const flagged = r.type === "IN" && (r.unscheduled || r.outOfWindow);
+                              const flagTitle = r.unscheduled ? "החתמה ללא שיבוץ — לבדיקת מנהל" : r.outOfWindow ? "החתמה מחוץ לחלון המשמרת — לבדיקת מנהל" : "";
+                              return (
                               <span key={r.id} style={{
                                 display: "inline-flex", alignItems: "center", gap: 3,
                                 background: r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
@@ -650,6 +715,12 @@ export default function AttendanceManagerClient({
                                 borderRadius: 5, padding: "1px 6px", fontWeight: 600,
                               }}>
                                 {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
+                                {role && (
+                                  <span title={`תפקיד: ${role.label} · קוד שכר ${role.payCode}`} style={{ background: `${role.color}33`, color: role.color, border: `1px solid ${role.color}66`, borderRadius: 4, padding: "0 4px", fontSize: 9, fontWeight: 700 }}>{role.label}</span>
+                                )}
+                                {flagged && (
+                                  <span title={flagTitle} style={{ color: "#FBBF24", fontSize: 11, cursor: "help" }}>⚠</span>
+                                )}
                                 {isManager && (
                                   <>
                                     <button
@@ -669,7 +740,8 @@ export default function AttendanceManagerClient({
                                   </>
                                 )}
                               </span>
-                            ))}
+                              );
+                            })}
                           </div>
                         </td>
                         <td style={{ padding: "5px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
@@ -932,6 +1004,59 @@ export default function AttendanceManagerClient({
                 ＋ הוסף סוג משמרת
               </button>
 
+              {/* Schedule grace window (task 5) */}
+              <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "10px 12px", marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>⏱️ חלון חסד להחתמה</span>
+                <input
+                  type="number" min={0} max={120} value={editGrace}
+                  onChange={e => setEditGrace(Math.max(0, Math.min(120, Number(e.target.value) || 0)))}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, padding: "4px 8px", width: 64, fontFamily: "inherit", outline: "none", textAlign: "center" }}
+                />
+                <span style={{ fontSize: 12, color: GM }}>דק׳ לפני תחילת המשמרת · החתמה מחוצה לחלון תסומן לבדיקה</span>
+              </div>
+
+              {/* Roles / pay codes (task 4) */}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>🎭 תפקידים וקודי שכר</div>
+                {editRoles.map((r, idx) => (
+                  <div key={idx} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                    <input
+                      value={r.label}
+                      onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, label: e.target.value } : x))}
+                      placeholder="שם תפקיד"
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 90, fontFamily: "inherit", outline: "none" }}
+                    />
+                    <input
+                      value={r.code}
+                      onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, code: e.target.value.toUpperCase() } : x))}
+                      placeholder="CODE"
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: GM, fontSize: 12, padding: "3px 7px", width: 80, fontFamily: "inherit", outline: "none" }}
+                    />
+                    <span style={{ fontSize: 11, color: GM }}>קוד שכר</span>
+                    <input
+                      value={r.payCode}
+                      onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, payCode: e.target.value } : x))}
+                      placeholder="100"
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 7px", width: 60, fontFamily: "inherit", outline: "none", textAlign: "center" }}
+                    />
+                    <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "center" }}>
+                      {PRESET_COLORS.map(c => (
+                        <button key={c} onClick={() => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, color: c } : x))}
+                          style={{ width: 16, height: 16, borderRadius: "50%", background: c, border: r.color === c ? "2px solid #fff" : "2px solid transparent", cursor: "pointer", boxSizing: "border-box", flexShrink: 0 }} title={c} />
+                      ))}
+                    </div>
+                    <button onClick={() => setEditRoles(prev => prev.filter((_, i) => i !== idx))}
+                      style={{ background: "transparent", border: "none", color: "#F87171", fontSize: 14, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0 }} title="הסר">✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setEditRoles(prev => [...prev, { code: `ROLE_${Date.now()}`, label: "תפקיד חדש", payCode: "", color: "#10b981" }])}
+                  style={{ width: "100%", background: "transparent", border: `1.5px dashed ${GB}`, borderRadius: 9, color: GM, fontSize: 13, padding: "7px", cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  ＋ הוסף תפקיד
+                </button>
+              </div>
+
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                 <button
                   onClick={saveConfig}
@@ -1005,7 +1130,7 @@ export default function AttendanceManagerClient({
             {isManager && (
               <>
                 <button
-                  onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
+                  onClick={() => { setEditCfg(shiftCfgList); setEditGrace(graceMinutes); setEditRoles(attRoles); setSettingsOpen(true); }}
                   style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
                   ⚙️ הגדרות
