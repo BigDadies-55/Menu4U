@@ -189,8 +189,8 @@ function ModuleTableRow({
         {!state.saving && state.dirty && (
           <button onClick={onSave} style={{
             fontSize: 11, padding: "4px 10px", borderRadius: 7, border: "none",
-            background: `linear-gradient(110deg,${T.gold}99,${T.gold})`,
-            color: T.bg, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+            background: T.gold,
+            color: "#000", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
           }}>שמור</button>
         )}
       </td>
@@ -390,7 +390,7 @@ export default function ModulesClient({ restaurants }: Props) {
                   style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface, color: T.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
               </div>
               <button onClick={saveSub} disabled={subSaving}
-                style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: `linear-gradient(110deg,${T.gold}99 0%,${T.gold} 50%,${T.gold}dd 100%)`, color: T.bg, fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: T.gold, color: "#000", fontSize: 13, fontWeight: 700, cursor: subSaving ? "default" : "pointer", opacity: subSaving ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
                 {subSaving ? "שומר..." : "שמור מנוי"}
               </button>
             </div>
