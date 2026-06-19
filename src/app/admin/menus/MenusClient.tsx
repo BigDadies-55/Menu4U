@@ -35,7 +35,7 @@ type Restaurant = { id: string; name: string; menus: Menu[] };
 type ImportItem = {
   name: string; description?: string; price: number;
   isVegetarian?: boolean; isVegan?: boolean; isGlutenFree?: boolean;
-  tags?: string[]; prepTime?: number | null; sortOrder?: number;
+  tags?: string[]; allergens?: string[]; prepTime?: number | null; sortOrder?: number;
 };
 type ImportCategory = { name: string; sortOrder?: number; items: ImportItem[] };
 type ImportMenu = {
@@ -91,28 +91,28 @@ const SAMPLE_DATA: ImportFile = {
           "name": "מנות ראשונות",
           "sortOrder": 0,
           "items": [
-            { "name": "סלט ים תיכוני", "description": "עגבניות, מלפפון, זיתים ופטה", "price": 42, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": [], "prepTime": 5, "sortOrder": 0 },
-            { "name": "ברוסקטה קלאסית", "description": "לחם קלוי עם עגבניות ובזיליקום", "price": 38, "isVegetarian": true, "isVegan": true, "isGlutenFree": false, "tags": [], "prepTime": 8, "sortOrder": 1 },
-            { "name": "מרק עגבניות", "description": "מרק עגבניות טרי עם שמנת ובזיליקום", "price": 36, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": ["חם"], "prepTime": 10, "sortOrder": 2 }
+            { "name": "סלט ים תיכוני", "description": "עגבניות, מלפפון, זיתים ופטה", "price": 42, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": [], "allergens": ["MILK"], "prepTime": 5, "sortOrder": 0 },
+            { "name": "ברוסקטה קלאסית", "description": "לחם קלוי עם עגבניות ובזיליקום", "price": 38, "isVegetarian": true, "isVegan": true, "isGlutenFree": false, "tags": [], "allergens": ["GLUTEN"], "prepTime": 8, "sortOrder": 1 },
+            { "name": "מרק עגבניות", "description": "מרק עגבניות טרי עם שמנת ובזיליקום", "price": 36, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": ["חם"], "allergens": ["MILK"], "prepTime": 10, "sortOrder": 2 }
           ]
         },
         {
           "name": "מנות עיקריות",
           "sortOrder": 1,
           "items": [
-            { "name": "סטייק אנטריקוט 300 גר'", "description": "סטייק בבישול לבחירה עם ירקות קלויים", "price": 148, "isVegetarian": false, "isVegan": false, "isGlutenFree": true, "tags": ["בשר", "ללא גלוטן"], "prepTime": 20, "sortOrder": 0 },
-            { "name": "פילה סלמון", "description": "פילה סלמון צלוי עם אורז ולימון", "price": 118, "isVegetarian": false, "isVegan": false, "isGlutenFree": true, "tags": ["דגים"], "prepTime": 18, "sortOrder": 1 },
-            { "name": "פסטה ארביאטה", "description": "פנה ברוטב עגבניות חריף עם שום", "price": 68, "isVegetarian": true, "isVegan": true, "isGlutenFree": false, "tags": ["חריף"], "prepTime": 15, "sortOrder": 2 },
-            { "name": "המבורגר ביתי", "description": "המבורגר 200 גר' עם חסה, עגבנייה ורוטב", "price": 88, "isVegetarian": false, "isVegan": false, "isGlutenFree": false, "tags": ["פופולרי"], "prepTime": 15, "sortOrder": 3 }
+            { "name": "סטייק אנטריקוט 300 גר'", "description": "סטייק בבישול לבחירה עם ירקות קלויים", "price": 148, "isVegetarian": false, "isVegan": false, "isGlutenFree": true, "tags": ["בשר", "ללא גלוטן"], "allergens": [], "prepTime": 20, "sortOrder": 0 },
+            { "name": "פילה סלמון", "description": "פילה סלמון צלוי עם אורז ולימון", "price": 118, "isVegetarian": false, "isVegan": false, "isGlutenFree": true, "tags": ["דגים"], "allergens": ["FISH"], "prepTime": 18, "sortOrder": 1 },
+            { "name": "פסטה ארביאטה", "description": "פנה ברוטב עגבניות חריף עם שום", "price": 68, "isVegetarian": true, "isVegan": true, "isGlutenFree": false, "tags": ["חריף"], "allergens": ["GLUTEN"], "prepTime": 15, "sortOrder": 2 },
+            { "name": "המבורגר ביתי", "description": "המבורגר 200 גר' עם חסה, עגבנייה ורוטב", "price": 88, "isVegetarian": false, "isVegan": false, "isGlutenFree": false, "tags": ["פופולרי"], "allergens": ["GLUTEN", "EGGS"], "prepTime": 15, "sortOrder": 3 }
           ]
         },
         {
           "name": "קינוחים",
           "sortOrder": 2,
           "items": [
-            { "name": "קרם ברולה", "description": "קרם צרפתי קלאסי עם ציפוי סוכר", "price": 42, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": [], "prepTime": 5, "sortOrder": 0 },
-            { "name": "פונדנט שוקולד", "description": "עוגת שוקולד חמה עם גלידת וניל", "price": 48, "isVegetarian": true, "isVegan": false, "isGlutenFree": false, "tags": ["שוקולד", "חם"], "prepTime": 12, "sortOrder": 1 },
-            { "name": "טירמיסו", "description": "קינוח איטלקי קלאסי עם קפה ומסקרפונה", "price": 44, "isVegetarian": true, "isVegan": false, "isGlutenFree": false, "tags": [], "prepTime": 3, "sortOrder": 2 }
+            { "name": "קרם ברולה", "description": "קרם צרפתי קלאסי עם ציפוי סוכר", "price": 42, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": [], "allergens": ["MILK", "EGGS"], "prepTime": 5, "sortOrder": 0 },
+            { "name": "פונדנט שוקולד", "description": "עוגת שוקולד חמה עם גלידת וניל", "price": 48, "isVegetarian": true, "isVegan": false, "isGlutenFree": false, "tags": ["שוקולד", "חם"], "allergens": ["MILK", "EGGS", "GLUTEN"], "prepTime": 12, "sortOrder": 1 },
+            { "name": "טירמיסו", "description": "קינוח איטלקי קלאסי עם קפה ומסקרפונה", "price": 44, "isVegetarian": true, "isVegan": false, "isGlutenFree": false, "tags": [], "allergens": ["MILK", "EGGS", "GLUTEN"], "prepTime": 3, "sortOrder": 2 }
           ]
         }
       ]
@@ -128,17 +128,17 @@ const SAMPLE_DATA: ImportFile = {
           "name": "משקאות חמים",
           "sortOrder": 0,
           "items": [
-            { "name": "אספרסו", "description": "קפה איטלקי קלאסי", "price": 12, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["קפה"], "prepTime": 3, "sortOrder": 0 },
-            { "name": "קפה לאטה", "description": "אספרסו עם חלב מוקצף", "price": 18, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": ["קפה"], "prepTime": 4, "sortOrder": 1 },
-            { "name": "תה נענע", "description": "תה נענע טרי", "price": 14, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": [], "prepTime": 3, "sortOrder": 2 }
+            { "name": "אספרסו", "description": "קפה איטלקי קלאסי", "price": 12, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["קפה"], "allergens": [], "prepTime": 3, "sortOrder": 0 },
+            { "name": "קפה לאטה", "description": "אספרסו עם חלב מוקצף", "price": 18, "isVegetarian": true, "isVegan": false, "isGlutenFree": true, "tags": ["קפה"], "allergens": ["MILK"], "prepTime": 4, "sortOrder": 1 },
+            { "name": "תה נענע", "description": "תה נענע טרי", "price": 14, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": [], "allergens": [], "prepTime": 3, "sortOrder": 2 }
           ]
         },
         {
           "name": "משקאות קרים",
           "sortOrder": 1,
           "items": [
-            { "name": "לימונדה טרייה", "description": "לימון, מנטה וסוכר", "price": 22, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["טרי"], "prepTime": 5, "sortOrder": 0 },
-            { "name": "מיץ תפוזים סחוט", "description": "מיץ תפוזים טרי", "price": 26, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["טרי", "בריא"], "prepTime": 3, "sortOrder": 1 }
+            { "name": "לימונדה טרייה", "description": "לימון, מנטה וסוכר", "price": 22, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["טרי"], "allergens": [], "prepTime": 5, "sortOrder": 0 },
+            { "name": "מיץ תפוזים סחוט", "description": "מיץ תפוזים טרי", "price": 26, "isVegetarian": true, "isVegan": true, "isGlutenFree": true, "tags": ["טרי", "בריא"], "allergens": [], "prepTime": 3, "sortOrder": 1 }
           ]
         }
       ]
@@ -172,6 +172,7 @@ async function downloadXlsx(data: ImportFile, filename: string) {
     "טבעוני": string;
     "ללא גלוטן": string;
     "תגיות": string;
+    "אלרגנים": string;
     "זמן הכנה (דק')": string;
   };
   const rows: XlsxRow[] = [];
@@ -188,6 +189,7 @@ async function downloadXlsx(data: ImportFile, filename: string) {
           "טבעוני": item.isVegan ? "כן" : "לא",
           "ללא גלוטן": item.isGlutenFree ? "כן" : "לא",
           "תגיות": (item.tags ?? []).join(", "),
+          "אלרגנים": (item.allergens ?? []).join(", "),
           "זמן הכנה (דק')": item.prepTime != null ? String(item.prepTime) : "",
         });
       }
@@ -195,10 +197,9 @@ async function downloadXlsx(data: ImportFile, filename: string) {
   }
 
   const ws = XLSX.utils.json_to_sheet(rows);
-  // Set RTL direction + column widths
   ws["!cols"] = [
     { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 32 },
-    { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 20 }, { wch: 14 },
+    { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 20 }, { wch: 28 }, { wch: 14 },
   ];
   XLSX.utils.book_append_sheet(wb, ws, "תפריט");
 
@@ -208,6 +209,7 @@ async function downloadXlsx(data: ImportFile, filename: string) {
     { "הוראות": "עמודות חובה: תפריט, קטגוריה, שם פריט, מחיר (₪)" },
     { "הוראות": "צמחוני / טבעוני / ללא גלוטן: כתוב כן או לא" },
     { "הוראות": "תגיות: הפרד בפסיקים (לדוגמא: חריף, פופולרי)" },
+    { "הוראות": "אלרגנים: הפרד בפסיקים — ערכים אפשריים: GLUTEN, MILK, EGGS, FISH, PEANUTS, SOYBEANS, NUTS, SESAME, CRUSTACEANS, MOLLUSCS, CELERY, MUSTARD, SULPHITES, LUPIN" },
     { "הוראות": "זמן הכנה: מספר בדקות (אפשרי להשאיר ריק)" },
   ];
   const wsInstr = XLSX.utils.json_to_sheet(instrRows);
@@ -245,8 +247,9 @@ async function parseXlsxToImportFile(file: File): Promise<ImportFile> {
 
     const rawPrice = row["מחיר (₪)"] ?? row["מחיר"];
     const price = parseFloat(String(rawPrice)) || 0;
-    const tagsRaw = String(row["תגיות"] ?? "").trim();
-    const prepRaw = String(row["זמן הכנה (דק')"] ?? row["זמן הכנה"] ?? "").trim();
+    const tagsRaw      = String(row["תגיות"]         ?? "").trim();
+    const allergensRaw = String(row["אלרגנים"]       ?? "").trim();
+    const prepRaw      = String(row["זמן הכנה (דק')"] ?? row["זמן הכנה"] ?? "").trim();
 
     cats.get(catName)!.push({
       name: itemName,
@@ -255,7 +258,8 @@ async function parseXlsxToImportFile(file: File): Promise<ImportFile> {
       isVegetarian: String(row["צמחוני"] ?? "").trim() === "כן",
       isVegan:      String(row["טבעוני"] ?? "").trim() === "כן",
       isGlutenFree: String(row["ללא גלוטן"] ?? "").trim() === "כן",
-      tags: tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [],
+      tags:      tagsRaw      ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [],
+      allergens: allergensRaw ? allergensRaw.split(",").map(a => a.trim().toUpperCase()).filter(Boolean) : [],
       prepTime: prepRaw ? parseInt(prepRaw) || null : null,
       sortOrder: cats.get(catName)!.length,
     });
@@ -770,6 +774,7 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 isVegan: importItem.isVegan ?? false,
                 isGlutenFree: importItem.isGlutenFree ?? false,
                 tags: importItem.tags ?? [],
+                allergens: importItem.allergens ?? [],
                 prepTime: importItem.prepTime ?? null,
                 sortOrder: importItem.sortOrder ?? 0,
               }),
@@ -2023,8 +2028,13 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.overlay; }}
               >
                 <div className="text-3xl mb-2">📂</div>
-                <div className="text-sm font-medium mb-1" style={{ color: T.sub }}>לחץ לבחירת קובץ JSON</div>
-                <div className="text-xs" style={{ color: T.muted }}>קובץ ייצוא תואם בפורמט Menu4U</div>
+                <div className="text-sm font-medium mb-1" style={{ color: T.sub }}>לחץ לבחירת קובץ JSON או Excel</div>
+                <div className="flex items-center justify-center gap-3 mt-2">
+                  <span style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 10px", fontSize: 11, color: T.muted }}>JSON</span>
+                  <span style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 10px", fontSize: 11, color: T.muted }}>XLSX</span>
+                  <span style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 10px", fontSize: 11, color: T.muted }}>XLS</span>
+                </div>
+                <div className="text-xs mt-2" style={{ color: T.muted }}>קובץ ייצוא תואם בפורמט Menu4U</div>
               </div>
             )}
 

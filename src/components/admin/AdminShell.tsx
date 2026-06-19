@@ -1,6 +1,7 @@
 "use client";
 import { T } from "@/lib/ui";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar, { useFavorites } from "./Sidebar";
 import PageTitle from "./PageTitle";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
@@ -9,6 +10,7 @@ import type { Role } from "@/generated/prisma/client";
 interface Props {
   user: { name?: string | null; email?: string | null; role: Role };
   kdsView: string;
+  idleTimeoutMinutes?: number;
   adminPalette?: string;
   adminBg?: string;
   adminBgImage?: string | null;
@@ -25,14 +27,38 @@ interface Props {
 
 export default function AdminShell({
   user, kdsView,
+  idleTimeoutMinutes = 0,
   adminPalette = "dark", adminBg = T.surface, adminBgImage,
   siteLogo, siteName = "Menu4U",
   adminSidebarBg, adminSidebarAccent, adminSidebarTextColor = T.muted,
   adminContentTextColor = T.text,
   children,
 }: Props) {
+  const router = useRouter();
   const [liveBg,    setLiveBg]    = useState(adminBg);
   const [liveBgImg, setLiveBgImg] = useState(adminBgImage);
+
+  // ── Client-side idle timeout ────────────────────────────────────────────
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetTimer = useCallback(() => {
+    if (!idleTimeoutMinutes || idleTimeoutMinutes <= 0) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      router.push("/login?reason=timeout");
+    }, idleTimeoutMinutes * 60 * 1000);
+  }, [idleTimeoutMinutes, router]);
+
+  useEffect(() => {
+    if (!idleTimeoutMinutes || idleTimeoutMinutes <= 0) return;
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"] as const;
+    events.forEach(e => window.addEventListener(e, resetTimer, { passive: true }));
+    resetTimer(); // start timer on mount
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [idleTimeoutMinutes, resetTimer]);
 
   useEffect(() => {
     fetch("/api/admin/site-config")
