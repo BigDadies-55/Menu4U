@@ -40,10 +40,20 @@ type BiDay = { date: string; revenue: number; laborCost: number; hours: number; 
 type BiHour = { hour: number; revenue: number; laborCost: number; laborPct: number | null };
 type BiOt = { userId: string; name: string; regular: number; ot125: number; ot150: number; otHours: number; laborCost: number; otCost: number; planned: number; actual: number; overPlanned: number };
 type BiPunct = { userId: string; name: string; shifts: number; onTime: number; late: number; early: number; lateMinutes: number; earlyMinutes: number };
+type BiInsights = {
+  weeks: number; targetPct: number; churnWeeklyHours: number;
+  topWaiters: { userId: string; name: string; revenue: number; hours: number; salesPerHour: number }[];
+  avgSalesPerHour: number;
+  stableEmployees: { userId: string; name: string; shifts: number; otHours: number }[];
+  earlyClockIn: { totalMinutes: number; avgMinutesPerShift: number; cost: number; employees: { name: string; minutes: number; cost: number }[] };
+  churnRisk: { userId: string; name: string; totalHours: number; avgWeeklyHours: number }[];
+  scheduling: { dow: number; dowLabel: string; fromHour: number; toHour: number; laborPct: number; revenue: number }[];
+};
 type BiData = {
   rateConfigured: boolean;
   totals: { revenue: number; laborCost: number; hours: number; laborPct: number | null };
   byDay: BiDay[]; byHour: BiHour[]; overtime: BiOt[]; punctuality: BiPunct[];
+  insights?: BiInsights;
 };
 
 export default function MyBusinessClient({ restaurants }: Props) {
@@ -184,6 +194,88 @@ export default function MyBusinessClient({ restaurants }: Props) {
                   ⚠️ לא הוגדר תעריף שעתי לתפקידים — עלות העבודה תוצג כ-0. הגדר ₪/ש׳ ב-⚙️ תעריפים.
                 </div>
               )}
+
+              {/* Insights — natural-language bottom lines */}
+              {biData.insights && (() => {
+                const ins = biData.insights;
+                const insCard = (border: string, bg: string): React.CSSProperties => ({ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: "12px 14px" });
+                const items: React.ReactNode[] = [];
+
+                // A. All-stars
+                if (ins.topWaiters.length > 0) {
+                  const top = ins.topWaiters[0];
+                  items.push(
+                    <div key="star" style={insCard("rgba(52,211,153,0.35)", "rgba(52,211,153,0.08)")}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#34D399", marginBottom: 4 }}>⭐ המלצר המייצר</div>
+                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                        <b>{top.name}</b> מכניס בממוצע <b>{money(top.salesPerHour)} לשעת עבודה</b>, לעומת ממוצע צוות של {money(ins.avgSalesPerHour)}. שווה לשבץ אותו במשמרות שיא.
+                      </div>
+                      {ins.topWaiters.length > 1 && (
+                        <div style={{ fontSize: 11, color: GM, marginTop: 6 }}>
+                          {ins.topWaiters.slice(0, 4).map(w => `${w.name}: ${money(w.salesPerHour)}/ש׳`).join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (ins.stableEmployees.length > 0) {
+                  items.push(
+                    <div key="stable" style={insCard("rgba(96,165,250,0.35)", "rgba(96,165,250,0.08)")}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#60A5FA", marginBottom: 4 }}>🛡️ העובדים היציבים</div>
+                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                        {ins.stableEmployees.map(e => e.name).join(", ")} — תמיד בזמן, ללא חתימות חסרות וללא שעות נוספות חריגות.
+                      </div>
+                    </div>
+                  );
+                }
+
+                // B. Cost leaks
+                if (ins.earlyClockIn.totalMinutes > 0) {
+                  items.push(
+                    <div key="early" style={insCard("rgba(251,191,36,0.35)", "rgba(251,191,36,0.08)")}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#FBBF24", marginBottom: 4 }}>💸 שעון דולף — החתמה מוקדמת</div>
+                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                        עובדים החתימו כניסה בממוצע <b>{ins.earlyClockIn.avgMinutesPerShift.toFixed(0)} דק׳</b> לפני תחילת המשמרת הרשמית. זה עלה כ-<b>{money(ins.earlyClockIn.cost)}</b> בשכר עודף בתקופה.
+                      </div>
+                      {ins.earlyClockIn.employees.length > 0 && (
+                        <div style={{ fontSize: 11, color: GM, marginTop: 6 }}>
+                          {ins.earlyClockIn.employees.map(e => `${e.name}: ${e.minutes} דק׳ (${money(e.cost)})`).join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                ins.churnRisk.forEach(c => {
+                  items.push(
+                    <div key={`churn-${c.userId}`} style={insCard("rgba(248,113,113,0.35)", "rgba(248,113,113,0.08)")}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#F87171", marginBottom: 4 }}>🔥 סיכון שחיקה ועזיבה</div>
+                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                        <b>{c.name}</b> עבד/ה בממוצע <b>{c.avgWeeklyHours.toFixed(0)} שעות שבועיות</b> (מעל התקן של {ins.churnWeeklyHours}). קיים סיכון גבוה לשחיקה או עזיבה.
+                      </div>
+                    </div>
+                  );
+                });
+
+                // C. Scheduling optimization
+                ins.scheduling.forEach((s, i) => {
+                  items.push(
+                    <div key={`sched-${i}`} style={insCard("rgba(168,85,247,0.35)", "rgba(168,85,247,0.08)")}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#C084FC", marginBottom: 4 }}>📅 אופטימיזציית סידור</div>
+                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                        בימי <b>{s.dowLabel}</b>, בין <b>{String(s.fromHour).padStart(2, "0")}:00–{String(s.toHour).padStart(2, "0")}:00</b>, עלות כוח האדם עמדה על <b>{s.laborPct.toFixed(0)}%</b> מהמחזור (מעל היעד של {ins.targetPct}%). המלצה: שקול להפחית כוח אדם בחלון זה.
+                      </div>
+                    </div>
+                  );
+                });
+
+                if (items.length === 0) return null;
+                return (
+                  <div style={{ ...card, padding: 18 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>💡 תובנות מתקדמות</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 12 }}>{items}</div>
+                  </div>
+                );
+              })()}
 
               {/* KPIs */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, marginBottom: 16 }}>
