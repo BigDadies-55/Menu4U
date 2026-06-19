@@ -2028,8 +2028,13 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.overlay; }}
               >
                 <div className="text-3xl mb-2">📂</div>
-                <div className="text-sm font-medium mb-1" style={{ color: T.sub }}>לחץ לבחירת קובץ JSON</div>
-                <div className="text-xs" style={{ color: T.muted }}>קובץ ייצוא תואם בפורמט Menu4U</div>
+                <div className="text-sm font-medium mb-1" style={{ color: T.sub }}>לחץ לבחירת קובץ JSON או Excel</div>
+                <div className="flex items-center justify-center gap-3 mt-2">
+                  <span style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 10px", fontSize: 11, color: T.muted }}>JSON</span>
+                  <span style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 10px", fontSize: 11, color: T.muted }}>XLSX</span>
+                  <span style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 10px", fontSize: 11, color: T.muted }}>XLS</span>
+                </div>
+                <div className="text-xs mt-2" style={{ color: T.muted }}>קובץ ייצוא תואם בפורמט Menu4U</div>
               </div>
             )}
 
