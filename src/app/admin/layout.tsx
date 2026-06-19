@@ -140,6 +140,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <AdminShell
         user={session.user}
         kdsView={kdsView}
+        idleTimeoutMinutes={(session.user as { idleTimeoutMinutes?: number })?.idleTimeoutMinutes ?? 0}
         adminPalette={effectivePalette}
         adminBg={adminBg}
         adminBgImage={adminBgImage}
