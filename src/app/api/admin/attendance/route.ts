@@ -30,11 +30,11 @@ async function ensureTable() {
 }
 
 // Per-restaurant attendance config: grace window + role/pay-code list.
-type AttRoleCfg = { code: string; label: string; payCode: string; color: string };
+type AttRoleCfg = { code: string; label: string; payCode: string; color: string; hourlyRate?: number };
 const DEFAULT_ATT_ROLES: AttRoleCfg[] = [
-  { code: "WAITER",    label: "מלצר",   payCode: "100", color: "#3b82f6" },
-  { code: "BARTENDER", label: "ברמן",   payCode: "200", color: "#a855f7" },
-  { code: "SHIFT_MGR", label: "אחמ״ש", payCode: "300", color: "#f59e0b" },
+  { code: "WAITER",    label: "מלצר",   payCode: "100", color: "#3b82f6", hourlyRate: 35 },
+  { code: "BARTENDER", label: "ברמן",   payCode: "200", color: "#a855f7", hourlyRate: 45 },
+  { code: "SHIFT_MGR", label: "אחמ״ש", payCode: "300", color: "#f59e0b", hourlyRate: 55 },
 ];
 const DEFAULT_GRACE_MINUTES = 10;
 

@@ -24,8 +24,8 @@ interface Props {
   currentUserName: string;
 }
 
-// Role / pay-code config used at check-in (task 4).
-type AttRoleCfg = { code: string; label: string; payCode: string; color: string };
+// Role / pay-code config used at check-in (task 4) + hourly rate for BI labor cost.
+type AttRoleCfg = { code: string; label: string; payCode: string; color: string; hourlyRate?: number };
 
 // ── Shift type config ─────────────────────────────────────────────────────────
 type ShiftTypeCfg = {
@@ -138,10 +138,11 @@ export default function AttendanceManagerClient({
   currentUserRole,
 }: Props) {
   const isManager = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"].includes(currentUserRole);
+  const isOwner = ["SUPER_ADMIN", "ADMIN", "OWNER"].includes(currentUserRole); // BI reports
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit">(isManager ? "attendance" : "summary");
+  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit" | "bi">(isManager ? "attendance" : "summary");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [staff, setStaff] = useState<{ id: string; name: string; email?: string }[]>([]);
   const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
@@ -171,6 +172,19 @@ export default function AttendanceManagerClient({
   type AuditRecord = { id: string; recordId: string; changedByUserId: string; changedByName: string | null; action: string; oldValue: string | null; newValue: string | null; reason: string; createdAt: string };
   const [auditRecords, setAuditRecords] = useState<AuditRecord[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+
+  // BI tab (owner-only)
+  type BiDay = { date: string; revenue: number; laborCost: number; hours: number; laborPct: number | null };
+  type BiHour = { hour: number; revenue: number; laborCost: number; laborPct: number | null };
+  type BiOt = { userId: string; name: string; regular: number; ot125: number; ot150: number; otHours: number; laborCost: number; otCost: number; planned: number; actual: number; overPlanned: number };
+  type BiPunct = { userId: string; name: string; shifts: number; onTime: number; late: number; early: number; lateMinutes: number; earlyMinutes: number };
+  type BiData = { rateConfigured: boolean; totals: { revenue: number; laborCost: number; hours: number; laborPct: number | null }; byDay: BiDay[]; byHour: BiHour[]; overtime: BiOt[]; punctuality: BiPunct[] };
+  const [biData, setBiData] = useState<BiData | null>(null);
+  const [biMode, setBiMode] = useState<"weekly" | "monthly" | "range">("monthly");
+  const [biMonth, setBiMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`; });
+  const [biFrom, setBiFrom] = useState("");
+  const [biTo,   setBiTo]   = useState("");
+  const [biLoading, setBiLoading] = useState(false);
 
   // Summary tab
   const [summaryMode, setSummaryMode] = useState<"weekly" | "monthly" | "range">("weekly");
@@ -313,6 +327,23 @@ export default function AttendanceManagerClient({
   }, [restaurantId]);
 
   useEffect(() => { if (activeTab === "audit") loadAudit(); }, [activeTab, loadAudit]);
+
+  // Load BI reports
+  const loadBi = useCallback(async () => {
+    if (!restaurantId) return;
+    let from = "", to = "";
+    if (biMode === "weekly") { from = formatDateISO(weekDates[0]); to = formatDateISO(weekDates[6]); }
+    else if (biMode === "monthly") { const [y, m] = biMonth.split("-").map(Number); from = `${biMonth}-01`; to = `${biMonth}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`; }
+    else { if (!biFrom || !biTo) return; from = biFrom; to = biTo; }
+    setBiLoading(true);
+    try {
+      const res = await fetch(`/api/admin/attendance/bi?restaurantId=${restaurantId}&from=${from}&to=${to}`);
+      setBiData(res.ok ? await res.json() : null);
+    } catch { setBiData(null); }
+    finally { setBiLoading(false); }
+  }, [restaurantId, biMode, biMonth, biFrom, biTo, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (activeTab === "bi") loadBi(); }, [activeTab, loadBi]);
 
   async function saveConfig() {
     setSettingsSaving(true);
@@ -897,6 +928,187 @@ export default function AttendanceManagerClient({
     );
   }
 
+  // ── Tab: BI (owner-only) ─────────────────────────────────────────────────────
+  function BiTab() {
+    const money = (n: number) => `₪${Math.round(n).toLocaleString("he-IL")}`;
+    const pct = (n: number | null) => (n == null ? "—" : `${n.toFixed(0)}%`);
+    // Labor cost % thresholds: ≤30% healthy, 30–45% watch, >45% loss-making.
+    const pctColor = (n: number | null) => (n == null ? GM : n > 45 ? "#F87171" : n > 30 ? "#FB923C" : "#34D399");
+
+    const modeBtn = (mode: typeof biMode, label: string) => (
+      <button onClick={() => setBiMode(mode)} style={{
+        padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8,
+        background: biMode === mode ? "rgba(245,158,11,0.2)" : "transparent",
+        border: biMode === mode ? "1px solid rgba(245,158,11,0.45)" : `1px solid ${GB}`,
+        color: biMode === mode ? "#FBBF24" : GM, transition: "0.15s", fontFamily: "inherit",
+      }}>{label}</button>
+    );
+
+    const card: React.CSSProperties = { background: "rgba(255,255,255,0.04)", border: `1px solid ${GB}`, borderRadius: 16, padding: 18, marginBottom: 16 };
+    const th: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: GM, padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" };
+    const td: React.CSSProperties = { fontSize: 12, padding: "5px 10px", whiteSpace: "nowrap" };
+
+    const maxDayVal = biData ? Math.max(1, ...biData.byDay.map(d => Math.max(d.revenue, d.laborCost))) : 1;
+
+    return (
+      <div>
+        {/* Controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+          {modeBtn("weekly", "שבועי")}
+          {modeBtn("monthly", "חודשי")}
+          {modeBtn("range", "טווח")}
+          {biMode === "monthly" && (
+            <input type="month" value={biMonth} onChange={e => setBiMonth(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+          )}
+          {biMode === "range" && (<>
+            <input type="date" value={biFrom} onChange={e => setBiFrom(e.target.value)} style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+            <span style={{ color: GM, fontSize: 12 }}>—</span>
+            <input type="date" value={biTo} onChange={e => setBiTo(e.target.value)} style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+          </>)}
+          {biLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
+        </div>
+
+        {!biData ? (
+          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 14 }}>אין נתונים לתקופה זו</div>
+        ) : (<>
+          {!biData.rateConfigured && (
+            <div style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.35)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#FBBF24" }}>
+              ⚠️ לא הוגדר תעריף שעתי לתפקידים — עלות העבודה תוצג כ-0. הגדר ₪/ש׳ בהגדרות ⚙️.
+            </div>
+          )}
+
+          {/* KPI summary */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 16 }}>
+            {[
+              { label: "פדיון", value: money(biData.totals.revenue), color: "#34D399" },
+              { label: "עלות עבודה", value: money(biData.totals.laborCost), color: "#60A5FA" },
+              { label: "Labor Cost %", value: pct(biData.totals.laborPct), color: pctColor(biData.totals.laborPct) },
+              { label: "שעות עבודה", value: biData.totals.hours.toFixed(1), color: "#FBBF24" },
+            ].map(k => (
+              <div key={k.label} style={{ ...card, marginBottom: 0, padding: 14 }}>
+                <div style={{ fontSize: 11, color: GM, marginBottom: 4 }}>{k.label}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: k.color }}>{k.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* A. Labor Cost vs Sales — by day */}
+          <div style={card}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 12 }}>📊 עלות עבודה מול פדיון — לפי יום</div>
+            {biData.byDay.length === 0 ? <div style={{ color: GM, fontSize: 13 }}>אין נתונים</div> : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {biData.byDay.map(d => (
+                  <div key={d.date} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 11, color: GM, width: 54, flexShrink: 0 }}>{d.date.slice(5).replace("-", "/")}</span>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+                      <div style={{ height: 9, background: "rgba(52,211,153,0.7)", width: `${(d.revenue / maxDayVal) * 100}%`, borderRadius: 3, minWidth: d.revenue > 0 ? 4 : 0 }} />
+                      <div style={{ height: 9, background: "rgba(96,165,250,0.7)", width: `${(d.laborCost / maxDayVal) * 100}%`, borderRadius: 3, minWidth: d.laborCost > 0 ? 4 : 0 }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: GM, width: 130, flexShrink: 0, textAlign: "left" }}>{money(d.revenue)} / {money(d.laborCost)}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: pctColor(d.laborPct), width: 48, flexShrink: 0, textAlign: "left" }}>{pct(d.laborPct)}</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 16, fontSize: 10, color: GM, marginTop: 4 }}>
+                  <span><span style={{ display: "inline-block", width: 9, height: 9, background: "rgba(52,211,153,0.7)", borderRadius: 2, marginLeft: 4 }} />פדיון</span>
+                  <span><span style={{ display: "inline-block", width: 9, height: 9, background: "rgba(96,165,250,0.7)", borderRadius: 2, marginLeft: 4 }} />עלות עבודה</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* A2. By hour — dead-hours detector */}
+          <div style={card}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 4 }}>🕐 לפי שעה ביום — זיהוי "שעות מתות"</div>
+            <div style={{ fontSize: 11, color: GM, marginBottom: 12 }}>עלות עבודה שעתית בתעריף בסיס מול פדיון. אחוז גבוה = יותר מדי עובדים מול מעט מכירות.</div>
+            {biData.byHour.length === 0 ? <div style={{ color: GM, fontSize: 13 }}>אין נתונים</div> : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>
+                  <th style={{ ...th, textAlign: "right" }}>שעה</th>
+                  <th style={{ ...th, textAlign: "left" }}>פדיון</th>
+                  <th style={{ ...th, textAlign: "left" }}>עלות עבודה</th>
+                  <th style={{ ...th, textAlign: "left" }}>Labor %</th>
+                </tr></thead>
+                <tbody>
+                  {biData.byHour.map(h => (
+                    <tr key={h.hour} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: (h.laborPct ?? 0) > 45 ? "rgba(248,113,113,0.07)" : "transparent" }}>
+                      <td style={{ ...td, textAlign: "right", color: "#fff", fontWeight: 700 }}>{String(h.hour).padStart(2, "0")}:00</td>
+                      <td style={{ ...td, textAlign: "left", color: "#34D399" }}>{money(h.revenue)}</td>
+                      <td style={{ ...td, textAlign: "left", color: "#60A5FA" }}>{money(h.laborCost)}</td>
+                      <td style={{ ...td, textAlign: "left", fontWeight: 800, color: pctColor(h.laborPct) }}>{pct(h.laborPct)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* B. Overtime & budget overruns */}
+          <div style={card}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 12 }}>⏰ שעות נוספות וחריגות תקן</div>
+            {biData.overtime.length === 0 ? <div style={{ color: GM, fontSize: 13 }}>אין נתונים</div> : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>
+                  <th style={{ ...th, textAlign: "right" }}>עובד</th>
+                  <th style={{ ...th, textAlign: "center", color: "#FB923C" }}>125%</th>
+                  <th style={{ ...th, textAlign: "center", color: "#F87171" }}>150%</th>
+                  <th style={{ ...th, textAlign: "center" }}>סה״כ נוספות</th>
+                  <th style={{ ...th, textAlign: "left" }}>עלות נוספות</th>
+                  <th style={{ ...th, textAlign: "center" }}>תקן/בפועל</th>
+                  <th style={{ ...th, textAlign: "center" }}>חריגה</th>
+                </tr></thead>
+                <tbody>
+                  {biData.overtime.map(o => (
+                    <tr key={o.userId} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <td style={{ ...td, color: "#fff", fontWeight: 700 }}>{o.name}</td>
+                      <td style={{ ...td, textAlign: "center", color: o.ot125 > 0 ? "#FB923C" : GM }}>{o.ot125 > 0 ? o.ot125.toFixed(1) : "–"}</td>
+                      <td style={{ ...td, textAlign: "center", color: o.ot150 > 0 ? "#F87171" : GM }}>{o.ot150 > 0 ? o.ot150.toFixed(1) : "–"}</td>
+                      <td style={{ ...td, textAlign: "center", fontWeight: 700, color: o.otHours > 0 ? "#FBBF24" : GM }}>{o.otHours.toFixed(1)}</td>
+                      <td style={{ ...td, textAlign: "left", color: "#60A5FA" }}>{money(o.otCost)}</td>
+                      <td style={{ ...td, textAlign: "center", color: GM }}>{o.planned.toFixed(0)} / {o.actual.toFixed(0)}</td>
+                      <td style={{ ...td, textAlign: "center", fontWeight: 700, color: o.overPlanned > 0 ? "#F87171" : "#34D399" }}>{o.overPlanned >= 0 ? "+" : ""}{o.overPlanned.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* C. Punctuality */}
+          <div style={card}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 12 }}>⏱️ עמידה בזמנים ואיחורים</div>
+            {biData.punctuality.length === 0 ? <div style={{ color: GM, fontSize: 13 }}>אין שיבוצים לתקופה</div> : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>
+                  <th style={{ ...th, textAlign: "right" }}>עובד</th>
+                  <th style={{ ...th, textAlign: "center" }}>משמרות</th>
+                  <th style={{ ...th, textAlign: "center", color: "#34D399" }}>בזמן</th>
+                  <th style={{ ...th, textAlign: "center", color: "#F87171" }}>איחורים</th>
+                  <th style={{ ...th, textAlign: "center" }}>דק׳ איחור מצטבר</th>
+                  <th style={{ ...th, textAlign: "center", color: "#FBBF24" }}>החתמה מוקדמת</th>
+                  <th style={{ ...th, textAlign: "center" }}>דק׳ מוקדם מצטבר</th>
+                </tr></thead>
+                <tbody>
+                  {biData.punctuality.map(p => (
+                    <tr key={p.userId} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <td style={{ ...td, color: "#fff", fontWeight: 700 }}>{p.name}</td>
+                      <td style={{ ...td, textAlign: "center", color: GM }}>{p.shifts}</td>
+                      <td style={{ ...td, textAlign: "center", color: "#34D399", fontWeight: 700 }}>{p.onTime}</td>
+                      <td style={{ ...td, textAlign: "center", color: p.late > 0 ? "#F87171" : GM, fontWeight: 700 }}>{p.late}</td>
+                      <td style={{ ...td, textAlign: "center", color: p.lateMinutes > 0 ? "#F87171" : GM }}>{p.lateMinutes}</td>
+                      <td style={{ ...td, textAlign: "center", color: p.early > 0 ? "#FBBF24" : GM, fontWeight: 700 }}>{p.early}</td>
+                      <td style={{ ...td, textAlign: "center", color: p.earlyMinutes > 0 ? "#FBBF24" : GM }}>{p.earlyMinutes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>)}
+      </div>
+    );
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
@@ -928,7 +1140,7 @@ export default function AttendanceManagerClient({
         {/* Settings modal */}
         {settingsOpen && (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "5vh 0 5vh" }}>
-            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: "18px 20px", width: 520, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)", flexShrink: 0 }}>
+            <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: "18px 20px", width: 680, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)", flexShrink: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 12 }}>⚙️ הגדרות סוגי משמרת</div>
 
               {editCfg.map((cfg, idx) => (
@@ -1019,7 +1231,7 @@ export default function AttendanceManagerClient({
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>🎭 תפקידים וקודי שכר</div>
                 {editRoles.map((r, idx) => (
-                  <div key={idx} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                  <div key={idx} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <input
                       value={r.label}
                       onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, label: e.target.value } : x))}
@@ -1039,6 +1251,13 @@ export default function AttendanceManagerClient({
                       placeholder="100"
                       style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 7px", width: 60, fontFamily: "inherit", outline: "none", textAlign: "center" }}
                     />
+                    <span style={{ fontSize: 11, color: GM }}>₪/ש׳</span>
+                    <input
+                      type="number" min={0} value={r.hourlyRate ?? 0}
+                      onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, hourlyRate: Math.max(0, Number(e.target.value) || 0) } : x))}
+                      placeholder="0"
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 7px", width: 56, fontFamily: "inherit", outline: "none", textAlign: "center" }}
+                    />
                     <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "center" }}>
                       {PRESET_COLORS.map(c => (
                         <button key={c} onClick={() => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, color: c } : x))}
@@ -1050,7 +1269,7 @@ export default function AttendanceManagerClient({
                   </div>
                 ))}
                 <button
-                  onClick={() => setEditRoles(prev => [...prev, { code: `ROLE_${Date.now()}`, label: "תפקיד חדש", payCode: "", color: "#10b981" }])}
+                  onClick={() => setEditRoles(prev => [...prev, { code: `ROLE_${Date.now()}`, label: "תפקיד חדש", payCode: "", color: "#10b981", hourlyRate: 0 }])}
                   style={{ width: "100%", background: "transparent", border: `1.5px dashed ${GB}`, borderRadius: 9, color: GM, fontSize: 13, padding: "7px", cursor: "pointer", fontFamily: "inherit" }}
                 >
                   ＋ הוסף תפקיד
@@ -1140,6 +1359,7 @@ export default function AttendanceManagerClient({
                     if (activeTab === "summary") loadSummaryShifts();
                     else if (activeTab === "attendance") loadAttendance();
                     else if (activeTab === "audit") loadAudit();
+                    else if (activeTab === "bi") loadBi();
                     loadShifts();
                   }}
                   style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
@@ -1165,6 +1385,7 @@ export default function AttendanceManagerClient({
           {isManager && tabBtn("attendance", "🕐 נוכחות")}
           {tabBtn("summary", "📊 סיכום שעות")}
           {isManager && tabBtn("audit", "📜 לוג שינויים")}
+          {isOwner && tabBtn("bi", "📈 BI / דוחות")}
         </div>
 
         {/* ── TAB PANEL ── */}
@@ -1181,6 +1402,7 @@ export default function AttendanceManagerClient({
           {activeTab === "attendance" && <AttendanceTab />}
           {activeTab === "summary"    && <SummaryTab />}
           {activeTab === "audit"      && <AuditTab />}
+          {activeTab === "bi"         && <BiTab />}
         </div>
 
       </div>

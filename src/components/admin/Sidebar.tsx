@@ -150,6 +150,7 @@ const GROUPS: NavGroup[] = [
     id: "ai", label: "AI ואנליטיקה", I: Ic.Stats,
     waiterHide: true, displayHide: true,
     items: [
+      { href: "/admin/my-business",     label: "העסק שלי",       I: Ic.Stats, ownerOnly: true, waiterHide: true, displayHide: true },
       { href: "/admin/orders/stats",    label: "סטטיסטיקות",    I: Ic.Stats, ownerOnly: true, waiterHide: true, displayHide: true },
       { href: "/admin/insight-rules",   label: "תובנות AI",      I: Ic.Stats, ownerOnly: true, waiterHide: true, displayHide: true },
       { href: "/admin/assistant",       label: "עוזר אישי",      I: Ic.Logs,  adminOnly: true, waiterHide: true, displayHide: true },
