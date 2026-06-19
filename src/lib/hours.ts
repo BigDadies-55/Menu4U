@@ -3,7 +3,7 @@
 // daily hours breakdown (regular + overtime tiers). This is the basis for any
 // payroll calculation, so it is intentionally isolated and easy to unit-test.
 
-export type Punch = { type: string; timestamp: string | Date };
+export type Punch = { type: string; timestamp: string | Date; roleCode?: string | null };
 
 export type HoursOptions = {
   /** Minutes deducted as an unpaid break. Default 30. */
@@ -93,6 +93,70 @@ export function breakdownDailyHours(grossHours: number, options: HoursOptions = 
 /** Convenience: punches → full daily breakdown. */
 export function computeDailyHours(punches: Punch[], options?: HoursOptions): HoursBreakdown {
   return breakdownDailyHours(grossHoursFromPunches(punches), options);
+}
+
+// ── Role-aware breakdown (task 4) ────────────────────────────────────────────
+// In hospitality an employee can switch roles within one day (waiter → bartender),
+// each role carrying a different pay code. Overtime is still computed on the daily
+// total, but the premium is attributed to the role worked during those (later)
+// hours. We therefore pair punches into chronological role-tagged segments and
+// fill the regular/125%/150% tiers across them.
+
+export type Tier = "regular" | "ot125" | "ot150";
+export type RoleSegment = { roleCode: string | null; hours: number };
+export type RoleTierAllocation = { roleCode: string | null; tier: Tier; hours: number };
+export type DailyRoleBreakdown = HoursBreakdown & { allocations: RoleTierAllocation[] };
+
+/** Pair IN/OUT punches into chronological segments, tagged with the IN punch's role. */
+export function segmentsFromPunches(punches: Punch[]): RoleSegment[] {
+  const ms = (t: string | Date) => new Date(t).getTime();
+  const ins  = punches.filter(p => p.type === "IN").sort((a, b) => ms(a.timestamp) - ms(b.timestamp));
+  const outs = punches.filter(p => p.type === "OUT").sort((a, b) => ms(a.timestamp) - ms(b.timestamp));
+  const segs: RoleSegment[] = [];
+  ins.forEach((inRec, i) => {
+    const outRec = outs[i];
+    if (!outRec) return;
+    const diff = (ms(outRec.timestamp) - ms(inRec.timestamp)) / 3_600_000;
+    if (diff > 0 && diff < 24) segs.push({ roleCode: inRec.roleCode ?? null, hours: diff });
+  });
+  return segs;
+}
+
+/**
+ * Daily breakdown that also attributes each tier to the role worked at that time.
+ * The unpaid break is deducted from the earliest hours; overtime falls on the later
+ * (chronological) segments — i.e. the role worked toward the end of the day.
+ */
+export function computeDailyHoursByRole(punches: Punch[], options: HoursOptions = {}): DailyRoleBreakdown {
+  const o = { ...DEFAULT_HOURS_OPTIONS, ...options };
+  const segs = segmentsFromPunches(punches);
+  const base = breakdownDailyHours(segs.reduce((a, s) => a + s.hours, 0), o);
+
+  // Deduct the break from the earliest segments.
+  let breakLeft = base.breakHours;
+  const netSegs = segs
+    .map(s => {
+      if (breakLeft <= 0) return s;
+      const ded = Math.min(breakLeft, s.hours);
+      breakLeft -= ded;
+      return { roleCode: s.roleCode, hours: s.hours - ded };
+    })
+    .filter(s => s.hours > 1e-9);
+
+  const ot125End = o.regularDayHours + o.overtime125Width;
+  const allocations: RoleTierAllocation[] = [];
+  let cum = 0;
+  for (const s of netSegs) {
+    let h = s.hours;
+    const push = (tier: Tier, take: number) => {
+      if (take > 1e-9) { allocations.push({ roleCode: s.roleCode, tier, hours: take }); cum += take; h -= take; }
+    };
+    if (cum < o.regularDayHours) push("regular", Math.min(h, o.regularDayHours - cum));
+    if (h > 1e-9 && cum < ot125End) push("ot125", Math.min(h, ot125End - cum));
+    if (h > 1e-9) push("ot150", h);
+  }
+
+  return { ...base, allocations };
 }
 
 /** Sum several daily breakdowns into a single total (e.g. a week or a month). */

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useModuleEnabled } from "@/hooks/useModuleEnabled";
 
 type AttRec = { id: string; type: string; timestamp: string };
+type AttRoleCfg = { code: string; label: string; payCode: string; color: string };
 
 interface Props {
   restaurantId: string;
@@ -25,6 +26,8 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
   const [note,       setNote]       = useState("");
   const [noteOpen,   setNoteOpen]   = useState<"IN" | "OUT" | null>(null);
   const [panelOpen,  setPanelOpen]  = useState(false);
+  const [roles,      setRoles]      = useState<AttRoleCfg[]>([]);
+  const [roleCode,   setRoleCode]   = useState("");
 
   const firstIn  = records.find(r => r.type === "IN");
   const firstOut = records.find(r => r.type === "OUT");
@@ -42,20 +45,30 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
 
   useEffect(() => { loadToday(); }, [loadToday]);
 
+  // Load the restaurant's role / pay-code list for the check-in picker.
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/attendance?config=1&restaurantId=${restaurantId}`)
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data.roles)) setRoles(data.roles); })
+      .catch(() => {});
+  }, [restaurantId]);
+
   async function record(type: "IN" | "OUT") {
     if (!userId || !restaurantId || loading) return;
+    if (type === "IN" && roles.length > 0 && !roleCode) return; // role is required on check-in
     setLoading(true);
     try {
       const res = await fetch("/api/admin/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId, type, note: note || undefined }),
+        body: JSON.stringify({ restaurantId, type, note: note || undefined, roleCode: type === "IN" ? (roleCode || undefined) : undefined }),
       });
       if (res.ok) {
         const data = await res.json();
         setRecords(prev => [...prev, { id: data.id, type, timestamp: data.timestamp }]);
       }
-    } finally { setLoading(false); setNote(""); setNoteOpen(null); }
+    } finally { setLoading(false); setNote(""); setNoteOpen(null); setRoleCode(""); }
   }
 
   if (!moduleOn) return null;
@@ -151,6 +164,28 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
               {new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
             </div>
+            {noteOpen === "IN" && roles.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>באיזה תפקיד אתה נכנס? <span style={{ color: "#F87171" }}>*</span></div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {roles.map(r => {
+                    const sel = roleCode === r.code;
+                    return (
+                      <button
+                        key={r.code}
+                        onClick={() => setRoleCode(r.code)}
+                        style={{
+                          padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                          background: sel ? `${r.color}33` : "rgba(255,255,255,0.05)",
+                          border: `1px solid ${sel ? r.color : "rgba(255,255,255,0.15)"}`,
+                          color: sel ? r.color : "rgba(255,255,255,0.7)",
+                        }}
+                      >{r.label}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <input
               type="text"
               value={note}
@@ -163,8 +198,8 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={() => record(noteOpen)}
-                disabled={loading}
-                style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", background: noteOpen === "IN" ? "#22c55e" : "#ef4444", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+                disabled={loading || (noteOpen === "IN" && roles.length > 0 && !roleCode)}
+                style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", background: noteOpen === "IN" ? "#22c55e" : "#ef4444", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", opacity: (loading || (noteOpen === "IN" && roles.length > 0 && !roleCode)) ? 0.6 : 1 }}
               >
                 {loading ? "..." : "אישור"}
               </button>
