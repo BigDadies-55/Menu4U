@@ -27,7 +27,15 @@ export default async function UsersPage() {
       restaurantUsers: { include: { restaurant: { select: { id: true, name: true } } } },
     },
   });
-  const users = rawUsers.map(u => ({ ...u }));
+  // employeeNo is a raw column (not in the Prisma schema) — fetch and merge it.
+  let empMap: Record<string, string | null> = {};
+  try {
+    const empRows = await prisma.$queryRawUnsafe<{ id: string; employeeNo: string | null }[]>(
+      `SELECT id, "employeeNo" FROM "User"`
+    );
+    empMap = Object.fromEntries(empRows.map(r => [r.id, r.employeeNo]));
+  } catch { /* column may not exist before migration */ }
+  const users = rawUsers.map(u => ({ ...u, employeeNo: empMap[u.id] ?? null }));
 
   const restaurants = await prisma.restaurant.findMany({
     where: { isActive: true },
