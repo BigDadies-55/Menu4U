@@ -16,6 +16,7 @@ const DEFAULTS = {
   privacyUrl: null as string | null, termsUrl: null as string | null,
   showPrivacyPolicy: true, enableLoyaltyPoints: true,
   enableOnlineOrders: false, showPrices: true,
+  loginImage: null as string | null,
 };
 
 export async function GET() {
@@ -43,6 +44,7 @@ export async function PATCH(req: Request) {
     timezone, currency, interfaceLanguage,
     privacyUrl, termsUrl,
     showPrivacyPolicy, enableLoyaltyPoints, enableOnlineOrders, showPrices,
+    loginImage,
   } = body;
   try {
     // Ensure all optional columns exist before writing
@@ -70,6 +72,7 @@ export async function PATCH(req: Request) {
       prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "enableLoyaltyPoints" BOOLEAN NOT NULL DEFAULT true`),
       prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "enableOnlineOrders" BOOLEAN NOT NULL DEFAULT false`),
       prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "showPrices" BOOLEAN NOT NULL DEFAULT true`),
+      prisma.$executeRawUnsafe(`ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "loginImage" TEXT`),
     ]);
 
     // Ensure the row exists
@@ -105,6 +108,7 @@ export async function PATCH(req: Request) {
         "enableLoyaltyPoints"    = $23,
         "enableOnlineOrders"     = $24,
         "showPrices"             = $25,
+        "loginImage"             = $26,
         "updatedAt"              = NOW()
       WHERE id = 'default'
     `,
@@ -119,6 +123,7 @@ export async function PATCH(req: Request) {
       privacyUrl ?? null, termsUrl ?? null,
       showPrivacyPolicy ?? true, enableLoyaltyPoints ?? true,
       enableOnlineOrders ?? false, showPrices ?? true,
+      loginImage ?? null,
     );
 
     await logAudit({ action: "UPDATE_SITE_CONFIG", entity: "SiteConfig" });

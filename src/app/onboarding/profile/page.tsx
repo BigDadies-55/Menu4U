@@ -8,7 +8,6 @@ export default function OnboardingProfilePage() {
   const [form, setForm] = useState({
     fullName: "",
     idNumber: "",
-    employeeNumber: "",
     city: "",
     address: "",
     altPhone: "",
@@ -19,7 +18,7 @@ export default function OnboardingProfilePage() {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(prev => ({ ...prev, [k]: e.target.value }));
 
-  const mandatoryFilled = form.fullName && form.idNumber && form.employeeNumber && form.city;
+  const mandatoryFilled = form.fullName && form.city;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,12 +84,11 @@ export default function OnboardingProfilePage() {
             <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(201,164,82,0.6)", letterSpacing: 1, textTransform: "uppercase" }}>שדות חובה</div>
 
             <Field label="שם מלא" fieldKey="fullName" required autoFocus placeholder="ישראל ישראלי" />
-            <Field label="תעודת זהות" fieldKey="idNumber" required placeholder="000000000" inputMode="numeric" maxLength={9} />
-            <Field label="מספר עובד" fieldKey="employeeNumber" required placeholder="EMP-001" />
             <Field label="עיר מגורים" fieldKey="city" required placeholder="תל אביב" />
 
             <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(201,164,82,0.6)", letterSpacing: 1, textTransform: "uppercase", marginTop: 6 }}>שדות רשות</div>
 
+            <Field label="תעודת זהות" fieldKey="idNumber" placeholder="000000000" inputMode="numeric" maxLength={9} />
             <Field label="כתובת מלאה" fieldKey="address" placeholder="רחוב ומספר, עיר" />
             <Field label="טלפון חלופי" fieldKey="altPhone" placeholder="050-0000000" type="tel" />
 

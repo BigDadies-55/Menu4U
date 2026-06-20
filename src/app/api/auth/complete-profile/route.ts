@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit, getIp } from "@/lib/audit";
+import { sendOnboardingWelcomeEmail, isEmailConfigured } from "@/lib/email";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -10,10 +11,11 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { fullName, idNumber, employeeNumber, city, address, altPhone, image } = body;
+  // Employee number is auto-assigned by the system (not entered here); ID number is optional.
+  const { fullName, idNumber, city, address, altPhone, image } = body;
 
   // Mandatory fields
-  if (!fullName || !idNumber || !employeeNumber || !city) {
+  if (!fullName || !city) {
     return NextResponse.json({ error: "יש למלא את כל שדות החובה" }, { status: 400 });
   }
 
@@ -28,13 +30,21 @@ export async function POST(req: Request) {
     },
   });
 
+  // Welcome email with the username + login link.
+  if (isEmailConfigured()) {
+    try {
+      const u = await prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true, username: true } });
+      if (u?.email && u.username) await sendOnboardingWelcomeEmail(u.email, u.username, fullName);
+    } catch (err) { console.error("[complete-profile] welcome email failed:", err); }
+  }
+
   await logAudit({
     userId: session.user.id,
     userEmail: session.user.email,
     action: "COMPLETE_PROFILE",
     entity: "User",
     entityId: session.user.id,
-    meta: { city, idNumber: "***", employeeNumber },
+    meta: { city, idNumber: idNumber ? "***" : null },
     ip: getIp(req),
   });
 

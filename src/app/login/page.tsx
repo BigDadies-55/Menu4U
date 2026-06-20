@@ -8,11 +8,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginImage, setLoginImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("reason") === "timeout") {
       setError("נותקת מהמערכת עקב חוסר פעילות. התחבר מחדש.");
     }
+  }, []);
+
+  // Configurable split-screen image (from site settings).
+  useEffect(() => {
+    fetch("/api/admin/site-config")
+      .then(r => r.json())
+      .then(d => { if (d?.loginImage) setLoginImage(d.loginImage); })
+      .catch(() => {});
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -37,12 +46,36 @@ export default function LoginPage() {
           min-height: 100vh;
           background: #09080a;
           display: flex;
+          align-items: stretch;
+          direction: rtl;
+        }
+        /* Left 50% — configurable image */
+        .login-photo-pane {
+          flex: 1 1 50%;
+          background-color: #110f12;
+          background-size: cover;
+          background-position: center;
+          position: relative;
+        }
+        .login-photo-pane::after {
+          content: '';
+          position: absolute; inset: 0;
+          background: linear-gradient(120deg, rgba(9,8,10,0.55) 0%, rgba(9,8,10,0.15) 100%);
+        }
+        /* Right 50% — login form */
+        .login-form-pane {
+          flex: 1 1 50%;
+          position: relative;
+          overflow: hidden;
+          display: flex;
           align-items: center;
           justify-content: center;
           padding: 24px;
-          position: relative;
-          overflow: hidden;
-          direction: rtl;
+          background: #09080a;
+        }
+        @media (max-width: 900px) {
+          .login-photo-pane { display: none; }
+          .login-form-pane { flex: 1 1 100%; }
         }
         .login-grain {
           position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -180,8 +213,27 @@ export default function LoginPage() {
       `}</style>
 
       <div className="login-root">
+        {/* Left 50% — configurable image */}
+        <div
+          className="login-photo-pane"
+          style={{
+            backgroundImage: loginImage
+              ? `url('${loginImage}')`
+              : "linear-gradient(135deg,#0a0804,#1c1205,#3d2b00)",
+          }}
+        >
+          {!loginImage && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 40, fontWeight: 700, color: "#fff", letterSpacing: 6, opacity: 0.9 }}>
+                TECH4<span style={{ color: "#C9A452" }}>BITES</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right 50% — login form */}
+        <div className="login-form-pane">
         <div className="login-grain" />
-        <div className="login-bg-photo" />
         <div className="login-glow-left" />
         <div className="login-glow-right" />
 
@@ -258,6 +310,7 @@ export default function LoginPage() {
           <a href="/" className="login-back">
             ← חזרה לאתר
           </a>
+        </div>
         </div>
       </div>
     </>
