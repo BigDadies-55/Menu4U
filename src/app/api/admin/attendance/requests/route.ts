@@ -160,7 +160,12 @@ export async function PATCH(req: Request) {
     action: status === "APPROVED" ? "ATTENDANCE_REQUEST_APPROVE" : "ATTENDANCE_REQUEST_REJECT",
     entity: "attendanceRequest", entityId: id,
     entityName: `${reqRow.userName ?? reqRow.userId} · ${reqRow.kind === "LEAVE" ? "חופשה" : "תיקון שעות"} · ${reqRow.fromDate}`,
-    meta: { restaurantId: reqRow.restaurantId, kind: reqRow.kind, status, decisionNote: (decisionNote ?? "").trim() || null, details: reqRow.details },
+    meta: {
+      restaurantId: reqRow.restaurantId, kind: reqRow.kind, status,
+      fromDate: reqRow.fromDate, toDate: reqRow.toDate,
+      details: reqRow.details, requestReason: reqRow.reason,
+      decisionNote: (decisionNote ?? "").trim() || null,
+    },
     ip: getIp(req),
   });
 

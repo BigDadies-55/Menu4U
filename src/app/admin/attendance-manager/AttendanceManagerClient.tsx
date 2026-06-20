@@ -957,14 +957,62 @@ export default function AttendanceManagerClient({
     const nameById: Record<string, string> = Object.fromEntries(staff.map(s => [s.id, s.name]));
     const who = (a: ActivityRecord) => (a.userId && nameById[a.userId]) || a.userEmail || a.userId || "—";
     const detail = (a: ActivityRecord): string => {
-      const m = a.meta ?? {};
-      const g = (k: string) => (typeof m[k] === "string" ? (m[k] as string) : "");
-      if (a.action === "ATTENDANCE_EDIT") return `${g("oldValue")} ← ${g("newValue")}${g("reason") ? ` · ${g("reason")}` : ""}`;
-      if (a.action === "ATTENDANCE_DELETE") return g("reason");
-      if (a.action.endsWith("_REQUEST")) return g("reason");
-      if (a.action === "ATTENDANCE_REQUEST_APPROVE" || a.action === "ATTENDANCE_REQUEST_REJECT") return g("decisionNote");
-      if (a.action === "NOTIFICATION_RUN_NOW") return typeof m.sent === "number" ? `${m.sent} התראות נשלחו` : "";
-      return "";
+      const m = (a.meta ?? {}) as Record<string, unknown>;
+      const s = (k: string) => (typeof m[k] === "string" ? (m[k] as string) : "");
+      const num = (k: string) => (typeof m[k] === "number" ? (m[k] as number) : undefined);
+      // details may be stored as an object or as a JSON string.
+      const parseDetails = (): Record<string, unknown> => {
+        const d = m.details;
+        if (d && typeof d === "object") return d as Record<string, unknown>;
+        if (typeof d === "string") { try { return JSON.parse(d); } catch { return {}; } }
+        return {};
+      };
+      const reqText = (): string => {
+        const d = parseDetails();
+        if (d.requestedTime) return `${d.requestedType === "IN" ? "כניסה" : "יציאה"} ל-${d.requestedTime}`;
+        if (d.leaveType) {
+          const from = s("fromDate"), to = s("toDate");
+          const range = from && to && to !== from ? `${from}–${to}` : from;
+          return `חופשה (${d.leaveType})${range ? ` · ${range}` : ""}`;
+        }
+        return "";
+      };
+      switch (a.action) {
+        case "ATTENDANCE_EDIT":
+          return `שונה: ${s("oldValue")} ← ${s("newValue")}${s("reason") ? ` · סיבה: ${s("reason")}` : ""}`;
+        case "ATTENDANCE_DELETE":
+          return s("reason") ? `סיבה: ${s("reason")}` : "";
+        case "ATTENDANCE_CORRECTION_REQUEST":
+        case "ATTENDANCE_LEAVE_REQUEST": {
+          const r = reqText();
+          return [r && `התבקש: ${r}`, s("reason") && `סיבה: ${s("reason")}`].filter(Boolean).join(" · ");
+        }
+        case "ATTENDANCE_REQUEST_APPROVE":
+        case "ATTENDANCE_REQUEST_REJECT": {
+          const r = reqText();
+          const decision = a.action === "ATTENDANCE_REQUEST_APPROVE" ? "אושר" : "נדחה";
+          return [
+            r ? `התבקש: ${r}` : "",
+            s("requestReason") && `סיבת הבקשה: ${s("requestReason")}`,
+            `החלטה: ${decision}`,
+            s("decisionNote") && `הערת מנהל: ${s("decisionNote")}`,
+          ].filter(Boolean).join(" · ");
+        }
+        case "ATTENDANCE_SIGNOFF":
+          return [s("signatureName") && `חתימה: ${s("signatureName")}`, num("netHours") != null && `נטו ${num("netHours")!.toFixed(1)} ש׳`].filter(Boolean).join(" · ");
+        case "ATTENDANCE_CONFIG_UPDATE":
+          return [num("graceMinutes") != null && `חלון חסד ${num("graceMinutes")} דק׳`, s("timezone") && `אזור זמן ${s("timezone")}`, num("roles") != null && `${num("roles")} תפקידים`].filter(Boolean).join(" · ");
+        case "PAYROLL_CONFIG_UPDATE":
+          return num("profiles") != null ? `${num("profiles")} פרופילי עובד עודכנו` : "עודכנו הגדרות שכר";
+        case "NOTIFICATION_RULES_UPDATE":
+          return "עודכנו כללי אוטומציה";
+        case "NOTIFICATION_RUN_NOW":
+          return num("sent") != null ? `${num("sent")} התראות נשלחו` : "";
+        case "ATTENDANCE_CLOCK_IN":
+        case "ATTENDANCE_CLOCK_OUT":
+          return s("roleCode") ? `תפקיד: ${s("roleCode")}` : "";
+        default: return "";
+      }
     };
 
     const [filter, setFilter] = React.useState("all");
