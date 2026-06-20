@@ -178,9 +178,9 @@ export default function AttendanceManagerClient({
   const [editGrace, setEditGrace] = useState(10);
   const [editRoles, setEditRoles] = useState<AttRoleCfg[]>([]);
 
-  // Audit trail tab
-  type AuditRecord = { id: string; recordId: string; changedByUserId: string; changedByName: string | null; action: string; oldValue: string | null; newValue: string | null; reason: string; createdAt: string };
-  const [auditRecords, setAuditRecords] = useState<AuditRecord[]>([]);
+  // Audit trail tab — full attendance activity from the central AuditLog.
+  type ActivityRecord = { id: string; action: string; userId: string | null; userEmail: string | null; entityName: string | null; meta: Record<string, unknown> | null; createdAt: string };
+  const [activityRecords, setActivityRecords] = useState<ActivityRecord[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
 
   // Summary tab
@@ -326,10 +326,10 @@ export default function AttendanceManagerClient({
     if (!restaurantId) return;
     setAuditLoading(true);
     try {
-      const res = await fetch(`/api/admin/attendance?audit=1&restaurantId=${restaurantId}`);
+      const res = await fetch(`/api/admin/attendance?activity=1&restaurantId=${restaurantId}`);
       const data = await res.json();
-      setAuditRecords(data.audit ?? []);
-    } catch { setAuditRecords([]); }
+      setActivityRecords(data.activity ?? []);
+    } catch { setActivityRecords([]); }
     finally { setAuditLoading(false); }
   }, [restaurantId]);
 
@@ -929,49 +929,84 @@ export default function AttendanceManagerClient({
   // ── Tab: Audit Trail ───────────────────────────────────────────────────────
   function AuditTab() {
     const fmtDT = (ts: string) => new Date(ts).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const actionLabel = (a: string) => (a === "DELETE" ? "מחיקה" : a === "EDIT" ? "עריכת שעה" : a);
-    const actionColor = (a: string) => (a === "DELETE" ? "#F87171" : "#FBBF24");
+
+    const LABELS: Record<string, string> = {
+      ATTENDANCE_CLOCK_IN: "החתמת כניסה", ATTENDANCE_CLOCK_OUT: "החתמת יציאה",
+      ATTENDANCE_EDIT: "עריכת שעה", ATTENDANCE_DELETE: "מחיקת רשומה",
+      ATTENDANCE_CONFIG_UPDATE: "עדכון הגדרות", ATTENDANCE_CORRECTION_REQUEST: "בקשת תיקון שעות",
+      ATTENDANCE_LEAVE_REQUEST: "בקשת חופשה", ATTENDANCE_REQUEST_APPROVE: "אישור בקשה",
+      ATTENDANCE_REQUEST_REJECT: "דחיית בקשה", ATTENDANCE_SIGNOFF: "אישור דוח חודשי",
+      PAYROLL_CONFIG_UPDATE: "עדכון הגדרות שכר", NOTIFICATION_RULES_UPDATE: "עדכון אוטומציות",
+      NOTIFICATION_RUN_NOW: "הרצת התראות",
+    };
+    const actionLabel = (a: string) => LABELS[a] ?? a;
+    const actionColor = (a: string) => {
+      if (a === "ATTENDANCE_REQUEST_APPROVE" || a === "ATTENDANCE_CLOCK_IN") return "#34D399";
+      if (a === "ATTENDANCE_DELETE" || a === "ATTENDANCE_REQUEST_REJECT" || a === "ATTENDANCE_CLOCK_OUT") return "#F87171";
+      if (a === "ATTENDANCE_SIGNOFF") return "#C084FC";
+      if (a === "ATTENDANCE_EDIT" || a.endsWith("_REQUEST")) return "#FBBF24";
+      return "#9CA3AF";
+    };
+    const nameById: Record<string, string> = Object.fromEntries(staff.map(s => [s.id, s.name]));
+    const who = (a: ActivityRecord) => (a.userId && nameById[a.userId]) || a.userEmail || a.userId || "—";
+    const detail = (a: ActivityRecord): string => {
+      const m = a.meta ?? {};
+      const g = (k: string) => (typeof m[k] === "string" ? (m[k] as string) : "");
+      if (a.action === "ATTENDANCE_EDIT") return `${g("oldValue")} ← ${g("newValue")}${g("reason") ? ` · ${g("reason")}` : ""}`;
+      if (a.action === "ATTENDANCE_DELETE") return g("reason");
+      if (a.action.endsWith("_REQUEST")) return g("reason");
+      if (a.action === "ATTENDANCE_REQUEST_APPROVE" || a.action === "ATTENDANCE_REQUEST_REJECT") return g("decisionNote");
+      if (a.action === "NOTIFICATION_RUN_NOW") return typeof m.sent === "number" ? `${m.sent} התראות נשלחו` : "";
+      return "";
+    };
+
+    const [filter, setFilter] = React.useState("all");
+    const filtered = filter === "all" ? activityRecords : activityRecords.filter(a => a.action === filter);
 
     return (
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: GM }}>
-            לוג שינויים — 500 הרשומות האחרונות
+            לוג פעילות נוכחות — 500 האחרונות
           </div>
+          <select value={filter} onChange={e => setFilter(e.target.value)}
+            style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
+            <option value="all" style={{ background: "#1a1a2e" }}>כל הפעולות</option>
+            {Object.entries(LABELS).map(([k, v]) => <option key={k} value={k} style={{ background: "#1a1a2e" }}>{v}</option>)}
+          </select>
           {auditLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
             onClick={() => {
-              const header = ["מתי", "פעולה", "מי ביצע", "ערך קודם", "ערך חדש", "סיבה", "מזהה רשומה"];
-              const rows = auditRecords.map(a => [fmtDT(a.createdAt), actionLabel(a.action), a.changedByName ?? a.changedByUserId, a.oldValue ?? "", a.newValue ?? "", a.reason, a.recordId]);
-              exportCsv([header, ...rows], `לוג-שינויים-נוכחות.csv`);
+              const header = ["מתי", "פעולה", "מי ביצע", "פרטים", "מידע נוסף"];
+              const rows = filtered.map(a => [fmtDT(a.createdAt), actionLabel(a.action), who(a), a.entityName ?? "", detail(a)]);
+              exportCsv([header, ...rows], `לוג-פעילות-נוכחות.csv`);
             }}
             style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
           >📊 ייצא Excel</button>
         </div>
 
-        {auditRecords.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 14 }}>לא תועדו שינויים עדיין</div>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 40, color: GM, fontSize: 14 }}>לא תועדה פעילות עדיין</div>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  {["מתי", "פעולה", "מי ביצע", "ערך קודם", "ערך חדש", "סיבה"].map(h => (
+                  {["מתי", "פעולה", "מי ביצע", "פרטים", "מידע נוסף"].map(h => (
                     <th key={h} style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {auditRecords.map(a => (
+                {filtered.map(a => (
                   <tr key={a.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                     <td style={{ padding: "6px 10px", fontSize: 12, color: GM, whiteSpace: "nowrap" }}>{fmtDT(a.createdAt)}</td>
                     <td style={{ padding: "6px 10px", whiteSpace: "nowrap" }}>
                       <span style={{ background: `${actionColor(a.action)}22`, color: actionColor(a.action), borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{actionLabel(a.action)}</span>
                     </td>
-                    <td style={{ padding: "6px 10px", fontSize: 13, color: "#fff", whiteSpace: "nowrap" }}>{a.changedByName ?? a.changedByUserId}</td>
-                    <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.65)", whiteSpace: "nowrap" }}>{a.oldValue ?? "–"}</td>
-                    <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.65)", whiteSpace: "nowrap" }}>{a.newValue ?? "–"}</td>
-                    <td style={{ padding: "6px 10px", fontSize: 12, color: "#fff" }}>{a.reason}</td>
+                    <td style={{ padding: "6px 10px", fontSize: 13, color: "#fff", whiteSpace: "nowrap" }}>{who(a)}</td>
+                    <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.75)" }}>{a.entityName ?? "–"}</td>
+                    <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{detail(a) || "–"}</td>
                   </tr>
                 ))}
               </tbody>
