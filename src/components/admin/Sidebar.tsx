@@ -121,7 +121,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/orders",          label: "הזמנות",            I: Ic.Orders,      displayHide: true, excludeStartsWith: ["/admin/orders/stats"] },
       { href: "/admin/cashier",         label: "קאשייר",            I: Ic.Cashier,     displayHide: true },
       { href: "/admin/shifts",          label: "ניהול משמרות",       I: Ic.Calendar,    displayHide: true, waiterHide: false },
-      { href: "/admin/attendance-manager", label: "ניהול נוכחות",    I: Ic.Stats,       displayHide: true, waiterHide: true },
+      { href: "/admin/attendance-manager", label: "ניהול נוכחות",    I: Ic.Stats,       displayHide: true, waiterHide: false },
       { href: "/admin/shift-manager",   label: "מנהל משמרת",        I: Ic.Stats,       displayHide: true, waiterHide: true },
       { href: "/admin/layout-builder",  label: "פריסת שולחנות",     I: Ic.Layout,      ownerOnly: true, waiterHide: true, displayHide: true },
       { href: "/admin/live-floor",      label: "מפת שולחנות חיה",  I: Ic.Layout,      displayHide: true, waiterHide: true, ownerOnly: true },

@@ -2,6 +2,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AssistantWidget } from "@/components/admin/AssistantWidget";
 import { computeDailyHoursByRole, sumBreakdowns, DEFAULT_HOURS_OPTIONS, type HoursBreakdown, type DailyRoleBreakdown } from "@/lib/hours";
+import ManagerDashboardTab from "./ManagerDashboardTab";
+import TimesheetTab from "./TimesheetTab";
+import SignoffTab from "./SignoffTab";
+import RequestsTab from "./RequestsTab";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ShiftRow = {
@@ -135,13 +139,15 @@ const MODAL_BORDER = "rgba(255,255,255,0.18)";
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AttendanceManagerClient({
   restaurants,
+  currentUserId,
   currentUserRole,
+  currentUserName,
 }: Props) {
   const isManager = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"].includes(currentUserRole);
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit">(isManager ? "attendance" : "summary");
+  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit" | "dashboard" | "timesheet" | "signoff" | "requests">(isManager ? "attendance" : "summary");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [staff, setStaff] = useState<{ id: string; name: string; email?: string }[]>([]);
   const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
@@ -1170,7 +1176,11 @@ export default function AttendanceManagerClient({
           overflowX: "auto",
         }}>
           {isManager && tabBtn("attendance", "🕐 נוכחות")}
+          {isManager && tabBtn("dashboard", "🎛️ ממשק מנהל")}
+          {tabBtn("timesheet", "📅 דוח נוכחות")}
           {tabBtn("summary", "📊 סיכום שעות")}
+          {tabBtn("signoff", "📝 אישור דוח")}
+          {tabBtn("requests", "📤 בקשות")}
           {isManager && tabBtn("audit", "📜 לוג שינויים")}
         </div>
 
@@ -1186,7 +1196,11 @@ export default function AttendanceManagerClient({
           minHeight: 300,
         }}>
           {activeTab === "attendance" && <AttendanceTab />}
+          {activeTab === "dashboard"  && <ManagerDashboardTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} showToast={showToast} />}
+          {activeTab === "timesheet"  && <TimesheetTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} isManager={isManager} currentUserId={currentUserId} />}
           {activeTab === "summary"    && <SummaryTab />}
+          {activeTab === "signoff"    && <SignoffTab restaurantId={restaurantId} staff={staff} isManager={isManager} currentUserId={currentUserId} currentUserName={currentUserName} showToast={showToast} />}
+          {activeTab === "requests"   && <RequestsTab restaurantId={restaurantId} showToast={showToast} />}
           {activeTab === "audit"      && <AuditTab />}
         </div>
 
