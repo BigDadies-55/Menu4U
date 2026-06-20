@@ -3,6 +3,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 
+// Always read fresh — otherwise Next caches the GET response and the login page
+// (which fetches this) shows a stale config (e.g. an outdated/empty login image).
+export const dynamic = "force-dynamic";
+
 const DEFAULTS = {
   id: "default", siteName: "Menu4U", logo: null, domain: null,
   copyright: null, adminPalette: "dark", adminBg: "#f0ece3", adminBgImage: null,

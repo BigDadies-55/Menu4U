@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   // Configurable split-screen image (from site settings).
   useEffect(() => {
-    fetch("/api/admin/site-config")
+    fetch("/api/admin/site-config", { cache: "no-store" })
       .then(r => r.json())
       .then(d => { if (d?.loginImage) setLoginImage(d.loginImage); })
       .catch(() => {});
