@@ -16,7 +16,8 @@ const G_CARD     = "rgba(255,255,255,0.06)";
 const G_BORDER_C = "rgba(255,255,255,0.15)";
 
 function fmtT(ts: string) {
-  return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+  // Punch timestamps are stored as wall-clock-as-UTC → render with timeZone:"UTC".
+  return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
 export default function AttendanceWidget({ restaurantId, userId }: Props) {

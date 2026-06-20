@@ -351,10 +351,11 @@ export default function AttendanceManagerClient({
       const recs = (attData.records ?? []).filter((r: { type: string }) => r.type !== "DELETED");
       // Flagged check-ins today.
       let alerts = recs.filter((r: { type: string; unscheduled?: boolean; outOfWindow?: boolean }) => r.type === "IN" && (r.unscheduled || r.outOfWindow)).length;
-      // Long continuous shifts (still checked-in ≥ 11h).
+      // Long continuous shifts (still checked-in ≥ 11h). Use wall-clock "now" to
+      // match the wall-clock-as-UTC convention of stored punch timestamps.
       const byUser: Record<string, { type: string; timestamp: string }[]> = {};
       for (const r of recs) (byUser[(r as { userId: string }).userId] ??= []).push(r);
-      const now = Date.now();
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })).getTime();
       for (const list of Object.values(byUser)) {
         const sorted = list.slice().sort((a, b) => a.timestamp.localeCompare(b.timestamp));
         const last = sorted[sorted.length - 1];
@@ -575,7 +576,8 @@ export default function AttendanceManagerClient({
     const [saving, setSaving] = React.useState(false);
     const [attUser, setAttUser] = React.useState("all"); // "all" or a specific userId
 
-    const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+    // Punch timestamps stored as wall-clock-as-UTC → display with timeZone:"UTC".
+    const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
     const typeLabel = (type: string) => (type === "IN" ? "כניסה" : "יציאה");
 
     async function deleteRecord(id: string, oldValue: string) {
@@ -595,9 +597,10 @@ export default function AttendanceManagerClient({
       if (!editTarget) return;
       const reason = editReason.trim();
       if (!editTime || !reason) return;
-      const d = new Date(editTarget.timestamp);
-      const [h, m] = editTime.split(":").map(Number);
-      d.setHours(h, m ?? 0, 0, 0);
+      // Build the new time in the wall-clock-as-UTC convention: keep the original
+      // date and set the requested HH:MM as UTC fields (so it round-trips correctly).
+      const datePart = editTarget.timestamp.slice(0, 10);
+      const newTimestamp = new Date(`${datePart}T${editTime}:00.000Z`).toISOString();
       const oldValue = `${typeLabel(editTarget.type)} ${fmtT(editTarget.timestamp)}`;
       const newValue = `${typeLabel(editTarget.type)} ${editTime}`;
       setSaving(true);
@@ -605,7 +608,7 @@ export default function AttendanceManagerClient({
         const res = await fetch("/api/admin/attendance", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editTarget.id, newTimestamp: d.toISOString(), reason, oldValue, newValue }),
+          body: JSON.stringify({ id: editTarget.id, newTimestamp, reason, oldValue, newValue }),
         });
         if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error ?? "שגיאה בעדכון"); return; }
         setEditTarget(null); setEditTime(""); setEditReason("");
@@ -928,7 +931,7 @@ export default function AttendanceManagerClient({
 
   // ── Tab: Audit Trail ───────────────────────────────────────────────────────
   function AuditTab() {
-    const fmtDT = (ts: string) => new Date(ts).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const fmtDT = (ts: string) => new Date(ts).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" });
 
     const LABELS: Record<string, string> = {
       ATTENDANCE_CLOCK_IN: "החתמת כניסה", ATTENDANCE_CLOCK_OUT: "החתמת יציאה",
