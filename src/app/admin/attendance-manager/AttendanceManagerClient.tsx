@@ -163,7 +163,7 @@ export default function AttendanceManagerClient({
   const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Attendance tab
-  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean };
+  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean; isCorrection?: boolean };
   const [attRecords, setAttRecords] = useState<AttRecord[]>([]);
   const [attMode, setAttMode] = useState<"weekly" | "monthly" | "range">("weekly");
   const [attMonth, setAttMonth] = useState(() => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`; });
@@ -610,7 +610,7 @@ export default function AttendanceManagerClient({
 
     // Group all records by userId → date → sorted list
     const activeRecords = attRecords.filter(r => r.type !== "DELETED");
-    type DayRecs = { id: string; type: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean }[];
+    type DayRecs = { id: string; type: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean; isCorrection?: boolean }[];
     const byUserDate: Record<string, Record<string, DayRecs>> = {};
     for (const r of activeRecords) {
       if (!byUserDate[r.userId]) byUserDate[r.userId] = {};
@@ -771,15 +771,17 @@ export default function AttendanceManagerClient({
                               const role = r.roleCode ? roleByCode[r.roleCode] : undefined;
                               const flagged = r.type === "IN" && (r.unscheduled || r.outOfWindow);
                               const flagTitle = r.unscheduled ? "החתמה ללא שיבוץ — לבדיקת מנהל" : r.outOfWindow ? "החתמה מחוץ לחלון המשמרת — לבדיקת מנהל" : "";
+                              // Corrections (approved requests) render in a distinct cyan with a ✎ marker.
+                              const corr = r.isCorrection;
                               return (
-                              <span key={r.id} style={{
+                              <span key={r.id} title={corr ? "תיקון מאושר" : undefined} style={{
                                 display: "inline-flex", alignItems: "center", gap: 3,
-                                background: r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
-                                color: r.type === "IN" ? "#34D399" : "#F87171",
-                                border: `1px solid ${r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
+                                background: corr ? "rgba(56,189,248,0.15)" : r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
+                                color: corr ? "#38BDF8" : r.type === "IN" ? "#34D399" : "#F87171",
+                                border: `1px solid ${corr ? "rgba(56,189,248,0.45)" : r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
                                 borderRadius: 5, padding: "1px 6px", fontWeight: 600,
                               }}>
-                                {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
+                                {corr ? "✎" : r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
                                 {role && (
                                   <span title={`תפקיד: ${role.label} · קוד שכר ${role.payCode}`} style={{ background: `${role.color}33`, color: role.color, border: `1px solid ${role.color}66`, borderRadius: 4, padding: "0 4px", fontSize: 9, fontWeight: 700 }}>{role.label}</span>
                                 )}

@@ -19,6 +19,7 @@ export type ShiftRow = {
 export type AttRecord = {
   id: string; userId: string; type: string; date: string; timestamp: string;
   note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean;
+  isCorrection?: boolean;
 };
 
 export function formatDateISO(d: Date): string {

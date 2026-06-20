@@ -20,6 +20,7 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
   const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
   const [selectedUser, setSelectedUser] = useState(isManager ? (staff[0]?.id ?? "") : currentUserId);
   const [records, setRecords] = useState<AttRecord[]>([]);
+  const [leaveDays, setLeaveDays] = useState<Record<string, string>>({}); // date → leave type (approved)
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -32,10 +33,26 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
     const { from, to } = monthRange(month);
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`);
-      const data = await res.json();
+      const [attRes, reqRes] = await Promise.all([
+        fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`),
+        fetch(`/api/admin/attendance/requests?restaurantId=${restaurantId}`),
+      ]);
+      const data = await attRes.json();
       setRecords((data.records ?? []).filter((r: AttRecord) => r.type !== "DELETED" && r.userId === selectedUser));
-    } catch { setRecords([]); }
+      // Approved leave for this employee → mark the relevant days.
+      const reqData = await reqRes.json();
+      const leave: Record<string, string> = {};
+      for (const r of (reqData.requests ?? []) as { userId: string; kind: string; status: string; fromDate: string; toDate: string | null; details: string | null }[]) {
+        if (r.kind !== "LEAVE" || r.status !== "APPROVED" || r.userId !== selectedUser) continue;
+        let type = "חופשה";
+        try { const d = r.details ? JSON.parse(r.details) : null; if (d?.leaveType) type = d.leaveType; } catch { /* ignore */ }
+        const start = r.fromDate, end = r.toDate || r.fromDate;
+        for (let dt = new Date(start + "T00:00:00Z"); dt <= new Date(end + "T00:00:00Z"); dt.setUTCDate(dt.getUTCDate() + 1)) {
+          leave[dt.toISOString().slice(0, 10)] = type;
+        }
+      }
+      setLeaveDays(leave);
+    } catch { setRecords([]); setLeaveDays({}); }
     finally { setLoading(false); }
   }, [restaurantId, selectedUser, month]);
 
@@ -136,23 +153,31 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
                     {d.day}/{month.slice(5)} <span style={{ opacity: 0.7 }}>{DOW_HE[d.dow]}</span>
                   </td>
                   <td style={{ ...cell, textAlign: "right" }}>
-                    {worked ? (
+                    {(worked || leaveDays[d.date]) ? (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                         {d.recs.map(r => {
                           const role = r.roleCode ? roleByCode[r.roleCode] : undefined;
+                          // Corrections (approved requests) render in a distinct cyan with a ✎ marker.
+                          const corr = r.isCorrection;
+                          const bg = corr ? "rgba(56,189,248,0.15)" : r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)";
+                          const col = corr ? "#38BDF8" : r.type === "IN" ? "#34D399" : "#F87171";
+                          const brd = corr ? "rgba(56,189,248,0.45)" : r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)";
                           return (
-                            <span key={r.id} style={{
+                            <span key={r.id} title={corr ? "תיקון מאושר" : undefined} style={{
                               display: "inline-flex", alignItems: "center", gap: 3,
-                              background: r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
-                              color: r.type === "IN" ? "#34D399" : "#F87171",
-                              border: `1px solid ${r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
+                              background: bg, color: col, border: `1px solid ${brd}`,
                               borderRadius: 5, padding: "1px 6px", fontWeight: 600, fontSize: 11,
                             }}>
-                              {r.type === "IN" ? "▶" : "■"} {fmtTime(r.timestamp)}
+                              {corr ? "✎" : r.type === "IN" ? "▶" : "■"} {fmtTime(r.timestamp)}
                               {role && <span style={{ background: `${role.color}33`, color: role.color, borderRadius: 4, padding: "0 4px", fontSize: 9, fontWeight: 700 }}>{role.label}</span>}
                             </span>
                           );
                         })}
+                        {leaveDays[d.date] && (
+                          <span title="חופשה מאושרת" style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(168,85,247,0.15)", color: "#C084FC", border: "1px solid rgba(168,85,247,0.45)", borderRadius: 5, padding: "1px 6px", fontWeight: 700, fontSize: 11 }}>
+                            🏖️ {leaveDays[d.date]}
+                          </span>
+                        )}
                       </div>
                     ) : <span style={{ color: "rgba(255,255,255,0.25)" }}>—</span>}
                   </td>
@@ -178,8 +203,11 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
           </tbody>
         </table>
       )}
-      <div style={{ fontSize: 10, color: GM, marginTop: 10, textAlign: "center" }}>
-        סה"כ שווה-ערך לתשלום (כולל תוספת נוספות): {fmtH(total.payableUnits)} ש׳ · ניכוי הפסקה אוטומטי
+      <div style={{ fontSize: 10, color: GM, marginTop: 10, textAlign: "center", lineHeight: 1.8 }}>
+        <div>סה"כ שווה-ערך לתשלום (כולל תוספת נוספות): {fmtH(total.payableUnits)} ש׳ · ניכוי הפסקה אוטומטי</div>
+        <div>
+          <span style={{ color: "#38BDF8" }}>✎ תיקון מאושר</span> · <span style={{ color: "#C084FC" }}>🏖️ חופשה מאושרת</span>
+        </div>
       </div>
     </div>
   );

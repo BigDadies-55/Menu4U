@@ -271,6 +271,8 @@ const sqls = [
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "employeeNo" TEXT;`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "User_employeeNo_key" ON "User"("employeeNo") WHERE "employeeNo" IS NOT NULL;`,
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "employeeNoPrefix" INTEGER;`,
+  // Attendance punches created from approved correction requests (shown in a distinct colour).
+  `ALTER TABLE "Attendance" ADD COLUMN IF NOT EXISTS "isCorrection" BOOLEAN NOT NULL DEFAULT false;`,
 ];
 
 async function run() {

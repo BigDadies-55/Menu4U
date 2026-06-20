@@ -122,5 +122,27 @@ export async function PATCH(req: Request) {
     status, session.user.id, session.user.name ?? session.user.email ?? null, (decisionNote ?? "").trim() || null, id
   );
 
+  // On approval of a time-correction, materialize the requested punch into the
+  // attendance log, flagged as a correction so it renders in a distinct colour.
+  const reqRow = existing[0];
+  if (status === "APPROVED" && reqRow.kind === "CORRECTION" && reqRow.details) {
+    try {
+      const d = JSON.parse(reqRow.details) as { requestedType?: "IN" | "OUT"; requestedTime?: string };
+      if (d.requestedType && d.requestedTime && /^\d{2}:\d{2}$/.test(d.requestedTime)) {
+        // Same time-frame convention as live punches (wall-clock stored as UTC fields).
+        const ts = new Date(`${reqRow.fromDate}T${d.requestedTime}:00.000Z`);
+        if (!isNaN(ts.getTime())) {
+          await prisma.$executeRawUnsafe(`ALTER TABLE "Attendance" ADD COLUMN IF NOT EXISTS "isCorrection" BOOLEAN NOT NULL DEFAULT false`);
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "Attendance"("id","userId","restaurantId","type","date","timestamp","note","isCorrection")
+             VALUES($1,$2,$3,$4,$5,$6,$7,true)`,
+            randomUUID(), reqRow.userId, reqRow.restaurantId, d.requestedType, reqRow.fromDate, ts,
+            `תיקון מאושר: ${reqRow.reason}`.slice(0, 240)
+          );
+        }
+      }
+    } catch { /* malformed details — approval still recorded */ }
+  }
+
   return NextResponse.json({ ok: true });
 }
