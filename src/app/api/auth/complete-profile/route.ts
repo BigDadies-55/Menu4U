@@ -10,10 +10,11 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { fullName, idNumber, employeeNumber, city, address, altPhone, image } = body;
+  // Employee number is auto-assigned by the system (not entered here); ID number is optional.
+  const { fullName, idNumber, city, address, altPhone, image } = body;
 
   // Mandatory fields
-  if (!fullName || !idNumber || !employeeNumber || !city) {
+  if (!fullName || !city) {
     return NextResponse.json({ error: "יש למלא את כל שדות החובה" }, { status: 400 });
   }
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     action: "COMPLETE_PROFILE",
     entity: "User",
     entityId: session.user.id,
-    meta: { city, idNumber: "***", employeeNumber },
+    meta: { city, idNumber: idNumber ? "***" : null },
     ip: getIp(req),
   });
 
