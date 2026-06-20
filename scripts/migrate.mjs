@@ -273,6 +273,8 @@ const sqls = [
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "employeeNoPrefix" INTEGER;`,
   // Attendance punches created from approved correction requests (shown in a distinct colour).
   `ALTER TABLE "Attendance" ADD COLUMN IF NOT EXISTS "isCorrection" BOOLEAN NOT NULL DEFAULT false;`,
+  // Per-restaurant attendance timezone.
+  `ALTER TABLE "AttendanceConfig" ADD COLUMN IF NOT EXISTS "timezone" TEXT NOT NULL DEFAULT 'Asia/Jerusalem';`,
   // Backfill: make sure every existing employee has a number (first digit = restaurant,
   // 6 digits, sequential by seniority). Mirrors lib/employeeNumber.ts; idempotent.
   `DO $$

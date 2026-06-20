@@ -175,8 +175,10 @@ export default function AttendanceManagerClient({
   // Attendance config: schedule grace window (task 5) + roles/pay-codes (task 4)
   const [graceMinutes, setGraceMinutes] = useState(10);
   const [attRoles, setAttRoles] = useState<AttRoleCfg[]>([]);
+  const [timezone, setTimezone] = useState("Asia/Jerusalem");
   const [editGrace, setEditGrace] = useState(10);
   const [editRoles, setEditRoles] = useState<AttRoleCfg[]>([]);
+  const [editTimezone, setEditTimezone] = useState("Asia/Jerusalem");
 
   // Audit trail tab — full attendance activity from the central AuditLog.
   type ActivityRecord = { id: string; action: string; userId: string | null; userEmail: string | null; entityName: string | null; meta: Record<string, unknown> | null; createdAt: string };
@@ -224,6 +226,7 @@ export default function AttendanceManagerClient({
       .then(data => {
         if (typeof data.graceMinutes === "number") setGraceMinutes(data.graceMinutes);
         if (Array.isArray(data.roles)) setAttRoles(data.roles);
+        if (typeof data.timezone === "string") setTimezone(data.timezone);
       })
       .catch(() => {});
   }, [restaurantId]);
@@ -355,7 +358,7 @@ export default function AttendanceManagerClient({
       // match the wall-clock-as-UTC convention of stored punch timestamps.
       const byUser: Record<string, { type: string; timestamp: string }[]> = {};
       for (const r of recs) (byUser[(r as { userId: string }).userId] ??= []).push(r);
-      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })).getTime();
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: timezone })).getTime();
       for (const list of Object.values(byUser)) {
         const sorted = list.slice().sort((a, b) => a.timestamp.localeCompare(b.timestamp));
         const last = sorted[sorted.length - 1];
@@ -363,7 +366,7 @@ export default function AttendanceManagerClient({
       }
       setAttentionCount(pending + alerts);
     } catch { /* ignore */ }
-  }, [restaurantId, isManager]);
+  }, [restaurantId, isManager, timezone]);
 
   useEffect(() => {
     if (!isManager) return;
@@ -384,13 +387,14 @@ export default function AttendanceManagerClient({
         fetch("/api/admin/attendance", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ config: true, restaurantId, graceMinutes: editGrace, roles: editRoles }),
+          body: JSON.stringify({ config: true, restaurantId, graceMinutes: editGrace, roles: editRoles, timezone: editTimezone }),
         }),
       ]);
       if (shiftRes.ok && attRes.ok) {
         setShiftCfgList(editCfg);
         setGraceMinutes(editGrace);
         setAttRoles(editRoles);
+        setTimezone(editTimezone);
         setSettingsOpen(false);
         showToast("✓ הגדרות נשמרו");
       } else {
@@ -1138,6 +1142,28 @@ export default function AttendanceManagerClient({
                 <span style={{ fontSize: 12, color: GM }}>דק׳ לפני תחילת המשמרת · החתמה מחוצה לחלון תסומן לבדיקה</span>
               </div>
 
+              {/* Restaurant timezone — all attendance times are recorded in this zone */}
+              <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "10px 12px", marginTop: 12, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>🕐 אזור זמן של העסק</span>
+                <select
+                  value={editTimezone}
+                  onChange={e => setEditTimezone(e.target.value)}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, padding: "5px 10px", fontFamily: "inherit", outline: "none", cursor: "pointer" }}
+                >
+                  {[
+                    ["Asia/Jerusalem", "ישראל (Asia/Jerusalem)"],
+                    ["Europe/London", "לונדון (Europe/London)"],
+                    ["Europe/Paris", "מרכז אירופה (Europe/Paris)"],
+                    ["America/New_York", "ניו יורק (America/New_York)"],
+                    ["America/Chicago", "שיקגו (America/Chicago)"],
+                    ["America/Los_Angeles", "לוס אנג׳לס (America/Los_Angeles)"],
+                    ["Asia/Dubai", "דובאי (Asia/Dubai)"],
+                    ["UTC", "UTC"],
+                  ].map(([v, l]) => <option key={v} value={v} style={{ background: "#1a1a2e" }}>{l}</option>)}
+                </select>
+                <span style={{ fontSize: 12, color: GM }}>כל זמני הנוכחות נרשמים ומוצגים לפי אזור זה</span>
+              </div>
+
               {/* Roles / pay codes (task 4) */}
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>🎭 תפקידים וקודי שכר</div>
@@ -1260,7 +1286,7 @@ export default function AttendanceManagerClient({
             {isManager && (
               <>
                 <button
-                  onClick={() => { setEditCfg(shiftCfgList); setEditGrace(graceMinutes); setEditRoles(attRoles); setSettingsOpen(true); }}
+                  onClick={() => { setEditCfg(shiftCfgList); setEditGrace(graceMinutes); setEditRoles(attRoles); setEditTimezone(timezone); setSettingsOpen(true); }}
                   style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
                   ⚙️ הגדרות
@@ -1315,7 +1341,7 @@ export default function AttendanceManagerClient({
         }}>
           {activeTab === "dashboard"  && (
             <>
-              <ManagerDashboardTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} showToast={showToast} />
+              <ManagerDashboardTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} timezone={timezone} showToast={showToast} />
               <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 12 }}>📊 סיכום שעות</div>
                 <SummaryTab />

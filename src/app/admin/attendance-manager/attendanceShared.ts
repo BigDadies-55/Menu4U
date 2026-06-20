@@ -40,9 +40,10 @@ export function fmtTime(ts: string): string {
   return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
-/** "Now" in the same wall-clock-as-UTC convention as stored punches (ms). */
-export function nowWallMs(): number {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })).getTime();
+/** "Now" in the same wall-clock-as-UTC convention as stored punches (ms), for the
+ *  given restaurant timezone. */
+export function nowWallMs(timezone = "Asia/Jerusalem"): number {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: timezone })).getTime();
 }
 
 // Real instants (createdAt / signedAt / decidedAt) are genuine UTC — render them

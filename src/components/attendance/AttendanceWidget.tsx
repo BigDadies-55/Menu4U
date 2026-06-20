@@ -29,6 +29,7 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
   const [panelOpen,  setPanelOpen]  = useState(false);
   const [roles,      setRoles]      = useState<AttRoleCfg[]>([]);
   const [roleCode,   setRoleCode]   = useState("");
+  const [timezone,   setTimezone]   = useState("Asia/Jerusalem");
 
   const firstIn  = records.find(r => r.type === "IN");
   const firstOut = records.find(r => r.type === "OUT");
@@ -38,11 +39,12 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
   const loadToday = useCallback(async () => {
     if (!userId) return;
     try {
-      const res  = await fetch(`/api/admin/attendance?userId=${userId}`);
+      // Pass restaurantId so "today" is resolved in the venue's timezone.
+      const res  = await fetch(`/api/admin/attendance?userId=${userId}${restaurantId ? `&restaurantId=${restaurantId}` : ""}`);
       const data = await res.json();
       setRecords((data.records ?? []).filter((r: AttRec) => r.type !== "DELETED"));
     } catch { /* ignore */ }
-  }, [userId]);
+  }, [userId, restaurantId]);
 
   useEffect(() => { loadToday(); }, [loadToday]);
 
@@ -51,7 +53,7 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
     if (!restaurantId) return;
     fetch(`/api/admin/attendance?config=1&restaurantId=${restaurantId}`)
       .then(r => r.json())
-      .then(data => { if (Array.isArray(data.roles)) setRoles(data.roles); })
+      .then(data => { if (Array.isArray(data.roles)) setRoles(data.roles); if (typeof data.timezone === "string") setTimezone(data.timezone); })
       .catch(() => {});
   }, [restaurantId]);
 
@@ -163,7 +165,7 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
               {noteOpen === "IN" ? "✅ רישום כניסה" : "🚪 רישום יציאה"}
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
-              {new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+              {new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: timezone })}
             </div>
             {noteOpen === "IN" && roles.length > 0 && (
               <div style={{ marginBottom: 14 }}>

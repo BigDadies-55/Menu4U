@@ -40,6 +40,7 @@ const DEFAULT_ATT_ROLES: AttRoleCfg[] = [
   { code: "SHIFT_MGR", label: "אחמ״ש", payCode: "300", color: "#f59e0b", hourlyRate: 55 },
 ];
 const DEFAULT_GRACE_MINUTES = 10;
+const DEFAULT_TIMEZONE = "Asia/Jerusalem";
 
 async function ensureConfigTable() {
   await prisma.$executeRawUnsafe(`
@@ -47,20 +48,30 @@ async function ensureConfigTable() {
       "restaurantId" TEXT NOT NULL,
       "graceMinutes" INTEGER NOT NULL DEFAULT ${DEFAULT_GRACE_MINUTES},
       "rolesJson"    TEXT,
+      "timezone"     TEXT NOT NULL DEFAULT '${DEFAULT_TIMEZONE}',
       CONSTRAINT "AttendanceConfig_pkey" PRIMARY KEY ("restaurantId")
     )
   `);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "AttendanceConfig" ADD COLUMN IF NOT EXISTS "timezone" TEXT NOT NULL DEFAULT '${DEFAULT_TIMEZONE}'`);
 }
 
-async function getConfig(restaurantId: string): Promise<{ graceMinutes: number; roles: AttRoleCfg[] }> {
+async function getConfig(restaurantId: string): Promise<{ graceMinutes: number; roles: AttRoleCfg[]; timezone: string }> {
   await ensureConfigTable();
-  const rows = await prisma.$queryRawUnsafe<{ graceMinutes: number; rolesJson: string | null }[]>(
-    `SELECT "graceMinutes","rolesJson" FROM "AttendanceConfig" WHERE "restaurantId"=$1`, restaurantId
+  const rows = await prisma.$queryRawUnsafe<{ graceMinutes: number; rolesJson: string | null; timezone: string | null }[]>(
+    `SELECT "graceMinutes","rolesJson","timezone" FROM "AttendanceConfig" WHERE "restaurantId"=$1`, restaurantId
   );
-  if (rows.length === 0) return { graceMinutes: DEFAULT_GRACE_MINUTES, roles: DEFAULT_ATT_ROLES };
+  if (rows.length === 0) return { graceMinutes: DEFAULT_GRACE_MINUTES, roles: DEFAULT_ATT_ROLES, timezone: DEFAULT_TIMEZONE };
   let roles = DEFAULT_ATT_ROLES;
   try { if (rows[0].rolesJson) roles = JSON.parse(rows[0].rolesJson); } catch { /* keep default */ }
-  return { graceMinutes: rows[0].graceMinutes ?? DEFAULT_GRACE_MINUTES, roles };
+  return { graceMinutes: rows[0].graceMinutes ?? DEFAULT_GRACE_MINUTES, roles, timezone: rows[0].timezone || DEFAULT_TIMEZONE };
+}
+
+// "Now" with the restaurant's wall-clock encoded into the UTC fields (the storage
+// convention for punches), plus the matching calendar date in that timezone.
+function restaurantNow(timezone: string): { now: Date; date: string } {
+  const now = new Date(new Date().toLocaleString("en-US", { timeZone: timezone }));
+  const date = new Date().toLocaleDateString("en-CA", { timeZone: timezone }); // YYYY-MM-DD
+  return { now, date };
 }
 
 const ATT_MANAGER_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
@@ -177,7 +188,9 @@ export async function GET(req: Request) {
 
   let rows: AttRow[] = [];
   if (userId && !from) {
-    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })).toISOString().slice(0, 10);
+    // "Today" in the restaurant's timezone (falls back to default if not provided).
+    const tz = restaurantId ? (await getConfig(restaurantId)).timezone : DEFAULT_TIMEZONE;
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: tz });
     rows = await prisma.$queryRawUnsafe<AttRow[]>(
       `SELECT * FROM "Attendance" WHERE "userId"=$1 AND "date"=$2 ORDER BY "timestamp" ASC`,
       userId, today
@@ -206,15 +219,17 @@ export async function POST(req: Request) {
   await ensureTable();
 
   const userId = session.user.id;
-  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
-  const date = now.toISOString().slice(0, 10);
+  // Use the restaurant's configured timezone so punches are recorded in the
+  // venue's local wall-clock (encoded in UTC fields per the storage convention).
+  const cfg = await getConfig(restaurantId);
+  const { now, date } = restaurantNow(cfg.timezone);
   const id = randomUUID();
 
   // Task 5: on check-in, flag (but never block) entries that fall outside the
   // employee's scheduled shift window. Managers review flagged rows afterwards.
   let unscheduled = false, outOfWindow = false;
   if (type === "IN") {
-    const { graceMinutes } = await getConfig(restaurantId);
+    const graceMinutes = cfg.graceMinutes;
     const shifts = await prisma.$queryRawUnsafe<{ startTime: string; endTime: string }[]>(
       `SELECT "startTime","endTime" FROM "Shift" WHERE "restaurantId"=$1 AND "userId"=$2 AND date=$3 AND status<>'CANCELLED'`,
       restaurantId, userId, date
@@ -253,22 +268,27 @@ export async function PATCH(req: Request) {
 
   const body = await req.json();
 
-  // Config update: grace window + roles (no record id, carries `config: true`).
+  // Config update: grace window + roles + timezone (no record id, carries `config: true`).
   if (body.config) {
-    const { restaurantId, graceMinutes, roles } = body as { restaurantId: string; graceMinutes?: number; roles?: AttRoleCfg[] };
+    const { restaurantId, graceMinutes, roles, timezone } = body as { restaurantId: string; graceMinutes?: number; roles?: AttRoleCfg[]; timezone?: string };
     if (!restaurantId) return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
     await ensureConfigTable();
     const grace = Math.max(0, Math.min(120, Math.round(Number(graceMinutes ?? DEFAULT_GRACE_MINUTES))));
     const rolesJson = JSON.stringify(Array.isArray(roles) ? roles : DEFAULT_ATT_ROLES);
+    // Validate the IANA timezone; fall back to default if invalid.
+    let tz = DEFAULT_TIMEZONE;
+    if (typeof timezone === "string" && timezone) {
+      try { new Intl.DateTimeFormat("en-US", { timeZone: timezone }); tz = timezone; } catch { tz = DEFAULT_TIMEZONE; }
+    }
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "AttendanceConfig"("restaurantId","graceMinutes","rolesJson") VALUES($1,$2,$3)
-       ON CONFLICT ("restaurantId") DO UPDATE SET "graceMinutes"=EXCLUDED."graceMinutes", "rolesJson"=EXCLUDED."rolesJson"`,
-      restaurantId, grace, rolesJson
+      `INSERT INTO "AttendanceConfig"("restaurantId","graceMinutes","rolesJson","timezone") VALUES($1,$2,$3,$4)
+       ON CONFLICT ("restaurantId") DO UPDATE SET "graceMinutes"=EXCLUDED."graceMinutes", "rolesJson"=EXCLUDED."rolesJson", "timezone"=EXCLUDED."timezone"`,
+      restaurantId, grace, rolesJson, tz
     );
     await logAudit({
       userId: session.user.id, userEmail: session.user.email,
       action: "ATTENDANCE_CONFIG_UPDATE", entity: "attendanceConfig", entityId: restaurantId,
-      meta: { restaurantId, graceMinutes: grace, roles: Array.isArray(roles) ? roles.length : 0 },
+      meta: { restaurantId, graceMinutes: grace, roles: Array.isArray(roles) ? roles.length : 0, timezone: tz },
       ip: getIp(req),
     });
     return NextResponse.json({ ok: true });
