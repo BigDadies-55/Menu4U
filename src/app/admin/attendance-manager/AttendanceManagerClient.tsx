@@ -6,6 +6,8 @@ import ManagerDashboardTab from "./ManagerDashboardTab";
 import TimesheetTab from "./TimesheetTab";
 import SignoffTab from "./SignoffTab";
 import RequestsTab from "./RequestsTab";
+import GeneratorsTab from "./GeneratorsTab";
+import AutomationsTab from "./AutomationsTab";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ShiftRow = {
@@ -147,7 +149,7 @@ export default function AttendanceManagerClient({
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit" | "dashboard" | "timesheet" | "signoff" | "requests">(isManager ? "attendance" : "summary");
+  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit" | "dashboard" | "timesheet" | "signoff" | "requests" | "generators" | "automations">(isManager ? "attendance" : "summary");
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [staff, setStaff] = useState<{ id: string; name: string; email?: string }[]>([]);
   const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
@@ -1181,6 +1183,8 @@ export default function AttendanceManagerClient({
           {tabBtn("summary", "📊 סיכום שעות")}
           {tabBtn("signoff", "📝 אישור דוח")}
           {tabBtn("requests", "📤 בקשות")}
+          {isManager && tabBtn("generators", "🧾 מחוללים")}
+          {isManager && tabBtn("automations", "🔔 אוטומציות")}
           {isManager && tabBtn("audit", "📜 לוג שינויים")}
         </div>
 
@@ -1201,6 +1205,8 @@ export default function AttendanceManagerClient({
           {activeTab === "summary"    && <SummaryTab />}
           {activeTab === "signoff"    && <SignoffTab restaurantId={restaurantId} staff={staff} isManager={isManager} currentUserId={currentUserId} currentUserName={currentUserName} showToast={showToast} />}
           {activeTab === "requests"   && <RequestsTab restaurantId={restaurantId} showToast={showToast} />}
+          {activeTab === "generators" && <GeneratorsTab restaurantId={restaurantId} staff={staff} showToast={showToast} />}
+          {activeTab === "automations" && <AutomationsTab restaurantId={restaurantId} showToast={showToast} />}
           {activeTab === "audit"      && <AuditTab />}
         </div>
 

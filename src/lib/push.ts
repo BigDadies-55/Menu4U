@@ -48,3 +48,22 @@ export async function notifyRestaurant(
     await sendToSubs(subs, payload);
   } catch { /* table may not exist yet */ }
 }
+
+export function isPushConfigured(): boolean {
+  return !!(VAPID_PUBLIC && VAPID_PRIVATE);
+}
+
+/** Send a push notification to every device a specific user has registered. */
+export async function notifyUser(userId: string, payload: PushPayload): Promise<boolean> {
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return false;
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const subs = await prisma.$queryRawUnsafe<Sub[]>(
+      `SELECT endpoint, p256dh, auth FROM "PushSubscription" WHERE "userId" = $1`,
+      userId
+    );
+    if (subs.length === 0) return false;
+    await sendToSubs(subs, payload);
+    return true;
+  } catch { return false; }
+}

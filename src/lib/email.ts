@@ -446,6 +446,51 @@ export async function sendShiftsEmail(
   });
 }
 
+export function isEmailConfigured(): boolean {
+  return !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+}
+
+/** Generic branded notification email used by the attendance automations. */
+export async function sendNotificationEmail(
+  email: string,
+  subject: string,
+  title: string,
+  bodyHtml: string,
+  cta?: { url: string; label: string },
+) {
+  const ctaBlock = cta
+    ? `<tr><td style="padding:8px 36px 36px;text-align:center;">
+         <a href="${cta.url}" style="display:inline-block;padding:13px 40px;background:linear-gradient(135deg,#6b470d,#C9A452);color:#fff;font-size:14px;font-weight:700;text-decoration:none;border-radius:11px;">${cta.label} ←</a>
+       </td></tr>`
+    : "";
+  await createTransport().sendMail({
+    from: `"Menu4U" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject,
+    html: `
+<!DOCTYPE html>
+<html dir="rtl" lang="he"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d0b0e;font-family:Arial,sans-serif;direction:rtl;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0b0e;padding:40px 0;"><tr><td align="center">
+    <table width="520" cellpadding="0" cellspacing="0" style="background:#110f12;border:1px solid rgba(201,164,82,0.18);border-radius:20px;overflow:hidden;">
+      <tr><td style="background:linear-gradient(135deg,#0a0804,#1c1205,#3d2b00);padding:30px;text-align:center;border-bottom:1px solid rgba(201,164,82,0.15);">
+        <div style="font-size:26px;font-weight:900;color:#C9A84C;letter-spacing:3px;">Menu4U</div>
+        <div style="font-size:11px;color:rgba(201,164,82,0.55);margin-top:4px;letter-spacing:1.5px;">ניהול נוכחות</div>
+      </td></tr>
+      <tr><td style="padding:32px 36px 12px;">
+        <p style="font-size:18px;font-weight:800;color:#d8cfc0;margin:0 0 12px;">${title}</p>
+        <div style="font-size:14px;color:#9b9090;line-height:1.7;">${bodyHtml}</div>
+      </td></tr>
+      ${ctaBlock}
+      <tr><td style="background:rgba(0,0,0,0.3);padding:18px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+        <p style="font-size:11px;color:#4a4050;margin:0;">הודעה אוטומטית ממערכת הנוכחות · Menu4U</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`,
+  });
+}
+
 export async function sendOtpEmail(email: string, otp: string, name?: string | null) {
   const displayName = name ?? email;
 
