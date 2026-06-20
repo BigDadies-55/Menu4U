@@ -98,7 +98,7 @@ export async function POST(req: Request) {
   let emailSent = false;
   if (hasEmailService) {
     try {
-      await sendInviteEmail(email, inviteLink, name);
+      await sendInviteEmail(email, inviteLink, name, username);
       emailSent = true;
     } catch (err) {
       console.error("[email] Failed to send invite email:", err);

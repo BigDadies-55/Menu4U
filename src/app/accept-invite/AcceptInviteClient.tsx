@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 export default function AcceptInviteClient({
   email,
   name,
+  username,
   token,
 }: {
   email: string;
   name: string | null;
+  username: string;
   token: string;
 }) {
   const router = useRouter();
@@ -78,16 +80,26 @@ export default function AcceptInviteClient({
           {done ? (
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#C9A452", marginBottom: 8 }}>הסיסמה הוגדרה בהצלחה!</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#C9A452", marginBottom: 12 }}>הסיסמה הוגדרה בהצלחה!</div>
+              <div style={{ background: "rgba(201,164,82,0.08)", border: "1px solid rgba(201,164,82,0.25)", borderRadius: 12, padding: "12px 16px", marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6b6070", letterSpacing: 1, marginBottom: 4 }}>שם המשתמש שלך לכניסה</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }} dir="ltr">{username}</div>
+              </div>
               <div style={{ fontSize: 13, color: "#6b6070" }}>מועבר לדף הכניסה...</div>
             </div>
           ) : (
             <>
               <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e9e0d0", margin: "0 0 6px" }}>ברוך הבא, {displayName}!</h1>
-              <p style={{ fontSize: 13, color: "#6b6070", margin: "0 0 24px", lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: "#6b6070", margin: "0 0 16px", lineHeight: 1.6 }}>
                 הגדר סיסמה לחשבון שלך עבור:<br />
                 <span style={{ color: "#C9A452", fontFamily: "monospace", fontSize: 14 }} dir="ltr">{email}</span>
               </p>
+
+              {/* Username — so the user knows how to log in */}
+              <div style={{ background: "rgba(201,164,82,0.08)", border: "1px solid rgba(201,164,82,0.25)", borderRadius: 12, padding: "12px 16px", marginBottom: 24 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6b6070", letterSpacing: 1, marginBottom: 4 }}>🔑 שם המשתמש שלך לכניסה</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "monospace" }} dir="ltr">{username}</div>
+              </div>
 
               <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
