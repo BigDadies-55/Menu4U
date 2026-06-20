@@ -21,6 +21,7 @@ export default async function AcceptInvitePage({
 
   const user = await prisma.user.findFirst({
     where: { email: record.identifier, emailVerified: null },
+    orderBy: { createdAt: "desc" },
     select: { name: true, email: true, username: true },
   });
 

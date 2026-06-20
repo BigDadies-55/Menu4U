@@ -22,6 +22,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
+  // Email must be unique — otherwise the invite/accept flow can attach the password
+  // to the wrong account (it's matched by email).
+  const existingEmail = await prisma.user.findFirst({ where: { email } });
+  if (existingEmail) {
+    return NextResponse.json({ error: "משתמש עם אימייל זה כבר קיים במערכת" }, { status: 400 });
+  }
+
   // OWNER / SHIFT_MANAGER cannot assign ADMIN or SUPER_ADMIN roles
   if (!isAdmin(session.user.role) && ["ADMIN", "SUPER_ADMIN"].includes(role)) {
     return NextResponse.json({ error: "אין הרשאה לשייך תפקיד מנהל" }, { status: 403 });
