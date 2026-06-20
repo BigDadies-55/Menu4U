@@ -273,6 +273,29 @@ const sqls = [
   `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "employeeNoPrefix" INTEGER;`,
   // Attendance punches created from approved correction requests (shown in a distinct colour).
   `ALTER TABLE "Attendance" ADD COLUMN IF NOT EXISTS "isCorrection" BOOLEAN NOT NULL DEFAULT false;`,
+  // Backfill: make sure every existing employee has a number (first digit = restaurant,
+  // 6 digits, sequential by seniority). Mirrors lib/employeeNumber.ts; idempotent.
+  `DO $$
+  DECLARE r RECORD; u RECORD; pfx INT; nextn BIGINT; base BIGINT;
+  BEGIN
+    -- Assign a distinct leading digit to any restaurant that lacks one.
+    FOR r IN SELECT id FROM "Restaurant" WHERE "employeeNoPrefix" IS NULL ORDER BY "createdAt" ASC, id ASC LOOP
+      SELECT COALESCE(MAX("employeeNoPrefix"),0)+1 INTO pfx FROM "Restaurant";
+      UPDATE "Restaurant" SET "employeeNoPrefix"=pfx WHERE id=r.id;
+    END LOOP;
+    -- Assign sequential numbers within each restaurant's range to users missing one.
+    FOR r IN SELECT id, "employeeNoPrefix" AS pfx FROM "Restaurant" WHERE "employeeNoPrefix" IS NOT NULL ORDER BY "employeeNoPrefix" ASC LOOP
+      base := r.pfx::bigint * 100000;
+      SELECT COALESCE(MAX(CAST("employeeNo" AS BIGINT)), base) INTO nextn FROM "User"
+        WHERE "employeeNo" ~ '^[0-9]+$' AND CAST("employeeNo" AS BIGINT) >= base AND CAST("employeeNo" AS BIGINT) < base + 100000;
+      FOR u IN SELECT us.id FROM "RestaurantUser" ru JOIN "User" us ON us.id = ru."userId"
+               WHERE ru."restaurantId" = r.id AND us."employeeNo" IS NULL
+               ORDER BY us."createdAt" ASC, us.id ASC LOOP
+        nextn := nextn + 1;
+        UPDATE "User" SET "employeeNo" = nextn::text WHERE id = u.id AND "employeeNo" IS NULL;
+      END LOOP;
+    END LOOP;
+  END $$;`,
 ];
 
 async function run() {
