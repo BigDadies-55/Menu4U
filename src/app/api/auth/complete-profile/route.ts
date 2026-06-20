@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit, getIp } from "@/lib/audit";
+import { sendOnboardingWelcomeEmail, isEmailConfigured } from "@/lib/email";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -28,6 +29,14 @@ export async function POST(req: Request) {
       ...(image ? { image } : {}),
     },
   });
+
+  // Welcome email with the username + login link.
+  if (isEmailConfigured()) {
+    try {
+      const u = await prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true, username: true } });
+      if (u?.email && u.username) await sendOnboardingWelcomeEmail(u.email, u.username, fullName);
+    } catch (err) { console.error("[complete-profile] welcome email failed:", err); }
+  }
 
   await logAudit({
     userId: session.user.id,

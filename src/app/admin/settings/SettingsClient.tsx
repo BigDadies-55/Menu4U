@@ -31,6 +31,7 @@ type Config = {
   privacyUrl: string | null; termsUrl: string | null;
   showPrivacyPolicy: boolean; enableLoyaltyPoints: boolean;
   enableOnlineOrders: boolean; showPrices: boolean;
+  loginImage: string | null;
 };
 
 type TopTab = "settings" | "security" | "advanced" | "appearance";
@@ -968,11 +969,13 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
   const [saving,        setSaving]        = useState(false);
   const [saved,         setSaved]         = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingLogin, setUploadingLogin] = useState(false);
 
   const [topTab, setTopTab] = useState<TopTab>("settings");
   const [advTab, setAdvTab] = useState<AdvTab>("backup");
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const loginFileRef = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof Config>(field: K, value: Config[K]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -987,6 +990,16 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
     const data = await res.json() as { url?: string };
     if (data.url) update("logo", data.url);
     setUploadingLogo(false);
+  }
+
+  async function uploadLoginImage(file: File) {
+    setUploadingLogin(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res  = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    const data = await res.json() as { url?: string };
+    if (data.url) update("loginImage", data.url);
+    setUploadingLogin(false);
   }
 
   async function save() {
@@ -1213,6 +1226,43 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                     </div>
                     <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
                       onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
+                  </div>
+                  {/* תמונת מסך התחברות */}
+                  <div>
+                    <div style={GLabel}>🖼️ תמונת מסך התחברות</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div onClick={() => loginFileRef.current?.click()}
+                        style={{ width: 96, height: 56, background: "rgba(255,255,255,0.06)",
+                          border: `2px dashed ${GBorder}`, borderRadius: 12,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 22, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
+                        {form.loginImage
+                          ? <img src={form.loginImage} alt="תמונת התחברות" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : <span>🌄</span>}
+                      </div>
+                      <div>
+                        <p style={{ ...GSub, marginBottom: 8 }}>מוצגת בחצי ממסך ההתחברות · רוחב 1200px+ מומלץ</p>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => loginFileRef.current?.click()} disabled={uploadingLogin} style={{
+                            background: `linear-gradient(135deg, ${GAccent}, #F59E0B)`,
+                            color: "#fff", fontSize: 12, fontWeight: 700,
+                            padding: "7px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+                            opacity: uploadingLogin ? 0.6 : 1, boxShadow: `0 4px 14px ${GGlow}`,
+                          }}>
+                            {uploadingLogin ? "מעלה..." : "📤 העלה"}
+                          </button>
+                          {form.loginImage && (
+                            <button onClick={() => update("loginImage", null)} style={{
+                              background: "transparent", color: "#f87171", fontSize: 12, fontWeight: 600,
+                              padding: "7px 12px", borderRadius: 10,
+                              border: "1px solid rgba(248,113,113,0.35)", cursor: "pointer",
+                            }}>הסר</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <input ref={loginFileRef} type="file" accept="image/*" style={{ display: "none" }}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadLoginImage(f); e.target.value = ""; }} />
                   </div>
                 </div>
               </div>

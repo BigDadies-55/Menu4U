@@ -450,6 +450,47 @@ export function isEmailConfigured(): boolean {
   return !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
 }
 
+/** Sent at the end of onboarding — shows the username and a login link. */
+export async function sendOnboardingWelcomeEmail(email: string, username: string, name?: string | null) {
+  const displayName = name || username;
+  const loginUrl = `${process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://menu4u.co.il"}/login`;
+  await createTransport().sendMail({
+    from: `"Menu4U" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: `ברוכים הבאים ל-Menu4U! 🎉`,
+    html: `
+<!DOCTYPE html>
+<html dir="rtl" lang="he"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d0b0e;font-family:Arial,sans-serif;direction:rtl;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0b0e;padding:40px 0;"><tr><td align="center">
+    <table width="520" cellpadding="0" cellspacing="0" style="background:#110f12;border:1px solid rgba(201,164,82,0.18);border-radius:20px;overflow:hidden;">
+      <tr><td style="background:linear-gradient(135deg,#0a0804,#1c1205,#3d2b00);padding:34px 32px;text-align:center;border-bottom:1px solid rgba(201,164,82,0.15);">
+        <div style="font-size:28px;font-weight:900;color:#C9A84C;letter-spacing:3px;">Menu4U</div>
+        <div style="margin-top:14px;font-size:26px;">🎉</div>
+      </td></tr>
+      <tr><td style="padding:34px 36px 12px;">
+        <p style="font-size:18px;font-weight:800;color:#d8cfc0;margin:0 0 10px;">ברוכים הבאים, ${displayName}!</p>
+        <p style="font-size:14px;color:#9b9090;line-height:1.7;margin:0 0 22px;">החשבון שלך מוכן. אלו פרטי הכניסה שלך למערכת הניהול:</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(201,164,82,0.07);border:1px solid rgba(201,164,82,0.22);border-radius:14px;margin-bottom:8px;">
+          <tr><td style="padding:18px 24px;">
+            <div style="font-size:10px;font-weight:700;color:#6b6070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">שם משתמש</div>
+            <div style="font-size:18px;color:#fff;font-family:'Courier New',monospace;font-weight:700;" dir="ltr">${username}</div>
+          </td></tr>
+        </table>
+      </td></tr>
+      <tr><td style="padding:14px 36px 36px;text-align:center;">
+        <a href="${loginUrl}" style="display:inline-block;padding:14px 44px;background:linear-gradient(135deg,#6b470d,#C9A452);color:#fff;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;">כניסה למערכת ←</a>
+        <p style="font-size:11px;color:#6b6070;margin-top:14px;word-break:break-all;" dir="ltr">${loginUrl}</p>
+      </td></tr>
+      <tr><td style="background:rgba(0,0,0,0.3);padding:18px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+        <p style="font-size:11px;color:#4a4050;margin:0;">© ${new Date().getFullYear()} Menu4U · כל הזכויות שמורות</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`,
+  });
+}
+
 /** Generic branded notification email used by the attendance automations. */
 export async function sendNotificationEmail(
   email: string,

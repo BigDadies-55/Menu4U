@@ -20,6 +20,7 @@ const DEFAULTS = {
   privacyUrl: null as string | null, termsUrl: null as string | null,
   showPrivacyPolicy: true, enableLoyaltyPoints: true,
   enableOnlineOrders: false, showPrices: true,
+  loginImage: null as string | null,
 };
 
 export default async function SettingsPage() {
