@@ -148,6 +148,31 @@ export async function GET(req: Request) {
     return NextResponse.json({ audit });
   }
 
+  // Full attendance activity feed from the central AuditLog (manager-accessible,
+  // unlike the admin-only /admin/logs page). Covers every logged attendance action.
+  if (searchParams.get("activity")) {
+    const role = session.user.role ?? "";
+    const isManager = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"].includes(role);
+    if (!isManager) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!restaurantId) return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
+    const ATTENDANCE_ACTIONS = [
+      "ATTENDANCE_CLOCK_IN", "ATTENDANCE_CLOCK_OUT", "ATTENDANCE_EDIT", "ATTENDANCE_DELETE",
+      "ATTENDANCE_CONFIG_UPDATE", "ATTENDANCE_CORRECTION_REQUEST", "ATTENDANCE_LEAVE_REQUEST",
+      "ATTENDANCE_REQUEST_APPROVE", "ATTENDANCE_REQUEST_REJECT", "ATTENDANCE_SIGNOFF",
+      "PAYROLL_CONFIG_UPDATE", "NOTIFICATION_RULES_UPDATE", "NOTIFICATION_RUN_NOW",
+    ];
+    let activity: { id: string; action: string; userId: string | null; userEmail: string | null; entityName: string | null; meta: unknown; createdAt: Date }[] = [];
+    try {
+      activity = await prisma.auditLog.findMany({
+        where: { action: { in: ATTENDANCE_ACTIONS }, meta: { path: ["restaurantId"], equals: restaurantId } },
+        select: { id: true, action: true, userId: true, userEmail: true, entityName: true, meta: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 500,
+      });
+    } catch { /* AuditLog may be empty */ }
+    return NextResponse.json({ activity });
+  }
+
   await ensureTable();
 
   let rows: AttRow[] = [];
