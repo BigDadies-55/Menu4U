@@ -32,6 +32,7 @@ type Config = {
   showPrivacyPolicy: boolean; enableLoyaltyPoints: boolean;
   enableOnlineOrders: boolean; showPrices: boolean;
   loginImage: string | null;
+  loginImageBrightness: number;
 };
 
 type TopTab = "settings" | "security" | "advanced" | "appearance";
@@ -1391,11 +1392,11 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 26, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
                 {form.loginImage
-                  ? <img src={form.loginImage} alt="תמונת התחברות" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ? <img src={form.loginImage} alt="תמונת התחברות" style={{ width: "100%", height: "100%", objectFit: "cover", filter: `brightness(${form.loginImageBrightness ?? 100}%)` }} />
                   : <span>🌄</span>}
               </div>
-              <div>
-                <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
                   <button onClick={() => loginFileRef.current?.click()} disabled={uploadingLogin} style={{
                     background: `linear-gradient(135deg, ${G_ACCENT}, #F59E0B)`,
                     color: "#fff", fontSize: 12, fontWeight: 700,
@@ -1411,6 +1412,17 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                       border: "1px solid rgba(248,113,113,0.35)", cursor: "pointer",
                     }}>הסר</button>
                   )}
+                </div>
+                {/* Brightness control */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, maxWidth: 360 }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap" }}>☀️ בהירות</span>
+                  <input
+                    type="range" min={0} max={100} step={1}
+                    value={form.loginImageBrightness ?? 100}
+                    onChange={e => update("loginImageBrightness", Number(e.target.value))}
+                    style={{ flex: 1, accentColor: G_ACCENT, cursor: "pointer" }}
+                  />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", width: 42, textAlign: "left" }}>{form.loginImageBrightness ?? 100}%</span>
                 </div>
               </div>
               <input ref={loginFileRef} type="file" accept="image/*" style={{ display: "none" }}
