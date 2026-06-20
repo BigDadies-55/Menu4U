@@ -26,6 +26,7 @@ type UserWithRestaurants = {
   mustChangePassword: boolean;
   createdAt: Date;
   lastLoginAt: Date | null;
+  employeeNo?: string | null;
   restaurantUsers: RestaurantUser[];
 };
 
@@ -694,7 +695,15 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
               <button onClick={() => setEditTarget(null)} style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.sub, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
             <form onSubmit={handleEdit} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-              <div><FieldLabel>שם מלא</FieldLabel>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <FieldLabel>שם מלא</FieldLabel>
+                  {editTarget.employeeNo && (
+                    <span title="מספר עובד (אוטומטי)" style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: T.gold, background: "rgba(201,164,82,0.12)", border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 8px" }}>
+                      מס׳ עובד: {editTarget.employeeNo}
+                    </span>
+                  )}
+                </div>
                 <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} style={DARK_INPUT} /></div>
               <div><FieldLabel>שם משתמש</FieldLabel>
                 <input value={editForm.username} onChange={e => setEditForm({ ...editForm, username: e.target.value.toLowerCase() })} style={DARK_INPUT} dir="ltr" placeholder="username" />

@@ -277,6 +277,9 @@ const sqls = [
   `ALTER TABLE "AttendanceConfig" ADD COLUMN IF NOT EXISTS "timezone" TEXT NOT NULL DEFAULT 'Asia/Jerusalem';`,
   // Configurable split-screen login image.
   `ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "loginImage" TEXT;`,
+  // Onboarding personal details.
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "city" TEXT;`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "address" TEXT;`,
   // Backfill: make sure every existing employee has a number (first digit = restaurant,
   // 6 digits, sequential by seniority). Mirrors lib/employeeNumber.ts; idempotent.
   `DO $$

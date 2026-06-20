@@ -12,10 +12,10 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   // Employee number is auto-assigned by the system (not entered here); ID number is optional.
-  const { fullName, idNumber, city, address, altPhone, image } = body;
+  const { fullName, idNumber, city, address, phone, image } = body;
 
   // Mandatory fields
-  if (!fullName || !city) {
+  if (!fullName || !phone || !city || !address) {
     return NextResponse.json({ error: "יש למלא את כל שדות החובה" }, { status: 400 });
   }
 
@@ -23,12 +23,18 @@ export async function POST(req: Request) {
     where: { id: session.user.id },
     data: {
       name: fullName,
+      phone,
       status: "ACTIVE",
-      // Optional fields stored in existing columns where possible
-      ...(altPhone ? { phone: altPhone } : {}),
       ...(image ? { image } : {}),
     },
   });
+
+  // Persist city/address as raw columns (not in the Prisma schema).
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "city" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "address" TEXT`);
+    await prisma.$executeRawUnsafe(`UPDATE "User" SET "city"=$1, "address"=$2 WHERE id=$3`, city, address, session.user.id);
+  } catch (err) { console.error("[complete-profile] city/address save failed:", err); }
 
   // Welcome email with the username + login link.
   if (isEmailConfigured()) {
@@ -44,7 +50,7 @@ export async function POST(req: Request) {
     action: "COMPLETE_PROFILE",
     entity: "User",
     entityId: session.user.id,
-    meta: { city, idNumber: idNumber ? "***" : null },
+    meta: { city, address, phone, idNumber: idNumber ? "***" : null },
     ip: getIp(req),
   });
 
