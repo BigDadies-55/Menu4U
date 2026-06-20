@@ -24,10 +24,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "הקישור אינו תקף או שפג תוקפו" }, { status: 400 });
   }
 
-  const user = await prisma.user.findFirst({
-    where: { email: record.identifier },
-    select: { id: true, email: true, name: true },
-  });
+  // Target the most-recently invited (still unverified) account for this email,
+  // so the password attaches to the right user even if duplicates exist.
+  const user =
+    (await prisma.user.findFirst({
+      where: { email: record.identifier, emailVerified: null },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, name: true },
+    })) ??
+    (await prisma.user.findFirst({
+      where: { email: record.identifier },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, name: true },
+    }));
 
   if (!user) {
     return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });

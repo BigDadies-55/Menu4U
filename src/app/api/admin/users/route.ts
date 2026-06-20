@@ -6,6 +6,7 @@ import type { Role } from "@/generated/prisma/client";
 import { logAudit, getIp } from "@/lib/audit";
 import { sendInviteEmail } from "@/lib/email";
 import { hashOtp } from "@/lib/otp";
+import { ensureEmployeeNumbers } from "@/lib/employeeNumber";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
@@ -19,6 +20,13 @@ export async function POST(req: Request) {
 
   if (!email) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  }
+
+  // Email must be unique — otherwise the invite/accept flow can attach the password
+  // to the wrong account (it's matched by email).
+  const existingEmail = await prisma.user.findFirst({ where: { email } });
+  if (existingEmail) {
+    return NextResponse.json({ error: "משתמש עם אימייל זה כבר קיים במערכת" }, { status: 400 });
   }
 
   // OWNER / SHIFT_MANAGER cannot assign ADMIN or SUPER_ADMIN roles
@@ -70,6 +78,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
     }
     throw err;
+  }
+
+  // Auto-assign an employee number for each restaurant the user was linked to.
+  for (const rid of restaurantIds as string[]) {
+    try { await ensureEmployeeNumbers(rid); } catch (e) { console.error("[employeeNo] assign failed:", e); }
   }
 
   // Generate invite token — 48 h expiry

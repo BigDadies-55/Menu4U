@@ -1227,43 +1227,6 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                     <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
                       onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
                   </div>
-                  {/* תמונת מסך התחברות */}
-                  <div>
-                    <div style={GLabel}>🖼️ תמונת מסך התחברות</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div onClick={() => loginFileRef.current?.click()}
-                        style={{ width: 96, height: 56, background: "rgba(255,255,255,0.06)",
-                          border: `2px dashed ${GBorder}`, borderRadius: 12,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 22, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
-                        {form.loginImage
-                          ? <img src={form.loginImage} alt="תמונת התחברות" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          : <span>🌄</span>}
-                      </div>
-                      <div>
-                        <p style={{ ...GSub, marginBottom: 8 }}>מוצגת בחצי ממסך ההתחברות · רוחב 1200px+ מומלץ</p>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button onClick={() => loginFileRef.current?.click()} disabled={uploadingLogin} style={{
-                            background: `linear-gradient(135deg, ${GAccent}, #F59E0B)`,
-                            color: "#fff", fontSize: 12, fontWeight: 700,
-                            padding: "7px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-                            opacity: uploadingLogin ? 0.6 : 1, boxShadow: `0 4px 14px ${GGlow}`,
-                          }}>
-                            {uploadingLogin ? "מעלה..." : "📤 העלה"}
-                          </button>
-                          {form.loginImage && (
-                            <button onClick={() => update("loginImage", null)} style={{
-                              background: "transparent", color: "#f87171", fontSize: 12, fontWeight: 600,
-                              padding: "7px 12px", borderRadius: 10,
-                              border: "1px solid rgba(248,113,113,0.35)", cursor: "pointer",
-                            }}>הסר</button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <input ref={loginFileRef} type="file" accept="image/*" style={{ display: "none" }}
-                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadLoginImage(f); e.target.value = ""; }} />
-                  </div>
                 </div>
               </div>
 
@@ -1418,6 +1381,42 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
         {/* ════ TAB: מראה ════ */}
         {topTab === "appearance" && (
           <div style={{ padding: "28px 28px 32px", direction: "rtl" }}>
+            {/* תמונת מסך התחברות */}
+            <div style={{ fontSize: 18, fontWeight: 800, color: G_ACCENT, marginBottom: 4 }}>🖼️ מסך התחברות</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 16 }}>תמונה שתוצג בחצי ממסך ההתחברות (רוחב 1200px+ מומלץ).</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28, paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+              <div onClick={() => loginFileRef.current?.click()}
+                style={{ width: 140, height: 80, background: "rgba(255,255,255,0.06)",
+                  border: `2px dashed ${G_BORDER}`, borderRadius: 12,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 26, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
+                {form.loginImage
+                  ? <img src={form.loginImage} alt="תמונת התחברות" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <span>🌄</span>}
+              </div>
+              <div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => loginFileRef.current?.click()} disabled={uploadingLogin} style={{
+                    background: `linear-gradient(135deg, ${G_ACCENT}, #F59E0B)`,
+                    color: "#fff", fontSize: 12, fontWeight: 700,
+                    padding: "7px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+                    opacity: uploadingLogin ? 0.6 : 1, boxShadow: "0 4px 14px rgba(245,158,11,0.35)",
+                  }}>
+                    {uploadingLogin ? "מעלה..." : "📤 העלה תמונה"}
+                  </button>
+                  {form.loginImage && (
+                    <button onClick={() => update("loginImage", null)} style={{
+                      background: "transparent", color: "#f87171", fontSize: 12, fontWeight: 600,
+                      padding: "7px 12px", borderRadius: 10,
+                      border: "1px solid rgba(248,113,113,0.35)", cursor: "pointer",
+                    }}>הסר</button>
+                  )}
+                </div>
+              </div>
+              <input ref={loginFileRef} type="file" accept="image/*" style={{ display: "none" }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadLoginImage(f); e.target.value = ""; }} />
+            </div>
+
             <div style={{ fontSize: 18, fontWeight: 800, color: G_ACCENT, marginBottom: 4 }}>פלטת צבעים — ממשק SUPER ADMIN</div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 24 }}>הפלטה שנבחר תופיע עבורך בלבד (Super Admin). כל מסעדה בוחרת פלטה משלה.</div>
 
