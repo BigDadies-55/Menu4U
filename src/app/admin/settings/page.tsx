@@ -21,6 +21,7 @@ const DEFAULTS = {
   showPrivacyPolicy: true, enableLoyaltyPoints: true,
   enableOnlineOrders: false, showPrices: true,
   loginImage: null as string | null,
+  loginImageBrightness: 100,
 };
 
 export default async function SettingsPage() {

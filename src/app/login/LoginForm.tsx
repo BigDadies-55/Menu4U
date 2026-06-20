@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { loginAction } from "./actions";
 
-export default function LoginForm({ loginImage }: { loginImage: string | null }) {
+export default function LoginForm({ loginImage, brightness = 100 }: { loginImage: string | null; brightness?: number }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -48,11 +48,6 @@ export default function LoginForm({ loginImage }: { loginImage: string | null })
           background-size: cover;
           background-position: center;
           position: relative;
-        }
-        .login-photo-pane::after {
-          content: '';
-          position: absolute; inset: 0;
-          background: linear-gradient(120deg, rgba(9,8,10,0.55) 0%, rgba(9,8,10,0.15) 100%);
         }
         /* Right 50% — login form */
         .login-form-pane {
@@ -212,6 +207,7 @@ export default function LoginForm({ loginImage }: { loginImage: string | null })
             backgroundImage: loginImage
               ? `url('${loginImage}')`
               : "linear-gradient(135deg,#0a0804,#1c1205,#3d2b00)",
+            filter: loginImage ? `brightness(${brightness}%)` : undefined,
           }}
         >
           {!loginImage && (
