@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { ensureEmployeeNumbers } from "@/lib/employeeNumber";
+import { logAudit, getIp } from "@/lib/audit";
 
 // ── Payroll export configuration ─────────────────────────────────────────────
 // Per-employee payroll identity (employee number / national-ID / department /
@@ -99,6 +100,13 @@ export async function PATCH(req: Request) {
       restaurantId, JSON.stringify(merged)
     );
   }
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "PAYROLL_CONFIG_UPDATE", entity: "payroll", entityId: restaurantId,
+    meta: { restaurantId, profiles: Array.isArray(profiles) ? profiles.length : 0, settings: settings ?? null },
+    ip: getIp(req),
+  });
 
   return NextResponse.json({ ok: true });
 }

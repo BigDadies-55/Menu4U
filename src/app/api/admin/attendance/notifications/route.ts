@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getRules, saveRules, channelStatus, evaluateRestaurant, RULE_META, type NotificationRule } from "@/lib/attendanceNotify";
+import { logAudit, getIp } from "@/lib/audit";
 
 const VIEW_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
 const EDIT_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER"];
@@ -33,6 +34,12 @@ export async function PATCH(req: Request) {
   if (!restaurantId || !Array.isArray(rules)) return NextResponse.json({ error: "Invalid params" }, { status: 400 });
 
   await saveRules(restaurantId, rules);
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "NOTIFICATION_RULES_UPDATE", entity: "notificationRule", entityId: restaurantId,
+    meta: { restaurantId, rules: rules.map(r => ({ type: r.type, enabled: r.enabled, channels: r.channels })) },
+    ip: getIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
@@ -46,5 +53,11 @@ export async function POST(req: Request) {
   if (!restaurantId) return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
 
   const result = await evaluateRestaurant(restaurantId);
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "NOTIFICATION_RUN_NOW", entity: "notificationRule", entityId: restaurantId,
+    meta: { restaurantId, sent: result.sent, byRule: result.byRule },
+    ip: getIp(req),
+  });
   return NextResponse.json({ ok: true, ...result });
 }

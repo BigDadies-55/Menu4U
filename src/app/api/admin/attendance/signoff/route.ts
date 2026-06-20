@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { logAudit, getIp } from "@/lib/audit";
 
 // ── Employee monthly sign-off ────────────────────────────────────────────────
 // One immutable declaration per (employee, restaurant, month) attesting that the
@@ -101,5 +102,14 @@ export async function POST(req: Request) {
   );
 
   const [row] = await prisma.$queryRawUnsafe<SignoffRow[]>(`SELECT * FROM "AttendanceSignoff" WHERE "id"=$1`, id);
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "ATTENDANCE_SIGNOFF", entity: "attendanceSignoff", entityId: id,
+    entityName: `${sig} · ${month}`,
+    meta: { restaurantId, month, signatureName: sig, netHours: num(netHours), payableHours: num(payableHours) },
+    ip: getIp(req),
+  });
+
   return NextResponse.json({ signoff: row });
 }

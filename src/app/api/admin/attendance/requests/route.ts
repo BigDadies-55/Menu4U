@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { logAudit, getIp } from "@/lib/audit";
 
 // ── Employee requests: time corrections + leave ──────────────────────────────
 // Employees submit a correction request (a missed/incorrect punch) or a leave
@@ -95,6 +96,16 @@ export async function POST(req: Request) {
   );
 
   const [row] = await prisma.$queryRawUnsafe<ReqRow[]>(`SELECT * FROM "AttendanceRequest" WHERE "id"=$1`, id);
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: kind === "LEAVE" ? "ATTENDANCE_LEAVE_REQUEST" : "ATTENDANCE_CORRECTION_REQUEST",
+    entity: "attendanceRequest", entityId: id,
+    entityName: `${session.user.name ?? session.user.email ?? ""} · ${fromDate}`,
+    meta: { restaurantId, kind, fromDate, toDate: toDate ?? null, details: details ?? null, reason: reason.trim() },
+    ip: getIp(req),
+  });
+
   return NextResponse.json({ request: row });
 }
 
@@ -143,6 +154,15 @@ export async function PATCH(req: Request) {
       }
     } catch { /* malformed details — approval still recorded */ }
   }
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: status === "APPROVED" ? "ATTENDANCE_REQUEST_APPROVE" : "ATTENDANCE_REQUEST_REJECT",
+    entity: "attendanceRequest", entityId: id,
+    entityName: `${reqRow.userName ?? reqRow.userId} · ${reqRow.kind === "LEAVE" ? "חופשה" : "תיקון שעות"} · ${reqRow.fromDate}`,
+    meta: { restaurantId: reqRow.restaurantId, kind: reqRow.kind, status, decisionNote: (decisionNote ?? "").trim() || null, details: reqRow.details },
+    ip: getIp(req),
+  });
 
   return NextResponse.json({ ok: true });
 }

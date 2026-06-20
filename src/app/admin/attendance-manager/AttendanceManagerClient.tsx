@@ -154,6 +154,7 @@ export default function AttendanceManagerClient({
   const [attentionCount, setAttentionCount] = useState(0);
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [staff, setStaff] = useState<{ id: string; name: string; email?: string }[]>([]);
+  const [employeeNos, setEmployeeNos] = useState<Record<string, string>>({});
   const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
   const SHIFT_CFG = cfgToDisplay(shiftCfgList);
 
@@ -237,6 +238,15 @@ export default function AttendanceManagerClient({
         setStaff(items.map(ru => ({ id: ru.user.id, name: ru.user.name || ru.user.email, email: ru.user.email })));
       })
       .catch(() => setStaff([]));
+  }, [restaurantId]);
+
+  // Load auto-assigned employee numbers (userId → number) for the pickers/tables.
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/attendance/employee-numbers?restaurantId=${restaurantId}`)
+      .then(r => r.json())
+      .then(data => { if (data.employeeNos) setEmployeeNos(data.employeeNos); })
+      .catch(() => {});
   }, [restaurantId]);
 
   // Load shifts for the current week (used as planned hours in weekly mode)
@@ -491,9 +501,9 @@ export default function AttendanceManagerClient({
           {summaryLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
             onClick={() => {
-              const header = ["עובד", ...Object.values(SHIFT_CFG).map(c => c.label), 'סה"כ שעות'];
-              const dataRows = summaries.map(s => [s.name, ...Object.keys(SHIFT_CFG).map(k => s.byType[k] ? s.byType[k].toFixed(1) : "0"), s.hours.toFixed(1)]);
-              const totals = ["סה\"כ", ...Object.keys(SHIFT_CFG).map(k => summaries.reduce((a,s)=>a+(s.byType[k]??0),0).toFixed(1)), summaries.reduce((a,s)=>a+s.hours,0).toFixed(1)];
+              const header = ["עובד", "מס׳ עובד", ...Object.values(SHIFT_CFG).map(c => c.label), 'סה"כ שעות'];
+              const dataRows = summaries.map(s => [s.name, employeeNos[s.id] ?? "", ...Object.keys(SHIFT_CFG).map(k => s.byType[k] ? s.byType[k].toFixed(1) : "0"), s.hours.toFixed(1)]);
+              const totals = ["סה\"כ", "", ...Object.keys(SHIFT_CFG).map(k => summaries.reduce((a,s)=>a+(s.byType[k]??0),0).toFixed(1)), summaries.reduce((a,s)=>a+s.hours,0).toFixed(1)];
               exportCsv([header, ...dataRows, totals], `סיכום-שעות-${summaryMode === "monthly" ? summaryMonth : summaryFrom + "_" + summaryTo}.csv`);
             }}
             style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
@@ -509,6 +519,7 @@ export default function AttendanceManagerClient({
             <thead>
               <tr>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>מס׳ עובד</th>
                 {Object.entries(SHIFT_CFG).map(([key, cfg]) => {
                   const gs = glassShift(cfg.color);
                   return <th key={key} style={{ fontSize: 11, fontWeight: 700, color: gs.text, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{cfg.label}</th>;
@@ -520,6 +531,7 @@ export default function AttendanceManagerClient({
               {summaries.map(s => (
                 <tr key={s.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                   <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700 }}>{s.name}</td>
+                  <td style={{ padding: "5px 8px", fontSize: 12, fontFamily: "monospace", color: "#FBBF24", fontWeight: 700 }}>{employeeNos[s.id] ?? "—"}</td>
                   {Object.keys(SHIFT_CFG).map(key => (
                     <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center" }}>
                       {s.byType[key] ? s.byType[key].toFixed(1) : "–"}
@@ -534,6 +546,7 @@ export default function AttendanceManagerClient({
               ))}
               <tr style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
                 <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 800 }}>סה"כ</td>
+                <td style={{ padding: "5px 8px" }}></td>
                 {Object.keys(SHIFT_CFG).map(key => (
                   <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center" }}>
                     {summaries.reduce((a, s) => a + (s.byType[key] ?? 0), 0).toFixed(1)}
@@ -682,11 +695,16 @@ export default function AttendanceManagerClient({
               style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           </>)}
           {allStaff.length > 0 && (
-            <select value={attUser} onChange={e => setAttUser(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer", minWidth: 130 }}>
-              <option value="all" style={{ background: "#1a1a2e" }}>כל העובדים</option>
-              {allStaff.map(m => <option key={m.id} value={m.id} style={{ background: "#1a1a2e" }}>{m.name}</option>)}
-            </select>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <select value={attUser} onChange={e => setAttUser(e.target.value)}
+                style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer", minWidth: 130 }}>
+                <option value="all" style={{ background: "#1a1a2e" }}>כל העובדים</option>
+                {allStaff.map(m => <option key={m.id} value={m.id} style={{ background: "#1a1a2e" }}>{m.name}</option>)}
+              </select>
+              {attUser !== "all" && employeeNos[attUser] && (
+                <span title="מספר עובד" style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#FBBF24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6, padding: "4px 8px" }}>#{employeeNos[attUser]}</span>
+              )}
+            </div>
           )}
           {attLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
@@ -1266,7 +1284,7 @@ export default function AttendanceManagerClient({
               </div>
             </>
           )}
-          {activeTab === "timesheet"  && <TimesheetTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} isManager={isManager} currentUserId={currentUserId} />}
+          {activeTab === "timesheet"  && <TimesheetTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} isManager={isManager} currentUserId={currentUserId} employeeNos={employeeNos} />}
           {activeTab === "attendance" && <AttendanceTab />}
           {activeTab === "requests"   && <RequestsTab restaurantId={restaurantId} showToast={showToast} />}
           {activeTab === "signoff"    && <SignoffTab restaurantId={restaurantId} staff={staff} isManager={isManager} currentUserId={currentUserId} currentUserName={currentUserName} showToast={showToast} />}

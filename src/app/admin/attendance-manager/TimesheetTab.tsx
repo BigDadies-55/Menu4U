@@ -12,11 +12,12 @@ interface Props {
   attRoles: AttRoleCfg[];
   isManager: boolean;
   currentUserId: string;
+  employeeNos: Record<string, string>;
 }
 
 // Step 5 — Monthly timesheet view. A calendar-style day-by-day table for a single
 // employee, with clear regular / overtime totals for the whole month.
-export default function TimesheetTab({ restaurantId, staff, attRoles, isManager, currentUserId }: Props) {
+export default function TimesheetTab({ restaurantId, staff, attRoles, isManager, currentUserId, employeeNos }: Props) {
   const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
   const [selectedUser, setSelectedUser] = useState(isManager ? (staff[0]?.id ?? "") : currentUserId);
   const [records, setRecords] = useState<AttRecord[]>([]);
@@ -108,6 +109,9 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
           <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)} style={{ ...inputStyle, cursor: "pointer", minWidth: 150 }}>
             {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}</option>)}
           </select>
+        )}
+        {selectedUser && employeeNos[selectedUser] && (
+          <span title="מספר עובד" style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#FBBF24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6, padding: "4px 8px" }}>#{employeeNos[selectedUser]}</span>
         )}
         {loading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
         <button onClick={doExport} style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>📊 ייצא Excel</button>

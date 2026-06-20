@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { logAudit, getIp } from "@/lib/audit";
 
 async function ensureTable() {
   await prisma.$executeRawUnsafe(`
@@ -203,6 +204,15 @@ export async function POST(req: Request) {
     id, userId, restaurantId, type, date, note ?? null, roleCode ?? null, unscheduled, outOfWindow
   );
 
+  await logAudit({
+    userId, userEmail: session.user.email,
+    action: type === "IN" ? "ATTENDANCE_CLOCK_IN" : "ATTENDANCE_CLOCK_OUT",
+    entity: "attendance", entityId: id,
+    entityName: `${session.user.name ?? session.user.email ?? userId} · ${date}`,
+    meta: { restaurantId, type, date, roleCode: roleCode ?? null, unscheduled, outOfWindow },
+    ip: getIp(req),
+  });
+
   return NextResponse.json({ id, type, timestamp: now.toISOString(), roleCode: roleCode ?? null, unscheduled, outOfWindow });
 }
 
@@ -230,6 +240,12 @@ export async function PATCH(req: Request) {
        ON CONFLICT ("restaurantId") DO UPDATE SET "graceMinutes"=EXCLUDED."graceMinutes", "rolesJson"=EXCLUDED."rolesJson"`,
       restaurantId, grace, rolesJson
     );
+    await logAudit({
+      userId: session.user.id, userEmail: session.user.email,
+      action: "ATTENDANCE_CONFIG_UPDATE", entity: "attendanceConfig", entityId: restaurantId,
+      meta: { restaurantId, graceMinutes: grace, roles: Array.isArray(roles) ? roles.length : 0 },
+      ip: getIp(req),
+    });
     return NextResponse.json({ ok: true });
   }
 
@@ -261,6 +277,14 @@ export async function PATCH(req: Request) {
     session.user.name ?? session.user.email ?? session.user.id,
     "EDIT", oldValue ?? null, newValue ?? null, reason.trim()
   );
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "ATTENDANCE_EDIT", entity: "attendance", entityId: id,
+    entityName: existing[0].userId,
+    meta: { restaurantId: existing[0].restaurantId, oldValue: oldValue ?? null, newValue: newValue ?? null, reason: reason.trim() },
+    ip: getIp(req),
+  });
 
   return NextResponse.json({ ok: true });
 }
@@ -301,6 +325,14 @@ export async function DELETE(req: Request) {
     session.user.name ?? session.user.email ?? session.user.id,
     "DELETE", oldValue || null, "(נמחק)", reason
   );
+
+  await logAudit({
+    userId: session.user.id, userEmail: session.user.email,
+    action: "ATTENDANCE_DELETE", entity: "attendance", entityId: id,
+    entityName: existing[0].userId,
+    meta: { restaurantId: existing[0].restaurantId, oldValue: oldValue || null, reason },
+    ip: getIp(req),
+  });
 
   return NextResponse.json({ ok: true });
 }
