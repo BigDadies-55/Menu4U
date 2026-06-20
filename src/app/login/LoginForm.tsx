@@ -58,7 +58,7 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
           align-items: center;
           justify-content: center;
           padding: 24px;
-          background: #09080a;
+          background: #ffffff;
         }
         @media (max-width: 900px) {
           .login-photo-pane { display: none; }
@@ -96,7 +96,7 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
         }
         .login-wordmark {
           font-family: Georgia, 'Times New Roman', serif;
-          font-size: 28px; font-weight: 700; color: white;
+          font-size: 28px; font-weight: 700; color: #1a1208;
           letter-spacing: 5px; line-height: 1;
         }
         .login-wordmark span { color: #C9A452; }
@@ -117,12 +117,11 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
           letter-spacing: .5px; margin-top: 8px;
         }
         .login-card {
-          background: rgba(255,255,255,0.035);
-          border: 1px solid rgba(255,255,255,0.07);
+          background: #ffffff;
+          border: 1px solid rgba(0,0,0,0.08);
           border-radius: 20px;
           padding: 36px 32px;
-          backdrop-filter: blur(24px);
-          box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.06);
+          box-shadow: 0 20px 50px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05);
           position: relative; overflow: hidden;
         }
         .login-card::before {
@@ -131,13 +130,13 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
           background: linear-gradient(90deg, transparent, rgba(201,164,82,0.5), transparent);
         }
         .login-card-title {
-          font-size: 16px; font-weight: 700; color: white;
+          font-size: 16px; font-weight: 700; color: #1a1208;
           margin-bottom: 28px; letter-spacing: -.2px;
           display: flex; align-items: center; gap: 8px;
         }
         .login-card-title::after {
           content: ''; flex: 1; height: 1px;
-          background: rgba(255,255,255,0.07);
+          background: rgba(0,0,0,0.08);
         }
         .login-field { margin-bottom: 18px; }
         .login-field label {
@@ -148,26 +147,26 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
         }
         .login-field input {
           width: 100%;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.09);
+          background: #f5f4f2;
+          border: 1px solid rgba(0,0,0,0.12);
           border-radius: 12px;
           padding: 13px 16px;
           font-size: 14px; font-family: 'Heebo', sans-serif;
-          color: white;
+          color: #1a1208;
           outline: none;
           transition: .2s;
           direction: ltr;
         }
-        .login-field input::placeholder { color: rgba(255,255,255,0.2); }
+        .login-field input::placeholder { color: rgba(0,0,0,0.3); }
         .login-field input:focus {
-          border-color: rgba(201,164,82,0.4);
-          background: rgba(201,164,82,0.04);
-          box-shadow: 0 0 0 3px rgba(201,164,82,0.08);
+          border-color: rgba(201,164,82,0.7);
+          background: #fffdf7;
+          box-shadow: 0 0 0 3px rgba(201,164,82,0.15);
         }
         .login-error {
-          background: rgba(239,68,68,0.12);
-          border: 1px solid rgba(239,68,68,0.25);
-          color: #fca5a5;
+          background: rgba(239,68,68,0.10);
+          border: 1px solid rgba(239,68,68,0.3);
+          color: #b91c1c;
           padding: 12px 16px;
           border-radius: 12px;
           font-size: 13px;
