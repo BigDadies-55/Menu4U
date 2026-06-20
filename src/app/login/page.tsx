@@ -265,13 +265,13 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="login-field">
-                <label>שם משתמש</label>
+                <label>שם משתמש או אימייל</label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   required
-                  placeholder="username"
+                  placeholder="username / email"
                   dir="ltr"
                   autoComplete="username"
                 />

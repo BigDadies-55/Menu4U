@@ -23,9 +23,19 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username as string },
+        // Accept either a username or an email address as the identifier.
+        const identifier = (credentials.username as string).trim();
+        let user = await prisma.user.findUnique({
+          where: { username: identifier.toLowerCase() },
         });
+        if (!user && identifier.includes("@")) {
+          // Login by email — only when it maps to exactly one account.
+          const byEmail = await prisma.user.findMany({
+            where: { email: { equals: identifier, mode: "insensitive" } },
+            take: 2,
+          });
+          if (byEmail.length === 1) user = byEmail[0];
+        }
 
         if (!user || !user.password) {
           await logAudit({ action: "LOGIN_FAILED", meta: { username: credentials.username } });
