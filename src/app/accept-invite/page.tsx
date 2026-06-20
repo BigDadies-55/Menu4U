@@ -21,10 +21,10 @@ export default async function AcceptInvitePage({
 
   const user = await prisma.user.findFirst({
     where: { email: record.identifier, emailVerified: null },
-    select: { name: true, email: true },
+    select: { name: true, email: true, username: true },
   });
 
   if (!user) redirect("/login?reason=invalid-invite");
 
-  return <AcceptInviteClient email={user.email} name={user.name} token={token} />;
+  return <AcceptInviteClient email={user.email ?? ""} name={user.name} username={user.username} token={token} />;
 }

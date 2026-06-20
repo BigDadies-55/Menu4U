@@ -46,10 +46,11 @@ export default function LoginPage() {
           min-height: 100vh;
           background: #09080a;
           display: flex;
+          flex-direction: row-reverse;
           align-items: stretch;
           direction: rtl;
         }
-        /* Left 50% — configurable image */
+        /* Image pane (rendered on the LEFT via row-reverse) */
         .login-photo-pane {
           flex: 1 1 50%;
           background-color: #110f12;
@@ -264,13 +265,13 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="login-field">
-                <label>שם משתמש</label>
+                <label>שם משתמש או אימייל</label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   required
-                  placeholder="username"
+                  placeholder="username / email"
                   dir="ltr"
                   autoComplete="username"
                 />

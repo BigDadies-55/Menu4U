@@ -199,9 +199,17 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
   });
 }
 
-export async function sendInviteEmail(email: string, inviteLink: string, name?: string | null) {
+export async function sendInviteEmail(email: string, inviteLink: string, name?: string | null, username?: string | null) {
   const displayName = name ?? email;
   const adminUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://menu4u.co.il";
+  const usernameBlock = username
+    ? `<table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(201,164,82,0.07);border:1px solid rgba(201,164,82,0.22);border-radius:14px;margin-bottom:28px;">
+         <tr><td style="padding:20px 28px;">
+           <div style="font-size:11px;font-weight:700;color:#6b6070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">🔑 שם המשתמש שלך</div>
+           <div style="font-size:17px;color:#fff;font-weight:700;font-family:'Courier New',monospace;" dir="ltr">${username}</div>
+         </td></tr>
+       </table>`
+    : "";
 
   await createTransport().sendMail({
     from: `"Tech4Bites" <${process.env.GMAIL_USER}>`,
@@ -236,6 +244,7 @@ export async function sendInviteEmail(email: string, inviteLink: string, name?: 
                 </td>
               </tr>
             </table>
+            ${usernameBlock}
             <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(239,68,68,0.07);border-right:3px solid rgba(239,68,68,0.5);border-radius:8px;margin-bottom:28px;">
               <tr>
                 <td style="padding:12px 16px;">
