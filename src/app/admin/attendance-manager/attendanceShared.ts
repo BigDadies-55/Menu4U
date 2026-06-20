@@ -32,12 +32,24 @@ export function monthRange(month: string): { from: string; to: string } {
   return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
 }
 
+// Attendance punch timestamps are stored as Israel wall-clock encoded in the UTC
+// fields of the value (see the POST handler). They must therefore be *displayed*
+// with timeZone:"UTC" to recover the original wall time, and "now" must be taken
+// in the same wall convention for any duration/elapsed comparison.
 export function fmtTime(ts: string): string {
-  return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
+/** "Now" in the same wall-clock-as-UTC convention as stored punches (ms), for the
+ *  given restaurant timezone. */
+export function nowWallMs(timezone = "Asia/Jerusalem"): number {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: timezone })).getTime();
+}
+
+// Real instants (createdAt / signedAt / decidedAt) are genuine UTC — render them
+// in Israel local time.
 export function fmtDateTime(ts: string): string {
-  return new Date(ts).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" });
 }
 
 export function exportCsv(rows: string[][], filename: string) {

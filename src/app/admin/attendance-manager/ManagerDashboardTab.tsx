@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { GB, GM, ACCENT_GRAD, formatDateISO, fmtTime, type AttRecord, type StaffMember, type AttRoleCfg } from "./attendanceShared";
+import { GB, GM, ACCENT_GRAD, formatDateISO, fmtTime, nowWallMs, type AttRecord, type StaffMember, type AttRoleCfg } from "./attendanceShared";
 import { type AttRequest, kindLabel, reqWhen } from "./RequestsTab";
 
 interface Props {
   restaurantId: string;
   staff: StaffMember[];
   attRoles: AttRoleCfg[];
+  timezone: string;
   showToast: (msg: string) => void;
 }
 
@@ -14,12 +15,12 @@ interface Props {
 const LONG_SHIFT_ALERT_HOURS = 11;
 
 // Step 4 — Manager dashboard: real-time presence, alerts, and request approvals.
-export default function ManagerDashboardTab({ restaurantId, staff, attRoles, showToast }: Props) {
+export default function ManagerDashboardTab({ restaurantId, staff, attRoles, timezone, showToast }: Props) {
   const [records, setRecords] = useState<AttRecord[]>([]);
   const [requests, setRequests] = useState<AttRequest[]>([]);
   const [canApprove, setCanApprove] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => nowWallMs(timezone));
   const [decideTarget, setDecideTarget] = useState<{ req: AttRequest; status: "APPROVED" | "REJECTED" } | null>(null);
   const [decisionNote, setDecisionNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -48,10 +49,10 @@ export default function ManagerDashboardTab({ restaurantId, staff, attRoles, sho
   useEffect(() => { load(); }, [load]);
   // Live clock: refresh elapsed every 30s + auto-reload presence every 60s.
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 30_000);
+    const t = setInterval(() => setNow(nowWallMs(timezone)), 30_000);
     const r = setInterval(load, 60_000);
     return () => { clearInterval(t); clearInterval(r); };
-  }, [load]);
+  }, [load, timezone]);
 
   // Build per-user presence from today's punches.
   type Presence = { userId: string; name: string; sinceTs: string; roleCode: string | null; elapsedH: number };

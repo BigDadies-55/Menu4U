@@ -131,8 +131,16 @@ export async function evaluateRestaurant(restaurantId: string, now = new Date())
   const rules = (await getRules(restaurantId)).filter(r => r.enabled && r.channels.length > 0);
   if (rules.length === 0) return result;
 
-  const il = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
-  const today = il.toISOString().slice(0, 10);
+  // Use the restaurant's configured timezone for all wall-clock comparisons.
+  let tz = "Asia/Jerusalem";
+  try {
+    const tzRows = await prisma.$queryRawUnsafe<{ timezone: string | null }[]>(
+      `SELECT "timezone" FROM "AttendanceConfig" WHERE "restaurantId"=$1`, restaurantId
+    );
+    if (tzRows[0]?.timezone) tz = tzRows[0].timezone;
+  } catch { /* table/column may not exist yet */ }
+  const il = new Date(now.toLocaleString("en-US", { timeZone: tz }));
+  const today = now.toLocaleDateString("en-CA", { timeZone: tz });
   const nowMin = il.getHours() * 60 + il.getMinutes();
 
   // Roster.
