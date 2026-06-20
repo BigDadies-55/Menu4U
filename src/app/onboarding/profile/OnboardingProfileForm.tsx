@@ -56,19 +56,7 @@ export default function OnboardingProfileForm({ initialName, initialPhone, initi
     color: "#e9e0d0", borderRadius: 10, padding: "12px 14px",
     fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box",
   };
-
-  const Label = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
-    <label style={{ fontSize: 12, fontWeight: 700, color: "#6b6070", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>
-      {children} {required && <span style={{ color: "#ff6b6b" }}>*</span>}
-    </label>
-  );
-
-  const Field = ({ label, fieldKey, required, ...rest }: { label: string; fieldKey: keyof typeof form; required?: boolean } & React.InputHTMLAttributes<HTMLInputElement>) => (
-    <div>
-      <Label required={required}>{label}</Label>
-      <input value={form[fieldKey]} onChange={set(fieldKey)} style={inp} {...rest} />
-    </div>
-  );
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: "#6b6070", letterSpacing: 0.5, display: "block", marginBottom: 6 };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0d0b0e", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: "Arial, sans-serif", direction: "rtl" }}>
@@ -88,16 +76,26 @@ export default function OnboardingProfileForm({ initialName, initialPhone, initi
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(201,164,82,0.6)", letterSpacing: 1, textTransform: "uppercase" }}>שדות חובה</div>
-
-            <Field label="שם מלא" fieldKey="fullName" required autoFocus placeholder="ישראל ישראלי" />
-            <Field label="מספר טלפון" fieldKey="phone" required placeholder="050-0000000" type="tel" inputMode="tel" />
-            <Field label="עיר מגורים" fieldKey="city" required placeholder="תל אביב" />
-            <Field label="כתובת מלאה" fieldKey="address" required placeholder="רחוב ומספר, עיר" />
-
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(201,164,82,0.6)", letterSpacing: 1, textTransform: "uppercase", marginTop: 6 }}>שדות רשות</div>
-
-            <Field label="תעודת זהות" fieldKey="idNumber" placeholder="000000000" inputMode="numeric" maxLength={9} />
+            <div>
+              <label style={labelStyle}>שם מלא <span style={{ color: "#ff6b6b" }}>*</span></label>
+              <input value={form.fullName} onChange={set("fullName")} style={inp} placeholder="ישראל ישראלי" />
+            </div>
+            <div>
+              <label style={labelStyle}>מספר טלפון <span style={{ color: "#ff6b6b" }}>*</span></label>
+              <input value={form.phone} onChange={set("phone")} style={inp} placeholder="050-0000000" type="tel" inputMode="tel" />
+            </div>
+            <div>
+              <label style={labelStyle}>עיר מגורים <span style={{ color: "#ff6b6b" }}>*</span></label>
+              <input value={form.city} onChange={set("city")} style={inp} placeholder="תל אביב" />
+            </div>
+            <div>
+              <label style={labelStyle}>כתובת מלאה <span style={{ color: "#ff6b6b" }}>*</span></label>
+              <input value={form.address} onChange={set("address")} style={inp} placeholder="רחוב ומספר, עיר" />
+            </div>
+            <div>
+              <label style={labelStyle}>תעודת זהות</label>
+              <input value={form.idNumber} onChange={set("idNumber")} style={inp} placeholder="000000000" inputMode="numeric" maxLength={9} />
+            </div>
 
             {error && (
               <div style={{ background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.25)", color: "#ff6b6b", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
