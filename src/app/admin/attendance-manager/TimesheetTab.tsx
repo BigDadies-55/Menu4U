@@ -123,6 +123,7 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
               <th style={th}>רגיל</th>
               <th style={{ ...th, color: "#FB923C" }}>125%</th>
               <th style={{ ...th, color: "#F87171" }}>150%</th>
+              <th style={{ ...th, color: "#34D399" }}>סה"כ יומי</th>
             </tr>
           </thead>
           <tbody>
@@ -161,6 +162,7 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
                   <td style={{ ...cell, color: "rgba(255,255,255,0.65)" }}>{d.bd.regularHours > 0 ? fmtH(d.bd.regularHours) : "–"}</td>
                   <td style={cell}>{d.bd.overtime125Hours > 0 ? <span style={{ background: "rgba(249,115,22,0.15)", color: "#FB923C", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{fmtH(d.bd.overtime125Hours)}</span> : <span style={{ color: GM }}>–</span>}</td>
                   <td style={cell}>{d.bd.overtime150Hours > 0 ? <span style={{ background: "rgba(239,68,68,0.15)", color: "#F87171", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{fmtH(d.bd.overtime150Hours)}</span> : <span style={{ color: GM }}>–</span>}</td>
+                  <td style={cell}>{d.bd.payableUnits > 0 ? <span title="שווה-ערך לתשלום (כולל תוספת נוספות)" style={{ background: "rgba(52,211,153,0.15)", color: "#34D399", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 800 }}>{fmtH(d.bd.payableUnits)}</span> : <span style={{ color: GM }}>–</span>}</td>
                 </tr>
               );
             })}
@@ -171,6 +173,7 @@ export default function TimesheetTab({ restaurantId, staff, attRoles, isManager,
               <td style={{ ...cell, color: "#fff", fontWeight: 700 }}>{fmtH(total.regularHours)}</td>
               <td style={{ ...cell, color: "#FB923C", fontWeight: 700 }}>{fmtH(total.overtime125Hours)}</td>
               <td style={{ ...cell, color: "#F87171", fontWeight: 700 }}>{fmtH(total.overtime150Hours)}</td>
+              <td style={cell}><span style={{ background: "rgba(52,211,153,0.15)", color: "#34D399", borderRadius: 6, padding: "2px 7px", fontSize: 12, fontWeight: 800 }}>{fmtH(total.payableUnits)}</span></td>
             </tr>
           </tbody>
         </table>
