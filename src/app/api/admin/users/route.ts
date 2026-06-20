@@ -6,6 +6,7 @@ import type { Role } from "@/generated/prisma/client";
 import { logAudit, getIp } from "@/lib/audit";
 import { sendInviteEmail } from "@/lib/email";
 import { hashOtp } from "@/lib/otp";
+import { ensureEmployeeNumbers } from "@/lib/employeeNumber";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
@@ -70,6 +71,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "אימייל כבר קיים במערכת" }, { status: 400 });
     }
     throw err;
+  }
+
+  // Auto-assign an employee number for each restaurant the user was linked to.
+  for (const rid of restaurantIds as string[]) {
+    try { await ensureEmployeeNumbers(rid); } catch (e) { console.error("[employeeNo] assign failed:", e); }
   }
 
   // Generate invite token — 48 h expiry

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/permissions";
 import { logAudit, getIp } from "@/lib/audit";
+import { ensureEmployeeNumbers } from "@/lib/employeeNumber";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -23,6 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     data: { userId: id, restaurantId, role: "ADMIN" },
     include: { restaurant: { select: { id: true, name: true } } },
   });
+  try { await ensureEmployeeNumbers(restaurantId); } catch (e) { console.error("[employeeNo] assign failed:", e); }
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "ASSIGN_USER_TO_RESTAURANT", entity: "restaurantUser", entityId: id, meta: { restaurantId, restaurantName: ru.restaurant.name }, ip: getIp(req) });
   return NextResponse.json(ru, { status: 201 });
 }

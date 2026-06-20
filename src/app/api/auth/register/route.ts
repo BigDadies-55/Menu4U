@@ -5,6 +5,7 @@ import { verifyInviteToken } from "@/lib/invite";
 import { validatePassword, savePasswordToHistory } from "@/lib/passwordPolicy";
 import { generateOtp, hashOtp } from "@/lib/otp";
 import { sendOtpEmail } from "@/lib/email";
+import { ensureEmployeeNumbers } from "@/lib/employeeNumber";
 
 // GET — validate token
 export async function GET(req: Request) {
@@ -115,6 +116,10 @@ export async function PUT(req: Request) {
       data: invite.restaurantIds.map(rid => ({ userId: user.id, restaurantId: rid, role: invite.role })),
       skipDuplicates: true,
     });
+    // Auto-assign an employee number per linked restaurant.
+    for (const rid of invite.restaurantIds) {
+      try { await ensureEmployeeNumbers(rid); } catch (e) { console.error("[employeeNo] assign failed:", e); }
+    }
   }
 
   await savePasswordToHistory(user.id, hpwd);
