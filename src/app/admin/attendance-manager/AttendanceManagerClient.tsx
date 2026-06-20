@@ -2,6 +2,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AssistantWidget } from "@/components/admin/AssistantWidget";
 import { computeDailyHoursByRole, sumBreakdowns, DEFAULT_HOURS_OPTIONS, type HoursBreakdown, type DailyRoleBreakdown } from "@/lib/hours";
+import ManagerDashboardTab from "./ManagerDashboardTab";
+import TimesheetTab from "./TimesheetTab";
+import SignoffTab from "./SignoffTab";
+import RequestsTab from "./RequestsTab";
+import GeneratorsTab from "./GeneratorsTab";
+import AutomationsTab from "./AutomationsTab";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ShiftRow = {
@@ -135,15 +141,20 @@ const MODAL_BORDER = "rgba(255,255,255,0.18)";
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AttendanceManagerClient({
   restaurants,
+  currentUserId,
   currentUserRole,
+  currentUserName,
 }: Props) {
   const isManager = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"].includes(currentUserRole);
 
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attendance" | "summary" | "audit">(isManager ? "attendance" : "summary");
+  const [activeTab, setActiveTab] = useState<"attendance" | "audit" | "dashboard" | "timesheet" | "signoff" | "requests" | "generators" | "automations">(isManager ? "dashboard" : "timesheet");
+  // Attention badge on the manager tab: pending requests + live alerts.
+  const [attentionCount, setAttentionCount] = useState(0);
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [staff, setStaff] = useState<{ id: string; name: string; email?: string }[]>([]);
+  const [employeeNos, setEmployeeNos] = useState<Record<string, string>>({});
   const [shiftCfgList, setShiftCfgList] = useState<ShiftTypeCfg[]>(DEFAULT_CFG);
   const SHIFT_CFG = cfgToDisplay(shiftCfgList);
 
@@ -153,7 +164,7 @@ export default function AttendanceManagerClient({
   const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Attendance tab
-  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean };
+  type AttRecord = { id: string; userId: string; type: string; date: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean; isCorrection?: boolean };
   const [attRecords, setAttRecords] = useState<AttRecord[]>([]);
   const [attMode, setAttMode] = useState<"weekly" | "monthly" | "range">("weekly");
   const [attMonth, setAttMonth] = useState(() => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`; });
@@ -229,6 +240,15 @@ export default function AttendanceManagerClient({
       .catch(() => setStaff([]));
   }, [restaurantId]);
 
+  // Load auto-assigned employee numbers (userId → number) for the pickers/tables.
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetch(`/api/admin/attendance/employee-numbers?restaurantId=${restaurantId}`)
+      .then(r => r.json())
+      .then(data => { if (data.employeeNos) setEmployeeNos(data.employeeNos); })
+      .catch(() => {});
+  }, [restaurantId]);
+
   // Load shifts for the current week (used as planned hours in weekly mode)
   const loadShifts = useCallback(async () => {
     if (!restaurantId) return;
@@ -271,7 +291,8 @@ export default function AttendanceManagerClient({
     finally { setSummaryLoading(false); }
   }, [restaurantId, summaryMode, summaryMonth, summaryFrom, summaryTo, weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (activeTab === "summary") loadSummaryShifts(); }, [activeTab, loadSummaryShifts]);
+  // Summary now lives at the bottom of the manager dashboard tab.
+  useEffect(() => { if (activeTab === "dashboard") loadSummaryShifts(); }, [activeTab, loadSummaryShifts]);
 
   // Load attendance
   const loadAttendance = useCallback(async () => {
@@ -314,6 +335,42 @@ export default function AttendanceManagerClient({
 
   useEffect(() => { if (activeTab === "audit") loadAudit(); }, [activeTab, loadAudit]);
 
+  // Compute the attention badge (pending requests + live alerts) for managers,
+  // independently of which tab is open. Refreshes every 60s.
+  const loadAttention = useCallback(async () => {
+    if (!restaurantId || !isManager) return;
+    try {
+      const today = formatDateISO(new Date());
+      const [reqRes, attRes] = await Promise.all([
+        fetch(`/api/admin/attendance/requests?restaurantId=${restaurantId}`),
+        fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${today}&to=${today}`),
+      ]);
+      const reqData = await reqRes.json();
+      const attData = await attRes.json();
+      const pending = (reqData.requests ?? []).filter((r: { status: string }) => r.status === "PENDING").length;
+      const recs = (attData.records ?? []).filter((r: { type: string }) => r.type !== "DELETED");
+      // Flagged check-ins today.
+      let alerts = recs.filter((r: { type: string; unscheduled?: boolean; outOfWindow?: boolean }) => r.type === "IN" && (r.unscheduled || r.outOfWindow)).length;
+      // Long continuous shifts (still checked-in ≥ 11h).
+      const byUser: Record<string, { type: string; timestamp: string }[]> = {};
+      for (const r of recs) (byUser[(r as { userId: string }).userId] ??= []).push(r);
+      const now = Date.now();
+      for (const list of Object.values(byUser)) {
+        const sorted = list.slice().sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        const last = sorted[sorted.length - 1];
+        if (last?.type === "IN" && (now - new Date(last.timestamp).getTime()) / 3_600_000 >= 11) alerts++;
+      }
+      setAttentionCount(pending + alerts);
+    } catch { /* ignore */ }
+  }, [restaurantId, isManager]);
+
+  useEffect(() => {
+    if (!isManager) return;
+    loadAttention();
+    const t = setInterval(loadAttention, 60_000);
+    return () => clearInterval(t);
+  }, [loadAttention, isManager]);
+
   async function saveConfig() {
     setSettingsSaving(true);
     try {
@@ -344,13 +401,14 @@ export default function AttendanceManagerClient({
   }
 
   // ── Tab button ─────────────────────────────────────────────────────────────
-  function tabBtn(id: typeof activeTab, label: React.ReactNode): React.ReactElement {
+  function tabBtn(id: typeof activeTab, label: React.ReactNode, badge = 0): React.ReactElement {
     const active = activeTab === id;
     return (
       <button
         key={id}
         onClick={() => setActiveTab(id)}
         style={{
+          position: "relative",
           background: active ? ACCENT_GRAD : "none",
           color: active ? "#fff" : GM,
           border: "none",
@@ -369,6 +427,14 @@ export default function AttendanceManagerClient({
         }}
       >
         {label}
+        {badge > 0 && (
+          <span style={{
+            minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9,
+            background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 0 0 2px rgba(239,68,68,0.35)",
+          }}>{badge}</span>
+        )}
       </button>
     );
   }
@@ -435,9 +501,9 @@ export default function AttendanceManagerClient({
           {summaryLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
             onClick={() => {
-              const header = ["עובד", ...Object.values(SHIFT_CFG).map(c => c.label), 'סה"כ שעות'];
-              const dataRows = summaries.map(s => [s.name, ...Object.keys(SHIFT_CFG).map(k => s.byType[k] ? s.byType[k].toFixed(1) : "0"), s.hours.toFixed(1)]);
-              const totals = ["סה\"כ", ...Object.keys(SHIFT_CFG).map(k => summaries.reduce((a,s)=>a+(s.byType[k]??0),0).toFixed(1)), summaries.reduce((a,s)=>a+s.hours,0).toFixed(1)];
+              const header = ["עובד", "מס׳ עובד", ...Object.values(SHIFT_CFG).map(c => c.label), 'סה"כ שעות'];
+              const dataRows = summaries.map(s => [s.name, employeeNos[s.id] ?? "", ...Object.keys(SHIFT_CFG).map(k => s.byType[k] ? s.byType[k].toFixed(1) : "0"), s.hours.toFixed(1)]);
+              const totals = ["סה\"כ", "", ...Object.keys(SHIFT_CFG).map(k => summaries.reduce((a,s)=>a+(s.byType[k]??0),0).toFixed(1)), summaries.reduce((a,s)=>a+s.hours,0).toFixed(1)];
               exportCsv([header, ...dataRows, totals], `סיכום-שעות-${summaryMode === "monthly" ? summaryMonth : summaryFrom + "_" + summaryTo}.csv`);
             }}
             style={{ marginRight: "auto", padding: "5px 13px", fontSize: 12, fontWeight: 700, cursor: "pointer", borderRadius: 8, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", color: "#4ade80", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}
@@ -453,6 +519,7 @@ export default function AttendanceManagerClient({
             <thead>
               <tr>
                 <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>עובד</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: GM, textAlign: "right", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>מס׳ עובד</th>
                 {Object.entries(SHIFT_CFG).map(([key, cfg]) => {
                   const gs = glassShift(cfg.color);
                   return <th key={key} style={{ fontSize: 11, fontWeight: 700, color: gs.text, textAlign: "center", padding: "6px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{cfg.label}</th>;
@@ -464,6 +531,7 @@ export default function AttendanceManagerClient({
               {summaries.map(s => (
                 <tr key={s.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                   <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700 }}>{s.name}</td>
+                  <td style={{ padding: "5px 8px", fontSize: 12, fontFamily: "monospace", color: "#FBBF24", fontWeight: 700 }}>{employeeNos[s.id] ?? "—"}</td>
                   {Object.keys(SHIFT_CFG).map(key => (
                     <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center" }}>
                       {s.byType[key] ? s.byType[key].toFixed(1) : "–"}
@@ -478,6 +546,7 @@ export default function AttendanceManagerClient({
               ))}
               <tr style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
                 <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 800 }}>סה"כ</td>
+                <td style={{ padding: "5px 8px" }}></td>
                 {Object.keys(SHIFT_CFG).map(key => (
                   <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center" }}>
                     {summaries.reduce((a, s) => a + (s.byType[key] ?? 0), 0).toFixed(1)}
@@ -504,6 +573,7 @@ export default function AttendanceManagerClient({
     const [editTime, setEditTime] = React.useState("");
     const [editReason, setEditReason] = React.useState("");
     const [saving, setSaving] = React.useState(false);
+    const [attUser, setAttUser] = React.useState("all"); // "all" or a specific userId
 
     const fmtT = (ts: string) => new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
     const typeLabel = (type: string) => (type === "IN" ? "כניסה" : "יציאה");
@@ -544,15 +614,16 @@ export default function AttendanceManagerClient({
       } finally { setSaving(false); }
     }
 
-    const displayStaff = staff.length > 0 ? staff : Array.from(
+    const allStaff = staff.length > 0 ? staff : Array.from(
       new Map(attRecords.filter(r => r.type !== "DELETED").map(r => [r.userId, { id: r.userId, name: r.userId }])).values()
     );
+    const displayStaff = attUser === "all" ? allStaff : allStaff.filter(m => m.id === attUser);
 
     const roleByCode: Record<string, AttRoleCfg> = Object.fromEntries(attRoles.map(r => [r.code, r]));
 
     // Group all records by userId → date → sorted list
     const activeRecords = attRecords.filter(r => r.type !== "DELETED");
-    type DayRecs = { id: string; type: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean }[];
+    type DayRecs = { id: string; type: string; timestamp: string; note: string | null; roleCode?: string | null; unscheduled?: boolean; outOfWindow?: boolean; isCorrection?: boolean }[];
     const byUserDate: Record<string, Record<string, DayRecs>> = {};
     for (const r of activeRecords) {
       if (!byUserDate[r.userId]) byUserDate[r.userId] = {};
@@ -623,6 +694,18 @@ export default function AttendanceManagerClient({
             <input type="date" value={attTo} onChange={e => setAttTo(e.target.value)}
               style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           </>)}
+          {allStaff.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <select value={attUser} onChange={e => setAttUser(e.target.value)}
+                style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer", minWidth: 130 }}>
+                <option value="all" style={{ background: "#1a1a2e" }}>כל העובדים</option>
+                {allStaff.map(m => <option key={m.id} value={m.id} style={{ background: "#1a1a2e" }}>{m.name}</option>)}
+              </select>
+              {attUser !== "all" && employeeNos[attUser] && (
+                <span title="מספר עובד" style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#FBBF24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6, padding: "4px 8px" }}>#{employeeNos[attUser]}</span>
+              )}
+            </div>
+          )}
           {attLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
             onClick={() => {
@@ -706,15 +789,17 @@ export default function AttendanceManagerClient({
                               const role = r.roleCode ? roleByCode[r.roleCode] : undefined;
                               const flagged = r.type === "IN" && (r.unscheduled || r.outOfWindow);
                               const flagTitle = r.unscheduled ? "החתמה ללא שיבוץ — לבדיקת מנהל" : r.outOfWindow ? "החתמה מחוץ לחלון המשמרת — לבדיקת מנהל" : "";
+                              // Corrections (approved requests) render in a distinct cyan with a ✎ marker.
+                              const corr = r.isCorrection;
                               return (
-                              <span key={r.id} style={{
+                              <span key={r.id} title={corr ? "תיקון מאושר" : undefined} style={{
                                 display: "inline-flex", alignItems: "center", gap: 3,
-                                background: r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
-                                color: r.type === "IN" ? "#34D399" : "#F87171",
-                                border: `1px solid ${r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
+                                background: corr ? "rgba(56,189,248,0.15)" : r.type === "IN" ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
+                                color: corr ? "#38BDF8" : r.type === "IN" ? "#34D399" : "#F87171",
+                                border: `1px solid ${corr ? "rgba(56,189,248,0.45)" : r.type === "IN" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
                                 borderRadius: 5, padding: "1px 6px", fontWeight: 600,
                               }}>
-                                {r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
+                                {corr ? "✎" : r.type === "IN" ? "▶" : "■"} {fmtT(r.timestamp)}
                                 {role && (
                                   <span title={`תפקיד: ${role.label} · קוד שכר ${role.payCode}`} style={{ background: `${role.color}33`, color: role.color, border: `1px solid ${role.color}66`, borderRadius: 4, padding: "0 4px", fontSize: 9, fontWeight: 700 }}>{role.label}</span>
                                 )}
@@ -1100,7 +1185,7 @@ export default function AttendanceManagerClient({
           {/* Right: title + restaurant selector */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ fontSize: 22, fontWeight: 900, display: "flex", alignItems: "center", gap: 8 }}>
-              🕐 ניהול נוכחות
+              נוכחות
             </div>
             {restaurants.length > 1 && (
               <select
@@ -1144,7 +1229,7 @@ export default function AttendanceManagerClient({
                 </button>
                 <button
                   onClick={() => {
-                    if (activeTab === "summary") loadSummaryShifts();
+                    if (activeTab === "dashboard") loadSummaryShifts();
                     else if (activeTab === "attendance") loadAttendance();
                     else if (activeTab === "audit") loadAudit();
                     loadShifts();
@@ -1169,9 +1254,14 @@ export default function AttendanceManagerClient({
           alignSelf: "flex-start",
           overflowX: "auto",
         }}>
-          {isManager && tabBtn("attendance", "🕐 נוכחות")}
-          {tabBtn("summary", "📊 סיכום שעות")}
-          {isManager && tabBtn("audit", "📜 לוג שינויים")}
+          {isManager && tabBtn("dashboard", "ממשק מנהל", attentionCount)}
+          {tabBtn("timesheet", "דוח נוכחות")}
+          {isManager && tabBtn("attendance", "עדכון נוכחות")}
+          {tabBtn("requests", "בקשות")}
+          {tabBtn("signoff", "אישור נוכחות")}
+          {isManager && tabBtn("automations", "אוטומציות")}
+          {isManager && tabBtn("generators", "מחוללים")}
+          {isManager && tabBtn("audit", "לוג שינויים")}
         </div>
 
         {/* ── TAB PANEL ── */}
@@ -1185,8 +1275,21 @@ export default function AttendanceManagerClient({
           boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
           minHeight: 300,
         }}>
+          {activeTab === "dashboard"  && (
+            <>
+              <ManagerDashboardTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} showToast={showToast} />
+              <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 12 }}>📊 סיכום שעות</div>
+                <SummaryTab />
+              </div>
+            </>
+          )}
+          {activeTab === "timesheet"  && <TimesheetTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} isManager={isManager} currentUserId={currentUserId} employeeNos={employeeNos} />}
           {activeTab === "attendance" && <AttendanceTab />}
-          {activeTab === "summary"    && <SummaryTab />}
+          {activeTab === "requests"   && <RequestsTab restaurantId={restaurantId} showToast={showToast} />}
+          {activeTab === "signoff"    && <SignoffTab restaurantId={restaurantId} staff={staff} isManager={isManager} currentUserId={currentUserId} currentUserName={currentUserName} showToast={showToast} />}
+          {activeTab === "automations" && <AutomationsTab restaurantId={restaurantId} showToast={showToast} />}
+          {activeTab === "generators" && <GeneratorsTab restaurantId={restaurantId} staff={staff} showToast={showToast} />}
           {activeTab === "audit"      && <AuditTab />}
         </div>
 

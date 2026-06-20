@@ -5,7 +5,7 @@ import AttendanceManagerClient from "./AttendanceManagerClient";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "🕐 ניהול נוכחות | Menu4U" };
+export const metadata = { title: "נוכחות | Menu4U" };
 
 export default async function AttendanceManagerPage() {
   const session = await auth();
