@@ -267,6 +267,10 @@ const sqls = [
     CONSTRAINT "AssistantUnanswered_pkey" PRIMARY KEY ("id")
   );`,
   `CREATE INDEX IF NOT EXISTS "AssistantUnanswered_resolved_idx" ON "AssistantUnanswered"("resolved","createdAt" DESC);`,
+  // Auto-assigned, immutable employee numbers (first digit = restaurant, 6 digits).
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "employeeNo" TEXT;`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "User_employeeNo_key" ON "User"("employeeNo") WHERE "employeeNo" IS NOT NULL;`,
+  `ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "employeeNoPrefix" INTEGER;`,
 ];
 
 async function run() {

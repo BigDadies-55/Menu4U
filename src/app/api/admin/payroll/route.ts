@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { ensureEmployeeNumbers } from "@/lib/employeeNumber";
 
 // ── Payroll export configuration ─────────────────────────────────────────────
 // Per-employee payroll identity (employee number / national-ID / department /
@@ -11,7 +12,8 @@ import { NextResponse } from "next/server";
 const VIEW_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
 const EDIT_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER"];
 
-type Profile = { userId: string; employeeNo: string; idNumber: string; department: string; project: string };
+// employeeNo lives on User (auto-assigned, immutable) — not editable here.
+type Profile = { userId: string; idNumber: string; department: string; project: string };
 type Settings = { regularCode: string; ot125Code: string; ot150Code: string };
 const DEFAULT_SETTINGS: Settings = { regularCode: "1", ot125Code: "2", ot150Code: "3" };
 
@@ -55,11 +57,13 @@ export async function GET(req: Request) {
 
   await ensureTables();
   const profiles = await prisma.$queryRawUnsafe<Profile[]>(
-    `SELECT "userId","employeeNo","idNumber","department","project" FROM "PayrollProfile" WHERE "restaurantId"=$1`,
+    `SELECT "userId","idNumber","department","project" FROM "PayrollProfile" WHERE "restaurantId"=$1`,
     restaurantId
   );
   const settings = await getSettings(restaurantId);
-  return NextResponse.json({ profiles, settings, canEdit: EDIT_ROLES.includes(session.user.role ?? "") });
+  // Auto-assign immutable employee numbers (first digit = restaurant, 6 digits).
+  const employeeNos = await ensureEmployeeNumbers(restaurantId);
+  return NextResponse.json({ profiles, settings, employeeNos, canEdit: EDIT_ROLES.includes(session.user.role ?? "") });
 }
 
 export async function PATCH(req: Request) {
@@ -77,12 +81,12 @@ export async function PATCH(req: Request) {
     for (const p of profiles) {
       if (!p.userId) continue;
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "PayrollProfile"("restaurantId","userId","employeeNo","idNumber","department","project")
-         VALUES($1,$2,$3,$4,$5,$6)
+        `INSERT INTO "PayrollProfile"("restaurantId","userId","idNumber","department","project")
+         VALUES($1,$2,$3,$4,$5)
          ON CONFLICT ("restaurantId","userId") DO UPDATE SET
-           "employeeNo"=EXCLUDED."employeeNo", "idNumber"=EXCLUDED."idNumber",
+           "idNumber"=EXCLUDED."idNumber",
            "department"=EXCLUDED."department", "project"=EXCLUDED."project"`,
-        restaurantId, p.userId, p.employeeNo ?? "", p.idNumber ?? "", p.department ?? "", p.project ?? ""
+        restaurantId, p.userId, p.idNumber ?? "", p.department ?? "", p.project ?? ""
       );
     }
   }

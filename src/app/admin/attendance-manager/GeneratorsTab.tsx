@@ -10,7 +10,7 @@ interface Props {
   showToast: (msg: string) => void;
 }
 
-type Profile = { userId: string; employeeNo: string; idNumber: string; department: string; project: string };
+type Profile = { userId: string; idNumber: string; department: string; project: string };
 type Settings = { regularCode: string; ot125Code: string; ot150Code: string };
 type Cut = "employee" | "department" | "project";
 
@@ -28,6 +28,7 @@ export default function GeneratorsTab({ restaurantId, staff, showToast }: Props)
   const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
   const [records, setRecords] = useState<AttRecord[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [employeeNos, setEmployeeNos] = useState<Record<string, string>>({});
   const [settings, setSettings] = useState<Settings>({ regularCode: "1", ot125Code: "2", ot150Code: "3" });
   const [canEdit, setCanEdit] = useState(false);
   const [vendor, setVendor] = useState<PayrollVendor>("GENERIC");
@@ -51,6 +52,7 @@ export default function GeneratorsTab({ restaurantId, staff, showToast }: Props)
       const map: Record<string, Profile> = {};
       for (const p of (payData.profiles ?? []) as Profile[]) map[p.userId] = p;
       setProfiles(map);
+      setEmployeeNos(payData.employeeNos ?? {});
       if (payData.settings) setSettings(payData.settings);
       setCanEdit(!!payData.canEdit);
       setDirty(false);
@@ -60,7 +62,7 @@ export default function GeneratorsTab({ restaurantId, staff, showToast }: Props)
 
   useEffect(() => { load(); }, [load]);
 
-  const prof = (userId: string): Profile => profiles[userId] ?? { userId, employeeNo: "", idNumber: "", department: "", project: "" };
+  const prof = (userId: string): Profile => profiles[userId] ?? { userId, idNumber: "", department: "", project: "" };
   const setProf = (userId: string, patch: Partial<Profile>) => {
     setProfiles(prev => ({ ...prev, [userId]: { ...prof(userId), ...patch } }));
     setDirty(true);
@@ -75,12 +77,12 @@ export default function GeneratorsTab({ restaurantId, staff, showToast }: Props)
       const total = sumBreakdowns(Object.values(byDate).map(recs => computeDailyHoursByRole(recs)));
       const p = prof(member.id);
       return {
-        employeeNo: p.employeeNo || member.id.slice(0, 8), idNumber: p.idNumber, name: member.name,
+        employeeNo: employeeNos[member.id] ?? "", idNumber: p.idNumber, name: member.name,
         department: p.department || "כללי", project: p.project || "—",
         regularHours: total.regularHours, ot125Hours: total.overtime125Hours, ot150Hours: total.overtime150Hours,
       };
     }).filter(e => e.regularHours + e.ot125Hours + e.ot150Hours > 0.01);
-  }, [staff, records, profiles]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [staff, records, profiles, employeeNos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
     if (saving) return;
@@ -209,7 +211,7 @@ export default function GeneratorsTab({ restaurantId, staff, showToast }: Props)
                 return (
                   <tr key={member.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                     <td style={{ ...cell, color: "#fff", fontWeight: 600, whiteSpace: "nowrap" }}>{member.name}</td>
-                    <td style={cell}><input value={p.employeeNo} disabled={!canEdit} onChange={e => setProf(member.id, { employeeNo: e.target.value })} style={pInput} placeholder="—" /></td>
+                    <td style={cell}><span title="מספר עובד אוטומטי — לא ניתן לעריכה" style={{ fontFamily: "monospace", fontSize: 13, color: "#FBBF24", fontWeight: 700, background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6, padding: "3px 8px", display: "inline-block" }}>{employeeNos[member.id] ?? "—"}</span></td>
                     <td style={cell}><input value={p.idNumber} disabled={!canEdit} onChange={e => setProf(member.id, { idNumber: e.target.value })} style={pInput} placeholder="—" /></td>
                     <td style={cell}><input value={p.department} disabled={!canEdit} onChange={e => setProf(member.id, { department: e.target.value })} style={pInput} placeholder="כללי" /></td>
                     <td style={cell}><input value={p.project} disabled={!canEdit} onChange={e => setProf(member.id, { project: e.target.value })} style={pInput} placeholder="—" /></td>
