@@ -75,8 +75,8 @@ const BGS = [
     cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
   { label: "בורדו",  body: T.bg,
     cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
-  { label: "שמנת",   body: T.text,
-    cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
+  { label: "פרקט",   body: "#d2ddd4",
+    cw: `repeating-linear-gradient(0deg,rgba(90,110,95,0.16) 0px,rgba(90,110,95,0.16) 1px,transparent 1px,transparent 22px),repeating-linear-gradient(90deg,rgba(90,110,95,0.16) 0px,rgba(90,110,95,0.16) 1px,transparent 1px,transparent 22px),#e2ece3` },
 ];
 
 /* ══════════════════════════ Helpers ══ */
