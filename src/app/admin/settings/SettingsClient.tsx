@@ -1392,7 +1392,7 @@ export default function SettingsClient({ config: initial }: { config: Config }) 
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 26, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
                 {form.loginImage
-                  ? <img src={form.loginImage} alt="תמונת התחברות" style={{ width: "100%", height: "100%", objectFit: "cover", filter: `brightness(${form.loginImageBrightness ?? 100}%)` }} />
+                  ? <img src={form.loginImage} alt="תמונת התחברות" style={{ width: "100%", height: "100%", objectFit: "fill", filter: `brightness(${form.loginImageBrightness ?? 100}%)` }} />
                   : <span>🌄</span>}
               </div>
               <div style={{ flex: 1 }}>
