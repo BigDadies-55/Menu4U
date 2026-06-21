@@ -12,6 +12,7 @@ export default async function KitchenPage() {
   if (!session?.user) redirect("/login");
 
   const role = session.user.role;
+  if (role === "EDITOR" || role === "VIEWER") redirect("/admin");
   const isSuperAdmin = role === "SUPER_ADMIN";
 
   let restaurantIds: string[] = [];

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { isShiftManager } from "@/lib/permissions";
 import OrdersClient from "./OrdersClient";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export const metadata = { title: "📋 הזמנות | Menu4U" };
 export default async function OrdersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role === "DISPLAY") redirect("/admin/dashboard");
+  if (!isShiftManager(session.user.role)) redirect("/admin");
 
   // Ensure all columns exist (some were added without formal migrations)
   try {

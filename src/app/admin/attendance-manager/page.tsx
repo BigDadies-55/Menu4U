@@ -12,6 +12,8 @@ export default async function AttendanceManagerPage() {
   if (!session?.user) redirect("/login");
 
   const role = session.user.role;
+  // OPS: floor staff + managers (waiters/bartenders view their own attendance). No editor/viewer/display.
+  if (!["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","WAITER","BARTENDER"].includes(role)) redirect("/admin");
   const isSuperAdmin = role === "SUPER_ADMIN";
 
   let restaurants: { id: string; name: string; openingHours?: string | null }[] = [];
