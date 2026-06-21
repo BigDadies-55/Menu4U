@@ -40,20 +40,26 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
           flex-direction: row-reverse;
           align-items: stretch;
           direction: rtl;
+          position: relative;
         }
-        /* Image pane (rendered on the LEFT via row-reverse) */
-        .login-photo-pane {
-          flex: 0 0 60%;
-          background-color: #110f12;
+        /* Full-screen image behind both panes (stretched to fill) */
+        .login-bgimg {
+          position: absolute; inset: 0; z-index: 0;
           background-size: 100% 100%;
           background-position: center;
           background-repeat: no-repeat;
+        }
+        /* Left image area (transparent — reveals the bg image sharp) */
+        .login-photo-pane {
+          flex: 0 0 60%;
           position: relative;
+          z-index: 1;
         }
         /* Right 50% — login form */
         .login-form-pane {
           flex: 0 0 40%;
           position: relative;
+          z-index: 1;
           overflow: hidden;
           display: flex;
           align-items: center;
@@ -202,16 +208,18 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
       `}</style>
 
       <div className="login-root">
-        {/* Left 50% — configurable image */}
+        {/* Full-screen background image — the form pane's glass blurs it */}
         <div
-          className="login-photo-pane"
+          className="login-bgimg"
           style={{
             backgroundImage: loginImage
               ? `url('${loginImage}')`
               : "linear-gradient(135deg,#0a0804,#1c1205,#3d2b00)",
             filter: loginImage ? `brightness(${brightness}%)` : undefined,
           }}
-        >
+        />
+        {/* Left 60% — sharp image area */}
+        <div className="login-photo-pane">
           {!loginImage && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 40, fontWeight: 700, color: "#fff", letterSpacing: 6, opacity: 0.9 }}>
@@ -221,7 +229,7 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
           )}
         </div>
 
-        {/* Right 50% — login form */}
+        {/* Right 40% — login form (frosted glass over the image) */}
         <div className="login-form-pane">
         <div className="login-grain" />
         <div className="login-glow-left" />
