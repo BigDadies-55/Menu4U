@@ -1,5 +1,7 @@
 "use client";
 
+import { T } from "@/lib/ui";
+
 type Role = "SUPER_ADMIN" | "ADMIN" | "OWNER" | "SHIFT_MANAGER" | "EDITOR" | "WAITER" | "BARTENDER" | "VIEWER" | "DISPLAY";
 
 const ROLES: { key: Role; label: string; color: string; text: string }[] = [
@@ -16,14 +18,15 @@ const ROLES: { key: Role; label: string; color: string; text: string }[] = [
 
 type Check = (role: Role) => boolean;
 
+// ── checks derived from the actual page-level role gates (src/app/admin/*/page.tsx) ──
 const ALL:   Check = () => true;
 const SA:    Check = r => r === "SUPER_ADMIN";
 const ADMIN: Check = r => ["SUPER_ADMIN","ADMIN"].includes(r);
 const OWNER: Check = r => ["SUPER_ADMIN","ADMIN","OWNER"].includes(r);
 const SM:    Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER"].includes(r);
-const ED:    Check = r => ["SUPER_ADMIN","ADMIN","OWNER","EDITOR"].includes(r);
-const WTR:   Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","WAITER","BARTENDER"].includes(r);
-const KDS:   Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","DISPLAY"].includes(r);
+const ED:    Check = r => ["SUPER_ADMIN","ADMIN","OWNER","EDITOR"].includes(r);                                  // menu content
+const OPS:   Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","WAITER","BARTENDER"].includes(r);      // floor staff
+const KDS:   Check = r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER","WAITER","BARTENDER","DISPLAY"].includes(r);
 
 type Feature = { label: string; sub?: string; check: Check };
 type Group   = { group: string; icon: string; features: Feature[] };
@@ -32,32 +35,37 @@ const MATRIX: Group[] = [
   {
     group: "ניהול מערכת", icon: "⚙️",
     features: [
-      { label: "דשבורד",             sub: "/admin",              check: ALL   },
-      { label: "בתי עסק",            sub: "/admin/restaurants",  check: SA    },
-      { label: "משתמשים (צפייה+יצירה)", sub: "/admin/users",     check: r => ["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER"].includes(r) },
-      { label: "הגדרות",             sub: "/admin/settings",     check: OWNER },
-      { label: "לוגים",              sub: "/admin/logs",         check: ADMIN },
-      { label: "תובנות AI",          sub: "/admin/insight-rules",check: ADMIN },
-      { label: "עוזר אישי",          sub: "/admin/assistant",    check: ADMIN },
-      { label: "אימות דו-שלבי",      sub: "/admin/2fa-setup",    check: ALL   },
-      { label: "מפת ניווט",          sub: "/admin/sitemap",      check: ALL   },
+      { label: "דשבורד",             sub: "/admin",               check: ALL   },
+      { label: "בתי עסק",            sub: "/admin/restaurants",   check: SA    },
+      { label: "רשתות מסעדות",       sub: "/admin/groups",        check: SA    },
+      { label: "משתמשים",            sub: "/admin/users",         check: SM    },
+      { label: "מודולים",            sub: "/admin/modules",       check: SA    },
+      { label: "הגדרות",             sub: "/admin/settings",      check: SA    },
+      { label: "לוגים",              sub: "/admin/logs",          check: ADMIN },
+      { label: "עץ הרשאות",          sub: "/admin/permissions",   check: ADMIN },
+      { label: "עוזר אישי",          sub: "/admin/assistant",     check: ADMIN },
+      { label: "אימות דו-שלבי",      sub: "/admin/2fa-setup",     check: ALL   },
+      { label: "מפת ניווט",          sub: "/admin/sitemap",       check: ALL   },
     ],
   },
   {
     group: "תפריטים ותוכן", icon: "🍽️",
     features: [
-      { label: "תפריטים",            sub: "/admin/menus",        check: ED    },
-      { label: "קטגוריות ופריטים",   sub: "/admin/menus → items",check: ED    },
+      { label: "תפריטים",            sub: "/admin/menus",          check: ED },
+      { label: "קטגוריות ופריטים",   sub: "/admin/menus → items",  check: ED },
     ],
   },
   {
     group: "תפעול יומי", icon: "🏃",
     features: [
-      { label: "מלצר חכם (POS)",     sub: "/admin/waiter",       check: WTR   },
-      { label: "הזמנות",             sub: "/admin/orders",       check: SM    },
-      { label: "קאשייר",             sub: "/admin/cashier",      check: SM    },
-      { label: "ציר זמן שולחנות",    sub: "/admin/table-timeline",check: SM   },
-      { label: "מפת שולחנות חיה",    sub: "/admin/live-floor",   check: SM    },
+      { label: "מלצר חכם (POS)",     sub: "/admin/waiter",          check: OPS },
+      { label: "הזמנות",             sub: "/admin/orders",          check: SM  },
+      { label: "קאשייר",             sub: "/admin/cashier",         check: SM  },
+      { label: "נוכחות",             sub: "/admin/attendance-manager", check: OPS },
+      { label: "מנהל משמרת",         sub: "/admin/shift-manager",   check: SM  },
+      { label: "ציר זמן שולחנות",    sub: "/admin/table-timeline",  check: SM  },
+      { label: "מפת שולחנות חיה",    sub: "/admin/live-floor",      check: SM  },
+      { label: "פריסת שולחנות",      sub: "/admin/layout-builder",  check: SM  },
     ],
   },
   {
@@ -69,43 +77,31 @@ const MATRIX: Group[] = [
     ],
   },
   {
-    group: "משמרות", icon: "📅",
-    features: [
-      { label: "ניהול משמרות",        sub: "/admin/shifts",         check: SM  },
-      { label: "מנהל משמרת",          sub: "/admin/shift-manager",  check: SM  },
-    ],
-  },
-  {
-    group: "עיצוב ופריסה", icon: "🗺️",
-    features: [
-      { label: "פריסת שולחנות",       sub: "/admin/layout-builder", check: OWNER },
-    ],
-  },
-  {
     group: "לקוחות ואנליטיקה", icon: "📊",
     features: [
-      { label: "סטטיסטיקות",         sub: "/admin/orders/stats",  check: OWNER },
-      { label: "מועדון לקוחות",       sub: "/admin/loyalty",       check: OWNER },
-      { label: "קשרי לקוחות (CRM)",   sub: "/admin/crm",           check: OWNER },
+      { label: "העסק שלי",           sub: "/admin/my-business",    check: OWNER },
+      { label: "סטטיסטיקות",         sub: "/admin/orders/stats",   check: OWNER },
+      { label: "תובנות AI",          sub: "/admin/insight-rules",  check: OWNER },
+      { label: "מועדון לקוחות",       sub: "/admin/loyalty",        check: OWNER },
+      { label: "קשרי לקוחות (CRM)",   sub: "/admin/crm",            check: OWNER },
     ],
   },
 ];
 
 export default function PermissionsClient() {
   return (
-    <div style={{ padding: "28px 28px 60px", minHeight: "100vh", direction: "rtl" }}>
+    <div style={{ padding: "clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 40px) 60px", minHeight: "100vh", direction: "rtl", color: T.text }}>
 
       {/* Header */}
       <div style={{
-        background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.12)",
+        background: T.panel, border: `1px solid ${T.border}`,
         borderRadius: 20, padding: "18px 26px", marginBottom: 24,
         display: "flex", alignItems: "center", gap: 14,
       }}>
         <span style={{ fontSize: 28 }}>🔐</span>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>עץ הרשאות</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: T.text }}>עץ הרשאות</div>
+          <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>
             תצוגה בלבד — לשינוי הרשאות יש לעדכן קוד
           </div>
         </div>
@@ -113,22 +109,22 @@ export default function PermissionsClient() {
 
       {/* Legend */}
       <div style={{
-        background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+        background: T.panel, border: `1px solid ${T.border}`,
         borderRadius: 12, padding: "12px 20px", marginBottom: 20,
         display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center",
       }}>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: 1 }}>מקרא:</span>
-        <span style={{ fontSize: 13, color: "#4ade80", display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 12, color: T.muted, fontWeight: 600, letterSpacing: 1 }}>מקרא:</span>
+        <span style={{ fontSize: 13, color: T.green, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 16 }}>✓</span> גישה מלאה
         </span>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 13, color: T.muted, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 16 }}>✗</span> ללא גישה
         </span>
       </div>
 
       {/* Matrix */}
       <div style={{
-        background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)",
+        background: T.panel, border: `1px solid ${T.border}`,
         borderRadius: 18, overflow: "hidden",
       }}>
         <div style={{ overflowX: "auto" }}>
@@ -136,8 +132,8 @@ export default function PermissionsClient() {
 
             {/* Role header */}
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                <th style={{ padding: "14px 20px", textAlign: "right", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, width: 220 }}>
+              <tr style={{ background: T.raised, borderBottom: `1px solid ${T.border}` }}>
+                <th style={{ padding: "14px 20px", textAlign: "right", fontSize: 12, fontWeight: 700, color: T.muted, letterSpacing: 1, width: 220 }}>
                   תכונה / מסך
                 </th>
                 {ROLES.map(r => (
@@ -158,10 +154,10 @@ export default function PermissionsClient() {
               {MATRIX.map((group, gi) => (
                 <>
                   {/* Group header row */}
-                  <tr key={`g-${gi}`} style={{ background: "rgba(255,255,255,0.025)", borderTop: gi > 0 ? "1px solid rgba(255,255,255,0.08)" : undefined }}>
+                  <tr key={`g-${gi}`} style={{ background: T.raised, borderTop: gi > 0 ? `1px solid ${T.border}` : undefined }}>
                     <td colSpan={ROLES.length + 1} style={{
                       padding: "8px 20px",
-                      fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.35)",
+                      fontSize: 11, fontWeight: 800, color: T.muted,
                       letterSpacing: 1.5, textTransform: "uppercase",
                     }}>
                       {group.icon} &nbsp;{group.group}
@@ -171,16 +167,16 @@ export default function PermissionsClient() {
                   {/* Feature rows */}
                   {group.features.map((feat, fi) => (
                     <tr key={`f-${gi}-${fi}`} style={{
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      borderBottom: `1px solid ${T.border}`,
                       transition: "background 0.12s",
                     }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                      onMouseEnter={e => (e.currentTarget.style.background = T.raised)}
                       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                     >
                       <td style={{ padding: "11px 20px" }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>{feat.label}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{feat.label}</div>
                         {feat.sub && (
-                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", marginTop: 2, fontFamily: "monospace" }}>{feat.sub}</div>
+                          <div style={{ fontSize: 11, color: T.muted, marginTop: 2, fontFamily: "monospace" }}>{feat.sub}</div>
                         )}
                       </td>
                       {ROLES.map(r => {
@@ -191,14 +187,14 @@ export default function PermissionsClient() {
                               <span style={{
                                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                                 width: 26, height: 26, borderRadius: "50%",
-                                background: "rgba(74,222,128,0.12)", color: "#4ade80",
+                                background: T.greenSub, color: T.green,
                                 fontSize: 14, fontWeight: 700,
                               }}>✓</span>
                             ) : (
                               <span style={{
                                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                                 width: 26, height: 26, borderRadius: "50%",
-                                color: "rgba(255,255,255,0.15)", fontSize: 14,
+                                color: T.muted, fontSize: 14,
                               }}>✗</span>
                             )}
                           </td>
@@ -213,8 +209,8 @@ export default function PermissionsClient() {
         </div>
       </div>
 
-      <p style={{ marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.2)", textAlign: "center" }}>
-        הרשאות מוגדרות בקוד · <code style={{ fontFamily: "monospace" }}>src/lib/permissions.ts</code>
+      <p style={{ marginTop: 16, fontSize: 11, color: T.muted, textAlign: "center" }}>
+        הרשאות מוגדרות בקוד · <code style={{ fontFamily: "monospace" }}>src/lib/permissions.ts</code> + בדיקות role בכל <code style={{ fontFamily: "monospace" }}>page.tsx</code>
       </p>
     </div>
   );
