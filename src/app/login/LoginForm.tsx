@@ -43,7 +43,7 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
         }
         /* Image pane (rendered on the LEFT via row-reverse) */
         .login-photo-pane {
-          flex: 1 1 50%;
+          flex: 0 0 60%;
           background-color: #110f12;
           background-size: 100% 100%;
           background-position: center;
@@ -52,7 +52,7 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
         }
         /* Right 50% — login form */
         .login-form-pane {
-          flex: 1 1 50%;
+          flex: 0 0 40%;
           position: relative;
           overflow: hidden;
           display: flex;
