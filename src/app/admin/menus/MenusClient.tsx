@@ -1434,11 +1434,11 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
                                 value={cat.kitchenStationId ?? ""}
                                 onChange={e => setCategoryStation(cat.id, e.target.value)}
                                 title="שיוך מנות — תחנת מטבח"
-                                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: "8px 10px", borderRadius: 10, cursor: "pointer", fontSize: 12, fontFamily: "inherit", outline: "none" }}
+                                style={{ background: "#1a1a24", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: "8px 10px", borderRadius: 10, cursor: "pointer", fontSize: 12, fontFamily: "inherit", outline: "none" }}
                               >
-                                {!cat.kitchenStationId && <option value="">ללא שיוך</option>}
+                                {!cat.kitchenStationId && <option value="" style={{ background: "#1a1a24", color: G_TEXT }}>ללא שיוך</option>}
                                 {restaurantStations.map(s => (
-                                  <option key={s.id} value={s.id}>{s.code} · {s.label}</option>
+                                  <option key={s.id} value={s.id} style={{ background: "#1a1a24", color: G_TEXT }}>{s.code} · {s.label}</option>
                                 ))}
                               </select>
                               <button onClick={() => deleteCategory(cat.id)}
