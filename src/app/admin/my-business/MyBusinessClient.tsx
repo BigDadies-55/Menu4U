@@ -9,10 +9,11 @@ interface Props {
 type AttRoleCfg = { code: string; label: string; payCode: string; color: string; hourlyRate?: number };
 
 // ── Design tokens (shared look with the attendance manager) ──────────────────
-const GB = "rgba(255,255,255,0.14)";
-const GC = "rgba(255,255,255,0.04)";
-const GM = "rgba(255,255,255,0.55)";
-const ACCENT_GRAD = "linear-gradient(135deg,#D97706,#F59E0B)";
+// צבעים מהפלטה המרכזית (var(--c-*) מוזרק ע"י admin/layout.tsx)
+const GB = "var(--c-border)";
+const GC = "var(--c-panel)";
+const GM = "var(--c-muted)";
+const ACCENT_GRAD = "linear-gradient(135deg, var(--c-gold), color-mix(in srgb, var(--c-gold) 75%, #000))";
 const MODAL_BG = "rgba(18,18,30,0.98)";
 const MODAL_BORDER = "rgba(255,255,255,0.18)";
 const PRESET_COLORS = ["#f59e0b", "#3b82f6", "#a855f7", "#6b7280", "#ef4444", "#10b981", "#f97316", "#ec4899"];
@@ -137,11 +138,11 @@ export default function MyBusinessClient({ restaurants }: Props) {
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');`}</style>
-      <div style={{ minHeight: "100vh", color: "#fff", fontFamily: "'Heebo', sans-serif", direction: "rtl", padding: "clamp(12px, 2vw, 20px) clamp(16px, 3vw, 40px)" }}>
+      <div style={{ minHeight: "100vh", color: "var(--c-text)", fontFamily: "'Heebo', sans-serif", direction: "rtl", padding: "clamp(12px, 2vw, 20px) clamp(16px, 3vw, 40px)" }}>
         <div style={{ maxWidth: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
 
           {toast && (
-            <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000, background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>{toast}</div>
+            <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000, background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 14, color: "var(--c-text)", fontSize: 14, fontWeight: 600, padding: "10px 18px", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>{toast}</div>
           )}
 
           {/* Header */}
@@ -150,8 +151,8 @@ export default function MyBusinessClient({ restaurants }: Props) {
               <div style={{ fontSize: 22, fontWeight: 900 }}>📈 העסק שלי</div>
               {restaurants.length > 1 && (
                 <select value={restaurantId} onChange={e => setRestaurantId(e.target.value)}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "6px 12px", borderRadius: 9, fontFamily: "Heebo, sans-serif", fontSize: 13, cursor: "pointer", minWidth: 150 }}>
-                  {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a1a2e" }}>{r.name}</option>)}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "6px 12px", borderRadius: 9, fontFamily: "Heebo, sans-serif", fontSize: 13, cursor: "pointer", minWidth: 150 }}>
+                  {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "var(--c-surface)" }}>{r.name}</option>)}
                 </select>
               )}
             </div>
@@ -168,17 +169,17 @@ export default function MyBusinessClient({ restaurants }: Props) {
               )}
               {mode === "monthly" && (
                 <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-                  style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "6px 10px", fontSize: 13, fontFamily: "inherit" }} />
+                  style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "6px 10px", fontSize: 13, fontFamily: "inherit" }} />
               )}
               {mode === "range" && (<>
-                <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "6px 10px", fontSize: 13, fontFamily: "inherit" }} />
+                <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "6px 10px", fontSize: 13, fontFamily: "inherit" }} />
                 <span style={{ color: GM }}>—</span>
-                <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "6px 10px", fontSize: 13, fontFamily: "inherit" }} />
+                <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "6px 10px", fontSize: 13, fontFamily: "inherit" }} />
               </>)}
               <button onClick={() => { setEditRoles(roles); setSettingsOpen(true); }}
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}>⚙️ תעריפים</button>
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}>⚙️ תעריפים</button>
               <button onClick={loadBi}
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}>🔄 רענון</button>
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}>🔄 רענון</button>
             </div>
           </header>
 
@@ -207,7 +208,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                   items.push(
                     <div key="star" style={insCard("rgba(52,211,153,0.35)", "rgba(52,211,153,0.08)")}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#34D399", marginBottom: 4 }}>⭐ המלצר המייצר</div>
-                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 13, color: "var(--c-text)", lineHeight: 1.6 }}>
                         <b>{top.name}</b> מכניס בממוצע <b>{money(top.salesPerHour)} לשעת עבודה</b>, לעומת ממוצע צוות של {money(ins.avgSalesPerHour)}. שווה לשבץ אותו במשמרות שיא.
                       </div>
                       {ins.topWaiters.length > 1 && (
@@ -222,7 +223,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                   items.push(
                     <div key="stable" style={insCard("rgba(96,165,250,0.35)", "rgba(96,165,250,0.08)")}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#60A5FA", marginBottom: 4 }}>🛡️ העובדים היציבים</div>
-                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 13, color: "var(--c-text)", lineHeight: 1.6 }}>
                         {ins.stableEmployees.map(e => e.name).join(", ")} — תמיד בזמן, ללא חתימות חסרות וללא שעות נוספות חריגות.
                       </div>
                     </div>
@@ -234,7 +235,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                   items.push(
                     <div key="early" style={insCard("rgba(251,191,36,0.35)", "rgba(251,191,36,0.08)")}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#FBBF24", marginBottom: 4 }}>💸 שעון דולף — החתמה מוקדמת</div>
-                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 13, color: "var(--c-text)", lineHeight: 1.6 }}>
                         עובדים החתימו כניסה בממוצע <b>{ins.earlyClockIn.avgMinutesPerShift.toFixed(0)} דק׳</b> לפני תחילת המשמרת הרשמית. זה עלה כ-<b>{money(ins.earlyClockIn.cost)}</b> בשכר עודף בתקופה.
                       </div>
                       {ins.earlyClockIn.employees.length > 0 && (
@@ -249,7 +250,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                   items.push(
                     <div key={`churn-${c.userId}`} style={insCard("rgba(248,113,113,0.35)", "rgba(248,113,113,0.08)")}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#F87171", marginBottom: 4 }}>🔥 סיכון שחיקה ועזיבה</div>
-                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 13, color: "var(--c-text)", lineHeight: 1.6 }}>
                         <b>{c.name}</b> עבד/ה בממוצע <b>{c.avgWeeklyHours.toFixed(0)} שעות שבועיות</b> (מעל התקן של {ins.churnWeeklyHours}). קיים סיכון גבוה לשחיקה או עזיבה.
                       </div>
                     </div>
@@ -261,7 +262,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                   items.push(
                     <div key={`sched-${i}`} style={insCard("rgba(168,85,247,0.35)", "rgba(168,85,247,0.08)")}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#C084FC", marginBottom: 4 }}>📅 אופטימיזציית סידור</div>
-                      <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 13, color: "var(--c-text)", lineHeight: 1.6 }}>
                         בימי <b>{s.dowLabel}</b>, בין <b>{String(s.fromHour).padStart(2, "0")}:00–{String(s.toHour).padStart(2, "0")}:00</b>, עלות כוח האדם עמדה על <b>{s.laborPct.toFixed(0)}%</b> מהמחזור (מעל היעד של {ins.targetPct}%). המלצה: שקול להפחית כוח אדם בחלון זה.
                       </div>
                     </div>
@@ -345,7 +346,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                     <tbody>
                       {biData.byHour.map(h => (
                         <tr key={h.hour} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: (h.laborPct ?? 0) > 45 ? "rgba(248,113,113,0.07)" : "transparent" }}>
-                          <td style={{ ...td, textAlign: "right", color: "#fff", fontWeight: 700 }}>{String(h.hour).padStart(2, "0")}:00</td>
+                          <td style={{ ...td, textAlign: "right", color: "var(--c-text)", fontWeight: 700 }}>{String(h.hour).padStart(2, "0")}:00</td>
                           <td style={{ ...td, textAlign: "left", color: "#34D399" }}>{money(h.revenue)}</td>
                           <td style={{ ...td, textAlign: "left", color: "#60A5FA" }}>{money(h.laborCost)}</td>
                           <td style={{ ...td, textAlign: "left", fontWeight: 800, color: pctColor(h.laborPct) }}>{pct(h.laborPct)}</td>
@@ -373,7 +374,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                     <tbody>
                       {biData.overtime.map(o => (
                         <tr key={o.userId} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ ...td, color: "#fff", fontWeight: 700 }}>{o.name}</td>
+                          <td style={{ ...td, color: "var(--c-text)", fontWeight: 700 }}>{o.name}</td>
                           <td style={{ ...td, textAlign: "center", color: o.ot125 > 0 ? "#FB923C" : GM }}>{o.ot125 > 0 ? o.ot125.toFixed(1) : "–"}</td>
                           <td style={{ ...td, textAlign: "center", color: o.ot150 > 0 ? "#F87171" : GM }}>{o.ot150 > 0 ? o.ot150.toFixed(1) : "–"}</td>
                           <td style={{ ...td, textAlign: "center", fontWeight: 700, color: o.otHours > 0 ? "#FBBF24" : GM }}>{o.otHours.toFixed(1)}</td>
@@ -404,7 +405,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
                     <tbody>
                       {biData.punctuality.map(p => (
                         <tr key={p.userId} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ ...td, color: "#fff", fontWeight: 700 }}>{p.name}</td>
+                          <td style={{ ...td, color: "var(--c-text)", fontWeight: 700 }}>{p.name}</td>
                           <td style={{ ...td, textAlign: "center", color: GM }}>{p.shifts}</td>
                           <td style={{ ...td, textAlign: "center", color: "#34D399", fontWeight: 700 }}>{p.onTime}</td>
                           <td style={{ ...td, textAlign: "center", color: p.late > 0 ? "#F87171" : GM, fontWeight: 700 }}>{p.late}</td>
@@ -430,15 +431,15 @@ export default function MyBusinessClient({ restaurants }: Props) {
             {editRoles.map((r, idx) => (
               <div key={idx} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <input value={r.label} onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, label: e.target.value } : x))}
-                  placeholder="שם תפקיד" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 90, fontFamily: "inherit", outline: "none" }} />
+                  placeholder="שם תפקיד" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 90, fontFamily: "inherit", outline: "none" }} />
                 <input value={r.code} onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, code: e.target.value.toUpperCase() } : x))}
                   placeholder="CODE" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: GM, fontSize: 12, padding: "3px 7px", width: 80, fontFamily: "inherit", outline: "none" }} />
                 <span style={{ fontSize: 11, color: GM }}>קוד שכר</span>
                 <input value={r.payCode} onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, payCode: e.target.value } : x))}
-                  placeholder="100" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 7px", width: 60, fontFamily: "inherit", outline: "none", textAlign: "center" }} />
+                  placeholder="100" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 7px", width: 60, fontFamily: "inherit", outline: "none", textAlign: "center" }} />
                 <span style={{ fontSize: 11, color: GM }}>₪/ש׳</span>
                 <input type="number" min={0} value={r.hourlyRate ?? 0} onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, hourlyRate: Math.max(0, Number(e.target.value) || 0) } : x))}
-                  placeholder="0" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 7px", width: 56, fontFamily: "inherit", outline: "none", textAlign: "center" }} />
+                  placeholder="0" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 7px", width: 56, fontFamily: "inherit", outline: "none", textAlign: "center" }} />
                 <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "center" }}>
                   {PRESET_COLORS.map(c => (
                     <button key={c} onClick={() => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, color: c } : x))}
@@ -453,7 +454,7 @@ export default function MyBusinessClient({ restaurants }: Props) {
               style={{ width: "100%", background: "transparent", border: `1.5px dashed ${GB}`, borderRadius: 9, color: GM, fontSize: 13, padding: "7px", cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>＋ הוסף תפקיד</button>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button onClick={saveRates} disabled={saving}
-                style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 10, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>{saving ? "שומר..." : "שמור"}</button>
+                style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "var(--c-text)", fontSize: 14, fontWeight: 800, padding: 10, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>{saving ? "שומר..." : "שמור"}</button>
               <button onClick={() => setSettingsOpen(false)}
                 style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 9, color: GM, fontSize: 14, padding: 10, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
             </div>

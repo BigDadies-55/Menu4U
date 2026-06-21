@@ -153,12 +153,13 @@ function calcHours(startTime: string, endTime: string): number {
 }
 
 // ── Glass design tokens ───────────────────────────────────────────────────────
-const BG_PAGE     = `linear-gradient(rgba(12,12,20,0.80),rgba(12,12,20,0.80)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`;
-const GB          = "rgba(255,255,255,0.14)";   // glass border
-const GC          = "rgba(255,255,255,0.04)";   // glass card bg
-const GM          = "rgba(255,255,255,0.55)";   // glass muted text
-const ACCENT      = "#D97706";
-const ACCENT_GRAD = "linear-gradient(135deg,#D97706,#F59E0B)";
+// צבעים מהפלטה המרכזית (var(--c-*) מוזרק ע"י admin/layout.tsx). רקע שקוף — יורש מה-Shell.
+const BG_PAGE     = "transparent";
+const GB          = "var(--c-border)";   // border
+const GC          = "var(--c-panel)";    // card bg
+const GM          = "var(--c-muted)";    // muted text
+const ACCENT      = "var(--c-gold)";
+const ACCENT_GRAD = "linear-gradient(135deg, var(--c-gold), color-mix(in srgb, var(--c-gold) 75%, #000))";
 const MODAL_BG    = "rgba(18,18,30,0.98)";
 const MODAL_BORDER = "rgba(255,255,255,0.18)";
 
@@ -739,7 +740,7 @@ export default function ShiftsClient({
                   </tr>
                 ) : displayStaff.map(member => (
                   <tr key={member.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <td style={{ padding: "8px 4px", color: "#fff", fontSize: 13, fontWeight: 700, verticalAlign: "middle" }}>
+                    <td style={{ padding: "8px 4px", color: "var(--c-text)", fontSize: 13, fontWeight: 700, verticalAlign: "middle" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{member.name}</span>
                         {isManager && (
@@ -827,7 +828,7 @@ export default function ShiftsClient({
                                     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                                     opacity: 0, transition: "0.15s", fontSize: 16,
                                   }}
-                                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.3)"; (e.currentTarget as HTMLButtonElement).style.color = "#fff"; }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.3)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text)"; }}
                                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)"; (e.currentTarget as HTMLButtonElement).style.color = GM; }}
                                   onClick={e => { e.stopPropagation(); setAddModal({ userId: member.id, userName: member.name, date: iso }); }}
                                 >+</button>
@@ -848,7 +849,7 @@ export default function ShiftsClient({
         {addModal && (
           <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 26, width: 340, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>הוסף משמרת</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text)", marginBottom: 4 }}>הוסף משמרת</div>
               <div style={{ fontSize: 13, color: GM, marginBottom: addModal.userId ? 20 : 10 }}>
                 {addModal.userId ? addModal.userName : addModal.date.split("-").reverse().join("/")}
                 {addModal.userId ? ` — ${addModal.date.split("-").reverse().join("/")}` : ""}
@@ -860,10 +861,10 @@ export default function ShiftsClient({
                     const sel = staff.find(s => s.id === e.target.value);
                     if (sel) setAddModal(prev => prev ? { ...prev, userId: sel.id, userName: sel.name } : prev);
                   }}
-                  style={{ width: "100%", marginBottom: 16, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
+                  style={{ width: "100%", marginBottom: 16, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }}
                 >
                   <option value="">— בחר עובד —</option>
-                  {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}</option>)}
+                  {staff.map(s => <option key={s.id} value={s.id} style={{ background: "var(--c-surface)" }}>{s.name}</option>)}
                 </select>
               )}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -918,7 +919,7 @@ export default function ShiftsClient({
         COMPLETED: { label: "הושלם",  bg: "rgba(16,185,129,0.15)", color: "#34D399", border: "rgba(16,185,129,0.3)" },
         CANCELLED: { label: "בוטל",   bg: "rgba(239,68,68,0.15)",  color: "#F87171", border: "rgba(239,68,68,0.3)"  },
       };
-      const s = map[status] ?? { label: status, bg: "rgba(255,255,255,0.08)", color: "#fff", border: GB };
+      const s = map[status] ?? { label: status, bg: "rgba(255,255,255,0.08)", color: "var(--c-text)", border: GB };
       return (
         <span style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 99, color: s.color, fontSize: 11, fontWeight: 700, padding: "3px 10px" }}>
           {s.label}
@@ -948,7 +949,7 @@ export default function ShiftsClient({
             return (
               <div key={sh.id} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ minWidth: 52, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{dayName}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text)" }}>{dayName}</div>
                   <div style={{ fontSize: 11, color: GM, marginTop: 2 }}>{formatDate(d)}</div>
                 </div>
                 <div style={{ background: gs.bg, border: `1px solid ${gs.border}`, borderRadius: 11, padding: "8px 14px", flexShrink: 0 }}>
@@ -972,7 +973,7 @@ export default function ShiftsClient({
         {swapModal && (
           <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 26, width: 360, maxWidth: "90vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>🔄 בקשת החלפת משמרת</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text)", marginBottom: 4 }}>🔄 בקשת החלפת משמרת</div>
               <div style={{ fontSize: 13, color: GM, marginBottom: 16 }}>
                 {SHIFT_CFG[swapModal.shiftType]?.label ?? swapModal.shiftType} — {swapModal.date.slice(0, 10).split("-").reverse().join("/")}
               </div>
@@ -982,7 +983,7 @@ export default function ShiftsClient({
                 onChange={e => setSwapReason(e.target.value)}
                 rows={3}
                 placeholder="כתוב סיבה..."
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 14, padding: "7px 10px", width: "100%", outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "var(--c-text)", fontSize: 14, padding: "7px 10px", width: "100%", outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
               />
               <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <button
@@ -1034,7 +1035,7 @@ export default function ShiftsClient({
             return (
               <div key={req.id} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text)" }}>
                     {typeLabelMap[req.type] ?? req.type} — {req.fromUserName}
                   </div>
                   <div style={{ fontSize: 12, color: GM, marginTop: 3 }}>
@@ -1111,7 +1112,7 @@ export default function ShiftsClient({
               const prev = new Date(cy, cm - 2, 1);
               setMonthlyMonth(`${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`);
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
           >‹</button>
           <span style={{ fontSize: 15, fontWeight: 800, minWidth: 130, textAlign: "center" }}>
@@ -1124,7 +1125,7 @@ export default function ShiftsClient({
               const next = new Date(cy, cm, 1);
               setMonthlyMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`);
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
           >›</button>
           {monthlyLoading && <span style={{ fontSize: 11, color: GM, marginRight: 4 }}>טוען...</span>}
@@ -1255,14 +1256,14 @@ export default function ShiftsClient({
           {modeBtn("range",   "טווח")}
           {summaryMode === "monthly" && (
             <input type="month" value={summaryMonth} onChange={e => setSummaryMonth(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }} />
           )}
           {summaryMode === "range" && (<>
             <input type="date" value={summaryFrom} onChange={e => setSummaryFrom(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
             <span style={{ color: GM, fontSize: 12 }}>—</span>
             <input type="date" value={summaryTo} onChange={e => setSummaryTo(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           </>)}
           {summaryLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
@@ -1295,7 +1296,7 @@ export default function ShiftsClient({
             <tbody>
               {summaries.map(s => (
                 <tr key={s.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                  <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700 }}>{s.name}</td>
+                  <td style={{ padding: "5px 10px", fontSize: 13, color: "var(--c-text)", fontWeight: 700 }}>{s.name}</td>
                   {Object.keys(SHIFT_CFG).map(key => (
                     <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center" }}>
                       {s.byType[key] ? s.byType[key].toFixed(1) : "–"}
@@ -1309,7 +1310,7 @@ export default function ShiftsClient({
                 </tr>
               ))}
               <tr style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-                <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 800 }}>סה"כ</td>
+                <td style={{ padding: "5px 10px", fontSize: 13, color: "var(--c-text)", fontWeight: 800 }}>סה"כ</td>
                 {Object.keys(SHIFT_CFG).map(key => (
                   <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center" }}>
                     {summaries.reduce((a, s) => a + (s.byType[key] ?? 0), 0).toFixed(1)}
@@ -1343,7 +1344,7 @@ export default function ShiftsClient({
     const totalFailed   = filtered.filter(l => l.status === "FAILED").length;
     const totalSmsUnits = filtered.filter(l => l.status === "SENT").reduce((acc, l) => acc + (l.smsCount ?? (l.message ? (l.message.length <= 70 ? 1 : Math.ceil(l.message.length / 67)) : 1)), 0);
 
-    const inpStyle: React.CSSProperties = { background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 13, padding: "6px 10px", fontFamily: "inherit", outline: "none", colorScheme: "dark" };
+    const inpStyle: React.CSSProperties = { background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "var(--c-text)", fontSize: 13, padding: "6px 10px", fontFamily: "inherit", outline: "none", colorScheme: "dark" };
     const presetBtn = (key: OpsPreset, label: string) => (
       <button key={key} onClick={() => applyPreset(key)} style={{ background: opsPreset === key ? ACCENT_GRAD : "rgba(255,255,255,0.06)", border: `1px solid ${opsPreset === key ? ACCENT : GB}`, borderRadius: 9, color: opsPreset === key ? "#fff" : GM, fontSize: 13, fontWeight: opsPreset === key ? 700 : 400, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>
         {label}
@@ -1428,7 +1429,7 @@ export default function ShiftsClient({
                     return (
                       <tr key={l.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                         <td style={{ padding: "8px 12px", fontSize: 11, color: GM, whiteSpace: "nowrap" }}>{l.restaurantName ?? ""}</td>
-                        <td style={{ padding: "8px 12px", fontSize: 13, color: "#fff", whiteSpace: "nowrap" }}>{l.recipientName}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 13, color: "var(--c-text)", whiteSpace: "nowrap" }}>{l.recipientName}</td>
                         <td style={{ padding: "8px 12px", fontSize: 13, color: GM }}>{l.phone}</td>
                         <td style={{ padding: "8px 12px", fontSize: 11, color: GM, whiteSpace: "nowrap" }}>{l.weekFrom?.slice(5).split("-").reverse().join("/")}–{l.weekTo?.slice(5).split("-").reverse().join("/")}</td>
                         <td style={{ padding: "8px 12px", fontSize: 11, color: GM, maxWidth: 200 }}>
@@ -1470,7 +1471,7 @@ export default function ShiftsClient({
     `}</style>
     <div style={{
       minHeight: "100vh",
-      color: "#fff",
+      color: "var(--c-text)",
       fontFamily: "'Heebo', sans-serif",
       direction: "rtl",
       padding: "clamp(12px, 2vw, 20px) clamp(16px, 3vw, 40px)",
@@ -1482,7 +1483,7 @@ export default function ShiftsClient({
           <div style={{
             position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000,
             background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 14,
-            color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px",
+            color: "var(--c-text)", fontSize: 14, fontWeight: 600, padding: "10px 18px",
             boxShadow: "0 8px 32px rgba(0,0,0,0.5)", whiteSpace: "nowrap",
             display: "flex", alignItems: "center", gap: 12, direction: "rtl",
           }}>
@@ -1490,7 +1491,7 @@ export default function ShiftsClient({
             {toast.undo && (
               <button
                 onClick={() => { toast.undo!(); setToast(null); }}
-                style={{ background: ACCENT_GRAD, border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 800, padding: "4px 12px", cursor: "pointer", fontFamily: "inherit" }}
+                style={{ background: ACCENT_GRAD, border: "none", borderRadius: 8, color: "var(--c-text)", fontSize: 13, fontWeight: 800, padding: "4px 12px", cursor: "pointer", fontFamily: "inherit" }}
               >
                 ↩ בטל
               </button>
@@ -1502,7 +1503,7 @@ export default function ShiftsClient({
         {settingsOpen && (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "5vh 0 5vh" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: "18px 20px", width: 520, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)", flexShrink: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 12 }}>⚙️ הגדרות סוגי משמרת</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text)", marginBottom: 12 }}>⚙️ הגדרות סוגי משמרת</div>
 
               {editCfg.map((cfg, idx) => (
                 <div key={cfg.key} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
@@ -1520,7 +1521,7 @@ export default function ShiftsClient({
                     <input
                       value={cfg.label}
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 70, fontFamily: "inherit", outline: "none" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 70, fontFamily: "inherit", outline: "none" }}
                       placeholder="שם"
                     />
 
@@ -1532,7 +1533,7 @@ export default function ShiftsClient({
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
                       placeholder="HH:MM"
                       maxLength={5}
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
                     />
                     <span style={{ fontSize: 11, color: GM }}>עד-</span>
                     <input
@@ -1541,7 +1542,7 @@ export default function ShiftsClient({
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
                       placeholder="HH:MM"
                       maxLength={5}
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
                     />
 
                     {/* Color dots */}
@@ -1581,7 +1582,7 @@ export default function ShiftsClient({
                 <button
                   onClick={saveConfig}
                   disabled={settingsSaving}
-                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 10, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
+                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "var(--c-text)", fontSize: 14, fontWeight: 800, padding: 10, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
                 >
                   {settingsSaving ? "שומר..." : "שמור"}
                 </button>
@@ -1619,10 +1620,10 @@ export default function ShiftsClient({
               <select
                 value={restaurantId}
                 onChange={e => setRestaurantId(e.target.value)}
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "6px 12px", borderRadius: 9, fontFamily: "Heebo, sans-serif", fontSize: 13, cursor: "pointer", appearance: "none", WebkitAppearance: "none", minWidth: 150 }}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "6px 12px", borderRadius: 9, fontFamily: "Heebo, sans-serif", fontSize: 13, cursor: "pointer", appearance: "none", WebkitAppearance: "none", minWidth: 150 }}
               >
                 {restaurants.map(r => (
-                  <option key={r.id} value={r.id} style={{ background: "#1a1a2e" }}>{r.name}</option>
+                  <option key={r.id} value={r.id} style={{ background: "var(--c-surface)" }}>{r.name}</option>
                 ))}
               </select>
             )}
@@ -1635,14 +1636,14 @@ export default function ShiftsClient({
               <button
                 onClick={() => setWeekOffset(w => w - 1)}
                 style={{ background: "none", border: "none", color: GM, cursor: "pointer", padding: "4px 8px", borderRadius: 7, display: "flex", alignItems: "center", transition: "0.15s", fontSize: 16 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
               >‹</button>
               <span style={{ fontSize: 14, fontWeight: 700, padding: "0 10px", whiteSpace: "nowrap" }}>{weekLabel(weekDates)}</span>
               <button
                 onClick={() => setWeekOffset(w => w + 1)}
                 style={{ background: "none", border: "none", color: GM, cursor: "pointer", padding: "4px 8px", borderRadius: 7, display: "flex", alignItems: "center", transition: "0.15s", fontSize: 16 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
               >›</button>
             </div>
@@ -1651,7 +1652,7 @@ export default function ShiftsClient({
               <>
                 <button
                   onClick={() => { setEditCfg(shiftCfgList); setSettingsOpen(true); }}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
                   ⚙️ הגדרות
                 </button>
@@ -1663,7 +1664,7 @@ export default function ShiftsClient({
                     else if (activeTab === "requests") loadRequests();
                     else if (activeTab === "ops") loadOps();
                   }}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
                   🔄 רענון
                 </button>
@@ -1737,7 +1738,7 @@ export default function ShiftsClient({
         {emailModal && (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 28, width: 420, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✉️ שלח מייל משמרות</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text)", marginBottom: 14 }}>✉️ שלח מייל משמרות</div>
 
               {/* Period type toggle */}
               <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
@@ -1754,14 +1755,14 @@ export default function ShiftsClient({
               {/* Period selector */}
               {emailPeriodType === "weekly" ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, background: "rgba(255,255,255,0.04)", border: `1px solid ${GB}`, borderRadius: 9, padding: "8px 12px" }}>
-                  <button onClick={() => setEmailWeekOffset(w => w + 1)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${GB}`, color: "#fff", cursor: "pointer", fontSize: 18, padding: "2px 10px", borderRadius: 7, fontFamily: "inherit", lineHeight: 1 }}>→</button>
-                  <span style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#fff", fontWeight: 600 }}>{weekLabel(getWeekDates(emailWeekOffset))}</span>
-                  <button onClick={() => setEmailWeekOffset(w => w - 1)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${GB}`, color: "#fff", cursor: "pointer", fontSize: 18, padding: "2px 10px", borderRadius: 7, fontFamily: "inherit", lineHeight: 1 }}>←</button>
+                  <button onClick={() => setEmailWeekOffset(w => w + 1)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${GB}`, color: "var(--c-text)", cursor: "pointer", fontSize: 18, padding: "2px 10px", borderRadius: 7, fontFamily: "inherit", lineHeight: 1 }}>→</button>
+                  <span style={{ flex: 1, textAlign: "center", fontSize: 13, color: "var(--c-text)", fontWeight: 600 }}>{weekLabel(getWeekDates(emailWeekOffset))}</span>
+                  <button onClick={() => setEmailWeekOffset(w => w - 1)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${GB}`, color: "var(--c-text)", cursor: "pointer", fontSize: 18, padding: "2px 10px", borderRadius: 7, fontFamily: "inherit", lineHeight: 1 }}>←</button>
                 </div>
               ) : (
                 <div style={{ marginBottom: 16 }}>
                   <input type="month" value={emailMonth} onChange={e => setEmailMonth(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }} />
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }} />
                 </div>
               )}
 
@@ -1793,14 +1794,14 @@ export default function ShiftsClient({
                       const sel = staff.find(s => s.id === e.target.value);
                       setEmailOverride(sel?.email ?? "");
                     }}
-                    style={{ width: "100%", marginBottom: 12, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }}>
+                    style={{ width: "100%", marginBottom: 12, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }}>
                     <option value="">— בחר עובד —</option>
-                    {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}{s.email ? ` (${s.email})` : ""}</option>)}
+                    {staff.map(s => <option key={s.id} value={s.id} style={{ background: "var(--c-surface)" }}>{s.name}{s.email ? ` (${s.email})` : ""}</option>)}
                   </select>
                   <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>מייל (ניתן לשינוי)</label>
                   <input type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)}
                     placeholder="example@email.com"
-                    style={{ width: "100%", marginBottom: 16, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", marginBottom: 16, padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
                 </>
               )}
 
@@ -1815,7 +1816,7 @@ export default function ShiftsClient({
 
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={sendShiftsEmail} disabled={emailSending || (emailMode === "single" && !emailUserId && !emailOverride)}
-                  style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", opacity: emailSending ? 0.6 : 1 }}>
+                  style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "var(--c-text)", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", opacity: emailSending ? 0.6 : 1 }}>
                   {emailSending ? "שולח..." : "✉️ שלח עכשיו"}
                 </button>
                 <button onClick={() => setEmailModal(false)}
@@ -1832,17 +1833,17 @@ export default function ShiftsClient({
         {smsModal && (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: 28, width: 440, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 4 }}>📱 שלח SMS משמרות</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text)", marginBottom: 4 }}>📱 שלח SMS משמרות</div>
               <div style={{ fontSize: 13, color: GM, marginBottom: 20 }}>שבוע {weekLabel(weekDates)}</div>
 
               <label style={{ fontSize: 13, color: GM, display: "block", marginBottom: 6 }}>שלח ל:</label>
               <select
                 value={smsTarget}
                 onChange={e => setSmsTarget(e.target.value)}
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "#fff", fontSize: 14, padding: "7px 10px", width: "100%", fontFamily: "inherit", outline: "none", marginBottom: 16, colorScheme: "dark" }}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, color: "var(--c-text)", fontSize: 14, padding: "7px 10px", width: "100%", fontFamily: "inherit", outline: "none", marginBottom: 16, colorScheme: "dark" }}
               >
-                <option value="all" style={{ background: "#1a1a2e" }}>כל העובדים עם משמרת השבוע</option>
-                {staff.map(s => <option key={s.id} value={s.id} style={{ background: "#1a1a2e" }}>{s.name}</option>)}
+                <option value="all" style={{ background: "var(--c-surface)" }}>כל העובדים עם משמרת השבוע</option>
+                {staff.map(s => <option key={s.id} value={s.id} style={{ background: "var(--c-surface)" }}>{s.name}</option>)}
               </select>
 
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
@@ -1863,7 +1864,7 @@ export default function ShiftsClient({
                 const countColor = smsCount === 1 ? "#34D399" : smsCount === 2 ? "#FB923C" : "#F87171";
                 return (
                   <>
-                    <pre style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 9, padding: "10px 14px", fontSize: 13, color: "#fff", fontFamily: "inherit", whiteSpace: "pre-wrap", marginBottom: 6, lineHeight: 1.6 }}>
+                    <pre style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 9, padding: "10px 14px", fontSize: 13, color: "var(--c-text)", fontFamily: "inherit", whiteSpace: "pre-wrap", marginBottom: 6, lineHeight: 1.6 }}>
                       {msg}
                     </pre>
                     <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 16 }}>
@@ -1886,7 +1887,7 @@ export default function ShiftsClient({
                 <button
                   onClick={sendSms}
                   disabled={smsSending || !smsConfigured}
-                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: smsSending || !smsConfigured ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
+                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "var(--c-text)", fontSize: 14, fontWeight: 800, padding: 12, cursor: "pointer", fontFamily: "inherit", opacity: smsSending || !smsConfigured ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
                 >
                   {smsSending ? "שולח..." : "📤 שלח"}
                 </button>
