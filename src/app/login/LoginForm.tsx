@@ -10,7 +10,7 @@ interface Props {
   siteName: string;
 }
 
-export default function LoginForm({ loginImage, brightness = 30, logo, siteName }: Props) {
+export default function LoginForm({ loginImage, brightness = 200, logo, siteName }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
