@@ -17,6 +17,7 @@ export const Role = {
   EDITOR: 'EDITOR',
   VIEWER: 'VIEWER',
   WAITER: 'WAITER',
+  BARTENDER: 'BARTENDER',
   DISPLAY: 'DISPLAY'
 } as const
 

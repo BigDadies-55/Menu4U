@@ -39,6 +39,7 @@ const MATRIX: Group[] = [
       { label: "בתי עסק",            sub: "/admin/restaurants",   check: SA    },
       { label: "רשתות מסעדות",       sub: "/admin/groups",        check: SA    },
       { label: "משתמשים",            sub: "/admin/users",         check: SM    },
+      { label: "ניהול מטבח",         sub: "/admin/kitchen-management", check: OWNER },
       { label: "מודולים",            sub: "/admin/modules",       check: SA    },
       { label: "הגדרות",             sub: "/admin/settings",      check: SA    },
       { label: "לוגים",              sub: "/admin/logs",          check: ADMIN },

@@ -394,6 +394,7 @@ export const ModelName = {
   VerificationToken: 'VerificationToken',
   RestaurantGroup: 'RestaurantGroup',
   Restaurant: 'Restaurant',
+  KitchenStation: 'KitchenStation',
   RestaurantUser: 'RestaurantUser',
   Menu: 'Menu',
   Category: 'Category',
@@ -433,7 +434,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userInvite" | "otpCode" | "passwordHistory" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "waiterStation" | "loyaltySettings" | "pushSubscription" | "shift" | "shiftRequest"
+    modelProps: "user" | "userInvite" | "otpCode" | "passwordHistory" | "passwordPolicy" | "account" | "session" | "verificationToken" | "restaurantGroup" | "restaurant" | "kitchenStation" | "restaurantUser" | "menu" | "category" | "item" | "order" | "orderCounter" | "orderStatusLog" | "orderItem" | "itemModifierGroup" | "itemModifier" | "orderItemModifier" | "menuView" | "auditLog" | "tableSession" | "siteConfig" | "customer" | "loyaltyMember" | "loyaltyTransaction" | "loyaltyCoupon" | "waiterStation" | "loyaltySettings" | "pushSubscription" | "shift" | "shiftRequest"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1174,6 +1175,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.RestaurantCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.RestaurantCountAggregateOutputType> | number
+        }
+      }
+    }
+    KitchenStation: {
+      payload: Prisma.$KitchenStationPayload<ExtArgs>
+      fields: Prisma.KitchenStationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.KitchenStationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.KitchenStationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>
+        }
+        findFirst: {
+          args: Prisma.KitchenStationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.KitchenStationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>
+        }
+        findMany: {
+          args: Prisma.KitchenStationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>[]
+        }
+        create: {
+          args: Prisma.KitchenStationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>
+        }
+        createMany: {
+          args: Prisma.KitchenStationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.KitchenStationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>[]
+        }
+        delete: {
+          args: Prisma.KitchenStationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>
+        }
+        update: {
+          args: Prisma.KitchenStationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>
+        }
+        deleteMany: {
+          args: Prisma.KitchenStationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.KitchenStationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.KitchenStationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>[]
+        }
+        upsert: {
+          args: Prisma.KitchenStationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KitchenStationPayload>
+        }
+        aggregate: {
+          args: Prisma.KitchenStationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateKitchenStation>
+        }
+        groupBy: {
+          args: Prisma.KitchenStationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.KitchenStationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.KitchenStationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.KitchenStationCountAggregateOutputType> | number
         }
       }
     }
@@ -3018,7 +3093,8 @@ export const UserScalarFieldEnum = {
   lockedUntil: 'lockedUntil',
   totpSecret: 'totpSecret',
   totpEnabled: 'totpEnabled',
-  managerPin: 'managerPin'
+  managerPin: 'managerPin',
+  status: 'status'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -3170,6 +3246,21 @@ export const RestaurantScalarFieldEnum = {
 export type RestaurantScalarFieldEnum = (typeof RestaurantScalarFieldEnum)[keyof typeof RestaurantScalarFieldEnum]
 
 
+export const KitchenStationScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  code: 'code',
+  label: 'label',
+  isActive: 'isActive',
+  skipKitchen: 'skipKitchen',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type KitchenStationScalarFieldEnum = (typeof KitchenStationScalarFieldEnum)[keyof typeof KitchenStationScalarFieldEnum]
+
+
 export const RestaurantUserScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -3207,6 +3298,7 @@ export const CategoryScalarFieldEnum = {
   image: 'image',
   isActive: 'isActive',
   autoReady: 'autoReady',
+  kitchenStationId: 'kitchenStationId',
   sortOrder: 'sortOrder',
   translations: 'translations',
   createdAt: 'createdAt',
@@ -3825,6 +3917,7 @@ export type GlobalOmitConfig = {
   verificationToken?: Prisma.VerificationTokenOmit
   restaurantGroup?: Prisma.RestaurantGroupOmit
   restaurant?: Prisma.RestaurantOmit
+  kitchenStation?: Prisma.KitchenStationOmit
   restaurantUser?: Prisma.RestaurantUserOmit
   menu?: Prisma.MenuOmit
   category?: Prisma.CategoryOmit

@@ -20,9 +20,11 @@ type Item = {
 
 type Category = {
   id: string; name: string; image: string | null;
-  items: Item[]; isActive: boolean; autoReady: boolean; sortOrder: number;
+  items: Item[]; isActive: boolean; autoReady: boolean; kitchenStationId: string | null; sortOrder: number;
   translations?: CatTranslationsMap | null;
 };
+
+type Station = { id: string; restaurantId: string; code: string; label: string; skipKitchen: boolean };
 
 type Menu = {
   id: string; name: string; isActive: boolean; isPrimary: boolean;
@@ -487,7 +489,7 @@ function ModifierGroupsEditor({ itemId, restaurantId }: { itemId: string; restau
   );
 }
 
-export default function MenusClient({ restaurants, canEdit }: { restaurants: Restaurant[]; canEdit: boolean }) {
+export default function MenusClient({ restaurants, stations = [], canEdit }: { restaurants: Restaurant[]; stations?: Station[]; canEdit: boolean }) {
   const router = useRouter();
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(restaurants[0] ?? null);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(restaurants[0]?.menus[0] ?? null);
@@ -966,24 +968,30 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
     setDeleteConfirm(null);
   }
 
-  async function toggleCategoryAutoReady(catId: string, current: boolean) {
-    // Optimistic update first
+  // תחנות המטבח של המסעדה הנבחרת (לבורר השיוך על כל קטגוריה)
+  const restaurantStations = stations.filter(s => s.restaurantId === selectedRestaurant?.id);
+
+  async function setCategoryStation(catId: string, stationId: string) {
+    const prev = selectedMenu?.categories.find(c => c.id === catId);
+    const station = restaurantStations.find(s => s.id === stationId);
+    const nextAutoReady = station?.skipKitchen ?? false;
+    // Optimistic update
     updateMenu(m => ({
       ...m,
-      categories: m.categories.map(c => c.id === catId ? { ...c, autoReady: !current } : c),
+      categories: m.categories.map(c => c.id === catId ? { ...c, kitchenStationId: stationId, autoReady: nextAutoReady } : c),
     }));
     try {
       const res = await fetch(`/api/admin/categories/${catId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autoReady: !current }),
+        body: JSON.stringify({ kitchenStationId: stationId }),
       });
       if (!res.ok) throw new Error("save failed");
     } catch {
       // Revert on failure
       updateMenu(m => ({
         ...m,
-        categories: m.categories.map(c => c.id === catId ? { ...c, autoReady: current } : c),
+        categories: m.categories.map(c => c.id === catId ? { ...c, kitchenStationId: prev?.kitchenStationId ?? null, autoReady: prev?.autoReady ?? false } : c),
       }));
     }
   }
@@ -1390,11 +1398,14 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                                 {cat.image && <img src={cat.image} alt={cat.name} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />}
                                 <span style={{ fontSize: 17, fontWeight: 700, color: G_TEXT }}>{cat.name}</span>
                                 <span style={{ fontSize: 11, fontWeight: 700, color: G_MUTED, opacity: 0.7 }}>[{idx + 1}]</span>
-                                {cat.autoReady && (
-                                  <span style={{ background: "rgba(245,158,11,0.15)", color: "#FBBF24", border: "1px solid rgba(245,158,11,0.3)", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>
-                                    ללא מטבח
-                                  </span>
-                                )}
+                                {(() => {
+                                  const st = restaurantStations.find(s => s.id === cat.kitchenStationId);
+                                  return st ? (
+                                    <span title={st.skipKitchen ? "מדלג על המטבח" : "תחנת מטבח"} style={{ background: "rgba(245,158,11,0.15)", color: "#FBBF24", border: "1px solid rgba(245,158,11,0.3)", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>
+                                      {st.code} · {st.label}
+                                    </span>
+                                  ) : null;
+                                })()}
                               </div>
                               <div style={{ fontSize: 12, color: G_MUTED, display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>
@@ -1419,13 +1430,17 @@ export default function MenusClient({ restaurants, canEdit }: { restaurants: Res
                                 title="הוסף פריט">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                               </button>
-                              <button onClick={() => toggleCategoryAutoReady(cat.id, cat.autoReady ?? false)}
-                                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
-                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
-                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                                title="ערוך">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              </button>
+                              <select
+                                value={cat.kitchenStationId ?? ""}
+                                onChange={e => setCategoryStation(cat.id, e.target.value)}
+                                title="שיוך מנות — תחנת מטבח"
+                                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: "8px 10px", borderRadius: 10, cursor: "pointer", fontSize: 12, fontFamily: "inherit", outline: "none" }}
+                              >
+                                {!cat.kitchenStationId && <option value="">ללא שיוך</option>}
+                                {restaurantStations.map(s => (
+                                  <option key={s.id} value={s.id}>{s.code} · {s.label}</option>
+                                ))}
+                              </select>
                               <button onClick={() => deleteCategory(cat.id)}
                                 style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
                                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#FCA5A5"; }}

@@ -304,6 +304,29 @@ const sqls = [
       END LOOP;
     END LOOP;
   END $$;`,
+  // Kitchen stations ("שיוך מנות") — configurable per restaurant
+  `CREATE TABLE IF NOT EXISTS "KitchenStation" (
+    "id" TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "skipKitchen" BOOLEAN NOT NULL DEFAULT false,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "KitchenStation_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "KitchenStation_restaurantId_fkey" FOREIGN KEY ("restaurantId")
+      REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "KitchenStation_restaurantId_code_key" ON "KitchenStation"("restaurantId", "code");`,
+  `ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "kitchenStationId" TEXT;`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Category_kitchenStationId_fkey') THEN
+      ALTER TABLE "Category" ADD CONSTRAINT "Category_kitchenStationId_fkey"
+        FOREIGN KEY ("kitchenStationId") REFERENCES "KitchenStation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+  END $$;`,
 ];
 
 async function run() {

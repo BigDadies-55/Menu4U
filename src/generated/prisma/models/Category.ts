@@ -42,6 +42,7 @@ export type CategoryMinAggregateOutputType = {
   image: string | null
   isActive: boolean | null
   autoReady: boolean | null
+  kitchenStationId: string | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -55,6 +56,7 @@ export type CategoryMaxAggregateOutputType = {
   image: string | null
   isActive: boolean | null
   autoReady: boolean | null
+  kitchenStationId: string | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -68,6 +70,7 @@ export type CategoryCountAggregateOutputType = {
   image: number
   isActive: number
   autoReady: number
+  kitchenStationId: number
   sortOrder: number
   translations: number
   createdAt: number
@@ -92,6 +95,7 @@ export type CategoryMinAggregateInputType = {
   image?: true
   isActive?: true
   autoReady?: true
+  kitchenStationId?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -105,6 +109,7 @@ export type CategoryMaxAggregateInputType = {
   image?: true
   isActive?: true
   autoReady?: true
+  kitchenStationId?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -118,6 +123,7 @@ export type CategoryCountAggregateInputType = {
   image?: true
   isActive?: true
   autoReady?: true
+  kitchenStationId?: true
   sortOrder?: true
   translations?: true
   createdAt?: true
@@ -219,6 +225,7 @@ export type CategoryGroupByOutputType = {
   image: string | null
   isActive: boolean
   autoReady: boolean
+  kitchenStationId: string | null
   sortOrder: number
   translations: runtime.JsonValue | null
   createdAt: Date
@@ -256,12 +263,14 @@ export type CategoryWhereInput = {
   image?: Prisma.StringNullableFilter<"Category"> | string | null
   isActive?: Prisma.BoolFilter<"Category"> | boolean
   autoReady?: Prisma.BoolFilter<"Category"> | boolean
+  kitchenStationId?: Prisma.StringNullableFilter<"Category"> | string | null
   sortOrder?: Prisma.IntFilter<"Category"> | number
   translations?: Prisma.JsonNullableFilter<"Category">
   createdAt?: Prisma.DateTimeFilter<"Category"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Category"> | Date | string
   menu?: Prisma.XOR<Prisma.MenuScalarRelationFilter, Prisma.MenuWhereInput>
   items?: Prisma.ItemListRelationFilter
+  kitchenStation?: Prisma.XOR<Prisma.KitchenStationNullableScalarRelationFilter, Prisma.KitchenStationWhereInput> | null
 }
 
 export type CategoryOrderByWithRelationInput = {
@@ -272,12 +281,14 @@ export type CategoryOrderByWithRelationInput = {
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   autoReady?: Prisma.SortOrder
+  kitchenStationId?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   menu?: Prisma.MenuOrderByWithRelationInput
   items?: Prisma.ItemOrderByRelationAggregateInput
+  kitchenStation?: Prisma.KitchenStationOrderByWithRelationInput
 }
 
 export type CategoryWhereUniqueInput = Prisma.AtLeast<{
@@ -291,12 +302,14 @@ export type CategoryWhereUniqueInput = Prisma.AtLeast<{
   image?: Prisma.StringNullableFilter<"Category"> | string | null
   isActive?: Prisma.BoolFilter<"Category"> | boolean
   autoReady?: Prisma.BoolFilter<"Category"> | boolean
+  kitchenStationId?: Prisma.StringNullableFilter<"Category"> | string | null
   sortOrder?: Prisma.IntFilter<"Category"> | number
   translations?: Prisma.JsonNullableFilter<"Category">
   createdAt?: Prisma.DateTimeFilter<"Category"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Category"> | Date | string
   menu?: Prisma.XOR<Prisma.MenuScalarRelationFilter, Prisma.MenuWhereInput>
   items?: Prisma.ItemListRelationFilter
+  kitchenStation?: Prisma.XOR<Prisma.KitchenStationNullableScalarRelationFilter, Prisma.KitchenStationWhereInput> | null
 }, "id">
 
 export type CategoryOrderByWithAggregationInput = {
@@ -307,6 +320,7 @@ export type CategoryOrderByWithAggregationInput = {
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   autoReady?: Prisma.SortOrder
+  kitchenStationId?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   translations?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -329,6 +343,7 @@ export type CategoryScalarWhereWithAggregatesInput = {
   image?: Prisma.StringNullableWithAggregatesFilter<"Category"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"Category"> | boolean
   autoReady?: Prisma.BoolWithAggregatesFilter<"Category"> | boolean
+  kitchenStationId?: Prisma.StringNullableWithAggregatesFilter<"Category"> | string | null
   sortOrder?: Prisma.IntWithAggregatesFilter<"Category"> | number
   translations?: Prisma.JsonNullableWithAggregatesFilter<"Category">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Category"> | Date | string
@@ -348,6 +363,7 @@ export type CategoryCreateInput = {
   updatedAt?: Date | string
   menu: Prisma.MenuCreateNestedOneWithoutCategoriesInput
   items?: Prisma.ItemCreateNestedManyWithoutCategoryInput
+  kitchenStation?: Prisma.KitchenStationCreateNestedOneWithoutCategoriesInput
 }
 
 export type CategoryUncheckedCreateInput = {
@@ -358,6 +374,7 @@ export type CategoryUncheckedCreateInput = {
   image?: string | null
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: string | null
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -378,6 +395,7 @@ export type CategoryUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   menu?: Prisma.MenuUpdateOneRequiredWithoutCategoriesNestedInput
   items?: Prisma.ItemUpdateManyWithoutCategoryNestedInput
+  kitchenStation?: Prisma.KitchenStationUpdateOneWithoutCategoriesNestedInput
 }
 
 export type CategoryUncheckedUpdateInput = {
@@ -388,6 +406,7 @@ export type CategoryUncheckedUpdateInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kitchenStationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -403,6 +422,7 @@ export type CategoryCreateManyInput = {
   image?: string | null
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: string | null
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -430,6 +450,7 @@ export type CategoryUncheckedUpdateManyInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kitchenStationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -454,6 +475,7 @@ export type CategoryCountOrderByAggregateInput = {
   image?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   autoReady?: Prisma.SortOrder
+  kitchenStationId?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   translations?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -472,6 +494,7 @@ export type CategoryMaxOrderByAggregateInput = {
   image?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   autoReady?: Prisma.SortOrder
+  kitchenStationId?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -485,6 +508,7 @@ export type CategoryMinOrderByAggregateInput = {
   image?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   autoReady?: Prisma.SortOrder
+  kitchenStationId?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -497,6 +521,48 @@ export type CategorySumOrderByAggregateInput = {
 export type CategoryScalarRelationFilter = {
   is?: Prisma.CategoryWhereInput
   isNot?: Prisma.CategoryWhereInput
+}
+
+export type CategoryCreateNestedManyWithoutKitchenStationInput = {
+  create?: Prisma.XOR<Prisma.CategoryCreateWithoutKitchenStationInput, Prisma.CategoryUncheckedCreateWithoutKitchenStationInput> | Prisma.CategoryCreateWithoutKitchenStationInput[] | Prisma.CategoryUncheckedCreateWithoutKitchenStationInput[]
+  connectOrCreate?: Prisma.CategoryCreateOrConnectWithoutKitchenStationInput | Prisma.CategoryCreateOrConnectWithoutKitchenStationInput[]
+  createMany?: Prisma.CategoryCreateManyKitchenStationInputEnvelope
+  connect?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+}
+
+export type CategoryUncheckedCreateNestedManyWithoutKitchenStationInput = {
+  create?: Prisma.XOR<Prisma.CategoryCreateWithoutKitchenStationInput, Prisma.CategoryUncheckedCreateWithoutKitchenStationInput> | Prisma.CategoryCreateWithoutKitchenStationInput[] | Prisma.CategoryUncheckedCreateWithoutKitchenStationInput[]
+  connectOrCreate?: Prisma.CategoryCreateOrConnectWithoutKitchenStationInput | Prisma.CategoryCreateOrConnectWithoutKitchenStationInput[]
+  createMany?: Prisma.CategoryCreateManyKitchenStationInputEnvelope
+  connect?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+}
+
+export type CategoryUpdateManyWithoutKitchenStationNestedInput = {
+  create?: Prisma.XOR<Prisma.CategoryCreateWithoutKitchenStationInput, Prisma.CategoryUncheckedCreateWithoutKitchenStationInput> | Prisma.CategoryCreateWithoutKitchenStationInput[] | Prisma.CategoryUncheckedCreateWithoutKitchenStationInput[]
+  connectOrCreate?: Prisma.CategoryCreateOrConnectWithoutKitchenStationInput | Prisma.CategoryCreateOrConnectWithoutKitchenStationInput[]
+  upsert?: Prisma.CategoryUpsertWithWhereUniqueWithoutKitchenStationInput | Prisma.CategoryUpsertWithWhereUniqueWithoutKitchenStationInput[]
+  createMany?: Prisma.CategoryCreateManyKitchenStationInputEnvelope
+  set?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  disconnect?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  delete?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  connect?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  update?: Prisma.CategoryUpdateWithWhereUniqueWithoutKitchenStationInput | Prisma.CategoryUpdateWithWhereUniqueWithoutKitchenStationInput[]
+  updateMany?: Prisma.CategoryUpdateManyWithWhereWithoutKitchenStationInput | Prisma.CategoryUpdateManyWithWhereWithoutKitchenStationInput[]
+  deleteMany?: Prisma.CategoryScalarWhereInput | Prisma.CategoryScalarWhereInput[]
+}
+
+export type CategoryUncheckedUpdateManyWithoutKitchenStationNestedInput = {
+  create?: Prisma.XOR<Prisma.CategoryCreateWithoutKitchenStationInput, Prisma.CategoryUncheckedCreateWithoutKitchenStationInput> | Prisma.CategoryCreateWithoutKitchenStationInput[] | Prisma.CategoryUncheckedCreateWithoutKitchenStationInput[]
+  connectOrCreate?: Prisma.CategoryCreateOrConnectWithoutKitchenStationInput | Prisma.CategoryCreateOrConnectWithoutKitchenStationInput[]
+  upsert?: Prisma.CategoryUpsertWithWhereUniqueWithoutKitchenStationInput | Prisma.CategoryUpsertWithWhereUniqueWithoutKitchenStationInput[]
+  createMany?: Prisma.CategoryCreateManyKitchenStationInputEnvelope
+  set?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  disconnect?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  delete?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  connect?: Prisma.CategoryWhereUniqueInput | Prisma.CategoryWhereUniqueInput[]
+  update?: Prisma.CategoryUpdateWithWhereUniqueWithoutKitchenStationInput | Prisma.CategoryUpdateWithWhereUniqueWithoutKitchenStationInput[]
+  updateMany?: Prisma.CategoryUpdateManyWithWhereWithoutKitchenStationInput | Prisma.CategoryUpdateManyWithWhereWithoutKitchenStationInput[]
+  deleteMany?: Prisma.CategoryScalarWhereInput | Prisma.CategoryScalarWhereInput[]
 }
 
 export type CategoryCreateNestedManyWithoutMenuInput = {
@@ -555,6 +621,80 @@ export type CategoryUpdateOneRequiredWithoutItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CategoryUpdateToOneWithWhereWithoutItemsInput, Prisma.CategoryUpdateWithoutItemsInput>, Prisma.CategoryUncheckedUpdateWithoutItemsInput>
 }
 
+export type CategoryCreateWithoutKitchenStationInput = {
+  id?: string
+  name: string
+  description?: string | null
+  image?: string | null
+  isActive?: boolean
+  autoReady?: boolean
+  sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  menu: Prisma.MenuCreateNestedOneWithoutCategoriesInput
+  items?: Prisma.ItemCreateNestedManyWithoutCategoryInput
+}
+
+export type CategoryUncheckedCreateWithoutKitchenStationInput = {
+  id?: string
+  menuId: string
+  name: string
+  description?: string | null
+  image?: string | null
+  isActive?: boolean
+  autoReady?: boolean
+  sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.ItemUncheckedCreateNestedManyWithoutCategoryInput
+}
+
+export type CategoryCreateOrConnectWithoutKitchenStationInput = {
+  where: Prisma.CategoryWhereUniqueInput
+  create: Prisma.XOR<Prisma.CategoryCreateWithoutKitchenStationInput, Prisma.CategoryUncheckedCreateWithoutKitchenStationInput>
+}
+
+export type CategoryCreateManyKitchenStationInputEnvelope = {
+  data: Prisma.CategoryCreateManyKitchenStationInput | Prisma.CategoryCreateManyKitchenStationInput[]
+  skipDuplicates?: boolean
+}
+
+export type CategoryUpsertWithWhereUniqueWithoutKitchenStationInput = {
+  where: Prisma.CategoryWhereUniqueInput
+  update: Prisma.XOR<Prisma.CategoryUpdateWithoutKitchenStationInput, Prisma.CategoryUncheckedUpdateWithoutKitchenStationInput>
+  create: Prisma.XOR<Prisma.CategoryCreateWithoutKitchenStationInput, Prisma.CategoryUncheckedCreateWithoutKitchenStationInput>
+}
+
+export type CategoryUpdateWithWhereUniqueWithoutKitchenStationInput = {
+  where: Prisma.CategoryWhereUniqueInput
+  data: Prisma.XOR<Prisma.CategoryUpdateWithoutKitchenStationInput, Prisma.CategoryUncheckedUpdateWithoutKitchenStationInput>
+}
+
+export type CategoryUpdateManyWithWhereWithoutKitchenStationInput = {
+  where: Prisma.CategoryScalarWhereInput
+  data: Prisma.XOR<Prisma.CategoryUpdateManyMutationInput, Prisma.CategoryUncheckedUpdateManyWithoutKitchenStationInput>
+}
+
+export type CategoryScalarWhereInput = {
+  AND?: Prisma.CategoryScalarWhereInput | Prisma.CategoryScalarWhereInput[]
+  OR?: Prisma.CategoryScalarWhereInput[]
+  NOT?: Prisma.CategoryScalarWhereInput | Prisma.CategoryScalarWhereInput[]
+  id?: Prisma.StringFilter<"Category"> | string
+  menuId?: Prisma.StringFilter<"Category"> | string
+  name?: Prisma.StringFilter<"Category"> | string
+  description?: Prisma.StringNullableFilter<"Category"> | string | null
+  image?: Prisma.StringNullableFilter<"Category"> | string | null
+  isActive?: Prisma.BoolFilter<"Category"> | boolean
+  autoReady?: Prisma.BoolFilter<"Category"> | boolean
+  kitchenStationId?: Prisma.StringNullableFilter<"Category"> | string | null
+  sortOrder?: Prisma.IntFilter<"Category"> | number
+  translations?: Prisma.JsonNullableFilter<"Category">
+  createdAt?: Prisma.DateTimeFilter<"Category"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Category"> | Date | string
+}
+
 export type CategoryCreateWithoutMenuInput = {
   id?: string
   name: string
@@ -567,6 +707,7 @@ export type CategoryCreateWithoutMenuInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.ItemCreateNestedManyWithoutCategoryInput
+  kitchenStation?: Prisma.KitchenStationCreateNestedOneWithoutCategoriesInput
 }
 
 export type CategoryUncheckedCreateWithoutMenuInput = {
@@ -576,6 +717,7 @@ export type CategoryUncheckedCreateWithoutMenuInput = {
   image?: string | null
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: string | null
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -609,23 +751,6 @@ export type CategoryUpdateManyWithWhereWithoutMenuInput = {
   data: Prisma.XOR<Prisma.CategoryUpdateManyMutationInput, Prisma.CategoryUncheckedUpdateManyWithoutMenuInput>
 }
 
-export type CategoryScalarWhereInput = {
-  AND?: Prisma.CategoryScalarWhereInput | Prisma.CategoryScalarWhereInput[]
-  OR?: Prisma.CategoryScalarWhereInput[]
-  NOT?: Prisma.CategoryScalarWhereInput | Prisma.CategoryScalarWhereInput[]
-  id?: Prisma.StringFilter<"Category"> | string
-  menuId?: Prisma.StringFilter<"Category"> | string
-  name?: Prisma.StringFilter<"Category"> | string
-  description?: Prisma.StringNullableFilter<"Category"> | string | null
-  image?: Prisma.StringNullableFilter<"Category"> | string | null
-  isActive?: Prisma.BoolFilter<"Category"> | boolean
-  autoReady?: Prisma.BoolFilter<"Category"> | boolean
-  sortOrder?: Prisma.IntFilter<"Category"> | number
-  translations?: Prisma.JsonNullableFilter<"Category">
-  createdAt?: Prisma.DateTimeFilter<"Category"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Category"> | Date | string
-}
-
 export type CategoryCreateWithoutItemsInput = {
   id?: string
   name: string
@@ -638,6 +763,7 @@ export type CategoryCreateWithoutItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   menu: Prisma.MenuCreateNestedOneWithoutCategoriesInput
+  kitchenStation?: Prisma.KitchenStationCreateNestedOneWithoutCategoriesInput
 }
 
 export type CategoryUncheckedCreateWithoutItemsInput = {
@@ -648,6 +774,7 @@ export type CategoryUncheckedCreateWithoutItemsInput = {
   image?: string | null
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: string | null
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -682,9 +809,69 @@ export type CategoryUpdateWithoutItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   menu?: Prisma.MenuUpdateOneRequiredWithoutCategoriesNestedInput
+  kitchenStation?: Prisma.KitchenStationUpdateOneWithoutCategoriesNestedInput
 }
 
 export type CategoryUncheckedUpdateWithoutItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  menuId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kitchenStationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type CategoryCreateManyKitchenStationInput = {
+  id?: string
+  menuId: string
+  name: string
+  description?: string | null
+  image?: string | null
+  isActive?: boolean
+  autoReady?: boolean
+  sortOrder?: number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type CategoryUpdateWithoutKitchenStationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  menu?: Prisma.MenuUpdateOneRequiredWithoutCategoriesNestedInput
+  items?: Prisma.ItemUpdateManyWithoutCategoryNestedInput
+}
+
+export type CategoryUncheckedUpdateWithoutKitchenStationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  menuId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.ItemUncheckedUpdateManyWithoutCategoryNestedInput
+}
+
+export type CategoryUncheckedUpdateManyWithoutKitchenStationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   menuId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -705,6 +892,7 @@ export type CategoryCreateManyMenuInput = {
   image?: string | null
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: string | null
   sortOrder?: number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -723,6 +911,7 @@ export type CategoryUpdateWithoutMenuInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.ItemUpdateManyWithoutCategoryNestedInput
+  kitchenStation?: Prisma.KitchenStationUpdateOneWithoutCategoriesNestedInput
 }
 
 export type CategoryUncheckedUpdateWithoutMenuInput = {
@@ -732,6 +921,7 @@ export type CategoryUncheckedUpdateWithoutMenuInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kitchenStationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -746,6 +936,7 @@ export type CategoryUncheckedUpdateManyWithoutMenuInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoReady?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kitchenStationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   translations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -791,12 +982,14 @@ export type CategorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   image?: boolean
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   menu?: boolean | Prisma.MenuDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Category$itemsArgs<ExtArgs>
+  kitchenStation?: boolean | Prisma.Category$kitchenStationArgs<ExtArgs>
   _count?: boolean | Prisma.CategoryCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["category"]>
 
@@ -808,11 +1001,13 @@ export type CategorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   image?: boolean
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   menu?: boolean | Prisma.MenuDefaultArgs<ExtArgs>
+  kitchenStation?: boolean | Prisma.Category$kitchenStationArgs<ExtArgs>
 }, ExtArgs["result"]["category"]>
 
 export type CategorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -823,11 +1018,13 @@ export type CategorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   image?: boolean
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   menu?: boolean | Prisma.MenuDefaultArgs<ExtArgs>
+  kitchenStation?: boolean | Prisma.Category$kitchenStationArgs<ExtArgs>
 }, ExtArgs["result"]["category"]>
 
 export type CategorySelectScalar = {
@@ -838,23 +1035,27 @@ export type CategorySelectScalar = {
   image?: boolean
   isActive?: boolean
   autoReady?: boolean
+  kitchenStationId?: boolean
   sortOrder?: boolean
   translations?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type CategoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "menuId" | "name" | "description" | "image" | "isActive" | "autoReady" | "sortOrder" | "translations" | "createdAt" | "updatedAt", ExtArgs["result"]["category"]>
+export type CategoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "menuId" | "name" | "description" | "image" | "isActive" | "autoReady" | "kitchenStationId" | "sortOrder" | "translations" | "createdAt" | "updatedAt", ExtArgs["result"]["category"]>
 export type CategoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   menu?: boolean | Prisma.MenuDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Category$itemsArgs<ExtArgs>
+  kitchenStation?: boolean | Prisma.Category$kitchenStationArgs<ExtArgs>
   _count?: boolean | Prisma.CategoryCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CategoryIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   menu?: boolean | Prisma.MenuDefaultArgs<ExtArgs>
+  kitchenStation?: boolean | Prisma.Category$kitchenStationArgs<ExtArgs>
 }
 export type CategoryIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   menu?: boolean | Prisma.MenuDefaultArgs<ExtArgs>
+  kitchenStation?: boolean | Prisma.Category$kitchenStationArgs<ExtArgs>
 }
 
 export type $CategoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -862,6 +1063,7 @@ export type $CategoryPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   objects: {
     menu: Prisma.$MenuPayload<ExtArgs>
     items: Prisma.$ItemPayload<ExtArgs>[]
+    kitchenStation: Prisma.$KitchenStationPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -871,6 +1073,7 @@ export type $CategoryPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     image: string | null
     isActive: boolean
     autoReady: boolean
+    kitchenStationId: string | null
     sortOrder: number
     translations: runtime.JsonValue | null
     createdAt: Date
@@ -1271,6 +1474,7 @@ export interface Prisma__CategoryClient<T, Null = never, ExtArgs extends runtime
   readonly [Symbol.toStringTag]: "PrismaPromise"
   menu<T extends Prisma.MenuDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MenuDefaultArgs<ExtArgs>>): Prisma.Prisma__MenuClient<runtime.Types.Result.GetResult<Prisma.$MenuPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   items<T extends Prisma.Category$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Category$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  kitchenStation<T extends Prisma.Category$kitchenStationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Category$kitchenStationArgs<ExtArgs>>): Prisma.Prisma__KitchenStationClient<runtime.Types.Result.GetResult<Prisma.$KitchenStationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1307,6 +1511,7 @@ export interface CategoryFieldRefs {
   readonly image: Prisma.FieldRef<"Category", 'String'>
   readonly isActive: Prisma.FieldRef<"Category", 'Boolean'>
   readonly autoReady: Prisma.FieldRef<"Category", 'Boolean'>
+  readonly kitchenStationId: Prisma.FieldRef<"Category", 'String'>
   readonly sortOrder: Prisma.FieldRef<"Category", 'Int'>
   readonly translations: Prisma.FieldRef<"Category", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Category", 'DateTime'>
@@ -1733,6 +1938,25 @@ export type Category$itemsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.ItemScalarFieldEnum | Prisma.ItemScalarFieldEnum[]
+}
+
+/**
+ * Category.kitchenStation
+ */
+export type Category$kitchenStationArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the KitchenStation
+   */
+  select?: Prisma.KitchenStationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the KitchenStation
+   */
+  omit?: Prisma.KitchenStationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KitchenStationInclude<ExtArgs> | null
+  where?: Prisma.KitchenStationWhereInput
 }
 
 /**
