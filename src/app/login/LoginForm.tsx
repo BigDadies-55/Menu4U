@@ -65,7 +65,7 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
           align-items: center;
           justify-content: center;
           padding: 24px;
-          background: rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.85);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
         }
