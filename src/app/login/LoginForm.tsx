@@ -59,7 +59,7 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
         .lg-card {
           position: relative; z-index: 1;
           width: 100%; max-width: 380px;
-          background: rgba(255,255,255,0.55);
+          background: rgba(255,255,255,0.62);
           backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
           border: 1px solid rgba(255,255,255,0.55);
           border-radius: 24px;
