@@ -107,7 +107,7 @@ function ModuleTableRow({
           />
           <span style={{
             fontSize: 10, fontWeight: 600,
-            color: effective ? GREEN : expired ? RED : T.muted,
+            color: effective ? T.gold : expired ? RED : T.muted,
           }}>
             {expired ? "פג תוקף" : effective ? "פעיל" : "כבוי"}
           </span>
