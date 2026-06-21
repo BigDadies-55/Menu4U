@@ -85,7 +85,7 @@ export default function AssistantAdminClient({ entries, unanswered, stats }: { e
   });
 
   return (
-    <div style={{ padding: 24, maxWidth: 900, margin: "0 auto", direction: "rtl" }}>
+    <div style={{ padding: "clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 40px)", maxWidth: "100%", direction: "rtl" }}>
       <div style={{ fontSize: T.f2xl, fontWeight: 900, color: T.text, marginBottom: 4 }}>💬 ניהול עוזר אישי</div>
       <div style={{ fontSize: T.fsm, color: T.muted, marginBottom: 24 }}>הוסף, ערוך ומחק שאלות ותשובות. הציינים (👍/👎) משפיעים על דירוג התשובות.</div>
 

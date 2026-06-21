@@ -75,8 +75,8 @@ const BGS = [
     cw: `repeating-linear-gradient(60deg,rgba(100,80,220,0.08) 0px,rgba(100,80,220,0.08) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 50% 50%,#0a0a20,#050510)` },
   { label: "בורדו",  body: T.bg,
     cw: `repeating-linear-gradient(30deg,rgba(180,80,20,0.09) 0px,rgba(180,80,20,0.09) 1px,transparent 1px,transparent 40px),radial-gradient(ellipse at 40% 60%,#1a0a05,#0a0502)` },
-  { label: "שמנת",   body: T.text,
-    cw: `linear-gradient(135deg,#f5f0e8 0%,#e8dcc8 50%,#f0e8d8 100%)` },
+  { label: "פרקט",   body: "#d2ddd4",
+    cw: `repeating-linear-gradient(0deg,rgba(90,110,95,0.16) 0px,rgba(90,110,95,0.16) 1px,transparent 1px,transparent 22px),repeating-linear-gradient(90deg,rgba(90,110,95,0.16) 0px,rgba(90,110,95,0.16) 1px,transparent 1px,transparent 22px),#e2ece3` },
 ];
 
 /* ══════════════════════════ Helpers ══ */
@@ -161,7 +161,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
 /* ══════════════════════════ Toast ══ */
 function Toast({ msg }: { msg: string }) {
   return (
-    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "rgba(20,10,4,0.97)", border: "1px solid rgba(212,160,23,0.5)", color: T.gold, padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "rgba(20,10,4,0.97)", border: `1px solid ${T.border}`, color: T.gold, padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
       {msg}
     </div>
   );
@@ -416,10 +416,10 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
     });
   }
 
-  const inp: React.CSSProperties = { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(212,160,23,0.2)", color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { background: T.raised, border: "1px solid rgba(212,160,23,0.2)", color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
 
   return (
-    <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: "linear-gradient(160deg,#180a05 0%,#251008 60%,#1a0d06 100%)", border: "1px solid rgba(212,160,23,0.5)", borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: T.text }}>
+    <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: `linear-gradient(160deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: T.text }}>
 
       {/* Draggable header */}
       <div
@@ -433,7 +433,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         }}
       >
         <span style={{ fontSize: 13, fontWeight: 700, color: T.gold }}>✏️ שולחן {table.num}</span>
-        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#888", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "2px 7px", borderRadius: 6 }}>×</button>
+        <button onClick={onClose} style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.muted, cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "2px 7px", borderRadius: 6 }}>×</button>
       </div>
 
       <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -494,7 +494,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         </div>
 
         {/* Apply */}
-        <button onClick={apply} style={{ width: "100%", padding: "10px 0", borderRadius: 10, background: "linear-gradient(135deg,#7a5a0e,#d4a017)", color: "#fff", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", letterSpacing: ".02em", boxShadow: "0 2px 12px rgba(212,160,23,0.3)" }}>
+        <button onClick={apply} style={{ width: "100%", padding: "10px 0", borderRadius: 10, background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})`, color: "#fff", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", letterSpacing: ".02em", boxShadow: "0 2px 12px rgba(212,160,23,0.3)" }}>
           ✓ עדכן שולחן
         </button>
 
@@ -553,7 +553,7 @@ function BgModal({ room, onClose, onUpdate }: {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.45)", borderRadius: 18, width: 420, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", color: "#fff" }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: `linear-gradient(145deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 18, width: 420, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", color: T.text }} onClick={e => e.stopPropagation()}>
         <div style={{ fontSize: 15, fontWeight: 800, color: T.gold, marginBottom: 16 }}>🖼 רקע קנבס</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
@@ -565,10 +565,10 @@ function BgModal({ room, onClose, onUpdate }: {
           ))}
         </div>
 
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14, marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: "#777", marginBottom: 8 }}>תמונת רקע מותאמת</div>
+        <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>תמונת רקע מותאמת</div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => fileRef.current?.click()} style={{ flex: 1, padding: "9px 0", borderRadius: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: "#ccc", cursor: "pointer", fontSize: 13 }}>
+            <button onClick={() => fileRef.current?.click()} style={{ flex: 1, padding: "9px 0", borderRadius: 10, background: T.raised, border: `1px solid ${T.border}`, color: T.sub, cursor: "pointer", fontSize: 13 }}>
               📁 העלה תמונה
             </button>
             {room.bgImg && (
@@ -584,7 +584,7 @@ function BgModal({ room, onClose, onUpdate }: {
           }} />
           {room.bgImg && (
             <div style={{ marginTop: 10 }}>
-              <div style={{ fontSize: 11, color: "#777", marginBottom: 4 }}>שקיפות: {Math.round((room.bgOpacity ?? 1) * 100)}%</div>
+              <div style={{ fontSize: 11, color: T.muted, marginBottom: 4 }}>שקיפות: {Math.round((room.bgOpacity ?? 1) * 100)}%</div>
               <input type="range" min={0.1} max={1} step={0.05} value={room.bgOpacity ?? 1}
                 onChange={e => onUpdate({ bgOpacity: parseFloat(e.target.value) })}
                 style={{ width: "100%", accentColor: T.gold }} />
@@ -592,7 +592,7 @@ function BgModal({ room, onClose, onUpdate }: {
           )}
         </div>
 
-        <button onClick={onClose} style={{ width: "100%", padding: "10px 0", borderRadius: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", cursor: "pointer", fontSize: 14 }}>סגור</button>
+        <button onClick={onClose} style={{ width: "100%", padding: "10px 0", borderRadius: 10, background: T.raised, border: `1px solid ${T.border}`, color: T.muted, cursor: "pointer", fontSize: 14 }}>סגור</button>
       </div>
     </div>
   );
@@ -609,27 +609,27 @@ function StatsModal({ room, onClose, onResetEvening }: {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.45)", borderRadius: 18, width: 360, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", color: "#fff" }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: `linear-gradient(145deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 18, width: 360, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", color: T.text }} onClick={e => e.stopPropagation()}>
         <div style={{ fontSize: 15, fontWeight: 800, color: T.gold, marginBottom: 16 }}>📊 סטטיסטיקות — {room.name}</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
           {(Object.entries(STATUS_CFG) as [TableStatus, typeof STATUS_CFG[TableStatus]][]).map(([s, cfg]) => {
             const cnt = tables.filter(t => t.status === s).length;
             return (
-              <div key={s} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", border: `1px solid ${cfg.color}30` }}>
+              <div key={s} style={{ background: T.raised, borderRadius: 12, padding: "14px 16px", border: `1px solid ${cfg.color}30` }}>
                 <div style={{ fontSize: 30, fontWeight: 900, color: cfg.color }}>{cnt}</div>
-                <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{cfg.label}</div>
+                <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{cfg.label}</div>
               </div>
             );
           })}
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+        <div style={{ background: T.raised, borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: "#aaa" }}>תפוסה</span>
+            <span style={{ fontSize: 13, color: T.muted }}>תפוסה</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: T.gold }}>{seatedTotal}/{totalSeats} ({occPct}%)</span>
           </div>
-          <div style={{ height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ height: 8, background: T.raised, borderRadius: 4, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${occPct}%`, background: "linear-gradient(90deg,#d4a017,#ffd700)", borderRadius: 4, transition: "width 0.3s" }} />
           </div>
         </div>
@@ -638,7 +638,7 @@ function StatsModal({ room, onClose, onResetEvening }: {
           <button onClick={onResetEvening} style={{ flex: 1, padding: "10px 0", borderRadius: 10, background: "rgba(244,67,54,0.12)", border: "1px solid rgba(244,67,54,0.3)", color: T.red, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
             🔄 אפס ערב
           </button>
-          <button onClick={onClose} style={{ flex: 1, padding: "10px 0", borderRadius: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", cursor: "pointer", fontSize: 13 }}>סגור</button>
+          <button onClick={onClose} style={{ flex: 1, padding: "10px 0", borderRadius: 10, background: T.raised, border: `1px solid ${T.border}`, color: T.muted, cursor: "pointer", fontSize: 13 }}>סגור</button>
         </div>
       </div>
     </div>
@@ -1534,7 +1534,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {/* Autosave */}
         <button onClick={() => setAutoSave(s => !s)} title="שמירה אוטומטית כל 30 שניות"
           style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 8, background: autoSave ? "rgba(212,160,23,0.12)" : T.raised, border: `1px solid ${autoSave ? "rgba(212,160,23,0.35)" : T.border}`, color: autoSave ? C.gold : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none", fontFamily: "inherit", whiteSpace: "nowrap" as const, flexShrink: 0 }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: autoSave ? T.green : "#555", display: "inline-block", flexShrink: 0 }} />
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: autoSave ? T.green : T.muted, display: "inline-block", flexShrink: 0 }} />
           אוטו
         </button>
 
@@ -1549,7 +1549,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         </TopBtn>
 
         {/* Save — leftmost */}
-        <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : "linear-gradient(135deg,#7a5a0e,#d4a017)", color: saved ? T.green : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" as const, letterSpacing: ".02em", flexShrink: 0 }}>
+        <button onClick={saveLayout} disabled={saving} style={{ padding: "5px 18px", borderRadius: 8, background: saved ? "rgba(76,175,80,0.22)" : `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})`, color: saved ? T.green : "#fff", fontWeight: 800, fontSize: 13, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" as const, letterSpacing: ".02em", flexShrink: 0 }}>
           {saving ? "שומר..." : saved ? "✓ נשמר" : "שמור"}
         </button>
       </div>
@@ -1790,10 +1790,10 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               { icon: "🗑", label: "מחק", color: T.red, action: () => delTable(ctxMenu.id) },
             ];
         return (
-          <div style={{ position: "fixed", left: cx, top: cy, zIndex: 3000, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.35)", borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: menuW }}
+          <div style={{ position: "fixed", left: cx, top: cy, zIndex: 3000, background: `linear-gradient(145deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: menuW }}
             onMouseLeave={() => setCtxMenu(null)}>
             {(items as (null | { icon: string; label: string; color?: string; action: () => void })[]).map((item, i) => {
-              if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
+              if (!item) return <div key={i} style={{ height: 1, background: T.raised }} />;
               return (
                 <button key={i} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.color ?? C.text, background: "none", border: "none", cursor: "pointer", textAlign: "right" as const }}
                   onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.1)")}
@@ -1810,7 +1810,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       {toolsMenu && (
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 3998 }} onClick={() => setToolsMenu(null)} />
-          <div style={{ position: "fixed", top: toolsMenu.y, left: toolsMenu.x, zIndex: 3999, background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.4)", borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 170 }}>
+          <div style={{ position: "fixed", top: toolsMenu.y, left: toolsMenu.x, zIndex: 3999, background: `linear-gradient(145deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.65)", overflow: "hidden", minWidth: 170 }}>
             {([
               { icon: "⊞", label: "רשת (G)",   active: snapOn,    action: () => setSnapOn(s => !s) },
               { icon: "⚡", label: "סדר אוטו",  active: false,     action: () => { autoArrange(); setToolsMenu(null); } },
@@ -1821,7 +1821,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               { icon: "⬆", label: "ייבא Layout", active: false, action: () => { importFileRef.current?.click(); setToolsMenu(null); } },
               { icon: "📊", label: "ייצא שולחנות לאקסל", active: false, action: () => { exportTablesToExcel(); setToolsMenu(null); } },
             ] as (null | { icon: string; label: string; active: boolean; action: () => void })[]).map((item, i) => {
-              if (!item) return <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />;
+              if (!item) return <div key={i} style={{ height: 1, background: T.raised }} />;
               return (
                 <button key={i} onClick={item.action}
                   style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", fontSize: 13, color: item.active ? T.gold : T.text, background: item.active ? "rgba(212,160,23,0.12)" : "none", border: "none", cursor: "pointer", textAlign: "right" as const, fontFamily: "inherit" }}
@@ -1873,14 +1873,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       {/* ── New room modal ── */}
       {showNewRoom && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowNewRoom(false)}>
-          <div style={{ background: "linear-gradient(145deg,#1a0a06,#2a1008)", border: "1px solid rgba(212,160,23,0.45)", borderRadius: 18, width: 300, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)" }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: `linear-gradient(145deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 18, width: 300, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.7)" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 15, fontWeight: 800, color: C.gold, marginBottom: 14 }}>＋ חדר חדש</div>
             <input type="text" value={newRoomName} autoFocus
-              style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: "#fff", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+              style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
               placeholder="שם החדר..." onChange={e => setNewRoomName(e.target.value)} onKeyDown={e => e.key === "Enter" && addRoom()} />
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-              <button onClick={addRoom} style={{ flex: 1, padding: "10px 0", borderRadius: 10, color: "#fff", fontWeight: 700, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#7a5a0e,#d4a017)" }}>הוסף</button>
-              <button onClick={() => { setShowNewRoom(false); setNewRoomName(""); }} style={{ padding: "10px 14px", borderRadius: 10, color: C.muted, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer" }}>ביטול</button>
+              <button onClick={addRoom} style={{ flex: 1, padding: "10px 0", borderRadius: 10, color: "#fff", fontWeight: 700, border: "none", cursor: "pointer", background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})` }}>הוסף</button>
+              <button onClick={() => { setShowNewRoom(false); setNewRoomName(""); }} style={{ padding: "10px 14px", borderRadius: 10, color: C.muted, background: T.raised, border: `1px solid ${T.border}`, cursor: "pointer" }}>ביטול</button>
             </div>
           </div>
         </div>

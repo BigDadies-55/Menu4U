@@ -131,10 +131,11 @@ function calcHours(startTime: string, endTime: string): number {
 }
 
 // ── Glass design tokens ───────────────────────────────────────────────────────
-const GB          = "rgba(255,255,255,0.14)";   // glass border
-const GC          = "rgba(255,255,255,0.04)";   // glass card bg
-const GM          = "rgba(255,255,255,0.55)";   // glass muted text
-const ACCENT_GRAD = "linear-gradient(135deg,#D97706,#F59E0B)";
+// צבעים מהפלטה המרכזית (var(--c-*) מוזרק ע"י admin/layout.tsx)
+const GB          = "var(--c-border)";   // border
+const GC          = "var(--c-panel)";    // card bg
+const GM          = "var(--c-muted)";    // muted text
+const ACCENT_GRAD = "linear-gradient(135deg, var(--c-gold), color-mix(in srgb, var(--c-gold) 75%, #000))";
 const MODAL_BG    = "rgba(18,18,30,0.98)";
 const MODAL_BORDER = "rgba(255,255,255,0.18)";
 
@@ -435,7 +436,7 @@ export default function AttendanceManagerClient({
         {badge > 0 && (
           <span style={{
             minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9,
-            background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800,
+            background: "#ef4444", color: "var(--c-text)", fontSize: 11, fontWeight: 800,
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 0 0 2px rgba(239,68,68,0.35)",
           }}>{badge}</span>
@@ -494,14 +495,14 @@ export default function AttendanceManagerClient({
           {modeBtn("range",   "טווח")}
           {summaryMode === "monthly" && (
             <input type="month" value={summaryMonth} onChange={e => setSummaryMonth(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }} />
           )}
           {summaryMode === "range" && (<>
             <input type="date" value={summaryFrom} onChange={e => setSummaryFrom(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
             <span style={{ color: GM, fontSize: 12 }}>—</span>
             <input type="date" value={summaryTo} onChange={e => setSummaryTo(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           </>)}
           {summaryLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
@@ -535,7 +536,7 @@ export default function AttendanceManagerClient({
             <tbody>
               {summaries.map(s => (
                 <tr key={s.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                  <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700 }}>{s.name}</td>
+                  <td style={{ padding: "5px 10px", fontSize: 13, color: "var(--c-text)", fontWeight: 700 }}>{s.name}</td>
                   <td style={{ padding: "5px 8px", fontSize: 12, fontFamily: "monospace", color: "#FBBF24", fontWeight: 700 }}>{employeeNos[s.id] ?? "—"}</td>
                   {Object.keys(SHIFT_CFG).map(key => (
                     <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center" }}>
@@ -550,7 +551,7 @@ export default function AttendanceManagerClient({
                 </tr>
               ))}
               <tr style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-                <td style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 800 }}>סה"כ</td>
+                <td style={{ padding: "5px 10px", fontSize: 13, color: "var(--c-text)", fontWeight: 800 }}>סה"כ</td>
                 <td style={{ padding: "5px 8px" }}></td>
                 {Object.keys(SHIFT_CFG).map(key => (
                   <td key={key} style={{ padding: "5px 8px", fontSize: 12, color: GM, textAlign: "center" }}>
@@ -692,21 +693,21 @@ export default function AttendanceManagerClient({
           {modeBtn("range",   "טווח")}
           {attMode === "monthly" && (
             <input type="month" value={attMonth} onChange={e => setAttMonth(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           )}
           {attMode === "range" && (<>
             <input type="date" value={attFrom} onChange={e => setAttFrom(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
             <span style={{ color: GM, fontSize: 12 }}>—</span>
             <input type="date" value={attTo} onChange={e => setAttTo(e.target.value)}
-              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
+              style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit" }} />
           </>)}
           {allStaff.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <select value={attUser} onChange={e => setAttUser(e.target.value)}
-                style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer", minWidth: 130 }}>
-                <option value="all" style={{ background: "#1a1a2e" }}>כל העובדים</option>
-                {allStaff.map(m => <option key={m.id} value={m.id} style={{ background: "#1a1a2e" }}>{m.name}</option>)}
+                style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer", minWidth: 130 }}>
+                <option value="all" style={{ background: "var(--c-surface)" }}>כל העובדים</option>
+                {allStaff.map(m => <option key={m.id} value={m.id} style={{ background: "var(--c-surface)" }}>{m.name}</option>)}
               </select>
               {attUser !== "all" && employeeNos[attUser] && (
                 <span title="מספר עובד" style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#FBBF24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6, padding: "4px 8px" }}>#{employeeNos[attUser]}</span>
@@ -763,7 +764,7 @@ export default function AttendanceManagerClient({
                     {member.dates.map((d, di) => (
                       <tr key={d.date} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                         {di === 0 && (
-                          <td rowSpan={member.dates.length} style={{ padding: "5px 10px", fontSize: 13, color: "#fff", fontWeight: 700, verticalAlign: "middle", borderLeft: "2px solid rgba(255,255,255,0.08)" }}>
+                          <td rowSpan={member.dates.length} style={{ padding: "5px 10px", fontSize: 13, color: "var(--c-text)", fontWeight: 700, verticalAlign: "middle", borderLeft: "2px solid rgba(255,255,255,0.08)" }}>
                             {member.name}
                             <div style={{ fontSize: 10, color: GM, marginTop: 3, fontWeight: 400, lineHeight: 1.5 }}>
                               <div>נטו: {fmtH(member.total.netHours)} ש׳</div>
@@ -888,17 +889,17 @@ export default function AttendanceManagerClient({
         {deleteConfirm && (
           <div onClick={() => setDeleteConfirm(null)} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div onClick={e => e.stopPropagation()} style={{ background: "rgba(18,17,28,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 16, padding: 24, width: 320, maxWidth: "92vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>מחיקת רשומת נוכחות</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "var(--c-text)", marginBottom: 6 }}>מחיקת רשומת נוכחות</div>
               <div style={{ fontSize: 13, color: GM, marginBottom: 14 }}>{deleteConfirm.label}</div>
               <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>סיבת השינוי <span style={{ color: "#F87171" }}>*</span></label>
               <input
                 type="text" value={deleteNote} onChange={e => setDeleteNote(e.target.value)}
                 placeholder="למשל: שכחתי להחתים"
                 autoFocus
-                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "var(--c-text)", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
               />
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => deleteRecord(deleteConfirm.id, deleteConfirm.label)} disabled={saving || !deleteNote.trim()} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: deleteNote.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: saving || !deleteNote.trim() ? 0.5 : 1 }}>אשר מחיקה</button>
+                <button onClick={() => deleteRecord(deleteConfirm.id, deleteConfirm.label)} disabled={saving || !deleteNote.trim()} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: "#ef4444", color: "var(--c-text)", fontWeight: 700, fontSize: 13, cursor: deleteNote.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: saving || !deleteNote.trim() ? 0.5 : 1 }}>אשר מחיקה</button>
                 <button onClick={() => setDeleteConfirm(null)} style={{ padding: "9px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
               </div>
             </div>
@@ -909,21 +910,21 @@ export default function AttendanceManagerClient({
         {editTarget && (
           <div onClick={() => setEditTarget(null)} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div onClick={e => e.stopPropagation()} style={{ background: "rgba(18,17,28,0.98)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 16, padding: 24, width: 320, maxWidth: "92vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>עריכת שעת {typeLabel(editTarget.type)}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "var(--c-text)", marginBottom: 6 }}>עריכת שעת {typeLabel(editTarget.type)}</div>
               <div style={{ fontSize: 13, color: GM, marginBottom: 14 }}>שעה מקורית: {fmtT(editTarget.timestamp)}</div>
               <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>שעה חדשה <span style={{ color: "#F87171" }}>*</span></label>
               <input
                 type="time" value={editTime} onChange={e => setEditTime(e.target.value)}
-                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 12, fontFamily: "inherit", boxSizing: "border-box", colorScheme: "dark" }}
+                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "var(--c-text)", fontSize: 13, outline: "none", marginBottom: 12, fontFamily: "inherit", boxSizing: "border-box", colorScheme: "dark" }}
               />
               <label style={{ fontSize: 12, color: GM, display: "block", marginBottom: 5 }}>סיבת השינוי <span style={{ color: "#F87171" }}>*</span></label>
               <input
                 type="text" value={editReason} onChange={e => setEditReason(e.target.value)}
                 placeholder="למשל: שכחתי להחתים"
-                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "#fff", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "8px 11px", borderRadius: 9, background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, color: "var(--c-text)", fontSize: 13, outline: "none", marginBottom: 14, fontFamily: "inherit", boxSizing: "border-box" }}
               />
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={saveEdit} disabled={saving || !editTime || !editReason.trim()} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: ACCENT_GRAD, color: "#fff", fontWeight: 700, fontSize: 13, cursor: editTime && editReason.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: saving || !editTime || !editReason.trim() ? 0.5 : 1 }}>{saving ? "שומר..." : "שמור שינוי"}</button>
+                <button onClick={saveEdit} disabled={saving || !editTime || !editReason.trim()} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: ACCENT_GRAD, color: "var(--c-text)", fontWeight: 700, fontSize: 13, cursor: editTime && editReason.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: saving || !editTime || !editReason.trim() ? 0.5 : 1 }}>{saving ? "שומר..." : "שמור שינוי"}</button>
                 <button onClick={() => setEditTarget(null)} style={{ padding: "9px 16px", borderRadius: 9, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: GM, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
               </div>
             </div>
@@ -1025,9 +1026,9 @@ export default function AttendanceManagerClient({
             לוג פעילות נוכחות — 500 האחרונות
           </div>
           <select value={filter} onChange={e => setFilter(e.target.value)}
-            style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
-            <option value="all" style={{ background: "#1a1a2e" }}>כל הפעולות</option>
-            {Object.entries(LABELS).map(([k, v]) => <option key={k} value={k} style={{ background: "#1a1a2e" }}>{v}</option>)}
+            style={{ background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8, color: "var(--c-text)", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
+            <option value="all" style={{ background: "var(--c-surface)" }}>כל הפעולות</option>
+            {Object.entries(LABELS).map(([k, v]) => <option key={k} value={k} style={{ background: "var(--c-surface)" }}>{v}</option>)}
           </select>
           {auditLoading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           <button
@@ -1059,7 +1060,7 @@ export default function AttendanceManagerClient({
                     <td style={{ padding: "6px 10px", whiteSpace: "nowrap" }}>
                       <span style={{ background: `${actionColor(a.action)}22`, color: actionColor(a.action), borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{actionLabel(a.action)}</span>
                     </td>
-                    <td style={{ padding: "6px 10px", fontSize: 13, color: "#fff", whiteSpace: "nowrap" }}>{who(a)}</td>
+                    <td style={{ padding: "6px 10px", fontSize: 13, color: "var(--c-text)", whiteSpace: "nowrap" }}>{who(a)}</td>
                     <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.75)" }}>{a.entityName ?? "–"}</td>
                     <td style={{ padding: "6px 10px", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{detail(a) || "–"}</td>
                   </tr>
@@ -1080,19 +1081,19 @@ export default function AttendanceManagerClient({
     `}</style>
     <div style={{
       minHeight: "100vh",
-      color: "#fff",
+      color: "var(--c-text)",
       fontFamily: "'Heebo', sans-serif",
       direction: "rtl",
-      padding: 20,
+      padding: "clamp(12px, 2vw, 20px) clamp(16px, 3vw, 40px)",
     }}>
-      <div style={{ maxWidth: 1500, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ maxWidth: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Toast */}
         {toast && (
           <div style={{
             position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000,
             background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 14,
-            color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px",
+            color: "var(--c-text)", fontSize: 14, fontWeight: 600, padding: "10px 18px",
             boxShadow: "0 8px 32px rgba(0,0,0,0.5)", whiteSpace: "nowrap",
             display: "flex", alignItems: "center", gap: 12, direction: "rtl",
           }}>
@@ -1104,7 +1105,7 @@ export default function AttendanceManagerClient({
         {settingsOpen && (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "5vh 0 5vh" }}>
             <div style={{ background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 18, padding: "18px 20px", width: 680, maxWidth: "95vw", direction: "rtl", boxShadow: "0 24px 64px rgba(0,0,0,0.6)", flexShrink: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 12 }}>⚙️ הגדרות סוגי משמרת</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text)", marginBottom: 12 }}>⚙️ הגדרות סוגי משמרת</div>
 
               {editCfg.map((cfg, idx) => (
                 <div key={cfg.key} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
@@ -1122,7 +1123,7 @@ export default function AttendanceManagerClient({
                     <input
                       value={cfg.label}
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 70, fontFamily: "inherit", outline: "none" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 70, fontFamily: "inherit", outline: "none" }}
                       placeholder="שם"
                     />
 
@@ -1134,7 +1135,7 @@ export default function AttendanceManagerClient({
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, startTime: e.target.value } : c))}
                       placeholder="HH:MM"
                       maxLength={5}
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
                     />
                     <span style={{ fontSize: 11, color: GM }}>עד-</span>
                     <input
@@ -1143,7 +1144,7 @@ export default function AttendanceManagerClient({
                       onChange={e => setEditCfg(prev => prev.map((c, i) => i === idx ? { ...c, endTime: e.target.value } : c))}
                       placeholder="HH:MM"
                       maxLength={5}
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 5px", fontFamily: "inherit", outline: "none", width: 54, textAlign: "center" }}
                     />
 
                     {/* Color dots */}
@@ -1181,22 +1182,22 @@ export default function AttendanceManagerClient({
 
               {/* Schedule grace window (task 5) */}
               <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "10px 12px", marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>⏱️ חלון חסד להחתמה</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text)" }}>⏱️ חלון חסד להחתמה</span>
                 <input
                   type="number" min={0} max={120} value={editGrace}
                   onChange={e => setEditGrace(Math.max(0, Math.min(120, Number(e.target.value) || 0)))}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, padding: "4px 8px", width: 64, fontFamily: "inherit", outline: "none", textAlign: "center" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 13, padding: "4px 8px", width: 64, fontFamily: "inherit", outline: "none", textAlign: "center" }}
                 />
                 <span style={{ fontSize: 12, color: GM }}>דק׳ לפני תחילת המשמרת · החתמה מחוצה לחלון תסומן לבדיקה</span>
               </div>
 
               {/* Restaurant timezone — all attendance times are recorded in this zone */}
               <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "10px 12px", marginTop: 12, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>🕐 אזור זמן של העסק</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text)" }}>🕐 אזור זמן של העסק</span>
                 <select
                   value={editTimezone}
                   onChange={e => setEditTimezone(e.target.value)}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, padding: "5px 10px", fontFamily: "inherit", outline: "none", cursor: "pointer" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 13, padding: "5px 10px", fontFamily: "inherit", outline: "none", cursor: "pointer" }}
                 >
                   {[
                     ["Asia/Jerusalem", "ישראל (Asia/Jerusalem)"],
@@ -1207,21 +1208,21 @@ export default function AttendanceManagerClient({
                     ["America/Los_Angeles", "לוס אנג׳לס (America/Los_Angeles)"],
                     ["Asia/Dubai", "דובאי (Asia/Dubai)"],
                     ["UTC", "UTC"],
-                  ].map(([v, l]) => <option key={v} value={v} style={{ background: "#1a1a2e" }}>{l}</option>)}
+                  ].map(([v, l]) => <option key={v} value={v} style={{ background: "var(--c-surface)" }}>{l}</option>)}
                 </select>
                 <span style={{ fontSize: 12, color: GM }}>כל זמני הנוכחות נרשמים ומוצגים לפי אזור זה</span>
               </div>
 
               {/* Roles / pay codes (task 4) */}
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>🎭 תפקידים וקודי שכר</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text)", marginBottom: 6 }}>🎭 תפקידים וקודי שכר</div>
                 {editRoles.map((r, idx) => (
                   <div key={idx} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${GB}`, borderRadius: 10, padding: "8px 12px", marginBottom: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <input
                       value={r.label}
                       onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, label: e.target.value } : x))}
                       placeholder="שם תפקיד"
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 90, fontFamily: "inherit", outline: "none" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 13, fontWeight: 700, padding: "3px 7px", width: 90, fontFamily: "inherit", outline: "none" }}
                     />
                     <input
                       value={r.code}
@@ -1234,14 +1235,14 @@ export default function AttendanceManagerClient({
                       value={r.payCode}
                       onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, payCode: e.target.value } : x))}
                       placeholder="100"
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 7px", width: 60, fontFamily: "inherit", outline: "none", textAlign: "center" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 7px", width: 60, fontFamily: "inherit", outline: "none", textAlign: "center" }}
                     />
                     <span style={{ fontSize: 11, color: GM }}>₪/ש׳</span>
                     <input
                       type="number" min={0} value={r.hourlyRate ?? 0}
                       onChange={e => setEditRoles(prev => prev.map((x, i) => i === idx ? { ...x, hourlyRate: Math.max(0, Number(e.target.value) || 0) } : x))}
                       placeholder="0"
-                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "#fff", fontSize: 12, padding: "3px 7px", width: 56, fontFamily: "inherit", outline: "none", textAlign: "center" }}
+                      style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 7, color: "var(--c-text)", fontSize: 12, padding: "3px 7px", width: 56, fontFamily: "inherit", outline: "none", textAlign: "center" }}
                     />
                     <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "center" }}>
                       {PRESET_COLORS.map(c => (
@@ -1265,7 +1266,7 @@ export default function AttendanceManagerClient({
                 <button
                   onClick={saveConfig}
                   disabled={settingsSaving}
-                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 800, padding: 10, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
+                  style={{ flex: 1, background: ACCENT_GRAD, border: "none", borderRadius: 9, color: "var(--c-text)", fontSize: 14, fontWeight: 800, padding: 10, cursor: "pointer", fontFamily: "inherit", opacity: settingsSaving ? 0.6 : 1, boxShadow: "0 4px 14px rgba(217,119,6,0.35)" }}
                 >
                   {settingsSaving ? "שומר..." : "שמור"}
                 </button>
@@ -1303,10 +1304,10 @@ export default function AttendanceManagerClient({
               <select
                 value={restaurantId}
                 onChange={e => setRestaurantId(e.target.value)}
-                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "6px 12px", borderRadius: 9, fontFamily: "Heebo, sans-serif", fontSize: 13, cursor: "pointer", appearance: "none", WebkitAppearance: "none", minWidth: 150 }}
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "6px 12px", borderRadius: 9, fontFamily: "Heebo, sans-serif", fontSize: 13, cursor: "pointer", appearance: "none", WebkitAppearance: "none", minWidth: 150 }}
               >
                 {restaurants.map(r => (
-                  <option key={r.id} value={r.id} style={{ background: "#1a1a2e" }}>{r.name}</option>
+                  <option key={r.id} value={r.id} style={{ background: "var(--c-surface)" }}>{r.name}</option>
                 ))}
               </select>
             )}
@@ -1319,14 +1320,14 @@ export default function AttendanceManagerClient({
               <button
                 onClick={() => setWeekOffset(w => w - 1)}
                 style={{ background: "none", border: "none", color: GM, cursor: "pointer", padding: "4px 8px", borderRadius: 7, display: "flex", alignItems: "center", transition: "0.15s", fontSize: 16 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
               >‹</button>
               <span style={{ fontSize: 14, fontWeight: 700, padding: "0 10px", whiteSpace: "nowrap" }}>{weekLabel(weekDates)}</span>
               <button
                 onClick={() => setWeekOffset(w => w + 1)}
                 style={{ background: "none", border: "none", color: GM, cursor: "pointer", padding: "4px 8px", borderRadius: 7, display: "flex", alignItems: "center", transition: "0.15s", fontSize: 16 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = GM; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
               >›</button>
             </div>
@@ -1335,7 +1336,7 @@ export default function AttendanceManagerClient({
               <>
                 <button
                   onClick={() => { setEditCfg(shiftCfgList); setEditGrace(graceMinutes); setEditRoles(attRoles); setEditTimezone(timezone); setSettingsOpen(true); }}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
                   ⚙️ הגדרות
                 </button>
@@ -1346,7 +1347,7 @@ export default function AttendanceManagerClient({
                     else if (activeTab === "audit") loadAudit();
                     loadShifts();
                   }}
-                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "#fff", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, color: "var(--c-text)", padding: "7px 13px", borderRadius: 9, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "0.15s" }}
                 >
                   🔄 רענון
                 </button>
@@ -1391,7 +1392,7 @@ export default function AttendanceManagerClient({
             <>
               <ManagerDashboardTab restaurantId={restaurantId} staff={staff} attRoles={attRoles} timezone={timezone} showToast={showToast} />
               <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 12 }}>📊 סיכום שעות</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--c-text)", marginBottom: 12 }}>📊 סיכום שעות</div>
                 <SummaryTab />
               </div>
             </>

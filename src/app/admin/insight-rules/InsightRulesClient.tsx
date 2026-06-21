@@ -5,12 +5,13 @@ import type { CustomRule, Condition, InsightType, BuiltinRuleOverride, BuiltinRu
 import { BUILTIN_RULE_META } from "@/lib/waiter-insights";
 
 // ─── design tokens (glass) ───────────────────────────────────────────────────
-const BG_PAGE    = `linear-gradient(rgba(8,8,20,0.82),rgba(8,8,20,0.82)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070') no-repeat center center / cover fixed`;
-const G_ROW      = "rgba(0,0,0,0.45)";
-const G_BORDER   = "rgba(255,255,255,0.10)";
-const G_BORDER_B = "rgba(255,255,255,0.18)";
-const G_MUTED    = "rgba(255,255,255,0.45)";
-const G_TEXT     = "#fff";
+// צבעים מהפלטה המרכזית (var(--c-*) מוזרק ע"י admin/layout.tsx). רקע שקוף — יורש מה-Shell.
+const BG_PAGE    = "transparent";
+const G_ROW      = "var(--c-panel)";
+const G_BORDER   = "var(--c-border)";
+const G_BORDER_B = "var(--c-border)";
+const G_MUTED    = "var(--c-muted)";
+const G_TEXT     = "var(--c-text)";
 
 // ─── fields / operators ──────────────────────────────────────────────────────
 const ALL_FIELDS: { value: Condition["field"]; label: string }[] = [
@@ -76,7 +77,7 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{
       width: 36, height: 20, borderRadius: 9999, border: "none", cursor: "pointer", flexShrink: 0,
-      background: on ? "#22c55e" : "rgba(255,255,255,0.15)",
+      background: on ? T.gold : T.raised,
       position: "relative", transition: "background 0.2s",
     }}>
       <span style={{
@@ -241,20 +242,20 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   function removeCond(i: number) { setForm(f => ({ ...f, conditions: f.conditions.filter((_, ci) => ci !== i) })); }
 
   return (
-    <div style={{ direction: "rtl", fontFamily: "'Rubik', 'Segoe UI', sans-serif", minHeight: "100vh", background: BG_PAGE, color: G_TEXT, padding: "32px 24px" }}>
+    <div style={{ direction: "rtl", fontFamily: "'Rubik', 'Segoe UI', sans-serif", minHeight: "100vh", background: BG_PAGE, color: G_TEXT, padding: "clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 40px)" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');`}</style>
 
       {/* Toast */}
       {toast && (
         <div style={{
           position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
-          background: "#22c55e", color: "#fff", borderRadius: 10,
+          background: "#22c55e", color: "var(--c-text)", borderRadius: 10,
           padding: "10px 24px", fontSize: 13, fontWeight: 700,
           zIndex: 9999, boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
         }}>{toast}</div>
       )}
 
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: "100%" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
@@ -278,7 +279,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
                 direction: "rtl", minWidth: 160, appearance: "none",
                 WebkitAppearance: "none",
               }}>
-                {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "#1a1a2e", color: "#fff" }}>{r.name}</option>)}
+                {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: "var(--c-surface)", color: "var(--c-text)" }}>{r.name}</option>)}
               </select>
             )}
             {/* Global toggle for super-admin */}

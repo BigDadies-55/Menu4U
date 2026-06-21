@@ -1,7 +1,7 @@
 "use client";
 import { T } from "@/lib/ui";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Sidebar, { useFavorites } from "./Sidebar";
 import PageTitle from "./PageTitle";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
@@ -35,6 +35,7 @@ export default function AdminShell({
   children,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const [liveBg,    setLiveBg]    = useState(adminBg);
   const [liveBgImg, setLiveBgImg] = useState(adminBgImage);
 
@@ -104,7 +105,14 @@ export default function AdminShell({
     setPwLoading(false);
   }
 
-  const isWaiter = ["WAITER", "BARTENDER"].includes(user.role);
+  // Full-bleed waiter screens — decided per-page (route), not only per-role.
+  // Covers /admin/waiter, /admin/waiter-pos*, /admin/waiter-floor and /admin/template-waiter.
+  const isWaiterRoute = /^\/admin\/(waiter|template-waiter)/.test(pathname ?? "");
+  const isWaiterRole = ["WAITER", "BARTENDER"].includes(user.role);
+  const isWaiter = isWaiterRoute || isWaiterRole;
+
+  // A manager/admin viewing a waiter screen has no Sidebar — give them a way back.
+  const showBackToAdmin = isWaiterRoute && !isWaiterRole;
 
   return (
     <div
@@ -118,6 +126,22 @@ export default function AdminShell({
       }}
       dir="rtl"
     >
+      {showBackToAdmin && (
+        <button
+          onClick={() => router.push("/admin")}
+          style={{
+            position: "fixed", top: 12, insetInlineStart: 12, zIndex: 60,
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 14px", borderRadius: 999, border: "none",
+            background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 13, fontWeight: 600,
+            backdropFilter: "blur(6px)", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+          }}
+        >
+          <span style={{ fontSize: 15, lineHeight: 1 }}>→</span>
+          חזרה לניהול
+        </button>
+      )}
+
       {!isWaiter && (
         <Sidebar
           user={user} kdsView={kdsView}

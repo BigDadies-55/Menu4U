@@ -60,7 +60,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
       style={{
         position: "relative", width: 40, height: 22, borderRadius: 11,
         border: "none", cursor: "pointer", flexShrink: 0,
-        background: on ? GREEN : T.raised,
+        background: on ? T.gold : T.raised,
         transition: "background 0.2s",
       }}
     >
@@ -107,7 +107,7 @@ function ModuleTableRow({
           />
           <span style={{
             fontSize: 10, fontWeight: 600,
-            color: effective ? GREEN : expired ? RED : T.muted,
+            color: effective ? T.gold : expired ? RED : T.muted,
           }}>
             {expired ? "פג תוקף" : effective ? "פעיל" : "כבוי"}
           </span>

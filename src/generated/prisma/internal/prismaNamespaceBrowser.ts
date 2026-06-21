@@ -61,6 +61,7 @@ export const ModelName = {
   VerificationToken: 'VerificationToken',
   RestaurantGroup: 'RestaurantGroup',
   Restaurant: 'Restaurant',
+  KitchenStation: 'KitchenStation',
   RestaurantUser: 'RestaurantUser',
   Menu: 'Menu',
   Category: 'Category',
@@ -129,7 +130,8 @@ export const UserScalarFieldEnum = {
   lockedUntil: 'lockedUntil',
   totpSecret: 'totpSecret',
   totpEnabled: 'totpEnabled',
-  managerPin: 'managerPin'
+  managerPin: 'managerPin',
+  status: 'status'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -281,6 +283,21 @@ export const RestaurantScalarFieldEnum = {
 export type RestaurantScalarFieldEnum = (typeof RestaurantScalarFieldEnum)[keyof typeof RestaurantScalarFieldEnum]
 
 
+export const KitchenStationScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  code: 'code',
+  label: 'label',
+  isActive: 'isActive',
+  skipKitchen: 'skipKitchen',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type KitchenStationScalarFieldEnum = (typeof KitchenStationScalarFieldEnum)[keyof typeof KitchenStationScalarFieldEnum]
+
+
 export const RestaurantUserScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -318,6 +335,7 @@ export const CategoryScalarFieldEnum = {
   image: 'image',
   isActive: 'isActive',
   autoReady: 'autoReady',
+  kitchenStationId: 'kitchenStationId',
   sortOrder: 'sortOrder',
   translations: 'translations',
   createdAt: 'createdAt',

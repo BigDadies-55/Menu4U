@@ -1,11 +1,13 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { isOwner } from "@/lib/permissions";
 import CrmClient from "./CrmClient";
 
 export default async function CrmPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (!isOwner(session.user.role)) redirect("/admin");
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 

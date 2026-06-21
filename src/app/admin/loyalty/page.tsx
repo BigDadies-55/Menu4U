@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { isOwner } from "@/lib/permissions";
 import LoyaltyClient from "./LoyaltyClient";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const metadata = { title: "⭐ מועדון לקוחות | Menu4U" };
 export default async function LoyaltyPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (!isOwner(session.user.role)) redirect("/admin");
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 

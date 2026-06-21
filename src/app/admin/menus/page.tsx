@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { ensureStationsForRestaurant } from "@/lib/kitchen-stations";
 import MenusClient from "./MenusClient";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ const ITEM_SELECT = {
 } as const;
 
 const CATEGORY_SELECT = {
-  id: true, name: true, image: true, isActive: true, autoReady: true, sortOrder: true,
+  id: true, name: true, image: true, isActive: true, autoReady: true, kitchenStationId: true, sortOrder: true,
   items: { select: ITEM_SELECT, orderBy: { sortOrder: "asc" as const } },
 } as const;
 
@@ -39,6 +40,7 @@ export default async function MenusPage() {
   // Ensure autoReady column exists before querying
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "kitchenStationId" TEXT`);
   } catch { /* ignore — column already exists */ }
 
   let restaurants;
@@ -58,9 +60,18 @@ export default async function MenusPage() {
     restaurants = userRestaurants.map((ur) => ur.restaurant);
   }
 
+  // Seed default kitchen stations + backfill, then load active ones for the selector
+  await Promise.allSettled(restaurants.map(r => ensureStationsForRestaurant(r.id)));
+  const stationRows = await prisma.kitchenStation.findMany({
+    where: { restaurantId: { in: restaurants.map(r => r.id) }, isActive: true },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true, restaurantId: true, code: true, label: true, skipKitchen: true },
+  });
+
   return (
     <MenusClient
       restaurants={restaurants}
+      stations={stationRows}
       canEdit={session.user.role !== "VIEWER"}
     />
   );

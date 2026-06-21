@@ -231,6 +231,25 @@ model Restaurant {
   waiterStations  WaiterStation[]
   shifts          Shift[]
   shiftRequests   ShiftRequest[]
+  kitchenStations KitchenStation[]
+}
+
+// תחנות מטבח ("שיוך מנות") — B/F/M/D וכו'. ניתנות להגדרה פר-מסעדה.
+model KitchenStation {
+  id           String   @id @default(cuid())
+  restaurantId String
+  code         String   // B / F / M / D / custom
+  label        String   // BAR / FIRST / MAIN / Desert
+  isActive     Boolean  @default(true)
+  skipKitchen  Boolean  @default(false) // true = פריטים מדלגים על המטבח (autoReady)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categories Category[]
+
+  @@unique([restaurantId, code])
 }
 
 model RestaurantUser {
@@ -271,14 +290,16 @@ model Category {
   description  String?
   image        String?
   isActive     Boolean  @default(true)
-  autoReady    Boolean  @default(false)
+  autoReady    Boolean  @default(false) // נגזר מהתחנה: BAR(skipKitchen)=true
+  kitchenStationId String?
   sortOrder    Int      @default(0)
   translations Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  menu  Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  items Item[]
+  menu           Menu            @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  items          Item[]
+  kitchenStation KitchenStation? @relation(fields: [kitchenStationId], references: [id], onDelete: SetNull)
 }
 
 model Item {

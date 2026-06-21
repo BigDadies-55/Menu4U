@@ -79,11 +79,7 @@ export default function SitemapClient() {
   const pathname = usePathname();
 
   return (
-    <div dir="rtl" style={{ padding: "20px 0", maxWidth: 860 }}>
-      <h1 style={{ fontSize: 18, fontWeight: 900, color: "#F59E0B", marginBottom: 24, display: "flex", alignItems: "center", gap: 8 }}>
-        🗺 מפת האתר
-      </h1>
-
+    <div>
       {/* Root */}
       <Link href="/admin" style={{ textDecoration: "none" }}>
         <div style={{

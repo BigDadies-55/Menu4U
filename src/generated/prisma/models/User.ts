@@ -61,6 +61,7 @@ export type UserMinAggregateOutputType = {
   totpSecret: string | null
   totpEnabled: boolean | null
   managerPin: string | null
+  status: string | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -90,6 +91,7 @@ export type UserMaxAggregateOutputType = {
   totpSecret: string | null
   totpEnabled: boolean | null
   managerPin: string | null
+  status: string | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -119,6 +121,7 @@ export type UserCountAggregateOutputType = {
   totpSecret: number
   totpEnabled: number
   managerPin: number
+  status: number
   _all: number
 }
 
@@ -158,6 +161,7 @@ export type UserMinAggregateInputType = {
   totpSecret?: true
   totpEnabled?: true
   managerPin?: true
+  status?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -187,6 +191,7 @@ export type UserMaxAggregateInputType = {
   totpSecret?: true
   totpEnabled?: true
   managerPin?: true
+  status?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -216,6 +221,7 @@ export type UserCountAggregateInputType = {
   totpSecret?: true
   totpEnabled?: true
   managerPin?: true
+  status?: true
   _all?: true
 }
 
@@ -332,6 +338,7 @@ export type UserGroupByOutputType = {
   totpSecret: string | null
   totpEnabled: boolean
   managerPin: string | null
+  status: string
   _count: UserCountAggregateOutputType | null
   _avg: UserAvgAggregateOutputType | null
   _sum: UserSumAggregateOutputType | null
@@ -384,6 +391,7 @@ export type UserWhereInput = {
   totpSecret?: Prisma.StringNullableFilter<"User"> | string | null
   totpEnabled?: Prisma.BoolFilter<"User"> | boolean
   managerPin?: Prisma.StringNullableFilter<"User"> | string | null
+  status?: Prisma.StringFilter<"User"> | string
   accounts?: Prisma.AccountListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
@@ -423,6 +431,7 @@ export type UserOrderByWithRelationInput = {
   totpSecret?: Prisma.SortOrderInput | Prisma.SortOrder
   totpEnabled?: Prisma.SortOrder
   managerPin?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
   accounts?: Prisma.AccountOrderByRelationAggregateInput
   sessions?: Prisma.SessionOrderByRelationAggregateInput
   restaurantUsers?: Prisma.RestaurantUserOrderByRelationAggregateInput
@@ -465,6 +474,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   totpSecret?: Prisma.StringNullableFilter<"User"> | string | null
   totpEnabled?: Prisma.BoolFilter<"User"> | boolean
   managerPin?: Prisma.StringNullableFilter<"User"> | string | null
+  status?: Prisma.StringFilter<"User"> | string
   accounts?: Prisma.AccountListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
   restaurantUsers?: Prisma.RestaurantUserListRelationFilter
@@ -504,6 +514,7 @@ export type UserOrderByWithAggregationInput = {
   totpSecret?: Prisma.SortOrderInput | Prisma.SortOrder
   totpEnabled?: Prisma.SortOrder
   managerPin?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
@@ -541,6 +552,7 @@ export type UserScalarWhereWithAggregatesInput = {
   totpSecret?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   totpEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   managerPin?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  status?: Prisma.StringWithAggregatesFilter<"User"> | string
 }
 
 export type UserCreateInput = {
@@ -570,6 +582,7 @@ export type UserCreateInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -609,6 +622,7 @@ export type UserUncheckedCreateInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -648,6 +662,7 @@ export type UserUpdateInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -687,6 +702,7 @@ export type UserUncheckedUpdateInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -726,6 +742,7 @@ export type UserCreateManyInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
 }
 
 export type UserUpdateManyMutationInput = {
@@ -755,6 +772,7 @@ export type UserUpdateManyMutationInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -784,6 +802,7 @@ export type UserUncheckedUpdateManyInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type UserCountOrderByAggregateInput = {
@@ -813,6 +832,7 @@ export type UserCountOrderByAggregateInput = {
   totpSecret?: Prisma.SortOrder
   totpEnabled?: Prisma.SortOrder
   managerPin?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type UserAvgOrderByAggregateInput = {
@@ -846,6 +866,7 @@ export type UserMaxOrderByAggregateInput = {
   totpSecret?: Prisma.SortOrder
   totpEnabled?: Prisma.SortOrder
   managerPin?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -875,6 +896,7 @@ export type UserMinOrderByAggregateInput = {
   totpSecret?: Prisma.SortOrder
   totpEnabled?: Prisma.SortOrder
   managerPin?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type UserSumOrderByAggregateInput = {
@@ -1092,6 +1114,7 @@ export type UserCreateWithoutInvitesSentInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -1130,6 +1153,7 @@ export type UserUncheckedCreateWithoutInvitesSentInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -1184,6 +1208,7 @@ export type UserUpdateWithoutInvitesSentInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -1222,6 +1247,7 @@ export type UserUncheckedUpdateWithoutInvitesSentInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -1260,6 +1286,7 @@ export type UserCreateWithoutPasswordHistoryInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -1298,6 +1325,7 @@ export type UserUncheckedCreateWithoutPasswordHistoryInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -1352,6 +1380,7 @@ export type UserUpdateWithoutPasswordHistoryInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -1390,6 +1419,7 @@ export type UserUncheckedUpdateWithoutPasswordHistoryInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -1428,6 +1458,7 @@ export type UserCreateWithoutAccountsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
@@ -1466,6 +1497,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
@@ -1520,6 +1552,7 @@ export type UserUpdateWithoutAccountsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
@@ -1558,6 +1591,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
@@ -1596,6 +1630,7 @@ export type UserCreateWithoutSessionsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
@@ -1634,6 +1669,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
@@ -1688,6 +1724,7 @@ export type UserUpdateWithoutSessionsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
@@ -1726,6 +1763,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
@@ -1764,6 +1802,7 @@ export type UserCreateWithoutRestaurantUsersInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryCreateNestedManyWithoutUserInput
@@ -1802,6 +1841,7 @@ export type UserUncheckedCreateWithoutRestaurantUsersInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedCreateNestedManyWithoutUserInput
@@ -1856,6 +1896,7 @@ export type UserUpdateWithoutRestaurantUsersInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUpdateManyWithoutUserNestedInput
@@ -1894,6 +1935,7 @@ export type UserUncheckedUpdateWithoutRestaurantUsersInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   passwordHistory?: Prisma.PasswordHistoryUncheckedUpdateManyWithoutUserNestedInput
@@ -1932,6 +1974,7 @@ export type UserCreateWithoutWaiterStationsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -1970,6 +2013,7 @@ export type UserUncheckedCreateWithoutWaiterStationsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -2024,6 +2068,7 @@ export type UserUpdateWithoutWaiterStationsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -2062,6 +2107,7 @@ export type UserUncheckedUpdateWithoutWaiterStationsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -2100,6 +2146,7 @@ export type UserCreateWithoutPushSubscriptionsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -2138,6 +2185,7 @@ export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -2192,6 +2240,7 @@ export type UserUpdateWithoutPushSubscriptionsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -2230,6 +2279,7 @@ export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -2268,6 +2318,7 @@ export type UserCreateWithoutShiftsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -2306,6 +2357,7 @@ export type UserUncheckedCreateWithoutShiftsInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -2360,6 +2412,7 @@ export type UserUpdateWithoutShiftsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -2398,6 +2451,7 @@ export type UserUncheckedUpdateWithoutShiftsInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -2436,6 +2490,7 @@ export type UserCreateWithoutShiftRequestsFromInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -2474,6 +2529,7 @@ export type UserUncheckedCreateWithoutShiftRequestsFromInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -2517,6 +2573,7 @@ export type UserCreateWithoutShiftRequestsToInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserCreateNestedManyWithoutUserInput
@@ -2555,6 +2612,7 @@ export type UserUncheckedCreateWithoutShiftRequestsToInput = {
   totpSecret?: string | null
   totpEnabled?: boolean
   managerPin?: string | null
+  status?: string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedCreateNestedManyWithoutUserInput
@@ -2609,6 +2667,7 @@ export type UserUpdateWithoutShiftRequestsFromInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -2647,6 +2706,7 @@ export type UserUncheckedUpdateWithoutShiftRequestsFromInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -2696,6 +2756,7 @@ export type UserUpdateWithoutShiftRequestsToInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUpdateManyWithoutUserNestedInput
@@ -2734,6 +2795,7 @@ export type UserUncheckedUpdateWithoutShiftRequestsToInput = {
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   managerPin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   restaurantUsers?: Prisma.RestaurantUserUncheckedUpdateManyWithoutUserNestedInput
@@ -2884,6 +2946,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   totpSecret?: boolean
   totpEnabled?: boolean
   managerPin?: boolean
+  status?: boolean
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   restaurantUsers?: boolean | Prisma.User$restaurantUsersArgs<ExtArgs>
@@ -2924,6 +2987,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   totpSecret?: boolean
   totpEnabled?: boolean
   managerPin?: boolean
+  status?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -2953,6 +3017,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   totpSecret?: boolean
   totpEnabled?: boolean
   managerPin?: boolean
+  status?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
@@ -2982,9 +3047,10 @@ export type UserSelectScalar = {
   totpSecret?: boolean
   totpEnabled?: boolean
   managerPin?: boolean
+  status?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "name" | "firstName" | "lastName" | "email" | "emailVerified" | "phone" | "image" | "password" | "role" | "createdAt" | "updatedAt" | "mustChangePassword" | "passwordChangedAt" | "lastActivityAt" | "lastLoginAt" | "termsAccepted" | "termsAcceptedAt" | "termsAcceptedIp" | "termsAcceptedUserAgent" | "failedLoginAttempts" | "lockedUntil" | "totpSecret" | "totpEnabled" | "managerPin", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "name" | "firstName" | "lastName" | "email" | "emailVerified" | "phone" | "image" | "password" | "role" | "createdAt" | "updatedAt" | "mustChangePassword" | "passwordChangedAt" | "lastActivityAt" | "lastLoginAt" | "termsAccepted" | "termsAcceptedAt" | "termsAcceptedIp" | "termsAcceptedUserAgent" | "failedLoginAttempts" | "lockedUntil" | "totpSecret" | "totpEnabled" | "managerPin" | "status", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
@@ -3042,6 +3108,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     totpSecret: string | null
     totpEnabled: boolean
     managerPin: string | null
+    status: string
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -3501,6 +3568,7 @@ export interface UserFieldRefs {
   readonly totpSecret: Prisma.FieldRef<"User", 'String'>
   readonly totpEnabled: Prisma.FieldRef<"User", 'Boolean'>
   readonly managerPin: Prisma.FieldRef<"User", 'String'>
+  readonly status: Prisma.FieldRef<"User", 'String'>
 }
     
 
