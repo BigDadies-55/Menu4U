@@ -41,9 +41,12 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
         .lg-root {
           font-family: 'Heebo', sans-serif;
           min-height: 100vh;
-          display: flex; align-items: center; justify-content: center;
-          padding: 24px; direction: rtl; position: relative; overflow: hidden;
+          display: flex; align-items: center; justify-content: flex-start;
+          padding: 24px 6vw; direction: rtl; position: relative; overflow: hidden;
           background: #e9e6df;
+        }
+        @media (max-width: 560px) {
+          .lg-root { justify-content: center; padding: 24px; }
         }
         .lg-bg {
           position: absolute; inset: -40px; z-index: 0;
@@ -56,10 +59,12 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
         .lg-card {
           position: relative; z-index: 1;
           width: 100%; max-width: 380px;
-          background: #ffffff;
+          background: rgba(255,255,255,0.62);
+          backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+          border: 1px solid rgba(255,255,255,0.55);
           border-radius: 24px;
           padding: 36px 30px 30px;
-          box-shadow: 0 24px 70px rgba(0,0,0,0.28), 0 4px 14px rgba(0,0,0,0.12);
+          box-shadow: 0 24px 70px rgba(0,0,0,0.30), 0 4px 14px rgba(0,0,0,0.12);
           text-align: center;
         }
         .lg-logo {
@@ -179,7 +184,6 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
             </button>
 
             <div className="lg-link forgot"><a href="/forgot-password">שכחת סיסמה?</a></div>
-            <div className="lg-link">צריך חשבון? <a href="/register">הרשמה</a></div>
           </form>
         </div>
       </div>
