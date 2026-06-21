@@ -60,7 +60,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
       style={{
         position: "relative", width: 40, height: 22, borderRadius: 11,
         border: "none", cursor: "pointer", flexShrink: 0,
-        background: on ? GREEN : T.raised,
+        background: on ? T.gold : T.raised,
         transition: "background 0.2s",
       }}
     >

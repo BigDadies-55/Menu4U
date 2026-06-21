@@ -77,7 +77,7 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{
       width: 36, height: 20, borderRadius: 9999, border: "none", cursor: "pointer", flexShrink: 0,
-      background: on ? T.emerald : T.raised,
+      background: on ? T.gold : T.raised,
       position: "relative", transition: "background 0.2s",
     }}>
       <span style={{
