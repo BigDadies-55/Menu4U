@@ -433,7 +433,7 @@ export default function CrmClient({ restaurants, isSuperAdmin }: { restaurants: 
 
   /* ══ RENDER ══════════════════════════════════════════════════ */
   return (
-    <div style={{ padding: "32px 24px", maxWidth: 900, margin: "0 auto", direction: "rtl", color: T.text }}>
+    <div style={{ padding: "clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 40px)", maxWidth: "100%", direction: "rtl", color: T.text }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
         <div>

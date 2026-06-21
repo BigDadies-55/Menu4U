@@ -615,7 +615,7 @@ export default function LoyaltyClient({
   }
 
   return (
-    <div style={{ padding: "28px 32px", maxWidth: 1200, margin: "0 auto", direction: "rtl" }}>
+    <div style={{ padding: "clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 40px)", maxWidth: "100%", direction: "rtl" }}>
 
       {/* Page header */}
       <div style={{ marginBottom: 28 }}>

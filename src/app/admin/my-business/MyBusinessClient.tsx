@@ -137,8 +137,8 @@ export default function MyBusinessClient({ restaurants }: Props) {
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');`}</style>
-      <div style={{ minHeight: "100vh", color: "#fff", fontFamily: "'Heebo', sans-serif", direction: "rtl", padding: 20 }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ minHeight: "100vh", color: "#fff", fontFamily: "'Heebo', sans-serif", direction: "rtl", padding: "clamp(12px, 2vw, 20px) clamp(16px, 3vw, 40px)" }}>
+        <div style={{ maxWidth: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
 
           {toast && (
             <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 2000, background: MODAL_BG, border: `1px solid ${MODAL_BORDER}`, borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 18px", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>{toast}</div>

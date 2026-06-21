@@ -1473,9 +1473,9 @@ export default function ShiftsClient({
       color: "#fff",
       fontFamily: "'Heebo', sans-serif",
       direction: "rtl",
-      padding: 20,
+      padding: "clamp(12px, 2vw, 20px) clamp(16px, 3vw, 40px)",
     }}>
-      <div style={{ maxWidth: 1500, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ maxWidth: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Toast */}
         {toast && (

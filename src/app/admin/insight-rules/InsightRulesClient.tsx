@@ -241,7 +241,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
   function removeCond(i: number) { setForm(f => ({ ...f, conditions: f.conditions.filter((_, ci) => ci !== i) })); }
 
   return (
-    <div style={{ direction: "rtl", fontFamily: "'Rubik', 'Segoe UI', sans-serif", minHeight: "100vh", background: BG_PAGE, color: G_TEXT, padding: "32px 24px" }}>
+    <div style={{ direction: "rtl", fontFamily: "'Rubik', 'Segoe UI', sans-serif", minHeight: "100vh", background: BG_PAGE, color: G_TEXT, padding: "clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 40px)" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');`}</style>
 
       {/* Toast */}
@@ -254,7 +254,7 @@ export default function InsightRulesClient({ restaurants, isSuperAdmin }: { rest
         }}>{toast}</div>
       )}
 
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: "100%" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
