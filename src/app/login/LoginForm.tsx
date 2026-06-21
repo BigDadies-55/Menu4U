@@ -45,8 +45,9 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
         .login-photo-pane {
           flex: 1 1 50%;
           background-color: #110f12;
-          background-size: cover;
+          background-size: 100% 100%;
           background-position: center;
+          background-repeat: no-repeat;
           position: relative;
         }
         /* Right 50% — login form */
