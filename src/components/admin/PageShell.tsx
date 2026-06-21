@@ -12,12 +12,13 @@ export default function PageShell({
   title,
   subtitle,
   actions,
-  maxWidth = 1280,
+  maxWidth,
   children,
 }: {
   title?: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  /** רוחב מקסימלי אופציונלי. ללא ערך — הדף ריספונסיבי וממלא את כל רוחב המסך. */
   maxWidth?: number;
   children: React.ReactNode;
 }) {
@@ -26,9 +27,10 @@ export default function PageShell({
       dir="rtl"
       style={{
         width: "100%",
-        maxWidth,
+        maxWidth: maxWidth ?? "100%",
         margin: "0 auto",
-        padding: "20px 32px",
+        // padding ריספונסיבי: צר במובייל, רחב בדסקטופ
+        padding: "clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 40px)",
       }}
     >
       {(title || actions) && (

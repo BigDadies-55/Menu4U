@@ -10,7 +10,7 @@ export default async function SitemapPage() {
   if (!session?.user) redirect("/login");
 
   return (
-    <PageShell title="🗺 מפת האתר" maxWidth={860}>
+    <PageShell title="🗺 מפת האתר">
       <SitemapClient />
     </PageShell>
   );
