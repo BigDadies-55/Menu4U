@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { loginAction } from "./actions";
 
-export default function LoginForm({ loginImage, brightness = 100 }: { loginImage: string | null; brightness?: number }) {
+interface Props {
+  loginImage: string | null;
+  brightness?: number;
+  logo: string | null;
+  siteName: string;
+}
+
+export default function LoginForm({ loginImage, brightness = 100, logo, siteName }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,7 +26,6 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const result = await loginAction(username, password);
     if (result?.error) {
       setError(result.error);
@@ -32,283 +38,149 @@ export default function LoginForm({ loginImage, brightness = 100 }: { loginImage
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
 
-        .login-root {
+        .lg-root {
           font-family: 'Heebo', sans-serif;
           min-height: 100vh;
-          background: #09080a;
-          display: flex;
-          flex-direction: row-reverse;
-          align-items: stretch;
-          direction: rtl;
-          position: relative;
+          display: flex; align-items: center; justify-content: center;
+          padding: 24px; direction: rtl; position: relative; overflow: hidden;
+          background: #e9e6df;
         }
-        /* Full-screen image behind both panes (stretched to fill) */
-        .login-bgimg {
-          position: absolute; inset: 0; z-index: 0;
-          background-size: 100% 100%;
-          background-position: center;
-          background-repeat: no-repeat;
+        .lg-bg {
+          position: absolute; inset: -40px; z-index: 0;
+          background-size: cover; background-position: center;
         }
-        /* Left image area (transparent — reveals the bg image sharp) */
-        .login-photo-pane {
-          flex: 0 0 60%;
-          position: relative;
-          z-index: 1;
+        .lg-bg::after {
+          content: ''; position: absolute; inset: 0;
+          background: rgba(255,255,255,0.28);
         }
-        /* Right 50% — login form */
-        .login-form-pane {
-          flex: 0 0 40%;
-          position: relative;
-          z-index: 1;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-          background: rgba(255,255,255,0.85);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-        }
-        @media (max-width: 900px) {
-          .login-photo-pane { display: none; }
-          .login-form-pane { flex: 1 1 100%; }
-        }
-        .login-grain {
-          position: fixed; inset: 0; z-index: 0; pointer-events: none;
-          opacity: .025;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        }
-        .login-bg-photo {
-          position: fixed; inset: 0; z-index: 0;
-          background: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1400&q=60') center/cover;
-          opacity: .04;
-        }
-        .login-glow-left {
-          position: fixed; top: 50%; left: -10%; transform: translateY(-50%);
-          width: 600px; height: 600px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(201,164,82,0.055) 0%, transparent 65%);
-          pointer-events: none; z-index: 0;
-        }
-        .login-glow-right {
-          position: fixed; bottom: -15%; right: -10%;
-          width: 500px; height: 500px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(201,164,82,0.035) 0%, transparent 65%);
-          pointer-events: none; z-index: 0;
-        }
-        .login-wrapper {
+        .lg-card {
           position: relative; z-index: 1;
-          width: 100%; max-width: 420px;
-        }
-        .login-brand {
-          text-align: center;
-          margin-bottom: 36px;
-        }
-        .login-wordmark {
-          font-family: Georgia, 'Times New Roman', serif;
-          font-size: 28px; font-weight: 700; color: #1a1208;
-          letter-spacing: 5px; line-height: 1;
-        }
-        .login-wordmark span { color: #C9A452; }
-        .login-divider-row {
-          display: flex; align-items: center; gap: 9px;
-          margin-top: 10px;
-        }
-        .login-line {
-          flex: 1; height: 0.8px;
-          background: rgba(201,164,82,0.35);
-        }
-        .login-portal-label {
-          font-size: 9px; letter-spacing: 3.5px; text-transform: uppercase;
-          color: rgba(201,164,82,0.6); font-weight: 600; white-space: nowrap;
-        }
-        .login-tagline {
-          font-size: 12px; color: #6b6070;
-          letter-spacing: .5px; margin-top: 8px;
-        }
-        .login-card {
+          width: 100%; max-width: 380px;
           background: #ffffff;
-          border: 1px solid rgba(0,0,0,0.08);
-          border-radius: 20px;
-          padding: 36px 32px;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05);
-          position: relative; overflow: hidden;
+          border-radius: 24px;
+          padding: 36px 30px 30px;
+          box-shadow: 0 24px 70px rgba(0,0,0,0.28), 0 4px 14px rgba(0,0,0,0.12);
+          text-align: center;
         }
-        .login-card::before {
-          content: '';
-          position: absolute; top: 0; left: 15%; right: 15%; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(201,164,82,0.5), transparent);
+        .lg-logo {
+          width: 76px; height: 76px; border-radius: 50%;
+          margin: 0 auto 14px;
+          background: linear-gradient(135deg, #8a9a5b, #5f6e3b);
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden; box-shadow: 0 6px 18px rgba(95,110,59,0.35);
         }
-        .login-card-title {
-          font-size: 16px; font-weight: 700; color: #1a1208;
-          margin-bottom: 28px; letter-spacing: -.2px;
-          display: flex; align-items: center; gap: 8px;
+        .lg-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .lg-logo span { font-size: 34px; line-height: 1; }
+        .lg-brand {
+          font-size: 23px; font-weight: 800; letter-spacing: 1px;
+          color: #3f3f3a; margin: 0;
         }
-        .login-card-title::after {
-          content: ''; flex: 1; height: 1px;
-          background: rgba(0,0,0,0.08);
+        .lg-tagline { font-size: 11.5px; color: #9a988c; margin: 4px 0 0; }
+        .lg-welcome {
+          font-size: 24px; font-weight: 800; color: #2f2f2b;
+          margin: 26px 0 22px;
         }
-        .login-field { margin-bottom: 18px; }
-        .login-field label {
-          display: block;
-          font-size: 10px; font-weight: 700; color: #6b6070;
-          letter-spacing: 1.2px; text-transform: uppercase;
-          margin-bottom: 8px;
+        .lg-field { position: relative; margin-bottom: 14px; }
+        .lg-field .lg-ico {
+          position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+          width: 18px; height: 18px; color: #9aa07e; pointer-events: none;
         }
-        .login-field input {
-          width: 100%;
-          background: #f5f4f2;
-          border: 1px solid rgba(0,0,0,0.12);
-          border-radius: 12px;
-          padding: 13px 16px;
-          font-size: 14px; font-family: 'Heebo', sans-serif;
-          color: #1a1208;
-          outline: none;
-          transition: .2s;
-          direction: ltr;
+        .lg-field input {
+          width: 100%; box-sizing: border-box;
+          padding: 14px 44px 14px 16px;
+          border: 1px solid #e2e0d8; border-radius: 12px;
+          background: #fcfcfa; font-size: 14px; color: #2f2f2b;
+          font-family: 'Heebo', sans-serif; outline: none; transition: .15s;
+          text-align: right;
         }
-        .login-field input::placeholder { color: rgba(0,0,0,0.3); }
-        .login-field input:focus {
-          border-color: rgba(201,164,82,0.7);
-          background: #fffdf7;
-          box-shadow: 0 0 0 3px rgba(201,164,82,0.15);
+        .lg-field input::placeholder { color: #b3b1a6; }
+        .lg-field input:focus {
+          border-color: #8a9a5b; background: #fff;
+          box-shadow: 0 0 0 3px rgba(138,154,91,0.18);
         }
-        .login-error {
-          background: rgba(239,68,68,0.10);
-          border: 1px solid rgba(239,68,68,0.3);
-          color: #b91c1c;
-          padding: 12px 16px;
-          border-radius: 12px;
-          font-size: 13px;
-          margin-bottom: 16px;
+        .lg-error {
+          background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.25);
+          color: #b91c1c; padding: 10px 14px; border-radius: 10px;
+          font-size: 13px; margin-bottom: 14px; text-align: center;
         }
-        .login-btn {
-          width: 100%; padding: 14px;
-          border: none; border-radius: 13px;
-          background: linear-gradient(135deg, #6b470d, #C9A452);
-          color: white;
-          font-family: 'Heebo', sans-serif;
-          font-size: 15px; font-weight: 700;
-          cursor: pointer; letter-spacing: .3px;
-          margin-top: 8px;
-          box-shadow: 0 8px 28px rgba(201,164,82,0.22);
-          transition: .22s;
+        .lg-btn {
+          width: 100%; padding: 14px; margin-top: 6px;
+          border: none; border-radius: 12px;
+          background: linear-gradient(135deg, #7e8e54, #62713f);
+          color: #fff; font-family: 'Heebo', sans-serif;
+          font-size: 15px; font-weight: 700; cursor: pointer;
+          box-shadow: 0 8px 22px rgba(98,113,63,0.35); transition: .18s;
         }
-        .login-btn:hover:not(:disabled) {
-          box-shadow: 0 12px 36px rgba(201,164,82,0.35);
-          transform: translateY(-1px);
-        }
-        .login-btn:disabled { opacity: .6; cursor: not-allowed; }
-        .login-back {
-          display: flex; align-items: center; justify-content: center; gap: 6px;
-          margin-top: 22px;
-          font-size: 12px; color: #6b6070;
-          text-decoration: none; transition: .2s;
-        }
-        .login-back:hover { color: #dfc07e; }
+        .lg-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(98,113,63,0.45); }
+        .lg-btn:disabled { opacity: .6; cursor: not-allowed; }
+        .lg-link { font-size: 13px; color: #8a887e; margin-top: 16px; }
+        .lg-link a { color: #62713f; font-weight: 700; text-decoration: underline; }
+        .lg-link.forgot { margin-top: 18px; }
+        .lg-link.forgot a { color: #8a887e; font-weight: 500; text-decoration: none; }
+        .lg-link.forgot a:hover { color: #62713f; }
       `}</style>
 
-      <div className="login-root">
-        {/* Full-screen background image — the form pane's glass blurs it */}
+      <div className="lg-root">
+        {/* Full-screen blurred background image */}
         <div
-          className="login-bgimg"
+          className="lg-bg"
           style={{
             backgroundImage: loginImage
               ? `url('${loginImage}')`
-              : "linear-gradient(135deg,#0a0804,#1c1205,#3d2b00)",
-            filter: loginImage ? `brightness(${brightness}%)` : undefined,
+              : "linear-gradient(135deg,#d9d6c8,#b9c08f,#8a9a5b)",
+            filter: `blur(7px) brightness(${brightness}%)`,
           }}
         />
-        {/* Left 60% — sharp image area */}
-        <div className="login-photo-pane">
-          {!loginImage && (
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 40, fontWeight: 700, color: "#fff", letterSpacing: 6, opacity: 0.9 }}>
-                TECH4<span style={{ color: "#C9A452" }}>BITES</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right 40% — login form (frosted glass over the image) */}
-        <div className="login-form-pane">
-        <div className="login-grain" />
-        <div className="login-glow-left" />
-        <div className="login-glow-right" />
 
         {process.env.NEXT_PUBLIC_APP_ENV === "development" && (
-          <div
-            className="fixed top-0 left-0 right-0 z-50 text-center text-xs font-bold py-1.5 tracking-widest uppercase"
-            style={{ background: "#f59e0b", color: "#000" }}
-          >
+          <div className="fixed top-0 left-0 right-0 z-50 text-center text-xs font-bold py-1.5 tracking-widest uppercase"
+            style={{ background: "#f59e0b", color: "#000" }}>
             ⚠️ סביבת פיתוח — DEV
           </div>
         )}
 
-        <div className="login-wrapper">
-          {/* Brand */}
-          <div className="login-brand">
-            <div className="login-wordmark">TECH4<span>BITES</span></div>
-            <div className="login-divider-row">
-              <div className="login-line" />
-              <div className="login-portal-label">פורטל ניהול</div>
-              <div className="login-line" />
+        <div className="lg-card">
+          {/* Logo */}
+          <div className="lg-logo">
+            {logo ? <img src={logo} alt={siteName} /> : <span>🍽️</span>}
+          </div>
+          <h1 className="lg-brand">{siteName}</h1>
+          <p className="lg-tagline">ניהול חכם למסעדות ועסקי מזון</p>
+
+          <div className="lg-welcome">ברוכים הבאים חזרה!</div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="lg-field">
+              <svg className="lg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
+              </svg>
+              <input
+                type="text" value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                required placeholder="דואר אלקטרוני או שם משתמש" autoComplete="username"
+              />
             </div>
-            <div className="login-tagline">כניסה למערכת הניהול</div>
-          </div>
 
-          {/* Card */}
-          <div className="login-card">
-            <div className="login-card-title">התחברות</div>
+            <div className="lg-field">
+              <svg className="lg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              <input
+                type="password" value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required placeholder="סיסמה" autoComplete="current-password"
+              />
+            </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="login-field">
-                <label>שם משתמש או אימייל</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                  required
-                  placeholder="username / email"
-                  dir="ltr"
-                  autoComplete="username"
-                />
-              </div>
+            {error && <div className="lg-error">{error}</div>}
 
-              <div className="login-field">
-                <label>סיסמה</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                />
-              </div>
+            <button type="submit" className="lg-btn" disabled={loading}>
+              {loading ? "מתחבר..." : "התחברות"}
+            </button>
 
-              {error && (
-                <div className="login-error">{error}</div>
-              )}
-
-              <button type="submit" className="login-btn" disabled={loading}>
-                {loading ? "מתחבר..." : "כניסה למערכת"}
-              </button>
-
-              <div style={{ textAlign: "center", marginTop: 16 }}>
-                <a href="/forgot-password" style={{ fontSize: 12, color: "#6b6070", textDecoration: "none", transition: ".2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "#dfc07e")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "#6b6070")}
-                >
-                  שכחתי סיסמה
-                </a>
-              </div>
-            </form>
-          </div>
-
-          {/* Back to site */}
-          <a href="/" className="login-back">
-            ← חזרה לאתר
-          </a>
-        </div>
+            <div className="lg-link forgot"><a href="/forgot-password">שכחת סיסמה?</a></div>
+            <div className="lg-link">צריך חשבון? <a href="/register">הרשמה</a></div>
+          </form>
         </div>
       </div>
     </>
