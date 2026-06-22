@@ -48,19 +48,20 @@ const SHAPE_BR: Record<TableShape, string> = {
 type PaletteItem = { icon: string; label: string; shape: TableShape; w: number; h: number; seats: number };
 
 const PALETTE: PaletteItem[] = [
-  { icon: "●", label: "עגול 6",    shape: "round",   w: 80,  h: 80,  seats: 6  },
-  { icon: "●", label: "עגול 8",    shape: "round",   w: 100, h: 100, seats: 8  },
-  { icon: "▬", label: "מלבן 8",    shape: "rect",    w: 130, h: 70,  seats: 8  },
-  { icon: "▬", label: "מלבן 10",   shape: "rect",    w: 155, h: 70,  seats: 10 },
-  { icon: "■", label: "ריבוע 4",   shape: "square",  w: 90,  h: 90,  seats: 4  },
+  { icon: "■", label: "ריבוע 2",   shape: "square",  w: 60,  h: 60,  seats: 2  },
+  { icon: "■", label: "ריבוע 4",   shape: "square",  w: 84,  h: 84,  seats: 4  },
+  { icon: "●", label: "עגול 2",    shape: "round",   w: 58,  h: 58,  seats: 2  },
+  { icon: "●", label: "עגול 4",    shape: "round",   w: 76,  h: 76,  seats: 4  },
+  { icon: "▬", label: "מלבן 4",    shape: "rect",    w: 110, h: 64,  seats: 4  },
+  { icon: "▬", label: "מלבן 6",    shape: "rect",    w: 140, h: 70,  seats: 6  },
   { icon: "◉", label: "אובאלי 10", shape: "oval",    w: 120, h: 80,  seats: 10 },
   { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 240, h: 65,  seats: 16 },
 ];
 
 type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label" | "image"; w: number; h: number };
 const DECO_PALETTE: DecoPaletteItem[] = [
-  { icon: "━", label: "קו",    kind: "line",  w: 200, h: 5   },
-  { icon: "▭", label: "תווית", kind: "label", w: 160, h: 80  },
+  { icon: "▮", label: "קיר",   kind: "line",  w: 200, h: 6   },
+  { icon: "🔤", label: "טקסט",  kind: "label", w: 160, h: 60  },
   { icon: "🖼", label: "תמונה", kind: "image", w: 160, h: 120 },
 ];
 
@@ -86,23 +87,38 @@ function emptyLayout(): LayoutV2 { return { version: 2, rooms: [mkRoom()] }; }
 function snapV(v: number, on: boolean) { return on ? Math.round(v / GRID) * GRID : Math.round(v); }
 
 /* ══════════════════════ Seat Indicators ══ */
-function SeatIndicators({ w, h, seats, seatedCount }: { w: number; h: number; seats: number; seatedCount: number }) {
-  const mx = Math.min(seats, 20);
-  const rx = w / 2 + 9, ry = h / 2 + 9;
+function SeatIndicators({ w, h, shape, seats, seatedCount }: { w: number; h: number; shape: TableShape; seats: number; seatedCount: number }) {
+  const mx = Math.min(seats, 24);
+
+  // Position each seat by shape: round/oval → evenly on the perimeter circle;
+  // rect/square/long/banquet → split symmetrically across the top & bottom edges.
+  const pts: { left: number; top: number }[] = [];
+  if (shape === "round" || shape === "oval") {
+    const rx = w / 2 + 9, ry = h / 2 + 9;
+    for (let i = 0; i < mx; i++) {
+      const a = (2 * Math.PI * i / mx) - Math.PI / 2;
+      pts.push({ left: w / 2 + rx * Math.cos(a) - 4.5, top: h / 2 + ry * Math.sin(a) - 4.5 });
+    }
+  } else {
+    const topN = Math.ceil(mx / 2), botN = mx - topN;
+    for (let i = 0; i < topN; i++) pts.push({ left: w * (i + 1) / (topN + 1) - 4.5, top: -13 });
+    for (let i = 0; i < botN; i++) pts.push({ left: w * (i + 1) / (botN + 1) - 4.5, top: h + 4 });
+  }
+
   return (
     <>
-      {Array.from({ length: mx }, (_, i) => {
-        const a = (2 * Math.PI * i / mx) - Math.PI / 2;
+      {pts.map((p, i) => {
+        const filled = i < seatedCount;
         return (
           <div key={i} style={{
             position: "absolute",
             width: 9, height: 9, borderRadius: "50%",
-            background: i < seatedCount ? T.gold : "rgba(255,255,255,0.15)",
-            border: `1px solid ${i < seatedCount ? T.gold : "rgba(255,255,255,0.25)"}`,
-            left: w / 2 + rx * Math.cos(a) - 4.5,
-            top: h / 2 + ry * Math.sin(a) - 4.5,
+            background: filled ? T.gold : T.raised,
+            border: `1px solid ${filled ? T.gold : T.border}`,
+            left: p.left,
+            top: p.top,
             pointerEvents: "none",
-            boxShadow: i < seatedCount ? "0 0 4px rgba(212,160,23,0.6)" : "none",
+            boxShadow: filled ? "0 0 4px rgba(212,160,23,0.6)" : "none",
           }} />
         );
       })}
@@ -228,7 +244,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
       )}
 
       {/* Seat indicators */}
-      <SeatIndicators w={w} h={h} seats={seats} seatedCount={seatedCount} />
+      <SeatIndicators w={w} h={h} shape={shape} seats={seats} seatedCount={seatedCount} />
 
       {/* Table body */}
       <div style={{ position: "absolute", inset: 0, borderRadius: br, background: bg, border: `2px solid ${brd}`, boxShadow: selected ? "0 0 0 2px #d4a017, 0 6px 24px rgba(0,0,0,0.5)" : "0 3px 14px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -416,7 +432,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
     });
   }
 
-  const inp: React.CSSProperties = { background: T.raised, border: "1px solid rgba(212,160,23,0.2)", color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
 
   return (
     <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: `linear-gradient(160deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: T.text }}>
@@ -441,7 +457,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Status pills */}
         <div style={{ display: "flex", gap: 4 }}>
           {(Object.entries(STATUS_CFG) as [TableStatus, typeof STATUS_CFG[TableStatus]][]).map(([s, cfg]) => (
-            <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} style={{ flex: 1, padding: "5px 0", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", background: form.status === s ? cfg.color + "30" : "rgba(255,255,255,0.04)", color: form.status === s ? cfg.color : "rgba(212,160,23,0.45)", border: `1px solid ${form.status === s ? cfg.color : "rgba(212,160,23,0.18)"}` }}>
+            <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} style={{ flex: 1, padding: "5px 0", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", background: form.status === s ? cfg.color + "30" : T.raised, color: form.status === s ? cfg.color : T.muted, border: `1px solid ${form.status === s ? cfg.color : T.border}` }}>
               {cfg.label}
             </button>
           ))}
@@ -450,11 +466,11 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Num + Name */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>מספר</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>מספר</div>
             <input type="number" value={form.num} onChange={e => setForm(f => ({ ...f, num: e.target.value }))} style={{ ...inp, padding: "7px 8px" }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>שם שולחן</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>שם שולחן</div>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inp} placeholder="שם אופציונלי..." />
           </div>
         </div>
@@ -462,23 +478,23 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Group + Color */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>קבוצה</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>קבוצה</div>
             <input type="text" value={form.group} onChange={e => setForm(f => ({ ...f, group: e.target.value }))} style={inp} placeholder="VIP, חיצוני..." />
           </div>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>צבע מותאם</div>
-            <input type="color" value={form.customColor} onChange={e => setForm(f => ({ ...f, customColor: e.target.value }))} style={{ width: "100%", height: 34, borderRadius: 8, border: "1px solid rgba(212,160,23,0.25)", cursor: "pointer", background: "none", padding: 2 }} />
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>צבע מותאם</div>
+            <input type="color" value={form.customColor} onChange={e => setForm(f => ({ ...f, customColor: e.target.value }))} style={{ width: "100%", height: 34, borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer", background: "none", padding: 2 }} />
           </div>
         </div>
 
         {/* Seats + SeatedCount */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>מקומות</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>מקומות</div>
             <input type="number" min={1} max={80} value={form.seats} onChange={e => setForm(f => ({ ...f, seats: e.target.value }))} style={inp} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>יושבים כרגע 🪑</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>יושבים כרגע 🪑</div>
             <input type="number" min={0} max={form.seats} value={form.seatedCount} onChange={e => setForm(f => ({ ...f, seatedCount: e.target.value }))} style={inp} />
           </div>
         </div>
@@ -487,7 +503,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         <div style={{ display: "flex", gap: 8 }}>
           {[["רוחב", "w"], ["גובה", "h"], ["סיבוב°", "rot"]].map(([lbl, key]) => (
             <div key={key} style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>{lbl}</div>
+              <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>{lbl}</div>
               <input type="number" value={form[key as keyof typeof form] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} style={{ ...inp, padding: "7px 6px" }} />
             </div>
           ))}
@@ -517,7 +533,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {tableUrl && (
           <>
             <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "2px 0" }} />
-            <div style={{ fontSize: 11, color: "rgba(212,160,23,0.6)", fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{ padding: 8, background: "#fff", borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
                 <QRCodeSVG value={tableUrl} size={92} />
@@ -1460,6 +1476,22 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     setRoomIdx(layout.rooms.length);
     setShowNewRoom(false); setNewRoomName("");
   }
+  // בר אקראי: 10 שרפרפים עצמאיים (כיסא אחד כל אחד), בשורה אחת — כל שרפרף = חשבון נפרד
+  function addBarRoom() {
+    const r = mkRoom("בר");
+    const W = 48, H = 48, gap = 16, startX = 40, y = 70;
+    r.tables = Array.from({ length: 10 }, (_, i) => ({
+      id: uid(), num: i + 1, name: `בר ${i + 1}`, group: "בר",
+      shape: "round" as TableShape,
+      x: startX + i * (W + gap), y,
+      w: W, h: H, seats: 1, seatedCount: 0,
+      status: "free" as TableStatus, rot: 0, customColor: "", zIdx: 1,
+    }));
+    setLayout(prev => ({ ...prev, rooms: [...prev.rooms, r] }));
+    setRoomIdx(layout.rooms.length);
+    setShowNewRoom(false); setNewRoomName("");
+    showToast("חדר בר נוסף — 10 שרפרפים");
+  }
   function delRoom(idx: number) {
     if (layout.rooms.length <= 1) return;
     if (!confirm(`למחוק את "${layout.rooms[idx].name}"?`)) return;
@@ -1500,8 +1532,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {restaurants.length > 1 && (<>
           <div style={{ width: 1, height: 18, background: C.border, flexShrink: 0 }} />
           <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); loadLayout(e.target.value); }}
-            style={{ background: T.bg, border: "1px solid rgba(212,160,23,0.3)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", direction: "rtl" }}>
-            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: T.bg, color: C.text }}>{r.name}</option>)}
+            style={{ background: T.panel, border: `1px solid ${T.border}`, color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", direction: "rtl" }}>
+            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: T.panel, color: C.text }}>{r.name}</option>)}
           </select>
         </>)}
 
@@ -1673,7 +1705,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); if ("shape" in pi) paletteDrag.current = pi; else paletteDragDeco.current = pi; }}
                   onDragEnd={() => { paletteDrag.current = null; paletteDragDeco.current = null; }}
                   onDoubleClick={() => { const cx = (vSize.w / 2 - panX) / zoom, cy = (vSize.h / 2 - panY) / zoom; if ("shape" in pi) spawnTable(cx, cy, pi); else spawnDeco(cx, cy, pi); }}
-                  style={{ width: 28, height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.25)", background: "rgba(212,160,23,0.05)", flexShrink: 0 }}
+                  style={{ width: 28, height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", userSelect: "none", border: `1px solid ${T.border}`, background: "rgba(212,160,23,0.05)", flexShrink: 0 }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.2)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
                   <span style={{ fontSize: 14, color: T.gold }}>{pi.icon}</span>
@@ -1882,6 +1914,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               <button onClick={addRoom} style={{ flex: 1, padding: "10px 0", borderRadius: 10, color: "#fff", fontWeight: 700, border: "none", cursor: "pointer", background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})` }}>הוסף</button>
               <button onClick={() => { setShowNewRoom(false); setNewRoomName(""); }} style={{ padding: "10px 14px", borderRadius: 10, color: C.muted, background: T.raised, border: `1px solid ${T.border}`, cursor: "pointer" }}>ביטול</button>
             </div>
+            <button onClick={addBarRoom} style={{ width: "100%", marginTop: 10, padding: "9px 0", borderRadius: 10, color: T.text, fontWeight: 700, fontSize: 13, cursor: "pointer", background: T.raised, border: `1px dashed ${T.border}` }}>🍸 צור חדר בר (10 שרפרפים)</button>
           </div>
         </div>
       )}
