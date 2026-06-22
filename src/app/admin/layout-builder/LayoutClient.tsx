@@ -13,7 +13,11 @@ type FreeTable = {
   shape: TableShape; x: number; y: number;
   w: number; h: number; seats: number; seatedCount: number;
   status: TableStatus; rot: number; customColor: string; zIdx: number;
+  barId?: string;   // אם משויך לבר — מקובע, נע/מסתובב כיחידה עם הבר
 };
+
+// בר = יחידה ויזואלית אחת (דלפק) שמכילה שרפרפים מקובעים; כל שרפרף נשאר שולחן/חשבון עצמאי
+type BarUnit = { id: string; x: number; y: number; w: number; h: number; rot: number; label: string };
 
 type Decoration = {
   id: string; kind: "line" | "label" | "image" | "text";
@@ -26,6 +30,7 @@ type Room = {
   id: string; name: string; tables: FreeTable[];
   bg: number; bgImg?: string; bgOpacity?: number;
   decos?: Decoration[];
+  bars?: BarUnit[];
 };
 
 type LayoutV2  = { version: 2; rooms: Room[] };
@@ -86,6 +91,18 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 function mkRoom(name = "חדר ראשי"): Room { return { id: uid(), name, tables: [], bg: 0 }; }
 function emptyLayout(): LayoutV2 { return { version: 2, rooms: [mkRoom()] }; }
 function snapV(v: number, on: boolean) { return on ? Math.round(v / GRID) * GRID : Math.round(v); }
+
+// מיקום מוחלט של שרפרף i (מתוך count) לאורך החזית של דלפק הבר, מסובב לפי bar.rot
+function stoolPos(bar: BarUnit, i: number, count: number, sw: number): { x: number; y: number } {
+  const cx = bar.w / 2, cy = bar.h / 2;
+  const lx = bar.w * (i + 1) / (count + 1);   // לאורך הרוחב
+  const ly = -sw * 0.55;                        // מעט מעל החזית
+  const dx = lx - cx, dy = ly - cy;
+  const th = (bar.rot || 0) * Math.PI / 180;
+  const rx = dx * Math.cos(th) - dy * Math.sin(th);
+  const ry = dx * Math.sin(th) + dy * Math.cos(th);
+  return { x: bar.x + cx + rx - sw / 2, y: bar.y + cy + ry - sw / 2 };
+}
 
 /* ══════════════════════ Seat Indicators ══ */
 function SeatIndicators({ w, h, shape, seats, seatedCount, color }: { w: number; h: number; shape: TableShape; seats: number; seatedCount: number; color: string }) {
@@ -168,7 +185,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
   const vpH = Math.min(MH - vpY, (vh / zoom) * sy);
 
   return (
-    <div style={{ position: "absolute", bottom: 16, right: 16, width: MW, height: MH, background: "rgba(13,4,4,0.97)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 8, overflow: "hidden", zIndex: 100, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+    <div style={{ position: "absolute", bottom: 16, right: 16, width: MW, height: MH, background: T.panel, border: "1px solid rgba(212,160,23,0.3)", borderRadius: 8, overflow: "hidden", zIndex: 100, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
       <canvas ref={canvasRef} width={MW} height={MH} style={{ display: "block" }} />
       <div style={{ position: "absolute", left: vpX, top: vpY, width: Math.max(6, vpW), height: Math.max(4, vpH), border: "1.5px solid #d4a017", background: "rgba(212,160,23,0.12)", pointerEvents: "none", borderRadius: 2 }} />
       <div style={{ position: "absolute", bottom: 2, left: 4, fontSize: 9, color: T.muted, userSelect: "none" }}>{Math.round(zoom * 100)}%</div>
@@ -179,7 +196,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
 /* ══════════════════════════ Toast ══ */
 function Toast({ msg }: { msg: string }) {
   return (
-    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "rgba(20,10,4,0.97)", border: `1px solid ${T.border}`, color: T.gold, padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.panel, border: `1px solid ${T.border}`, color: T.gold, padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
       {msg}
     </div>
   );
@@ -399,6 +416,40 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
         <div onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
           style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: T.gold, border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }} />
       )}
+    </div>
+  );
+}
+
+/* ══════════════════════ Bar Unit (counter) ══ */
+function BarUnitItem({ bar, selected, onMD, onResizeMD, onRotateMD, onRotateStep, onDelete }: {
+  bar: BarUnit; selected: boolean;
+  onMD: (e: React.MouseEvent) => void;
+  onResizeMD: (e: React.MouseEvent) => void;
+  onRotateMD: (e: React.MouseEvent) => void;
+  onRotateStep: (deg: number) => void;
+  onDelete: () => void;
+}) {
+  const hBtn: React.CSSProperties = { width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.85)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, cursor: "pointer", userSelect: "none" };
+  return (
+    <div onMouseDown={onMD}
+      style={{ position: "absolute", left: bar.x, top: bar.y, width: bar.w, height: bar.h, transform: `rotate(${bar.rot}deg)`, transformOrigin: "center", cursor: "grab", userSelect: "none", zIndex: selected ? 60 : 1 }}>
+      {/* Counter body */}
+      <div style={{ position: "absolute", inset: 0, borderRadius: 10, background: "#ffffff", border: `2px solid ${T.gold}`, boxShadow: selected ? "0 0 0 2px #d4a017, 0 6px 24px rgba(0,0,0,0.4)" : "0 3px 14px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: T.gold, letterSpacing: 1 }}>🍸 {bar.label}</span>
+      </div>
+
+      {selected && (<>
+        {/* Rotate + delete */}
+        <div style={{ position: "absolute", top: -38, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, zIndex: 50 }}>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(-15); }} onMouseDown={e => e.stopPropagation()} title="סובב -15°" style={hBtn}>↺</div>
+          <div onMouseDown={e => { e.stopPropagation(); onRotateMD(e); }} title="גרור לסיבוב" style={{ ...hBtn, background: "rgba(212,160,23,0.95)", cursor: "grab" }}>↻</div>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(15); }} onMouseDown={e => e.stopPropagation()} title="סובב +15°" style={hBtn}>↻</div>
+          <div onClick={e => { e.stopPropagation(); onDelete(); }} onMouseDown={e => e.stopPropagation()} title="מחק בר" style={{ ...hBtn, background: "rgba(244,67,54,0.85)", border: "1.5px solid #ff8a80" }}>🗑</div>
+        </div>
+        {/* Resize */}
+        <div onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
+          style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: T.gold, border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }} />
+      </>)}
     </div>
   );
 }
@@ -731,6 +782,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   /* selection / edit */
   const [selId, setSelId]               = useState<string | null>(null);
+  const [selBarId, setSelBarId]         = useState<string | null>(null);
   const [editId, setEditId]             = useState<string | null>(null);
   const [editPos, setEditPos]           = useState({ x: 120, y: 80 });
   const [selDecoId, setSelDecoId]       = useState<string | null>(null);
@@ -792,6 +844,14 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const rotateCtrDeco   = useRef({ cx: 0, cy: 0 });
   const rsDecoId        = useRef<string | null>(null);
   const rsDecoStart     = useRef({ dw: 0, dh: 0 });
+
+  /* bar interaction refs */
+  const barDragId   = useRef<string | null>(null);
+  const barDragStart = useRef({ mx: 0, my: 0, x: 0, y: 0 });
+  const barRsId     = useRef<string | null>(null);
+  const barRsStart  = useRef({ dw: 0, dh: 0 });
+  const barRotId    = useRef<string | null>(null);
+  const barRotCtr   = useRef({ cx: 0, cy: 0 });
 
   /* undo / redo */
   const undoStack = useRef<LayoutV2[]>([]);
@@ -1123,27 +1183,59 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     showToast(`שולחן ${t.num} נוסף`);
   }
 
-  // בר: N שרפרפים עצמאיים (כיסא אחד כל אחד) בשורה — כל שרפרף = שולחן/חשבון נפרד
+  // בר: דלפק אחד (יחידה) + N שרפרפים מקובעים — כל שרפרף נשאר שולחן/חשבון עצמאי
   function spawnBar(cx: number, cy: number, count: number) {
     pushHistory();
-    const W = 48, H = 48, gap = 16;
+    const SW = 48, gap = 16;
+    const w = Math.max(140, count * (SW + gap) + gap);
+    const h = 40;
+    const barId = uid();
+    const bar: BarUnit = {
+      id: barId,
+      x: snapV(Math.max(0, cx - w / 2), snapOn),
+      y: snapV(Math.max(0, cy - h / 2), snapOn),
+      w, h, rot: 0, label: "בר",
+    };
     const baseNum = Math.max(0, ...(activeRoom?.tables.map(t => t.num) ?? [0]));
-    const startX = Math.max(0, cx - (count * (W + gap) - gap) / 2);
-    const y = Math.max(0, cy - H / 2);
-    const stools: FreeTable[] = Array.from({ length: count }, (_, i) => ({
-      id: uid(), num: baseNum + i + 1, name: `בר ${i + 1}`, group: "בר",
-      shape: "round" as TableShape,
-      x: snapV(startX + i * (W + gap), snapOn), y: snapV(y, snapOn),
-      w: W, h: H, seats: 1, seatedCount: 0,
-      status: "free" as TableStatus, rot: 0, customColor: "", zIdx: 1,
-    }));
-    updRoom(r => ({ ...r, tables: [...r.tables, ...stools] }));
-    setSelId(null); clearMultiSel();
+    const stools: FreeTable[] = Array.from({ length: count }, (_, i) => {
+      const p = stoolPos(bar, i, count, SW);
+      return {
+        id: uid(), num: baseNum + i + 1, name: `בר ${i + 1}`, group: "בר",
+        shape: "round" as TableShape, x: p.x, y: p.y,
+        w: SW, h: SW, seats: 1, seatedCount: 0,
+        status: "free" as TableStatus, rot: 0, customColor: "", zIdx: 2, barId,
+      };
+    });
+    updRoom(r => ({ ...r, bars: [...(r.bars ?? []), bar], tables: [...r.tables, ...stools] }));
+    setSelId(null); clearMultiSel(); setSelBarId(barId);
     showToast(`בר נוסף — ${count} שרפרפים`);
   }
   function promptSpawnBar(cx: number, cy: number) {
     const n = parseInt(window.prompt("כמה מקומות בבר?", "10") || "0", 10);
     if (n > 0) spawnBar(cx, cy, Math.min(n, 40));
+  }
+
+  // עדכון בר + ריפוזישן כל השרפרפים שלו בפעולה אחת (תנועה/שינוי-גודל/סיבוב כיחידה)
+  function updBar(barId: string, patch: Partial<BarUnit>) {
+    updRoom(r => {
+      const bars = (r.bars ?? []).map(b => b.id === barId ? { ...b, ...patch } : b);
+      const bar = bars.find(b => b.id === barId);
+      if (!bar) return { ...r, bars };
+      const stools = r.tables.filter(t => t.barId === barId).sort((a, b) => a.num - b.num);
+      const pos = new Map(stools.map((t, i) => [t.id, stoolPos(bar, i, stools.length, t.w)]));
+      const tables = r.tables.map(t => pos.has(t.id) ? { ...t, ...pos.get(t.id)! } : t);
+      return { ...r, bars, tables };
+    });
+  }
+  function deleteBar(barId: string) {
+    pushHistory();
+    updRoom(r => ({
+      ...r,
+      bars: (r.bars ?? []).filter(b => b.id !== barId),
+      tables: r.tables.filter(t => t.barId !== barId),
+    }));
+    setSelBarId(null);
+    showToast("הבר נמחק");
   }
 
   /* ── Edit popup position ── */
@@ -1237,6 +1329,31 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       return;
     }
 
+    if (barDragId.current) {
+      if (!didDrag.current) pushHistory();
+      didDrag.current = true;
+      const dx = (e.clientX - barDragStart.current.mx) / zoomR.current;
+      const dy = (e.clientY - barDragStart.current.my) / zoomR.current;
+      updBar(barDragId.current, { x: snapV(barDragStart.current.x + dx, snapOn), y: snapV(barDragStart.current.y + dy, snapOn) });
+      return;
+    }
+    if (barRsId.current) {
+      const p = screenToCanvas(e.clientX, e.clientY);
+      const bar = activeRoom?.bars?.find(b => b.id === barRsId.current);
+      if (!bar) return;
+      updBar(barRsId.current, {
+        w: snapV(Math.max(120, p.x - bar.x + barRsStart.current.dw), snapOn),
+        h: snapV(Math.max(28,  p.y - bar.y + barRsStart.current.dh), snapOn),
+      });
+      return;
+    }
+    if (barRotId.current) {
+      const { cx, cy } = barRotCtr.current;
+      const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
+      updBar(barRotId.current, { rot: snapOn ? Math.round(angle / 15) * 15 : Math.round(angle) });
+      return;
+    }
+
     if (rotatingId.current) {
       const { cx, cy } = rotateCtr.current;
       const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
@@ -1312,7 +1429,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   function handleCanvasMU(e: React.MouseEvent) {
     if (isPanning.current && panIsOnBg.current) {
       const dist = Math.hypot(e.clientX - panStart.current.mx, e.clientY - panStart.current.my);
-      if (dist < 5) { setSelId(null); setSelDecoId(null); setCtxMenu(null); setEditId(null); clearMultiSel(); }
+      if (dist < 5) { setSelId(null); setSelDecoId(null); setSelBarId(null); setCtxMenu(null); setEditId(null); clearMultiSel(); }
     }
     isMultiDrag.current = false;
     isPanning.current = false; panIsOnBg.current = false;
@@ -1322,12 +1439,26 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     draggingDecoId.current = null;
     rotatingDecoId.current = null;
     rsDecoId.current = null;
+    barDragId.current = null;
+    barRsId.current = null;
+    barRotId.current = null;
   }
 
   function handleTableMD(e: React.MouseEvent, table: FreeTable) {
     if (e.button !== 0 || spaceDown.current) return;
     e.stopPropagation();
     didDrag.current = false;
+
+    // שרפרף בר — מקובע; גרירה מזיזה את כל יחידת הבר
+    if (table.barId) {
+      const bar = activeRoom?.bars?.find(b => b.id === table.barId);
+      if (bar) {
+        setSelBarId(bar.id); setSelId(null); setSelDecoId(null); clearMultiSel();
+        barDragId.current = bar.id;
+        barDragStart.current = { mx: e.clientX, my: e.clientY, x: bar.x, y: bar.y };
+        return;
+      }
+    }
 
     if (e.shiftKey) {
       const inSel = selId === table.id || multiSelIds.has(table.id);
@@ -1452,6 +1583,32 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     rsStart.current = { dw: table.w - (p.x - table.x), dh: table.h - (p.y - table.y) };
   }
 
+  /* ── Bar unit handlers ── */
+  function handleBarMD(e: React.MouseEvent, bar: BarUnit) {
+    if (e.button !== 0 || spaceDown.current) return;
+    e.stopPropagation();
+    didDrag.current = false;
+    setSelBarId(bar.id); setSelId(null); setSelDecoId(null); clearMultiSel(); setCtxMenu(null);
+    barDragId.current = bar.id;
+    barDragStart.current = { mx: e.clientX, my: e.clientY, x: bar.x, y: bar.y };
+  }
+  function handleBarResizeMD(e: React.MouseEvent, bar: BarUnit) {
+    e.stopPropagation(); e.preventDefault();
+    barRsId.current = bar.id;
+    const p = screenToCanvas(e.clientX, e.clientY);
+    barRsStart.current = { dw: bar.w - (p.x - bar.x), dh: bar.h - (p.y - bar.y) };
+  }
+  function handleBarRotateMD(e: React.MouseEvent, bar: BarUnit) {
+    e.stopPropagation(); e.preventDefault();
+    barRotId.current = bar.id;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (rect) barRotCtr.current = { cx: rect.left + (bar.x + bar.w / 2) * zoomR.current + panXR.current, cy: rect.top + (bar.y + bar.h / 2) * zoomR.current + panYR.current };
+  }
+  function rotateBarStep(barId: string, deg: number) {
+    const b = activeRoom?.bars?.find(b => b.id === barId);
+    if (b) updBar(barId, { rot: ((b.rot || 0) + deg + 360) % 360 });
+  }
+
   /* palette DnD */
   function handleDragOver(e: React.DragEvent) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }
   function handleDrop(e: React.DragEvent) {
@@ -1476,7 +1633,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         spaceDown.current = true;
         if (containerRef.current) containerRef.current.style.cursor = "grab";
       }
-      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); setSelDecoId(null); clearMultiSel(); }
+      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); setSelDecoId(null); setSelBarId(null); clearMultiSel(); }
       if (e.key === "g" || e.key === "G") setSnapOn(s => !s);
       const tag = (document.activeElement as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -1485,6 +1642,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       if ((e.key === "a" || e.key === "A") && (e.ctrlKey || e.metaKey)) { e.preventDefault(); selectAll(); return; }
       const allT = allSelTableIds(), allD = allSelDecoIds();
       if (e.key === "Delete" || e.key === "Backspace") {
+        if (selBarId) { deleteBar(selBarId); return; }
         if (allT.size + allD.size > 1) { delSelected(); return; }
         if (selDecoId) { delDeco(selDecoId); return; }
         if (selId) { delTable(selId); return; }
@@ -1507,7 +1665,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     window.addEventListener("keydown", dn);
     window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
-  }, [selId, selDecoId, activeRoom]); // eslint-disable-line
+  }, [selId, selDecoId, selBarId, activeRoom]); // eslint-disable-line
 
   /* rooms */
   function addRoom() {
@@ -1775,6 +1933,20 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                 <div style={{ width: vSize.w, height: vSize.h, position: "relative" }}>
                   {/* Background layer (separate so bgImg opacity doesn't affect tables) */}
                   <div data-canvas="bg" style={{ position: "absolute", inset: 0, zIndex: 0, cursor: "grab", ...(activeRoom?.bgImg ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 } : { background: bgCfg.cw, backgroundSize: "40px 40px" }) }} />
+
+                  {/* Bar counters (behind stools) */}
+                  {(activeRoom?.bars ?? []).map(bar => (
+                    <BarUnitItem
+                      key={bar.id}
+                      bar={bar}
+                      selected={selBarId === bar.id}
+                      onMD={e => handleBarMD(e, bar)}
+                      onResizeMD={e => handleBarResizeMD(e, bar)}
+                      onRotateMD={e => handleBarRotateMD(e, bar)}
+                      onRotateStep={deg => rotateBarStep(bar.id, deg)}
+                      onDelete={() => deleteBar(bar.id)}
+                    />
+                  ))}
 
                   {/* Decorations */}
                   {(activeRoom?.decos ?? [])
