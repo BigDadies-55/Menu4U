@@ -16,10 +16,10 @@ type FreeTable = {
 };
 
 type Decoration = {
-  id: string; kind: "line" | "label" | "image";
+  id: string; kind: "line" | "label" | "image" | "text";
   x: number; y: number; w: number; h: number;
   rot: number; text: string; color: string; zIdx: number;
-  imgSrc?: string;
+  imgSrc?: string; fontSize?: number;
 };
 
 type Room = {
@@ -58,10 +58,11 @@ const PALETTE: PaletteItem[] = [
   { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 240, h: 65,  seats: 16 },
 ];
 
-type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label" | "image"; w: number; h: number };
+type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label" | "image" | "text"; w: number; h: number };
 const DECO_PALETTE: DecoPaletteItem[] = [
-  { icon: "▮", label: "קיר",   kind: "line",  w: 200, h: 6   },
-  { icon: "🔤", label: "טקסט",  kind: "label", w: 160, h: 60  },
+  { icon: "▮", label: "קיר",   kind: "line",  w: 200, h: 14  },
+  { icon: "🔤", label: "טקסט",  kind: "text",  w: 140, h: 44  },
+  { icon: "▭", label: "תווית", kind: "label", w: 160, h: 60  },
   { icon: "🖼", label: "תמונה", kind: "image", w: 160, h: 120 },
 ];
 
@@ -92,17 +93,18 @@ function SeatIndicators({ w, h, shape, seats, seatedCount }: { w: number; h: num
 
   // Position each seat by shape: round/oval → evenly on the perimeter circle;
   // rect/square/long/banquet → split symmetrically across the top & bottom edges.
+  const D = 16, R = D / 2;   // seat dot diameter / radius
   const pts: { left: number; top: number }[] = [];
   if (shape === "round" || shape === "oval") {
-    const rx = w / 2 + 9, ry = h / 2 + 9;
+    const rx = w / 2 + R - 1, ry = h / 2 + R - 1;
     for (let i = 0; i < mx; i++) {
       const a = (2 * Math.PI * i / mx) - Math.PI / 2;
-      pts.push({ left: w / 2 + rx * Math.cos(a) - 4.5, top: h / 2 + ry * Math.sin(a) - 4.5 });
+      pts.push({ left: w / 2 + rx * Math.cos(a) - R, top: h / 2 + ry * Math.sin(a) - R });
     }
   } else {
     const topN = Math.ceil(mx / 2), botN = mx - topN;
-    for (let i = 0; i < topN; i++) pts.push({ left: w * (i + 1) / (topN + 1) - 4.5, top: -13 });
-    for (let i = 0; i < botN; i++) pts.push({ left: w * (i + 1) / (botN + 1) - 4.5, top: h + 4 });
+    for (let i = 0; i < topN; i++) pts.push({ left: w * (i + 1) / (topN + 1) - R, top: -(D + 5) });
+    for (let i = 0; i < botN; i++) pts.push({ left: w * (i + 1) / (botN + 1) - R, top: h + 5 });
   }
 
   return (
@@ -112,13 +114,13 @@ function SeatIndicators({ w, h, shape, seats, seatedCount }: { w: number; h: num
         return (
           <div key={i} style={{
             position: "absolute",
-            width: 9, height: 9, borderRadius: "50%",
+            width: D, height: D, borderRadius: "50%",
             background: filled ? T.gold : T.raised,
-            border: `1px solid ${filled ? T.gold : T.border}`,
+            border: `2px solid ${filled ? T.gold : T.border}`,
             left: p.left,
             top: p.top,
             pointerEvents: "none",
-            boxShadow: filled ? "0 0 4px rgba(212,160,23,0.6)" : "none",
+            boxShadow: filled ? "0 0 6px rgba(212,160,23,0.6)" : "0 1px 3px rgba(0,0,0,0.25)",
           }} />
         );
       })}
@@ -314,7 +316,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 }
 
 /* ══════════════════════ Decoration Item ══ */
-function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, onRotateStep, onTextCommit, onPickImage }: {
+function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, onRotateStep, onTextCommit, onPickImage, onFontSize }: {
   deco: Decoration; selected: boolean;
   onMD: (e: React.MouseEvent) => void;
   onCtx: (e: React.MouseEvent) => void;
@@ -323,11 +325,14 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
   onRotateStep: (deg: number) => void;
   onTextCommit: (text: string) => void;
   onPickImage: () => void;
+  onFontSize: (delta: number) => void;
 }) {
   const [textEditing, setTextEditing] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const isLine  = deco.kind === "line";
   const isImage = deco.kind === "image";
+  const isText  = deco.kind === "text";
+  const fontSize = deco.fontSize ?? (isText ? 18 : 14);
   const c = deco.color || T.gold;
 
   return (
@@ -346,6 +351,12 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
             style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.92)", border: "2px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "grab" }}>↻</div>
           <div onClick={e => { e.stopPropagation(); onRotateStep(15); }} onMouseDown={e => e.stopPropagation()} title="סובב +15°"
             style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.75)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>↻</div>
+          {(isText || deco.kind === "label") && (<>
+            <div onClick={e => { e.stopPropagation(); onFontSize(-2); }} onMouseDown={e => e.stopPropagation()} title="הקטן טקסט"
+              style={{ width: 24, height: 24, borderRadius: "50%", background: T.raised, border: `1.5px solid ${T.border}`, color: T.text, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>A−</div>
+            <div onClick={e => { e.stopPropagation(); onFontSize(2); }} onMouseDown={e => e.stopPropagation()} title="הגדל טקסט"
+              style={{ width: 24, height: 24, borderRadius: "50%", background: T.raised, border: `1.5px solid ${T.border}`, color: T.text, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>A+</div>
+          </>)}
         </div>
       )}
 
@@ -363,7 +374,7 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
           }
         </div>
       ) : (
-        <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1.5px solid ${c}80`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: isText ? "transparent" : `${c}20`, border: isText ? "none" : `1.5px solid ${c}80`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
           {textEditing ? (
             <textarea
               ref={taRef}
@@ -372,10 +383,10 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
               onBlur={e => { onTextCommit(e.target.value); setTextEditing(false); }}
               onKeyDown={e => { if (e.key === "Escape") { onTextCommit(taRef.current?.value ?? deco.text); setTextEditing(false); } e.stopPropagation(); }}
               onMouseDown={e => e.stopPropagation()}
-              style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: c, fontSize: 14, fontWeight: 600, textAlign: "center", padding: "8px", fontFamily: "inherit", cursor: "text" }}
+              style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: c, fontSize, fontWeight: 600, textAlign: "center", padding: "8px", fontFamily: "inherit", cursor: "text" }}
             />
           ) : (
-            <div style={{ color: c, fontSize: 14, fontWeight: 600, textAlign: "center", padding: "6px 10px", wordBreak: "break-word", pointerEvents: "none", width: "100%" }}>
+            <div style={{ color: c, fontSize, fontWeight: 600, textAlign: "center", padding: "6px 10px", wordBreak: "break-word", pointerEvents: "none", width: "100%" }}>
               {deco.text || <span style={{ opacity: 0.35, fontSize: 11 }}>לחץ פעמיים לכתיבה</span>}
             </div>
           )}
@@ -765,6 +776,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const spaceDown   = useRef(false);
   const paletteDrag    = useRef<PaletteItem | null>(null);
   const paletteDragDeco = useRef<DecoPaletteItem | null>(null);
+  const paletteDragBar  = useRef(false);
   const imgFileRef      = useRef<HTMLInputElement>(null);
   const imgTargetDecoId = useRef<string | null>(null);
   const importFileRef   = useRef<HTMLInputElement>(null);
@@ -966,6 +978,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       y: snapV(Math.max(0, cy - item.h / 2), snapOn),
       w: item.w, h: item.h,
       rot: 0, text: "", color: T.gold, zIdx: 1,
+      fontSize: item.kind === "text" ? 18 : 14,
     };
     updRoom(r => ({ ...r, decos: [...(r.decos ?? []), d] }));
     setSelDecoId(d.id); setSelId(null); clearMultiSel();
@@ -1106,6 +1119,29 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     updRoom(r => ({ ...r, tables: [...r.tables, t] }));
     setSelId(t.id); clearMultiSel();
     showToast(`שולחן ${t.num} נוסף`);
+  }
+
+  // בר: N שרפרפים עצמאיים (כיסא אחד כל אחד) בשורה — כל שרפרף = שולחן/חשבון נפרד
+  function spawnBar(cx: number, cy: number, count: number) {
+    pushHistory();
+    const W = 48, H = 48, gap = 16;
+    const baseNum = Math.max(0, ...(activeRoom?.tables.map(t => t.num) ?? [0]));
+    const startX = Math.max(0, cx - (count * (W + gap) - gap) / 2);
+    const y = Math.max(0, cy - H / 2);
+    const stools: FreeTable[] = Array.from({ length: count }, (_, i) => ({
+      id: uid(), num: baseNum + i + 1, name: `בר ${i + 1}`, group: "בר",
+      shape: "round" as TableShape,
+      x: snapV(startX + i * (W + gap), snapOn), y: snapV(y, snapOn),
+      w: W, h: H, seats: 1, seatedCount: 0,
+      status: "free" as TableStatus, rot: 0, customColor: "", zIdx: 1,
+    }));
+    updRoom(r => ({ ...r, tables: [...r.tables, ...stools] }));
+    setSelId(null); clearMultiSel();
+    showToast(`בר נוסף — ${count} שרפרפים`);
+  }
+  function promptSpawnBar(cx: number, cy: number) {
+    const n = parseInt(window.prompt("כמה מקומות בבר?", "10") || "0", 10);
+    if (n > 0) spawnBar(cx, cy, Math.min(n, 40));
   }
 
   /* ── Edit popup position ── */
@@ -1425,6 +1461,9 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     } else if (paletteDragDeco.current) {
       const pi = paletteDragDeco.current; paletteDragDeco.current = null;
       spawnDeco(p.x, p.y, pi);
+    } else if (paletteDragBar.current) {
+      paletteDragBar.current = false;
+      promptSpawnBar(p.x, p.y);
     }
   }
 
@@ -1475,22 +1514,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     setLayout(prev => ({ ...prev, rooms: [...prev.rooms, r] }));
     setRoomIdx(layout.rooms.length);
     setShowNewRoom(false); setNewRoomName("");
-  }
-  // בר אקראי: 10 שרפרפים עצמאיים (כיסא אחד כל אחד), בשורה אחת — כל שרפרף = חשבון נפרד
-  function addBarRoom() {
-    const r = mkRoom("בר");
-    const W = 48, H = 48, gap = 16, startX = 40, y = 70;
-    r.tables = Array.from({ length: 10 }, (_, i) => ({
-      id: uid(), num: i + 1, name: `בר ${i + 1}`, group: "בר",
-      shape: "round" as TableShape,
-      x: startX + i * (W + gap), y,
-      w: W, h: H, seats: 1, seatedCount: 0,
-      status: "free" as TableStatus, rot: 0, customColor: "", zIdx: 1,
-    }));
-    setLayout(prev => ({ ...prev, rooms: [...prev.rooms, r] }));
-    setRoomIdx(layout.rooms.length);
-    setShowNewRoom(false); setNewRoomName("");
-    showToast("חדר בר נוסף — 10 שרפרפים");
   }
   function delRoom(idx: number) {
     if (layout.rooms.length <= 1) return;
@@ -1678,6 +1701,19 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                 </div>
               ))}
 
+              {/* Bar generator — drag to define how many independent stools */}
+              <div draggable
+                onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", "בר"); paletteDragBar.current = true; }}
+                onDragEnd={() => { paletteDragBar.current = false; }}
+                onDoubleClick={() => promptSpawnBar((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom)}
+                style={{ display: "flex", alignItems: "center", padding: "6px 8px", borderRadius: 8, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.22)", background: "rgba(212,160,23,0.04)", transition: "all 0.12s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.22)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.04)"; }}>
+                <span style={{ fontSize: 16, color: T.gold, marginLeft: 8 }}>🍸</span>
+                <span style={{ fontSize: 12, color: C.text, fontWeight: 600, flex: 1 }}>בר (שרפרפים)</span>
+                <span style={{ fontSize: 13, color: "rgba(212,160,23,0.3)", letterSpacing: "1px" }}>⠿</span>
+              </div>
+
               {/* Divider */}
               <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "4px 0" }} />
 
@@ -1754,6 +1790,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         onRotateStep={deg => rotateDecoStep(deco.id, deg)}
                         onTextCommit={text => updDeco(deco.id, { text })}
                         onPickImage={() => pickImageForDeco(deco.id)}
+                        onFontSize={delta => updDeco(deco.id, { fontSize: Math.max(8, Math.min(72, (deco.fontSize ?? (deco.kind === "text" ? 18 : 14)) + delta)) })}
                       />
                     ))}
 
@@ -1914,7 +1951,6 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
               <button onClick={addRoom} style={{ flex: 1, padding: "10px 0", borderRadius: 10, color: "#fff", fontWeight: 700, border: "none", cursor: "pointer", background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})` }}>הוסף</button>
               <button onClick={() => { setShowNewRoom(false); setNewRoomName(""); }} style={{ padding: "10px 14px", borderRadius: 10, color: C.muted, background: T.raised, border: `1px solid ${T.border}`, cursor: "pointer" }}>ביטול</button>
             </div>
-            <button onClick={addBarRoom} style={{ width: "100%", marginTop: 10, padding: "9px 0", borderRadius: 10, color: T.text, fontWeight: 700, fontSize: 13, cursor: "pointer", background: T.raised, border: `1px dashed ${T.border}` }}>🍸 צור חדר בר (10 שרפרפים)</button>
           </div>
         </div>
       )}
