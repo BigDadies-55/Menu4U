@@ -86,6 +86,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [logoutPrompt, setLogoutPrompt] = useState(false);
   const [alertToast, setAlertToast]     = useState<string | null>(null);
   const prevAlertKeys = useRef<Set<string>>(new Set());
+  const [shift, setShift] = useState<{ revenue: number; diners: number; avgPerDiner: number } | null>(null);
 
   const activeRestaurant = restaurants.find(r => r.id === restaurantId);
   const [bgUrl, setBgUrl] = useState(
@@ -112,6 +113,19 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     if (typeof window === "undefined") return;
     if (!localStorage.getItem(todayKey())) setClockPrompt(true);
   }, []);
+
+  // Shift totals (today) — revenue, diners, avg per diner.
+  useEffect(() => {
+    if (!restaurantId) return;
+    let cancelled = false;
+    const load = () => fetch(`/api/admin/waiter-pos/shift-stats?restaurantId=${restaurantId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && !cancelled) setShift(d); })
+      .catch(() => {});
+    load();
+    const id = setInterval(load, 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [restaurantId, tables]);
 
   function answerClockPrompt(reported: boolean) {
     try { localStorage.setItem(todayKey(), "1"); } catch { /* ignore */ }
@@ -162,7 +176,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       fontFamily: "'Heebo', sans-serif",
       overflow: "hidden",
       display: "flex", flexDirection: "column",
-      padding: "12px 16px", gap: 10,
+      padding: "12px 16px 68px", gap: 10,
       background: "transparent",
       color: "#fff",
       height: isWaiter ? "100%" : undefined,
@@ -174,11 +188,12 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         @keyframes toastIn { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       `}</style>
 
-      {/* ══ TOP NAV ══ */}
+      {/* ══ TOP NAV — full-width black bar, edge to edge ══ */}
       <div style={{
-        background: "rgba(15,14,22,0.75)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        border: `1px solid ${G_BORDER_C}`, borderRadius: 18,
-        padding: "0 14px", height: 58, flexShrink: 0,
+        background: "#000",
+        borderBottom: "1px solid rgba(255,255,255,0.10)",
+        boxShadow: "0 2px 14px rgba(0,0,0,0.5)",
+        margin: "-12px -16px 0", padding: "0 14px", height: 60, flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
       }}>
         {/* RIGHT (RTL start): hamburger | waiter name | restaurant */}
@@ -212,7 +227,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
         {/* LEFT (RTL end): clock | fullscreen */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.08)", border: `1px solid ${G_BORDER_C}`, borderRadius: 10, padding: "6px 14px", fontVariantNumeric: "tabular-nums" }}>{clock}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{clock}</div>
           <button onClick={toggleFullscreen} title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"} style={{
             background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 10,
             padding: "8px 11px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center",
@@ -575,10 +590,33 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
       {/* Success toast */}
       {toastMsg && (
-        <div style={{ position: "fixed", bottom: 24, right: "50%", transform: "translateX(50%)", background: "#1a2a1a", borderRadius: 10, padding: "11px 22px", color: "#4ade80", fontSize: 13, fontWeight: 600, zIndex: 800, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+        <div style={{ position: "fixed", bottom: 80, right: "50%", transform: "translateX(50%)", background: "#1a2a1a", borderRadius: 10, padding: "11px 22px", color: "#4ade80", fontSize: 13, fontWeight: 600, zIndex: 800, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
           ✓ {toastMsg}
         </div>
       )}
+
+      {/* ══ BOTTOM BAR — shift totals (full-width black) ══ */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+        background: "#000", borderTop: "1px solid rgba(255,255,255,0.10)",
+        boxShadow: "0 -2px 14px rgba(0,0,0,0.5)", height: 60,
+        display: "flex", alignItems: "center", justifyContent: "space-around",
+        padding: "0 12px", direction: "rtl",
+      }}>
+        {[
+          { label: "הכנסות משמרת", val: `₪${Math.round(shift?.revenue ?? 0).toLocaleString("he-IL")}`, color: "#34d399" },
+          { label: "סועדים במשמרת", val: `${shift?.diners ?? 0}`, color: "#93c5fd" },
+          { label: "ממוצע לאדם", val: `₪${Math.round(shift?.avgPerDiner ?? 0).toLocaleString("he-IL")}`, color: "#fbbf24" },
+        ].map((s, i) => (
+          <React.Fragment key={s.label}>
+            {i > 0 && <div style={{ width: 1, height: 30, background: "rgba(255,255,255,0.12)" }} />}
+            <div style={{ textAlign: "center", flex: 1 }}>
+              <div style={{ fontSize: 10, color: G_MUTED_C, marginBottom: 2 }}>{s.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: s.color, fontVariantNumeric: "tabular-nums" }}>{s.val}</div>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
     </div>
     </>
   );
