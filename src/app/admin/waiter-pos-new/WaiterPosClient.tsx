@@ -536,7 +536,6 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                     <InsightCard insight={ins} />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 12, flexShrink: 0 }}>
-                    <button onClick={() => snoozeInsight(ins, 720)} title="סגור תובנה" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, color: "#fca5a5", cursor: "pointer", fontFamily: "inherit", lineHeight: 1 }}>✕</button>
                     <button onClick={() => snoozeInsight(ins, 30)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: G_MUTED_C, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>⏸ 30 דק&apos;</button>
                     <button onClick={() => snoozeInsight(ins, 120)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: G_MUTED_C, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>⏸ 2 שע&apos;</button>
                   </div>
