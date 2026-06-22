@@ -10,6 +10,10 @@ type AttRoleCfg = { code: string; label: string; payCode: string; color: string 
 interface Props {
   restaurantId: string;
   userId: string;
+  /** Hide the built-in trigger button (use when opened from an external menu). */
+  hideTrigger?: boolean;
+  /** Each time this number changes, the attendance panel opens. */
+  openSignal?: number;
 }
 
 const G_CARD     = "rgba(255,255,255,0.06)";
@@ -20,7 +24,7 @@ function fmtT(ts: string) {
   return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
-export default function AttendanceWidget({ restaurantId, userId }: Props) {
+export default function AttendanceWidget({ restaurantId, userId, hideTrigger = false, openSignal }: Props) {
   const moduleOn = useModuleEnabled(restaurantId, "attendance");
   const [records,    setRecords]    = useState<AttRec[]>([]);
   const [loading,    setLoading]    = useState(false);
@@ -47,6 +51,9 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
   }, [userId, restaurantId]);
 
   useEffect(() => { loadToday(); }, [loadToday]);
+
+  // Allow a parent (menu item / first-entry prompt) to open the panel.
+  useEffect(() => { if (openSignal !== undefined && openSignal > 0) setPanelOpen(true); }, [openSignal]);
 
   // Load the restaurant's role / pay-code list for the check-in picker.
   useEffect(() => {
@@ -79,7 +86,7 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
   return (
     <>
       {/* ── Trigger button ── */}
-      <button
+      {!hideTrigger && <button
         onClick={() => setPanelOpen(true)}
         title="נוכחות"
         style={{
@@ -94,7 +101,7 @@ export default function AttendanceWidget({ restaurantId, userId }: Props) {
         }}
       >
         ⏱ {hasOut ? fmtT(firstOut!.timestamp) : hasIn ? fmtT(firstIn!.timestamp) : "נוכחות"}
-      </button>
+      </button>}
 
       {/* ── Panel modal ── */}
       {panelOpen && createPortal(

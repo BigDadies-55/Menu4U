@@ -15,6 +15,7 @@ const WAITER_API_PREFIXES = [
 // Static waiter routes to pre-cache shell
 const WAITER_ROUTES = [
   "/admin/waiter-pos",
+  "/admin/waiter-pos-new",
   "/admin/waiter-floor",
 ];
 

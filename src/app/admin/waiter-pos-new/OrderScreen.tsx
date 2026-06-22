@@ -24,11 +24,14 @@ type Props = {
   tableAllergens: string[];
   restaurantId: string;
   existingOrder: OrderDetail | null;
+  isOffline?: boolean;
+  enqueueOffline?: (payload: object) => string;
   onClose: () => void;
   onSuccess: (newOrderId?: string) => void;
+  onQueued?: () => void;
 };
 
-export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, restaurantId, existingOrder, onClose, onSuccess }: Props) {
+export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, restaurantId, existingOrder, isOffline = false, enqueueOffline, onClose, onSuccess, onQueued }: Props) {
   const [categories, setCategories]     = useState<MenuCategory[]>([]);
   const [loadingMenu, setLoadingMenu]   = useState(true);
   const [menuError, setMenuError]       = useState<string | null>(null);
@@ -222,16 +225,23 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
         onSuccess();
       } else {
         // Create new order
+        const payload = {
+          restaurantId,
+          tableNumber: tableNum,
+          coversCount: guestCount,
+          tableAllergens,
+          items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers })),
+        };
+        // Offline → queue for later sync instead of failing the request.
+        if (isOffline && enqueueOffline) {
+          enqueueOffline(payload);
+          onQueued?.();
+          return;
+        }
         const r = await fetch("/api/admin/orders/waiter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            restaurantId,
-            tableNumber: tableNum,
-            coversCount: guestCount,
-            tableAllergens,
-            items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers })),
-          }),
+          body: JSON.stringify(payload),
         });
         const newOrder = await r.json();
         onSuccess(newOrder?.id);
