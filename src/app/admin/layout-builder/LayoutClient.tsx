@@ -90,6 +90,26 @@ const BGS = [
 function uid() { return Math.random().toString(36).slice(2, 10); }
 function mkRoom(name = "חדר ראשי"): Room { return { id: uid(), name, tables: [], bg: 0 }; }
 function emptyLayout(): LayoutV2 { return { version: 2, rooms: [mkRoom()] }; }
+
+// Table numbers must be unique across the WHOLE restaurant — orders are keyed by
+// number alone (no room), so a repeated "6" in another room would share the same
+// order. Keep the first occurrence (scanning rooms in order) and renumber later
+// duplicates to the next free global number.
+function dedupeRoomTableNums(lay: LayoutV2): { layout: LayoutV2; changed: number } {
+  const seen = new Set<number>();
+  let maxNum = 0;
+  for (const r of lay.rooms) for (const t of r.tables) maxNum = Math.max(maxNum, t.num);
+  let changed = 0;
+  const rooms = lay.rooms.map(r => ({
+    ...r,
+    tables: r.tables.map(t => {
+      if (!seen.has(t.num)) { seen.add(t.num); return t; }
+      maxNum += 1; changed += 1; seen.add(maxNum);
+      return { ...t, num: maxNum };
+    }),
+  }));
+  return { layout: { ...lay, rooms }, changed };
+}
 function snapV(v: number, on: boolean) { return on ? Math.round(v / GRID) * GRID : Math.round(v); }
 
 // מיקום מוחלט של שרפרף i (מתוך count) לאורך החזית של דלפק הבר, מסובב לפי bar.rot
@@ -994,8 +1014,10 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         const data = await res.json();
         if (data.tableLayoutJson) {
           const p = JSON.parse(data.tableLayoutJson);
-          const newLayout = p.version === 2 ? p : emptyLayout();
-          setLayout(newLayout);
+          const base = p.version === 2 ? p : emptyLayout();
+          const { layout: deduped, changed } = dedupeRoomTableNums(base);
+          setLayout(deduped);
+          if (changed > 0) showToast(`תוקנו ${changed} שולחנות עם מספר כפול — לחץ שמירה`);
           requestAnimationFrame(() => { setZoom(1); setPanX(0); setPanY(0); });
         } else setLayout(emptyLayout());
       }
@@ -1122,7 +1144,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         const parsed = JSON.parse(ev.target?.result as string) as LayoutV2;
         if (parsed.version !== 2 || !Array.isArray(parsed.rooms)) throw new Error();
         pushHistory();
-        setLayout(parsed);
+        setLayout(dedupeRoomTableNums(parsed).layout);
         showToast("Layout יובא ✓");
       } catch {
         showToast("קובץ לא תקין ✗");
@@ -1181,10 +1203,13 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     return { x: (sx - rect.left - panXR.current) / zoomR.current, y: (sy - rect.top - panYR.current) / zoomR.current };
   }
 
+  // Highest table number across ALL rooms — so new tables never collide between rooms.
+  function maxNumAllRooms() { return Math.max(0, ...layout.rooms.flatMap(r => r.tables.map(t => t.num))); }
+
   /* ── Spawn table ── */
   function spawnTable(cx: number, cy: number, pi: PaletteItem) {
     pushHistory();
-    const num = Math.max(0, ...(activeRoom?.tables.map(t => t.num) ?? [0])) + 1;
+    const num = maxNumAllRooms() + 1;
     const t: FreeTable = {
       id: uid(), num, name: "", group: "",
       shape: pi.shape,
@@ -1211,7 +1236,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       y: snapV(Math.max(0, cy - h / 2), snapOn),
       w, h, rot: 0, label: "בר",
     };
-    const baseNum = Math.max(0, ...(activeRoom?.tables.map(t => t.num) ?? [0]));
+    const baseNum = maxNumAllRooms();
     const stools: FreeTable[] = Array.from({ length: count }, (_, i) => {
       const p = stoolPos(bar, i, count, SW);
       return {
