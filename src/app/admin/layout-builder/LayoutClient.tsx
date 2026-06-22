@@ -88,7 +88,7 @@ function emptyLayout(): LayoutV2 { return { version: 2, rooms: [mkRoom()] }; }
 function snapV(v: number, on: boolean) { return on ? Math.round(v / GRID) * GRID : Math.round(v); }
 
 /* ══════════════════════ Seat Indicators ══ */
-function SeatIndicators({ w, h, shape, seats, seatedCount }: { w: number; h: number; shape: TableShape; seats: number; seatedCount: number }) {
+function SeatIndicators({ w, h, shape, seats, seatedCount, color }: { w: number; h: number; shape: TableShape; seats: number; seatedCount: number; color: string }) {
   const mx = Math.min(seats, 24);
 
   // Position each seat by shape: round/oval → evenly on the perimeter circle;
@@ -115,12 +115,12 @@ function SeatIndicators({ w, h, shape, seats, seatedCount }: { w: number; h: num
           <div key={i} style={{
             position: "absolute",
             width: D, height: D, borderRadius: "50%",
-            background: filled ? T.gold : T.raised,
-            border: `2px solid ${filled ? T.gold : T.border}`,
+            background: filled ? color : "#ffffff",
+            border: `2px solid ${color}`,
             left: p.left,
             top: p.top,
             pointerEvents: "none",
-            boxShadow: filled ? "0 0 6px rgba(212,160,23,0.6)" : "0 1px 3px rgba(0,0,0,0.25)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
           }} />
         );
       })}
@@ -247,7 +247,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
       )}
 
       {/* Seat indicators */}
-      <SeatIndicators w={w} h={h} shape={shape} seats={seats} seatedCount={seatedCount} />
+      <SeatIndicators w={w} h={h} shape={shape} seats={seats} seatedCount={seatedCount} color={brd} />
 
       {/* Table body */}
       <div style={{ position: "absolute", inset: 0, borderRadius: br, background: bg, border: `2px solid ${brd}`, boxShadow: selected ? "0 0 0 2px #d4a017, 0 6px 24px rgba(0,0,0,0.5)" : "0 3px 14px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -442,6 +442,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
       status: form.status,
       customColor: form.customColor !== T.gold ? form.customColor : "",
     });
+    onClose();
   }
 
   const inp: React.CSSProperties = { background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
@@ -451,7 +452,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
 
       {/* Draggable header */}
       <div
-        style={{ padding: "11px 14px 9px", cursor: "move", borderBottom: "1px solid rgba(212,160,23,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", userSelect: "none", borderRadius: "14px 14px 0 0", background: "rgba(0,0,0,0.2)" }}
+        style={{ padding: "11px 14px 9px", cursor: "move", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", userSelect: "none", borderRadius: "14px 14px 0 0", background: "rgba(0,0,0,0.2)" }}
         onMouseDown={e => {
           dragRef.current = { sx: e.clientX, sy: e.clientY, ox: off.x, oy: off.y };
           const mm = (me: MouseEvent) => { if (!dragRef.current) return; setOff({ x: dragRef.current.ox + me.clientX - dragRef.current.sx, y: dragRef.current.oy + me.clientY - dragRef.current.sy }); };
@@ -521,11 +522,6 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
           ))}
         </div>
 
-        {/* Apply */}
-        <button onClick={apply} style={{ width: "100%", padding: "10px 0", borderRadius: 10, background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})`, color: "#fff", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", letterSpacing: ".02em", boxShadow: "0 2px 12px rgba(212,160,23,0.3)" }}>
-          ✓ עדכן שולחן
-        </button>
-
         {/* Footer actions */}
         <div style={{ display: "flex", gap: 5 }}>
           {[
@@ -534,7 +530,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
             { icon: "⬇", label: "אחורה", action: onSendBack },
             { icon: "🗑", label: "מחק",   action: onDelete, danger: true },
           ].map(btn => (
-            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? "rgba(244,67,54,0.13)" : "rgba(255,255,255,0.06)", color: btn.danger ? T.red : T.sub, border: `1px solid ${btn.danger ? "rgba(244,67,54,0.3)" : "rgba(255,255,255,0.1)"}`, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
+            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? T.redSub : T.raised, color: btn.danger ? T.red : T.sub, border: `1px solid ${btn.danger ? T.red : T.border}`, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
               <span style={{ fontSize: 14 }}>{btn.icon}</span>
               <span style={{ fontSize: 9 }}>{btn.label}</span>
             </button>
@@ -544,7 +540,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* QR section */}
         {tableUrl && (
           <>
-            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "2px 0" }} />
+            <div style={{ height: 1, background: T.border, margin: "2px 0" }} />
             <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{ padding: 8, background: "#fff", borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
@@ -553,7 +549,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <input readOnly value={tableUrl}
-                style={{ flex: 1, fontSize: 9, color: "rgba(212,160,23,0.55)", background: "rgba(212,160,23,0.05)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 6, padding: "6px 8px", outline: "none", fontFamily: "monospace", minWidth: 0 }}
+                style={{ flex: 1, fontSize: 9, color: T.muted, background: T.raised, border: `1px solid ${T.border}`, borderRadius: 6, padding: "6px 8px", outline: "none", fontFamily: "monospace", minWidth: 0 }}
                 onClick={e => (e.target as HTMLInputElement).select()} />
               <button
                 onClick={() => {
@@ -562,12 +558,17 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
                     setTimeout(() => setCopied(false), 2000);
                   }).catch(() => {});
                 }}
-                style={{ padding: "6px 10px", borderRadius: 7, background: copied ? "rgba(76,175,80,0.2)" : "rgba(212,160,23,0.15)", color: copied ? T.green : T.gold, border: `1px solid ${copied ? "rgba(76,175,80,0.4)" : "rgba(212,160,23,0.35)"}`, cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s" }}>
+                style={{ padding: "6px 10px", borderRadius: 7, background: copied ? T.greenSub : T.raised, color: copied ? T.green : T.gold, border: `1px solid ${copied ? T.green : T.border}`, cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s" }}>
                 {copied ? "✓ הועתק" : "העתק"}
               </button>
             </div>
           </>
         )}
+
+        {/* Apply — bottom; closes the popup on update */}
+        <button onClick={apply} style={{ width: "100%", marginTop: 4, padding: "11px 0", borderRadius: 10, background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})`, color: "#fff", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", letterSpacing: ".02em", boxShadow: "0 2px 12px rgba(212,160,23,0.3)" }}>
+          ✓ עדכן שולחן
+        </button>
       </div>
     </div>
   );
