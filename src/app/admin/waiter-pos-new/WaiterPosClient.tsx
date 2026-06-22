@@ -83,6 +83,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [changePwOpen, setChangePwOpen] = useState(false);
   const [attSignal, setAttSignal]       = useState(0);
   const [clockPrompt, setClockPrompt]   = useState(false);
+  const [logoutPrompt, setLogoutPrompt] = useState(false);
   const [alertToast, setAlertToast]     = useState<string | null>(null);
   const prevAlertKeys = useRef<Set<string>>(new Set());
 
@@ -145,7 +146,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     { icon: viewMode === "floor" ? "⊞" : "🗺️", label: viewMode === "floor" ? "תצוגת כרטיסים" : "תצוגת מפה", onClick: () => runMenu(() => setViewMode(viewMode === "floor" ? "grid" : "floor")) },
     { icon: isFullscreen ? "🗗" : "⛶", label: isFullscreen ? "צא ממסך מלא" : "מסך מלא", onClick: () => runMenu(toggleFullscreen) },
     { icon: "🔐", label: "החלפת סיסמה", onClick: () => runMenu(() => setChangePwOpen(true)) },
-    { icon: "⬅", label: "יציאה", danger: true, onClick: () => runMenu(() => signOut({ callbackUrl: "/login" })) },
+    { icon: "⬅", label: "יציאה", danger: true, onClick: () => runMenu(() => setLogoutPrompt(true)) },
   ];
 
   const totalPending = pendingCount;
@@ -477,6 +478,22 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => answerClockPrompt(true)} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>כן, המשך</button>
               <button onClick={() => answerClockPrompt(false)} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "rgba(248,113,113,0.18)", color: "#F87171", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>לא, דווח עכשיו</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ LOGOUT / CLOCK-OUT PROMPT ══ */}
+      {logoutPrompt && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div dir="rtl" style={{ background: "rgba(15,14,22,0.98)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: `1px solid ${G_BORDER_C}`, borderRadius: 20, width: "100%", maxWidth: 360, padding: 28, textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>🚪</div>
+            <div style={{ fontSize: 19, fontWeight: 800, marginBottom: 8 }}>דיווחת יציאה?</div>
+            <div style={{ fontSize: 13, color: G_MUTED_C, marginBottom: 22 }}>לפני היציאה מהמערכת, ודא שדיווחת יציאה בשעון.</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button onClick={() => { setLogoutPrompt(false); setAttSignal(s => s + 1); }} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(248,113,113,0.18)", color: "#F87171", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>לא, דווח עכשיו</button>
+              <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>כן, התנתק</button>
+              <button onClick={() => setLogoutPrompt(false)} style={{ padding: "10px", borderRadius: 12, border: `1px solid ${G_BORDER_C}`, background: "transparent", color: G_MUTED_C, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
             </div>
           </div>
         </div>
