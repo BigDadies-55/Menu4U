@@ -13,19 +13,24 @@ type FreeTable = {
   shape: TableShape; x: number; y: number;
   w: number; h: number; seats: number; seatedCount: number;
   status: TableStatus; rot: number; customColor: string; zIdx: number;
+  barId?: string;   // אם משויך לבר — מקובע, נע/מסתובב כיחידה עם הבר
 };
 
+// בר = יחידה ויזואלית אחת (דלפק) שמכילה שרפרפים מקובעים; כל שרפרף נשאר שולחן/חשבון עצמאי
+type BarUnit = { id: string; x: number; y: number; w: number; h: number; rot: number; label: string };
+
 type Decoration = {
-  id: string; kind: "line" | "label" | "image";
+  id: string; kind: "line" | "label" | "image" | "text";
   x: number; y: number; w: number; h: number;
   rot: number; text: string; color: string; zIdx: number;
-  imgSrc?: string;
+  imgSrc?: string; fontSize?: number;
 };
 
 type Room = {
   id: string; name: string; tables: FreeTable[];
   bg: number; bgImg?: string; bgOpacity?: number;
   decos?: Decoration[];
+  bars?: BarUnit[];
 };
 
 type LayoutV2  = { version: 2; rooms: Room[] };
@@ -48,19 +53,21 @@ const SHAPE_BR: Record<TableShape, string> = {
 type PaletteItem = { icon: string; label: string; shape: TableShape; w: number; h: number; seats: number };
 
 const PALETTE: PaletteItem[] = [
-  { icon: "●", label: "עגול 6",    shape: "round",   w: 80,  h: 80,  seats: 6  },
-  { icon: "●", label: "עגול 8",    shape: "round",   w: 100, h: 100, seats: 8  },
-  { icon: "▬", label: "מלבן 8",    shape: "rect",    w: 130, h: 70,  seats: 8  },
-  { icon: "▬", label: "מלבן 10",   shape: "rect",    w: 155, h: 70,  seats: 10 },
-  { icon: "■", label: "ריבוע 4",   shape: "square",  w: 90,  h: 90,  seats: 4  },
+  { icon: "■", label: "ריבוע 2",   shape: "square",  w: 60,  h: 60,  seats: 2  },
+  { icon: "■", label: "ריבוע 4",   shape: "square",  w: 84,  h: 84,  seats: 4  },
+  { icon: "●", label: "עגול 2",    shape: "round",   w: 58,  h: 58,  seats: 2  },
+  { icon: "●", label: "עגול 4",    shape: "round",   w: 76,  h: 76,  seats: 4  },
+  { icon: "▬", label: "מלבן 4",    shape: "rect",    w: 110, h: 64,  seats: 4  },
+  { icon: "▬", label: "מלבן 6",    shape: "rect",    w: 140, h: 70,  seats: 6  },
   { icon: "◉", label: "אובאלי 10", shape: "oval",    w: 120, h: 80,  seats: 10 },
   { icon: "▰", label: "בנקט 16",   shape: "banquet", w: 240, h: 65,  seats: 16 },
 ];
 
-type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label" | "image"; w: number; h: number };
+type DecoPaletteItem = { icon: string; label: string; kind: "line" | "label" | "image" | "text"; w: number; h: number };
 const DECO_PALETTE: DecoPaletteItem[] = [
-  { icon: "━", label: "קו",    kind: "line",  w: 200, h: 5   },
-  { icon: "▭", label: "תווית", kind: "label", w: 160, h: 80  },
+  { icon: "▮", label: "קיר",   kind: "line",  w: 200, h: 14  },
+  { icon: "🔤", label: "טקסט",  kind: "text",  w: 140, h: 44  },
+  { icon: "▭", label: "תווית", kind: "label", w: 160, h: 60  },
   { icon: "🖼", label: "תמונה", kind: "image", w: 160, h: 120 },
 ];
 
@@ -85,24 +92,62 @@ function mkRoom(name = "חדר ראשי"): Room { return { id: uid(), name, tabl
 function emptyLayout(): LayoutV2 { return { version: 2, rooms: [mkRoom()] }; }
 function snapV(v: number, on: boolean) { return on ? Math.round(v / GRID) * GRID : Math.round(v); }
 
+// מיקום מוחלט של שרפרף i (מתוך count) לאורך החזית של דלפק הבר, מסובב לפי bar.rot
+function stoolPos(bar: BarUnit, i: number, count: number, sw: number): { x: number; y: number } {
+  const cx = bar.w / 2, cy = bar.h / 2;
+  const lx = bar.w * (i + 1) / (count + 1);   // לאורך הרוחב
+  const ly = bar.h / 2;                         // על קו המרכז — בתוך הדלפק
+  const dx = lx - cx, dy = ly - cy;
+  const th = (bar.rot || 0) * Math.PI / 180;
+  const rx = dx * Math.cos(th) - dy * Math.sin(th);
+  const ry = dx * Math.sin(th) + dy * Math.cos(th);
+  return { x: bar.x + cx + rx - sw / 2, y: bar.y + cy + ry - sw / 2 };
+}
+
 /* ══════════════════════ Seat Indicators ══ */
-function SeatIndicators({ w, h, seats, seatedCount }: { w: number; h: number; seats: number; seatedCount: number }) {
-  const mx = Math.min(seats, 20);
-  const rx = w / 2 + 9, ry = h / 2 + 9;
+function SeatIndicators({ w, h, shape, seats, seatedCount, color, barOut }: { w: number; h: number; shape: TableShape; seats: number; seatedCount: number; color: string; barOut?: number }) {
+  const mx = Math.min(seats, 24);
+
+  // Position each seat by shape: round/oval → evenly on the perimeter circle;
+  // rect/square/long/banquet → split symmetrically across the top & bottom edges.
+  const D = 27, R = D / 2;   // seat dot diameter / radius (×1.7)
+  const IN = 0.1 * D;        // הכיסא צמוד וחודר 10% לתוך השולחן
+  const pts: { left: number; top: number }[] = [];
+  if (barOut != null) {
+    // bar stool — seat(s) project outward from the counter, at a fixed direction
+    const rad = barOut * Math.PI / 180;
+    const rx = w / 2 + R - IN, ry = h / 2 + R - IN;
+    const spread = 0.5; // ~28° between seats if more than one
+    for (let i = 0; i < mx; i++) {
+      const a = rad + (i - (mx - 1) / 2) * spread;
+      pts.push({ left: w / 2 + rx * Math.cos(a) - R, top: h / 2 + ry * Math.sin(a) - R });
+    }
+  } else if (shape === "round" || shape === "oval") {
+    const rx = w / 2 + R - IN, ry = h / 2 + R - IN;
+    for (let i = 0; i < mx; i++) {
+      const a = (2 * Math.PI * i / mx) - Math.PI / 2;
+      pts.push({ left: w / 2 + rx * Math.cos(a) - R, top: h / 2 + ry * Math.sin(a) - R });
+    }
+  } else {
+    const topN = Math.ceil(mx / 2), botN = mx - topN;
+    for (let i = 0; i < topN; i++) pts.push({ left: w * (i + 1) / (topN + 1) - R, top: -(D - IN) });
+    for (let i = 0; i < botN; i++) pts.push({ left: w * (i + 1) / (botN + 1) - R, top: h - IN });
+  }
+
   return (
     <>
-      {Array.from({ length: mx }, (_, i) => {
-        const a = (2 * Math.PI * i / mx) - Math.PI / 2;
+      {pts.map((p, i) => {
+        const filled = i < seatedCount;
         return (
           <div key={i} style={{
             position: "absolute",
-            width: 9, height: 9, borderRadius: "50%",
-            background: i < seatedCount ? T.gold : "rgba(255,255,255,0.15)",
-            border: `1px solid ${i < seatedCount ? T.gold : "rgba(255,255,255,0.25)"}`,
-            left: w / 2 + rx * Math.cos(a) - 4.5,
-            top: h / 2 + ry * Math.sin(a) - 4.5,
+            width: D, height: D, borderRadius: "50%",
+            background: filled ? color : "#ffffff",
+            border: `2px solid ${color}`,
+            left: p.left,
+            top: p.top,
             pointerEvents: "none",
-            boxShadow: i < seatedCount ? "0 0 4px rgba(212,160,23,0.6)" : "none",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
           }} />
         );
       })}
@@ -150,7 +195,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
   const vpH = Math.min(MH - vpY, (vh / zoom) * sy);
 
   return (
-    <div style={{ position: "absolute", bottom: 16, right: 16, width: MW, height: MH, background: "rgba(13,4,4,0.97)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 8, overflow: "hidden", zIndex: 100, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+    <div style={{ position: "absolute", bottom: 16, right: 16, width: MW, height: MH, background: T.panel, border: "1px solid rgba(212,160,23,0.3)", borderRadius: 8, overflow: "hidden", zIndex: 100, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
       <canvas ref={canvasRef} width={MW} height={MH} style={{ display: "block" }} />
       <div style={{ position: "absolute", left: vpX, top: vpY, width: Math.max(6, vpW), height: Math.max(4, vpH), border: "1.5px solid #d4a017", background: "rgba(212,160,23,0.12)", pointerEvents: "none", borderRadius: 2 }} />
       <div style={{ position: "absolute", bottom: 2, left: 4, fontSize: 9, color: T.muted, userSelect: "none" }}>{Math.round(zoom * 100)}%</div>
@@ -161,7 +206,7 @@ function Minimap({ room, panX, panY, zoom, vw, vh, cw, ch }: {
 /* ══════════════════════════ Toast ══ */
 function Toast({ msg }: { msg: string }) {
   return (
-    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "rgba(20,10,4,0.97)", border: `1px solid ${T.border}`, color: T.gold, padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.panel, border: `1px solid ${T.border}`, color: T.gold, padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.6)", pointerEvents: "none", whiteSpace: "nowrap" }}>
       {msg}
     </div>
   );
@@ -185,9 +230,10 @@ function TopBtn({ children, onClick, title, active, danger, wide }: {
 /* ══════════════════════ Table Item ══ */
 type InlineSeated = { val: string; onChange: (v: string) => void; onCommit: () => void };
 
-function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotateMD, onResizeMD, onSeatedClick, onRotateStep }: {
+function TableItem({ table, selected, inlineSeated, barOut, onMD, onDbl, onCtx, onRotateMD, onResizeMD, onSeatedClick, onRotateStep }: {
   table: FreeTable; selected: boolean;
   inlineSeated: InlineSeated | null;
+  barOut?: number;
   onMD: (e: React.MouseEvent) => void;
   onDbl: (e: React.MouseEvent) => void;
   onCtx: (e: React.MouseEvent) => void;
@@ -198,7 +244,8 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 }) {
   const { w, h, shape, status, num, name, seatedCount, seats, rot, customColor } = table;
   const cfg  = STATUS_CFG[status] ?? STATUS_CFG.free;
-  const bg   = customColor ? `radial-gradient(circle at 40% 35%,${customColor}cc,${customColor}44)` : cfg.bg;
+  // לבן בפנים תמיד; הסטטוס (או צבע מותאם) צובע רק את המסגרת והטקסט
+  const bg   = "#ffffff";
   const brd  = customColor || cfg.border;
   const br   = SHAPE_BR[shape];
   const fSz  = Math.max(11, Math.min(w, h) * 0.22);
@@ -228,7 +275,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
       )}
 
       {/* Seat indicators */}
-      <SeatIndicators w={w} h={h} seats={seats} seatedCount={seatedCount} />
+      <SeatIndicators w={w} h={h} shape={shape} seats={seats} seatedCount={seatedCount} color={brd} barOut={barOut} />
 
       {/* Table body */}
       <div style={{ position: "absolute", inset: 0, borderRadius: br, background: bg, border: `2px solid ${brd}`, boxShadow: selected ? "0 0 0 2px #d4a017, 0 6px 24px rgba(0,0,0,0.5)" : "0 3px 14px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -236,13 +283,13 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 
         {/* Number + seats */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 4, zIndex: 1 }}>
-          <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num || "?"}</span>
-          <span style={{ fontSize: Math.max(9, fSz * 0.65), fontWeight: 700, color: "rgba(255,255,255,0.75)", lineHeight: 1 }}>({seats})</span>
+          <span style={{ fontSize: fSz, fontWeight: 900, color: brd, lineHeight: 1 }}>{num || "?"}</span>
+          <span style={{ fontSize: Math.max(9, fSz * 0.65), fontWeight: 700, color: "#64748b", lineHeight: 1 }}>({seats})</span>
         </div>
 
         {/* Name */}
         {name && (
-          <div style={{ fontSize: Math.max(8, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, marginTop: 1, maxWidth: w - 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: Math.max(8, fSz * 0.55), color: "#64748b", zIndex: 1, marginTop: 1, maxWidth: w - 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {name}
           </div>
         )}
@@ -277,7 +324,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
             onClick={onSeatedClick}
             onMouseDown={e => e.stopPropagation()}
             title="לחץ לעדכון יושבים"
-            style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.55)", zIndex: 1, marginTop: 2, cursor: "pointer", padding: "1px 5px", borderRadius: 4, transition: "background 0.15s" }}
+            style={{ fontSize: Math.max(7, fSz * 0.52), color: "#94a3b8", zIndex: 1, marginTop: 2, cursor: "pointer", padding: "1px 5px", borderRadius: 4, transition: "background 0.15s" }}
             onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.25)")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
@@ -298,7 +345,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 }
 
 /* ══════════════════════ Decoration Item ══ */
-function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, onRotateStep, onTextCommit, onPickImage }: {
+function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, onRotateStep, onTextCommit, onPickImage, onFontSize }: {
   deco: Decoration; selected: boolean;
   onMD: (e: React.MouseEvent) => void;
   onCtx: (e: React.MouseEvent) => void;
@@ -307,11 +354,14 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
   onRotateStep: (deg: number) => void;
   onTextCommit: (text: string) => void;
   onPickImage: () => void;
+  onFontSize: (delta: number) => void;
 }) {
   const [textEditing, setTextEditing] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const isLine  = deco.kind === "line";
   const isImage = deco.kind === "image";
+  const isText  = deco.kind === "text";
+  const fontSize = deco.fontSize ?? (isText ? 18 : 14);
   const c = deco.color || T.gold;
 
   return (
@@ -330,6 +380,12 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
             style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.92)", border: "2px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "grab" }}>↻</div>
           <div onClick={e => { e.stopPropagation(); onRotateStep(15); }} onMouseDown={e => e.stopPropagation()} title="סובב +15°"
             style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.75)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>↻</div>
+          {(isText || deco.kind === "label") && (<>
+            <div onClick={e => { e.stopPropagation(); onFontSize(-2); }} onMouseDown={e => e.stopPropagation()} title="הקטן טקסט"
+              style={{ width: 24, height: 24, borderRadius: "50%", background: T.raised, border: `1.5px solid ${T.border}`, color: T.text, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>A−</div>
+            <div onClick={e => { e.stopPropagation(); onFontSize(2); }} onMouseDown={e => e.stopPropagation()} title="הגדל טקסט"
+              style={{ width: 24, height: 24, borderRadius: "50%", background: T.raised, border: `1.5px solid ${T.border}`, color: T.text, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>A+</div>
+          </>)}
         </div>
       )}
 
@@ -347,7 +403,7 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
           }
         </div>
       ) : (
-        <div style={{ position: "absolute", inset: 0, background: `${c}20`, border: `1.5px solid ${c}80`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: isText ? "transparent" : `${c}20`, border: isText ? "none" : `1.5px solid ${c}80`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
           {textEditing ? (
             <textarea
               ref={taRef}
@@ -356,10 +412,10 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
               onBlur={e => { onTextCommit(e.target.value); setTextEditing(false); }}
               onKeyDown={e => { if (e.key === "Escape") { onTextCommit(taRef.current?.value ?? deco.text); setTextEditing(false); } e.stopPropagation(); }}
               onMouseDown={e => e.stopPropagation()}
-              style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: c, fontSize: 14, fontWeight: 600, textAlign: "center", padding: "8px", fontFamily: "inherit", cursor: "text" }}
+              style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: c, fontSize, fontWeight: 600, textAlign: "center", padding: "8px", fontFamily: "inherit", cursor: "text" }}
             />
           ) : (
-            <div style={{ color: c, fontSize: 14, fontWeight: 600, textAlign: "center", padding: "6px 10px", wordBreak: "break-word", pointerEvents: "none", width: "100%" }}>
+            <div style={{ color: c, fontSize, fontWeight: 600, textAlign: "center", padding: "6px 10px", wordBreak: "break-word", pointerEvents: "none", width: "100%" }}>
               {deco.text || <span style={{ opacity: 0.35, fontSize: 11 }}>לחץ פעמיים לכתיבה</span>}
             </div>
           )}
@@ -371,6 +427,40 @@ function DecorationItem({ deco, selected, onMD, onCtx, onResizeMD, onRotateMD, o
         <div onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
           style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: T.gold, border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }} />
       )}
+    </div>
+  );
+}
+
+/* ══════════════════════ Bar Unit (counter) ══ */
+function BarUnitItem({ bar, selected, onMD, onResizeMD, onRotateMD, onRotateStep, onDelete }: {
+  bar: BarUnit; selected: boolean;
+  onMD: (e: React.MouseEvent) => void;
+  onResizeMD: (e: React.MouseEvent) => void;
+  onRotateMD: (e: React.MouseEvent) => void;
+  onRotateStep: (deg: number) => void;
+  onDelete: () => void;
+}) {
+  const hBtn: React.CSSProperties = { width: 24, height: 24, borderRadius: "50%", background: "rgba(212,160,23,0.85)", border: "1.5px solid #ffd700", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, cursor: "pointer", userSelect: "none" };
+  return (
+    <div onMouseDown={onMD}
+      style={{ position: "absolute", left: bar.x, top: bar.y, width: bar.w, height: bar.h, transform: `rotate(${bar.rot}deg)`, transformOrigin: "center", cursor: "grab", userSelect: "none", zIndex: selected ? 60 : 1 }}>
+      {/* Counter body */}
+      <div style={{ position: "absolute", inset: 0, borderRadius: 10, background: "#ffffff", border: `2px solid ${T.gold}`, boxShadow: selected ? "0 0 0 2px #d4a017, 0 6px 24px rgba(0,0,0,0.4)" : "0 3px 14px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: T.gold, letterSpacing: 1 }}>🍸 {bar.label}</span>
+      </div>
+
+      {selected && (<>
+        {/* Rotate + delete */}
+        <div style={{ position: "absolute", top: -38, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, zIndex: 50 }}>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(-15); }} onMouseDown={e => e.stopPropagation()} title="סובב -15°" style={hBtn}>↺</div>
+          <div onMouseDown={e => { e.stopPropagation(); onRotateMD(e); }} title="גרור לסיבוב" style={{ ...hBtn, background: "rgba(212,160,23,0.95)", cursor: "grab" }}>↻</div>
+          <div onClick={e => { e.stopPropagation(); onRotateStep(15); }} onMouseDown={e => e.stopPropagation()} title="סובב +15°" style={hBtn}>↻</div>
+          <div onClick={e => { e.stopPropagation(); onDelete(); }} onMouseDown={e => e.stopPropagation()} title="מחק בר" style={{ ...hBtn, background: "rgba(244,67,54,0.85)", border: "1.5px solid #ff8a80" }}>🗑</div>
+        </div>
+        {/* Resize */}
+        <div onMouseDown={e => { e.stopPropagation(); onResizeMD(e); }}
+          style={{ position: "absolute", right: -5, bottom: -5, width: 14, height: 14, background: T.gold, border: "2px solid #fff", borderRadius: 3, cursor: "se-resize", zIndex: 50 }} />
+      </>)}
     </div>
   );
 }
@@ -414,16 +504,17 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
       status: form.status,
       customColor: form.customColor !== T.gold ? form.customColor : "",
     });
+    onClose();
   }
 
-  const inp: React.CSSProperties = { background: T.raised, border: "1px solid rgba(212,160,23,0.2)", color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { background: T.raised, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: "7px 10px", fontSize: 13, width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
 
   return (
     <div style={{ position: "fixed", left: px, top: py, zIndex: 2000, background: `linear-gradient(160deg, ${T.surface}, ${T.panel})`, border: `1px solid ${T.border}`, borderRadius: 14, width: 306, boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,160,23,0.08)", color: T.text }}>
 
       {/* Draggable header */}
       <div
-        style={{ padding: "11px 14px 9px", cursor: "move", borderBottom: "1px solid rgba(212,160,23,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", userSelect: "none", borderRadius: "14px 14px 0 0", background: "rgba(0,0,0,0.2)" }}
+        style={{ padding: "11px 14px 9px", cursor: "move", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", userSelect: "none", borderRadius: "14px 14px 0 0", background: "rgba(0,0,0,0.2)" }}
         onMouseDown={e => {
           dragRef.current = { sx: e.clientX, sy: e.clientY, ox: off.x, oy: off.y };
           const mm = (me: MouseEvent) => { if (!dragRef.current) return; setOff({ x: dragRef.current.ox + me.clientX - dragRef.current.sx, y: dragRef.current.oy + me.clientY - dragRef.current.sy }); };
@@ -441,7 +532,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Status pills */}
         <div style={{ display: "flex", gap: 4 }}>
           {(Object.entries(STATUS_CFG) as [TableStatus, typeof STATUS_CFG[TableStatus]][]).map(([s, cfg]) => (
-            <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} style={{ flex: 1, padding: "5px 0", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", background: form.status === s ? cfg.color + "30" : "rgba(255,255,255,0.04)", color: form.status === s ? cfg.color : "rgba(212,160,23,0.45)", border: `1px solid ${form.status === s ? cfg.color : "rgba(212,160,23,0.18)"}` }}>
+            <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))} style={{ flex: 1, padding: "5px 0", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", background: form.status === s ? cfg.color + "30" : T.raised, color: form.status === s ? cfg.color : T.muted, border: `1px solid ${form.status === s ? cfg.color : T.border}` }}>
               {cfg.label}
             </button>
           ))}
@@ -450,11 +541,11 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Num + Name */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>מספר</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>מספר</div>
             <input type="number" value={form.num} onChange={e => setForm(f => ({ ...f, num: e.target.value }))} style={{ ...inp, padding: "7px 8px" }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>שם שולחן</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>שם שולחן</div>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inp} placeholder="שם אופציונלי..." />
           </div>
         </div>
@@ -462,23 +553,23 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* Group + Color */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>קבוצה</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>קבוצה</div>
             <input type="text" value={form.group} onChange={e => setForm(f => ({ ...f, group: e.target.value }))} style={inp} placeholder="VIP, חיצוני..." />
           </div>
           <div style={{ flex: "0 0 66px" }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>צבע מותאם</div>
-            <input type="color" value={form.customColor} onChange={e => setForm(f => ({ ...f, customColor: e.target.value }))} style={{ width: "100%", height: 34, borderRadius: 8, border: "1px solid rgba(212,160,23,0.25)", cursor: "pointer", background: "none", padding: 2 }} />
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>צבע מותאם</div>
+            <input type="color" value={form.customColor} onChange={e => setForm(f => ({ ...f, customColor: e.target.value }))} style={{ width: "100%", height: 34, borderRadius: 8, border: `1px solid ${T.border}`, cursor: "pointer", background: "none", padding: 2 }} />
           </div>
         </div>
 
         {/* Seats + SeatedCount */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>מקומות</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>מקומות</div>
             <input type="number" min={1} max={80} value={form.seats} onChange={e => setForm(f => ({ ...f, seats: e.target.value }))} style={inp} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>יושבים כרגע 🪑</div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>יושבים כרגע 🪑</div>
             <input type="number" min={0} max={form.seats} value={form.seatedCount} onChange={e => setForm(f => ({ ...f, seatedCount: e.target.value }))} style={inp} />
           </div>
         </div>
@@ -487,16 +578,11 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         <div style={{ display: "flex", gap: 8 }}>
           {[["רוחב", "w"], ["גובה", "h"], ["סיבוב°", "rot"]].map(([lbl, key]) => (
             <div key={key} style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: "rgba(212,160,23,0.6)", marginBottom: 4 }}>{lbl}</div>
+              <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>{lbl}</div>
               <input type="number" value={form[key as keyof typeof form] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} style={{ ...inp, padding: "7px 6px" }} />
             </div>
           ))}
         </div>
-
-        {/* Apply */}
-        <button onClick={apply} style={{ width: "100%", padding: "10px 0", borderRadius: 10, background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})`, color: "#fff", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", letterSpacing: ".02em", boxShadow: "0 2px 12px rgba(212,160,23,0.3)" }}>
-          ✓ עדכן שולחן
-        </button>
 
         {/* Footer actions */}
         <div style={{ display: "flex", gap: 5 }}>
@@ -506,7 +592,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
             { icon: "⬇", label: "אחורה", action: onSendBack },
             { icon: "🗑", label: "מחק",   action: onDelete, danger: true },
           ].map(btn => (
-            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? "rgba(244,67,54,0.13)" : "rgba(255,255,255,0.06)", color: btn.danger ? T.red : T.sub, border: `1px solid ${btn.danger ? "rgba(244,67,54,0.3)" : "rgba(255,255,255,0.1)"}`, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
+            <button key={btn.label} onClick={btn.action} title={btn.label} style={{ flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 13, cursor: "pointer", background: btn.danger ? T.redSub : T.raised, color: btn.danger ? T.red : T.sub, border: `1px solid ${btn.danger ? T.red : T.border}`, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
               <span style={{ fontSize: 14 }}>{btn.icon}</span>
               <span style={{ fontSize: 9 }}>{btn.label}</span>
             </button>
@@ -516,8 +602,8 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
         {/* QR section */}
         {tableUrl && (
           <>
-            <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "2px 0" }} />
-            <div style={{ fontSize: 11, color: "rgba(212,160,23,0.6)", fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
+            <div style={{ height: 1, background: T.border, margin: "2px 0" }} />
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, textAlign: "center" }}>QR לשולחן {table.num}</div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{ padding: 8, background: "#fff", borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
                 <QRCodeSVG value={tableUrl} size={92} />
@@ -525,7 +611,7 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <input readOnly value={tableUrl}
-                style={{ flex: 1, fontSize: 9, color: "rgba(212,160,23,0.55)", background: "rgba(212,160,23,0.05)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 6, padding: "6px 8px", outline: "none", fontFamily: "monospace", minWidth: 0 }}
+                style={{ flex: 1, fontSize: 9, color: T.muted, background: T.raised, border: `1px solid ${T.border}`, borderRadius: 6, padding: "6px 8px", outline: "none", fontFamily: "monospace", minWidth: 0 }}
                 onClick={e => (e.target as HTMLInputElement).select()} />
               <button
                 onClick={() => {
@@ -534,12 +620,17 @@ function EditPopup({ table, pos, restaurantId, origin, onClose, onUpdate, onDele
                     setTimeout(() => setCopied(false), 2000);
                   }).catch(() => {});
                 }}
-                style={{ padding: "6px 10px", borderRadius: 7, background: copied ? "rgba(76,175,80,0.2)" : "rgba(212,160,23,0.15)", color: copied ? T.green : T.gold, border: `1px solid ${copied ? "rgba(76,175,80,0.4)" : "rgba(212,160,23,0.35)"}`, cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s" }}>
+                style={{ padding: "6px 10px", borderRadius: 7, background: copied ? T.greenSub : T.raised, color: copied ? T.green : T.gold, border: `1px solid ${copied ? T.green : T.border}`, cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s" }}>
                 {copied ? "✓ הועתק" : "העתק"}
               </button>
             </div>
           </>
         )}
+
+        {/* Apply — bottom; closes the popup on update */}
+        <button onClick={apply} style={{ width: "100%", marginTop: 4, padding: "11px 0", borderRadius: 10, background: `linear-gradient(135deg, color-mix(in srgb, ${T.gold} 72%, #000), ${T.gold})`, color: "#fff", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", letterSpacing: ".02em", boxShadow: "0 2px 12px rgba(212,160,23,0.3)" }}>
+          ✓ עדכן שולחן
+        </button>
       </div>
     </div>
   );
@@ -702,6 +793,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
 
   /* selection / edit */
   const [selId, setSelId]               = useState<string | null>(null);
+  const [selBarId, setSelBarId]         = useState<string | null>(null);
   const [editId, setEditId]             = useState<string | null>(null);
   const [editPos, setEditPos]           = useState({ x: 120, y: 80 });
   const [selDecoId, setSelDecoId]       = useState<string | null>(null);
@@ -749,6 +841,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const spaceDown   = useRef(false);
   const paletteDrag    = useRef<PaletteItem | null>(null);
   const paletteDragDeco = useRef<DecoPaletteItem | null>(null);
+  const paletteDragBar  = useRef(false);
   const imgFileRef      = useRef<HTMLInputElement>(null);
   const imgTargetDecoId = useRef<string | null>(null);
   const importFileRef   = useRef<HTMLInputElement>(null);
@@ -762,6 +855,18 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const rotateCtrDeco   = useRef({ cx: 0, cy: 0 });
   const rsDecoId        = useRef<string | null>(null);
   const rsDecoStart     = useRef({ dw: 0, dh: 0 });
+
+  /* bar interaction refs */
+  const barDragId   = useRef<string | null>(null);
+  const barDragStart = useRef({ mx: 0, my: 0, x: 0, y: 0 });
+  const barRsId     = useRef<string | null>(null);
+  const barRsStart  = useRef({ dw: 0, dh: 0 });
+  const barRotId    = useRef<string | null>(null);
+  const barRotCtr   = useRef({ cx: 0, cy: 0 });
+
+  /* group (multi-select) resize */
+  const groupRs      = useRef(false);
+  const groupRsStart = useRef<{ bx: number; by: number; bw: number; bh: number; tables: { id: string; x: number; y: number; w: number; h: number }[]; decos: { id: string; x: number; y: number; w: number; h: number }[] }>({ bx: 0, by: 0, bw: 1, bh: 1, tables: [], decos: [] });
 
   /* undo / redo */
   const undoStack = useRef<LayoutV2[]>([]);
@@ -950,6 +1055,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       y: snapV(Math.max(0, cy - item.h / 2), snapOn),
       w: item.w, h: item.h,
       rot: 0, text: "", color: T.gold, zIdx: 1,
+      fontSize: item.kind === "text" ? 18 : 14,
     };
     updRoom(r => ({ ...r, decos: [...(r.decos ?? []), d] }));
     setSelDecoId(d.id); setSelId(null); clearMultiSel();
@@ -1092,6 +1198,61 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     showToast(`שולחן ${t.num} נוסף`);
   }
 
+  // בר: דלפק אחד (יחידה) + N שרפרפים מקובעים — כל שרפרף נשאר שולחן/חשבון עצמאי
+  function spawnBar(cx: number, cy: number, count: number) {
+    pushHistory();
+    const SW = 48, gap = 16;
+    const w = Math.max(140, count * (SW + gap) + gap);
+    const h = SW + 22;   // גבוה מספיק כדי שהשרפרפים יהיו בתוך הדלפק
+    const barId = uid();
+    const bar: BarUnit = {
+      id: barId,
+      x: snapV(Math.max(0, cx - w / 2), snapOn),
+      y: snapV(Math.max(0, cy - h / 2), snapOn),
+      w, h, rot: 0, label: "בר",
+    };
+    const baseNum = Math.max(0, ...(activeRoom?.tables.map(t => t.num) ?? [0]));
+    const stools: FreeTable[] = Array.from({ length: count }, (_, i) => {
+      const p = stoolPos(bar, i, count, SW);
+      return {
+        id: uid(), num: baseNum + i + 1, name: `בר ${i + 1}`, group: "בר",
+        shape: "round" as TableShape, x: p.x, y: p.y,
+        w: SW, h: SW, seats: 1, seatedCount: 0,
+        status: "free" as TableStatus, rot: 0, customColor: "", zIdx: 2, barId,
+      };
+    });
+    updRoom(r => ({ ...r, bars: [...(r.bars ?? []), bar], tables: [...r.tables, ...stools] }));
+    setSelId(null); clearMultiSel(); setSelBarId(barId);
+    showToast(`בר נוסף — ${count} שרפרפים`);
+  }
+  function promptSpawnBar(cx: number, cy: number) {
+    const n = parseInt(window.prompt("כמה מקומות בבר?", "10") || "0", 10);
+    if (n > 0) spawnBar(cx, cy, Math.min(n, 40));
+  }
+
+  // עדכון בר + ריפוזישן כל השרפרפים שלו בפעולה אחת (תנועה/שינוי-גודל/סיבוב כיחידה)
+  function updBar(barId: string, patch: Partial<BarUnit>) {
+    updRoom(r => {
+      const bars = (r.bars ?? []).map(b => b.id === barId ? { ...b, ...patch } : b);
+      const bar = bars.find(b => b.id === barId);
+      if (!bar) return { ...r, bars };
+      const stools = r.tables.filter(t => t.barId === barId).sort((a, b) => a.num - b.num);
+      const pos = new Map(stools.map((t, i) => [t.id, stoolPos(bar, i, stools.length, t.w)]));
+      const tables = r.tables.map(t => pos.has(t.id) ? { ...t, ...pos.get(t.id)! } : t);
+      return { ...r, bars, tables };
+    });
+  }
+  function deleteBar(barId: string) {
+    pushHistory();
+    updRoom(r => ({
+      ...r,
+      bars: (r.bars ?? []).filter(b => b.id !== barId),
+      tables: r.tables.filter(t => t.barId !== barId),
+    }));
+    setSelBarId(null);
+    showToast("הבר נמחק");
+  }
+
   /* ── Edit popup position ── */
   function openEdit(id: string) {
     const table = activeRoom?.tables.find(t => t.id === id);
@@ -1183,6 +1344,40 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       return;
     }
 
+    if (barDragId.current) {
+      if (!didDrag.current) pushHistory();
+      didDrag.current = true;
+      const dx = (e.clientX - barDragStart.current.mx) / zoomR.current;
+      const dy = (e.clientY - barDragStart.current.my) / zoomR.current;
+      updBar(barDragId.current, { x: snapV(barDragStart.current.x + dx, snapOn), y: snapV(barDragStart.current.y + dy, snapOn) });
+      return;
+    }
+    if (barRsId.current) {
+      const p = screenToCanvas(e.clientX, e.clientY);
+      const bar = activeRoom?.bars?.find(b => b.id === barRsId.current);
+      if (!bar) return;
+      updBar(barRsId.current, {
+        w: snapV(Math.max(120, p.x - bar.x + barRsStart.current.dw), snapOn),
+        h: snapV(Math.max(28,  p.y - bar.y + barRsStart.current.dh), snapOn),
+      });
+      return;
+    }
+    if (barRotId.current) {
+      const { cx, cy } = barRotCtr.current;
+      const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
+      updBar(barRotId.current, { rot: snapOn ? Math.round(angle / 15) * 15 : Math.round(angle) });
+      return;
+    }
+
+    if (groupRs.current) {
+      const p = screenToCanvas(e.clientX, e.clientY);
+      const g = groupRsStart.current;
+      const s = Math.max(0.2, Math.min(5, (p.x - g.bx) / g.bw));
+      for (const o of g.tables) updTable(o.id, { x: Math.round(g.bx + (o.x - g.bx) * s), y: Math.round(g.by + (o.y - g.by) * s), w: Math.max(30, Math.round(o.w * s)), h: Math.max(24, Math.round(o.h * s)) });
+      for (const o of g.decos)  updDeco(o.id,  { x: Math.round(g.bx + (o.x - g.bx) * s), y: Math.round(g.by + (o.y - g.by) * s), w: Math.max(10, Math.round(o.w * s)), h: Math.max(4, Math.round(o.h * s)) });
+      return;
+    }
+
     if (rotatingId.current) {
       const { cx, cy } = rotateCtr.current;
       const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
@@ -1258,7 +1453,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   function handleCanvasMU(e: React.MouseEvent) {
     if (isPanning.current && panIsOnBg.current) {
       const dist = Math.hypot(e.clientX - panStart.current.mx, e.clientY - panStart.current.my);
-      if (dist < 5) { setSelId(null); setSelDecoId(null); setCtxMenu(null); setEditId(null); clearMultiSel(); }
+      if (dist < 5) { setSelId(null); setSelDecoId(null); setSelBarId(null); setCtxMenu(null); setEditId(null); clearMultiSel(); }
     }
     isMultiDrag.current = false;
     isPanning.current = false; panIsOnBg.current = false;
@@ -1268,12 +1463,27 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     draggingDecoId.current = null;
     rotatingDecoId.current = null;
     rsDecoId.current = null;
+    barDragId.current = null;
+    barRsId.current = null;
+    barRotId.current = null;
+    groupRs.current = false;
   }
 
   function handleTableMD(e: React.MouseEvent, table: FreeTable) {
     if (e.button !== 0 || spaceDown.current) return;
     e.stopPropagation();
     didDrag.current = false;
+
+    // שרפרף בר — מקובע; גרירה מזיזה את כל יחידת הבר
+    if (table.barId) {
+      const bar = activeRoom?.bars?.find(b => b.id === table.barId);
+      if (bar) {
+        setSelBarId(bar.id); setSelId(null); setSelDecoId(null); clearMultiSel();
+        barDragId.current = bar.id;
+        barDragStart.current = { mx: e.clientX, my: e.clientY, x: bar.x, y: bar.y };
+        return;
+      }
+    }
 
     if (e.shiftKey) {
       const inSel = selId === table.id || multiSelIds.has(table.id);
@@ -1398,6 +1608,57 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     rsStart.current = { dw: table.w - (p.x - table.x), dh: table.h - (p.y - table.y) };
   }
 
+  /* ── Bar unit handlers ── */
+  function handleBarMD(e: React.MouseEvent, bar: BarUnit) {
+    if (e.button !== 0 || spaceDown.current) return;
+    e.stopPropagation();
+    didDrag.current = false;
+    setSelBarId(bar.id); setSelId(null); setSelDecoId(null); clearMultiSel(); setCtxMenu(null);
+    barDragId.current = bar.id;
+    barDragStart.current = { mx: e.clientX, my: e.clientY, x: bar.x, y: bar.y };
+  }
+  function handleBarResizeMD(e: React.MouseEvent, bar: BarUnit) {
+    e.stopPropagation(); e.preventDefault();
+    barRsId.current = bar.id;
+    const p = screenToCanvas(e.clientX, e.clientY);
+    barRsStart.current = { dw: bar.w - (p.x - bar.x), dh: bar.h - (p.y - bar.y) };
+  }
+  function handleBarRotateMD(e: React.MouseEvent, bar: BarUnit) {
+    e.stopPropagation(); e.preventDefault();
+    barRotId.current = bar.id;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (rect) barRotCtr.current = { cx: rect.left + (bar.x + bar.w / 2) * zoomR.current + panXR.current, cy: rect.top + (bar.y + bar.h / 2) * zoomR.current + panYR.current };
+  }
+  function rotateBarStep(barId: string, deg: number) {
+    const b = activeRoom?.bars?.find(b => b.id === barId);
+    if (b) updBar(barId, { rot: ((b.rot || 0) + deg + 360) % 360 });
+  }
+
+  /* ── Group (multi-select) bounding box + resize ── */
+  function selBBox() {
+    const ts = (activeRoom?.tables ?? []).filter(t => allSelTableIds().has(t.id));
+    const ds = (activeRoom?.decos ?? []).filter(d => allSelDecoIds().has(d.id));
+    const items = [...ts, ...ds];
+    if (items.length < 2) return null;
+    const x = Math.min(...items.map(i => i.x));
+    const y = Math.min(...items.map(i => i.y));
+    const w = Math.max(...items.map(i => i.x + i.w)) - x;
+    const h = Math.max(...items.map(i => i.y + i.h)) - y;
+    return { x, y, w, h };
+  }
+  function handleGroupResizeMD(e: React.MouseEvent) {
+    e.stopPropagation(); e.preventDefault();
+    const bb = selBBox();
+    if (!bb) return;
+    pushHistory();
+    groupRs.current = true;
+    groupRsStart.current = {
+      bx: bb.x, by: bb.y, bw: Math.max(1, bb.w), bh: Math.max(1, bb.h),
+      tables: (activeRoom?.tables ?? []).filter(t => allSelTableIds().has(t.id)).map(t => ({ id: t.id, x: t.x, y: t.y, w: t.w, h: t.h })),
+      decos:  (activeRoom?.decos ?? []).filter(d => allSelDecoIds().has(d.id)).map(d => ({ id: d.id, x: d.x, y: d.y, w: d.w, h: d.h })),
+    };
+  }
+
   /* palette DnD */
   function handleDragOver(e: React.DragEvent) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }
   function handleDrop(e: React.DragEvent) {
@@ -1409,6 +1670,9 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     } else if (paletteDragDeco.current) {
       const pi = paletteDragDeco.current; paletteDragDeco.current = null;
       spawnDeco(p.x, p.y, pi);
+    } else if (paletteDragBar.current) {
+      paletteDragBar.current = false;
+      promptSpawnBar(p.x, p.y);
     }
   }
 
@@ -1419,7 +1683,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         spaceDown.current = true;
         if (containerRef.current) containerRef.current.style.cursor = "grab";
       }
-      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); setSelDecoId(null); clearMultiSel(); }
+      if (e.key === "Escape")     { setCtxMenu(null); setSelId(null); setEditId(null); setSelDecoId(null); setSelBarId(null); clearMultiSel(); }
       if (e.key === "g" || e.key === "G") setSnapOn(s => !s);
       const tag = (document.activeElement as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -1428,6 +1692,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       if ((e.key === "a" || e.key === "A") && (e.ctrlKey || e.metaKey)) { e.preventDefault(); selectAll(); return; }
       const allT = allSelTableIds(), allD = allSelDecoIds();
       if (e.key === "Delete" || e.key === "Backspace") {
+        if (selBarId) { deleteBar(selBarId); return; }
         if (allT.size + allD.size > 1) { delSelected(); return; }
         if (selDecoId) { delDeco(selDecoId); return; }
         if (selId) { delTable(selId); return; }
@@ -1450,7 +1715,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     window.addEventListener("keydown", dn);
     window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
-  }, [selId, selDecoId, activeRoom]); // eslint-disable-line
+  }, [selId, selDecoId, selBarId, activeRoom]); // eslint-disable-line
 
   /* rooms */
   function addRoom() {
@@ -1500,8 +1765,8 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
         {restaurants.length > 1 && (<>
           <div style={{ width: 1, height: 18, background: C.border, flexShrink: 0 }} />
           <select value={restaurantId} onChange={e => { setRestaurantId(e.target.value); loadLayout(e.target.value); }}
-            style={{ background: T.bg, border: "1px solid rgba(212,160,23,0.3)", color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", direction: "rtl" }}>
-            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: T.bg, color: C.text }}>{r.name}</option>)}
+            style={{ background: T.panel, border: `1px solid ${T.border}`, color: C.text, borderRadius: 7, padding: "3px 7px", fontSize: 12, outline: "none", direction: "rtl" }}>
+            {restaurants.map(r => <option key={r.id} value={r.id} style={{ background: T.panel, color: C.text }}>{r.name}</option>)}
           </select>
         </>)}
 
@@ -1646,6 +1911,19 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                 </div>
               ))}
 
+              {/* Bar generator — drag to define how many independent stools */}
+              <div draggable
+                onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", "בר"); paletteDragBar.current = true; }}
+                onDragEnd={() => { paletteDragBar.current = false; }}
+                onDoubleClick={() => promptSpawnBar((vSize.w / 2 - panX) / zoom, (vSize.h / 2 - panY) / zoom)}
+                style={{ display: "flex", alignItems: "center", padding: "6px 8px", borderRadius: 8, cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.22)", background: "rgba(212,160,23,0.04)", transition: "all 0.12s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.gold; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.22)"; (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.04)"; }}>
+                <span style={{ fontSize: 16, color: T.gold, marginLeft: 8 }}>🍸</span>
+                <span style={{ fontSize: 12, color: C.text, fontWeight: 600, flex: 1 }}>בר (שרפרפים)</span>
+                <span style={{ fontSize: 13, color: "rgba(212,160,23,0.3)", letterSpacing: "1px" }}>⠿</span>
+              </div>
+
               {/* Divider */}
               <div style={{ height: 1, background: "rgba(212,160,23,0.15)", margin: "4px 0" }} />
 
@@ -1673,7 +1951,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   onDragStart={e => { e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", pi.label); if ("shape" in pi) paletteDrag.current = pi; else paletteDragDeco.current = pi; }}
                   onDragEnd={() => { paletteDrag.current = null; paletteDragDeco.current = null; }}
                   onDoubleClick={() => { const cx = (vSize.w / 2 - panX) / zoom, cy = (vSize.h / 2 - panY) / zoom; if ("shape" in pi) spawnTable(cx, cy, pi); else spawnDeco(cx, cy, pi); }}
-                  style={{ width: 28, height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", userSelect: "none", border: "1px solid rgba(212,160,23,0.25)", background: "rgba(212,160,23,0.05)", flexShrink: 0 }}
+                  style={{ width: 28, height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", userSelect: "none", border: `1px solid ${T.border}`, background: "rgba(212,160,23,0.05)", flexShrink: 0 }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.2)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.05)"; }}>
                   <span style={{ fontSize: 14, color: T.gold }}>{pi.icon}</span>
@@ -1706,6 +1984,20 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                   {/* Background layer (separate so bgImg opacity doesn't affect tables) */}
                   <div data-canvas="bg" style={{ position: "absolute", inset: 0, zIndex: 0, cursor: "grab", ...(activeRoom?.bgImg ? { backgroundImage: `url(${activeRoom.bgImg})`, backgroundSize: "cover", backgroundPosition: "center", opacity: activeRoom.bgOpacity ?? 1 } : { background: bgCfg.cw, backgroundSize: "40px 40px" }) }} />
 
+                  {/* Bar counters (behind stools) */}
+                  {(activeRoom?.bars ?? []).map(bar => (
+                    <BarUnitItem
+                      key={bar.id}
+                      bar={bar}
+                      selected={selBarId === bar.id}
+                      onMD={e => handleBarMD(e, bar)}
+                      onResizeMD={e => handleBarResizeMD(e, bar)}
+                      onRotateMD={e => handleBarRotateMD(e, bar)}
+                      onRotateStep={deg => rotateBarStep(bar.id, deg)}
+                      onDelete={() => deleteBar(bar.id)}
+                    />
+                  ))}
+
                   {/* Decorations */}
                   {(activeRoom?.decos ?? [])
                     .slice()
@@ -1722,6 +2014,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         onRotateStep={deg => rotateDecoStep(deco.id, deg)}
                         onTextCommit={text => updDeco(deco.id, { text })}
                         onPickImage={() => pickImageForDeco(deco.id)}
+                        onFontSize={delta => updDeco(deco.id, { fontSize: Math.max(8, Math.min(72, (deco.fontSize ?? (deco.kind === "text" ? 18 : 14)) + delta)) })}
                       />
                     ))}
 
@@ -1734,6 +2027,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         key={table.id}
                         table={table}
                         selected={selId === table.id || multiSelIds.has(table.id)}
+                        barOut={table.barId ? ((activeRoom?.bars?.find(b => b.id === table.barId)?.rot ?? 0) + 90) : undefined}
                         inlineSeated={inlineSeated?.id === table.id ? {
                           val: inlineSeated.val,
                           onChange: val => setInlineSeated(s => s ? { ...s, val } : null),
@@ -1756,6 +2050,18 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         }}
                       />
                     ))}
+
+                  {/* Group selection box + resize handle (≥2 selected) */}
+                  {(() => {
+                    const gbb = selBBox();
+                    if (!gbb) return null;
+                    return (
+                      <div style={{ position: "absolute", left: gbb.x, top: gbb.y, width: gbb.w, height: gbb.h, border: `1.5px dashed ${T.gold}`, borderRadius: 6, pointerEvents: "none", zIndex: 90 }}>
+                        <div onMouseDown={handleGroupResizeMD} title="שנה גודל הקבוצה"
+                          style={{ position: "absolute", right: -8, bottom: -8, width: 18, height: 18, background: T.gold, border: "2px solid #fff", borderRadius: 4, cursor: "se-resize", pointerEvents: "auto", zIndex: 91, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }} />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
