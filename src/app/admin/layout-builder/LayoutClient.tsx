@@ -96,7 +96,7 @@ function snapV(v: number, on: boolean) { return on ? Math.round(v / GRID) * GRID
 function stoolPos(bar: BarUnit, i: number, count: number, sw: number): { x: number; y: number } {
   const cx = bar.w / 2, cy = bar.h / 2;
   const lx = bar.w * (i + 1) / (count + 1);   // לאורך הרוחב
-  const ly = -sw * 0.55;                        // מעט מעל החזית
+  const ly = bar.h / 2;                         // על קו המרכז — בתוך הדלפק
   const dx = lx - cx, dy = ly - cy;
   const th = (bar.rot || 0) * Math.PI / 180;
   const rx = dx * Math.cos(th) - dy * Math.sin(th);
@@ -105,14 +105,23 @@ function stoolPos(bar: BarUnit, i: number, count: number, sw: number): { x: numb
 }
 
 /* ══════════════════════ Seat Indicators ══ */
-function SeatIndicators({ w, h, shape, seats, seatedCount, color }: { w: number; h: number; shape: TableShape; seats: number; seatedCount: number; color: string }) {
+function SeatIndicators({ w, h, shape, seats, seatedCount, color, barOut }: { w: number; h: number; shape: TableShape; seats: number; seatedCount: number; color: string; barOut?: number }) {
   const mx = Math.min(seats, 24);
 
   // Position each seat by shape: round/oval → evenly on the perimeter circle;
   // rect/square/long/banquet → split symmetrically across the top & bottom edges.
-  const D = 16, R = D / 2;   // seat dot diameter / radius
+  const D = 27, R = D / 2;   // seat dot diameter / radius (×1.7)
   const pts: { left: number; top: number }[] = [];
-  if (shape === "round" || shape === "oval") {
+  if (barOut != null) {
+    // bar stool — seat(s) project outward from the counter, at a fixed direction
+    const rad = barOut * Math.PI / 180;
+    const rx = w / 2 + R + 2, ry = h / 2 + R + 2;
+    const spread = 0.5; // ~28° between seats if more than one
+    for (let i = 0; i < mx; i++) {
+      const a = rad + (i - (mx - 1) / 2) * spread;
+      pts.push({ left: w / 2 + rx * Math.cos(a) - R, top: h / 2 + ry * Math.sin(a) - R });
+    }
+  } else if (shape === "round" || shape === "oval") {
     const rx = w / 2 + R - 1, ry = h / 2 + R - 1;
     for (let i = 0; i < mx; i++) {
       const a = (2 * Math.PI * i / mx) - Math.PI / 2;
@@ -220,9 +229,10 @@ function TopBtn({ children, onClick, title, active, danger, wide }: {
 /* ══════════════════════ Table Item ══ */
 type InlineSeated = { val: string; onChange: (v: string) => void; onCommit: () => void };
 
-function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotateMD, onResizeMD, onSeatedClick, onRotateStep }: {
+function TableItem({ table, selected, inlineSeated, barOut, onMD, onDbl, onCtx, onRotateMD, onResizeMD, onSeatedClick, onRotateStep }: {
   table: FreeTable; selected: boolean;
   inlineSeated: InlineSeated | null;
+  barOut?: number;
   onMD: (e: React.MouseEvent) => void;
   onDbl: (e: React.MouseEvent) => void;
   onCtx: (e: React.MouseEvent) => void;
@@ -264,7 +274,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
       )}
 
       {/* Seat indicators */}
-      <SeatIndicators w={w} h={h} shape={shape} seats={seats} seatedCount={seatedCount} color={brd} />
+      <SeatIndicators w={w} h={h} shape={shape} seats={seats} seatedCount={seatedCount} color={brd} barOut={barOut} />
 
       {/* Table body */}
       <div style={{ position: "absolute", inset: 0, borderRadius: br, background: bg, border: `2px solid ${brd}`, boxShadow: selected ? "0 0 0 2px #d4a017, 0 6px 24px rgba(0,0,0,0.5)" : "0 3px 14px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -853,6 +863,10 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   const barRotId    = useRef<string | null>(null);
   const barRotCtr   = useRef({ cx: 0, cy: 0 });
 
+  /* group (multi-select) resize */
+  const groupRs      = useRef(false);
+  const groupRsStart = useRef<{ bx: number; by: number; bw: number; bh: number; tables: { id: string; x: number; y: number; w: number; h: number }[]; decos: { id: string; x: number; y: number; w: number; h: number }[] }>({ bx: 0, by: 0, bw: 1, bh: 1, tables: [], decos: [] });
+
   /* undo / redo */
   const undoStack = useRef<LayoutV2[]>([]);
   const redoStack = useRef<LayoutV2[]>([]);
@@ -1188,7 +1202,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     pushHistory();
     const SW = 48, gap = 16;
     const w = Math.max(140, count * (SW + gap) + gap);
-    const h = 40;
+    const h = SW + 22;   // גבוה מספיק כדי שהשרפרפים יהיו בתוך הדלפק
     const barId = uid();
     const bar: BarUnit = {
       id: barId,
@@ -1354,6 +1368,15 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       return;
     }
 
+    if (groupRs.current) {
+      const p = screenToCanvas(e.clientX, e.clientY);
+      const g = groupRsStart.current;
+      const s = Math.max(0.2, Math.min(5, (p.x - g.bx) / g.bw));
+      for (const o of g.tables) updTable(o.id, { x: Math.round(g.bx + (o.x - g.bx) * s), y: Math.round(g.by + (o.y - g.by) * s), w: Math.max(30, Math.round(o.w * s)), h: Math.max(24, Math.round(o.h * s)) });
+      for (const o of g.decos)  updDeco(o.id,  { x: Math.round(g.bx + (o.x - g.bx) * s), y: Math.round(g.by + (o.y - g.by) * s), w: Math.max(10, Math.round(o.w * s)), h: Math.max(4, Math.round(o.h * s)) });
+      return;
+    }
+
     if (rotatingId.current) {
       const { cx, cy } = rotateCtr.current;
       const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI + 90;
@@ -1442,6 +1465,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
     barDragId.current = null;
     barRsId.current = null;
     barRotId.current = null;
+    groupRs.current = false;
   }
 
   function handleTableMD(e: React.MouseEvent, table: FreeTable) {
@@ -1607,6 +1631,31 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
   function rotateBarStep(barId: string, deg: number) {
     const b = activeRoom?.bars?.find(b => b.id === barId);
     if (b) updBar(barId, { rot: ((b.rot || 0) + deg + 360) % 360 });
+  }
+
+  /* ── Group (multi-select) bounding box + resize ── */
+  function selBBox() {
+    const ts = (activeRoom?.tables ?? []).filter(t => allSelTableIds().has(t.id));
+    const ds = (activeRoom?.decos ?? []).filter(d => allSelDecoIds().has(d.id));
+    const items = [...ts, ...ds];
+    if (items.length < 2) return null;
+    const x = Math.min(...items.map(i => i.x));
+    const y = Math.min(...items.map(i => i.y));
+    const w = Math.max(...items.map(i => i.x + i.w)) - x;
+    const h = Math.max(...items.map(i => i.y + i.h)) - y;
+    return { x, y, w, h };
+  }
+  function handleGroupResizeMD(e: React.MouseEvent) {
+    e.stopPropagation(); e.preventDefault();
+    const bb = selBBox();
+    if (!bb) return;
+    pushHistory();
+    groupRs.current = true;
+    groupRsStart.current = {
+      bx: bb.x, by: bb.y, bw: Math.max(1, bb.w), bh: Math.max(1, bb.h),
+      tables: (activeRoom?.tables ?? []).filter(t => allSelTableIds().has(t.id)).map(t => ({ id: t.id, x: t.x, y: t.y, w: t.w, h: t.h })),
+      decos:  (activeRoom?.decos ?? []).filter(d => allSelDecoIds().has(d.id)).map(d => ({ id: d.id, x: d.x, y: d.y, w: d.w, h: d.h })),
+    };
   }
 
   /* palette DnD */
@@ -1977,6 +2026,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         key={table.id}
                         table={table}
                         selected={selId === table.id || multiSelIds.has(table.id)}
+                        barOut={table.barId ? ((activeRoom?.bars?.find(b => b.id === table.barId)?.rot ?? 0) + 90) : undefined}
                         inlineSeated={inlineSeated?.id === table.id ? {
                           val: inlineSeated.val,
                           onChange: val => setInlineSeated(s => s ? { ...s, val } : null),
@@ -1999,6 +2049,18 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
                         }}
                       />
                     ))}
+
+                  {/* Group selection box + resize handle (≥2 selected) */}
+                  {(() => {
+                    const gbb = selBBox();
+                    if (!gbb) return null;
+                    return (
+                      <div style={{ position: "absolute", left: gbb.x, top: gbb.y, width: gbb.w, height: gbb.h, border: `1.5px dashed ${T.gold}`, borderRadius: 6, pointerEvents: "none", zIndex: 90 }}>
+                        <div onMouseDown={handleGroupResizeMD} title="שנה גודל הקבוצה"
+                          style={{ position: "absolute", right: -8, bottom: -8, width: 18, height: 18, background: T.gold, border: "2px solid #fff", borderRadius: 4, cursor: "se-resize", pointerEvents: "auto", zIndex: 91, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }} />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
