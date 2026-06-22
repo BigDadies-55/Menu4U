@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { computeDailyHoursByRole, sumBreakdowns } from "@/lib/hours";
+import MonthlyDetailReport from "@/components/attendance/MonthlyDetailReport";
 
 // Employee self sign-off of the monthly attendance report — a trimmed, waiter-facing
 // version of attendance-manager/SignoffTab. The waiter reviews this month's totals
@@ -36,6 +37,7 @@ export default function SelfSignoffModal({
   const [signature, setSignature] = useState(userName);
   const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   const load = useCallback(async () => {
     if (!restaurantId) return;
@@ -63,6 +65,7 @@ export default function SelfSignoffModal({
     return sumBreakdowns(Object.values(byDate).map(recs => computeDailyHoursByRole(recs)));
   }, [records, userId]);
 
+  const myRecords = useMemo(() => records.filter(r => r.userId === userId), [records, userId]);
   const mySignoff = signoffs.find(s => s.userId === userId);
   const fmtH = (n: number) => n.toFixed(1);
 
@@ -127,6 +130,13 @@ export default function SelfSignoffModal({
                 <div style={{ fontSize: 16, fontWeight: 800, color: c.color }}>{c.val}</div>
               </div>
             ))}
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <button onClick={() => setShowDetail(v => !v)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+              📊 {showDetail ? "הסתר דוח מפורט" : "הצג דוח מפורט"}
+            </button>
+            {showDetail && <MonthlyDetailReport records={myRecords} />}
           </div>
 
           {mySignoff ? (
