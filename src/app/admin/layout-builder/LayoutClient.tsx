@@ -111,26 +111,27 @@ function SeatIndicators({ w, h, shape, seats, seatedCount, color, barOut }: { w:
   // Position each seat by shape: round/oval → evenly on the perimeter circle;
   // rect/square/long/banquet → split symmetrically across the top & bottom edges.
   const D = 27, R = D / 2;   // seat dot diameter / radius (×1.7)
+  const IN = 0.1 * D;        // הכיסא צמוד וחודר 10% לתוך השולחן
   const pts: { left: number; top: number }[] = [];
   if (barOut != null) {
     // bar stool — seat(s) project outward from the counter, at a fixed direction
     const rad = barOut * Math.PI / 180;
-    const rx = w / 2 + R + 2, ry = h / 2 + R + 2;
+    const rx = w / 2 + R - IN, ry = h / 2 + R - IN;
     const spread = 0.5; // ~28° between seats if more than one
     for (let i = 0; i < mx; i++) {
       const a = rad + (i - (mx - 1) / 2) * spread;
       pts.push({ left: w / 2 + rx * Math.cos(a) - R, top: h / 2 + ry * Math.sin(a) - R });
     }
   } else if (shape === "round" || shape === "oval") {
-    const rx = w / 2 + R - 1, ry = h / 2 + R - 1;
+    const rx = w / 2 + R - IN, ry = h / 2 + R - IN;
     for (let i = 0; i < mx; i++) {
       const a = (2 * Math.PI * i / mx) - Math.PI / 2;
       pts.push({ left: w / 2 + rx * Math.cos(a) - R, top: h / 2 + ry * Math.sin(a) - R });
     }
   } else {
     const topN = Math.ceil(mx / 2), botN = mx - topN;
-    for (let i = 0; i < topN; i++) pts.push({ left: w * (i + 1) / (topN + 1) - R, top: -(D + 5) });
-    for (let i = 0; i < botN; i++) pts.push({ left: w * (i + 1) / (botN + 1) - R, top: h + 5 });
+    for (let i = 0; i < topN; i++) pts.push({ left: w * (i + 1) / (topN + 1) - R, top: -(D - IN) });
+    for (let i = 0; i < botN; i++) pts.push({ left: w * (i + 1) / (botN + 1) - R, top: h - IN });
   }
 
   return (
