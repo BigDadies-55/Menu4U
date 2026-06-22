@@ -216,7 +216,8 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 }) {
   const { w, h, shape, status, num, name, seatedCount, seats, rot, customColor } = table;
   const cfg  = STATUS_CFG[status] ?? STATUS_CFG.free;
-  const bg   = customColor ? `radial-gradient(circle at 40% 35%,${customColor}cc,${customColor}44)` : cfg.bg;
+  // לבן בפנים תמיד; הסטטוס (או צבע מותאם) צובע רק את המסגרת והטקסט
+  const bg   = "#ffffff";
   const brd  = customColor || cfg.border;
   const br   = SHAPE_BR[shape];
   const fSz  = Math.max(11, Math.min(w, h) * 0.22);
@@ -254,13 +255,13 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
 
         {/* Number + seats */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 4, zIndex: 1 }}>
-          <span style={{ fontSize: fSz, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num || "?"}</span>
-          <span style={{ fontSize: Math.max(9, fSz * 0.65), fontWeight: 700, color: "rgba(255,255,255,0.75)", lineHeight: 1 }}>({seats})</span>
+          <span style={{ fontSize: fSz, fontWeight: 900, color: brd, lineHeight: 1 }}>{num || "?"}</span>
+          <span style={{ fontSize: Math.max(9, fSz * 0.65), fontWeight: 700, color: "#64748b", lineHeight: 1 }}>({seats})</span>
         </div>
 
         {/* Name */}
         {name && (
-          <div style={{ fontSize: Math.max(8, fSz * 0.55), color: "rgba(255,255,255,0.7)", zIndex: 1, marginTop: 1, maxWidth: w - 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: Math.max(8, fSz * 0.55), color: "#64748b", zIndex: 1, marginTop: 1, maxWidth: w - 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {name}
           </div>
         )}
@@ -295,7 +296,7 @@ function TableItem({ table, selected, inlineSeated, onMD, onDbl, onCtx, onRotate
             onClick={onSeatedClick}
             onMouseDown={e => e.stopPropagation()}
             title="לחץ לעדכון יושבים"
-            style={{ fontSize: Math.max(7, fSz * 0.52), color: "rgba(255,255,255,0.55)", zIndex: 1, marginTop: 2, cursor: "pointer", padding: "1px 5px", borderRadius: 4, transition: "background 0.15s" }}
+            style={{ fontSize: Math.max(7, fSz * 0.52), color: "#94a3b8", zIndex: 1, marginTop: 2, cursor: "pointer", padding: "1px 5px", borderRadius: 4, transition: "background 0.15s" }}
             onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,160,23,0.25)")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
