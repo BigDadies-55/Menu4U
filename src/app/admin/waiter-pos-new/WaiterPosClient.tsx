@@ -8,11 +8,12 @@ import { OrderScreen } from "./OrderScreen";
 import Receipt from "./Receipt";
 import SelfSignoffModal from "./SelfSignoffModal";
 import ChangePasswordModal from "./ChangePasswordModal";
+import FloorLayout from "./FloorLayout";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import {
   useWaiterPos,
   type Restaurant, type Insight,
-  STATUS_BORDER, STATUS_LABEL, STATUS_BADGE_BG, STATUS_BADGE_TEXT,
+  STATUS_LABEL, STATUS_BADGE_BG, STATUS_BADGE_TEXT,
   ORDER_STATUS_HE, ORDER_STATUS_COLOR, ORDER_STATUS_TEXT_COLOR,
   fmtTimer,
 } from "./useWaiterPos";
@@ -59,11 +60,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     notifOpen, setNotifOpen,
     isOffline, offlineSince, usingCachedData,
     orderScreenData, setOrderScreenData,
-    floorRef,
     showInstallBanner, setShowInstallBanner,
     isIos, isStandalone,
     unreadCount, overlayTable, overlayInsights,
-    filteredTables, rotatedFloor, floorScale, floorOffsetX, floorOffsetY,
+    filteredTables,
     fetchAll,
     quickFireCourse, patchStatus,
     toggleFullscreen, triggerInstall,
@@ -276,80 +276,14 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             </div>
           )}
 
-          <div ref={floorRef} style={{ flex: 1, position: "relative", overflow: "hidden", background: "rgba(0,0,0,0.3)", borderRadius: 16 }}>
-            {!layout ? (
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: G_MUTED_C, fontSize: 14 }}>
-                אין פריסת שולחנות — הגדר פריסה בבונה הפריסה
-              </div>
-            ) : rotatedFloor.tables.map(lt => {
-              const tNum      = String(lt.num);
-              const tData     = tables.find(t => t.tableNum === tNum);
-              const status    = tData?.availStatus ?? "free";
-              const isMyTable = myTableNums === null || myTableNums.has(tNum);
-              const color     = isMyTable ? (STATUS_BORDER[status] ?? "#9ca3af") : "#555";
-              const numColor  = isMyTable ? (STATUS_NUM_COLOR[status] ?? "#fff") : "#555";
-              const isRound   = lt.shape === "round" || lt.shape === "oval";
-              const tInsights = isMyTable ? insights.filter(i => i.tableNum === tNum) : [];
-              const topIns    = tInsights[0];
-              const isWarn    = isMyTable && status === "occupied" && (tData?.minutesSitting ?? 0) > 20;
-              const W = lt.w * floorScale, H = lt.h * floorScale;
-              const numFs   = Math.max(10, Math.min(H * 0.3, 24));
-              const infoFs  = Math.max(8, Math.min(H * 0.16, 12));
-              const badgeFs = Math.max(7, Math.min(H * 0.14, 11));
-              const showInfo  = W > 58 && H > 52;
-              const showBadge = W > 68 && H > 64;
-              const statusBadgeBg   = isMyTable ? (ORDER_STATUS_COLOR[tData?.orderStatus ?? ""] ?? STATUS_BADGE_BG[status]) : "#333";
-              const statusBadgeFg   = isMyTable ? (tData?.orderStatus ? (ORDER_STATUS_TEXT_COLOR[tData.orderStatus] ?? "#fff") : (STATUS_BADGE_TEXT[status] ?? "#fff")) : "#888";
-              const statusBadgeText = isMyTable
-                ? (status === "occupied" ? (ORDER_STATUS_HE[tData?.orderStatus ?? ""] ?? STATUS_LABEL[status]) : STATUS_LABEL[status])
-                : STATUS_LABEL[status];
-              return (
-                <div key={`${lt.num}-${layoutRotation}`}
-                  onClick={() => isMyTable && setTableOverlay(tNum)}
-                  style={{
-                    position: "absolute",
-                    left: lt.x * floorScale + floorOffsetX, top: lt.y * floorScale + floorOffsetY,
-                    width: W, height: H,
-                    borderRadius: isRound ? "50%" : lt.shape === "banquet" ? 12 : 6,
-                    background: isMyTable ? `${color}18` : "rgba(255,255,255,0.05)",
-                    border: `2.5px solid ${color}`,
-                    opacity: isMyTable ? 1 : 0.35,
-                    animation: tInsights.length > 0 ? "insightPulse 2.5s ease-in-out infinite" : undefined,
-                    cursor: isMyTable ? "pointer" : "not-allowed",
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    padding: "3px 4px", gap: 1, overflow: "hidden", boxSizing: "border-box", transition: "box-shadow 0.12s",
-                  }}
-                  onMouseEnter={e => isMyTable && ((e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 18px ${color}55`)}
-                  onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.boxShadow = "")}
-                >
-                  {/* Insight badge — top-left corner of the table */}
-                  {topIns && (
-                    <span style={{ position: "absolute", top: 2, left: 2, fontSize: Math.max(11, infoFs), lineHeight: 1, filter: "drop-shadow(0 0 3px rgba(0,0,0,0.6))" }}>
-                      {topIns.type === "alert" ? "⚠️" : topIns.type === "tip" ? "💡" : "ℹ️"}
-                    </span>
-                  )}
-                  {tInsights.length > 1 && (
-                    <span style={{ position: "absolute", top: 2, right: 2, background: "#ef4444", color: "#fff", borderRadius: 99, fontSize: 9, fontWeight: 800, minWidth: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{tInsights.length}</span>
-                  )}
-                  <span style={{ fontSize: numFs, fontWeight: 800, color: numColor, lineHeight: 1 }}>{tNum}</span>
-                  {showInfo && status === "occupied" && tData && (
-                    <span style={{ fontSize: infoFs, fontWeight: 500, color: isWarn ? "#fca5a5" : G_MUTED_C, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{fmtTimer(tData.sittingStart)}</span>
-                  )}
-                  {showInfo && status === "occupied" && tData && tData.guests > 0 && (
-                    <span style={{ fontSize: infoFs, color: G_MUTED_C, lineHeight: 1 }}>👤{tData.guests}</span>
-                  )}
-                  {showInfo && status !== "occupied" && (
-                    <span style={{ fontSize: infoFs, color: G_MUTED_C, lineHeight: 1 }}>{lt.seats ?? tData?.seats ?? ""}מק&apos;</span>
-                  )}
-                  {showBadge && (
-                    <span style={{ background: statusBadgeBg, color: statusBadgeFg, borderRadius: 4, padding: "1px 5px", fontSize: badgeFs, fontWeight: 700, lineHeight: 1.3, maxWidth: "90%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {statusBadgeText}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <FloorLayout
+            room={layout?.rooms[roomIdx] as unknown as Parameters<typeof FloorLayout>[0]["room"]}
+            liveTables={tables}
+            insights={insights}
+            myTableNums={myTableNums}
+            rotation={layoutRotation}
+            onTableClick={setTableOverlay}
+          />
         </div>
       )}
 
