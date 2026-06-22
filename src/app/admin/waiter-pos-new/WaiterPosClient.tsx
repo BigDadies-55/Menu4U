@@ -38,6 +38,15 @@ function todayKey() {
   return `m4u_clock_prompt_${n.getFullYear()}-${n.getMonth() + 1}-${n.getDate()}`;
 }
 
+function shiftLabel() {
+  const h = new Date().getHours();
+  if (h < 6) return "משמרת לילה";
+  if (h < 12) return "משמרת בוקר";
+  if (h < 17) return "משמרת צהריים";
+  if (h < 22) return "משמרת ערב";
+  return "משמרת לילה";
+}
+
 // ── Main ─────────────────────────────────────────────────────────────
 export default function WaiterPosClient({ restaurants, waiterName, isWaiter = false, waiterId }: {
   restaurants: Restaurant[]; waiterName: string; isWaiter?: boolean; waiterId?: string;
@@ -598,6 +607,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           existingOrder={orderScreenData.existingOrder}
           isOffline={isOffline}
           enqueueOffline={enqueue}
+          areaName={layout?.rooms.find(r => r.tables?.some(t => String(t.num) === orderScreenData.tableNum))?.name}
+          shiftName={shiftLabel()}
+          waiterName={waiterName}
+          restaurantName={activeRestaurant?.name}
           onClose={() => setOrderScreenData(null)}
           onSuccess={() => { setOrderScreenData(null); showToast("ההזמנה עודכנה בהצלחה ✓"); fetchAll(true); }}
           onQueued={() => { setOrderScreenData(null); showToast("📴 ההזמנה נשמרה ותסונכרן כשיחזור החיבור"); }}
