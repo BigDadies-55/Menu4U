@@ -72,13 +72,14 @@ function SeatIndicators({ w, h, shape, seats, seatedCount, color, barOut }: {
   );
 }
 
-export default function FloorLayout({ room, liveTables, insights, myTableNums, rotation, onTableClick }: {
+export default function FloorLayout({ room, liveTables, insights, myTableNums, rotation, onTableClick, onTableContext }: {
   room: Room | undefined;
   liveTables: TableData[];
   insights: Insight[];
   myTableNums: Set<string> | null;
   rotation: 0 | 90;
   onTableClick: (tableNum: string) => void;
+  onTableContext?: (tableNum: string, x: number, y: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 400 });
@@ -152,6 +153,7 @@ export default function FloorLayout({ room, liveTables, insights, myTableNums, r
                 return (
                   <div key={`${tNum}`}
                     onClick={() => isMine && onTableClick(tNum)}
+                    onContextMenu={e => { if (isMine && onTableContext) { e.preventDefault(); onTableContext(tNum, e.clientX, e.clientY); } }}
                     style={{
                       position: "absolute", left: lt.x, top: lt.y, width: lt.w, height: lt.h,
                       transform: `rotate(${lt.rot ?? 0}deg)`, transformOrigin: "center",

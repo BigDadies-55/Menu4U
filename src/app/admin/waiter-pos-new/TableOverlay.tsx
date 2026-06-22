@@ -221,17 +221,12 @@ export function TableOverlay({
   const billTotal    = order?.totalAmount ?? totalAmount;
   const allergyHits  = (order?.tableAllergens ?? []);
 
-  // ── Overlay wrappers ─────────────────────────────────────────────
-  const bgStyle: React.CSSProperties = isMobile
-    ? { position: "fixed", inset: 0, zIndex: 500 }
-    : { position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" };
-
-  const panelStyle: React.CSSProperties = isMobile
-    ? { position: "fixed", inset: 0, background: "#f5f3ef", display: "flex", flexDirection: "column", zIndex: 501 }
-    : { position: "relative", background: "#f5f3ef", borderRadius: 28, width: 500, height: "min(92dvh, 820px)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.22)" };
+  // ── Overlay wrappers — opens FULL between the top bar (60px) and bottom bar (60px) ──
+  const bgStyle: React.CSSProperties = { position: "fixed", top: 60, left: 0, right: 0, bottom: 60, zIndex: 60, background: "transparent" };
+  const panelStyle: React.CSSProperties = { position: "relative", background: "#f5f3ef", width: "100%", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" };
 
   return (
-    <div style={bgStyle} onClick={isMobile ? undefined : onClose}>
+    <div style={bgStyle}>
       <div style={panelStyle} onClick={e => e.stopPropagation()}>
 
         {/* Offline / cached data banner */}
@@ -271,10 +266,10 @@ export function TableOverlay({
         </div>
 
         {/* ── Scrollable body ── */}
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 16px 8px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: isMobile ? "16px 16px 8px" : "18px 28px 10px" }}>
 
-          {/* AI insights */}
-          {insights.length > 0 && (
+          {/* AI insights — only for occupied tables (new-table screen stays minimal) */}
+          {isOccupied && insights.length > 0 && (
             <div style={{ background: "#f0eeff", border: "1.5px solid #d0c8f0", borderRadius: 16, padding: "12px 16px", marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#5a4a9e", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>✨ תובנות AI</div>
               {insights.map((ins, i) => (
@@ -642,7 +637,7 @@ export function TableOverlay({
           {!isOccupied && (
             <>
               <button onClick={() => onNewOrder(guestCount, allergens)} disabled={isOffline} style={{ padding: 16, borderRadius: 14, border: "none", background: isOffline ? "#ccc" : "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: isOffline ? 0.5 : 1 }}>
-                🍽️ פתח שולחן והזמן
+                🍽️ פתיחת שולחן והזמן
               </button>
               <button onClick={onClose} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
                 ביטול

@@ -87,6 +87,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [alertToast, setAlertToast]     = useState<string | null>(null);
   const prevAlertKeys = useRef<Set<string>>(new Set());
   const [shift, setShift] = useState<{ revenue: number; diners: number; avgPerDiner: number } | null>(null);
+  const [statusMenu, setStatusMenu] = useState<{ tableNum: string; x: number; y: number } | null>(null);
 
   const activeRestaurant = restaurants.find(r => r.id === restaurantId);
   const [bgUrl, setBgUrl] = useState(
@@ -298,6 +299,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             myTableNums={myTableNums}
             rotation={layoutRotation}
             onTableClick={setTableOverlay}
+            onTableContext={(tableNum, x, y) => setStatusMenu({ tableNum, x, y })}
           />
         </div>
       )}
@@ -508,6 +510,37 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ RIGHT-CLICK STATUS MENU ══ */}
+      {statusMenu && (
+        <div onClick={() => setStatusMenu(null)} onContextMenu={e => { e.preventDefault(); setStatusMenu(null); }} style={{ position: "fixed", inset: 0, zIndex: 650 }}>
+          <div onClick={e => e.stopPropagation()} dir="rtl" style={{
+            position: "fixed",
+            top: Math.min(statusMenu.y, (typeof window !== "undefined" ? window.innerHeight : 800) - 210),
+            left: Math.min(statusMenu.x, (typeof window !== "undefined" ? window.innerWidth : 600) - 200),
+            background: "rgba(15,14,22,0.98)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+            border: `1px solid ${G_BORDER_C}`, borderRadius: 14, padding: 8, width: 190,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: G_MUTED_C, padding: "4px 10px 8px" }}>שולחן {statusMenu.tableNum} — שינוי סטטוס</div>
+            {([
+              { s: "reserved" as const, label: "🔵 מוזמן" },
+              { s: "inactive" as const, label: "🔴 לא פעיל" },
+              { s: "free" as const, label: "🟢 פנוי" },
+              { s: "bill_requested" as const, label: "🧾 מבקש חשבון" },
+            ]).map(o => (
+              <button key={o.s} onClick={() => { patchStatus(statusMenu.tableNum, o.s); setStatusMenu(null); }} style={{
+                display: "block", width: "100%", textAlign: "right", padding: "10px 12px", borderRadius: 10,
+                background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit",
+                fontSize: 14, fontWeight: 600, color: "#fff",
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >{o.label}</button>
+            ))}
           </div>
         </div>
       )}
