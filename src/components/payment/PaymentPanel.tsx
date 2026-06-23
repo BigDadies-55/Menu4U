@@ -472,7 +472,7 @@ export function PaymentPanel({
               {allItemsIncludingVoided.map((item, idx) => (
                 <div key={idx} style={{ opacity: (item.voidedAt || item.isComped) ? 0.5 : 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: (item.voidedAt || item.isComped) ? INK_SUB : INK, textDecoration: (item.voidedAt || item.isComped) ? "line-through" : "none" }}>
-                    <span style={{ flex: 1 }}>{item.quantity}× {item.item.name}{item.voidedAt ? " ❌ מבוטל" : item.isComped ? " 🎁 חינם" : ""}</span>
+                    <span style={{ flex: 1 }}>{item.quantity}× {item.item.name}{item.voidedAt ? " ❌ מבוטל" : ""}</span>
                     <span style={{ flexShrink: 0, direction: "ltr" }}>₪{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                   {item.modifiers && item.modifiers.map((m, mi) => (
@@ -504,8 +504,8 @@ export function PaymentPanel({
               )}
               {(hasManagerAdjustment || voidedItems.length > 0) && (
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: INK_SUB }}>
-                  <span>💬 {voidedItems.length > 0 && hasManagerAdjustment ? "בטוח מנות + הנחה" : voidedItems.length > 0 ? `${voidedItems.length} פריט מבוטל` : "הנחה/שינוי"}</span>
-                  <span style={{ direction: "ltr" }}>−₪{(allItems.reduce((s, i) => s + (i.price * i.quantity), 0) - subtotal - loyaltyDiscount).toFixed(2)}</span>
+                  <span>הנחה</span>
+                  <span style={{ direction: "ltr" }}>−₪{(allItemsIncludingVoided.reduce((s, i) => s + (i.price * i.quantity), 0) - subtotal - loyaltyDiscount).toFixed(2)}</span>
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK }}>
@@ -634,6 +634,22 @@ export function PaymentPanel({
               </div>
             </div>
 
+            {/* ── Action toolbar: discount / price / split ── */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+              <button type="button" style={{...actionBtnStyle(activePanel === "discount"), padding: "6px 0", fontSize: 11}}
+                onClick={() => { setActionError(null); setActivePanel(activePanel === "discount" ? null : "discount"); }}>
+                🏷 הנחה
+              </button>
+              <button type="button" style={{...actionBtnStyle(activePanel === "price"), padding: "6px 0", fontSize: 11}}
+                onClick={() => { setActionError(null); setActivePanel(activePanel === "price" ? null : "price"); }}>
+                ✏️ שינויי מחיר
+              </button>
+              <button type="button" style={{...actionBtnStyle(activePanel === "split"), padding: "6px 0", fontSize: 11}}
+                onClick={() => { if (activePanel === "split") setActivePanel(null); else openSplit(); }}>
+                🧾 פיצול
+              </button>
+            </div>
+
             {/* Payment method — permanent, hidden only while the split panel is open */}
             {activePanel !== "split" && (
               <div style={{ marginBottom: 16 }}>
@@ -658,22 +674,6 @@ export function PaymentPanel({
                 </div>
               </div>
             )}
-
-            {/* ── Action toolbar: discount / price / split ── */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-              <button type="button" style={actionBtnStyle(activePanel === "discount")}
-                onClick={() => { setActionError(null); setActivePanel(activePanel === "discount" ? null : "discount"); }}>
-                🏷 הנחה
-              </button>
-              <button type="button" style={actionBtnStyle(activePanel === "price")}
-                onClick={() => { setActionError(null); setActivePanel(activePanel === "price" ? null : "price"); }}>
-                ✏️ שינויי מחיר
-              </button>
-              <button type="button" style={actionBtnStyle(activePanel === "split")}
-                onClick={() => { if (activePanel === "split") setActivePanel(null); else openSplit(); }}>
-                🧾 פיצול
-              </button>
-            </div>
 
             {/* Discount panel */}
             {activePanel === "discount" && (
