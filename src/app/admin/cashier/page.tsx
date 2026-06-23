@@ -8,10 +8,22 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "💳 קופה | Menu4U" };
 
-export default async function CashierPage() {
+export default async function CashierPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ waiter?: string; tableNumber?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (!isShiftManager(session.user.role)) redirect("/admin");
+
+  // Waiters/bartenders reach this page only via the waiter "close bill" flow
+  // (?waiter=1) to settle a specific table — they don't get the full cashier
+  // dashboard. Everyone else needs shift-manager access.
+  const sp = await searchParams;
+  const waiterMode = sp?.waiter === "1";
+  const role = session.user.role;
+  const isWaiterPaying = waiterMode && (role === "WAITER" || role === "BARTENDER");
+  if (!isShiftManager(role) && !isWaiterPaying) redirect("/admin");
 
   // Ensure all columns exist (some were added without formal migrations)
   try {
@@ -39,7 +51,6 @@ export default async function CashierPage() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "loyaltyDiscountAmount" DOUBLE PRECISION`);
   } catch { /* ignore */ }
 
-  const role = session.user.role;
   const userId = session.user.id;
   const isSuperAdmin = role === "SUPER_ADMIN";
 
