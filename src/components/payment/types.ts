@@ -9,6 +9,8 @@ export type OrderItem = {
   course: number;
   item: { name: string };
   modifiers?: OrderItemModifier[];
+  voidedAt?: string | null;
+  isComped?: boolean;
 };
 
 export type Order = {

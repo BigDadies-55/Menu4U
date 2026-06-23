@@ -104,6 +104,10 @@ export function PaymentPanel({
   const subtotal = validOrders.reduce((s, o) => s + o.totalAmount, 0);
   const loyaltyDiscount = validOrders.reduce((s, o) => s + (o.loyaltyDiscountAmount ?? 0), 0);
   const loyaltyMemberNames = [...new Set(validOrders.filter(o => o.loyaltyMemberName).map(o => o.loyaltyMemberName!))];
+  // Track voids/comps for display in receipt
+  const voidedItems = allItems.filter(i => i.voidedAt || i.isComped);
+  const itemsSubtotal = allItems.reduce((s, i) => s + (i.price * i.quantity), 0);
+  const hasManagerAdjustment = itemsSubtotal !== subtotal + loyaltyDiscount;
   const tipAmount = tipPct === -1
     ? (parseFloat(customTip) || 0)
     : Math.round(subtotal * tipPct) / 100;
@@ -496,8 +500,14 @@ export function PaymentPanel({
                   <span style={{ direction: "ltr" }}>−₪{loyaltyDiscount.toFixed(2)}</span>
                 </div>
               )}
+              {(hasManagerAdjustment || voidedItems.length > 0) && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: INK_SUB }}>
+                  <span>💬 {voidedItems.length > 0 && hasManagerAdjustment ? "בטוח מנות + הנחה" : voidedItems.length > 0 ? `${voidedItems.length} פריט מבוטל` : "הנחה/שינוי"}</span>
+                  <span style={{ direction: "ltr" }}>−₪{(allItems.reduce((s, i) => s + (i.price * i.quantity), 0) - subtotal - loyaltyDiscount).toFixed(2)}</span>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: INK }}>
-                <span>{loyaltyDiscount > 0 ? "לאחר הנחה" : "סה\"כ"}</span>
+                <span>{loyaltyDiscount > 0 || hasManagerAdjustment ? "לאחר הנחות" : "סה\"כ"}</span>
                 <span style={{ direction: "ltr" }}>₪{subtotal.toFixed(2)}</span>
               </div>
               {tipAmount > 0 && (
