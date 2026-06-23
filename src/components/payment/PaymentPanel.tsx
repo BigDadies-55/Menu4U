@@ -52,8 +52,7 @@ export function PaymentPanel({
 
   const [tipPct, setTipPct] = useState<number>(0);
   const [customTip, setCustomTip] = useState("");
-  // Default method shown on the receipt; actual method is chosen per-payment in the split flow.
-  const payMethod: "cash" | "card" | "app" = "card";
+  const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
   const [paying, setPaying] = useState(false);
 
   // ── Manager-approved actions (discount / on-house / price override) ──
@@ -623,6 +622,31 @@ export function PaymentPanel({
               </div>
             </div>
 
+            {/* Payment method — permanent, hidden only while the split panel is open */}
+            {activePanel !== "split" && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>אמצעי תשלום</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {PAY_METHODS.map(m => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setPayMethod(m.value)}
+                      style={{
+                        flex: 1, padding: "9px 0", borderRadius: 12, fontSize: 13, fontWeight: 600,
+                        border: `2px solid ${payMethod === m.value ? T.gold : T.sub}`,
+                        background: payMethod === m.value ? T.goldSub : "#fff",
+                        color: payMethod === m.value ? T.gold : T.muted,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* ── Action toolbar: discount / price / split ── */}
             <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
               <button type="button" style={actionBtnStyle(activePanel === "discount")}
@@ -748,9 +772,10 @@ export function PaymentPanel({
 
             {/* Loyalty club panel */}
             {loyaltyDiscount === 0 && clubStep !== "idle" && clubStep !== "done" && (
-              <div style={{ marginBottom: 16, background: T.raised, borderRadius: 10, padding: "12px 14px", border: "1px solid #fde68a" }}>
+              <div style={{ marginBottom: 16, background: T.raised, borderRadius: 14, padding: "14px 16px", border: `1px solid ${T.border}` }}>
                 {(clubStep === "phone" || clubStep === "searching") && (
                   <>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>⭐ הנחת מועדון לקוחות</div>
                     <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
                       <input
                         type="tel" value={clubPhone}
@@ -758,7 +783,7 @@ export function PaymentPanel({
                         onKeyDown={e => e.key === "Enter" && searchMember()}
                         placeholder="מספר טלפון"
                         autoFocus
-                        style={{ flex: 1, padding: "7px 10px", borderRadius: 7, border: "1px solid #fde68a", background: "#fff", fontSize: 13, color: T.text, outline: "none" }}
+                        style={{ flex: 1, padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface, fontSize: 13, color: T.text, outline: "none" }}
                       />
                       <button type="button" onClick={searchMember} disabled={clubStep === "searching"}
                         style={{ padding: "7px 12px", borderRadius: 7, border: "none", background: T.gold, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
@@ -795,16 +820,16 @@ export function PaymentPanel({
                     <>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
                         <div>
-                          <span style={{ fontWeight: 700, fontSize: 13, color: T.text }}>{clubMember.name}</span>
-                          <span style={{ fontSize: 12, color: T.gold, marginRight: 8 }}>{clubMember.points} ⭐</span>
+                          <span style={{ fontWeight: 900, fontSize: 15, color: T.text }}>{clubMember.name}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: T.gold, marginRight: 8 }}>{clubMember.points} ⭐</span>
                           {hasCoupons && <span style={{ fontSize: 12, color: T.green, marginRight: 4 }}>· {activeCoupons.length} קופונים</span>}
                         </div>
                         <button type="button" onClick={() => setClubStep("idle")}
-                          style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
+                          style={{ background: "none", border: "none", color: T.sub, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>✕</button>
                       </div>
 
                       {hasCoupons && hasPoints && (
-                        <div style={{ display: "flex", background: "#f1f5f9", borderRadius: 8, padding: 3, gap: 2, marginBottom: 10 }}>
+                        <div style={{ display: "flex", background: T.overlay, borderRadius: 8, padding: 3, gap: 2, marginBottom: 10 }}>
                           {([
                             { v: "coupon" as RedeemMode, label: "🎟 קופון" },
                             { v: "points" as RedeemMode, label: "⭐ נקודות" },
@@ -812,7 +837,7 @@ export function PaymentPanel({
                             <button key={opt.v} type="button" onClick={() => setRedeemMode(opt.v)}
                               style={{ flex: 1, padding: "5px 0", borderRadius: 6, border: "none",
                                 background: redeemMode === opt.v ? T.gold : "transparent",
-                                color: redeemMode === opt.v ? "#fff" : T.muted, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                                color: redeemMode === opt.v ? "#fff" : T.sub, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                               {opt.label}
                             </button>
                           ))}
@@ -829,10 +854,10 @@ export function PaymentPanel({
                               return (
                                 <div key={c.id} onClick={() => setSelectedCouponId(c.id)}
                                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 7, marginBottom: 5,
-                                    border: `2px solid ${selectedCouponId === c.id ? T.gold : "#e5e7eb"}`,
-                                    background: selectedCouponId === c.id ? T.goldSub : "#fff", cursor: "pointer" }}>
+                                    border: `2px solid ${selectedCouponId === c.id ? T.gold : T.border}`,
+                                    background: selectedCouponId === c.id ? T.goldSub : T.surface, cursor: "pointer" }}>
                                   <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: T.gold, flexShrink: 0 }}>{c.code}</span>
-                                  <span style={{ fontSize: 12, color: T.sub, flex: 1 }}>{val}{c.description ? ` · ${c.description}` : ""}</span>
+                                  <span style={{ fontSize: 12, color: T.text, flex: 1 }}>{val}{c.description ? ` · ${c.description}` : ""}</span>
                                   {selectedCouponId === c.id && <span style={{ fontSize: 14, color: T.gold }}>✓</span>}
                                 </div>
                               );
@@ -860,7 +885,7 @@ export function PaymentPanel({
                                 const v = Math.min(Math.max(Number(e.target.value) || 0, 0), clubMember!.points);
                                 setClubPoints(v);
                               }}
-                              style={{ width: 90, padding: "6px 10px", borderRadius: 7, border: "1px solid #fde68a", background: "#fff", fontSize: 13, color: T.text, outline: "none" }}
+                              style={{ width: 90, padding: "6px 10px", borderRadius: 7, border: `1px solid ${T.border}`, background: T.surface, fontSize: 13, color: T.text, outline: "none" }}
                             />
                             <span style={{ fontSize: 12, color: T.sub }}>נקודות</span>
                             <span style={{ fontSize: 13, fontWeight: 700, color: T.green, marginRight: "auto" }}>
