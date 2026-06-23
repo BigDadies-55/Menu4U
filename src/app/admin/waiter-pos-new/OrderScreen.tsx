@@ -331,6 +331,12 @@ export function OrderScreen({
         {/* ── Order (left, fills rest) ── */}
         <div style={{ flex: 1, minWidth: 0, background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column" }}>
           <div style={{ flex: 1, overflowY: "auto" }}>
+            {allergens.length > 0 && (
+              <div style={{ background: "#fdecea", borderBottom: "1px solid #f5c4bc", color: "#b91c1c", padding: "11px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700 }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+                <span>שולחן עם אלרגנים: {allergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}</span>
+              </div>
+            )}
             {existingItems.length === 0 && cart.length === 0 && (
               <div style={{ textAlign: "center", color: "#9b8f82", fontSize: 14, padding: 40 }}>לחץ על מנה כדי להוסיף להזמנה</div>
             )}
