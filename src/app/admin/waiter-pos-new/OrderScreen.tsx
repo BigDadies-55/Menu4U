@@ -373,26 +373,26 @@ export function OrderScreen({
         </div>
       </div>
 
-      {/* ══ Modifier picker ══ */}
+      {/* ══ Modifier picker — dark glass theme (matches the waiter NEW screen) ══ */}
       {modifierItem && (
         <div onClick={() => setModifierItem(null)} style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 18, padding: 20, width: "min(96vw,420px)", maxHeight: "85vh", overflowY: "auto", direction: "rtl", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: 16, fontWeight: 800 }}>{modifierItem.name}</div>
-              <button onClick={() => setModifierItem(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#999" }}>✕</button>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,14,22,0.97)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 20, width: "min(96vw,420px)", maxHeight: "85vh", overflowY: "auto", direction: "rtl", display: "flex", flexDirection: "column", gap: 14, color: "#fff", fontFamily: "'Heebo', sans-serif", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `2px solid ${T.gold}`, paddingBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{modifierItem.name}</div>
+              <button onClick={() => setModifierItem(null)} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, width: 32, height: 32, fontSize: 17, cursor: "pointer", color: "#fff" }}>✕</button>
             </div>
             {modifierItem.modifierGroups.map(g => (
               <div key={g.id}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{g.name} {g.required && <span style={{ color: "#dc2626", fontSize: 10 }}>חובה</span>}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: "rgba(255,255,255,0.85)" }}>{g.name} {g.required && <span style={{ color: "#fca5a5", fontSize: 10 }}>חובה</span>}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {g.options.map(opt => {
                     const active = (modifierSel[g.id] ?? []).includes(opt.id);
-                    return <button key={opt.id} onClick={() => toggleModOption(g.id, opt.id, g.maxSelect)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${active ? T.gold : "#e8e2da"}`, background: active ? "rgba(212,160,23,0.12)" : "#faf8f5", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{opt.label}{opt.priceAdd > 0 && <span style={{ opacity: .7, fontSize: 10 }}> +₪{opt.priceAdd}</span>}</button>;
+                    return <button key={opt.id} onClick={() => toggleModOption(g.id, opt.id, g.maxSelect)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${active ? T.gold : "rgba(255,255,255,0.15)"}`, background: active ? "rgba(200,161,58,0.22)" : "rgba(255,255,255,0.06)", color: active ? "#f0d488" : "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{opt.label}{opt.priceAdd > 0 && <span style={{ opacity: .7, fontSize: 10 }}> +₪{opt.priceAdd}</span>}</button>;
                   })}
                 </div>
               </div>
             ))}
-            <button onClick={confirmModifiers} style={{ padding: 13, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>הוסף להזמנה</button>
+            <button onClick={confirmModifiers} style={{ padding: 13, borderRadius: 12, border: "none", background: T.gold, color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>הוסף להזמנה</button>
           </div>
         </div>
       )}
