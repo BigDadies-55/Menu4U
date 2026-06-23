@@ -139,8 +139,19 @@ export function OrderScreen({
   function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
     const extra = modifiers.reduce((s, m) => s + m.priceAdd, 0);
     const course = item.course ?? 1;
-    const key = `${item.id}-c${course}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: Number(item.price) + extra, quantity: 1, course, notes: "", allergens: item.allergens ?? [], modifiers }]);
+    const sig = modifiers.map(m => m.label).sort().join("|");
+    setCart(p => {
+      // Re-ordering the same dish (identical modifiers/course) bumps the quantity
+      // of the existing cart line instead of adding a new row.
+      const idx = p.findIndex(ci => ci.itemId === item.id && ci.course === course && ci.modifiers.map(m => m.label).sort().join("|") === sig);
+      if (idx >= 0) {
+        const next = [...p];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      const key = `${item.id}-c${course}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      return [...p, { key, itemId: item.id, name: item.name, price: Number(item.price) + extra, quantity: 1, course, notes: "", allergens: item.allergens ?? [], modifiers }];
+    });
   }
   function confirmModifiers() {
     if (!modifierItem) return;
@@ -266,22 +277,22 @@ export function OrderScreen({
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
         {/* ── Categories (right, 20% / 17% mobile) ── */}
-        <div style={{ width: isMobile ? "17%" : "20%", background: T.bar, borderLeft: `1px solid ${T.barLine}`, overflowY: "auto", flexShrink: 0 }}>
+        <div style={{ width: isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
           {loadingMenu ? (
-            <div style={{ padding: 20, color: "rgba(255,255,255,0.4)", fontSize: 13 }}>טוען...</div>
+            <div style={{ padding: 20, color: "#888", fontSize: 13 }}>טוען...</div>
           ) : categories.map(c => (
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
               display: "block", width: "100%", textAlign: "right", padding: isMobile ? "14px 10px" : "19px 22px", border: "none",
-              borderBottom: "1px solid rgba(255,255,255,0.05)", cursor: "pointer", fontFamily: "inherit",
-              fontSize: isMobile ? 13 : 16, fontWeight: activeCat === c.id ? 800 : 700,
+              borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
+              fontSize: isMobile ? 13 : 16, fontWeight: activeCat === c.id ? 800 : 600,
               background: activeCat === c.id ? T.gold : "transparent",
-              color: activeCat === c.id ? "#fff" : "rgba(255,255,255,0.72)",
+              color: activeCat === c.id ? "#fff" : "#1a1612",
             }}>{c.name}</button>
           ))}
         </div>
 
         {/* ── Dishes (middle, 30%) ── */}
-        <div style={{ width: isMobile ? "34%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
+        <div style={{ width: isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
           <div style={{ padding: "10px 12px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "8px 12px", fontSize: 12, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />
           </div>
@@ -310,7 +321,7 @@ export function OrderScreen({
                       <svg width={isMobile ? 22 : 26} height={isMobile ? 18 : 21} viewBox="0 0 48 40" fill="none" stroke="#6f6f6f" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
                       </svg>
-                      <div style={{ fontSize: isMobile ? 10.5 : 12, fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
+                      <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
                     </div>
                   );
                 })}
@@ -459,10 +470,10 @@ function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDet
     <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10, padding: isMobile ? "10px 10px" : "12px 14px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
       <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 700, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
+        <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
         <div style={{ fontSize: 11, color: warn ? "#c0392b" : "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
       </div>
-      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
       <button onClick={onVoid} title="ביטול (דרוש אישור מנהל)" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#f4f1ed", color: "#b91c1c", cursor: "pointer", fontSize: 13, flexShrink: 0 }}>🔒</button>
     </div>
   );
@@ -487,11 +498,11 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
         <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 700, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
+          <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
           {item.notes && <div style={{ fontSize: 10, color: "#9c7a12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📝 {item.notes}</div>}
         </div>
-        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
         {!isMobile && controls}
       </div>
       {isMobile && <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>{controls}</div>}
