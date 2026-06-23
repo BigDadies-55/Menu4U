@@ -229,10 +229,11 @@ export function OrderScreen({
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0c0c12", display: "flex", flexDirection: "column", fontFamily: "'Heebo', sans-serif", direction: "rtl" }}>
 
       {/* ══ TOP BAR ══ */}
-      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: 64, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px 0 14px" }}>
+      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: 64, flexShrink: 0, display: "flex", alignItems: "stretch", justifyContent: "space-between", padding: "0 16px 0 0" }}>
         {/* right group */}
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <button onClick={onClose} title="חזרה" style={{ width: 46, height: 46, borderRadius: 12, border: "none", background: T.goldGrad, color: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
+        <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+          <button onClick={onClose} title="חזרה" style={{ width: 62, height: "100%", border: "none", background: T.gold, color: "#fff", fontSize: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "0 18px" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>הזמנה</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: T.gold }}>#{order?.orderNumber ?? "—"}</div>
@@ -241,6 +242,7 @@ export function OrderScreen({
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>אזור ישיבה</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{areaName ?? `שולחן ${tableNum}`}</div>
+          </div>
           </div>
         </div>
 
@@ -273,54 +275,56 @@ export function OrderScreen({
             <div style={{ padding: 20, color: "rgba(255,255,255,0.4)", fontSize: 13 }}>טוען...</div>
           ) : categories.map(c => (
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
-              display: "block", width: "100%", textAlign: "right", padding: "16px 18px", border: "none",
-              borderBottom: `1px solid ${T.barLine}`, cursor: "pointer", fontFamily: "inherit",
-              fontSize: 15, fontWeight: 800,
-              background: activeCat === c.id ? T.goldGrad : "transparent",
-              color: activeCat === c.id ? "#fff" : "rgba(255,255,255,0.7)",
+              display: "block", width: "100%", textAlign: "right", padding: "19px 22px", border: "none",
+              borderBottom: "1px solid rgba(255,255,255,0.05)", cursor: "pointer", fontFamily: "inherit",
+              fontSize: 16, fontWeight: activeCat === c.id ? 800 : 700,
+              background: activeCat === c.id ? T.gold : "transparent",
+              color: activeCat === c.id ? "#fff" : "rgba(255,255,255,0.72)",
             }}>{c.name}</button>
           ))}
         </div>
 
         {/* ── Dishes (middle, 30%) ── */}
-        <div style={{ width: "30%", background: "#f5f3ef", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
-          <div style={{ padding: "10px 12px", borderBottom: "1px solid #e3ded5", flexShrink: 0 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ width: "100%", background: "#fff", border: "1px solid #e3ded5", borderRadius: 99, padding: "9px 14px", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+        <div style={{ width: "30%", background: "#fff", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "9px 14px", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px,1fr))", gap: 12, alignContent: "start" }}>
+          <div style={{ flex: 1, overflowY: "auto" }}>
             {menuError ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#c0392b", padding: 24, fontSize: 13, fontWeight: 700 }}>⚠️ {menuError}</div>
-            ) : filteredItems.map(item => {
-              const qty = cartQtyForItem(item.id);
-              const warn = hasAllergy(item);
-              const safe = allergens.length > 0 && !warn;
-              return (
-                <div key={item.id} onClick={() => addItem(item)} style={{
-                  background: "#fff", border: `2px solid ${qty > 0 ? T.gold : "#e8e2da"}`, borderRadius: 14,
-                  cursor: "pointer", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                }}>
-                  {qty > 0 && <div style={{ position: "absolute", top: 6, left: 6, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 22, height: 22, padding: "0 5px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
-                  {warn && <div style={{ position: "absolute", top: 6, right: 6, fontSize: 14, zIndex: 2 }}>⛔</div>}
-                  {safe && <div style={{ position: "absolute", top: 6, right: 6, fontSize: 14, color: "#16a34a", zIndex: 2 }}>✅</div>}
-                  {/* Dome icon (no images) */}
-                  <div style={{ height: 64, display: "flex", alignItems: "center", justifyContent: "center", color: "#9b8f82" }}>
-                    <svg width="40" height="32" viewBox="0 0 48 40" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><circle cx="24" cy="13" r="2.5" />
-                    </svg>
-                  </div>
-                  <div style={{ padding: "0 8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1612", lineHeight: 1.3 }}>{item.name}</div>
-                    {warn && <div style={{ fontSize: 9, fontWeight: 800, color: "#c0392b", marginTop: 3 }}>{allergyLabel(item)}</div>}
-                  </div>
-                </div>
-              );
-            })}
+              <div style={{ textAlign: "center", color: "#c0392b", padding: 24, fontSize: 13, fontWeight: 700 }}>⚠️ {menuError}</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", borderTop: "1px solid #eee", borderRight: "1px solid #eee" }}>
+                {filteredItems.map(item => {
+                  const qty = cartQtyForItem(item.id);
+                  const warn = hasAllergy(item);
+                  const safe = allergens.length > 0 && !warn;
+                  return (
+                    <div key={item.id} onClick={() => addItem(item)} style={{
+                      background: qty > 0 ? "rgba(200,161,58,0.08)" : "#fff",
+                      borderLeft: "1px solid #eee", borderBottom: "1px solid #eee",
+                      boxShadow: qty > 0 ? `inset 0 0 0 2px ${T.gold}` : "none",
+                      cursor: "pointer", position: "relative", aspectRatio: "1 / 1",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
+                    }}>
+                      {qty > 0 && <div style={{ position: "absolute", top: 6, left: 6, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 20, height: 20, padding: "0 5px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
+                      {warn && <div style={{ position: "absolute", top: 6, right: 6, fontSize: 13, zIndex: 2 }}>⛔</div>}
+                      {safe && <div style={{ position: "absolute", top: 6, right: 6, fontSize: 13, color: "#16a34a", zIndex: 2 }}>✅</div>}
+                      {/* Dome icon (no images) — small */}
+                      <svg width="30" height="24" viewBox="0 0 48 40" fill="none" stroke="#5f5f5f" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
+                      </svg>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: "#333", textAlign: "center", padding: "0 6px", lineHeight: 1.25 }}>{item.name}</div>
+                      {warn && <div style={{ fontSize: 9, fontWeight: 800, color: "#c0392b" }}>{allergyLabel(item)}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
         {/* ── Order (left, 50%) ── */}
-        <div style={{ width: "50%", background: "#fbfaf8", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ width: "50%", background: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <div style={{ flex: 1, overflowY: "auto" }}>
             {existingItems.length === 0 && cart.length === 0 && (
               <div style={{ textAlign: "center", color: "#9b8f82", fontSize: 14, padding: 40 }}>לחץ על מנה כדי להוסיף להזמנה</div>
@@ -385,10 +389,10 @@ export function OrderScreen({
 
       {/* ══ Covers stepper ══ */}
       {coversOpen && (
-        <Popup onClose={() => setCoversOpen(false)} title="כמות סועדים">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18 }}>
+        <Popup onClose={() => setCoversOpen(false)} title="כמות סועדים" width={380}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, padding: "10px 0" }}>
             <button onClick={() => setCovers(c => Math.max(1, c - 1))} style={stepBtn}>−</button>
-            <span style={{ fontSize: 30, fontWeight: 900, minWidth: 50, textAlign: "center" }}>{covers}</span>
+            <span style={{ fontSize: 40, fontWeight: 900, minWidth: 60, textAlign: "center", color: "#1a1612" }}>{covers}</span>
             <button onClick={() => setCovers(c => c + 1)} style={stepBtn}>+</button>
           </div>
         </Popup>
@@ -396,8 +400,8 @@ export function OrderScreen({
 
       {/* ══ Allergens editor ══ */}
       {allergensOpen && (
-        <Popup onClose={() => setAllergensOpen(false)} title="אלרגיות בשולחן">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <Popup onClose={() => setAllergensOpen(false)} title="אלרגיות בשולחן" width={640}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
             <button onClick={() => setAllergens([])} style={chip(allergens.length === 0)}>ללא</button>
             {ALLERGEN_LIST.map(a => <button key={a.key} onClick={() => toggleAllergen(a.key)} style={chip(allergens.includes(a.key))}>{a.label}</button>)}
           </div>
@@ -457,7 +461,7 @@ function ExistingRow({ item, allergens, onVoid }: { item: OrderItemDetail; aller
   const statusHe: Record<string, string> = { PENDING: "ממתין", PREPARING: "מכין 🍳", DONE: "מוכן ✓", SERVED: "הוגש", CANCELLED: "בוטל" };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
-      <div style={{ width: 30, height: 30, borderRadius: 99, background: "#efe9e1", color: "#7a6a52", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14, flexShrink: 0 }}>{courseLetter(item.course)}</div>
+      <div style={{ width: 34, height: 34, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1612" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
         <div style={{ fontSize: 11, color: warn ? "#c0392b" : "#9b8f82" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
@@ -473,7 +477,7 @@ function CartRow({ item, warn, onQty, onNotes }: { item: CartItem; warn: boolean
   return (
     <div style={{ padding: "12px 14px", borderBottom: "1px solid #ede7df", background: "rgba(212,160,23,0.05)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 99, background: "rgba(212,160,23,0.18)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14, flexShrink: 0 }}>{courseLetter(item.course)}</div>
+        <div style={{ width: 34, height: 34, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1612" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
@@ -494,13 +498,13 @@ function CartRow({ item, warn, onQty, onNotes }: { item: CartItem; warn: boolean
 }
 
 // ── Generic centered popup ──
-function Popup({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+function Popup({ title, children, onClose, width = 460 }: { title: string; children: React.ReactNode; onClose: () => void; width?: number }) {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} dir="rtl" style={{ background: "#fff", borderRadius: 18, padding: 22, width: "min(96vw,460px)", maxHeight: "85vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{title}</div>
-          <button onClick={onClose} style={{ background: "#f0ede8", border: "none", borderRadius: 8, width: 32, height: 32, fontSize: 17, cursor: "pointer", color: "#555" }}>✕</button>
+      <div onClick={e => e.stopPropagation()} dir="rtl" style={{ background: "#fff", color: "#1a1612", borderRadius: 18, padding: 22, width: `min(96vw, ${width}px)`, maxHeight: "85vh", overflowY: "auto", fontFamily: "'Heebo', sans-serif" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, borderBottom: "2px solid #c8a13a", paddingBottom: 12 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1612" }}>{title}</div>
+          <button onClick={onClose} style={{ background: "#f0ede8", border: "none", borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#555" }}>✕</button>
         </div>
         {children}
       </div>
