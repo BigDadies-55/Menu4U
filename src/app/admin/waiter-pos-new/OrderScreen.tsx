@@ -332,9 +332,9 @@ export function OrderScreen({
         <div style={{ flex: 1, minWidth: 0, background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column" }}>
           <div style={{ flex: 1, overflowY: "auto" }}>
             {allergens.length > 0 && (
-              <div style={{ background: "#fdecea", borderBottom: "1px solid #f5c4bc", color: "#b91c1c", padding: "11px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700 }}>
-                <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
-                <span>שולחן עם אלרגנים: {allergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}</span>
+              <div style={{ background: "#fdecea", borderBottom: "1px solid #f5c4bc", color: "#b91c1c", padding: "3px 12px", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, lineHeight: 1.2 }}>
+                <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>שולחן עם אלרגנים: {allergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}</span>
               </div>
             )}
             {existingItems.length === 0 && cart.length === 0 && (
@@ -500,7 +500,7 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
     </div>
   );
   return (
-    <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #ede7df", background: "rgba(212,160,23,0.06)" }}>
+    <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
         <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
