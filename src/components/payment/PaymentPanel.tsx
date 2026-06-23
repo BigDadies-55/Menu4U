@@ -99,13 +99,15 @@ export function PaymentPanel({
   }, [onClose]);
 
   const validOrders = orders.filter(o => !["CANCELLED", "PAID"].includes(o.status));
-  const allItems = validOrders.flatMap(o => o.items);
+  // Exclude voided/comped items from display — they don't contribute to bill amount
+  const allItems = validOrders.flatMap(o => o.items).filter(i => !i.voidedAt && !i.isComped);
   // totalAmount already has discounts (loyalty / manager adjustments) baked in
   const subtotal = validOrders.reduce((s, o) => s + o.totalAmount, 0);
   const loyaltyDiscount = validOrders.reduce((s, o) => s + (o.loyaltyDiscountAmount ?? 0), 0);
   const loyaltyMemberNames = [...new Set(validOrders.filter(o => o.loyaltyMemberName).map(o => o.loyaltyMemberName!))];
-  // Track voids/comps for display in receipt
-  const voidedItems = allItems.filter(i => i.voidedAt || i.isComped);
+  // Track voids/comps for display in receipt (all items before filtering)
+  const allItemsIncludingVoided = validOrders.flatMap(o => o.items);
+  const voidedItems = allItemsIncludingVoided.filter(i => i.voidedAt || i.isComped);
   const itemsSubtotal = allItems.reduce((s, i) => s + (i.price * i.quantity), 0);
   const hasManagerAdjustment = itemsSubtotal !== subtotal + loyaltyDiscount;
   const tipAmount = tipPct === -1
@@ -467,10 +469,10 @@ export function PaymentPanel({
               </div>
               <div style={{ borderTop: "1px dashed #9ca3af", margin: "6px 0" }} />
 
-              {allItems.map((item, idx) => (
-                <div key={idx}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: INK }}>
-                    <span style={{ flex: 1 }}>{item.quantity}× {item.item.name}</span>
+              {allItemsIncludingVoided.map((item, idx) => (
+                <div key={idx} style={{ opacity: (item.voidedAt || item.isComped) ? 0.5 : 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 4, color: (item.voidedAt || item.isComped) ? INK_SUB : INK, textDecoration: (item.voidedAt || item.isComped) ? "line-through" : "none" }}>
+                    <span style={{ flex: 1 }}>{item.quantity}× {item.item.name}{item.voidedAt ? " ❌ מבוטל" : item.isComped ? " 🎁 חינם" : ""}</span>
                     <span style={{ flexShrink: 0, direction: "ltr" }}>₪{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                   {item.modifiers && item.modifiers.map((m, mi) => (
