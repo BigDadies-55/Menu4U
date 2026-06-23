@@ -494,6 +494,8 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
         <span style={{ fontSize: 14, fontWeight: 800, minWidth: 18, textAlign: "center", color: "#1a1612" }}>{item.quantity}</span>
         <button onClick={() => onQty(item.quantity + 1)} style={qBtn}>+</button>
       </div>
+      {/* price sits between the quantity and the X, with spacing */}
+      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "center", margin: "0 8px", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
       <button onClick={() => onQty(0)} title="הסר" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#fdecea", color: "#e53e3e", cursor: "pointer", fontSize: 14, fontWeight: 900, flexShrink: 0 }}>✕</button>
     </div>
   );
@@ -506,7 +508,6 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
           {item.notes && <div style={{ fontSize: 10, color: "#9c7a12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📝 {item.notes}</div>}
         </div>
-        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
         {!isMobile && controls}
       </div>
       {isMobile && <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>{controls}</div>}
