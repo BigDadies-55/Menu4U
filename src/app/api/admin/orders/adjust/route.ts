@@ -87,7 +87,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "סוג התאמה לא נתמך" }, { status: 400 });
   }
 
-  if (discount <= 0) return NextResponse.json({ error: "סכום הנחה לא תקין" }, { status: 400 });
+  if (discount <= 0) {
+    return NextResponse.json(
+      { error: `סכום הנחה לא תקין — סכום החשבון נקרא כ-₪${itemsTotal.toFixed(2)} (ערך שהוזן: ${value ?? "—"}, ${openOrders.length} הזמנות)` },
+      { status: 400 },
+    );
+  }
 
   // Cascade the discount across the table's orders so none goes negative.
   let remaining = discount;

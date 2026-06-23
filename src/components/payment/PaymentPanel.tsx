@@ -15,7 +15,7 @@ function fmtDateTime(d: Date) {
 }
 
 type SplitPayment = { id: string; amount: number; method: string; createdByName: string | null; createdAt: string };
-type ActivePanel = "discount" | "onhouse" | "price" | "split" | null;
+type ActivePanel = "discount" | "price" | "split" | null;
 type PinPrompt = { title: string; description?: string; run: (token: string) => Promise<void> };
 
 const PAY_METHOD_LABEL: Record<string, string> = {
@@ -52,7 +52,8 @@ export function PaymentPanel({
 
   const [tipPct, setTipPct] = useState<number>(0);
   const [customTip, setCustomTip] = useState("");
-  const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
+  // Default method shown on the receipt; actual method is chosen per-payment in the split flow.
+  const payMethod: "cash" | "card" | "app" = "card";
   const [paying, setPaying] = useState(false);
 
   // ── Manager-approved actions (discount / on-house / price override) ──
@@ -65,8 +66,6 @@ export function PaymentPanel({
   const [discMode, setDiscMode] = useState<"AMOUNT" | "PERCENT">("PERCENT");
   const [discValue, setDiscValue] = useState("");
   const [discReason, setDiscReason] = useState("");
-  // On the house reason
-  const [houseReason, setHouseReason] = useState("");
   // Price override
   const [priceItemId, setPriceItemId] = useState<string | null>(null);
   const [newPrice, setNewPrice] = useState("");
@@ -235,17 +234,6 @@ export function PaymentPanel({
           value, reason: discReason.trim() || undefined,
         });
         if (ok) { setActivePanel(null); setDiscValue(""); setDiscReason(""); }
-      },
-    });
-  }
-
-  function submitOnHouse() {
-    requestAdjust({
-      title: "אישור: על חשבון הבית",
-      description: `ביטול חיוב מלא · ₪${subtotal.toFixed(2)}`,
-      run: async (token) => {
-        const ok = await postAdjust(token, { type: "ON_HOUSE", reason: houseReason.trim() || undefined });
-        if (ok) { setActivePanel(null); setHouseReason(""); }
       },
     });
   }
@@ -535,11 +523,11 @@ export function PaymentPanel({
               {hasPartialPayments && (
                 <>
                   <div style={{ borderTop: "1px dashed #9ca3af", margin: "8px 0" }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.green, fontWeight: 700 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: INK_SUB, fontWeight: 700 }}>
                     <span>שולם עד כה</span>
                     <span style={{ direction: "ltr" }}>₪{splitPaid.toFixed(2)}</span>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.red, fontWeight: 700 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.gold, fontWeight: 700 }}>
                     <span>נשאר לתשלום</span>
                     <span style={{ direction: "ltr" }}>₪{splitBalance.toFixed(2)}</span>
                   </div>
@@ -635,42 +623,15 @@ export function PaymentPanel({
               </div>
             </div>
 
-            {/* Payment method */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>אמצעי תשלום</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {PAY_METHODS.map(m => (
-                  <button
-                    key={m.value}
-                    type="button"
-                    onClick={() => setPayMethod(m.value)}
-                    style={{
-                      flex: 1, padding: "9px 0", borderRadius: 12, fontSize: 13, fontWeight: 600,
-                      border: `2px solid ${payMethod === m.value ? T.gold : T.sub}`,
-                      background: payMethod === m.value ? T.goldSub : "#fff",
-                      color: payMethod === m.value ? T.gold : T.muted,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Action toolbar: discount / on-house / price / split ── */}
+            {/* ── Action toolbar: discount / price / split ── */}
             <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
               <button type="button" style={actionBtnStyle(activePanel === "discount")}
                 onClick={() => { setActionError(null); setActivePanel(activePanel === "discount" ? null : "discount"); }}>
                 🏷 הנחה
               </button>
-              <button type="button" style={actionBtnStyle(activePanel === "onhouse")}
-                onClick={() => { setActionError(null); setActivePanel(activePanel === "onhouse" ? null : "onhouse"); }}>
-                🎁 על הבית
-              </button>
               <button type="button" style={actionBtnStyle(activePanel === "price")}
                 onClick={() => { setActionError(null); setActivePanel(activePanel === "price" ? null : "price"); }}>
-                ✏️ מחיר
+                ✏️ שינויי מחיר
               </button>
               <button type="button" style={actionBtnStyle(activePanel === "split")}
                 onClick={() => { if (activePanel === "split") setActivePanel(null); else openSplit(); }}>
@@ -698,22 +659,6 @@ export function PaymentPanel({
                 <button type="button" onClick={submitDiscount} disabled={actionBusy}
                   style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 700, fontSize: 13, cursor: actionBusy ? "wait" : "pointer" }}>
                   🔐 אשר הנחה (PIN מנהל)
-                </button>
-              </div>
-            )}
-
-            {/* On the house panel */}
-            {activePanel === "onhouse" && (
-              <div style={{ background: T.raised, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
-                <div style={{ fontSize: 12, color: T.sub, marginBottom: 8 }}>
-                  ביטול חיוב מלא של החשבון (₪{subtotal.toFixed(2)}) — דורש אישור מנהל.
-                </div>
-                <input type="text" value={houseReason} onChange={e => setHouseReason(e.target.value)} placeholder="סיבה (לא חובה)"
-                  style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13, outline: "none", marginBottom: 8 }} />
-                {actionError && <div style={{ color: T.red, fontSize: 11, marginBottom: 6 }}>{actionError}</div>}
-                <button type="button" onClick={submitOnHouse} disabled={actionBusy}
-                  style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", background: T.red, color: "#fff", fontWeight: 700, fontSize: 13, cursor: actionBusy ? "wait" : "pointer" }}>
-                  🔐 על חשבון הבית (PIN מנהל)
                 </button>
               </div>
             )}
@@ -754,12 +699,12 @@ export function PaymentPanel({
                   <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{total.toFixed(2)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-                  <span style={{ color: T.green }}>שולם</span>
-                  <span style={{ fontWeight: 700, color: T.green, direction: "ltr" }}>₪{splitPaid.toFixed(2)}</span>
+                  <span style={{ color: T.muted }}>שולם</span>
+                  <span style={{ fontWeight: 700, color: T.text, direction: "ltr" }}>₪{splitPaid.toFixed(2)}</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 900, marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 900, marginBottom: 10, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
                   <span style={{ color: T.text }}>נשאר</span>
-                  <span style={{ color: T.red, direction: "ltr" }}>₪{splitBalance.toFixed(2)}</span>
+                  <span style={{ color: T.gold, direction: "ltr" }}>₪{splitBalance.toFixed(2)}</span>
                 </div>
 
                 {splitPayments.length > 0 && (
@@ -795,7 +740,7 @@ export function PaymentPanel({
                 </div>
                 {splitErr && <div style={{ color: T.red, fontSize: 11, marginBottom: 6 }}>{splitErr}</div>}
                 <button type="button" onClick={submitPartial} disabled={splitBusy || splitBalance <= 0}
-                  style={{ width: "100%", padding: "9px 0", borderRadius: 8, border: "none", background: T.green, color: "#fff", fontWeight: 800, fontSize: 14, cursor: splitBusy ? "wait" : "pointer", opacity: splitBalance <= 0 ? 0.55 : 1 }}>
+                  style={{ width: "100%", padding: "9px 0", borderRadius: 8, border: "none", background: T.gold, color: "#fff", fontWeight: 800, fontSize: 14, cursor: splitBusy ? "wait" : "pointer", opacity: splitBalance <= 0 ? 0.55 : 1 }}>
                   {splitBusy ? "מעבד..." : "✓ קבל תשלום"}
                 </button>
               </div>
