@@ -327,6 +327,22 @@ const sqls = [
         FOREIGN KEY ("kitchenStationId") REFERENCES "KitchenStation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
     END IF;
   END $$;`,
+  // Partial payments (split bill) — one row per individual payment toward an open table.
+  `CREATE TABLE IF NOT EXISTS "Payment" (
+    "id" TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "tableNumber" TEXT,
+    "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "method" TEXT NOT NULL DEFAULT 'cash',
+    "orderIds" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "createdByUserId" TEXT,
+    "createdByName" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Payment_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "Payment_restaurantId_fkey" FOREIGN KEY ("restaurantId")
+      REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  );`,
+  `CREATE INDEX IF NOT EXISTS "Payment_restaurantId_tableNumber_idx" ON "Payment"("restaurantId", "tableNumber");`,
 ];
 
 async function run() {

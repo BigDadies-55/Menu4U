@@ -232,6 +232,24 @@ model Restaurant {
   shifts          Shift[]
   shiftRequests   ShiftRequest[]
   kitchenStations KitchenStation[]
+  payments        Payment[]
+}
+
+// תשלומים חלקיים (פיצול תשלום) — כל רשומה = תשלום בודד של סועד על חשבון פתוח.
+model Payment {
+  id              String   @id @default(cuid())
+  restaurantId    String
+  tableNumber     String?
+  amount          Float    @default(0)
+  method          String   @default("cash") // cash | card | app
+  orderIds        String[] @default([])
+  createdByUserId String?
+  createdByName   String?
+  createdAt       DateTime @default(now())
+
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, tableNumber])
 }
 
 // תחנות מטבח ("שיוך מנות") — B/F/M/D וכו'. ניתנות להגדרה פר-מסעדה.
