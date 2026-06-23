@@ -136,11 +136,11 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
   }
 
   async function savePin() {
-    if (!editTarget || !pinInput.match(/^\d{4,8}$/)) { setPinMsg("PIN חייב להיות 4–8 ספרות"); return; }
+    if (!editTarget || !pinInput.match(/^\d{4}$/)) { setPinMsg("PIN חייב להיות 4 ספרות"); return; }
     setPinSaving(true); setPinMsg("");
     try {
       const r = await fetch(`/api/admin/users/${editTarget.id}/manager-pin`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin: pinInput }),
       });
       if (r.ok) { setHasPin(true); setPinInput(""); setPinMsg("✓ PIN נשמר"); }
@@ -152,7 +152,10 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     if (!editTarget) return;
     setPinSaving(true); setPinMsg("");
     try {
-      const r = await fetch(`/api/admin/users/${editTarget.id}/manager-pin`, { method: "DELETE" });
+      const r = await fetch(`/api/admin/users/${editTarget.id}/manager-pin`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: null }),
+      });
       if (r.ok) { setHasPin(false); setPinMsg("✓ PIN נמחק"); }
     } finally { setPinSaving(false); }
   }
@@ -718,13 +721,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                   {availableRoles.map(r => <option key={r} value={r} style={{ background: T.bg }}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
-              {["ADMIN","OWNER","SHIFT_MANAGER"].includes(editForm.role) && (
+              {["SUPER_ADMIN","ADMIN","OWNER","SHIFT_MANAGER"].includes(editForm.role) && (
                 <div style={{ borderTop: `1px solid ${T.borderSub}`, paddingTop: 14 }}>
                   <FieldLabel>🔐 PIN מנהל {hasPin ? <span style={{ color: T.green, fontSize: 11 }}>(מוגדר ✓)</span> : <span style={{ color: T.muted, fontSize: 11 }}>(לא מוגדר)</span>}</FieldLabel>
                   <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                    <input type="password" inputMode="numeric" maxLength={8}
+                    <input type="password" inputMode="numeric" maxLength={4}
                       value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,""))}
-                      placeholder="4–8 ספרות"
+                      placeholder="4 ספרות"
                       style={{ ...DARK_INPUT, flex: 1, letterSpacing: 4, textAlign: "center" }} />
                     <button type="button" onClick={savePin} disabled={pinSaving || !pinInput}
                       style={{ padding: "0 14px", background: `linear-gradient(135deg,${T.gold},${T.amber})`, color: "#000", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: (!pinInput || pinSaving) ? 0.5 : 1 }}>
