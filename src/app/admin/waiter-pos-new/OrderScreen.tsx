@@ -305,6 +305,7 @@ export function OrderScreen({
                   const qty = cartQtyForItem(item.id);
                   const warn = hasAllergy(item);
                   const safe = allergens.length > 0 && !warn;
+                  const domeColor = warn ? "#e23b3b" : safe ? "#16a34a" : "#6f6f6f";
                   return (
                     <div key={item.id} onClick={() => addItem(item)} style={{
                       background: qty > 0 ? "rgba(200,161,58,0.08)" : "#fff",
@@ -314,14 +315,11 @@ export function OrderScreen({
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, padding: 4, minWidth: 0,
                     }}>
                       {qty > 0 && <div style={{ position: "absolute", top: 4, left: 4, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 18, height: 18, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
-                      {/* subtle allergen mark — small dot top-right */}
-                      {warn && <div title="מכיל אלרגן" style={{ position: "absolute", top: 5, right: 5, width: 9, height: 9, borderRadius: 99, background: "#e23b3b", zIndex: 2 }} />}
-                      {safe && <div title="מותר" style={{ position: "absolute", top: 5, right: 5, width: 9, height: 9, borderRadius: 99, background: "#16a34a", zIndex: 2 }} />}
-                      {/* Dome icon — small */}
-                      <svg width={isMobile ? 22 : 26} height={isMobile ? 18 : 21} viewBox="0 0 48 40" fill="none" stroke="#6f6f6f" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                      {/* Dome (cloche) — coloured by allergen status: red=contains / green=allowed / grey=no table allergens */}
+                      <svg style={{ width: "clamp(20px, 2.4vw, 30px)", height: "clamp(16px, 2vw, 24px)" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
                       </svg>
-                      <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
+                      <div style={{ fontSize: "clamp(11px, 1.35vw, 15px)", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
                     </div>
                   );
                 })}
