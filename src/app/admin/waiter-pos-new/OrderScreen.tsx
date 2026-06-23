@@ -139,7 +139,7 @@ export function OrderScreen({
   function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
     const extra = modifiers.reduce((s, m) => s + m.priceAdd, 0);
     const course = item.course ?? 1;
-    const key = `${item.id}-c${course}-${Date.now()}`;
+    const key = `${item.id}-c${course}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     setCart(p => [...p, { key, itemId: item.id, name: item.name, price: Number(item.price) + extra, quantity: 1, course, notes: "", allergens: item.allergens ?? [], modifiers }]);
   }
   function confirmModifiers() {
@@ -169,7 +169,6 @@ export function OrderScreen({
 
   const toggleAllergen = (k: string) => setAllergens(a => a.includes(k) ? a.filter(x => x !== k) : [...a, k]);
   const hasAllergy = (item: MenuItem) => (item.allergens ?? []).some(a => allergens.includes(a));
-  const allergyLabel = (item: MenuItem) => (item.allergens ?? []).filter(a => allergens.includes(a)).map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
 
   // ── Save cart → returns order id (or null) ──
   async function submitCart(): Promise<string | null> {
@@ -236,38 +235,27 @@ export function OrderScreen({
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0c0c12", display: "flex", flexDirection: "column", fontFamily: "'Heebo', sans-serif", direction: "rtl" }}>
 
-      {/* ══ TOP BAR ══ */}
-      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: 64, flexShrink: 0, display: "flex", alignItems: "stretch", justifyContent: "space-between", padding: "0 16px 0 0" }}>
-        {/* right group */}
-        <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
-          <button onClick={onClose} title="חזרה" style={{ width: 62, height: "100%", border: "none", background: T.gold, color: "#fff", fontSize: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
-          <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "0 18px" }}>
+      {/* ══ TOP BAR — full-bleed, equal spacing between cells ══ */}
+      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: 64, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
+        <button onClick={onClose} title="חזרה" style={{ width: 62, height: "100%", border: "none", background: T.gold, color: "#fff", fontSize: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 22px" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>הזמנה</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: T.gold }}>#{order?.orderNumber ?? "—"}</div>
           </div>
-          <div style={{ width: 1, height: 34, background: T.barLine }} />
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>אזור ישיבה</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{areaName ?? `שולחן ${tableNum}`}</div>
           </div>
+          <div style={{ textAlign: "center", opacity: avgPerDiner > 60 ? 1 : 0.35 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>ממוצע לסועד {avgPerDiner > 60 ? "😊" : ""}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: avgPerDiner > 60 ? "#34d399" : "rgba(255,255,255,0.6)" }}>₪{avgPerDiner.toFixed(0)}</div>
           </div>
-        </div>
-
-        {/* left group */}
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          {avgPerDiner > 60 && (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>ממוצע לסועד 😊</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#34d399" }}>₪{avgPerDiner.toFixed(0)}</div>
-            </div>
-          )}
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>סועדים</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>👤 {covers}</div>
           </div>
-          <div style={{ width: 1, height: 34, background: T.barLine }} />
-          <div style={{ textAlign: "left" }}>
+          <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: T.gold }}>{shiftName ?? "משמרת"}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>{waiterName ?? ""}</div>
           </div>
@@ -350,22 +338,21 @@ export function OrderScreen({
         </div>
       </div>
 
-      {/* ══ BOTTOM BAR ══ */}
-      <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 66, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <BBtn icon="👤＋" label="סועדים" onClick={() => setCoversOpen(true)} />
-          <BBtn icon="⚠️" label="אלרגנים" onClick={() => setAllergensOpen(true)} active={allergens.length > 0} />
-          <BBtn icon="🖨" label="הדפס" onClick={() => order && setPrintOpen(true)} disabled={!order} />
-          <BBtn icon="💳" label="תשלום" onClick={goPayment} disabled={!order} />
-          <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 22px", borderRadius: 12,
-            border: "none", cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
-            background: T.goldGrad, color: "#fff", fontWeight: 800, fontSize: 13, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.5 : 1,
-          }}>
-            <span style={{ fontSize: 17 }}>✓</span>{submitting ? "שולח..." : "שחרר מנה"}
-          </button>
-        </div>
-        <div style={{ textAlign: "left" }}>
+      {/* ══ BOTTOM BAR — uniform full-bleed strip, flat square cells ══ */}
+      <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 66, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
+        <BCell icon="👤＋" label="סועדים" onClick={() => setCoversOpen(true)} active={false} />
+        <BCell icon="⚠️" label="אלרגנים" onClick={() => setAllergensOpen(true)} active={allergens.length > 0} />
+        <BCell icon="🖨" label="הדפס" onClick={() => order && setPrintOpen(true)} disabled={!order} />
+        <BCell icon="💳" label="תשלום" onClick={goPayment} disabled={!order} />
+        <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 26px",
+          border: "none", cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
+          background: T.gold, color: "#fff", fontWeight: 800, fontSize: 13, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.55 : 1,
+        }}>
+          <span style={{ fontSize: 18 }}>✓</span>{submitting ? "שולח..." : "שחרר מנה"}
+        </button>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "left", padding: "0 22px", borderRight: `1px solid ${T.barLine}` }}>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>סה״כ לתשלום</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
         </div>
@@ -449,16 +436,16 @@ export function OrderScreen({
   );
 }
 
-// ── Bottom-bar button ──
-function BBtn({ icon, label, onClick, active, disabled }: { icon: string; label: string; onClick: () => void; active?: boolean; disabled?: boolean }) {
+// ── Bottom-bar flat cell (uniform strip, square, divider on the left) ──
+function BCell({ icon, label, onClick, active, disabled }: { icon: string; label: string; onClick: () => void; active?: boolean; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 14px", borderRadius: 12,
-      border: "none", cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
-      background: active ? "rgba(212,160,23,0.18)" : "rgba(255,255,255,0.06)",
-      color: active ? "#d4a017" : "#fff", fontWeight: 700, fontSize: 12, opacity: disabled ? 0.4 : 1,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "0 22px",
+      border: "none", borderLeft: "1px solid rgba(255,255,255,0.08)", cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
+      background: active ? "rgba(200,161,58,0.16)" : "transparent",
+      color: active ? "#d4a017" : "#e6e6e6", fontWeight: 600, fontSize: 12, opacity: disabled ? 0.4 : 1,
     }}>
-      <span style={{ fontSize: 17 }}>{icon}</span>{label}
+      <span style={{ fontSize: 18 }}>{icon}</span>{label}
     </button>
   );
 }
@@ -475,7 +462,7 @@ function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDet
         <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 700, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
         <div style={{ fontSize: 11, color: warn ? "#c0392b" : "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
       </div>
-      <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 900, color: "#1a1612", minWidth: isMobile ? 32 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
       <button onClick={onVoid} title="ביטול (דרוש אישור מנהל)" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#f4f1ed", color: "#b91c1c", cursor: "pointer", fontSize: 13, flexShrink: 0 }}>🔒</button>
     </div>
   );
@@ -504,7 +491,7 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
           {item.notes && <div style={{ fontSize: 10, color: "#9c7a12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📝 {item.notes}</div>}
         </div>
-        <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 900, color: "#1a1612", minWidth: isMobile ? 30 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
         {!isMobile && controls}
       </div>
       {isMobile && <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>{controls}</div>}
