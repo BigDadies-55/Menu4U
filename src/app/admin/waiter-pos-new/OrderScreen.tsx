@@ -469,9 +469,9 @@ function BCell({ icon, label, onClick, active, disabled }: { icon: string; label
 function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDetail; allergens: string[]; isMobile: boolean; onVoid: () => void }) {
   const warn = item.itemAllergens.some(a => allergens.includes(a));
   const statusHe: Record<string, string> = { PENDING: "ממתין", PREPARING: "מכין 🍳", DONE: "מוכן ✓", SERVED: "הוגש", CANCELLED: "בוטל" };
-  const badge = isMobile ? 28 : 34;
+  const badge = isMobile ? 24 : 28;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10, padding: isMobile ? "10px 10px" : "12px 14px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
+    <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10, padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
       <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
@@ -485,7 +485,7 @@ function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDet
 
 function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; warn: boolean; isMobile: boolean; onQty: (q: number) => void; onNotes: (n: string) => void }) {
   const [notesOpen, setNotesOpen] = useState(!!item.notes);
-  const badge = isMobile ? 28 : 34;
+  const badge = isMobile ? 24 : 28;
   const controls = (
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
       <button onClick={() => setNotesOpen(o => !o)} title="הערה" style={{ width: badge, height: badge, borderRadius: 8, border: "1px solid #e3ded5", background: "#fff", cursor: "pointer", fontSize: 13, color: "#6b6258", flexShrink: 0 }}>✎</button>
@@ -498,7 +498,7 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
     </div>
   );
   return (
-    <div style={{ padding: isMobile ? "10px 10px" : "12px 14px", borderBottom: "1px solid #ede7df", background: "rgba(212,160,23,0.06)" }}>
+    <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #ede7df", background: "rgba(212,160,23,0.06)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
         <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
