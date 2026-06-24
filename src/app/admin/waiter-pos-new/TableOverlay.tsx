@@ -238,11 +238,18 @@ export function TableOverlay({
         )}
 
         {/* ── Header ── */}
-        <div style={{ background: "#fff", padding: "16px 20px 14px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ede9e3", direction: "rtl" }}>
-          {/* X button */}
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, letterSpacing: ".05em" }}>שולחן</div>
-            <div style={{ fontSize: 46, fontWeight: 900, color: "#1a1612", lineHeight: 1 }}>{tableNum}</div>
+        <div style={{ background: "#fff", padding: "14px 18px 14px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ede9e3", direction: "rtl" }}>
+          {/* Title + golden badge (RTL: badge on right) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            {/* Golden number badge */}
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: "#d4a840", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(212,168,64,.35)" }}>
+              <span style={{ fontSize: 26, fontWeight: 900, color: "#fff", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{tableNum}</span>
+            </div>
+            {/* Title text */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ fontSize: 11, color: "#aaa", fontWeight: 600, letterSpacing: ".04em" }}>ניהול הזמנה</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#1a1612", lineHeight: 1.1 }}>שולחן {tableNum}</div>
+            </div>
           </div>
 
           {/* Middle info */}
@@ -250,19 +257,25 @@ export function TableOverlay({
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 12px", borderRadius: 99, background: "#fdf2f0", color: "#c0392b", border: "1.5px solid #f5c4bc" }}>תפוס</span>
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#e07060", fontVariantNumeric: "tabular-nums" }}>⏱ {fmtMins(sittingStart)} דק&apos;</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#e07060", fontVariantNumeric: "tabular-nums" }}>⏱ {fmtMins(sittingStart)} דק&apos;</span>
               </div>
-              <div style={{ fontSize: 12, color: "#888" }}>👤 {guests > 0 ? `${guests} סועדים` : `${seats} מקומות`}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#888" }}>
+                <span>👥</span>
+                <span>{guests > 0 ? `${guests} סועדים` : `${seats} מקומות`}</span>
+              </div>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 12px", borderRadius: 99, background: "#f0f7f3", color: "#1f5c3a", border: "1.5px solid #b3d9c4" }}>פנוי</span>
-              <div style={{ fontSize: 12, color: "#888" }}>👤 {seats} מקומות</div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, padding: "4px 14px", borderRadius: 99, background: "#f0f7f3", color: "#1f5c3a", border: "1.5px solid #b3d9c4" }}>פנוי</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#888" }}>
+                <span>👥</span>
+                <span>{seats} מקומות</span>
+              </div>
             </div>
           )}
 
           {/* Close button */}
-          <button onClick={onClose} style={{ width: 42, height: 42, borderRadius: 99, border: "none", background: "#f0ede8", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", color: "#555", flexShrink: 0, fontFamily: "inherit" }}>✕</button>
+          <button onClick={onClose} style={{ width: 40, height: 40, borderRadius: 99, border: "none", background: "#f0ede8", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "#555", flexShrink: 0, fontFamily: "inherit" }}>✕</button>
         </div>
 
         {/* ── Scrollable body ── */}
@@ -501,36 +514,63 @@ export function TableOverlay({
           {/* ════ FREE / RESERVED / INACTIVE ════ */}
           {!isOccupied && (
             <>
-              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, padding: "14px 18px", marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1612" }}>כמה סועדים?</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#f4f1ed", borderRadius: 99, padding: "6px 16px" }}>
-                    <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>−</button>
-                    <span style={{ fontSize: 20, fontWeight: 900, minWidth: 28, textAlign: "center" }}>{guestCount}</span>
-                    <button onClick={() => setGuestCount(g => g + 1)} style={{ width: 30, height: 30, borderRadius: 99, border: "none", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.08)", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
+              {/* Guest count card */}
+              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, padding: "16px 18px", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>👥</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1612" }}>כמות סועדים</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button onClick={() => setGuestCount(g => Math.max(1, g - 1))} style={{ width: 36, height: 36, borderRadius: 99, border: "1.5px solid #e8e2da", background: "#fff", cursor: "pointer", fontSize: 20, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#4a4540", fontFamily: "inherit", lineHeight: 1 }}>−</button>
+                    <span style={{ fontSize: 22, fontWeight: 900, minWidth: 24, textAlign: "center", color: "#1a1612" }}>{guestCount}</span>
+                    <button onClick={() => setGuestCount(g => g + 1)} style={{ width: 36, height: 36, borderRadius: 99, border: "1.5px solid #e8e2da", background: "#fff", cursor: "pointer", fontSize: 20, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", color: "#4a4540", fontFamily: "inherit", lineHeight: 1 }}>+</button>
                   </div>
                 </div>
                 {guestCount > seats && (
                   <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#92620a" }}>⚠️ שולחן מוגדר ל־{seats} מקומות</div>
                 )}
               </div>
-              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, padding: "14px 18px", marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "#8a8480", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>אלרגיות בשולחן?</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                  <button onClick={() => setAllergens([])} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.length === 0 ? "#5a9e7a" : "#e8e2da"}`, background: allergens.length === 0 ? "#f0f7f3" : "#f4f1ed", color: allergens.length === 0 ? "#1f5c3a" : "#4a4540", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>ללא</button>
+
+              {/* Allergens card */}
+              <div style={{ background: "#fff", border: "1.5px solid #e8e2da", borderRadius: 16, padding: "16px 18px", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, direction: "rtl" }}>
+                  <span style={{ fontSize: 16, color: "#8a8480" }}>₪</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1612" }}>אלרגיות או בקשות מיוחדות?</span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, direction: "rtl" }}>
+                  <button
+                    onClick={() => setAllergens([])}
+                    style={{ padding: "8px 16px", borderRadius: 99, border: `1.5px solid ${allergens.length === 0 ? "#d4a840" : "#e8e2da"}`, background: allergens.length === 0 ? "#d4a840" : "#fff", color: allergens.length === 0 ? "#fff" : "#4a4540", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                    ללא אלרגיות
+                  </button>
                   {ALLERGEN_LIST.map(a => (
-                    <button key={a.key} onClick={() => toggleAllergen(a.key)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${allergens.includes(a.key) ? "#e07060" : "#e8e2da"}`, background: allergens.includes(a.key) ? "#fdf2f0" : "#f4f1ed", color: allergens.includes(a.key) ? "#8b2e22" : "#4a4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{a.label}</button>
+                    <button key={a.key} onClick={() => toggleAllergen(a.key)}
+                      style={{ padding: "8px 16px", borderRadius: 99, border: `1.5px solid ${allergens.includes(a.key) ? "#e07060" : "#e8e2da"}`, background: allergens.includes(a.key) ? "#fdf2f0" : "#fff", color: allergens.includes(a.key) ? "#8b2e22" : "#4a4540", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                      {a.label}
+                    </button>
                   ))}
                 </div>
               </div>
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#8a8480", marginBottom: 8 }}>שינוי סטטוס:</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {(["reserved", "inactive", "free"] as const).map(s => (
-                    <button key={s} onClick={() => { onStatusChange(s); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: "1.5px solid #e8e2da", background: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
-                      {{ reserved: "🔵 מוזמן", inactive: "🔴 לא פעיל", free: "🟢 פנוי" }[s]}
-                    </button>
-                  ))}
+
+              {/* Status section */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", marginBottom: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#8a8480" }}>סטטוס השולחן:</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {([
+                    { key: "free",     label: "פנוי",     dot: "#22c55e", activeBg: "#f0f7f3", activeBorder: "#b3d9c4", activeColor: "#1f5c3a" },
+                    { key: "reserved", label: "מוזמן",    dot: "#3b82f6", activeBg: "#eff6ff", activeBorder: "#93c5fd", activeColor: "#1d4ed8" },
+                    { key: "inactive", label: "לא פעיל",  dot: "#ef4444", activeBg: "#fef2f2", activeBorder: "#fca5a5", activeColor: "#b91c1c" },
+                  ] as const).map(s => {
+                    const isActive = availStatus === s.key;
+                    return (
+                      <button key={s.key} onClick={() => onStatusChange(s.key)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${isActive ? s.activeBorder : "#e8e2da"}`, background: isActive ? s.activeBg : "#fff", cursor: "pointer", fontFamily: "inherit" }}>
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? s.activeColor : "#4a4540" }}>{s.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </>
@@ -636,8 +676,10 @@ export function TableOverlay({
           {/* Free table */}
           {!isOccupied && (
             <>
-              <button onClick={() => onNewOrder(guestCount, allergens)} disabled={isOffline} style={{ padding: 16, borderRadius: 14, border: "none", background: isOffline ? "#ccc" : "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: isOffline ? 0.5 : 1 }}>
-                🍽️ פתיחת שולחן והזמן
+              <button onClick={() => onNewOrder(guestCount, allergens)} disabled={isOffline}
+                style={{ padding: 17, borderRadius: 14, border: "none", background: isOffline ? "#ccc" : "#1a1612", color: "#fff", fontSize: 15, fontWeight: 900, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: isOffline ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <span style={{ color: "#d4a840", fontSize: 16 }}>✦</span>
+                פתיחת שולחן והזמנה
               </button>
               <button onClick={onClose} style={{ padding: 12, borderRadius: 12, border: "1.5px solid #e8e2da", background: "#f4f1ed", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#4a4540", fontFamily: "inherit" }}>
                 ביטול
