@@ -176,7 +176,6 @@ export function OrderScreen({
     else setCart(p => p.map(i => i.key === key ? { ...i, quantity: qty } : i));
   }
   function changeNotes(key: string, notes: string) { setCart(p => p.map(i => i.key === key ? { ...i, notes } : i)); }
-  function changeCourse(key: string, course: number) { setCart(p => p.map(i => i.key === key ? { ...i, course } : i)); }
   function cartQtyForItem(itemId: string) { return cart.filter(i => i.itemId === itemId).reduce((s, i) => s + i.quantity, 0); }
 
   const toggleAllergen = (k: string) => setAllergens(a => a.includes(k) ? a.filter(x => x !== k) : [...a, k]);
@@ -348,7 +347,7 @@ export function OrderScreen({
             {/* New cart items — deletable */}
             {cart.map(i => (
               <CartRow key={i.key} item={i} warn={i.allergens.some(a => allergens.includes(a))} isMobile={isMobile}
-                onQty={q => changeQty(i.key, q)} onNotes={n => changeNotes(i.key, n)} onCourse={c => changeCourse(i.key, c)} />
+                onQty={q => changeQty(i.key, q)} onNotes={n => changeNotes(i.key, n)} />
             ))}
           </div>
         </div>
@@ -484,10 +483,7 @@ function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDet
   );
 }
 
-const COURSE_CYCLE: Record<number, number> = { 1: 2, 2: 3, 3: 1 };
-const COURSE_LABEL: Record<number, string> = { 1: "ראשונות", 2: "עיקריות", 3: "קינוח" };
-
-function CartRow({ item, warn, isMobile, onQty, onNotes, onCourse }: { item: CartItem; warn: boolean; isMobile: boolean; onQty: (q: number) => void; onNotes: (n: string) => void; onCourse: (c: number) => void }) {
+function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; warn: boolean; isMobile: boolean; onQty: (q: number) => void; onNotes: (n: string) => void }) {
   const [notesOpen, setNotesOpen] = useState(!!item.notes);
   const badge = isMobile ? 24 : 28;
   const controls = (
@@ -506,7 +502,7 @@ function CartRow({ item, warn, isMobile, onQty, onNotes, onCourse }: { item: Car
   return (
     <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
-        <button onClick={() => onCourse(COURSE_CYCLE[item.course] ?? 1)} title={COURSE_LABEL[item.course]} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "pointer", fontFamily: "inherit" }}>{courseLetter(item.course)}</button>
+        <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
