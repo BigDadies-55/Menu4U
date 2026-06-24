@@ -20,6 +20,9 @@ export async function GET(req: Request) {
   // Ensure allergens column exists (may be missing on older DBs)
   await prisma.$executeRawUnsafe(`ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "allergens" TEXT[] NOT NULL DEFAULT '{}'`);
 
+  // Ensure columns exist (idempotent migration)
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "course" INTEGER NOT NULL DEFAULT 1`);
+
   try {
     const menus = await prisma.menu.findMany({
       where: { restaurantId, isActive: true },
@@ -30,6 +33,7 @@ export async function GET(req: Request) {
           select: {
             id: true,
             name: true,
+            course: true,
             items: {
               where: { isActive: true },
               orderBy: { sortOrder: "asc" },

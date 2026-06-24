@@ -57,6 +57,7 @@ model User {
   failedLoginAttempts  Int       @default(0)
   lockedUntil          DateTime?
   totpSecret           String?
+  totpPendingSecret    String?
   totpEnabled          Boolean   @default(false)
   managerPin           String?
   status               String    @default("PENDING")
@@ -311,6 +312,7 @@ model Category {
   autoReady    Boolean  @default(false) // נגזר מהתחנה: BAR(skipKitchen)=true
   kitchenStationId String?
   sortOrder    Int      @default(0)
+  course       Int      @default(1)  // 1=ראשונות, 2=עיקריות, 3=קינוח
   translations Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

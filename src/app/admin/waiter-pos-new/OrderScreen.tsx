@@ -19,7 +19,7 @@ type MenuItem = {
   course?: number;
   modifierGroups: ModifierGroup[];
 };
-type MenuCategory = { id: string; name: string; items: MenuItem[] };
+type MenuCategory = { id: string; name: string; course: number; items: MenuItem[] };
 
 type CartItem = {
   key: string; itemId: string; name: string; price: number;
@@ -75,6 +75,7 @@ export function OrderScreen({
   const [voidItem, setVoidItem] = useState<{ id: string; name: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -138,7 +139,7 @@ export function OrderScreen({
   }
   function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
     const extra = modifiers.reduce((s, m) => s + m.priceAdd, 0);
-    const course = item.course ?? 1;
+    const course = categories.find(c => c.items.some(i => i.id === item.id))?.course ?? item.course ?? 1;
     const sig = modifiers.map(m => m.label).sort().join("|");
     setCart(p => {
       // Re-ordering the same dish (identical modifiers/course) bumps the quantity
@@ -198,15 +199,18 @@ export function OrderScreen({
     return newOrder?.id ?? null;
   }
 
-  // "שחרר מנה" — final approval: save the cart, then open the per-course release modal.
+  // "אשר ושלח" — save the cart; skip release modal if no held courses.
   async function handleRelease() {
     if (submitting) return;
     setSubmitting(true);
     try {
       const oid = await submitCart();
-      if (!oid) return; // offline queued → closed via onQueued
+      if (!oid) return; // offline queued
       await refreshOrder(oid);
-      setReleaseOpen(true);
+      // Skip release modal if nothing is held — finish immediately
+      const hasHeld = (order?.items ?? []).some(i => i.heldUntilFired && !i.firedAt && !i.voidedAt && i.itemStatus !== "CANCELLED");
+      if (hasHeld) { setReleaseOpen(true); }
+      else { onSuccess(oid); }
     } finally { setSubmitting(false); }
   }
 
@@ -353,18 +357,25 @@ export function OrderScreen({
         </div>
       </div>
 
-      {/* ══ BOTTOM BAR — uniform full-bleed strip, flat square cells ══ */}
+      {/* ══ BOTTOM BAR ══ */}
       <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 66, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
         <BCell icon="👤＋" label="סועדים" onClick={() => setCoversOpen(true)} active={false} />
         <BCell icon="⚠️" label="אלרגנים" onClick={() => setAllergensOpen(true)} active={allergens.length > 0} />
-        <BCell icon="🖨" label="הדפס" onClick={() => order && setPrintOpen(true)} disabled={!order} />
-        <BCell icon="💳" label="תשלום" onClick={goPayment} disabled={!order} />
+        {/* Print + Payment — less frequent, secondary placement */}
+        {isMobile ? (
+          <BCell icon="⋯" label="עוד" onClick={() => setSecondaryOpen(o => !o)} active={secondaryOpen} />
+        ) : (
+          <>
+            <BCell icon="🖨" label="הדפס" onClick={() => order && setPrintOpen(true)} disabled={!order} />
+            <BCell icon="💳" label="תשלום" onClick={goPayment} disabled={!order} />
+          </>
+        )}
         <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 26px",
           border: "none", cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
           background: T.gold, color: "#fff", fontWeight: 800, fontSize: 13, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.55 : 1,
         }}>
-          <span style={{ fontSize: 18 }}>✓</span>{submitting ? "שולח..." : "שחרר מנה"}
+          <span style={{ fontSize: 18 }}>✓</span>{submitting ? "שולח..." : "אשר ושלח"}
         </button>
         <div style={{ flex: 1 }} />
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "left", padding: "0 22px", borderRight: `1px solid ${T.barLine}` }}>
@@ -372,6 +383,20 @@ export function OrderScreen({
           <div style={{ fontSize: 22, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
         </div>
       </div>
+
+      {/* ══ Mobile secondary menu (Print + Payment) ══ */}
+      {secondaryOpen && isMobile && (
+        <div onClick={() => setSecondaryOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 590 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 66, right: 0, background: T.bar, border: `1px solid ${T.barLine}`, borderRadius: "12px 0 0 0", padding: "8px 0", display: "flex", flexDirection: "column", minWidth: 140 }}>
+            <button onClick={() => { setSecondaryOpen(false); order && setPrintOpen(true); }} disabled={!order} style={{ padding: "12px 20px", border: "none", background: "transparent", color: !order ? "rgba(255,255,255,0.3)" : "#e6e6e6", fontSize: 13, fontWeight: 600, cursor: !order ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
+              <span>🖨</span> הדפס
+            </button>
+            <button onClick={() => { setSecondaryOpen(false); goPayment(); }} disabled={!order} style={{ padding: "12px 20px", border: "none", background: "transparent", color: !order ? "rgba(255,255,255,0.3)" : "#e6e6e6", fontSize: 13, fontWeight: 600, cursor: !order ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
+              <span>💳</span> תשלום
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ══ Modifier picker — dark glass theme (matches the waiter NEW screen) ══ */}
       {modifierItem && (
@@ -502,7 +527,7 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
   return (
     <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
-        <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
+        <div title={{ 1: "ראשונות", 2: "עיקריות", 3: "קינוח" }[item.course] ?? `קורס ${item.course}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "default" }}>{courseLetter(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}

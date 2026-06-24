@@ -26,7 +26,7 @@ const G_MUTED_C    = "rgba(255,255,255,0.6)";
 
 const STATUS_NUM_COLOR: Record<string, string> = {
   occupied: "#EF4444", reserved: "#3B82F6", free: "#10B981",
-  inactive: "rgba(255,255,255,0.25)", bill_requested: "#F97316", paid: "#34d399",
+  inactive: "rgba(255,255,255,0.55)", bill_requested: "#F97316", paid: "#34d399",
 };
 const STATUS_NUM_GLOW: Record<string, string> = {
   occupied: "rgba(239,68,68,0.45)", reserved: "rgba(59,130,246,0.45)", free: "rgba(16,185,129,0.45)",

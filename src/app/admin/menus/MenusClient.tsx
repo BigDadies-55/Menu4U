@@ -20,7 +20,7 @@ type Item = {
 
 type Category = {
   id: string; name: string; image: string | null;
-  items: Item[]; isActive: boolean; autoReady: boolean; kitchenStationId: string | null; sortOrder: number;
+  items: Item[]; isActive: boolean; autoReady: boolean; kitchenStationId: string | null; sortOrder: number; course: number;
   translations?: CatTranslationsMap | null;
 };
 
@@ -70,7 +70,7 @@ const ALLERGEN_LIST = [
 ] as const;
 
 const emptyItemForm = { name: "", description: "", price: "", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, tags: [] as string[], allergens: [] as string[], prepTime: "", translations: emptyItemTr() };
-const emptyCategoryForm = { name: "", description: "", image: "", translations: emptyCatTr() };
+const emptyCategoryForm = { name: "", description: "", image: "", course: 1, translations: emptyCatTr() };
 
 type ModOption = { id?: string; label: string; priceAdd: number; order: number };
 type ModGroup  = { id?: string; name: string; required: boolean; maxSelect: number; order: number; options: ModOption[] };
@@ -1412,12 +1412,16 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
                                 {cat.items.length} פריטים
                               </div>
                             </div>
-                            <div style={{ color: G_MUTED, opacity: 0.4, cursor: "grab", flexShrink: 0 }}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                              <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0} title="הזז למעלה"
+                                style={{ background: "none", border: "none", color: idx === 0 ? "rgba(255,255,255,0.15)" : G_MUTED, cursor: idx === 0 ? "default" : "pointer", padding: "2px 4px", lineHeight: 1, fontSize: 14 }}>▲</button>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill={G_MUTED} style={{ opacity: 0.4 }}>
                                 <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
                                 <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
                                 <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
                               </svg>
+                              <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1} title="הזז למטה"
+                                style={{ background: "none", border: "none", color: idx === sortedCategories.length - 1 ? "rgba(255,255,255,0.15)" : G_MUTED, cursor: idx === sortedCategories.length - 1 ? "default" : "pointer", padding: "2px 4px", lineHeight: 1, fontSize: 14 }}>▼</button>
                             </div>
                           </div>
                           {canEdit && (
@@ -1676,6 +1680,14 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
                 <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>שם הקטגוריה *</label>
                 <input required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })}
                   style={darkInput} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>קורס</label>
+                <select value={categoryForm.course} onChange={e => setCategoryForm({ ...categoryForm, course: Number(e.target.value) })} style={darkInput}>
+                  <option value={1}>ראשונות</option>
+                  <option value={2}>עיקריות</option>
+                  <option value={3}>קינוח</option>
+                </select>
               </div>
               <ImageUpload
                 label="תמונת קטגוריה"
