@@ -1412,12 +1412,16 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
                                 {cat.items.length} פריטים
                               </div>
                             </div>
-                            <div style={{ color: G_MUTED, opacity: 0.4, cursor: "grab", flexShrink: 0 }}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                              <button onClick={() => moveCategoryOrder(cat.id, "up")} disabled={idx === 0} title="הזז למעלה"
+                                style={{ background: "none", border: "none", color: idx === 0 ? "rgba(255,255,255,0.15)" : G_MUTED, cursor: idx === 0 ? "default" : "pointer", padding: "2px 4px", lineHeight: 1, fontSize: 14 }}>▲</button>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill={G_MUTED} style={{ opacity: 0.4 }}>
                                 <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
                                 <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
                                 <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
                               </svg>
+                              <button onClick={() => moveCategoryOrder(cat.id, "down")} disabled={idx === sortedCategories.length - 1} title="הזז למטה"
+                                style={{ background: "none", border: "none", color: idx === sortedCategories.length - 1 ? "rgba(255,255,255,0.15)" : G_MUTED, cursor: idx === sortedCategories.length - 1 ? "default" : "pointer", padding: "2px 4px", lineHeight: 1, fontSize: 14 }}>▼</button>
                             </div>
                           </div>
                           {canEdit && (
