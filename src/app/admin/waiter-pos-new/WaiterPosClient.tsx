@@ -436,8 +436,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             <div style={{ fontSize: 19, fontWeight: 800, marginBottom: 8 }}>דיווחת שעון?</div>
             <div style={{ fontSize: 13, color: G_MUTED_C, marginBottom: 22 }}>לפני תחילת המשמרת, ודא שדיווחת כניסה.</div>
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => answerClockPrompt(true)} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>המשך ללא דיווח</button>
-              <button onClick={() => answerClockPrompt(false)} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "rgba(248,113,113,0.18)", color: "#F87171", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>דווח עכשיו</button>
+              <button onClick={() => answerClockPrompt(true)} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "rgba(248,113,113,0.18)", color: "#F87171", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>המשך ללא דיווח</button>
+              <button onClick={() => answerClockPrompt(false)} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>דווח עכשיו</button>
             </div>
           </div>
         </div>
@@ -452,7 +452,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             <div style={{ fontSize: 13, color: G_MUTED_C, marginBottom: 22 }}>לפני היציאה מהמערכת, ודא שדיווחת יציאה בשעון.</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button onClick={() => setLogoutPrompt(false)} style={{ padding: "10px", borderRadius: 12, border: `1px solid ${G_BORDER_C}`, background: "transparent", color: G_MUTED_C, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
-              <button onClick={() => { setLogoutPrompt(false); setAttSignal(s => s + 1); }} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(248,113,113,0.18)", color: "#F87171", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>דווח עכשיו</button>
+              <button onClick={() => { setLogoutPrompt(false); setAttSignal(s => s + 1); }} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>דווח עכשיו</button>
             </div>
           </div>
         </div>
