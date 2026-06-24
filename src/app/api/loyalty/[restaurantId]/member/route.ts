@@ -116,10 +116,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ restaura
   const phone = searchParams.get("phone");
   if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
 
-  // Rate limit: 20 lookups per IP per 5 min (prevents phone enumeration)
+  // Rate limit: 5 per IP per 5 min + 30 global per restaurant per 5 min
   const ip = getIpKey(req);
-  const allowed = await checkRateLimit(`member-get:${ip}:${restaurantId}`, 20, 5 * 60 * 1000);
-  if (!allowed) return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
+  const [perIp, perRestaurant] = await Promise.all([
+    checkRateLimit(`member-get:${ip}:${restaurantId}`, 5, 5 * 60 * 1000),
+    checkRateLimit(`member-get-global:${restaurantId}`, 30, 5 * 60 * 1000),
+  ]);
+  if (!perIp || !perRestaurant) return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
 
   await ensureTables();
 

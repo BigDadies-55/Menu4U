@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { checkRateLimit, getIpKey } from "@/lib/rateLimit";
 
 export async function GET(
   req: Request,
@@ -13,6 +14,11 @@ export async function GET(
   if (!tableNumber) {
     return NextResponse.json({ error: "Missing table" }, { status: 400 });
   }
+
+  // Rate limit: 5 lookups per IP per minute — prevents table enumeration
+  const ip = getIpKey(req);
+  const allowed = await checkRateLimit(`orders-public:${ip}:${restaurantId}`, 5, 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
 
   // Ensure loyalty columns exist on Order
   await Promise.allSettled([
@@ -40,7 +46,6 @@ export async function GET(
       createdAt: true,
       notes: true,
       customerName: true,
-      customerPhone: true,
       loyaltyMemberId: true,
       loyaltyMemberName: true,
       loyaltyDiscountType: true,
