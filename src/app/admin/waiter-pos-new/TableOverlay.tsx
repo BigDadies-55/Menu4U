@@ -534,19 +534,14 @@ export function TableOverlay({
                 )}
               </div>
 
-              {/* Allergies card */}
-              <div style={{ background: CARD, border: `1px solid ${CARD_BD}`, borderRadius: 20, padding: "16px 20px", marginBottom: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", marginBottom: 14 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: INK }}>אלרגיות או בקשות מיוחדות?</span>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: INK_SUB }}>$</span>
+              {/* Allergies — display only; editing happens inside OrderScreen */}
+              {allergens.length > 0 && (
+                <div style={{ background: "#fdf2f0", border: "1.5px solid #f5c4bc", borderRadius: 16, padding: "10px 16px", marginBottom: 14, direction: "rtl", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 13 }}>⚠️</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#8b2e22" }}>אלרגיות: {allergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}</span>
+                  <button onClick={() => setAllergens([])} title="נקה אלרגיות" style={{ marginRight: "auto", background: "none", border: "none", color: "#c0392b", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, direction: "rtl" }}>
-                  <button onClick={() => setAllergens([])} style={allergenPill(allergens.length === 0)}>ללא אלרגיות</button>
-                  {ALLERGEN_LIST.map(a => (
-                    <button key={a.key} onClick={() => toggleAllergen(a.key)} style={allergenPill(allergens.includes(a.key))}>{a.label}</button>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* Status segmented toggle */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", marginBottom: 8, padding: "0 4px" }}>
@@ -669,9 +664,14 @@ export function TableOverlay({
 
           {/* Free table */}
           {!isOccupied && (
-            <button onClick={() => onNewOrder(guestCount, allergens)} disabled={isOffline} style={{ padding: 17, borderRadius: 16, border: "none", background: isOffline ? "#ccc" : DARK_BTN, color: "#fff", fontSize: 16, fontWeight: 800, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isOffline ? 0.5 : 1 }}>
-              ✨ פתיחת שולחן והזמנה
-            </button>
+            <>
+              <button onClick={() => onNewOrder(guestCount, allergens)} disabled={isOffline} style={{ padding: 17, borderRadius: 16, border: "none", background: isOffline ? "#ccc" : DARK_BTN, color: "#fff", fontSize: 16, fontWeight: 800, cursor: isOffline ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isOffline ? 0.5 : 1 }}>
+                ✨ פתיחת שולחן והזמנה
+              </button>
+              {allergens.length === 0 && (
+                <div style={{ textAlign: "center", fontSize: 11, color: "#aaa", marginTop: 2 }}>אלרגיות יוגדרו בתוך ההזמנה</div>
+              )}
+            </>
           )}
         </div>
       </div>
