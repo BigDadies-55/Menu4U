@@ -4,7 +4,6 @@ import { T, btn, badge } from "@/lib/ui";
 
 interface TotpData {
   enabled: boolean;
-  secret?: string;
   qr?: string;
 }
 
@@ -22,12 +21,12 @@ export default function TotpSetupClient() {
   useEffect(() => { load(); }, []);
 
   async function enable() {
-    if (!data?.secret || code.length !== 6) { setMsg({ text: "יש להזין 6 ספרות", ok: false }); return; }
+    if (code.length !== 6) { setMsg({ text: "יש להזין 6 ספרות", ok: false }); return; }
     setLoading(true); setMsg(null);
     const res = await fetch("/api/admin/totp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret: data.secret, code }),
+      body: JSON.stringify({ code }),
     });
     const d = await res.json();
     if (res.ok) { setMsg({ text: "אימות דו-שלבי הופעל בהצלחה ✓", ok: true }); setCode(""); load(); }
@@ -77,16 +76,6 @@ export default function TotpSetupClient() {
             </div>
           )}
 
-          {data.secret && (
-            <div style={{
-              background: T.panel, border: `1px solid ${T.border}`,
-              borderRadius: T.rMd, padding: "10px 14px",
-              fontSize: T.fsm, color: T.muted, wordBreak: "break-all" as const,
-            }}>
-              <span style={{ color: T.sub }}>קוד ידני: </span>
-              <span style={{ fontFamily: T.fontMono, color: T.text }}>{data.secret}</span>
-            </div>
-          )}
 
           <div style={{ display: "flex", gap: 10 }}>
             <input

@@ -57,6 +57,7 @@ model User {
   failedLoginAttempts  Int       @default(0)
   lockedUntil          DateTime?
   totpSecret           String?
+  totpPendingSecret    String?
   totpEnabled          Boolean   @default(false)
   managerPin           String?
   status               String    @default("PENDING")

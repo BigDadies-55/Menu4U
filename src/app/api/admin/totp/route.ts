@@ -18,28 +18,38 @@ export async function GET() {
     return NextResponse.json({ enabled: true });
   }
 
-  // Generate a fresh temp secret for setup
+  // Generate a fresh temp secret — store server-side only, never expose to client
   const secret = createTotpSecret();
-  const uri    = buildTotpUri(user.email ?? "user", secret);
-  const qr     = await QRCode.toDataURL(uri);
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { totpPendingSecret: secret },
+  });
+  const uri = buildTotpUri(user.email ?? "user", secret);
+  const qr  = await QRCode.toDataURL(uri);
 
-  return NextResponse.json({ enabled: false, secret, qr });
+  return NextResponse.json({ enabled: false, qr }); // secret NOT returned
 }
 
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { secret, code } = await req.json();
-  if (!secret || !code) return NextResponse.json({ error: "secret and code required" }, { status: 400 });
+  const { code } = await req.json();
+  if (!code) return NextResponse.json({ error: "code required" }, { status: 400 });
 
-  if (!verifyTotpCode(secret, code)) {
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { totpPendingSecret: true },
+  });
+  if (!user?.totpPendingSecret) return NextResponse.json({ error: "לא נמצא secret — התחל מחדש" }, { status: 400 });
+
+  if (!verifyTotpCode(user.totpPendingSecret, code)) {
     return NextResponse.json({ error: "קוד שגוי — נסה שנית" }, { status: 400 });
   }
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { totpSecret: secret, totpEnabled: true },
+    data: { totpSecret: user.totpPendingSecret, totpPendingSecret: null, totpEnabled: true },
   });
 
   return NextResponse.json({ ok: true });
