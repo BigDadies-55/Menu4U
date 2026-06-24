@@ -17,10 +17,24 @@ export const metadata: Metadata = {
   title: "Menu4U",
   description: "מערכת ניהול תפריטים ומסעדות",
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "מלצר",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "application-name": "מלצר",
+  },
 };
 
 export const viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#1a1a2e",
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
