@@ -223,7 +223,7 @@ export function TableOverlay({
 
   // ── Overlay wrappers — opens FULL between the top bar (60px) and bottom bar (60px) ──
   const bgStyle: React.CSSProperties = { position: "fixed", top: 60, left: 0, right: 0, bottom: 60, zIndex: 60, background: "transparent" };
-  const panelStyle: React.CSSProperties = { position: "relative", background: "#f5f3ef", width: "100%", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" };
+  const panelStyle: React.CSSProperties = { position: "relative", background: "#f1f1f4", width: "100%", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" };
 
   return (
     <div style={bgStyle}>
@@ -265,11 +265,11 @@ export function TableOverlay({
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, padding: "4px 14px", borderRadius: 99, background: "#f0f7f3", color: "#1f5c3a", border: "1.5px solid #b3d9c4" }}>פנוי</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#888" }}>
-                <span>👥</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 99, padding: "6px 14px 6px 10px", boxShadow: "0 1px 4px rgba(0,0,0,.06)", direction: "rtl" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 12px", borderRadius: 99, background: "#e8f5ee", color: "#1f9d57" }}>פנוי</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "#555" }}>
                 <span>{seats} מקומות</span>
+                <span style={{ fontSize: 14 }}>👤</span>
               </div>
             </div>
           )}
