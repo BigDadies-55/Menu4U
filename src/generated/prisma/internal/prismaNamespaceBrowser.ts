@@ -61,6 +61,7 @@ export const ModelName = {
   VerificationToken: 'VerificationToken',
   RestaurantGroup: 'RestaurantGroup',
   Restaurant: 'Restaurant',
+  Payment: 'Payment',
   KitchenStation: 'KitchenStation',
   RestaurantUser: 'RestaurantUser',
   Menu: 'Menu',
@@ -281,6 +282,21 @@ export const RestaurantScalarFieldEnum = {
 } as const
 
 export type RestaurantScalarFieldEnum = (typeof RestaurantScalarFieldEnum)[keyof typeof RestaurantScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  restaurantId: 'restaurantId',
+  tableNumber: 'tableNumber',
+  amount: 'amount',
+  method: 'method',
+  orderIds: 'orderIds',
+  createdByUserId: 'createdByUserId',
+  createdByName: 'createdByName',
+  createdAt: 'createdAt'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
 
 
 export const KitchenStationScalarFieldEnum = {

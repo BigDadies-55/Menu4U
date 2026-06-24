@@ -92,6 +92,11 @@ export type RestaurantGroup = Prisma.RestaurantGroupModel
  */
 export type Restaurant = Prisma.RestaurantModel
 /**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel
+/**
  * Model KitchenStation
  * 
  */
