@@ -30,6 +30,7 @@ export async function GET(req: Request) {
           select: {
             id: true,
             name: true,
+            course: true,
             items: {
               where: { isActive: true },
               orderBy: { sortOrder: "asc" },

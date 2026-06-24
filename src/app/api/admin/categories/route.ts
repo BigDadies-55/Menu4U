@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   if (!session?.user || !isEditor(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { name, description, menuId, image, sortOrder, kitchenStationId } = await req.json();
+  const { name, description, menuId, image, sortOrder, kitchenStationId, course } = await req.json();
   if (!name || !menuId) {
     return NextResponse.json({ error: "Name and menuId are required" }, { status: 400 });
   }
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
   const category = await prisma.category.create({
     data: {
-      name, description: description || null, menuId, image: image || null, sortOrder: sortOrder ?? 0,
+      name, description: description || null, menuId, image: image || null, sortOrder: sortOrder ?? 0, course: course ?? 1,
       kitchenStationId: stationId,
       autoReady: station?.skipKitchen ?? false,
     },
