@@ -519,7 +519,25 @@ export function TableOverlay({
           {/* ════ FREE / RESERVED / INACTIVE ════ */}
           {!isOccupied && (
             <>
-              {/* Guests card */}
+              {/* 1. Allergens — first question, safety-critical */}
+              <div style={{ background: allergens.length > 0 ? "#fff8f6" : CARD, border: `1.5px solid ${allergens.length > 0 ? "#f5c4bc" : CARD_BD}`, borderRadius: 20, padding: "16px 20px", marginBottom: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", marginBottom: 12 }}>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: allergens.length > 0 ? "#8b2e22" : INK, display: "flex", alignItems: "center", gap: 7 }}>
+                    ⚠️ אלרגיות או בקשות מיוחדות?
+                  </span>
+                  {allergens.length > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, background: "#fdf2f0", color: "#c0392b", border: "1px solid #f5c4bc", borderRadius: 99, padding: "2px 10px" }}>{allergens.length} נבחרו</span>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, direction: "rtl" }}>
+                  <button onClick={() => setAllergens([])} style={allergenPill(allergens.length === 0)}>ללא אלרגיות</button>
+                  {ALLERGEN_LIST.map(a => (
+                    <button key={a.key} onClick={() => toggleAllergen(a.key)} style={allergenPill(allergens.includes(a.key))}>{a.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. Guests card */}
               <div style={{ background: CARD, border: `1px solid ${CARD_BD}`, borderRadius: 20, padding: "16px 20px", marginBottom: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl" }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: INK, display: "flex", alignItems: "center", gap: 8 }}>👥 כמות סועדים</span>
@@ -534,14 +552,6 @@ export function TableOverlay({
                 )}
               </div>
 
-              {/* Allergies — display only; editing happens inside OrderScreen */}
-              {allergens.length > 0 && (
-                <div style={{ background: "#fdf2f0", border: "1.5px solid #f5c4bc", borderRadius: 16, padding: "10px 16px", marginBottom: 14, direction: "rtl", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 13 }}>⚠️</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#8b2e22" }}>אלרגיות: {allergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}</span>
-                  <button onClick={() => setAllergens([])} title="נקה אלרגיות" style={{ marginRight: "auto", background: "none", border: "none", color: "#c0392b", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
-                </div>
-              )}
 
               {/* Status segmented toggle */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", direction: "rtl", marginBottom: 8, padding: "0 4px" }}>
