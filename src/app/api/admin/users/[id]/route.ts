@@ -45,7 +45,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (body.mustChangePassword !== undefined) updateData.mustChangePassword = body.mustChangePassword;
   if (body.name     !== undefined) updateData.name  = body.name  || null;
   if (body.phone    !== undefined) updateData.phone = body.phone || null;
-  if (body.email    !== undefined) updateData.email = body.email || null;
+
+  // Detect a real email change so we can require re-validation of the new address.
+  let emailChanged = false;
+  let newEmail: string | null = null;
+  if (body.email !== undefined) {
+    newEmail = (body.email as string)?.trim() || null;
+    const current = await prisma.user.findUnique({ where: { id }, select: { email: true } });
+    emailChanged = newEmail !== (current?.email ?? null);
+    if (emailChanged) {
+      updateData.email = newEmail;
+      // The new address is unverified until the user confirms the OTP.
+      updateData.emailVerified = null;
+    }
+  }
   if (body.username !== undefined) {
     const uname = (body.username as string).toLowerCase().trim();
     if (!/^[a-z0-9._-]{3,30}$/.test(uname))
@@ -67,12 +80,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   });
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_USER", entity: "user", entityId: id, entityName: user.email ?? user.username, meta: { changed: Object.keys(updateData) }, ip: getIp(req) });
 
-  if (body.email) {
+  // On every email change, issue a fresh validation OTP to the new address.
+  if (emailChanged && newEmail) {
     const otp = generateOtp();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
-    await prisma.verificationToken.deleteMany({ where: { identifier: body.email } });
-    await prisma.verificationToken.create({ data: { identifier: body.email, token: hashOtp(otp), expires } });
-    try { await sendOtpEmail(body.email, otp, user.name); } catch (err) { console.error("[otp] email change send failed:", err); }
+    await prisma.verificationToken.deleteMany({ where: { identifier: newEmail } });
+    await prisma.verificationToken.create({ data: { identifier: newEmail, token: hashOtp(otp), expires } });
+    // Fire-and-forget: don't block the response on the (possibly slow) SMTP call.
+    sendOtpEmail(newEmail, otp, user.name).catch(err => console.error("[otp] email change send failed:", err));
   }
 
   return NextResponse.json(user);
