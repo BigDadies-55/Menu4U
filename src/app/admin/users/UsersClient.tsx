@@ -325,7 +325,6 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     return                            { label: "מאומת ✓",           color: T.green   };
   }
 
-  function shortId(id: string) { return "#" + id.slice(-6).toUpperCase(); }
 
   const FieldLabel = ({ children }: { children: React.ReactNode }) => (
     <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
@@ -477,6 +476,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                       </div>
                     </td>
 
+                    {/* Username */}
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
+                      <span dir="ltr" style={{ display: "inline-block", fontSize: 13, fontWeight: 600, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>
+                        @{user.username}
+                      </span>
+                    </td>
+
                     {/* Role badge */}
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
                       <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "4px 12px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
@@ -499,15 +505,16 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                       </div>
                     </td>
 
-                    {/* Status */}
-                    <td style={{ ...tdBase, fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
+                    {/* Verification */}
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20, fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
                       {status.label}
                     </td>
 
-                    {/* ID + date */}
-                    <td style={tdBase}>
-                      <div style={{ fontSize: 11, color: T.muted, fontFamily: "monospace", lineHeight: 1.3 }}>{shortId(user.id)}</div>
-                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2, lineHeight: 1.3 }}>{formatDate(user.createdAt)}</div>
+                    {/* Last login */}
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
+                      <span style={{ fontSize: 12, color: T.muted, whiteSpace: "nowrap" }}>
+                        {user.lastLoginAt ? formatDate(user.lastLoginAt) : "—"}
+                      </span>
                     </td>
 
                     {/* 3-dot menu */}
@@ -517,7 +524,16 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
                           const menuW = 210;
                           const left  = rect.right + menuW > window.innerWidth ? rect.left - menuW : rect.left;
-                          setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
+                          // Estimate menu height so it can flip upward near the viewport bottom.
+                          const itemH = 46;
+                          let items = 4; // restaurants, reset pw, force pw, delete
+                          if (["SUPER_ADMIN","ADMIN"].includes(currentUserRole)) items++;
+                          if (!user.emailVerified && user.email) items++;
+                          const menuH = items * itemH + 12;
+                          const top = rect.bottom + 6 + menuH > window.innerHeight
+                            ? Math.max(8, rect.top - 6 - menuH)
+                            : rect.bottom + 6;
+                          setMenuPos({ top, left: Math.max(8, left) });
                           setOpenMenuId(openMenuId === user.id ? null : user.id);
                         }}
                         style={{ background: T.raised, border: `1px solid ${T.borderSub}`, cursor: "pointer", color: T.sub, fontSize: 18, borderRadius: 8, lineHeight: 1, fontFamily: "inherit", transition: "0.15s", width: 34, height: 34, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
@@ -796,7 +812,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999,
             background: T.panel, border: `1px solid ${T.border}`,
             borderRadius: 16, backdropFilter: "blur(20px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5)", width: 210, overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)", width: 210,
+            maxHeight: "calc(100vh - 16px)", overflowY: "auto",
           }}>
             {["SUPER_ADMIN","ADMIN"].includes(currentUserRole) && (
               <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />

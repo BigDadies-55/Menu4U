@@ -256,6 +256,80 @@ export async function GET(req: Request) {
         CONSTRAINT "WaiterStation_restaurantId_userId_key" UNIQUE ("restaurantId", "userId")
       );
     `);
+    // ── User: security / TOTP / onboarding columns ──
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "User"
+        ADD COLUMN IF NOT EXISTS "mustChangePassword"  BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS "passwordChangedAt"   TIMESTAMP(3),
+        ADD COLUMN IF NOT EXISTS "lastActivityAt"      TIMESTAMP(3),
+        ADD COLUMN IF NOT EXISTS "lastLoginAt"         TIMESTAMP(3),
+        ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS "lockedUntil"         TIMESTAMP(3),
+        ADD COLUMN IF NOT EXISTS "totpSecret"          TEXT,
+        ADD COLUMN IF NOT EXISTS "totpPendingSecret"   TEXT,
+        ADD COLUMN IF NOT EXISTS "totpEnabled"         BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS "managerPin"          TEXT,
+        ADD COLUMN IF NOT EXISTS "status"              TEXT NOT NULL DEFAULT 'PENDING',
+        ADD COLUMN IF NOT EXISTS "username"            TEXT,
+        ADD COLUMN IF NOT EXISTS "firstName"           TEXT,
+        ADD COLUMN IF NOT EXISTS "lastName"            TEXT,
+        ADD COLUMN IF NOT EXISTS "phone"               TEXT;
+    `);
+    // ── InviteStatus enum + UserInvite table ──
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'InviteStatus') THEN
+          CREATE TYPE "InviteStatus" AS ENUM ('PENDING', 'COMPLETED', 'EXPIRED', 'CANCELLED');
+        END IF;
+      END $$;
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "UserInvite" (
+        "id"             TEXT         NOT NULL,
+        "token"          TEXT         NOT NULL,
+        "firstName"      TEXT         NOT NULL,
+        "lastName"       TEXT         NOT NULL,
+        "email"          TEXT,
+        "phone"          TEXT,
+        "role"           "Role"       NOT NULL,
+        "restaurantIds"  TEXT[]       NOT NULL DEFAULT '{}',
+        "invitedById"    TEXT         NOT NULL,
+        "status"         "InviteStatus" NOT NULL DEFAULT 'PENDING',
+        "expiresAt"      TIMESTAMP(3) NOT NULL,
+        "reminderSentAt" TIMESTAMP(3),
+        "createdAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "UserInvite_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "UserInvite_token_key" UNIQUE ("token"),
+        CONSTRAINT "UserInvite_invitedById_fkey"
+          FOREIGN KEY ("invitedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+      );
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "UserInvite_token_idx"  ON "UserInvite"("token");`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "UserInvite_status_idx" ON "UserInvite"("status");`);
+    // ── OtpCode table ──
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "OtpCode" (
+        "id"         TEXT         NOT NULL,
+        "identifier" TEXT         NOT NULL,
+        "channel"    TEXT         NOT NULL,
+        "code"       TEXT         NOT NULL,
+        "expires"    TIMESTAMP(3) NOT NULL,
+        "attempts"   INT          NOT NULL DEFAULT 0,
+        CONSTRAINT "OtpCode_pkey" PRIMARY KEY ("id")
+      );
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "OtpCode_identifier_idx" ON "OtpCode"("identifier");`);
+    // ── BARTENDER role ──
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'BARTENDER' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'Role')) THEN
+          ALTER TYPE "Role" ADD VALUE 'BARTENDER';
+        END IF;
+      END $$;
+    `);
+    // ── Category course ──
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "course" INTEGER NOT NULL DEFAULT 1;`);
+
     await logAudit({ action: "RUN_MIGRATION", entity: "system" });
     return NextResponse.json({ success: true, message: "Migrations applied" });
   } catch (err) {

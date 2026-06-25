@@ -14,6 +14,8 @@ interface Props {
   hideTrigger?: boolean;
   /** Each time this number changes, the attendance panel opens. */
   openSignal?: number;
+  /** Called when a record (IN or OUT) is successfully logged. */
+  onRecord?: (type: "IN" | "OUT") => void;
 }
 
 const G_CARD     = "rgba(255,255,255,0.06)";
@@ -24,7 +26,7 @@ function fmtT(ts: string) {
   return new Date(ts).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
-export default function AttendanceWidget({ restaurantId, userId, hideTrigger = false, openSignal }: Props) {
+export default function AttendanceWidget({ restaurantId, userId, hideTrigger = false, openSignal, onRecord }: Props) {
   const moduleOn = useModuleEnabled(restaurantId, "attendance");
   const [records,    setRecords]    = useState<AttRec[]>([]);
   const [loading,    setLoading]    = useState(false);
@@ -77,6 +79,7 @@ export default function AttendanceWidget({ restaurantId, userId, hideTrigger = f
       if (res.ok) {
         const data = await res.json();
         setRecords(prev => [...prev, { id: data.id, type, timestamp: data.timestamp }]);
+        onRecord?.(type);
       }
     } finally { setLoading(false); setNote(""); setNoteOpen(null); setRoleCode(""); }
   }

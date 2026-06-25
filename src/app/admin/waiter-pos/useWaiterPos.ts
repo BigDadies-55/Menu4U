@@ -108,6 +108,8 @@ export function fmtAgo(minutes: number): string {
 }
 
 const LS_REST_KEY = "menu4u_active_restaurant";
+const LS_ROTATION_KEY = "menu4u_layout_rotation";
+const LS_VIEWMODE_KEY = "menu4u_waiter_viewmode";
 
 // ── Hook ──────────────────────────────────────────────────────────────
 export function useWaiterPos({
@@ -143,13 +145,28 @@ export function useWaiterPos({
   const [isMobile, setIsMobile]               = useState(false);
   const [isFullscreen, setIsFullscreen]       = useState(false);
   const [showFsBanner, setShowFsBanner]       = useState(false);
-  const [viewMode, setViewMode]               = useState<"grid" | "floor">("floor");
+  const [viewMode, setViewMode]               = useState<"grid" | "floor">(() => {
+    if (typeof window !== "undefined") {
+      const v = localStorage.getItem(LS_VIEWMODE_KEY);
+      if (v === "grid" || v === "floor") return v;
+    }
+    return "floor";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem(LS_VIEWMODE_KEY, viewMode);
+  }, [viewMode]);
   const [layout, setLayout]                   = useState<LayoutV2 | null>(null);
   const [roomIdx, setRoomIdx]                 = useState(0);
   const [refreshing, setRefreshing]           = useState(false);
   const [statusFilter, setStatusFilter]       = useState<Set<string>>(new Set());
   const [myTableNums, setMyTableNums]         = useState<Set<string> | null>(null);
-  const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(0);
+  const [layoutRotation, setLayoutRotation]   = useState<0 | 90>(() => {
+    if (typeof window !== "undefined" && localStorage.getItem(LS_ROTATION_KEY) === "90") return 90;
+    return 0;
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem(LS_ROTATION_KEY, String(layoutRotation));
+  }, [layoutRotation]);
   const [notifications, setNotifications]     = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen]             = useState(false);
   const prevReadyRef = useRef<Record<string, number>>({});
