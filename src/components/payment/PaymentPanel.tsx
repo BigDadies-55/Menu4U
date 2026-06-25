@@ -54,6 +54,7 @@ export function PaymentPanel({
   const [customTip, setCustomTip] = useState("");
   const [payMethod, setPayMethod] = useState<"cash" | "card" | "app">("card");
   const [paying, setPaying] = useState(false);
+  const [noTipPrompt, setNoTipPrompt] = useState(false);
 
   // ── Manager-approved actions (discount / on-house / price override) ──
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
@@ -375,6 +376,12 @@ export function PaymentPanel({
   }
 
   async function handleConfirm() {
+    // Warn before closing a bill with no tip — let the user go back or continue.
+    if (tipAmount <= 0) { setNoTipPrompt(true); return; }
+    await doConfirm();
+  }
+  async function doConfirm() {
+    setNoTipPrompt(false);
     setPaying(true);
     await onConfirm();
     setPaying(false);
@@ -981,6 +988,21 @@ export function PaymentPanel({
           </div>
         </div>
       </div>
+
+      {/* ── No-tip confirmation ── */}
+      {noTipPrompt && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, direction: "rtl" }}>
+          <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 360, padding: 28, textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>💰</div>
+            <div style={{ fontSize: 19, fontWeight: 800, color: T.text, marginBottom: 8 }}>החשבון לא כולל טיפ</div>
+            <div style={{ fontSize: 13, color: T.muted, marginBottom: 22 }}>לא נוסף טיפ לחשבון. להמשיך בכל זאת?</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" onClick={() => setNoTipPrompt(false)} style={{ flex: 1, padding: "12px", borderRadius: 12, border: `1px solid #e5e7eb`, background: "#fff", color: T.muted, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>חזור</button>
+              <button type="button" onClick={doConfirm} disabled={paying} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "none", background: T.gold, color: "#fff", fontWeight: 800, fontSize: 15, cursor: paying ? "wait" : "pointer", fontFamily: "inherit" }}>{paying ? "מעבד..." : "המשך"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
