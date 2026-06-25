@@ -170,6 +170,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     { icon: viewMode === "floor" ? "⊞" : "🗺️", label: viewMode === "floor" ? "תצוגת כרטיסים" : "תצוגת מפה", onClick: () => runMenu(() => setViewMode(viewMode === "floor" ? "grid" : "floor")) },
     { icon: isFullscreen ? "🗗" : "⛶", label: isFullscreen ? "צא ממסך מלא" : "מסך מלא", onClick: () => runMenu(toggleFullscreen) },
     { icon: "🔐", label: "החלפת סיסמה", onClick: () => runMenu(() => setChangePwOpen(true)) },
+    { icon: "📲", label: "הורד אפליקציה (Android)", onClick: () => { setMenuOpen(false); window.open("/downloads/waiter.apk", "_blank"); } },
     { icon: "⬅", label: "יציאה", danger: true, onClick: () => runMenu(() => setLogoutPrompt(true)) },
   ];
 
