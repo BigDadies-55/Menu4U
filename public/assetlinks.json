@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tech4bites.waiter",
+      "sha256_cert_fingerprints": [
+        "29:8C:6C:18:AE:DA:0B:43:12:30:F2:F2:CC:99:31:B7:EE:0A:EA:A6:55:7C:B7:25:5B:99:C0:9D:91:84:9E:40"
+      ]
+    }
+  }
+]
