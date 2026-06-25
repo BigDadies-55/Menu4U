@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { OrderPanel, CartItem, CartItemModifier } from "./OrderPanel";
+import { useRouter } from "next/navigation";
+import type { CartItemModifier } from "./OrderPanel";
 import type { OrderDetail, OrderItemDetail } from "./TableOverlay";
 import { ALLERGEN_LIST } from "@/lib/allergens";
+import { ManagerPinModal } from "./ManagerPinModal";
+import Receipt from "./Receipt";
 import { idbSet, idbGet } from "@/lib/waiter-db";
 
 type ModifierOption = { id: string; label: string; priceAdd: number };
@@ -13,137 +16,153 @@ type MenuItem = {
   id: string; name: string; description: string | null;
   price: number; image: string | null; allergens: string[];
   isVegetarian: boolean; isVegan: boolean; isGlutenFree: boolean;
+  course?: number;
   modifierGroups: ModifierGroup[];
 };
-type MenuCategory = { id: string; name: string; items: MenuItem[] };
+type MenuCategory = { id: string; name: string; course: number; items: MenuItem[] };
+
+type CartItem = {
+  key: string; itemId: string; name: string; price: number;
+  quantity: number; course: number; notes: string; allergens: string[]; modifiers: CartItemModifier[];
+};
 
 type Props = {
   tableNum: string;
-  orderId: string | null;         // null = new order (free table)
+  orderId: string | null;
   guestCount: number;
   tableAllergens: string[];
   restaurantId: string;
   existingOrder: OrderDetail | null;
+  isOffline?: boolean;
+  enqueueOffline?: (payload: object) => string;
+  areaName?: string;
+  shiftName?: string;
+  waiterName?: string;
+  restaurantName?: string;
   onClose: () => void;
   onSuccess: (newOrderId?: string) => void;
+  onQueued?: () => void;
 };
 
-export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, restaurantId, existingOrder, onClose, onSuccess }: Props) {
-  const [categories, setCategories]     = useState<MenuCategory[]>([]);
-  const [loadingMenu, setLoadingMenu]   = useState(true);
-  const [menuError, setMenuError]       = useState<string | null>(null);
-  const [activeCat, setActiveCat]       = useState<string>("");
-  const [search, setSearch]             = useState("");
-  const [activeCourse, setActiveCourse] = useState(1);
-  const [minCourse] = useState(3);
-  const [cart, setCart]                 = useState<CartItem[]>([]);
-  const [submitting, setSubmitting]     = useState(false);
-  const [order, setOrder]               = useState<OrderDetail | null>(existingOrder);
-  const [firingItem, setFiringItem]     = useState<string | null>(null);
-  const [isMobile, setIsMobile]         = useState(false);
-  const [cartOpen, setCartOpen]         = useState(false);
+const POPULAR_CAT_ID = "__popular__";
+// Course → single-letter badge (first letter of the Hebrew course name).
+const COURSE_LETTER: Record<number, string> = { 1: "ר", 2: "ע", 3: "ק" };
+const courseLetter = (c: number) => COURSE_LETTER[c] ?? String(c);
+
+export function OrderScreen({
+  tableNum, orderId, guestCount, tableAllergens, restaurantId, existingOrder,
+  isOffline = false, enqueueOffline, areaName, shiftName, waiterName, restaurantName,
+  onClose, onSuccess, onQueued,
+}: Props) {
+  const router = useRouter();
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [loadingMenu, setLoadingMenu] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const [activeCat, setActiveCat] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [order, setOrder] = useState<OrderDetail | null>(existingOrder);
   const [modifierItem, setModifierItem] = useState<MenuItem | null>(null);
-  const [modifierSel, setModifierSel]   = useState<Record<string, string[]>>({});
+  const [modifierSel, setModifierSel] = useState<Record<string, string[]>>({});
+  const [covers, setCovers] = useState(guestCount || 1);
+  const [allergens, setAllergens] = useState<string[]>(tableAllergens);
+  const [coversOpen, setCoversOpen] = useState(false);
+  const [allergensOpen, setAllergensOpen] = useState(false);
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
+  const [firingCourse, setFiringCourse] = useState<number | null>(null);
+  const [voidItem, setVoidItem] = useState<{ id: string; name: string } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
 
   useEffect(() => {
-    function check() { setIsMobile(window.innerWidth < 640); }
+    const check = () => setIsMobile(window.innerWidth < 768);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const POPULAR_CAT_ID = "__popular__";
-
-  // Load popular items + inject as first category
+  // ── Load popular + menu (IDB fallback offline) ──
   useEffect(() => {
     fetch(`/api/admin/waiter-pos/popular?restaurantId=${restaurantId}`)
       .then(r => r.ok ? r.json() : { items: [] })
       .then(d => {
         if ((d.items ?? []).length > 0) {
-          setCategories(prev => {
-            const alreadyHas = prev.some(c => c.id === POPULAR_CAT_ID);
-            if (alreadyHas) return prev;
-            const popularCat: MenuCategory = { id: POPULAR_CAT_ID, name: "⭐ פופולרי", items: d.items };
-            return [popularCat, ...prev];
-          });
+          setCategories(prev => prev.some(c => c.id === POPULAR_CAT_ID) ? prev : [{ id: POPULAR_CAT_ID, name: "⭐ פופולרי", items: d.items }, ...prev]);
         }
-      });
+      }).catch(() => {});
   }, [restaurantId]);
 
-  // Load menu (with IDB fallback for offline)
   useEffect(() => {
     fetch(`/api/admin/waiter-pos/menu?restaurantId=${restaurantId}`)
       .then(async r => {
         const text = await r.text();
         let d: Record<string, unknown>;
-        try { d = JSON.parse(text); } catch { setMenuError(`שגיאה ${r.status} (לא JSON) — בדוק console`); console.error("[menu fetch]", r.status, text.slice(0, 300)); return; }
-        if (!r.ok) { setMenuError(`שגיאה ${r.status}: ${String(d?.error ?? "לא ידוע")}`); return; }
-        const cats: MenuCategory[] = (d.categories as MenuCategory[]) ?? [];
-        setCategories(cats);
-        if (cats.length > 0) setActiveCat(cats[0].id);
+        try { d = JSON.parse(text); } catch { setMenuError(`שגיאה ${r.status}`); return; }
+        if (!r.ok) { setMenuError(`שגיאה ${r.status}: ${String(d?.error ?? "")}`); return; }
+        const cats = (d.categories as MenuCategory[]) ?? [];
+        setCategories(prev => {
+          const pop = prev.filter(c => c.id === POPULAR_CAT_ID);
+          return [...pop, ...cats];
+        });
+        if (cats.length > 0) setActiveCat(a => a || (categoriesHasPopular() ? POPULAR_CAT_ID : cats[0].id));
         else setMenuError("אין קטגוריות פעילות בתפריט");
-        // Persist to IDB
         idbSet("menu", restaurantId, cats).catch(() => {});
       })
       .catch(async () => {
-        // Offline fallback
         const cached = await idbGet<MenuCategory[]>("menu", restaurantId).catch(() => undefined);
-        if (cached?.length) {
-          setCategories(cached);
-          setActiveCat(cached[0].id);
-          setMenuError("");
-        } else {
-          setMenuError("אין חיבור לאינטרנט ואין תפריט שמור");
-        }
+        if (cached?.length) { setCategories(cached); setActiveCat(cached[0].id); setMenuError(""); }
+        else setMenuError("אין חיבור ואין תפריט שמור");
       })
       .finally(() => setLoadingMenu(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId]);
 
-  // Refresh order after fire actions
-  const refreshOrder = useCallback(async () => {
-    if (!orderId) return;
-    const r = await fetch(`/api/admin/orders/${orderId}`);
-    if (r.ok) setOrder(await r.json());
+  function categoriesHasPopular() { return categories.some(c => c.id === POPULAR_CAT_ID); }
+
+  useEffect(() => { if (!activeCat && categories.length > 0) setActiveCat(categories[0].id); }, [categories, activeCat]);
+
+  const refreshOrder = useCallback(async (id?: string | null) => {
+    const oid = id ?? orderId;
+    if (!oid) return null;
+    const r = await fetch(`/api/admin/orders/${oid}`);
+    if (r.ok) { const o = await r.json(); setOrder(o); return o as OrderDetail; }
+    return null;
   }, [orderId]);
 
-  // Derived: max course in existing order
-  const maxCourse = Math.max(minCourse, ...(order?.items ?? []).map(i => i.course), activeCourse);
-  const toRoman = (n: number) => (["I","II","III","IV","V","VI","VII","VIII","IX","X"][n-1] ?? String(n));
-
-  // Cart helpers
+  // ── Cart helpers ──
   function addItem(item: MenuItem) {
-    if (item.modifierGroups?.length > 0) {
-      setModifierItem(item);
-      setModifierSel({});
-      return;
-    }
+    if (item.modifierGroups?.length > 0) { setModifierItem(item); setModifierSel({}); return; }
     pushToCart(item, []);
   }
-
   function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
-    const extraPrice = modifiers.reduce((s, m) => s + m.priceAdd, 0);
-    const key = `${item.id}-c${activeCourse}-${Date.now()}`;
-    setCart(p => [...p, { key, itemId: item.id, name: item.name, price: Number(item.price) + extraPrice, quantity: 1, course: activeCourse, notes: "", allergens: item.allergens ?? [], modifiers }]);
+    const extra = modifiers.reduce((s, m) => s + m.priceAdd, 0);
+    const course = categories.find(c => c.items.some(i => i.id === item.id))?.course ?? item.course ?? 1;
+    const sig = modifiers.map(m => m.label).sort().join("|");
+    setCart(p => {
+      // Re-ordering the same dish (identical modifiers/course) bumps the quantity
+      // of the existing cart line instead of adding a new row.
+      const idx = p.findIndex(ci => ci.itemId === item.id && ci.course === course && ci.modifiers.map(m => m.label).sort().join("|") === sig);
+      if (idx >= 0) {
+        const next = [...p];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      const key = `${item.id}-c${course}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      return [...p, { key, itemId: item.id, name: item.name, price: Number(item.price) + extra, quantity: 1, course, notes: "", allergens: item.allergens ?? [], modifiers }];
+    });
   }
-
   function confirmModifiers() {
     if (!modifierItem) return;
+    for (const g of modifierItem.modifierGroups) if (g.required && (modifierSel[g.id] ?? []).length === 0) return;
     const mods: CartItemModifier[] = [];
-    for (const group of modifierItem.modifierGroups) {
-      const selected = modifierSel[group.id] ?? [];
-      for (const optId of selected) {
-        const opt = group.options.find(o => o.id === optId);
-        if (opt) mods.push({ groupName: group.name, label: opt.label, priceAdd: opt.priceAdd });
-      }
+    for (const g of modifierItem.modifierGroups) for (const optId of (modifierSel[g.id] ?? [])) {
+      const opt = g.options.find(o => o.id === optId); if (opt) mods.push({ groupName: g.name, label: opt.label, priceAdd: opt.priceAdd });
     }
-    // Validate required groups
-    for (const group of modifierItem.modifierGroups) {
-      if (group.required && (modifierSel[group.id] ?? []).length === 0) return;
-    }
-    pushToCart(modifierItem, mods);
-    setModifierItem(null);
+    pushToCart(modifierItem, mods); setModifierItem(null);
   }
-
   function toggleModOption(groupId: string, optId: string, maxSelect: number) {
     setModifierSel(prev => {
       const cur = prev[groupId] ?? [];
@@ -153,310 +172,390 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
       return { ...prev, [groupId]: [...cur, optId] };
     });
   }
-
   function changeQty(key: string, qty: number) {
     if (qty <= 0) setCart(p => p.filter(i => i.key !== key));
     else setCart(p => p.map(i => i.key === key ? { ...i, quantity: qty } : i));
   }
+  function changeNotes(key: string, notes: string) { setCart(p => p.map(i => i.key === key ? { ...i, notes } : i)); }
+  function cartQtyForItem(itemId: string) { return cart.filter(i => i.itemId === itemId).reduce((s, i) => s + i.quantity, 0); }
 
-  function changeNotes(key: string, notes: string) {
-    setCart(p => p.map(i => i.key === key ? { ...i, notes } : i));
+  const toggleAllergen = (k: string) => setAllergens(a => a.includes(k) ? a.filter(x => x !== k) : [...a, k]);
+  const hasAllergy = (item: MenuItem) => (item.allergens ?? []).some(a => allergens.includes(a));
+
+  // ── Save cart → returns order id (or null) ──
+  async function submitCart(): Promise<string | null> {
+    if (cart.length === 0) return orderId;
+    const items = cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers }));
+    if (orderId) {
+      await fetch(`/api/admin/orders/${orderId}/add-items`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, tableAllergens: allergens }) });
+      setCart([]);
+      return orderId;
+    }
+    const payload = { restaurantId, tableNumber: tableNum, coversCount: covers, tableAllergens: allergens, items };
+    if (isOffline && enqueueOffline) { enqueueOffline(payload); onQueued?.(); return null; }
+    const r = await fetch("/api/admin/orders/waiter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const newOrder = await r.json();
+    setCart([]);
+    return newOrder?.id ?? null;
   }
 
-  function cartQtyForItem(itemId: string) {
-    return cart.filter(i => i.itemId === itemId).reduce((s, i) => s + i.quantity, 0);
-  }
-
-  // Items added to a different course — hide them from the grid
-  const itemIdsInOtherCourse = new Set(
-    cart.filter(i => i.course !== activeCourse).map(i => i.itemId)
-  );
-
-  // Filter items by search + allergy
-  const activeCategory = categories.find(c => c.id === activeCat);
-  const filteredItems = (activeCategory?.items ?? []).filter(item => {
-    if (itemIdsInOtherCourse.has(item.id)) return false;
-    if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
-
-  // Fire individual item
-  async function fireItem(orderItemId: string) {
-    if (!orderId) return;
-    setFiringItem(orderItemId);
-    await fetch(`/api/admin/orders/${orderId}/items/${orderItemId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "advance" }),
-    });
-    await refreshOrder();
-    setFiringItem(null);
-  }
-
-  // Fire course
-  async function fireCourse(course: number) {
-    if (!orderId) return;
-    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ course }),
-    });
-    await refreshOrder();
-  }
-
-  // Submit
-  async function handleSubmit() {
-    if (cart.length === 0) return;
+  // "אשר ושלח" — save the cart; skip release modal if no held courses.
+  async function handleRelease() {
+    if (submitting) return;
     setSubmitting(true);
     try {
-      if (orderId) {
-        // Add to existing order
-        await fetch(`/api/admin/orders/${orderId}/add-items`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers })),
-            tableAllergens,
-          }),
-        });
-        onSuccess();
-      } else {
-        // Create new order
-        const r = await fetch("/api/admin/orders/waiter", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            restaurantId,
-            tableNumber: tableNum,
-            coversCount: guestCount,
-            tableAllergens,
-            items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers })),
-          }),
-        });
-        const newOrder = await r.json();
-        onSuccess(newOrder?.id);
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      const oid = await submitCart();
+      if (!oid) return; // offline queued
+      await refreshOrder(oid);
+      // Skip release modal if nothing is held — finish immediately
+      const hasHeld = (order?.items ?? []).some(i => i.heldUntilFired && !i.firedAt && !i.voidedAt && i.itemStatus !== "CANCELLED");
+      if (hasHeld) { setReleaseOpen(true); }
+      else { onSuccess(oid); }
+    } finally { setSubmitting(false); }
   }
 
-  const hasAllergy = (item: MenuItem) => (item.allergens ?? []).some(a => tableAllergens.includes(a));
-  const allergyLabel = (item: MenuItem) =>
-    (item.allergens ?? []).filter(a => tableAllergens.includes(a)).map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ");
+  async function fireCourse(course: number) {
+    if (!order) return;
+    setFiringCourse(course);
+    await fetch(`/api/admin/orders/${order.id}/fire-course`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ course }) });
+    await refreshOrder(order.id);
+    setFiringCourse(null);
+  }
+
+  async function doVoid(token: string) {
+    if (!voidItem || !order) return;
+    setActionLoading(true);
+    await fetch(`/api/admin/orders/${order.id}/items/${voidItem.id}/void`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ managerToken: token }) });
+    setActionLoading(false); setVoidItem(null);
+    await refreshOrder(order.id);
+  }
+
+  function goPayment() {
+    router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1&returnTo=/admin/waiter-pos`);
+  }
+
+  // ── Derived ──
+  const activeCategory = categories.find(c => c.id === activeCat);
+  const filteredItems = (activeCategory?.items ?? []).filter(item => !search || item.name.toLowerCase().includes(search.toLowerCase()));
+  const existingItems = (order?.items ?? []).filter(i => !i.voidedAt);
+  const existingTotal = existingItems.reduce((s, i) => s + (i.isComped ? 0 : i.price * i.quantity), 0);
+  const newTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const total = existingTotal + newTotal;
+  const avgPerDiner = covers > 0 ? total / covers : 0;
+  const courseNums = Array.from(new Set((order?.items ?? []).filter(i => !i.voidedAt).map(i => i.course))).sort();
+
+  // ── Styles ──
+  const T = { bar: "#171a23", barLine: "rgba(255,255,255,0.08)", gold: "#d4a017", goldGrad: "linear-gradient(135deg,#D97706,#F59E0B)" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(10,10,18,0.98)", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0c0c12", display: "flex", flexDirection: "column", fontFamily: "'Heebo', sans-serif", direction: "rtl" }}>
 
-      {/* Top bar */}
-      <div style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.1)", height: 56, padding: "0 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(12px)" }}>
-        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#fff", fontFamily: "inherit" }}>← חזור</button>
-        <span style={{ fontSize: 15, fontWeight: 900, flex: 1, color: "#ffffff" }}>שולחן {tableNum}{orderId ? ` · הזמנה #${order?.orderNumber}` : " · הזמנה חדשה"}</span>
-        {tableAllergens.length > 0 && (
-          <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)", color: "#FCA5A5", display: "flex", alignItems: "center", gap: 3 }}>
-            ⚠️ {tableAllergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}
-          </span>
-        )}
-      </div>
-
-      {/* Category bar */}
-      <div style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "8px 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 7, overflowX: "auto", backdropFilter: "blur(8px)" }}>
-        {categories.map(c => (
-          <button key={c.id} onClick={() => setActiveCat(c.id)} style={{ padding: "6px 16px", borderRadius: 99, border: activeCat === c.id ? "none" : "1px solid rgba(255,255,255,0.12)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit", background: activeCat === c.id ? "linear-gradient(135deg,#D97706,#F59E0B)" : "rgba(255,255,255,0.07)", color: activeCat === c.id ? "#fff" : "rgba(255,255,255,0.7)", transition: "all .12s" }}>
-            {c.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Body */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-
-        {/* Menu column */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Search + course selector */}
-          <div style={{ padding: "9px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש מנה..." style={{ width: "60%", flexShrink: 0, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "8px 14px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#fff" }} />
-            {/* Course selector */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.38)" }}>קורס:</span>
-              {Array.from({ length: maxCourse }, (_, i) => i + 1).map(c => (
-                <button key={c} onClick={() => setActiveCourse(c)} style={{ minWidth: 28, height: 28, padding: "0 7px", borderRadius: 8, border: "1.5px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: activeCourse === c ? "linear-gradient(135deg,#D97706,#F59E0B)" : "rgba(255,255,255,0.07)", color: activeCourse === c ? "#fff" : "rgba(255,255,255,0.65)", borderColor: activeCourse === c ? "transparent" : "rgba(255,255,255,0.1)", transition: "all .12s" }}>
-                  {toRoman(c)}
-                </button>
-              ))}
-              <button onClick={() => setActiveCourse(maxCourse + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: "1.5px dashed rgba(255,255,255,0.2)", fontSize: 14, fontWeight: 700, cursor: "pointer", background: "transparent", color: "rgba(255,255,255,0.38)", fontFamily: "inherit" }}>+</button>
-            </div>
+      {/* ══ TOP BAR — full-bleed, equal spacing between cells ══ */}
+      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: 64, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
+        <button onClick={onClose} title="חזרה" style={{ width: 62, height: "100%", border: "none", background: T.gold, color: "#fff", fontSize: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 22px" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>הזמנה</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: T.gold }}>#{order?.orderNumber ?? "—"}</div>
           </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>אזור ישיבה</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{areaName ?? `שולחן ${tableNum}`}</div>
+          </div>
+          <div style={{ textAlign: "center", opacity: avgPerDiner > 60 ? 1 : 0.35 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>ממוצע לסועד {avgPerDiner > 60 ? "😊" : ""}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: avgPerDiner > 60 ? "#34d399" : "rgba(255,255,255,0.6)" }}>₪{avgPerDiner.toFixed(0)}</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>סועדים</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>👤 {covers}</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: T.gold }}>{shiftName ?? "משמרת"}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>{waiterName ?? ""}</div>
+          </div>
+        </div>
+      </div>
 
-          {/* Items grid */}
-          <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 9, alignContent: "start" }}>
-            {loadingMenu ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "rgba(255,255,255,0.38)", padding: 30, fontSize: 13 }}>טוען תפריט...</div>
-            ) : menuError ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 30 }}>
-                <div style={{ fontSize: 13, color: "#F87171", fontWeight: 700, marginBottom: 8 }}>⚠️ {menuError}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)" }}>restaurantId: {restaurantId}</div>
-              </div>
-            ) : filteredItems.map(item => {
-              const qty    = cartQtyForItem(item.id);
-              const warn   = hasAllergy(item);
-              const wLabel = allergyLabel(item);
-              const safe   = tableAllergens.length > 0 && !warn;
-              // find the last cart entry for this item (to remove one at a time)
-              const lastKey = [...cart].reverse().find(i => i.itemId === item.id)?.key;
-              return (
-                <div key={item.id} onClick={() => addItem(item)} style={{ background: "rgba(255,255,255,0.06)", border: `1.5px solid ${qty > 0 ? "#D97706" : "rgba(255,255,255,0.1)"}`, borderRadius: 16, cursor: "pointer", position: "relative", transition: "transform .1s, box-shadow .1s", boxShadow: qty > 0 ? "0 0 0 1px rgba(217,119,6,0.3), 0 4px 16px rgba(0,0,0,0.3)" : "none" }}>
-                  {/* quantity badge (left) */}
-                  {qty > 0 && (
-                    <div style={{ position: "absolute", top: 6, left: 6, background: "#D97706", color: "#fff", borderRadius: 99, minWidth: 20, height: 20, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>
-                  )}
-                  {/* remove one — red X (right) */}
-                  {qty > 0 && lastKey && (
-                    <div onClick={e => { e.stopPropagation(); changeQty(lastKey, cart.find(i => i.key === lastKey)!.quantity - 1); }} style={{ position: "absolute", top: 6, right: 6, background: "#e53e3e", color: "#fff", borderRadius: 99, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, zIndex: 2, cursor: "pointer", lineHeight: 1 }}>✕</div>
-                  )}
-                  <div style={{ height: 90, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, position: "relative", borderRadius: "14px 14px 0 0", overflow: "hidden", flexShrink: 0 }}>
-                    {item.image ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🍽️"}
-                    {warn && !qty && <span style={{ position: "absolute", top: 4, right: 4, fontSize: 13 }}>⚠️</span>}
-                    {safe && !qty && <span style={{ position: "absolute", top: 3, right: 4, fontSize: 18, color: "#16a34a", textShadow: "0 0 4px #fff", lineHeight: 1 }}>★</span>}
-                  </div>
-                  <div style={{ padding: "7px 9px 9px" }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#ffffff", marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
-                    {item.description && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.38)", marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "#ffffff" }}>₪{Number(item.price).toFixed(0)}</span>
-                      {warn && <span style={{ fontSize: 9, fontWeight: 800, color: "#FCA5A5", background: "rgba(248,113,113,0.15)", borderRadius: 5, padding: "1px 5px" }}>{wLabel}</span>}
-                      {safe && <span style={{ fontSize: 9, fontWeight: 800, color: "#34D399", background: "rgba(52,211,153,0.12)", borderRadius: 5, padding: "1px 5px" }}>★ מותר</span>}
+      {/* ══ BODY: 20% categories | 30% dishes | 50% order ══ */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
+
+        {/* ── Categories (right, 20% / 17% mobile) ── */}
+        <div style={{ width: isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
+          {loadingMenu ? (
+            <div style={{ padding: 20, color: "#888", fontSize: 13 }}>טוען...</div>
+          ) : categories.map(c => (
+            <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
+              display: "block", width: "100%", textAlign: "right", padding: isMobile ? "14px 10px" : "19px 22px", border: "none",
+              borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
+              fontSize: isMobile ? 13 : 16, fontWeight: activeCat === c.id ? 800 : 600,
+              background: activeCat === c.id ? T.gold : "transparent",
+              color: activeCat === c.id ? "#fff" : "#1a1612",
+            }}>{c.name}</button>
+          ))}
+        </div>
+
+        {/* ── Dishes (middle, 30%) ── */}
+        <div style={{ width: isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "8px 12px", fontSize: 12, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {menuError ? (
+              <div style={{ textAlign: "center", color: "#c0392b", padding: 24, fontSize: 13, fontWeight: 700 }}>⚠️ {menuError}</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(3,1fr)", borderTop: "1px solid #eee", borderRight: "1px solid #eee" }}>
+                {filteredItems.map(item => {
+                  const qty = cartQtyForItem(item.id);
+                  const warn = hasAllergy(item);
+                  const safe = allergens.length > 0 && !warn;
+                  const domeColor = warn ? "#e23b3b" : safe ? "#16a34a" : "#6f6f6f";
+                  return (
+                    <div key={item.id} onClick={() => addItem(item)} style={{
+                      background: qty > 0 ? "rgba(200,161,58,0.08)" : "#fff",
+                      borderLeft: "1px solid #eee", borderBottom: "1px solid #eee",
+                      boxShadow: qty > 0 ? `inset 0 0 0 2px ${T.gold}` : "none",
+                      cursor: "pointer", position: "relative", aspectRatio: "1 / 1",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, padding: 4, minWidth: 0,
+                    }}>
+                      {qty > 0 && <div style={{ position: "absolute", top: 4, left: 4, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 18, height: 18, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
+                      {/* Dome (cloche) — coloured by allergen status: red=contains / green=allowed / grey=no table allergens */}
+                      <svg style={{ width: "clamp(20px, 2.4vw, 30px)", height: "clamp(16px, 2vw, 24px)" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
+                      </svg>
+                      <div style={{ fontSize: "clamp(11px, 1.35vw, 15px)", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* ── Order (left, fills rest) ── */}
+        <div style={{ flex: 1, minWidth: 0, background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {allergens.length > 0 && (
+              <div style={{ background: "#fdecea", borderBottom: "1px solid #f5c4bc", color: "#b91c1c", padding: "3px 12px", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, lineHeight: 1.2 }}>
+                <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>שולחן עם אלרגנים: {allergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}</span>
+              </div>
+            )}
+            {existingItems.length === 0 && cart.length === 0 && (
+              <div style={{ textAlign: "center", color: "#9b8f82", fontSize: 14, padding: 40 }}>לחץ על מנה כדי להוסיף להזמנה</div>
+            )}
+
+            {/* Existing (sent) items — no X; cancel needs manager PIN */}
+            {existingItems.map(i => <ExistingRow key={i.id} item={i} allergens={allergens} isMobile={isMobile} onVoid={() => setVoidItem({ id: i.id, name: i.itemName })} />)}
+
+            {/* New cart items — deletable */}
+            {cart.map(i => (
+              <CartRow key={i.key} item={i} warn={i.allergens.some(a => allergens.includes(a))} isMobile={isMobile}
+                onQty={q => changeQty(i.key, q)} onNotes={n => changeNotes(i.key, n)} />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ── Floating cart button (all screen sizes) ── */}
-      {true && (
-        <>
-          {/* FAB */}
-          <button onClick={() => setCartOpen(true)} style={{
-            position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-            zIndex: 510, background: "linear-gradient(135deg,#D97706,#F59E0B)", color: "#fff",
-            border: "none", borderRadius: 99, padding: "14px 28px",
-            fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
-            display: "flex", alignItems: "center", gap: 10,
-            boxShadow: "0 4px 20px rgba(217,119,6,0.4)",
-            minWidth: 220, justifyContent: "center",
-          }}>
-            🛒 סל
-            {cart.length > 0 && (
-              <span style={{ background: "rgba(248,113,113,0.9)", borderRadius: 99, minWidth: 22, height: 22, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>
-                {cart.reduce((s, i) => s + i.quantity, 0)}
-              </span>
-            )}
-            {cart.length > 0 && (
-              <span style={{ fontSize: 13, opacity: .85 }}>
-                · ₪{cart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(0)}
-              </span>
-            )}
-          </button>
+      {/* ══ BOTTOM BAR ══ */}
+      <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 66, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
+        <BCell icon="👤＋" label="סועדים" onClick={() => setCoversOpen(true)} active={false} />
+        <BCell icon="⚠️" label="אלרגנים" onClick={() => setAllergensOpen(true)} active={allergens.length > 0} />
+        {/* Print + Payment — less frequent, secondary placement */}
+        {isMobile ? (
+          <BCell icon="⋯" label="עוד" onClick={() => setSecondaryOpen(o => !o)} active={secondaryOpen} />
+        ) : (
+          <>
+            <BCell icon="🖨" label="הדפס" onClick={() => order && setPrintOpen(true)} disabled={!order} />
+            <BCell icon="💳" label="תשלום" onClick={goPayment} disabled={!order} />
+          </>
+        )}
+        <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 26px",
+          border: "none", cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
+          background: T.gold, color: "#fff", fontWeight: 800, fontSize: 13, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.55 : 1,
+        }}>
+          <span style={{ fontSize: 18 }}>✓</span>{submitting ? "שולח..." : "אשר ושלח"}
+        </button>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "left", padding: "0 22px", borderRight: `1px solid ${T.barLine}` }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>סה״כ לתשלום</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
+        </div>
+      </div>
 
-          {/* Bottom sheet */}
-          {cartOpen && (
-            <div style={{ position: "fixed", inset: 0, zIndex: 520, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-              {/* Backdrop */}
-              <div onClick={() => setCartOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)" }} />
-              {/* Sheet */}
-              <div style={{ position: "relative", background: "rgba(15,15,24,0.97)", borderRadius: "20px 20px 0 0", maxHeight: "80dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
-                {/* Handle */}
-                <div style={{ padding: "12px 0 4px", display: "flex", justifyContent: "center", flexShrink: 0 }}>
-                  <div style={{ width: 40, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.2)" }} />
-                </div>
-                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", width: "100%" }}>
-                  <OrderPanel
-                    orderId={orderId}
-                    restaurantId={restaurantId}
-                    existingItems={order?.items ?? []}
-                    cartItems={cart}
-                    tableAllergens={tableAllergens}
-                    orderNumber={order?.orderNumber}
-                    onQtyChange={changeQty}
-                    onNotesChange={changeNotes}
-                    onFireItem={fireItem}
-                    onFireCourse={fireCourse}
-                    onItemActioned={refreshOrder}
-                  />
-                </div>
-                <div style={{ padding: "12px 16px 28px", borderTop: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }}>
-                  <button onClick={() => { setCartOpen(false); handleSubmit(); }} disabled={cart.length === 0 || submitting} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: cart.length === 0 ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#D97706,#F59E0B)", color: cart.length === 0 ? "rgba(255,255,255,0.38)" : "#fff", fontSize: 15, fontWeight: 900, cursor: cart.length === 0 ? "default" : "pointer", fontFamily: "inherit" }}>
-                    {submitting ? "שולח..." : orderId ? `📤 הוסף להזמנה #${order?.orderNumber}` : "📤 צור הזמנה"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    {/* ── Modifier picker popup ── */}
-    {modifierItem && (
-      <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)" }}
-        onClick={() => setModifierItem(null)}>
-        <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,15,24,0.97)", borderRadius: 20, padding: 20, width: "min(96vw,420px)", maxHeight: "85dvh", overflowY: "auto", direction: "rtl", display: "flex", flexDirection: "column", gap: 16, border: "1px solid rgba(255,255,255,0.12)" }}>
-          {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>{modifierItem.name}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 2 }}>בחר אפשרויות</div>
-            </div>
-            <button onClick={() => setModifierItem(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "rgba(255,255,255,0.38)", lineHeight: 1 }}>✕</button>
+      {/* ══ Mobile secondary menu (Print + Payment) ══ */}
+      {secondaryOpen && isMobile && (
+        <div onClick={() => setSecondaryOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 590 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 66, right: 0, background: T.bar, border: `1px solid ${T.barLine}`, borderRadius: "12px 0 0 0", padding: "8px 0", display: "flex", flexDirection: "column", minWidth: 140 }}>
+            <button onClick={() => { setSecondaryOpen(false); order && setPrintOpen(true); }} disabled={!order} style={{ padding: "12px 20px", border: "none", background: "transparent", color: !order ? "rgba(255,255,255,0.3)" : "#e6e6e6", fontSize: 13, fontWeight: 600, cursor: !order ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
+              <span>🖨</span> הדפס
+            </button>
+            <button onClick={() => { setSecondaryOpen(false); goPayment(); }} disabled={!order} style={{ padding: "12px 20px", border: "none", background: "transparent", color: !order ? "rgba(255,255,255,0.3)" : "#e6e6e6", fontSize: 13, fontWeight: 600, cursor: !order ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
+              <span>💳</span> תשלום
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Groups */}
-          {modifierItem.modifierGroups.map(group => {
-            const sel = modifierSel[group.id] ?? [];
-            const allSatisfied = !group.required || sel.length > 0;
-            return (
-              <div key={group.id}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                  {group.name}
-                  {group.required && <span style={{ fontSize: 10, color: "#F87171", fontWeight: 600 }}>חובה</span>}
-                  {group.maxSelect > 1 && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.38)" }}>עד {group.maxSelect}</span>}
-                  {!allSatisfied && <span style={{ fontSize: 10, color: "#F87171" }}>← נא לבחור</span>}
-                </div>
+      {/* ══ Modifier picker — dark glass theme (matches the waiter NEW screen) ══ */}
+      {modifierItem && (
+        <div onClick={() => setModifierItem(null)} style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,14,22,0.97)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 20, width: "min(96vw,420px)", maxHeight: "85vh", overflowY: "auto", direction: "rtl", display: "flex", flexDirection: "column", gap: 14, color: "#fff", fontFamily: "'Heebo', sans-serif", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `2px solid ${T.gold}`, paddingBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{modifierItem.name}</div>
+              <button onClick={() => setModifierItem(null)} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, width: 32, height: 32, fontSize: 17, cursor: "pointer", color: "#fff" }}>✕</button>
+            </div>
+            {modifierItem.modifierGroups.map(g => (
+              <div key={g.id}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: "rgba(255,255,255,0.85)" }}>{g.name} {g.required && <span style={{ color: "#fca5a5", fontSize: 10 }}>חובה</span>}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {group.options.map(opt => {
-                    const active = sel.includes(opt.id);
-                    return (
-                      <button key={opt.id} onClick={() => toggleModOption(group.id, opt.id, group.maxSelect)}
-                        style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${active ? "#D97706" : "rgba(255,255,255,0.1)"}`, background: active ? "rgba(217,119,6,0.15)" : "rgba(255,255,255,0.06)", color: active ? "#fff" : "#ffffff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
-                        {opt.label}
-                        {opt.priceAdd > 0 && <span style={{ fontSize: 10, opacity: .75 }}>+₪{opt.priceAdd}</span>}
-                      </button>
-                    );
+                  {g.options.map(opt => {
+                    const active = (modifierSel[g.id] ?? []).includes(opt.id);
+                    return <button key={opt.id} onClick={() => toggleModOption(g.id, opt.id, g.maxSelect)} style={{ padding: "7px 14px", borderRadius: 99, border: `1.5px solid ${active ? T.gold : "rgba(255,255,255,0.15)"}`, background: active ? "rgba(200,161,58,0.22)" : "rgba(255,255,255,0.06)", color: active ? "#f0d488" : "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{opt.label}{opt.priceAdd > 0 && <span style={{ opacity: .7, fontSize: 10 }}> +₪{opt.priceAdd}</span>}</button>;
                   })}
                 </div>
               </div>
-            );
-          })}
-
-          {/* Confirm */}
-          {(() => {
-            const allOk = modifierItem.modifierGroups.every(g => !g.required || (modifierSel[g.id] ?? []).length > 0);
-            const extraPrice = Object.entries(modifierSel).flatMap(([gId, optIds]) => {
-              const g = modifierItem.modifierGroups.find(g => g.id === gId);
-              return optIds.map(oId => g?.options.find(o => o.id === oId)?.priceAdd ?? 0);
-            }).reduce((s, v) => s + v, 0);
-            return (
-              <button onClick={confirmModifiers} disabled={!allOk}
-                style={{ background: allOk ? "linear-gradient(135deg,#D97706,#F59E0B)" : "rgba(255,255,255,0.1)", color: "#fff", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 800, cursor: allOk ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
-                הוסף לסל — ₪{(Number(modifierItem.price) + extraPrice).toFixed(0)}
-              </button>
-            );
-          })()}
+            ))}
+            <button onClick={confirmModifiers} style={{ padding: 13, borderRadius: 12, border: "none", background: T.gold, color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>הוסף להזמנה</button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
+
+      {/* ══ Covers stepper ══ */}
+      {coversOpen && (
+        <Popup onClose={() => setCoversOpen(false)} title="כמות סועדים" width={380}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, padding: "10px 0" }}>
+            <button onClick={() => setCovers(c => Math.max(1, c - 1))} style={stepBtn}>−</button>
+            <span style={{ fontSize: 40, fontWeight: 900, minWidth: 60, textAlign: "center", color: "#1a1612" }}>{covers}</span>
+            <button onClick={() => setCovers(c => c + 1)} style={stepBtn}>+</button>
+          </div>
+        </Popup>
+      )}
+
+      {/* ══ Allergens editor ══ */}
+      {allergensOpen && (
+        <Popup onClose={() => setAllergensOpen(false)} title="אלרגיות בשולחן" width={640}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+            <button onClick={() => setAllergens([])} style={chip(allergens.length === 0)}>ללא</button>
+            {ALLERGEN_LIST.map(a => <button key={a.key} onClick={() => toggleAllergen(a.key)} style={chip(allergens.includes(a.key))}>{a.label}</button>)}
+          </div>
+        </Popup>
+      )}
+
+      {/* ══ Course release (final approval) ══ */}
+      {releaseOpen && order && (
+        <Popup onClose={() => { setReleaseOpen(false); onSuccess(order.id); }} title="שחרור קורסים — אישור הזמנה">
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {courseNums.length === 0 ? <div style={{ color: "#9b8f82", fontSize: 13 }}>אין קורסים בהזמנה</div> : courseNums.map(c => {
+              const items = (order.items ?? []).filter(i => i.course === c && !i.voidedAt && i.itemStatus !== "CANCELLED");
+              const held = items.length > 0 && items.some(i => i.heldUntilFired && !i.firedAt);
+              return (
+                <div key={c} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#faf8f5", border: "1px solid #e8e2da", borderRadius: 12, padding: "10px 14px" }}>
+                  <div><div style={{ fontWeight: 800 }}>קורס {courseLetter(c)} · {items.length} פריטים</div><div style={{ fontSize: 11, color: "#9b8f82" }}>{held ? "ממתין לשחרור" : "נשלח למטבח"}</div></div>
+                  {held && <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "7px 16px", borderRadius: 10, border: "none", background: T.goldGrad, color: "#fff", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>{firingCourse === c ? "…" : "🔥 שחרר"}</button>}
+                </div>
+              );
+            })}
+            <button onClick={() => { setReleaseOpen(false); onSuccess(order.id); }} style={{ marginTop: 6, padding: 14, borderRadius: 12, border: "none", background: "#1a1612", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>✓ אישור וסיום</button>
+          </div>
+        </Popup>
+      )}
+
+      {/* ══ Manager PIN for voiding a sent item ══ */}
+      {voidItem && (
+        <ManagerPinModal restaurantId={restaurantId} title="אישור ביטול מנה" description={voidItem.name} onApproved={doVoid} onCancel={() => setVoidItem(null)} />
+      )}
+      {actionLoading && <div style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 }}>מבצע...</div>}
+
+      {/* ══ Receipt print ══ */}
+      {printOpen && order && (
+        <Receipt order={order} tableNum={tableNum} restaurantName={restaurantName ?? "המסעדה"} waiterName={waiterName ?? ""} autoPrint onClose={() => setPrintOpen(false)} />
+      )}
     </div>
   );
 }
+
+// ── Bottom-bar flat cell (uniform strip, square, divider on the left) ──
+function BCell({ icon, label, onClick, active, disabled }: { icon: string; label: string; onClick: () => void; active?: boolean; disabled?: boolean }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "0 22px",
+      border: "none", borderLeft: "1px solid rgba(255,255,255,0.08)", cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
+      background: active ? "rgba(200,161,58,0.16)" : "transparent",
+      color: active ? "#d4a017" : "#e6e6e6", fontWeight: 600, fontSize: 12, opacity: disabled ? 0.4 : 1,
+    }}>
+      <span style={{ fontSize: 18 }}>{icon}</span>{label}
+    </button>
+  );
+}
+
+// ── Order rows ──
+function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDetail; allergens: string[]; isMobile: boolean; onVoid: () => void }) {
+  const warn = item.itemAllergens.some(a => allergens.includes(a));
+  const statusHe: Record<string, string> = { PENDING: "ממתין", PREPARING: "מכין 🍳", DONE: "מוכן ✓", SERVED: "הוגש", CANCELLED: "בוטל" };
+  const badge = isMobile ? 24 : 28;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10, padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
+      <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
+        <div style={{ fontSize: 11, color: warn ? "#c0392b" : "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
+      </div>
+      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <button onClick={onVoid} title="ביטול (דרוש אישור מנהל)" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#f4f1ed", color: "#b91c1c", cursor: "pointer", fontSize: 13, flexShrink: 0 }}>🔒</button>
+    </div>
+  );
+}
+
+function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; warn: boolean; isMobile: boolean; onQty: (q: number) => void; onNotes: (n: string) => void }) {
+  const [notesOpen, setNotesOpen] = useState(!!item.notes);
+  const badge = isMobile ? 24 : 28;
+  const controls = (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+      <button onClick={() => setNotesOpen(o => !o)} title="הערה" style={{ width: badge, height: badge, borderRadius: 8, border: "1px solid #e3ded5", background: "#fff", cursor: "pointer", fontSize: 13, color: "#6b6258", flexShrink: 0 }}>✎</button>
+      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0, border: "1px solid #e0e0e0", borderRadius: 99 }}>
+        <button onClick={() => onQty(item.quantity - 1)} style={qBtn}>−</button>
+        <span style={{ fontSize: 14, fontWeight: 800, minWidth: 18, textAlign: "center", color: "#1a1612" }}>{item.quantity}</span>
+        <button onClick={() => onQty(item.quantity + 1)} style={qBtn}>+</button>
+      </div>
+      {/* price sits between the quantity and the X, with spacing */}
+      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "center", margin: "0 8px", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <button onClick={() => onQty(0)} title="הסר" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#fdecea", color: "#e53e3e", cursor: "pointer", fontSize: 14, fontWeight: 900, flexShrink: 0 }}>✕</button>
+    </div>
+  );
+  return (
+    <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
+        <div title={{ 1: "ראשונות", 2: "עיקריות", 3: "קינוח" }[item.course] ?? `קורס ${item.course}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "default" }}>{courseLetter(item.course)}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
+          {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
+          {item.notes && <div style={{ fontSize: 10, color: "#9c7a12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📝 {item.notes}</div>}
+        </div>
+        {!isMobile && controls}
+      </div>
+      {isMobile && <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>{controls}</div>}
+      {notesOpen && <input autoFocus value={item.notes} onChange={e => onNotes(e.target.value)} placeholder="הערה למטבח..." style={{ marginTop: 8, width: "100%", background: "#fff", border: "1px solid #e3ded5", borderRadius: 8, fontSize: 12, padding: "7px 10px", outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />}
+    </div>
+  );
+}
+
+// ── Generic centered popup ──
+function Popup({ title, children, onClose, width = 460 }: { title: string; children: React.ReactNode; onClose: () => void; width?: number }) {
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} dir="rtl" style={{ background: "#fff", color: "#1a1612", borderRadius: 18, padding: 22, width: `min(96vw, ${width}px)`, maxHeight: "85vh", overflowY: "auto", fontFamily: "'Heebo', sans-serif" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, borderBottom: "2px solid #c8a13a", paddingBottom: 12 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1612" }}>{title}</div>
+          <button onClick={onClose} style={{ background: "#f0ede8", border: "none", borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#555" }}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const stepBtn: React.CSSProperties = { width: 56, height: 56, borderRadius: 99, border: "none", background: "#1a1612", color: "#fff", fontSize: 26, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" };
+const qBtn: React.CSSProperties = { width: 28, height: 28, borderRadius: 8, border: "1px solid #e3ded5", background: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" };
+const chip = (active: boolean): React.CSSProperties => ({ padding: "9px 16px", borderRadius: 99, border: `1.5px solid ${active ? "#e07060" : "#e8e2da"}`, background: active ? "#fdf2f0" : "#faf8f5", color: active ? "#8b2e22" : "#4a4540", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" });
