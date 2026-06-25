@@ -66,7 +66,7 @@ export default function InstallPage() {
           <div style={S.icon}>✅</div>
           <div style={S.title}>האפליקציה מותקנת</div>
           <div style={S.sub}>מלצר חכם פועל במצב אפליקציה מלאה</div>
-          <a href="/admin/waiter-pos-new" style={{ ...S.btn, display: "block", textDecoration: "none" } as any}>
+          <a href="/admin/waiter-pos" style={{ ...S.btn, display: "block", textDecoration: "none" } as any}>
             פתח מסך מלצר
           </a>
         </div>
@@ -108,7 +108,7 @@ export default function InstallPage() {
           </>
         )}
 
-        <a href="/admin/waiter-pos-new" style={S.link}>
+        <a href="/admin/waiter-pos" style={S.link}>
           המשך בדפדפן בלי להתקין ←
         </a>
       </div>

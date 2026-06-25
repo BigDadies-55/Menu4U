@@ -2,7 +2,7 @@
   "name": "Waiter - Menu4U",
   "short_name": "Waiter",
   "description": "Smart waiter ordering system for restaurants — manage tables, orders and courses",
-  "start_url": "/admin/waiter-pos-new",
+  "start_url": "/admin/waiter-pos",
   "scope": "/",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone", "minimal-ui"],
@@ -36,7 +36,7 @@
   "shortcuts": [
     {
       "name": "תפריט הזמנות",
-      "url": "/admin/waiter-pos-new",
+      "url": "/admin/waiter-pos",
       "description": "פתח את מסך המלצר"
     }
   ],

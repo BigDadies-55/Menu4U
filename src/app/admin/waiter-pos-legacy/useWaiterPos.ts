@@ -144,7 +144,7 @@ export function useWaiterPos({
   const [isMobile, setIsMobile]               = useState(false);
   const [isFullscreen, setIsFullscreen]       = useState(false);
   const [showFsBanner, setShowFsBanner]       = useState(false);
-  const [viewMode, setViewMode]               = useState<"grid" | "floor">("floor");
+  const [viewMode, setViewMode]               = useState<"grid" | "floor">("grid");
   const [layout, setLayout]                   = useState<LayoutV2 | null>(null);
   const [roomIdx, setRoomIdx]                 = useState(0);
   const [refreshing, setRefreshing]           = useState(false);
