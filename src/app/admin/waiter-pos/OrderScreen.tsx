@@ -139,7 +139,9 @@ export function OrderScreen({
   }
   function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
     const extra = modifiers.reduce((s, m) => s + m.priceAdd, 0);
-    const course = categories.find(c => c.items.some(i => i.id === item.id))?.course ?? item.course ?? 1;
+    // Resolve course from the real category — skip the "⭐ פופולרי" pseudo-category,
+    // which has no course and would otherwise win the lookup for popular items.
+    const course = categories.find(c => c.id !== POPULAR_CAT_ID && c.items.some(i => i.id === item.id))?.course ?? item.course ?? 1;
     const sig = modifiers.map(m => m.label).sort().join("|");
     setCart(p => {
       // Re-ordering the same dish (identical modifiers/course) bumps the quantity
