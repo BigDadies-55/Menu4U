@@ -174,17 +174,21 @@ export default function FloorLayout({ room, liveTables, insights, myTableNums, r
                         </span>
                       )}
 
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 4, zIndex: 1 }}>
-                        <span style={{ fontSize: fSz, fontWeight: 900, color, lineHeight: 1 }}>{tNum}</span>
-                        {seats > 0 && <span style={{ fontSize: Math.max(9, fSz * 0.6), fontWeight: 700, color: "#64748b", lineHeight: 1 }}>({seats})</span>}
-                      </div>
+                      {/* Counter-rotate the label by the floor rotation so the
+                          text stays upright/readable when the layout is turned. */}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 1, transform: rotation ? `rotate(${-rotation}deg)` : undefined }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                          <span style={{ fontSize: fSz, fontWeight: 900, color, lineHeight: 1 }}>{tNum}</span>
+                          {seats > 0 && <span style={{ fontSize: Math.max(9, fSz * 0.6), fontWeight: 700, color: "#64748b", lineHeight: 1 }}>({seats})</span>}
+                        </div>
 
-                      {showLine && isOcc && tData && (
-                        <span style={{ fontSize: Math.max(8, fSz * 0.5), fontWeight: 700, color: "#475569", marginTop: 2, fontVariantNumeric: "tabular-nums", zIndex: 1 }}>{fmtTimer(tData.sittingStart)}</span>
-                      )}
-                      {showLine && (
-                        <span style={{ fontSize: Math.max(7, fSz * 0.46), color: "#94a3b8", marginTop: 1, zIndex: 1, maxWidth: lt.w - 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{statusText}</span>
-                      )}
+                        {showLine && isOcc && tData && (
+                          <span style={{ fontSize: Math.max(8, fSz * 0.5), fontWeight: 700, color: "#475569", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{fmtTimer(tData.sittingStart)}</span>
+                        )}
+                        {showLine && (
+                          <span style={{ fontSize: Math.max(7, fSz * 0.46), color: "#94a3b8", marginTop: 1, maxWidth: lt.w - 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{statusText}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
