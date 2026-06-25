@@ -517,7 +517,16 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                           const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
                           const menuW = 210;
                           const left  = rect.right + menuW > window.innerWidth ? rect.left - menuW : rect.left;
-                          setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
+                          // Estimate menu height so it can flip upward near the viewport bottom.
+                          const itemH = 46;
+                          let items = 4; // restaurants, reset pw, force pw, delete
+                          if (["SUPER_ADMIN","ADMIN"].includes(currentUserRole)) items++;
+                          if (!user.emailVerified && user.email) items++;
+                          const menuH = items * itemH + 12;
+                          const top = rect.bottom + 6 + menuH > window.innerHeight
+                            ? Math.max(8, rect.top - 6 - menuH)
+                            : rect.bottom + 6;
+                          setMenuPos({ top, left: Math.max(8, left) });
                           setOpenMenuId(openMenuId === user.id ? null : user.id);
                         }}
                         style={{ background: T.raised, border: `1px solid ${T.borderSub}`, cursor: "pointer", color: T.sub, fontSize: 18, borderRadius: 8, lineHeight: 1, fontFamily: "inherit", transition: "0.15s", width: 34, height: 34, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
@@ -796,7 +805,8 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
             position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999,
             background: T.panel, border: `1px solid ${T.border}`,
             borderRadius: 16, backdropFilter: "blur(20px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5)", width: 210, overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)", width: 210,
+            maxHeight: "calc(100vh - 16px)", overflowY: "auto",
           }}>
             {["SUPER_ADMIN","ADMIN"].includes(currentUserRole) && (
               <MenuAction icon="✎" label="ערוך פרטים" onClick={() => { openEdit(user); setOpenMenuId(null); }} />

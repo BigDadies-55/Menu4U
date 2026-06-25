@@ -91,7 +91,19 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   }
 
   const userToDelete = await prisma.user.findUnique({ where: { id }, select: { email: true } });
-  await prisma.user.delete({ where: { id } });
-  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_USER", entity: "user", entityId: id, entityName: userToDelete?.email, ip: getIp(req) });
+  if (!userToDelete) {
+    return NextResponse.json({ error: "המשתמש לא נמצא" }, { status: 404 });
+  }
+  try {
+    await prisma.$transaction([
+      // Invites this user sent have a non-cascading FK — remove them first.
+      prisma.userInvite.deleteMany({ where: { invitedById: id } }),
+      prisma.user.delete({ where: { id } }),
+    ]);
+  } catch (err) {
+    console.error("[users] delete failed:", err);
+    return NextResponse.json({ error: "שגיאה במחיקת המשתמש" }, { status: 500 });
+  }
+  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_USER", entity: "user", entityId: id, entityName: userToDelete.email, ip: getIp(req) });
   return NextResponse.json({ success: true });
 }
