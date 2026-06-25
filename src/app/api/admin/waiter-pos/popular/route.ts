@@ -31,14 +31,14 @@ export async function GET(req: Request) {
     const itemIds = rows.map(r => r.itemId);
     const items = await prisma.item.findMany({
       where: { id: { in: itemIds }, isActive: true },
-      select: { id: true, name: true, description: true, price: true, image: true, allergens: true, isVegetarian: true, isVegan: true, isGlutenFree: true, category: { select: { course: true } } },
+      select: { id: true, name: true, description: true, price: true, image: true, allergens: true, isVegetarian: true, isVegan: true, isGlutenFree: true },
     });
 
     // Sort by popularity order
     const sorted = itemIds
       .map(id => items.find(i => i.id === id))
       .filter(Boolean)
-      .map(i => { const { category, ...rest } = i!; return { ...rest, price: Number(i!.price), allergens: i!.allergens ?? [], course: category?.course ?? 1 }; });
+      .map(i => ({ ...i!, price: Number(i!.price), allergens: i!.allergens ?? [] }));
 
     return NextResponse.json({ items: sorted });
   } catch (e) {

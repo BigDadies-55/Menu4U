@@ -139,11 +139,9 @@ export function OrderScreen({
   }
   function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
     const extra = modifiers.reduce((s, m) => s + m.priceAdd, 0);
-    // The API stamps each item with its category's course; prefer that, and fall
-    // back to a category lookup (skipping the "⭐ פופולרי" pseudo-category).
-    const course = item.course
-      ?? categories.find(c => c.id !== POPULAR_CAT_ID && c.items.some(i => i.id === item.id))?.course
-      ?? 1;
+    // Resolve course from the real category — skip the "⭐ פופולרי" pseudo-category,
+    // which has no course and would otherwise win the lookup for popular items.
+    const course = categories.find(c => c.id !== POPULAR_CAT_ID && c.items.some(i => i.id === item.id))?.course ?? item.course ?? 1;
     const sig = modifiers.map(m => m.label).sort().join("|");
     setCart(p => {
       // Re-ordering the same dish (identical modifiers/course) bumps the quantity
@@ -323,7 +321,6 @@ export function OrderScreen({
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, padding: 4, minWidth: 0,
                     }}>
                       {qty > 0 && <div style={{ position: "absolute", top: 4, left: 4, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 18, height: 18, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
-                      {item.course != null && <div title={{ 1: "ראשונות", 2: "עיקריות", 3: "קינוח", 4: "משקאות" }[item.course] ?? `קורס ${item.course}`} style={{ position: "absolute", top: 4, right: 4, background: "rgba(200,161,58,0.14)", border: "1px solid #d8c48a", color: "#9c7a12", borderRadius: "50% 0 50% 0", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>{courseLetter(item.course)}</div>}
                       {/* Dome (cloche) — coloured by allergen status: red=contains / green=allowed / grey=no table allergens */}
                       <svg style={{ width: "clamp(20px, 2.4vw, 30px)", height: "clamp(16px, 2vw, 24px)" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
