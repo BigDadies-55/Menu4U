@@ -93,6 +93,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [attSignal, setAttSignal]       = useState(0);
   const [clockPrompt, setClockPrompt]   = useState(false);
   const [logoutPrompt, setLogoutPrompt] = useState(false);
+  const [logoutAfterAttendance, setLogoutAfterAttendance] = useState(false);
   const [alertToast, setAlertToast]     = useState<string | null>(null);
   const prevAlertKeys = useRef<Set<string>>(new Set());
   const [shift, setShift] = useState<{ revenue: number; diners: number; avgPerDiner: number } | null>(null);
@@ -387,7 +388,12 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
       {/* Hidden attendance widget — opened from the menu / first-entry prompt */}
       {waiterId && restaurantId && (
-        <AttendanceWidget restaurantId={restaurantId} userId={waiterId} hideTrigger openSignal={attSignal} />
+        <AttendanceWidget restaurantId={restaurantId} userId={waiterId} hideTrigger openSignal={attSignal} onRecord={(type) => {
+          if (logoutAfterAttendance && type === "OUT") {
+            setLogoutAfterAttendance(false);
+            signOut({ callbackUrl: "/login" });
+          }
+        }} />
       )}
 
       {/* ══ HAMBURGER MENU DRAWER ══ */}
@@ -452,7 +458,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             <div style={{ fontSize: 13, color: G_MUTED_C, marginBottom: 22 }}>לפני היציאה מהמערכת, ודא שדיווחת יציאה בשעון.</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ padding: "10px", borderRadius: 12, border: `1px solid ${G_BORDER_C}`, background: "transparent", color: G_MUTED_C, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>כבר דיווחתי</button>
-              <button onClick={() => { setLogoutPrompt(false); setAttSignal(s => s + 1); }} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>דווח עכשיו</button>
+              <button onClick={() => { setLogoutPrompt(false); setLogoutAfterAttendance(true); setAttSignal(s => s + 1); }} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>דווח עכשיו</button>
             </div>
           </div>
         </div>
