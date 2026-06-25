@@ -38,15 +38,17 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
 
+        * { box-sizing: border-box; }
         .lg-root {
           font-family: 'Heebo', sans-serif;
-          min-height: 100vh;
-          display: flex; align-items: center; justify-content: flex-start;
-          padding: 24px 6vw; direction: rtl; position: relative; overflow: hidden;
+          min-height: 100svh;
+          display: flex; align-items: center; justify-content: center;
+          padding: env(safe-area-inset-top, 24px) 20px env(safe-area-inset-bottom, 24px);
+          direction: rtl; position: relative; overflow: hidden;
           background: #e9e6df;
         }
-        @media (max-width: 560px) {
-          .lg-root { justify-content: center; padding: 24px; }
+        @media (min-width: 640px) {
+          .lg-root { justify-content: flex-start; padding: 24px 6vw; }
         }
         .lg-bg {
           position: absolute; inset: -40px; z-index: 0;
@@ -58,32 +60,32 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
         }
         .lg-card {
           position: relative; z-index: 1;
-          width: 100%; max-width: 380px;
-          background: rgba(255,255,255,0.62);
+          width: 100%; max-width: 420px;
+          background: rgba(255,255,255,0.72);
           backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
           border: 1px solid rgba(255,255,255,0.55);
           border-radius: 24px;
-          padding: 36px 30px 30px;
+          padding: clamp(24px, 5vw, 36px) clamp(20px, 5vw, 32px) clamp(20px, 4vw, 30px);
           box-shadow: 0 24px 70px rgba(0,0,0,0.30), 0 4px 14px rgba(0,0,0,0.12);
           text-align: center;
         }
         .lg-logo {
-          width: 76px; height: 76px; border-radius: 50%;
-          margin: 0 auto 14px;
+          width: clamp(60px, 16vw, 76px); height: clamp(60px, 16vw, 76px);
+          border-radius: 50%; margin: 0 auto 14px;
           background: linear-gradient(135deg, #C9A452, #6b470d);
           display: flex; align-items: center; justify-content: center;
           overflow: hidden; box-shadow: 0 6px 18px rgba(201,164,82,0.35);
         }
         .lg-logo img { width: 100%; height: 100%; object-fit: cover; }
-        .lg-logo span { font-size: 34px; line-height: 1; }
+        .lg-logo span { font-size: clamp(26px, 8vw, 34px); line-height: 1; }
         .lg-brand {
-          font-size: 23px; font-weight: 800; letter-spacing: 1px;
+          font-size: clamp(18px, 5vw, 23px); font-weight: 800; letter-spacing: 1px;
           color: #3f3f3a; margin: 0;
         }
-        .lg-tagline { font-size: 11.5px; color: #9a988c; margin: 4px 0 0; }
+        .lg-tagline { font-size: clamp(11px, 2.8vw, 12px); color: #9a988c; margin: 4px 0 0; }
         .lg-welcome {
-          font-size: 24px; font-weight: 800; color: #2f2f2b;
-          margin: 26px 0 22px;
+          font-size: clamp(18px, 5vw, 24px); font-weight: 800; color: #2f2f2b;
+          margin: clamp(18px, 4vw, 26px) 0 clamp(16px, 4vw, 22px);
         }
         .lg-field { position: relative; margin-bottom: 14px; }
         .lg-field .lg-ico {
@@ -91,12 +93,12 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
           width: 18px; height: 18px; color: #b8995a; pointer-events: none;
         }
         .lg-field input {
-          width: 100%; box-sizing: border-box;
-          padding: 14px 44px 14px 16px;
+          width: 100%;
+          padding: clamp(12px, 3vw, 14px) 44px clamp(12px, 3vw, 14px) 16px;
           border: 1px solid #e2e0d8; border-radius: 12px;
-          background: #fcfcfa; font-size: 14px; color: #2f2f2b;
+          background: #fcfcfa; font-size: clamp(15px, 4vw, 16px); color: #2f2f2b;
           font-family: 'Heebo', sans-serif; outline: none; transition: .15s;
-          text-align: right;
+          text-align: right; -webkit-appearance: none; appearance: none;
         }
         .lg-field input::placeholder { color: #b3b1a6; }
         .lg-field input:focus {
@@ -109,20 +111,27 @@ export default function LoginForm({ loginImage, brightness = 100, logo, siteName
           font-size: 13px; margin-bottom: 14px; text-align: center;
         }
         .lg-btn {
-          width: 100%; padding: 14px; margin-top: 6px;
+          width: 100%; padding: clamp(13px, 3.5vw, 15px); margin-top: 6px;
           border: none; border-radius: 12px;
           background: linear-gradient(135deg, #6b470d, #C9A452);
           color: #fff; font-family: 'Heebo', sans-serif;
-          font-size: 15px; font-weight: 700; cursor: pointer;
+          font-size: clamp(15px, 4vw, 16px); font-weight: 700; cursor: pointer;
           box-shadow: 0 8px 22px rgba(201,164,82,0.35); transition: .18s;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
         }
         .lg-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(201,164,82,0.45); }
+        .lg-btn:active:not(:disabled) { transform: scale(0.98); }
         .lg-btn:disabled { opacity: .6; cursor: not-allowed; }
         .lg-link { font-size: 13px; color: #8a887e; margin-top: 16px; }
         .lg-link a { color: #8a6d1a; font-weight: 700; text-decoration: underline; }
         .lg-link.forgot { margin-top: 18px; }
         .lg-link.forgot a { color: #8a887e; font-weight: 500; text-decoration: none; }
         .lg-link.forgot a:hover { color: #8a6d1a; }
+        @media (max-height: 600px) and (max-width: 640px) {
+          .lg-logo { width: 50px; height: 50px; }
+          .lg-welcome { margin: 12px 0 14px; }
+        }
       `}</style>
 
       <div className="lg-root">
