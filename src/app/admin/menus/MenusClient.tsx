@@ -1009,12 +1009,17 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ course }),
       });
-      if (!res.ok) throw new Error("save failed");
-    } catch {
+      if (!res.ok) {
+        let detail = "";
+        try { detail = (await res.json())?.error ?? ""; } catch { /* ignore */ }
+        throw new Error(`${res.status} ${detail}`);
+      }
+    } catch (e) {
       updateMenu(m => ({
         ...m,
         categories: m.categories.map(c => c.id === catId ? { ...c, course: prev } : c),
       }));
+      alert(`שמירת הסיווג נכשלה: ${e instanceof Error ? e.message : "שגיאה"}`);
     }
   }
 
