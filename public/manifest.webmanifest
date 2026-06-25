@@ -1,7 +1,7 @@
 {
-  "name": "Menu4U — מלצר חכם",
-  "short_name": "מלצר",
-  "description": "מערכת ניהול הזמנות למלצרים",
+  "name": "Waiter - Menu4U",
+  "short_name": "Waiter",
+  "description": "Smart waiter ordering system for restaurants — manage tables, orders and courses",
   "start_url": "/admin/waiter-pos-new",
   "scope": "/admin/waiter-pos-new",
   "display": "standalone",
