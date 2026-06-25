@@ -325,7 +325,6 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
     return                            { label: "מאומת ✓",           color: T.green   };
   }
 
-  function shortId(id: string) { return "#" + id.slice(-6).toUpperCase(); }
 
   const FieldLabel = ({ children }: { children: React.ReactNode }) => (
     <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
@@ -479,7 +478,7 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
 
                     {/* Username */}
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
-                      <span dir="ltr" style={{ display: "inline-block", fontSize: 13, fontWeight: 600, color: T.purple, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>
+                      <span dir="ltr" style={{ display: "inline-block", fontSize: 13, fontWeight: 600, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>
                         @{user.username}
                       </span>
                     </td>
@@ -506,15 +505,16 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                       </div>
                     </td>
 
-                    {/* Status */}
-                    <td style={{ ...tdBase, fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
+                    {/* Verification */}
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20, fontSize: 12, fontWeight: 600, color: status.color, whiteSpace: "nowrap" }}>
                       {status.label}
                     </td>
 
-                    {/* ID + date */}
-                    <td style={tdBase}>
-                      <div style={{ fontSize: 11, color: T.muted, fontFamily: "monospace", lineHeight: 1.3 }}>{shortId(user.id)}</div>
-                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2, lineHeight: 1.3 }}>{formatDate(user.createdAt)}</div>
+                    {/* Last login */}
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
+                      <span style={{ fontSize: 12, color: T.muted, whiteSpace: "nowrap" }}>
+                        {user.lastLoginAt ? formatDate(user.lastLoginAt) : "—"}
+                      </span>
                     </td>
 
                     {/* 3-dot menu */}
