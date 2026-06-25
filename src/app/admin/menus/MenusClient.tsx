@@ -930,11 +930,11 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
         const res = await fetch(`/api/admin/categories/${editingCategoryId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: categoryForm.name, course: categoryForm.course, image: categoryForm.image || null, translations: categoryForm.translations }),
+          body: JSON.stringify({ name: categoryForm.name, image: categoryForm.image || null, translations: categoryForm.translations }),
         });
         if (res.ok) {
           const updated = await res.json();
-          updateMenu(m => ({ ...m, categories: m.categories.map(c => c.id === editingCategoryId ? { ...c, name: updated.name, course: updated.course, image: updated.image, translations: updated.translations } : c) }));
+          updateMenu(m => ({ ...m, categories: m.categories.map(c => c.id === editingCategoryId ? { ...c, name: updated.name, image: updated.image, translations: updated.translations } : c) }));
           setShowCategoryForm(false);
           setEditingCategoryId(null);
           setCategoryForm(emptyCategoryForm);
@@ -1038,33 +1038,6 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
         ...m,
         categories: m.categories.map(c => c.id === catId ? { ...c, kitchenStationId: prev?.kitchenStationId ?? null, autoReady: prev?.autoReady ?? false } : c),
       }));
-    }
-  }
-
-  async function setCategoryCourse(catId: string, course: number) {
-    const prev = selectedMenu?.categories.find(c => c.id === catId)?.course ?? 1;
-    // Optimistic update
-    updateMenu(m => ({
-      ...m,
-      categories: m.categories.map(c => c.id === catId ? { ...c, course } : c),
-    }));
-    try {
-      const res = await fetch(`/api/admin/categories/${catId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ course }),
-      });
-      if (!res.ok) {
-        let detail = "";
-        try { detail = (await res.json())?.error ?? ""; } catch { /* ignore */ }
-        throw new Error(`${res.status} ${detail}`);
-      }
-    } catch (e) {
-      updateMenu(m => ({
-        ...m,
-        categories: m.categories.map(c => c.id === catId ? { ...c, course: prev } : c),
-      }));
-      alert(`שמירת הסיווג נכשלה: ${e instanceof Error ? e.message : "שגיאה"}`);
     }
   }
 
@@ -1514,17 +1487,6 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                               </button>
                               <select
-                                value={cat.course ?? 1}
-                                onChange={e => setCategoryCourse(cat.id, Number(e.target.value))}
-                                title="קורס — סיווג מנה"
-                                style={{ background: "#1a1a24", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: "8px 10px", borderRadius: 10, cursor: "pointer", fontSize: 12, fontFamily: "inherit", outline: "none" }}
-                              >
-                                <option value={1} style={{ background: "#1a1a24", color: G_TEXT }}>ראשונות</option>
-                                <option value={2} style={{ background: "#1a1a24", color: G_TEXT }}>עיקריות</option>
-                                <option value={3} style={{ background: "#1a1a24", color: G_TEXT }}>קינוח</option>
-                                <option value={4} style={{ background: "#1a1a24", color: G_TEXT }}>משקאות</option>
-                              </select>
-                              <select
                                 value={cat.kitchenStationId ?? ""}
                                 onChange={e => setCategoryStation(cat.id, e.target.value)}
                                 title="שיוך מנות — תחנת מטבח"
@@ -1770,15 +1732,6 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
                 <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>שם הקטגוריה *</label>
                 <input required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })}
                   style={darkInput} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>קורס</label>
-                <select value={categoryForm.course} onChange={e => setCategoryForm({ ...categoryForm, course: Number(e.target.value) })} style={darkInput}>
-                  <option value={1}>ראשונות</option>
-                  <option value={2}>עיקריות</option>
-                  <option value={3}>קינוח</option>
-                  <option value={4}>משקאות</option>
-                </select>
               </div>
               <ImageUpload
                 label="תמונת קטגוריה"
