@@ -73,7 +73,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     isIos, isStandalone,
     unreadCount, overlayTable, overlayInsights,
     filteredTables,
-    fetchAll,
+    fetchAll, refreshing,
     quickFireCourse, patchStatus,
     toggleFullscreen, triggerInstall,
     snoozeInsight,
@@ -239,6 +239,14 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
         {/* LEFT (RTL end): clock | fullscreen */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{clock}</div>
+          <button onClick={() => fetchAll()} disabled={refreshing} title="רענון" style={{
+            background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 10,
+            padding: "8px 11px", cursor: refreshing ? "default" : "pointer", color: "#fff", display: "flex", alignItems: "center",
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: refreshing ? "spin 0.8s linear infinite" : undefined }}>
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
           <button onClick={toggleFullscreen} title={isFullscreen ? "צא ממסך מלא" : "מסך מלא"} style={{
             background: "rgba(255,255,255,0.06)", border: `1px solid ${G_BORDER_C}`, borderRadius: 10,
             padding: "8px 11px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center",
