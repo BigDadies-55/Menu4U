@@ -46,7 +46,7 @@ type Props = {
 
 const POPULAR_CAT_ID = "__popular__";
 // Course → single-letter badge (first letter of the Hebrew course name).
-const COURSE_LETTER: Record<number, string> = { 1: "ר", 2: "ע", 3: "ק" };
+const COURSE_LETTER: Record<number, string> = { 1: "ר", 2: "ע", 3: "ק", 4: "מ" };
 const courseLetter = (c: number) => COURSE_LETTER[c] ?? String(c);
 
 export function OrderScreen({
@@ -527,7 +527,7 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
   return (
     <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
-        <div title={{ 1: "ראשונות", 2: "עיקריות", 3: "קינוח" }[item.course] ?? `קורס ${item.course}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "default" }}>{courseLetter(item.course)}</div>
+        <div title={{ 1: "ראשונות", 2: "עיקריות", 3: "קינוח", 4: "משקאות" }[item.course] ?? `קורס ${item.course}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "default" }}>{courseLetter(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
