@@ -451,7 +451,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             <div style={{ fontSize: 19, fontWeight: 800, marginBottom: 8 }}>דיווחת יציאה?</div>
             <div style={{ fontSize: 13, color: G_MUTED_C, marginBottom: 22 }}>לפני היציאה מהמערכת, ודא שדיווחת יציאה בשעון.</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button onClick={() => setLogoutPrompt(false)} style={{ padding: "10px", borderRadius: 12, border: `1px solid ${G_BORDER_C}`, background: "transparent", color: G_MUTED_C, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>ביטול</button>
+              <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ padding: "10px", borderRadius: 12, border: `1px solid ${G_BORDER_C}`, background: "transparent", color: G_MUTED_C, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>כבר דיווחתי</button>
               <button onClick={() => { setLogoutPrompt(false); setAttSignal(s => s + 1); }} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(52,211,153,0.2)", color: "#34D399", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>דווח עכשיו</button>
             </div>
           </div>
