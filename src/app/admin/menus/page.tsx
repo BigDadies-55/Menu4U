@@ -15,7 +15,7 @@ const ITEM_SELECT = {
 } as const;
 
 const CATEGORY_SELECT = {
-  id: true, name: true, image: true, isActive: true, autoReady: true, kitchenStationId: true, sortOrder: true, course: true,
+  id: true, name: true, image: true, isActive: true, autoReady: true, kitchenStationId: true, sortOrder: true, course: true, translations: true,
   items: { select: ITEM_SELECT, orderBy: { sortOrder: "asc" as const } },
 } as const;
 
