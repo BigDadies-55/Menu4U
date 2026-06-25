@@ -91,8 +91,15 @@ export default function InstallPage() {
           </button>
         ) : (
           <>
+            <a
+              href="/downloads/waiter.apk"
+              download="waiter.apk"
+              style={{ ...S.btn, display: "block", textDecoration: "none", marginBottom: 16, background: "#22c55e", color: "#fff" }}
+            >
+              ⬇️ הורד APK ישירות
+            </a>
             <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 16 }}>
-              התקנה ידנית דרך Chrome:
+              או התקנה דרך Chrome:
             </div>
             {[
               { n: "1", t: 'פתח את הכתובת הזו ב-Chrome' },
