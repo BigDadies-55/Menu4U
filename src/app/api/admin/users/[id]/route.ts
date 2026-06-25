@@ -95,14 +95,25 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     return NextResponse.json({ error: "המשתמש לא נמצא" }, { status: 404 });
   }
   try {
+    // Remove every dependent row explicitly so deletion works even if the
+    // database's cascade FKs drifted from the Prisma schema.
     await prisma.$transaction([
-      // Invites this user sent have a non-cascading FK — remove them first.
       prisma.userInvite.deleteMany({ where: { invitedById: id } }),
+      prisma.shiftRequest.deleteMany({ where: { fromUserId: id } }),
+      prisma.shiftRequest.updateMany({ where: { toUserId: id }, data: { toUserId: null } }),
+      prisma.shift.deleteMany({ where: { userId: id } }),
+      prisma.pushSubscription.deleteMany({ where: { userId: id } }),
+      prisma.waiterStation.deleteMany({ where: { userId: id } }),
+      prisma.passwordHistory.deleteMany({ where: { userId: id } }),
+      prisma.restaurantUser.deleteMany({ where: { userId: id } }),
+      prisma.session.deleteMany({ where: { userId: id } }),
+      prisma.account.deleteMany({ where: { userId: id } }),
       prisma.user.delete({ where: { id } }),
     ]);
   } catch (err) {
     console.error("[users] delete failed:", err);
-    return NextResponse.json({ error: "שגיאה במחיקת המשתמש" }, { status: 500 });
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `שגיאה במחיקת המשתמש: ${detail}` }, { status: 500 });
   }
   await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "DELETE_USER", entity: "user", entityId: id, entityName: userToDelete.email, ip: getIp(req) });
   return NextResponse.json({ success: true });
