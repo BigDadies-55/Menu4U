@@ -15,7 +15,7 @@ const ITEM_SELECT = {
 } as const;
 
 const CATEGORY_SELECT = {
-  id: true, name: true, image: true, isActive: true, autoReady: true, kitchenStationId: true, sortOrder: true,
+  id: true, name: true, image: true, isActive: true, autoReady: true, kitchenStationId: true, sortOrder: true, course: true,
   items: { select: ITEM_SELECT, orderBy: { sortOrder: "asc" as const } },
 } as const;
 
@@ -41,6 +41,7 @@ export default async function MenusPage() {
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "autoReady" BOOLEAN NOT NULL DEFAULT false`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "kitchenStationId" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "course" INTEGER NOT NULL DEFAULT 1`);
   } catch { /* ignore — column already exists */ }
 
   let restaurants;
