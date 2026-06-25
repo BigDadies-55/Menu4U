@@ -1,6 +1,6 @@
 /* Menu4U Service Worker — offline cache + push notifications */
-const CACHE_STATIC = "menu4u-static-v3";
-const CACHE_API    = "menu4u-api-v3";
+const CACHE_STATIC = "menu4u-static-v4";
+const CACHE_API    = "menu4u-api-v4";
 
 // API paths to cache for offline (network-first, fall back to cache)
 const WAITER_API_PREFIXES = [
@@ -14,7 +14,6 @@ const WAITER_API_PREFIXES = [
 
 // Static waiter routes to pre-cache shell
 const WAITER_ROUTES = [
-  "/admin/waiter-pos",
   "/admin/waiter-pos",
   "/admin/waiter-floor",
 ];
