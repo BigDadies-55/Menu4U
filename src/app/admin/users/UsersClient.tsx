@@ -477,6 +477,13 @@ export default function UsersClient({ users: initial, restaurants, currentUserRo
                       </div>
                     </td>
 
+                    {/* Username */}
+                    <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
+                      <span dir="ltr" style={{ display: "inline-block", fontSize: 13, fontWeight: 600, color: T.purple, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>
+                        @{user.username}
+                      </span>
+                    </td>
+
                     {/* Role badge */}
                     <td style={{ ...tdBase, paddingRight: 20, paddingLeft: 20 }}>
                       <span style={{ ...ROLE_BADGE[user.role], borderRadius: 40, padding: "4px 12px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>
