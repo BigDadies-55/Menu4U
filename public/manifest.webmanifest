@@ -1,7 +1,7 @@
 {
-  "name": "Menu4U — מלצר חכם",
-  "short_name": "מלצר",
-  "description": "מערכת ניהול הזמנות למלצרים",
+  "name": "Waiter - Menu4U",
+  "short_name": "Waiter",
+  "description": "Smart waiter ordering system for restaurants — manage tables, orders and courses",
   "start_url": "/admin/waiter-pos-new",
   "scope": "/admin/waiter-pos-new",
   "display": "standalone",
@@ -14,21 +14,28 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icon-192.svg",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.svg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/favicon.ico",
-      "sizes": "48x48",
-      "type": "image/x-icon"
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "shortcuts": [

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Waiter - Menu4U</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="Smart waiter ordering system for restaurants — manage tables, orders and courses">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+    // Redirect to app if already logged in
+    window.location.href = '/admin/waiter-pos-new/install';
+  </script>
+</head>
+<body style="background:#1a1a2e;color:white;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;">
+  <div style="text-align:center;">
+    <div style="font-size:64px;margin-bottom:16px;">🍽️</div>
+    <h1 style="color:#f59e0b;margin-bottom:8px;">Waiter — Menu4U</h1>
+    <p style="color:rgba(255,255,255,0.5);">Smart waiter ordering system</p>
+  </div>
+</body>
+</html>
