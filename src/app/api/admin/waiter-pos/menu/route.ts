@@ -61,9 +61,11 @@ export async function GET(req: Request) {
       .filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
 
     // Normalize: ensure allergens is always an array (old rows may have null)
+    // and stamp each item with its category's course so the client never has to
+    // re-derive it (which broke for items shown under the "popular" pseudo-cat).
     const normalized = categories.map(c => ({
       ...c,
-      items: c.items.map(i => ({ ...i, allergens: i.allergens ?? [], price: Number(i.price ?? 0) })),
+      items: c.items.map(i => ({ ...i, allergens: i.allergens ?? [], price: Number(i.price ?? 0), course: c.course ?? 1 })),
     }));
     return NextResponse.json({ categories: normalized });
   } catch (e) {
