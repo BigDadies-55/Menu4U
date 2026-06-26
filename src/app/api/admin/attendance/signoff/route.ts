@@ -11,6 +11,28 @@ import { logAudit, getIp } from "@/lib/audit";
 
 const MANAGER_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
 
+// Current month in YYYY-MM (Asia/Jerusalem). Employees may only sign past months.
+function currentMonthStr() {
+  const n = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`;
+}
+
+async function isMonthReleased(restaurantId: string, month: string): Promise<boolean> {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "AttendanceMonthRelease" (
+      "id" TEXT NOT NULL, "restaurantId" TEXT NOT NULL, "month" TEXT NOT NULL,
+      "releasedByUserId" TEXT NOT NULL, "releasedByName" TEXT,
+      "releasedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "AttendanceMonthRelease_pkey" PRIMARY KEY ("id")
+    )
+  `);
+  const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+    `SELECT "id" FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2`,
+    restaurantId, month
+  );
+  return rows.length > 0;
+}
+
 async function ensureTable() {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "AttendanceSignoff" (
@@ -83,6 +105,15 @@ export async function POST(req: Request) {
   if (!restaurantId || !month) return NextResponse.json({ error: "Missing params" }, { status: 400 });
   const sig = (signatureName ?? session.user.name ?? session.user.email ?? "").trim();
   if (!sig) return NextResponse.json({ error: "חתימה היא שדה חובה" }, { status: 400 });
+
+  // A report may be signed only for a past month (not the current/future one)...
+  if (month >= currentMonthStr()) {
+    return NextResponse.json({ error: "ניתן לאשר רק חודש שהסתיים" }, { status: 400 });
+  }
+  // ...and only after the manager has released (finalised) that month.
+  if (!(await isMonthReleased(restaurantId, month))) {
+    return NextResponse.json({ error: "הדוח החודשי טרם אושר ע\"י המנהל" }, { status: 400 });
+  }
 
   await ensureTable();
 

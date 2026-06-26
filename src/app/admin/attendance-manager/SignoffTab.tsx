@@ -25,10 +25,19 @@ type Signoff = {
 // Step 3 — Employee monthly sign-off. The employee reviews the month's totals and
 // digitally signs that they are accurate; once signed it is locked. Managers see a
 // roster of who has / hasn't signed.
+// Employees sign the previous (just-ended) month, not the current one.
+function prevMonthStr() {
+  const n = new Date();
+  const d = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export default function SignoffTab({ restaurantId, staff, isManager, currentUserId, currentUserName, showToast }: Props) {
-  const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
+  const [month, setMonth] = useState(prevMonthStr);
   const [records, setRecords] = useState<AttRecord[]>([]);
   const [signoffs, setSignoffs] = useState<Signoff[]>([]);
+  const [released, setReleased] = useState(false);
+  const [releaseBusy, setReleaseBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [signature, setSignature] = useState(currentUserName);
   const [confirmed, setConfirmed] = useState(false);
@@ -40,14 +49,17 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
     const { from, to } = monthRange(month);
     setLoading(true);
     try {
-      const [attRes, sgRes] = await Promise.all([
+      const [attRes, sgRes, relRes] = await Promise.all([
         fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`),
         fetch(`/api/admin/attendance/signoff?restaurantId=${restaurantId}&month=${month}`),
+        fetch(`/api/admin/attendance/month-release?restaurantId=${restaurantId}&month=${month}`),
       ]);
       const attData = await attRes.json();
       const sgData = await sgRes.json();
+      const relData = await relRes.json();
       setRecords((attData.records ?? []).filter((r: AttRecord) => r.type !== "DELETED"));
       setSignoffs(sgData.signoffs ?? []);
+      setReleased(!!relData.released);
     } catch { /* ignore */ }
     finally { setLoading(false); setConfirmed(false); }
   }, [restaurantId, month]);
@@ -88,6 +100,22 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
     } finally { setSaving(false); }
   }
 
+  async function toggleRelease() {
+    if (releaseBusy) return;
+    setReleaseBusy(true);
+    try {
+      const res = await fetch(`/api/admin/attendance/month-release${released ? `?restaurantId=${restaurantId}&month=${month}` : ""}`, {
+        method: released ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: released ? undefined : JSON.stringify({ restaurantId, month }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error ?? "שגיאה"); return; }
+      showToast(released ? "הדוח נפתח מחדש לעריכה" : "✓ הדוח אושר — נפתחה חתימה לעובדים");
+      load();
+    } finally { setReleaseBusy(false); }
+  }
+
   const monthLabel = month;
   const inputBox: React.CSSProperties = {
     background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8,
@@ -98,9 +126,22 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         <span style={{ fontSize: 13, color: GM }}>חודש לאישור:</span>
-        <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }} />
+        <input type="month" value={month} max={prevMonthStr()} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }} />
         {loading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
       </div>
+
+      {/* Manager release gate — only after release can employees sign */}
+      {isManager && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: released ? "rgba(52,211,153,0.08)" : "rgba(251,191,36,0.08)", border: `1px solid ${released ? "rgba(52,211,153,0.3)" : "rgba(251,191,36,0.3)"}`, borderRadius: 12, padding: "12px 16px", marginBottom: 16, maxWidth: 640 }}>
+          <div style={{ flex: "1 1 240px" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: released ? "#34D399" : "#FBBF24" }}>{released ? "✓ הדוח אושר — עובדים יכולים לחתום" : "⏳ הדוח טרם אושר לחתימה"}</div>
+            <div style={{ fontSize: 11, color: GM, marginTop: 2 }}>{released ? `סיים לעדכן? אפשר לפתוח מחדש לעריכה.` : `סיים לעדכן את דוח ${monthLabel}, ואז אשר כדי לפתוח חתימה לעובדים.`}</div>
+          </div>
+          <button onClick={toggleRelease} disabled={releaseBusy} style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: released ? "rgba(255,255,255,0.1)" : ACCENT_GRAD, color: "#fff", fontWeight: 800, fontSize: 13, cursor: releaseBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: releaseBusy ? 0.6 : 1 }}>
+            {releaseBusy ? "..." : released ? "פתח מחדש לעריכה" : "אשר דוח חודשי"}
+          </button>
+        </div>
+      )}
 
       {/* My sign-off card */}
       <div style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${GB}`, borderRadius: 16, padding: 20, marginBottom: 18, maxWidth: 640 }}>
@@ -133,6 +174,11 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
           <div style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.35)", borderRadius: 12, padding: "14px 16px", color: "#34D399" }}>
             <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>✓ הדוח אושר ונחתם</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>חתימה: {mySignoff.signatureName} · {fmtDateTime(mySignoff.signedAt)}</div>
+          </div>
+        ) : !released ? (
+          <div style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.35)", borderRadius: 12, padding: "14px 16px", color: "#FBBF24" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>⏳ הדוח טרם אושר ע״י המנהל</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>ניתן יהיה לחתום על דוח {monthLabel} רק לאחר אישור המנהל.</div>
           </div>
         ) : (
           <>

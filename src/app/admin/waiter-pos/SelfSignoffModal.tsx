@@ -23,6 +23,12 @@ function monthRange(month: string) {
   const last = new Date(y, m, 0).getDate();
   return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
 }
+// Employees sign the previous (just-ended) month, not the current one.
+function prevMonthStr() {
+  const n = new Date();
+  const d = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 
 export default function SelfSignoffModal({
   restaurantId, userId, userName, onClose, showToast,
@@ -30,9 +36,10 @@ export default function SelfSignoffModal({
   restaurantId: string; userId: string; userName: string;
   onClose: () => void; showToast: (msg: string) => void;
 }) {
-  const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
+  const [month, setMonth] = useState(prevMonthStr);
   const [records, setRecords] = useState<AttRecord[]>([]);
   const [signoffs, setSignoffs] = useState<Signoff[]>([]);
+  const [released, setReleased] = useState(false);
   const [loading, setLoading] = useState(false);
   const [signature, setSignature] = useState(userName);
   const [confirmed, setConfirmed] = useState(false);
@@ -44,14 +51,17 @@ export default function SelfSignoffModal({
     const { from, to } = monthRange(month);
     setLoading(true);
     try {
-      const [attRes, sgRes] = await Promise.all([
+      const [attRes, sgRes, relRes] = await Promise.all([
         fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`),
         fetch(`/api/admin/attendance/signoff?restaurantId=${restaurantId}&month=${month}`),
+        fetch(`/api/admin/attendance/month-release?restaurantId=${restaurantId}&month=${month}`),
       ]);
       const attData = await attRes.json();
       const sgData = await sgRes.json();
+      const relData = await relRes.json();
       setRecords((attData.records ?? []).filter((r: AttRecord) => r.type !== "DELETED"));
       setSignoffs(sgData.signoffs ?? []);
+      setReleased(!!relData.released);
     } catch { /* ignore */ }
     finally { setLoading(false); setConfirmed(false); }
   }, [restaurantId, month]);
@@ -111,7 +121,7 @@ export default function SelfSignoffModal({
         <div style={{ padding: "16px 22px 22px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, color: GM }}>חודש לאישור:</span>
-            <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }} />
+            <input type="month" value={month} max={prevMonthStr()} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }} />
             {loading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           </div>
 
@@ -143,6 +153,11 @@ export default function SelfSignoffModal({
             <div style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.35)", borderRadius: 12, padding: "14px 16px", color: "#34D399" }}>
               <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>✓ הדוח אושר ונחתם</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>חתימה: {mySignoff.signatureName} · {fmtDateTime(mySignoff.signedAt)}</div>
+            </div>
+          ) : !released ? (
+            <div style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.35)", borderRadius: 12, padding: "14px 16px", color: "#FBBF24" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>⏳ הדוח טרם אושר ע״י המנהל</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>ניתן יהיה לחתום על דוח {month} רק לאחר שהמנהל יסיים לעדכן ויאשר את הדוח החודשי.</div>
             </div>
           ) : (
             <>
