@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  outboxAdd, outboxList, outboxRemove, outboxBumpAttempts, outboxCount, newKey,
+  outboxAdd, outboxList, outboxRemove, outboxBumpAttempts, outboxCount, outboxRemapTempId, newKey,
   type OutboxEntry,
 } from "@/lib/outbox";
 
-export type SyncResult = { entry: OutboxEntry; ok: boolean; data?: unknown; status?: number };
+export type SyncResult = { entry: OutboxEntry; ok: boolean; conflict?: boolean; data?: unknown; status?: number };
 
-type EnqueueArgs = { kind: string; method: string; url: string; body: unknown; label: string; key?: string };
+type EnqueueArgs = { kind: string; method: string; url: string; body: unknown; label: string; key?: string; tempId?: string };
 
 // Unified offline-tolerant mutation queue. enqueue() records an action and tries
 // to flush immediately; on failure it stays durably queued and is replayed FIFO
@@ -43,14 +43,23 @@ export function useOutbox(onResults?: (results: SyncResult[]) => void) {
           if (res.ok) {
             const data = await res.json().catch(() => ({}));
             await outboxRemove(entry.key);
+            // An offline-created order just got its real id — rewrite dependents.
+            const realId = (data as { id?: string } | null)?.id;
+            if (entry.tempId && realId) await outboxRemapTempId(entry.tempId, realId);
             results.push({ entry, ok: true, data, status: res.status });
-          } else if (res.status >= 400 && res.status < 500 && res.status !== 409) {
+          } else if (res.status === 409) {
+            // Conflict — the resource changed/closed on the server (e.g. table paid
+            // by another device). Drop it so the queue doesn't stick, and report it.
+            const data = await res.json().catch(() => ({}));
+            await outboxRemove(entry.key);
+            results.push({ entry, ok: false, conflict: true, data, status: 409 });
+          } else if (res.status >= 400 && res.status < 500) {
             // Permanent client error (bad payload, gone) — drop the poison item.
             const data = await res.json().catch(() => ({}));
             await outboxRemove(entry.key);
             results.push({ entry, ok: false, data, status: res.status });
           } else {
-            // 5xx or 409 conflict — keep, stop to preserve order (409 handled in phase 2).
+            // 5xx server error — keep, stop to preserve order, retry later.
             await outboxBumpAttempts(entry.key, entry);
             results.push({ entry, ok: false, status: res.status });
             break;
@@ -69,7 +78,7 @@ export function useOutbox(onResults?: (results: SyncResult[]) => void) {
 
   const enqueue = useCallback(async (args: EnqueueArgs): Promise<string> => {
     const key = args.key ?? newKey();
-    await outboxAdd({ key, kind: args.kind, method: args.method, url: args.url, body: args.body, label: args.label });
+    await outboxAdd({ key, kind: args.kind, method: args.method, url: args.url, body: args.body, label: args.label, tempId: args.tempId });
     await refreshCount();
     flush(); // optimistic — try right away if we're actually online
     return key;
@@ -82,11 +91,15 @@ export function useOutbox(onResults?: (results: SyncResult[]) => void) {
     function onOffline() { setIsOnline(false); }
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
+    // The Service Worker may flush the outbox in the background — keep the badge in sync.
+    function onSwMessage(e: MessageEvent) { if (e.data?.type === "outbox-flushed") refreshCount(); }
+    navigator.serviceWorker?.addEventListener?.("message", onSwMessage);
     // Periodic retry as a safety net (covers flaky connections that never fire "online").
     const id = setInterval(() => { if (navigator.onLine) flush(); }, 20_000);
     return () => {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
+      navigator.serviceWorker?.removeEventListener?.("message", onSwMessage);
       clearInterval(id);
     };
   }, [flush, refreshCount]);

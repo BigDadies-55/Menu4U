@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { logAudit, getIp } from "@/lib/audit";
+import { idempotencyKey, getIdempotent, saveIdempotent } from "@/lib/idempotency";
 
 async function ensureTable() {
   await prisma.$executeRawUnsafe(`
@@ -71,6 +72,15 @@ async function getConfig(restaurantId: string): Promise<{ graceMinutes: number; 
 function restaurantNow(timezone: string): { now: Date; date: string } {
   const now = new Date(new Date().toLocaleString("en-US", { timeZone: timezone }));
   const date = new Date().toLocaleDateString("en-CA", { timeZone: timezone }); // YYYY-MM-DD
+  return { now, date };
+}
+
+// Same as restaurantNow but for a specific instant (offline punch replayed later —
+// the punch time is the client's `at`, not the sync time).
+function restaurantAt(timezone: string, iso: string): { now: Date; date: string } {
+  const base = new Date(iso);
+  const now = new Date(base.toLocaleString("en-US", { timeZone: timezone }));
+  const date = base.toLocaleDateString("en-CA", { timeZone: timezone });
   return { now, date };
 }
 
@@ -209,8 +219,12 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const idemKey = idempotencyKey(req);
+  const cachedPunch = await getIdempotent(idemKey);
+  if (cachedPunch) return NextResponse.json(cachedPunch.response, { status: cachedPunch.statusCode });
+
   const body = await req.json();
-  const { restaurantId, type, note, roleCode } = body as { restaurantId: string; type: "IN" | "OUT"; note?: string; roleCode?: string };
+  const { restaurantId, type, note, roleCode, at } = body as { restaurantId: string; type: "IN" | "OUT"; note?: string; roleCode?: string; at?: string };
 
   if (!restaurantId || !["IN","OUT"].includes(type)) {
     return NextResponse.json({ error: "Invalid params" }, { status: 400 });
@@ -221,8 +235,10 @@ export async function POST(req: Request) {
   const userId = session.user.id;
   // Use the restaurant's configured timezone so punches are recorded in the
   // venue's local wall-clock (encoded in UTC fields per the storage convention).
+  // `at` is set when an offline punch is replayed — record the real punch time.
   const cfg = await getConfig(restaurantId);
-  const { now, date } = restaurantNow(cfg.timezone);
+  const offline = typeof at === "string" && !Number.isNaN(Date.parse(at));
+  const { now, date } = offline ? restaurantAt(cfg.timezone, at!) : restaurantNow(cfg.timezone);
   const id = randomUUID();
 
   // Task 5: on check-in, flag (but never block) entries that fall outside the
@@ -238,11 +254,20 @@ export async function POST(req: Request) {
     ({ unscheduled, outOfWindow } = evaluateSchedule(shifts, nowMin, graceMinutes));
   }
 
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "Attendance"("id","userId","restaurantId","type","date","note","roleCode","unscheduled","outOfWindow")
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-    id, userId, restaurantId, type, date, note ?? null, roleCode ?? null, unscheduled, outOfWindow
-  );
+  if (offline) {
+    // Replayed offline punch — store the actual punch instant explicitly.
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Attendance"("id","userId","restaurantId","type","date","timestamp","note","roleCode","unscheduled","outOfWindow")
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      id, userId, restaurantId, type, date, new Date(at!).toISOString(), note ?? null, roleCode ?? null, unscheduled, outOfWindow
+    );
+  } else {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Attendance"("id","userId","restaurantId","type","date","note","roleCode","unscheduled","outOfWindow")
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      id, userId, restaurantId, type, date, note ?? null, roleCode ?? null, unscheduled, outOfWindow
+    );
+  }
 
   await logAudit({
     userId, userEmail: session.user.email,
@@ -253,7 +278,9 @@ export async function POST(req: Request) {
     ip: getIp(req),
   });
 
-  return NextResponse.json({ id, type, timestamp: now.toISOString(), roleCode: roleCode ?? null, unscheduled, outOfWindow });
+  const result = { id, type, timestamp: now.toISOString(), roleCode: roleCode ?? null, unscheduled, outOfWindow };
+  await saveIdempotent(idemKey, 200, result);
+  return NextResponse.json(result);
 }
 
 // Manager correction: manually edit a record's time. Requires a reason — every

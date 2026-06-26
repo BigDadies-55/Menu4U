@@ -1,6 +1,80 @@
-/* Menu4U Service Worker — offline cache + push notifications */
-const CACHE_STATIC = "menu4u-static-v5";
-const CACHE_API    = "menu4u-api-v5";
+/* Menu4U Service Worker — offline cache + push notifications + outbox sync */
+const CACHE_STATIC = "menu4u-static-v6";
+const CACHE_API    = "menu4u-api-v6";
+
+// ── Background Sync: replay the offline outbox even if the app is closed ──────
+const OUTBOX_DB = "menu4u-outbox";
+const OUTBOX_STORE = "queue";
+
+function obOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(OUTBOX_DB, 1);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function obAll(db) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(OUTBOX_STORE, "readonly");
+    const rq = tx.objectStore(OUTBOX_STORE).getAll();
+    rq.onsuccess = () => res((rq.result || []).sort((a, b) => a.seq - b.seq));
+    rq.onerror = () => rej(rq.error);
+  });
+}
+function obDel(db, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(OUTBOX_STORE, "readwrite");
+    tx.objectStore(OUTBOX_STORE).delete(key);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+function obRemap(db, tempId, realId) {
+  return obAll(db).then(entries => new Promise((res, rej) => {
+    const tx = db.transaction(OUTBOX_STORE, "readwrite");
+    const st = tx.objectStore(OUTBOX_STORE);
+    for (const e of entries) {
+      const uh = e.url.includes(tempId);
+      const bs = e.body == null ? "" : JSON.stringify(e.body);
+      const bh = bs.includes(tempId);
+      if (!uh && !bh) continue;
+      st.put({ ...e, url: uh ? e.url.split(tempId).join(realId) : e.url, body: bh ? JSON.parse(bs.split(tempId).join(realId)) : e.body });
+    }
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  }));
+}
+async function flushOutbox() {
+  const db = await obOpen();
+  const entries = await obAll(db);
+  for (const e of entries) {
+    let res;
+    try {
+      res = await fetch(e.url, {
+        method: e.method,
+        headers: { "Content-Type": "application/json", "X-Idempotency-Key": e.key },
+        body: e.body == null ? undefined : JSON.stringify(e.body),
+      });
+    } catch (_) { break; } // still offline — stop, retry on next sync
+    if (res.ok) {
+      let data = {};
+      try { data = await res.json(); } catch (_) { /* ignore */ }
+      await obDel(db, e.key);
+      if (e.tempId && data && data.id) await obRemap(db, e.tempId, data.id);
+    } else if (res.status >= 400 && res.status < 500) {
+      await obDel(db, e.key); // drop poison / conflict
+    } else {
+      break; // 5xx — keep, retry later
+    }
+  }
+  // Nudge any open clients to refresh their data after a background flush.
+  const clientList = await self.clients.matchAll({ includeUncontrolled: true });
+  for (const c of clientList) c.postMessage({ type: "outbox-flushed" });
+}
+
+self.addEventListener("sync", event => {
+  if (event.tag === "outbox-flush") event.waitUntil(flushOutbox());
+});
 
 // API paths to cache for offline (network-first, fall back to cache)
 const WAITER_API_PREFIXES = [
