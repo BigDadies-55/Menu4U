@@ -453,13 +453,22 @@ export function OrderScreen({
 
       {/* ══ Covers stepper ══ */}
       {coversOpen && (
-        <Popup onClose={() => setCoversOpen(false)} title="כמות סועדים" width={380}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, padding: "10px 0" }}>
-            <button onClick={() => setCovers(c => Math.max(1, c - 1))} style={stepBtn}>−</button>
-            <span style={{ fontSize: 40, fontWeight: 900, minWidth: 60, textAlign: "center", color: "#1a1612" }}>{covers}</span>
-            <button onClick={() => setCovers(c => c + 1)} style={stepBtn}>+</button>
-          </div>
-        </Popup>
+        <CoversPopup
+          covers={covers}
+          onConfirm={async (newCovers) => {
+            setCovers(newCovers);
+            setCoversOpen(false);
+            const currentOrderId = orderId ?? order?.id;
+            if (currentOrderId) {
+              await fetch(`/api/admin/orders/${currentOrderId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ coversCount: newCovers }),
+              });
+            }
+          }}
+          onClose={() => setCoversOpen(false)}
+        />
       )}
 
       {/* ══ Allergens editor ══ */}
@@ -580,6 +589,34 @@ function Popup({ title, children, onClose, width = 460 }: { title: string; child
           <button onClick={onClose} style={{ background: "#f0ede8", border: "none", borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#555" }}>✕</button>
         </div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+function CoversPopup({ covers, onConfirm, onClose }: { covers: number; onConfirm: (n: number) => Promise<void>; onClose: () => void }) {
+  const [val, setVal] = useState(covers);
+  const [saving, setSaving] = useState(false);
+  const T = { gold: "#d4a017" };
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} dir="rtl" style={{ background: "#fff", color: "#1a1612", borderRadius: 18, padding: 22, width: "min(96vw, 380px)", fontFamily: "'Heebo', sans-serif" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, borderBottom: "2px solid #c8a13a", paddingBottom: 12 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1612" }}>כמות סועדים</div>
+          <button onClick={onClose} style={{ background: "#f0ede8", border: "none", borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#555" }}>✕</button>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, padding: "10px 0 20px" }}>
+          <button onClick={() => setVal(v => Math.max(1, v - 1))} style={stepBtn}>−</button>
+          <span style={{ fontSize: 40, fontWeight: 900, minWidth: 60, textAlign: "center", color: "#1a1612" }}>{val}</span>
+          <button onClick={() => setVal(v => v + 1)} style={stepBtn}>+</button>
+        </div>
+        <button
+          onClick={async () => { setSaving(true); await onConfirm(val); setSaving(false); }}
+          disabled={saving}
+          style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.gold, color: "#fff", fontWeight: 800, fontSize: 15, cursor: saving ? "default" : "pointer", fontFamily: "inherit", opacity: saving ? 0.7 : 1 }}
+        >
+          {saving ? "שומר..." : "✓ אישור"}
+        </button>
       </div>
     </div>
   );
