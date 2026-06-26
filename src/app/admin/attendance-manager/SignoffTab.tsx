@@ -2,10 +2,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { computeDailyHoursByRole, sumBreakdowns } from "@/lib/hours";
 import {
-  GB, GM, ACCENT_GRAD, monthRange, fmtDateTime,
+  GB, GM, ACCENT_GRAD, fmtDateTime,
   type AttRecord, type StaffMember,
 } from "./attendanceShared";
 import MonthlyDetailReport from "@/components/attendance/MonthlyDetailReport";
+import { type PeriodType, periodRange, prevPeriod, recentPeriods, periodLabel } from "@/lib/attendancePeriod";
 
 interface Props {
   restaurantId: string;
@@ -25,15 +26,9 @@ type Signoff = {
 // Step 3 — Employee monthly sign-off. The employee reviews the month's totals and
 // digitally signs that they are accurate; once signed it is locked. Managers see a
 // roster of who has / hasn't signed.
-// Employees sign the previous (just-ended) month, not the current one.
-function prevMonthStr() {
-  const n = new Date();
-  const d = new Date(n.getFullYear(), n.getMonth() - 1, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
 export default function SignoffTab({ restaurantId, staff, isManager, currentUserId, currentUserName, showToast }: Props) {
-  const [month, setMonth] = useState(prevMonthStr);
+  const [periodType, setPeriodType] = useState<PeriodType>("month");
+  const [month, setMonth] = useState(() => prevPeriod("month"));
   const [records, setRecords] = useState<AttRecord[]>([]);
   const [signoffs, setSignoffs] = useState<Signoff[]>([]);
   const [released, setReleased] = useState(false);
@@ -46,13 +41,13 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
 
   const load = useCallback(async () => {
     if (!restaurantId) return;
-    const { from, to } = monthRange(month);
+    const { from, to } = periodRange(periodType, month);
     setLoading(true);
     try {
       const [attRes, sgRes, relRes] = await Promise.all([
         fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`),
         fetch(`/api/admin/attendance/signoff?restaurantId=${restaurantId}&month=${month}`),
-        fetch(`/api/admin/attendance/month-release?restaurantId=${restaurantId}&month=${month}`),
+        fetch(`/api/admin/attendance/month-release?restaurantId=${restaurantId}&month=${month}&periodType=${periodType}`),
       ]);
       const attData = await attRes.json();
       const sgData = await sgRes.json();
@@ -62,7 +57,7 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
       setReleased(!!relData.released);
     } catch { /* ignore */ }
     finally { setLoading(false); setConfirmed(false); }
-  }, [restaurantId, month]);
+  }, [restaurantId, month, periodType]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -87,7 +82,7 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          restaurantId, month,
+          restaurantId, month, periodType,
           netHours: myTotal.netHours, regularHours: myTotal.regularHours,
           ot125Hours: myTotal.overtime125Hours, ot150Hours: myTotal.overtime150Hours,
           payableHours: myTotal.payableUnits, signatureName: sig,
@@ -104,10 +99,10 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
     if (releaseBusy) return;
     setReleaseBusy(true);
     try {
-      const res = await fetch(`/api/admin/attendance/month-release${released ? `?restaurantId=${restaurantId}&month=${month}` : ""}`, {
+      const res = await fetch(`/api/admin/attendance/month-release${released ? `?restaurantId=${restaurantId}&month=${month}&periodType=${periodType}` : ""}`, {
         method: released ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: released ? undefined : JSON.stringify({ restaurantId, month }),
+        body: released ? undefined : JSON.stringify({ restaurantId, month, periodType }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.error ?? "שגיאה"); return; }
@@ -116,7 +111,7 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
     } finally { setReleaseBusy(false); }
   }
 
-  const monthLabel = month;
+  const monthLabel = periodLabel(periodType, month);
   const inputBox: React.CSSProperties = {
     background: "rgba(255,255,255,0.07)", border: `1px solid ${GB}`, borderRadius: 8,
     color: "#fff", padding: "5px 10px", fontSize: 12, fontFamily: "inherit", outline: "none",
@@ -125,8 +120,16 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, color: GM }}>חודש לאישור:</span>
-        <input type="month" value={month} max={prevMonthStr()} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }} />
+        <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, padding: 3 }}>
+          {([["month", "חודשי"], ["week", "שבועי"]] as const).map(([t, lbl]) => (
+            <button key={t} onClick={() => { setPeriodType(t); setMonth(prevPeriod(t)); }} style={{ padding: "5px 14px", borderRadius: 7, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: periodType === t ? "rgba(245,158,11,0.25)" : "transparent", color: periodType === t ? "#F59E0B" : GM }}>{lbl}</button>
+          ))}
+        </div>
+        <select value={month} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }}>
+          {recentPeriods(periodType, periodType === "week" ? 8 : 6).map(p => (
+            <option key={p} value={p} style={{ background: "#1a1a24" }}>{periodLabel(periodType, p)}</option>
+          ))}
+        </select>
         {loading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
       </div>
 
@@ -146,7 +149,7 @@ export default function SignoffTab({ restaurantId, staff, isManager, currentUser
       {/* My sign-off card */}
       <div style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${GB}`, borderRadius: 16, padding: 20, marginBottom: 18, maxWidth: 640 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 4 }}>📝 אישור דוח נוכחות חודשי</div>
-        <div style={{ fontSize: 12, color: GM, marginBottom: 16 }}>בחתימתך הינך מצהיר/ה כי הנתונים משקפים במדויק את שעות עבודתך והפסקותיך בחודש {monthLabel}.</div>
+        <div style={{ fontSize: 12, color: GM, marginBottom: 16 }}>בחתימתך הינך מצהיר/ה כי הנתונים משקפים במדויק את שעות עבודתך והפסקותיך ב{monthLabel}.</div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
           {[

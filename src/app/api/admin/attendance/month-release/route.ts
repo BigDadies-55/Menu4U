@@ -22,12 +22,13 @@ async function ensureTable() {
       CONSTRAINT "AttendanceMonthRelease_pkey" PRIMARY KEY ("id")
     )
   `);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "AttendanceMonthRelease" ADD COLUMN IF NOT EXISTS "periodType" TEXT NOT NULL DEFAULT 'month'`);
   await prisma.$executeRawUnsafe(
     `CREATE UNIQUE INDEX IF NOT EXISTS "AttendanceMonthRelease_rest_month_idx" ON "AttendanceMonthRelease"("restaurantId","month")`
   );
 }
 
-type ReleaseRow = { id: string; restaurantId: string; month: string; releasedByUserId: string; releasedByName: string | null; releasedAt: Date };
+type ReleaseRow = { id: string; restaurantId: string; month: string; periodType: string; releasedByUserId: string; releasedByName: string | null; releasedAt: Date };
 
 // GET ?restaurantId&month — returns whether the month has been released.
 export async function GET(req: Request) {
@@ -37,12 +38,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const restaurantId = searchParams.get("restaurantId") ?? "";
   const month = searchParams.get("month") ?? "";
+  const periodType = searchParams.get("periodType") === "week" ? "week" : "month";
   if (!restaurantId || !month) return NextResponse.json({ error: "Missing params" }, { status: 400 });
 
   await ensureTable();
   const [row] = await prisma.$queryRawUnsafe<ReleaseRow[]>(
-    `SELECT * FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2`,
-    restaurantId, month
+    `SELECT * FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2 AND "periodType"=$3`,
+    restaurantId, month, periodType
   );
   return NextResponse.json({ released: !!row, release: row ?? null });
 }
@@ -55,20 +57,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "רק מנהל יכול לאשר דוח חודשי" }, { status: 403 });
   }
 
-  const { restaurantId, month } = (await req.json()) as { restaurantId?: string; month?: string };
+  const { restaurantId, month, periodType: rawType } = (await req.json()) as { restaurantId?: string; month?: string; periodType?: string };
+  const periodType = rawType === "week" ? "week" : "month";
   if (!restaurantId || !month) return NextResponse.json({ error: "Missing params" }, { status: 400 });
 
   await ensureTable();
   const existing = await prisma.$queryRawUnsafe<ReleaseRow[]>(
-    `SELECT * FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2`,
-    restaurantId, month
+    `SELECT * FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2 AND "periodType"=$3`,
+    restaurantId, month, periodType
   );
   if (existing.length > 0) return NextResponse.json({ release: existing[0], alreadyReleased: true });
 
   const id = randomUUID();
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "AttendanceMonthRelease"("id","restaurantId","month","releasedByUserId","releasedByName") VALUES($1,$2,$3,$4,$5)`,
-    id, restaurantId, month, session.user.id, session.user.name ?? session.user.email ?? null
+    `INSERT INTO "AttendanceMonthRelease"("id","restaurantId","month","periodType","releasedByUserId","releasedByName") VALUES($1,$2,$3,$4,$5,$6)`,
+    id, restaurantId, month, periodType, session.user.id, session.user.name ?? session.user.email ?? null
   );
   const [row] = await prisma.$queryRawUnsafe<ReleaseRow[]>(`SELECT * FROM "AttendanceMonthRelease" WHERE "id"=$1`, id);
 
@@ -92,12 +95,13 @@ export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const restaurantId = searchParams.get("restaurantId") ?? "";
   const month = searchParams.get("month") ?? "";
+  const periodType = searchParams.get("periodType") === "week" ? "week" : "month";
   if (!restaurantId || !month) return NextResponse.json({ error: "Missing params" }, { status: 400 });
 
   await ensureTable();
   await prisma.$executeRawUnsafe(
-    `DELETE FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2`,
-    restaurantId, month
+    `DELETE FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2 AND "periodType"=$3`,
+    restaurantId, month, periodType
   );
   await logAudit({
     userId: session.user.id, userEmail: session.user.email,
