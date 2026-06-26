@@ -46,9 +46,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (station) body.autoReady = station.skipKitchen;
   }
 
-  const category = await prisma.category.update({ where: { id }, data: body });
-  await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_CATEGORY", entity: "category", entityId: id, entityName: category.name, meta: { changed: Object.keys(body) }, ip: getIp(req) });
-  return NextResponse.json(category);
+  try {
+    const category = await prisma.category.update({ where: { id }, data: body });
+    await logAudit({ userId: session.user.id, userEmail: session.user.email, action: "UPDATE_CATEGORY", entity: "category", entityId: id, entityName: category.name, meta: { changed: Object.keys(body) }, ip: getIp(req) });
+    return NextResponse.json(category);
+  } catch (err) {
+    console.error("[categories PATCH]", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: detail }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {

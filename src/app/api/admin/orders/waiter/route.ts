@@ -4,6 +4,7 @@ import { sseNotify } from "@/lib/sse";
 import { notifyRestaurant } from "@/lib/push";
 import { NextResponse } from "next/server";
 import { logAudit, getIp } from "@/lib/audit";
+import { idempotencyKey, getIdempotent, saveIdempotent } from "@/lib/idempotency";
 
 /**
  * POST /api/admin/orders/waiter
@@ -23,6 +24,11 @@ import { logAudit, getIp } from "@/lib/audit";
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Idempotency — a replayed offline order returns the original result, never a duplicate.
+  const idemKey = idempotencyKey(req);
+  const cached = await getIdempotent(idemKey);
+  if (cached) return NextResponse.json(cached.response, { status: cached.statusCode });
 
   const body = await req.json();
   const { restaurantId, tableNumber, notes, coversCount, tableAllergens, items } = body;
@@ -142,5 +148,6 @@ export async function POST(req: Request) {
     url: "/admin/orders",
     tag: `order-${order.id}`,
   });
+  await saveIdempotent(idemKey, 201, order);
   return NextResponse.json(order, { status: 201 });
 }

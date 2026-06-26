@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useModuleEnabled } from "@/hooks/useModuleEnabled";
+import { outboxAdd, newKey } from "@/lib/outbox";
 
 type AttRec = { id: string; type: string; timestamp: string };
 type AttRoleCfg = { code: string; label: string; payCode: string; color: string };
@@ -71,10 +72,20 @@ export default function AttendanceWidget({ restaurantId, userId, hideTrigger = f
     if (type === "IN" && roles.length > 0 && !roleCode) return; // role is required on check-in
     setLoading(true);
     try {
+      const at = new Date().toISOString();
+      const payload = { restaurantId, type, note: note || undefined, roleCode: type === "IN" ? (roleCode || undefined) : undefined, at };
+      // Offline: queue with the real punch time so the record reflects when it
+      // actually happened, not when it later syncs.
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        await outboxAdd({ key: newKey(), kind: "attendance.punch", method: "POST", url: "/api/admin/attendance", body: payload, label: `דיווח ${type === "IN" ? "כניסה" : "יציאה"}` });
+        setRecords(prev => [...prev, { id: `offline_${at}`, type, timestamp: at }]); // optimistic
+        onRecord?.(type);
+        return;
+      }
       const res = await fetch("/api/admin/attendance", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId, type, note: note || undefined, roleCode: type === "IN" ? (roleCode || undefined) : undefined }),
+        headers: { "Content-Type": "application/json", "X-Idempotency-Key": newKey() },
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const data = await res.json();
