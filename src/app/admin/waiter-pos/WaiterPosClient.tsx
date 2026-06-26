@@ -9,6 +9,7 @@ import Receipt from "./Receipt";
 import SelfSignoffModal from "./SelfSignoffModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import FloorLayout from "./FloorLayout";
+import OutboxPanel from "./OutboxPanel";
 import { useOutbox } from "@/hooks/useOutbox";
 import {
   useWaiterPos,
@@ -80,7 +81,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
   // ── Offline outbox — durable, ordered, idempotent replay of all queued actions ──
-  const { pendingCount, isSyncing, enqueue } = useOutbox(results => {
+  const { pendingCount, isSyncing, enqueue, flush, isOnline: outboxOnline } = useOutbox(results => {
     const ok = results.filter(r => r.ok).length;
     const conflicts = results.filter(r => r.conflict);
     if (ok > 0) { showToast(`${ok} פעולות סונכרנו ✓`); fetchAll(true); }
@@ -94,6 +95,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const [attSignal, setAttSignal]       = useState(0);
   const [clockPrompt, setClockPrompt]   = useState(false);
   const [logoutPrompt, setLogoutPrompt] = useState(false);
+  const [outboxOpen, setOutboxOpen] = useState(false);
   const [alertToast, setAlertToast]     = useState<string | null>(null);
   const prevAlertKeys = useRef<Set<string>>(new Set());
   const [shift, setShift] = useState<{ revenue: number; diners: number; avgPerDiner: number } | null>(null);
@@ -170,6 +172,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     { icon: "🔔", label: "התראות", badge: unreadCount, onClick: () => runMenu(() => { setNotifOpen(true); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); }) },
     { icon: viewMode === "floor" ? "⊞" : "🗺️", label: viewMode === "floor" ? "תצוגת כרטיסים" : "תצוגת מפה", onClick: () => runMenu(() => setViewMode(viewMode === "floor" ? "grid" : "floor")) },
     { icon: isFullscreen ? "🗗" : "⛶", label: isFullscreen ? "צא ממסך מלא" : "מסך מלא", onClick: () => runMenu(toggleFullscreen) },
+    { icon: "🔄", label: "תור סנכרון", badge: pendingCount, onClick: () => runMenu(() => setOutboxOpen(true)) },
     { icon: "🔐", label: "החלפת סיסמה", onClick: () => runMenu(() => setChangePwOpen(true)) },
     { icon: "📲", label: "הורד אפליקציה (Android)", onClick: () => { setMenuOpen(false); window.open("/downloads/waiter.apk", "_blank"); } },
     { icon: "⬅", label: "יציאה", danger: true, onClick: () => runMenu(() => setLogoutPrompt(true)) },
@@ -271,7 +274,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               : <>{isSyncing ? "🔄 מסנכרן..." : "⏳ ממתין לסנכרון"}</>
             }
           </span>
-          {totalPending > 0 && <span style={{ fontWeight: 700, background: "rgba(255,255,255,0.12)", borderRadius: 8, padding: "2px 10px" }}>{totalPending} פעולות בתור</span>}
+          {totalPending > 0 && <button onClick={() => setOutboxOpen(true)} style={{ fontWeight: 700, background: "rgba(255,255,255,0.12)", border: "none", color: "inherit", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", fontSize: 13 }}>{totalPending} פעולות בתור ›</button>}
         </div>
       )}
 
@@ -634,6 +637,11 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       {/* ══ CHANGE PASSWORD ══ */}
       {changePwOpen && (
         <ChangePasswordModal showToast={showToast} onClose={() => setChangePwOpen(false)} />
+      )}
+
+      {/* ══ OFFLINE SYNC QUEUE ══ */}
+      {outboxOpen && (
+        <OutboxPanel isOnline={outboxOnline} isSyncing={isSyncing} onSync={flush} onClose={() => setOutboxOpen(false)} />
       )}
 
       {/* Critical alert toast (top, auto-dismiss) */}
