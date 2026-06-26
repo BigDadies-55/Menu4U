@@ -98,6 +98,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   const prevAlertKeys = useRef<Set<string>>(new Set());
   const [shift, setShift] = useState<{ revenue: number; diners: number; avgPerDiner: number } | null>(null);
   const [statusMenu, setStatusMenu] = useState<{ tableNum: string; x: number; y: number } | null>(null);
+  const [lastClock, setLastClock] = useState<{ type: "IN" | "OUT"; time: string } | null>(null);
 
   const activeRestaurant = restaurants.find(r => r.id === restaurantId);
   const [bgUrl, setBgUrl] = useState(
@@ -138,6 +139,24 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     return () => { cancelled = true; clearInterval(id); };
   }, [restaurantId, tables]);
 
+  // Fetch last clock record for current user
+  useEffect(() => {
+    if (!restaurantId || !waiterId) return;
+    const load = () => fetch(`/api/admin/attendance?restaurantId=${restaurantId}&userId=${waiterId}&limit=1`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const rec = d?.records?.[0] ?? d?.activity?.[0];
+        if (!rec) return;
+        const type = rec.type ?? (rec.action === "ATTENDANCE_CLOCK_IN" ? "IN" : rec.action === "ATTENDANCE_CLOCK_OUT" ? "OUT" : null);
+        if (!type) return;
+        const dt = new Date(rec.clockIn ?? rec.clockOut ?? rec.createdAt);
+        const time = dt.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+        setLastClock({ type, time });
+      })
+      .catch(() => {});
+    load();
+  }, [restaurantId, waiterId, attSignal]);
+
   function answerClockPrompt(reported: boolean) {
     try { localStorage.setItem(todayKey(), "1"); } catch { /* ignore */ }
     setClockPrompt(false);
@@ -163,8 +182,8 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   // ── Menu action helpers ──
   function runMenu(fn: () => void) { setMenuOpen(false); fn(); }
 
-  const menuItems: { icon: string; label: string; badge?: number; onClick: () => void; danger?: boolean }[] = [
-    { icon: "⏱", label: "דיווח נוכחות", onClick: () => runMenu(() => setAttSignal(s => s + 1)) },
+  const menuItems: { icon: string; label: string; sublabel?: string; badge?: number; onClick: () => void; danger?: boolean }[] = [
+    { icon: "⏱", label: "דיווח נוכחות", sublabel: lastClock ? `${lastClock.type === "IN" ? "כניסה" : "יציאה"} ${lastClock.time}` : undefined, onClick: () => runMenu(() => setAttSignal(s => s + 1)) },
     { icon: "📝", label: "אישור נוכחות", onClick: () => runMenu(() => setSignoffOpen(true)) },
     { icon: "✨", label: "תובנות", badge: insightCount, onClick: () => runMenu(() => setAllInsightsOpen(true)) },
     { icon: "🔔", label: "התראות", badge: unreadCount, onClick: () => runMenu(() => { setNotifOpen(true); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); }) },
@@ -428,6 +447,9 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                 >
                   <span style={{ fontSize: 19, width: 26, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.sublabel && (
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>{item.sublabel}</span>
+                  )}
                   {item.badge !== undefined && item.badge > 0 && (
                     <span style={{ background: item.icon === "✨" ? "rgba(139,92,246,0.3)" : "#ef4444", color: "#fff", borderRadius: 99, fontSize: 11, fontWeight: 800, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px" }}>{item.badge}</span>
                   )}
