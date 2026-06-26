@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useOffline } from "@/hooks/useOffline";
 import { idbSet, idbGet } from "@/lib/waiter-db";
+import { outboxAdd, newKey } from "@/lib/outbox";
 import type { OrderDetail } from "./TableOverlay";
 
 // ── Exported types ────────────────────────────────────────────────────
@@ -410,18 +411,32 @@ export function useWaiterPos({
   function showToast(msg: string) { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); }
 
   async function quickFireCourse(orderId: string, course: number, tableNum: string) {
-    await fetch(`/api/admin/orders/${orderId}/fire-course`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ course }),
+    const url = `/api/admin/orders/${orderId}/fire-course`;
+    const body = { course };
+    if (isOffline) {
+      await outboxAdd({ key: newKey(), kind: "order.fire", method: "POST", url, body, label: `שחרור קורס ${course} · שולחן ${tableNum}` });
+      showToast(`📴 שחרור קורס ${course} ישלח כשיחזור החיבור`);
+      return;
+    }
+    await fetch(url, {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Idempotency-Key": newKey() },
+      body: JSON.stringify(body),
     });
     showToast(`🔥 קורס ${course} שולחן ${tableNum} — יצא למטבח`);
     fetchAll(true);
   }
 
   async function patchStatus(tableNum: string, status: "reserved" | "inactive" | "free" | "bill_requested") {
+    const body = { restaurantId, tableNum, status };
+    if (isOffline) {
+      await outboxAdd({ key: newKey(), kind: "table.status", method: "PATCH", url: "/api/admin/waiter-pos/tables", body, label: `עדכון שולחן ${tableNum}` });
+      setTableOverlay(null);
+      showToast(`📴 עדכון שולחן ${tableNum} ישלח כשיחזור החיבור`);
+      return;
+    }
     await fetch("/api/admin/waiter-pos/tables", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restaurantId, tableNum, status }),
+      method: "PATCH", headers: { "Content-Type": "application/json", "X-Idempotency-Key": newKey() },
+      body: JSON.stringify(body),
     });
     setTableOverlay(null);
     showToast(`שולחן ${tableNum} עודכן`);
