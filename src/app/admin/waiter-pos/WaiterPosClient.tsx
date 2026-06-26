@@ -159,6 +159,20 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     load();
   }, [restaurantId, waiterId, attSignal]);
 
+  // Intercept Android back button / PWA close — show exit prompt
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Push a dummy state so back button doesn't close the app
+    window.history.pushState({ pwa: true }, "");
+    const onPop = () => {
+      setLogoutPrompt(true);
+      // Re-push so next back press also triggers this
+      window.history.pushState({ pwa: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   function answerClockPrompt(reported: boolean) {
     try { localStorage.setItem(todayKey(), "1"); } catch { /* ignore */ }
     setClockPrompt(false);
