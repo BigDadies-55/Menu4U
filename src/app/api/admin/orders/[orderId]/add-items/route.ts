@@ -2,10 +2,16 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { logAudit, getIp } from "@/lib/audit";
+import { idempotencyKey, getIdempotent, saveIdempotent } from "@/lib/idempotency";
 
 export async function POST(req: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Idempotency — a replayed offline "add items" won't add the items twice.
+  const idemKey = idempotencyKey(req);
+  const cached = await getIdempotent(idemKey);
+  if (cached) return NextResponse.json(cached.response, { status: cached.statusCode });
 
   const { orderId } = await params;
   const { items, tableAllergens } = await req.json();
@@ -76,5 +82,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ orderId
     ip: getIp(req),
   });
 
-  return NextResponse.json({ success: true, totalAmount: updatedOrder.totalAmount });
+  const result = { success: true, totalAmount: updatedOrder.totalAmount };
+  await saveIdempotent(idemKey, 200, result);
+  return NextResponse.json(result);
 }

@@ -8,6 +8,7 @@ import { ALLERGEN_LIST } from "@/lib/allergens";
 import { ManagerPinModal } from "./ManagerPinModal";
 import Receipt from "./Receipt";
 import { idbSet, idbGet } from "@/lib/waiter-db";
+import { newKey } from "@/lib/outbox";
 
 type ModifierOption = { id: string; label: string; priceAdd: number };
 type ModifierGroup  = { id: string; name: string; required: boolean; maxSelect: number; options: ModifierOption[] };
@@ -34,7 +35,7 @@ type Props = {
   restaurantId: string;
   existingOrder: OrderDetail | null;
   isOffline?: boolean;
-  enqueueOffline?: (payload: object) => string;
+  enqueueOffline?: (args: { kind: string; method: string; url: string; body: unknown; label: string }) => Promise<string>;
   areaName?: string;
   shiftName?: string;
   waiterName?: string;
@@ -186,18 +187,27 @@ export function OrderScreen({
   const toggleAllergen = (k: string) => setAllergens(a => a.includes(k) ? a.filter(x => x !== k) : [...a, k]);
   const hasAllergy = (item: MenuItem) => (item.allergens ?? []).some(a => allergens.includes(a));
 
-  // ── Save cart → returns order id (or null) ──
+  // ── Save cart → returns order id (or null when queued offline) ──
   async function submitCart(): Promise<string | null> {
     if (cart.length === 0) return orderId;
     const items = cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers }));
     if (orderId) {
-      await fetch(`/api/admin/orders/${orderId}/add-items`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, tableAllergens: allergens }) });
+      // Add items to an existing (already-synced) order.
+      const body = { items, tableAllergens: allergens };
+      if (isOffline && enqueueOffline) {
+        await enqueueOffline({ kind: "order.addItems", method: "POST", url: `/api/admin/orders/${orderId}/add-items`, body, label: `הוספת פריטים · שולחן ${tableNum}` });
+        setCart([]); onQueued?.(); return null; // queued — close cleanly
+      }
+      await fetch(`/api/admin/orders/${orderId}/add-items`, { method: "POST", headers: { "Content-Type": "application/json", "X-Idempotency-Key": newKey() }, body: JSON.stringify(body) });
       setCart([]);
       return orderId;
     }
     const payload = { restaurantId, tableNumber: tableNum, coversCount: covers, tableAllergens: allergens, items };
-    if (isOffline && enqueueOffline) { enqueueOffline(payload); onQueued?.(); return null; }
-    const r = await fetch("/api/admin/orders/waiter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    if (isOffline && enqueueOffline) {
+      await enqueueOffline({ kind: "order.create", method: "POST", url: "/api/admin/orders/waiter", body: payload, label: `הזמנה חדשה · שולחן ${tableNum}` });
+      onQueued?.(); return null;
+    }
+    const r = await fetch("/api/admin/orders/waiter", { method: "POST", headers: { "Content-Type": "application/json", "X-Idempotency-Key": newKey() }, body: JSON.stringify(payload) });
     const newOrder = await r.json();
     setCart([]);
     return newOrder?.id ?? null;
