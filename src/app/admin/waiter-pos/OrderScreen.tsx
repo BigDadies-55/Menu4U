@@ -251,6 +251,16 @@ export function OrderScreen({
   }
 
   // ── Derived ──
+  // Order the category tabs by kitchen station: בר → ראשונות → עיקריות → קינוחים,
+  // keeping the "⭐ פופולרי" pseudo-category first and anything else after.
+  const CODE_RANK: Record<string, number> = { B: 0, F: 1, M: 2, D: 3 };
+  const catRank = (c: MenuCategory) =>
+    c.id === POPULAR_CAT_ID ? -1 : (CODE_RANK[(c.courseCode ?? "").toUpperCase()] ?? 90);
+  const sortedCategories = categories
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => catRank(a.c) - catRank(b.c) || a.i - b.i)
+    .map(x => x.c);
+
   const activeCategory = categories.find(c => c.id === activeCat);
   const filteredItems = (activeCategory?.items ?? []).filter(item => !search || item.name.toLowerCase().includes(search.toLowerCase()));
   const existingItems = (order?.items ?? []).filter(i => !i.voidedAt);
@@ -304,7 +314,7 @@ export function OrderScreen({
         <div style={{ width: isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
           {loadingMenu ? (
             <div style={{ padding: 20, color: "#888", fontSize: 13 }}>טוען...</div>
-          ) : categories.map(c => (
+          ) : sortedCategories.map(c => (
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
               display: "block", width: "100%", textAlign: "right", padding: isMobile ? "14px 10px" : "19px 22px", border: "none",
               borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
