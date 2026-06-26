@@ -88,7 +88,9 @@ export function TableOverlay({
   const [statusEditOpen, setStatusEditOpen]   = useState(false);
   const [allergens, setAllergens]       = useState<string[]>([]);
   const [savingAllergens, setSavingAllergens] = useState(false);
-  const [guestCount, setGuestCount]     = useState(Math.max(guests, 2));
+  // Default diners = the table's seat count (waiter can adjust ±); an occupied
+  // table keeps its actual guest count.
+  const [guestCount, setGuestCount]     = useState(guests > 0 ? guests : Math.max(seats, 1));
   const [firingCourse, setFiringCourse]   = useState<number | null>(null);
   const [servingCourse, setServingCourse] = useState<number | null>(null);
   const [transferOpen, setTransferOpen]   = useState(false);
