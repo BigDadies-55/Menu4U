@@ -318,8 +318,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               {layout.rooms.length > 1 && layout.rooms.map((room, i) => (
                 <button key={room.id} onClick={() => setRoomIdx(i)} style={{
                   padding: "5px 11px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  border: `1px solid ${G_BORDER_C}`, background: roomIdx === i ? "rgba(255,255,255,0.18)" : "rgba(15,14,22,0.7)",
-                  color: "#fff", fontFamily: "inherit", backdropFilter: "blur(12px)",
+                  border: roomIdx === i ? "2px solid #22c55e" : `1px solid ${G_BORDER_C}`,
+                  background: "rgba(15,14,22,0.7)",
+                  color: roomIdx === i ? "#22c55e" : "#fff",
+                  fontFamily: "inherit", backdropFilter: "blur(12px)",
                 }}>{room.name}</button>
               ))}
               <button onClick={() => setLayoutRotation(r => r === 0 ? 90 : 0)} title="סיבוב" style={{
