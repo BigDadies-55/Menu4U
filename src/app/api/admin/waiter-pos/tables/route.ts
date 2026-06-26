@@ -142,8 +142,13 @@ export async function GET(req: Request) {
       ? Math.floor((now - new Date(latestAny.updatedAt).getTime()) / 60000)
       : 0;
 
-    const billRequested = availStatus === "bill_requested";
     const billAtStr = overrides[`${tableNum}_bill_at`];
+    // A bill-request timestamp from before the current sitting belongs to a
+    // previous, already-closed session — ignore it (avoids a stale "bill overdue"
+    // insight when a new order opens on a table that wasn't cleanly freed).
+    const billStale = !!(billAtStr && sittingStart && new Date(billAtStr).getTime() < new Date(sittingStart).getTime());
+    if (availStatus === "bill_requested" && billStale) availStatus = "occupied";
+    const billRequested = availStatus === "bill_requested" && !billStale;
     const minutesSinceBillRequested = billRequested && billAtStr
       ? Math.floor((now - new Date(billAtStr).getTime()) / 60000)
       : 0;

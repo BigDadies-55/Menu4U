@@ -63,6 +63,27 @@ export async function finalizeTablePayment(opts: {
     });
   } catch { /* non-critical */ }
 
+  // ── BEST-EFFORT: clear the table's manual status override (bill_requested +
+  //    bill_at) so the next sitting doesn't inherit a stale "bill requested"
+  //    insight from the session that was just closed. ──
+  try {
+    if (tableNumber) {
+      const rows = await prisma.$queryRawUnsafe<Array<{ tableStatusOverridesJson: string | null }>>(
+        `SELECT "tableStatusOverridesJson" FROM "Restaurant" WHERE id = $1`, restaurantId
+      );
+      let overrides: Record<string, string> = {};
+      try { overrides = JSON.parse(rows[0]?.tableStatusOverridesJson ?? "{}"); } catch { overrides = {}; }
+      if (overrides[tableNumber] !== undefined || overrides[`${tableNumber}_bill_at`] !== undefined) {
+        delete overrides[tableNumber];
+        delete overrides[`${tableNumber}_bill_at`];
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Restaurant" SET "tableStatusOverridesJson" = $1 WHERE id = $2`,
+          JSON.stringify(overrides), restaurantId
+        );
+      }
+    }
+  } catch { /* non-critical */ }
+
   // ── BEST-EFFORT: table session record ──
   try {
     if (tableNumber) {
