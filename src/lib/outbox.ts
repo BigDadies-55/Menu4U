@@ -11,6 +11,7 @@ export type OutboxEntry = {
   url: string;          // endpoint
   body: unknown;        // JSON payload
   label: string;        // human-readable, for the offline banner
+  tempId?: string;      // on "order.create": the local temp id this resolves to a real id
   createdAt: number;
   attempts: number;
 };
@@ -35,6 +36,12 @@ export function newKey(): string {
   return `idem_${Date.now()}_${rnd}`;
 }
 
+// A local placeholder id for an order created while offline. Once the create
+// syncs, every queued action referencing it is rewritten to the real server id.
+export function newTempId(): string {
+  return `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -47,6 +54,44 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
+// Rewrite every queued entry that references a temp id, replacing it with the
+// real server id (in both the URL and the JSON body). Called after an offline
+// order-create syncs and we learn its real id.
+export async function outboxRemapTempId(tempId: string, realId: string): Promise<void> {
+  const entries = await outboxList();
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    for (const e of entries) {
+      const urlHas = e.url.includes(tempId);
+      const bodyStr = e.body == null ? "" : JSON.stringify(e.body);
+      const bodyHas = bodyStr.includes(tempId);
+      if (!urlHas && !bodyHas) continue;
+      const next: OutboxEntry = {
+        ...e,
+        url: urlHas ? e.url.split(tempId).join(realId) : e.url,
+        body: bodyHas ? JSON.parse(bodyStr.split(tempId).join(realId)) : e.body,
+      };
+      store.put(next);
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Ask the Service Worker to replay the outbox in the background — fires even if
+// the app is later closed (where supported; otherwise the in-app hook handles it).
+export function registerOutboxSync(): void {
+  try {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    if (typeof window === "undefined" || !("SyncManager" in window)) return;
+    navigator.serviceWorker.ready
+      .then(reg => (reg as unknown as { sync: { register: (t: string) => Promise<void> } }).sync.register("outbox-flush"))
+      .catch(() => { /* best-effort */ });
+  } catch { /* ignore */ }
+}
+
 export async function outboxAdd(e: Omit<OutboxEntry, "seq" | "createdAt" | "attempts">): Promise<OutboxEntry> {
   const entry: OutboxEntry = { ...e, seq: nextSeq(), createdAt: Date.now(), attempts: 0 };
   const db = await openDb();
@@ -56,6 +101,7 @@ export async function outboxAdd(e: Omit<OutboxEntry, "seq" | "createdAt" | "atte
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  registerOutboxSync();
   return entry;
 }
 

@@ -8,7 +8,7 @@ import { ALLERGEN_LIST } from "@/lib/allergens";
 import { ManagerPinModal } from "./ManagerPinModal";
 import Receipt from "./Receipt";
 import { idbSet, idbGet } from "@/lib/waiter-db";
-import { newKey } from "@/lib/outbox";
+import { newKey, newTempId } from "@/lib/outbox";
 
 type ModifierOption = { id: string; label: string; priceAdd: number };
 type ModifierGroup  = { id: string; name: string; required: boolean; maxSelect: number; options: ModifierOption[] };
@@ -35,7 +35,7 @@ type Props = {
   restaurantId: string;
   existingOrder: OrderDetail | null;
   isOffline?: boolean;
-  enqueueOffline?: (args: { kind: string; method: string; url: string; body: unknown; label: string }) => Promise<string>;
+  enqueueOffline?: (args: { kind: string; method: string; url: string; body: unknown; label: string; tempId?: string }) => Promise<string>;
   areaName?: string;
   shiftName?: string;
   waiterName?: string;
@@ -204,7 +204,9 @@ export function OrderScreen({
     }
     const payload = { restaurantId, tableNumber: tableNum, coversCount: covers, tableAllergens: allergens, items };
     if (isOffline && enqueueOffline) {
-      await enqueueOffline({ kind: "order.create", method: "POST", url: "/api/admin/orders/waiter", body: payload, label: `הזמנה חדשה · שולחן ${tableNum}` });
+      // Carry a temp id so any later queued action on this order is remapped to the
+      // real server id once the create syncs.
+      await enqueueOffline({ kind: "order.create", method: "POST", url: "/api/admin/orders/waiter", body: payload, label: `הזמנה חדשה · שולחן ${tableNum}`, tempId: newTempId() });
       onQueued?.(); return null;
     }
     const r = await fetch("/api/admin/orders/waiter", { method: "POST", headers: { "Content-Type": "application/json", "X-Idempotency-Key": newKey() }, body: JSON.stringify(payload) });

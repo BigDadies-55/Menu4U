@@ -82,7 +82,9 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   // ── Offline outbox — durable, ordered, idempotent replay of all queued actions ──
   const { pendingCount, isSyncing, enqueue } = useOutbox(results => {
     const ok = results.filter(r => r.ok).length;
+    const conflicts = results.filter(r => r.conflict);
     if (ok > 0) { showToast(`${ok} פעולות סונכרנו ✓`); fetchAll(true); }
+    for (const c of conflicts) showToast(`⚠️ "${c.entry.label}" נדחתה — ${(c.data as { error?: string })?.error ?? "המצב השתנה בשרת"}`);
   });
 
   // ── Local UI state for the redesigned shell ──
