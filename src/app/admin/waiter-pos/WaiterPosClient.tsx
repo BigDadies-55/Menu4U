@@ -302,7 +302,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
 
       {/* Offline / sync banner */}
       {(isOffline || totalPending > 0) && (
-        <div style={{ background: isOffline ? "rgba(124,58,237,0.25)" : "rgba(59,130,246,0.2)", border: `1px solid ${isOffline ? "rgba(124,58,237,0.5)" : "rgba(59,130,246,0.45)"}`, borderRadius: 12, color: isOffline ? "#c4b5fd" : "#93c5fd", padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0, fontSize: 13 }}>
+        <div style={{ background: isOffline ? "linear-gradient(135deg, rgba(239,68,68,0.32), rgba(185,28,28,0.32))" : "rgba(59,130,246,0.2)", border: `1px solid ${isOffline ? "rgba(239,68,68,0.6)" : "rgba(59,130,246,0.45)"}`, borderRadius: 12, color: isOffline ? "#fecaca" : "#93c5fd", padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0, fontSize: 13 }}>
           <span>
             {isOffline
               ? <>📴 <strong>מצב offline</strong>{usingCachedData && offlineSince ? ` — נתונים מ-${offlineSince.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}` : ""}</>

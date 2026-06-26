@@ -250,7 +250,7 @@ export function TableOverlay({
 
         {/* Offline / cached data banner */}
         {(isOffline || fromCache) && (
-          <div style={{ background: "#7c3aed", color: "#fff", padding: "6px 16px", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <div style={{ background: "linear-gradient(135deg, #ef4444, #b91c1c)", color: "#fff", padding: "6px 16px", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
             <span>📴 מצב offline</span>
             <span style={{ opacity: 0.85 }}>— הזמנות יישמרו ויסתנכרנו · סגירת חשבון אינה זמינה</span>
           </div>
