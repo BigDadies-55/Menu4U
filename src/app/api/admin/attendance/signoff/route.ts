@@ -3,13 +3,32 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { logAudit, getIp } from "@/lib/audit";
+import { isPastPeriod, type PeriodType } from "@/lib/attendancePeriod";
 
-// ── Employee monthly sign-off ────────────────────────────────────────────────
-// One immutable declaration per (employee, restaurant, month) attesting that the
-// monthly attendance figures are accurate. This is a key employer-protection
-// record, so once signed it is locked (a re-sign attempt returns the existing row).
+// ── Employee period sign-off ─────────────────────────────────────────────────
+// One immutable declaration per (employee, restaurant, period) attesting that the
+// attendance figures are accurate. "period" is a month ("2026-05") or a week
+// (Sunday date "2026-05-17"); periodType distinguishes them. Once signed it is
+// locked (a re-sign attempt returns the existing row).
 
 const MANAGER_ROLES = ["SUPER_ADMIN", "ADMIN", "OWNER", "SHIFT_MANAGER"];
+
+async function isPeriodReleased(restaurantId: string, period: string, periodType: PeriodType): Promise<boolean> {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "AttendanceMonthRelease" (
+      "id" TEXT NOT NULL, "restaurantId" TEXT NOT NULL, "month" TEXT NOT NULL,
+      "releasedByUserId" TEXT NOT NULL, "releasedByName" TEXT,
+      "releasedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "AttendanceMonthRelease_pkey" PRIMARY KEY ("id")
+    )
+  `);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "AttendanceMonthRelease" ADD COLUMN IF NOT EXISTS "periodType" TEXT NOT NULL DEFAULT 'month'`);
+  const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+    `SELECT "id" FROM "AttendanceMonthRelease" WHERE "restaurantId"=$1 AND "month"=$2 AND "periodType"=$3`,
+    restaurantId, period, periodType
+  );
+  return rows.length > 0;
+}
 
 async function ensureTable() {
   await prisma.$executeRawUnsafe(`
@@ -29,6 +48,7 @@ async function ensureTable() {
       CONSTRAINT "AttendanceSignoff_pkey" PRIMARY KEY ("id")
     )
   `);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "AttendanceSignoff" ADD COLUMN IF NOT EXISTS "periodType" TEXT NOT NULL DEFAULT 'month'`);
   await prisma.$executeRawUnsafe(
     `CREATE UNIQUE INDEX IF NOT EXISTS "AttendanceSignoff_user_rest_month_idx" ON "AttendanceSignoff"("userId","restaurantId","month")`
   );
@@ -74,15 +94,25 @@ export async function POST(req: Request) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { restaurantId, month, netHours, regularHours, ot125Hours, ot150Hours, payableHours, signatureName } = body as {
-    restaurantId: string; month: string;
+  const { restaurantId, month, periodType: rawType, netHours, regularHours, ot125Hours, ot150Hours, payableHours, signatureName } = body as {
+    restaurantId: string; month: string; periodType?: string;
     netHours?: number; regularHours?: number; ot125Hours?: number; ot150Hours?: number; payableHours?: number;
     signatureName?: string;
   };
+  const periodType: PeriodType = rawType === "week" ? "week" : "month";
 
   if (!restaurantId || !month) return NextResponse.json({ error: "Missing params" }, { status: 400 });
   const sig = (signatureName ?? session.user.name ?? session.user.email ?? "").trim();
   if (!sig) return NextResponse.json({ error: "חתימה היא שדה חובה" }, { status: 400 });
+
+  // A report may be signed only for a period that has fully ended...
+  if (!isPastPeriod(periodType, month)) {
+    return NextResponse.json({ error: periodType === "week" ? "ניתן לאשר רק שבוע שהסתיים" : "ניתן לאשר רק חודש שהסתיים" }, { status: 400 });
+  }
+  // ...and only after the manager has released (finalised) that period.
+  if (!(await isPeriodReleased(restaurantId, month, periodType))) {
+    return NextResponse.json({ error: "הדוח טרם אושר ע\"י המנהל" }, { status: 400 });
+  }
 
   await ensureTable();
 
@@ -95,9 +125,9 @@ export async function POST(req: Request) {
   const id = randomUUID();
   const num = (n: unknown) => (typeof n === "number" && isFinite(n) ? n : 0);
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "AttendanceSignoff"("id","userId","userName","restaurantId","month","netHours","regularHours","ot125Hours","ot150Hours","payableHours","signatureName")
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-    id, session.user.id, session.user.name ?? session.user.email ?? null, restaurantId, month,
+    `INSERT INTO "AttendanceSignoff"("id","userId","userName","restaurantId","month","periodType","netHours","regularHours","ot125Hours","ot150Hours","payableHours","signatureName")
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    id, session.user.id, session.user.name ?? session.user.email ?? null, restaurantId, month, periodType,
     num(netHours), num(regularHours), num(ot125Hours), num(ot150Hours), num(payableHours), sig
   );
 

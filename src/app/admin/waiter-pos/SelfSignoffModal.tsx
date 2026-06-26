@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { computeDailyHoursByRole, sumBreakdowns } from "@/lib/hours";
 import MonthlyDetailReport from "@/components/attendance/MonthlyDetailReport";
+import { type PeriodType, periodRange, prevPeriod, recentPeriods, periodLabel } from "@/lib/attendancePeriod";
 
 // Employee self sign-off of the monthly attendance report — a trimmed, waiter-facing
 // version of attendance-manager/SignoffTab. The waiter reviews this month's totals
@@ -18,11 +19,6 @@ const GM = "rgba(255,255,255,0.55)";
 function fmtDateTime(ts: string): string {
   return new Date(ts).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" });
 }
-function monthRange(month: string) {
-  const [y, m] = month.split("-").map(Number);
-  const last = new Date(y, m, 0).getDate();
-  return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
-}
 
 export default function SelfSignoffModal({
   restaurantId, userId, userName, onClose, showToast,
@@ -30,9 +26,11 @@ export default function SelfSignoffModal({
   restaurantId: string; userId: string; userName: string;
   onClose: () => void; showToast: (msg: string) => void;
 }) {
-  const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
+  const [periodType, setPeriodType] = useState<PeriodType>("month");
+  const [month, setMonth] = useState(() => prevPeriod("month"));
   const [records, setRecords] = useState<AttRecord[]>([]);
   const [signoffs, setSignoffs] = useState<Signoff[]>([]);
+  const [released, setReleased] = useState(false);
   const [loading, setLoading] = useState(false);
   const [signature, setSignature] = useState(userName);
   const [confirmed, setConfirmed] = useState(false);
@@ -41,20 +39,23 @@ export default function SelfSignoffModal({
 
   const load = useCallback(async () => {
     if (!restaurantId) return;
-    const { from, to } = monthRange(month);
+    const { from, to } = periodRange(periodType, month);
     setLoading(true);
     try {
-      const [attRes, sgRes] = await Promise.all([
+      const [attRes, sgRes, relRes] = await Promise.all([
         fetch(`/api/admin/attendance?restaurantId=${restaurantId}&from=${from}&to=${to}`),
         fetch(`/api/admin/attendance/signoff?restaurantId=${restaurantId}&month=${month}`),
+        fetch(`/api/admin/attendance/month-release?restaurantId=${restaurantId}&month=${month}&periodType=${periodType}`),
       ]);
       const attData = await attRes.json();
       const sgData = await sgRes.json();
+      const relData = await relRes.json();
       setRecords((attData.records ?? []).filter((r: AttRecord) => r.type !== "DELETED"));
       setSignoffs(sgData.signoffs ?? []);
+      setReleased(!!relData.released);
     } catch { /* ignore */ }
     finally { setLoading(false); setConfirmed(false); }
-  }, [restaurantId, month]);
+  }, [restaurantId, month, periodType]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -78,7 +79,7 @@ export default function SelfSignoffModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          restaurantId, month,
+          restaurantId, month, periodType,
           netHours: myTotal.netHours, regularHours: myTotal.regularHours,
           ot125Hours: myTotal.overtime125Hours, ot150Hours: myTotal.overtime150Hours,
           payableHours: myTotal.payableUnits, signatureName: sig,
@@ -109,13 +110,21 @@ export default function SelfSignoffModal({
         </div>
 
         <div style={{ padding: "16px 22px 22px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, color: GM }}>חודש לאישור:</span>
-            <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.06)", border: `1px solid ${GB}`, borderRadius: 9, padding: 3 }}>
+              {([["month", "חודשי"], ["week", "שבועי"]] as const).map(([t, lbl]) => (
+                <button key={t} onClick={() => { setPeriodType(t); setMonth(prevPeriod(t)); }} style={{ padding: "5px 14px", borderRadius: 7, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: periodType === t ? "rgba(245,158,11,0.25)" : "transparent", color: periodType === t ? "#F59E0B" : GM }}>{lbl}</button>
+              ))}
+            </div>
+            <select value={month} onChange={e => setMonth(e.target.value)} style={{ ...inputBox, cursor: "pointer", colorScheme: "dark" }}>
+              {recentPeriods(periodType, periodType === "week" ? 8 : 6).map(p => (
+                <option key={p} value={p} style={{ background: "#0f0e16" }}>{periodLabel(periodType, p)}</option>
+              ))}
+            </select>
             {loading && <span style={{ fontSize: 11, color: GM }}>טוען...</span>}
           </div>
 
-          <div style={{ fontSize: 12, color: GM, marginBottom: 14 }}>בחתימתך הינך מצהיר/ה כי הנתונים משקפים במדויק את שעות עבודתך והפסקותיך בחודש {month}.</div>
+          <div style={{ fontSize: 12, color: GM, marginBottom: 14 }}>בחתימתך הינך מצהיר/ה כי הנתונים משקפים במדויק את שעות עבודתך והפסקותיך ב{periodLabel(periodType, month)}.</div>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
             {[
@@ -143,6 +152,11 @@ export default function SelfSignoffModal({
             <div style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.35)", borderRadius: 12, padding: "14px 16px", color: "#34D399" }}>
               <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>✓ הדוח אושר ונחתם</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>חתימה: {mySignoff.signatureName} · {fmtDateTime(mySignoff.signedAt)}</div>
+            </div>
+          ) : !released ? (
+            <div style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.35)", borderRadius: 12, padding: "14px 16px", color: "#FBBF24" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>⏳ הדוח טרם אושר ע״י המנהל</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>ניתן יהיה לחתום על {periodLabel(periodType, month)} רק לאחר שהמנהל יסיים לעדכן ויאשר את הדוח.</div>
             </div>
           ) : (
             <>
