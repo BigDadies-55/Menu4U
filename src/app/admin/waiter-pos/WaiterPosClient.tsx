@@ -444,7 +444,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       {menuOpen && (
         <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.5)" }}>
           <div onClick={e => e.stopPropagation()} dir="rtl" style={{
-            position: "absolute", top: 0, right: 0, bottom: 0, width: isMobile ? "72vw" : 260,
+            position: "absolute", top: 0, right: 0, bottom: 0, width: isMobile ? "50vw" : 182,
             background: "rgba(15,14,22,0.98)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
             borderLeft: `1px solid ${G_BORDER_C}`, boxShadow: "-12px 0 40px rgba(0,0,0,0.5)",
             display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out",
