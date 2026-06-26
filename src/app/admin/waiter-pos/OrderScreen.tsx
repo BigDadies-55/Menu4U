@@ -251,16 +251,6 @@ export function OrderScreen({
   }
 
   // ── Derived ──
-  // Order the category tabs by kitchen station: בר → ראשונות → עיקריות → קינוחים,
-  // keeping the "⭐ פופולרי" pseudo-category first and anything else after.
-  const CODE_RANK: Record<string, number> = { B: 0, F: 1, M: 2, D: 3 };
-  const catRank = (c: MenuCategory) =>
-    c.id === POPULAR_CAT_ID ? -1 : (CODE_RANK[(c.courseCode ?? "").toUpperCase()] ?? 90);
-  const sortedCategories = categories
-    .map((c, i) => ({ c, i }))
-    .sort((a, b) => catRank(a.c) - catRank(b.c) || a.i - b.i)
-    .map(x => x.c);
-
   const activeCategory = categories.find(c => c.id === activeCat);
   const filteredItems = (activeCategory?.items ?? []).filter(item => !search || item.name.toLowerCase().includes(search.toLowerCase()));
   const existingItems = (order?.items ?? []).filter(i => !i.voidedAt);
@@ -273,6 +263,15 @@ export function OrderScreen({
   const courseCodeByNum: Record<number, string> = {};
   for (const c of categories) if (c.courseCode && c.course != null) courseCodeByNum[c.course] = c.courseCode;
   const courseBadge = (c: number) => courseCodeByNum[c] ?? courseLetter(c);
+
+  // Order the dish rows by kitchen station: בר(B) → ראשונות(F) → עיקריות(M) → קינוחים(D).
+  const CODE_RANK: Record<string, number> = { B: 0, F: 1, M: 2, D: 3 };
+  const rowRank = (course: number) => CODE_RANK[courseBadge(course).toUpperCase()] ?? 90;
+  function byCourse<T extends { course: number }>(arr: T[]): T[] {
+    return arr.map((x, i) => ({ x, i })).sort((a, b) => rowRank(a.x.course) - rowRank(b.x.course) || a.i - b.i).map(o => o.x);
+  }
+  const sortedExisting = byCourse(existingItems);
+  const sortedCart = byCourse(cart);
 
   // ── Styles ──
   const T = { bar: "#171a23", barLine: "rgba(255,255,255,0.08)", gold: "#d4a017", goldGrad: "linear-gradient(135deg,#D97706,#F59E0B)" };
@@ -314,7 +313,7 @@ export function OrderScreen({
         <div style={{ width: isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
           {loadingMenu ? (
             <div style={{ padding: 20, color: "#888", fontSize: 13 }}>טוען...</div>
-          ) : sortedCategories.map(c => (
+          ) : categories.map(c => (
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
               display: "block", width: "100%", textAlign: "right", padding: isMobile ? "14px 10px" : "19px 22px", border: "none",
               borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
@@ -376,10 +375,10 @@ export function OrderScreen({
             )}
 
             {/* Existing (sent) items — no X; cancel needs manager PIN */}
-            {existingItems.map(i => <ExistingRow key={i.id} item={i} allergens={allergens} isMobile={isMobile} courseBadge={courseBadge} onVoid={() => setVoidItem({ id: i.id, name: i.itemName })} />)}
+            {sortedExisting.map(i => <ExistingRow key={i.id} item={i} allergens={allergens} isMobile={isMobile} courseBadge={courseBadge} onVoid={() => setVoidItem({ id: i.id, name: i.itemName })} />)}
 
             {/* New cart items — deletable */}
-            {cart.map(i => (
+            {sortedCart.map(i => (
               <CartRow key={i.key} item={i} warn={i.allergens.some(a => allergens.includes(a))} isMobile={isMobile} courseBadge={courseBadge}
                 onQty={q => changeQty(i.key, q)} onNotes={n => changeNotes(i.key, n)} />
             ))}
