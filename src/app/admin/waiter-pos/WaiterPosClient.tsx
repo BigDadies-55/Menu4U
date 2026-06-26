@@ -144,20 +144,36 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
   // Fetch last clock record for current user
   useEffect(() => {
     if (!restaurantId || !waiterId) return;
-    const load = () => fetch(`/api/admin/attendance?restaurantId=${restaurantId}&userId=${waiterId}&limit=1`)
+    const load = () => fetch(`/api/admin/attendance?restaurantId=${restaurantId}&userId=${waiterId}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        const rec = d?.records?.[0] ?? d?.activity?.[0];
+        const rec = d?.records?.[0];
         if (!rec) return;
-        const type = rec.type ?? (rec.action === "ATTENDANCE_CLOCK_IN" ? "IN" : rec.action === "ATTENDANCE_CLOCK_OUT" ? "OUT" : null);
+        const type: "IN" | "OUT" | null = rec.type === "IN" ? "IN" : rec.type === "OUT" ? "OUT" : null;
         if (!type) return;
-        const dt = new Date(rec.clockIn ?? rec.clockOut ?? rec.createdAt);
+        const raw = rec.timestamp ?? rec.date;
+        const dt = raw ? new Date(raw) : null;
+        if (!dt || isNaN(dt.getTime())) return;
         const time = dt.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
         setLastClock({ type, time });
       })
       .catch(() => {});
     load();
   }, [restaurantId, waiterId, attSignal]);
+
+  // Intercept Android back button / PWA close — show exit prompt
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Push a dummy state so back button doesn't close the app
+    window.history.pushState({ pwa: true }, "");
+    const onPop = () => {
+      setLogoutPrompt(true);
+      // Re-push so next back press also triggers this
+      window.history.pushState({ pwa: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   function answerClockPrompt(reported: boolean) {
     try { localStorage.setItem(todayKey(), "1"); } catch { /* ignore */ }
@@ -321,8 +337,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               {layout.rooms.length > 1 && layout.rooms.map((room, i) => (
                 <button key={room.id} onClick={() => setRoomIdx(i)} style={{
                   padding: "5px 11px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  border: `1px solid ${G_BORDER_C}`, background: roomIdx === i ? "rgba(255,255,255,0.18)" : "rgba(15,14,22,0.7)",
-                  color: "#fff", fontFamily: "inherit", backdropFilter: "blur(12px)",
+                  border: roomIdx === i ? "2px solid #22c55e" : `1px solid ${G_BORDER_C}`,
+                  background: "rgba(15,14,22,0.7)",
+                  color: roomIdx === i ? "#22c55e" : "#fff",
+                  fontFamily: "inherit", backdropFilter: "blur(12px)",
                 }}>{room.name}</button>
               ))}
               <button onClick={() => setLayoutRotation(r => r === 0 ? 90 : 0)} title="סיבוב" style={{
@@ -426,7 +444,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       {menuOpen && (
         <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.5)" }}>
           <div onClick={e => e.stopPropagation()} dir="rtl" style={{
-            position: "absolute", top: 0, right: 0, bottom: 0, width: isMobile ? "82vw" : 320,
+            position: "absolute", top: 0, right: 0, bottom: 0, width: isMobile ? "72vw" : 260,
             background: "rgba(15,14,22,0.98)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
             borderLeft: `1px solid ${G_BORDER_C}`, boxShadow: "-12px 0 40px rgba(0,0,0,0.5)",
             display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out",
@@ -451,7 +469,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
                   <span style={{ fontSize: 19, width: 26, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
                   {item.sublabel && (
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>{item.sublabel}</span>
+                    <span style={{ fontSize: 13, color: "#C9A452", fontWeight: 700 }}>{item.sublabel}</span>
                   )}
                   {item.badge !== undefined && item.badge > 0 && (
                     <span style={{ background: item.icon === "✨" ? "rgba(139,92,246,0.3)" : "#ef4444", color: "#fff", borderRadius: 99, fontSize: 11, fontWeight: 800, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px" }}>{item.badge}</span>
