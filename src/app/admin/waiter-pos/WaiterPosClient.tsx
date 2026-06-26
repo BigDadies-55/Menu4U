@@ -9,7 +9,7 @@ import Receipt from "./Receipt";
 import SelfSignoffModal from "./SelfSignoffModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import FloorLayout from "./FloorLayout";
-import { useOfflineQueue } from "@/hooks/useOfflineQueue";
+import { useOutbox } from "@/hooks/useOutbox";
 import {
   useWaiterPos,
   type Restaurant, type Insight,
@@ -79,11 +79,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
     snoozeInsight,
   } = useWaiterPos({ restaurants, waiterName, isWaiter });
 
-  // ── Offline outbox — queue new orders while offline, auto-sync on reconnect ──
-  const { pendingCount, isSyncing, enqueue } = useOfflineQueue(results => {
+  // ── Offline outbox — durable, ordered, idempotent replay of all queued actions ──
+  const { pendingCount, isSyncing, enqueue } = useOutbox(results => {
     const ok = results.filter(r => r.ok).length;
-    if (ok > 0) showToast(`${ok} הזמנות סונכרנו ✓`);
-    fetchAll(true);
+    if (ok > 0) { showToast(`${ok} פעולות סונכרנו ✓`); fetchAll(true); }
   });
 
   // ── Local UI state for the redesigned shell ──
@@ -270,7 +269,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
               : <>{isSyncing ? "🔄 מסנכרן..." : "⏳ ממתין לסנכרון"}</>
             }
           </span>
-          {totalPending > 0 && <span style={{ fontWeight: 700, background: "rgba(255,255,255,0.12)", borderRadius: 8, padding: "2px 10px" }}>{totalPending} הזמנות בתור</span>}
+          {totalPending > 0 && <span style={{ fontWeight: 700, background: "rgba(255,255,255,0.12)", borderRadius: 8, padding: "2px 10px" }}>{totalPending} פעולות בתור</span>}
         </div>
       )}
 
@@ -582,7 +581,7 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           waiterName={waiterName}
           onClose={() => setTableOverlay(null)}
           onAddItems={(order) => {
-            if (isOffline) { showToast("📴 לא ניתן לערוך הזמנה קיימת במצב offline"); return; }
+            // Adding items offline is now supported via the outbox (order already has a server id).
             setOrderScreenData({ orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });
             setTableOverlay(null);
           }}
