@@ -497,6 +497,7 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
 
   const [showMenuForm, setShowMenuForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [showItemForm, setShowItemForm] = useState(false);
   const [editItem, setEditItem] = useState<Item | null>(null);
   const [scheduleMenu, setScheduleMenu] = useState<Menu | null>(null);
@@ -902,22 +903,66 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
   }
 
   // ── Category CRUD ─────────────────────────────────────────────────────────
-  async function createCategory(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedMenu) return;
-    setLoading(true);
-    const res = await fetch("/api/admin/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...categoryForm, menuId: selectedMenu.id, sortOrder: selectedMenu.categories.length }),
+  function openNewCategory() {
+    setEditingCategoryId(null);
+    setCategoryForm(emptyCategoryForm);
+    setShowCategoryForm(true);
+  }
+
+  function openEditCategory(cat: Category) {
+    setEditingCategoryId(cat.id);
+    setCategoryForm({
+      name: cat.name ?? "",
+      description: "",
+      image: cat.image ?? "",
+      course: cat.course ?? 1,
+      translations: cat.translations ?? emptyCatTr(),
     });
-    if (res.ok) {
-      const newCat: Category = { ...(await res.json()), items: [] };
-      updateMenu(m => ({ ...m, categories: [...m.categories, newCat] }));
-      setShowCategoryForm(false);
-      setCategoryForm(emptyCategoryForm);
+    setShowCategoryForm(true);
+  }
+
+  async function saveCategory(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (editingCategoryId) {
+        // Edit existing category
+        const res = await fetch(`/api/admin/categories/${editingCategoryId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: categoryForm.name, image: categoryForm.image || null, translations: categoryForm.translations }),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          updateMenu(m => ({ ...m, categories: m.categories.map(c => c.id === editingCategoryId ? { ...c, name: updated.name, image: updated.image, translations: updated.translations } : c) }));
+          setShowCategoryForm(false);
+          setEditingCategoryId(null);
+          setCategoryForm(emptyCategoryForm);
+        } else {
+          let detail = ""; try { detail = (await res.json())?.error ?? ""; } catch { /* ignore */ }
+          alert(`עדכון הקטגוריה נכשל: ${res.status} ${detail}`);
+        }
+        return;
+      }
+      // Create new category
+      if (!selectedMenu) return;
+      const res = await fetch("/api/admin/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...categoryForm, menuId: selectedMenu.id, sortOrder: selectedMenu.categories.length }),
+      });
+      if (res.ok) {
+        const newCat: Category = { ...(await res.json()), items: [] };
+        updateMenu(m => ({ ...m, categories: [...m.categories, newCat] }));
+        setShowCategoryForm(false);
+        setCategoryForm(emptyCategoryForm);
+      } else {
+        let detail = ""; try { detail = (await res.json())?.error ?? ""; } catch { /* ignore */ }
+        alert(`יצירת הקטגוריה נכשלה: ${res.status} ${detail}`);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   function deleteCategory(catId: string) {
@@ -1257,7 +1302,7 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
               {/* New category button */}
               {selectedMenu && canEdit && (
                 <button
-                  onClick={() => setShowCategoryForm(true)}
+                  onClick={openNewCategory}
                   style={{
                     background: G_ACCENT_GRAD, border: "none",
                     color: G_TEXT, borderRadius: 10, padding: "8px 18px", fontSize: 13, fontWeight: 700,
@@ -1284,7 +1329,7 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
               <div style={{ fontWeight: 600, color: G_TEXT, marginBottom: 6 }}>אין קטגוריות עדיין</div>
               <div style={{ fontSize: 13, color: G_MUTED, marginBottom: 16 }}>הוסף קטגוריה ראשונה כדי להתחיל לבנות את התפריט</div>
               {canEdit && (
-                <button onClick={() => setShowCategoryForm(true)}
+                <button onClick={openNewCategory}
                   style={{ background: G_ACCENT_GRAD, border: "none", color: G_TEXT, borderRadius: 10, padding: "10px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 15px rgba(217,119,6,0.3)" }}>
                   + קטגוריה חדשה
                 </button>
@@ -1427,6 +1472,13 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
                           {canEdit && (
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12 }}
                               onClick={e => e.stopPropagation()}>
+                              <button onClick={() => openEditCategory(cat)}
+                                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                                title="ערוך קטגוריה">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                              </button>
                               <button onClick={() => { setSelectedCategory(cat); setEditItem(null); setItemForm(emptyItemForm); setTagInput(""); setShowItemForm(true); }}
                                 style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${G_BORDER}`, color: G_TEXT, padding: 8, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", transition: "0.2s" }}
                                 onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
@@ -1674,20 +1726,12 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
       {showCategoryForm && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
           <div className="w-full max-w-md p-6" style={{ background: T.panel, border: "1px solid #2d3239", borderRadius: 16 }}>
-            <h2 className="text-xl font-bold mb-4" style={{ color: T.text }}>קטגוריה חדשה</h2>
-            <form onSubmit={createCategory} className="space-y-4">
+            <h2 className="text-xl font-bold mb-4" style={{ color: T.text }}>{editingCategoryId ? "עריכת קטגוריה" : "קטגוריה חדשה"}</h2>
+            <form onSubmit={saveCategory} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>שם הקטגוריה *</label>
                 <input required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })}
                   style={darkInput} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: T.sub }}>קורס</label>
-                <select value={categoryForm.course} onChange={e => setCategoryForm({ ...categoryForm, course: Number(e.target.value) })} style={darkInput}>
-                  <option value={1}>ראשונות</option>
-                  <option value={2}>עיקריות</option>
-                  <option value={3}>קינוח</option>
-                </select>
               </div>
               <ImageUpload
                 label="תמונת קטגוריה"
@@ -1716,9 +1760,9 @@ export default function MenusClient({ restaurants, stations = [], canEdit }: { r
               </details>
               <div className="flex gap-3">
                 <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50" style={{ background: T.gold, color: "#fff", boxShadow: "0 2px 8px rgba(201,168,76,0.35)" }}>
-                  {loading ? "יוצר..." : "צור"}
+                  {loading ? "שומר..." : editingCategoryId ? "שמור" : "צור"}
                 </button>
-                <button type="button" onClick={() => setShowCategoryForm(false)} className="flex-1 py-2.5 rounded-lg font-medium" style={{ background: T.raised, color: T.sub }}>ביטול</button>
+                <button type="button" onClick={() => { setShowCategoryForm(false); setEditingCategoryId(null); setCategoryForm(emptyCategoryForm); }} className="flex-1 py-2.5 rounded-lg font-medium" style={{ background: T.raised, color: T.sub }}>ביטול</button>
               </div>
             </form>
           </div>

@@ -28,17 +28,32 @@ export async function GET(req: Request) {
 
     if (rows.length === 0) return NextResponse.json({ items: [] });
 
+    // Station rank/code → course classification (same model as the menu route).
+    const stations = await prisma.kitchenStation.findMany({
+      where: { restaurantId, isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, code: true },
+    });
+    const stationRank = new Map(stations.map((s, i) => [s.id, i + 1]));
+    const stationCode = new Map(stations.map(s => [s.id, s.code]));
+
     const itemIds = rows.map(r => r.itemId);
     const items = await prisma.item.findMany({
       where: { id: { in: itemIds }, isActive: true },
-      select: { id: true, name: true, description: true, price: true, image: true, allergens: true, isVegetarian: true, isVegan: true, isGlutenFree: true },
+      select: { id: true, name: true, description: true, price: true, image: true, allergens: true, isVegetarian: true, isVegan: true, isGlutenFree: true, category: { select: { course: true, kitchenStationId: true } } },
     });
 
     // Sort by popularity order
     const sorted = itemIds
       .map(id => items.find(i => i.id === id))
       .filter(Boolean)
-      .map(i => ({ ...i!, price: Number(i!.price), allergens: i!.allergens ?? [] }));
+      .map(i => {
+        const { category, ...rest } = i!;
+        const sid = category?.kitchenStationId;
+        const course = sid ? (stationRank.get(sid) ?? category?.course ?? 1) : (category?.course ?? 1);
+        const courseCode = sid ? (stationCode.get(sid) ?? null) : null;
+        return { ...rest, price: Number(i!.price), allergens: i!.allergens ?? [], course, courseCode };
+      });
 
     return NextResponse.json({ items: sorted });
   } catch (e) {

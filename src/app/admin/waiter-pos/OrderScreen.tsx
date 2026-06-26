@@ -16,10 +16,10 @@ type MenuItem = {
   id: string; name: string; description: string | null;
   price: number; image: string | null; allergens: string[];
   isVegetarian: boolean; isVegan: boolean; isGlutenFree: boolean;
-  course?: number;
+  course?: number; courseCode?: string | null;
   modifierGroups: ModifierGroup[];
 };
-type MenuCategory = { id: string; name: string; course: number; items: MenuItem[] };
+type MenuCategory = { id: string; name: string; course: number; courseCode?: string | null; items: MenuItem[] };
 
 type CartItem = {
   key: string; itemId: string; name: string; price: number;
@@ -46,7 +46,7 @@ type Props = {
 
 const POPULAR_CAT_ID = "__popular__";
 // Course → single-letter badge (first letter of the Hebrew course name).
-const COURSE_LETTER: Record<number, string> = { 1: "ר", 2: "ע", 3: "ק" };
+const COURSE_LETTER: Record<number, string> = { 1: "ר", 2: "ע", 3: "ק", 4: "מ" };
 const courseLetter = (c: number) => COURSE_LETTER[c] ?? String(c);
 
 export function OrderScreen({
@@ -139,7 +139,11 @@ export function OrderScreen({
   }
   function pushToCart(item: MenuItem, modifiers: CartItemModifier[]) {
     const extra = modifiers.reduce((s, m) => s + m.priceAdd, 0);
-    const course = categories.find(c => c.items.some(i => i.id === item.id))?.course ?? item.course ?? 1;
+    // Course is stamped on the item by the API (derived from its kitchen station);
+    // fall back to a category lookup (skipping the "⭐ פופולרי" pseudo-category).
+    const course = item.course
+      ?? categories.find(c => c.id !== POPULAR_CAT_ID && c.items.some(i => i.id === item.id))?.course
+      ?? 1;
     const sig = modifiers.map(m => m.label).sort().join("|");
     setCart(p => {
       // Re-ordering the same dish (identical modifiers/course) bumps the quantity
@@ -243,6 +247,10 @@ export function OrderScreen({
   const total = existingTotal + newTotal;
   const avgPerDiner = covers > 0 ? total / covers : 0;
   const courseNums = Array.from(new Set((order?.items ?? []).filter(i => !i.voidedAt).map(i => i.course))).sort();
+  // Course number → kitchen-station code (the badge shown for each dish).
+  const courseCodeByNum: Record<number, string> = {};
+  for (const c of categories) if (c.courseCode && c.course != null) courseCodeByNum[c.course] = c.courseCode;
+  const courseBadge = (c: number) => courseCodeByNum[c] ?? courseLetter(c);
 
   // ── Styles ──
   const T = { bar: "#171a23", barLine: "rgba(255,255,255,0.08)", gold: "#d4a017", goldGrad: "linear-gradient(135deg,#D97706,#F59E0B)" };
@@ -346,11 +354,11 @@ export function OrderScreen({
             )}
 
             {/* Existing (sent) items — no X; cancel needs manager PIN */}
-            {existingItems.map(i => <ExistingRow key={i.id} item={i} allergens={allergens} isMobile={isMobile} onVoid={() => setVoidItem({ id: i.id, name: i.itemName })} />)}
+            {existingItems.map(i => <ExistingRow key={i.id} item={i} allergens={allergens} isMobile={isMobile} courseBadge={courseBadge} onVoid={() => setVoidItem({ id: i.id, name: i.itemName })} />)}
 
             {/* New cart items — deletable */}
             {cart.map(i => (
-              <CartRow key={i.key} item={i} warn={i.allergens.some(a => allergens.includes(a))} isMobile={isMobile}
+              <CartRow key={i.key} item={i} warn={i.allergens.some(a => allergens.includes(a))} isMobile={isMobile} courseBadge={courseBadge}
                 onQty={q => changeQty(i.key, q)} onNotes={n => changeNotes(i.key, n)} />
             ))}
           </div>
@@ -452,7 +460,7 @@ export function OrderScreen({
               const held = items.length > 0 && items.some(i => i.heldUntilFired && !i.firedAt);
               return (
                 <div key={c} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#faf8f5", border: "1px solid #e8e2da", borderRadius: 12, padding: "10px 14px" }}>
-                  <div><div style={{ fontWeight: 800 }}>קורס {courseLetter(c)} · {items.length} פריטים</div><div style={{ fontSize: 11, color: "#9b8f82" }}>{held ? "ממתין לשחרור" : "נשלח למטבח"}</div></div>
+                  <div><div style={{ fontWeight: 800 }}>קורס {courseBadge(c)} · {items.length} פריטים</div><div style={{ fontSize: 11, color: "#9b8f82" }}>{held ? "ממתין לשחרור" : "נשלח למטבח"}</div></div>
                   {held && <button onClick={() => fireCourse(c)} disabled={firingCourse === c} style={{ padding: "7px 16px", borderRadius: 10, border: "none", background: T.goldGrad, color: "#fff", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>{firingCourse === c ? "…" : "🔥 שחרר"}</button>}
                 </div>
               );
@@ -491,13 +499,13 @@ function BCell({ icon, label, onClick, active, disabled }: { icon: string; label
 }
 
 // ── Order rows ──
-function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDetail; allergens: string[]; isMobile: boolean; onVoid: () => void }) {
+function ExistingRow({ item, allergens, isMobile, courseBadge, onVoid }: { item: OrderItemDetail; allergens: string[]; isMobile: boolean; courseBadge: (c: number) => string; onVoid: () => void }) {
   const warn = item.itemAllergens.some(a => allergens.includes(a));
   const statusHe: Record<string, string> = { PENDING: "ממתין", PREPARING: "מכין 🍳", DONE: "מוכן ✓", SERVED: "הוגש", CANCELLED: "בוטל" };
   const badge = isMobile ? 24 : 28;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10, padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
-      <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseLetter(item.course)}</div>
+      <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseBadge(item.course)}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
         <div style={{ fontSize: 11, color: warn ? "#c0392b" : "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
@@ -508,7 +516,7 @@ function ExistingRow({ item, allergens, isMobile, onVoid }: { item: OrderItemDet
   );
 }
 
-function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; warn: boolean; isMobile: boolean; onQty: (q: number) => void; onNotes: (n: string) => void }) {
+function CartRow({ item, warn, isMobile, courseBadge, onQty, onNotes }: { item: CartItem; warn: boolean; isMobile: boolean; courseBadge: (c: number) => string; onQty: (q: number) => void; onNotes: (n: string) => void }) {
   const [notesOpen, setNotesOpen] = useState(!!item.notes);
   const badge = isMobile ? 24 : 28;
   const controls = (
@@ -527,7 +535,7 @@ function CartRow({ item, warn, isMobile, onQty, onNotes }: { item: CartItem; war
   return (
     <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
-        <div title={{ 1: "ראשונות", 2: "עיקריות", 3: "קינוח" }[item.course] ?? `קורס ${item.course}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "default" }}>{courseLetter(item.course)}</div>
+        <div title={`קורס ${courseBadge(item.course)}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "default" }}>{courseBadge(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}

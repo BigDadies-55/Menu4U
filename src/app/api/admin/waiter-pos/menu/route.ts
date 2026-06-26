@@ -24,6 +24,16 @@ export async function GET(req: Request) {
   await prisma.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN IF NOT EXISTS "course" INTEGER NOT NULL DEFAULT 1`);
 
   try {
+    // Kitchen stations define the course classification: a category's station
+    // (its rank by sortOrder) is the course, and the station code is the badge.
+    const stations = await prisma.kitchenStation.findMany({
+      where: { restaurantId, isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, code: true },
+    });
+    const stationRank = new Map(stations.map((s, i) => [s.id, i + 1]));
+    const stationCode = new Map(stations.map(s => [s.id, s.code]));
+
     const menus = await prisma.menu.findMany({
       where: { restaurantId, isActive: true },
       select: {
@@ -34,6 +44,7 @@ export async function GET(req: Request) {
             id: true,
             name: true,
             course: true,
+            kitchenStationId: true,
             items: {
               where: { isActive: true },
               orderBy: { sortOrder: "asc" },
@@ -60,11 +71,18 @@ export async function GET(req: Request) {
       .flatMap(m => m.categories)
       .filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
 
-    // Normalize: ensure allergens is always an array (old rows may have null)
-    const normalized = categories.map(c => ({
-      ...c,
-      items: c.items.map(i => ({ ...i, allergens: i.allergens ?? [], price: Number(i.price ?? 0) })),
-    }));
+    // Normalize: allergens → array, and derive course/courseCode from the
+    // category's kitchen station (falling back to the legacy course field).
+    const normalized = categories.map(c => {
+      const rank = c.kitchenStationId ? (stationRank.get(c.kitchenStationId) ?? c.course ?? 1) : (c.course ?? 1);
+      const code = c.kitchenStationId ? (stationCode.get(c.kitchenStationId) ?? null) : null;
+      return {
+        ...c,
+        course: rank,
+        courseCode: code,
+        items: c.items.map(i => ({ ...i, allergens: i.allergens ?? [], price: Number(i.price ?? 0), course: rank, courseCode: code })),
+      };
+    });
     return NextResponse.json({ categories: normalized });
   } catch (e) {
     console.error("[waiter-pos/menu]", e);
