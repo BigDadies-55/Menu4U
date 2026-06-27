@@ -46,12 +46,12 @@ async function getChar(forceReconnect = false): Promise<BluetoothRemoteGATTChara
 }
 
 async function writeChunked(char: BluetoothRemoteGATTCharacteristic, data: Uint8Array) {
-  const CHUNK = 400;
+  const CHUNK = 180; // safe under typical BLE MTU (200-244 bytes minus header overhead)
   for (let i = 0; i < data.length; i += CHUNK) {
     const slice = data.slice(i, i + CHUNK);
     try { await char.writeValueWithoutResponse(slice); }
     catch { await char.writeValue(slice); }
-    if (i + CHUNK < data.length) await new Promise(r => setTimeout(r, 20));
+    if (i + CHUNK < data.length) await new Promise(r => setTimeout(r, 30));
   }
 }
 
@@ -195,6 +195,9 @@ function buildDoc(data: PrintReceiptData): Uint8Array {
       bitmap.push(byte);
     }
   }
+
+  // Sanity check — canvas must have rendered something
+  if (!bitmap.some(b => b !== 0)) throw new Error("שגיאת canvas — טען מחדש את הדף ונסה שוב");
 
   // ── ESC/POS: INIT + GS v 0 raster image + feed + cut ──
   const header = [
