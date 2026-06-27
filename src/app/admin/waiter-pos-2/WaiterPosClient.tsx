@@ -673,12 +673,12 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
           onClose={() => setTableOverlay(null)}
           onAddItems={(order) => {
             if (isOffline) { showToast("📴 לא ניתן לערוך הזמנה במצב offline"); return; }
-            setOrderScreenData({ orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });
+            setOrderScreenData({ orderType: "DINE_IN", orderId: order.id, tableNum: overlayTable.tableNum, allergens: order.tableAllergens, guestCount: overlayTable.guests, existingOrder: order });
             setTableOverlay(null);
           }}
           onNewOrder={(guestCount, allergens) => {
             if (isOffline) { showToast("📴 לא ניתן ליצור הזמנה במצב offline"); return; }
-            setOrderScreenData({ orderId: null, tableNum: overlayTable.tableNum, allergens, guestCount, existingOrder: null });
+            setOrderScreenData({ orderType: "DINE_IN", orderId: null, tableNum: overlayTable.tableNum, allergens, guestCount, existingOrder: null });
             setTableOverlay(null);
           }}
           onStatusChange={(status) => patchStatus(overlayTable.tableNum, status)}
@@ -706,7 +706,10 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
       {/* ══ ORDER SCREEN ══ */}
       {orderScreenData && (
         <OrderScreen
+          orderType={orderScreenData.orderType}
           tableNum={orderScreenData.tableNum}
+          customerName={orderScreenData.customerName}
+          customerPhone={orderScreenData.customerPhone}
           orderId={orderScreenData.orderId}
           guestCount={orderScreenData.guestCount}
           tableAllergens={orderScreenData.allergens}

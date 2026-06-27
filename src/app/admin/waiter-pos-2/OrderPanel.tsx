@@ -20,8 +20,12 @@ export type CartItem = {
 };
 
 type Props = {
+  orderType: "DINE_IN" | "TAKEAWAY" | "DELIVERY";
   orderId: string | null;
   restaurantId: string;
+  tableNum?: string;
+  customerName?: string;
+  customerPhone?: string;
   existingItems: OrderItemDetail[];
   cartItems: CartItem[];
   tableAllergens: string[];
@@ -45,7 +49,7 @@ const ITEM_STATUS_TX: Record<string, string> = {
   PENDING: "#FBB040", PREPARING: "#60A5FA", DONE: "#34D399", CANCELLED: "rgba(255,255,255,0.35)",
 };
 
-export function OrderPanel({ orderId, restaurantId, existingItems, cartItems, tableAllergens, orderNumber, onQtyChange, onNotesChange, onFireItem, onFireCourse, onItemActioned }: Props) {
+export function OrderPanel({ orderType, orderId, restaurantId, tableNum, customerName, customerPhone, existingItems, cartItems, tableAllergens, orderNumber, onQtyChange, onNotesChange, onFireItem, onFireCourse, onItemActioned }: Props) {
   const [view, setView] = useState<"B" | "C">(() => {
     if (typeof window !== "undefined") {
       const s = localStorage.getItem(LS_VIEW_KEY);

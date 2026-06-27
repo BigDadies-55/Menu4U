@@ -55,7 +55,10 @@ export type ReceiptData = {
 
 export type OrderScreenData = {
   orderId: string | null;
-  tableNum: string;
+  orderType: "DINE_IN" | "TAKEAWAY" | "DELIVERY";
+  tableNum?: string;
+  customerName?: string;
+  customerPhone?: string;
   allergens: string[];
   guestCount: number;
   existingOrder: OrderDetail | null;

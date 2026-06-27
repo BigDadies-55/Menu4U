@@ -18,8 +18,11 @@ type MenuItem = {
 type MenuCategory = { id: string; name: string; items: MenuItem[] };
 
 type Props = {
-  tableNum: string;
-  orderId: string | null;         // null = new order (free table)
+  orderType: "DINE_IN" | "TAKEAWAY" | "DELIVERY";
+  tableNum?: string;
+  customerName?: string;
+  customerPhone?: string;
+  orderId: string | null;
   guestCount: number;
   tableAllergens: string[];
   restaurantId: string;
@@ -28,7 +31,7 @@ type Props = {
   onSuccess: (newOrderId?: string) => void;
 };
 
-export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, restaurantId, existingOrder, onClose, onSuccess }: Props) {
+export function OrderScreen({ orderType, tableNum, customerName, customerPhone, orderId, guestCount, tableAllergens, restaurantId, existingOrder, onClose, onSuccess }: Props) {
   const [categories, setCategories]     = useState<MenuCategory[]>([]);
   const [loadingMenu, setLoadingMenu]   = useState(true);
   const [menuError, setMenuError]       = useState<string | null>(null);
@@ -44,6 +47,9 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
   const [cartOpen, setCartOpen]         = useState(false);
   const [modifierItem, setModifierItem] = useState<MenuItem | null>(null);
   const [modifierSel, setModifierSel]   = useState<Record<string, string[]>>({});
+  const [selectedOrderType, setSelectedOrderType] = useState<"DINE_IN" | "TAKEAWAY" | "DELIVERY">(orderType);
+  const [tempCustomerName, setTempCustomerName] = useState(customerName || "");
+  const [tempCustomerPhone, setTempCustomerPhone] = useState(customerPhone || "");
 
   useEffect(() => {
     function check() { setIsMobile(window.innerWidth < 640); }
@@ -222,12 +228,20 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
         onSuccess();
       } else {
         // Create new order
+        if (selectedOrderType !== "DINE_IN" && !tempCustomerName) {
+          alert("שם לקוח נדרש");
+          setSubmitting(false);
+          return;
+        }
         const r = await fetch("/api/admin/orders/waiter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             restaurantId,
-            tableNumber: tableNum,
+            orderType: selectedOrderType,
+            tableNumber: selectedOrderType === "DINE_IN" ? tableNum : undefined,
+            customerName: selectedOrderType !== "DINE_IN" ? tempCustomerName : undefined,
+            customerPhone: selectedOrderType !== "DINE_IN" ? tempCustomerPhone : undefined,
             coversCount: guestCount,
             tableAllergens,
             items: cart.map(i => ({ itemId: i.itemId, quantity: i.quantity, course: i.course, notes: i.notes || null, modifiers: i.modifiers })),
@@ -249,13 +263,36 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(10,10,18,0.98)", display: "flex", flexDirection: "column" }}>
 
       {/* Top bar */}
-      <div style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.1)", height: 56, padding: "0 14px", flexShrink: 0, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(12px)" }}>
-        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#fff", fontFamily: "inherit" }}>← חזור</button>
-        <span style={{ fontSize: 15, fontWeight: 900, flex: 1, color: "#ffffff" }}>שולחן {tableNum}{orderId ? ` · הזמנה #${order?.orderNumber}` : " · הזמנה חדשה"}</span>
-        {tableAllergens.length > 0 && (
-          <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)", color: "#FCA5A5", display: "flex", alignItems: "center", gap: 3 }}>
-            ⚠️ {tableAllergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}
+      <div style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.1)", minHeight: 56, padding: "0 14px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, justifyContent: "center", backdropFilter: "blur(12px)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#fff", fontFamily: "inherit" }}>← חזור</button>
+          <span style={{ fontSize: 15, fontWeight: 900, flex: 1, color: "#ffffff" }}>
+            {selectedOrderType === "DINE_IN" ? `שולחן ${tableNum}` : selectedOrderType === "TAKEAWAY" ? `📦 ${tempCustomerName}` : `🚗 ${tempCustomerName}`}
+            {orderId ? ` · הזמנה #${order?.orderNumber}` : " · הזמנה חדשה"}
           </span>
+          {tableAllergens.length > 0 && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)", color: "#FCA5A5", display: "flex", alignItems: "center", gap: 3 }}>
+              ⚠️ {tableAllergens.map(k => ALLERGEN_LIST.find(a => a.key === k)?.label ?? k).join(", ")}
+            </span>
+          )}
+        </div>
+        {!orderId && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: selectedOrderType === "DINE_IN" ? "#ffffff" : "rgba(255,255,255,0.5)" }}>
+              <input type="radio" checked={selectedOrderType === "DINE_IN"} onChange={() => setSelectedOrderType("DINE_IN")} style={{ cursor: "pointer" }} />
+              🍽️ שולחן
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: selectedOrderType === "TAKEAWAY" ? "#ffffff" : "rgba(255,255,255,0.5)" }}>
+              <input type="radio" checked={selectedOrderType === "TAKEAWAY"} onChange={() => setSelectedOrderType("TAKEAWAY")} style={{ cursor: "pointer" }} />
+              📦 טייקאווי
+            </label>
+            {selectedOrderType === "TAKEAWAY" && (
+              <>
+                <input value={tempCustomerName} onChange={e => setTempCustomerName(e.target.value)} placeholder="שם" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#fff", width: 120 }} />
+                <input value={tempCustomerPhone} onChange={e => setTempCustomerPhone(e.target.value)} placeholder="טלפון" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 12, outline: "none", fontFamily: "inherit", color: "#fff", width: 130 }} />
+              </>
+            )}
+          </div>
         )}
       </div>
 
@@ -375,8 +412,12 @@ export function OrderScreen({ tableNum, orderId, guestCount, tableAllergens, res
                 </div>
                 <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", width: "100%" }}>
                   <OrderPanel
+                    orderType={orderType}
                     orderId={orderId}
                     restaurantId={restaurantId}
+                    tableNum={tableNum}
+                    customerName={customerName}
+                    customerPhone={customerPhone}
                     existingItems={order?.items ?? []}
                     cartItems={cart}
                     tableAllergens={tableAllergens}
