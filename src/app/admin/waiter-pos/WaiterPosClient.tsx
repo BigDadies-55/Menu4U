@@ -449,30 +449,30 @@ export default function WaiterPosClient({ restaurants, waiterName, isWaiter = fa
             borderLeft: `1px solid ${G_BORDER_C}`, boxShadow: "-12px 0 40px rgba(0,0,0,0.5)",
             display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out",
           }}>
-            <div style={{ padding: "20px 20px 16px", borderBottom: `1px solid ${G_BORDER_C}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${G_BORDER_C}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>{waiterName}</div>
-                <div style={{ fontSize: 11, color: G_MUTED_C }}>{activeRestaurant?.name ?? "מלצר חכם"}</div>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>{waiterName}</div>
+                <div style={{ fontSize: 10, color: G_MUTED_C }}>{activeRestaurant?.name ?? "מלצר חכם"}</div>
               </div>
-              <button onClick={() => setMenuOpen(false)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${G_BORDER_C}`, borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#fff" }}>✕</button>
+              <button onClick={() => setMenuOpen(false)} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${G_BORDER_C}`, borderRadius: 8, width: 28, height: 28, fontSize: 15, cursor: "pointer", color: "#fff" }}>✕</button>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "5px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
               {menuItems.map(item => (
                 <button key={item.label} onClick={item.onClick} style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", borderRadius: 12,
+                  display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 8,
                   background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit",
-                  fontSize: 15, fontWeight: 600, color: item.danger ? "#fca5a5" : "#fff", textAlign: "right", width: "100%",
+                  fontSize: 13, fontWeight: 600, color: item.danger ? "#fca5a5" : "#fff", textAlign: "right", width: "100%",
                 }}
                   onMouseEnter={e => (e.currentTarget.style.background = item.danger ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.07)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
-                  <span style={{ fontSize: 19, width: 26, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ fontSize: 15, width: 20, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
                   {item.sublabel && (
-                    <span style={{ fontSize: 13, color: "#C9A452", fontWeight: 700 }}>{item.sublabel}</span>
+                    <span style={{ fontSize: 11, color: "#C9A452", fontWeight: 700 }}>{item.sublabel}</span>
                   )}
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span style={{ background: item.icon === "✨" ? "rgba(139,92,246,0.3)" : "#ef4444", color: "#fff", borderRadius: 99, fontSize: 11, fontWeight: 800, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px" }}>{item.badge}</span>
+                    <span style={{ background: item.icon === "✨" ? "rgba(139,92,246,0.3)" : "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, fontWeight: 800, minWidth: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>{item.badge}</span>
                   )}
                 </button>
               ))}

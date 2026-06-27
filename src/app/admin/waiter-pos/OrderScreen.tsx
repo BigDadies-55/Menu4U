@@ -310,25 +310,25 @@ export function OrderScreen({
       {/* ══ BODY: 20% categories | 30% dishes | 50% order ══ */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
-        {/* ── Categories (right, 20% / 17% mobile / 22% phone) ── */}
-        <div style={{ width: isPhone ? "22%" : isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
+        {/* ── Categories (right, 20% / 17% mobile / 15% phone) ── */}
+        <div style={{ width: isPhone ? "15%" : isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
           {loadingMenu ? (
             <div style={{ padding: 20, color: "#888", fontSize: 13 }}>טוען...</div>
           ) : categories.map(c => (
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
-              display: "block", width: "100%", textAlign: "right", padding: isMobile ? "10px 8px" : "13px 16px", border: "none",
+              display: "block", width: "100%", textAlign: "right", padding: isMobile ? "5px 5px" : "7px 10px", border: "none",
               borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
-              fontSize: isMobile ? 12 : 14, fontWeight: activeCat === c.id ? 800 : 600,
+              fontSize: isMobile ? 10 : 12, fontWeight: activeCat === c.id ? 800 : 600,
               background: activeCat === c.id ? T.gold : "transparent",
               color: activeCat === c.id ? "#fff" : "#1a1612",
             }}>{c.name}</button>
           ))}
         </div>
 
-        {/* ── Dishes (middle, 30% / 25% mobile / 35% phone) ── */}
-        <div style={{ width: isPhone ? "35%" : isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
-          <div style={{ padding: "7px 10px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "6px 10px", fontSize: 11, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />
+        {/* ── Dishes (middle, 30% / 25% mobile / 20% phone) ── */}
+        <div style={{ width: isPhone ? "20%" : isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
+          <div style={{ padding: "4px 5px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "3px 8px", fontSize: 10, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />
           </div>
           <div style={{ flex: 1, overflowY: "auto" }}>
             {menuError ? (
@@ -345,15 +345,15 @@ export function OrderScreen({
                       background: qty > 0 ? "rgba(200,161,58,0.08)" : "#fff",
                       borderLeft: "1px solid #eee", borderBottom: "1px solid #eee",
                       boxShadow: qty > 0 ? `inset 0 0 0 2px ${T.gold}` : "none",
-                      cursor: "pointer", position: "relative", aspectRatio: "1 / 1",
-                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: 2, minWidth: 0,
+                      cursor: "pointer", position: "relative", aspectRatio: "4 / 3",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, padding: 2, minWidth: 0,
                     }}>
                       {qty > 0 && <div style={{ position: "absolute", top: 4, left: 4, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 18, height: 18, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
                       {/* Dome (cloche) — coloured by allergen status: red=contains / green=allowed / grey=no table allergens */}
-                      <svg style={{ width: "clamp(20px, 2.4vw, 30px)", height: "clamp(16px, 2vw, 24px)" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                      <svg style={{ width: "clamp(14px, 1.6vw, 20px)", height: "clamp(11px, 1.3vw, 16px)" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
                       </svg>
-                      <div style={{ fontSize: "clamp(10px, 1.1vw, 13px)", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
+                      <div style={{ fontSize: "clamp(9px, 0.9vw, 11px)", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.15, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
                     </div>
                   );
                 })}
