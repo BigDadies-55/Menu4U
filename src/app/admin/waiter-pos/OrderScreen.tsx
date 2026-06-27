@@ -348,10 +348,10 @@ export function OrderScreen({
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
               display: "flex", width: "100%",
               alignItems: "center", justifyContent: "center", textAlign: "center",
-              aspectRatio: isMobile ? "auto" : "1 / 1",
+              aspectRatio: isMobile ? "auto" : "5 / 2",
               padding: isMobile ? "5px 5px" : "6px 4px",
               border: "none", borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
-              fontSize: isMobile ? 10 : 13, fontWeight: activeCat === c.id ? 800 : 600,
+              fontSize: isMobile ? 10 : 18, fontWeight: activeCat === c.id ? 800 : 600,
               background: activeCat === c.id ? T.gold : "transparent",
               color: activeCat === c.id ? "#fff" : "#1a1612",
               lineHeight: 1.2,
@@ -368,7 +368,7 @@ export function OrderScreen({
             {menuError ? (
               <div style={{ textAlign: "center", color: "#c0392b", padding: 24, fontSize: 13, fontWeight: 700 }}>⚠️ {menuError}</div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(3,1fr)", borderTop: "1px solid #eee", borderRight: "1px solid #eee" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", borderTop: "1px solid #eee", borderRight: "1px solid #eee" }}>
                 {filteredItems.map(item => {
                   const qty = cartQtyForItem(item.id);
                   const warn = hasAllergy(item);
@@ -379,15 +379,15 @@ export function OrderScreen({
                       background: qty > 0 ? "rgba(200,161,58,0.08)" : "#fff",
                       borderLeft: "1px solid #eee", borderBottom: "1px solid #eee",
                       boxShadow: qty > 0 ? `inset 0 0 0 2px ${T.gold}` : "none",
-                      cursor: "pointer", position: "relative", aspectRatio: isMobile ? "4 / 3" : "2 / 3",
+                      cursor: "pointer", position: "relative", aspectRatio: isMobile ? "4 / 3" : "5 / 4",
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, padding: 2, minWidth: 0,
                     }}>
                       {qty > 0 && <div style={{ position: "absolute", top: 4, left: 4, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 18, height: 18, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
                       {/* Dome (cloche) — coloured by allergen status: red=contains / green=allowed / grey=no table allergens */}
-                      <svg style={{ width: "clamp(14px, 1.6vw, 20px)", height: "clamp(11px, 1.3vw, 16px)" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                      <svg style={{ width: isMobile ? "clamp(14px, 1.6vw, 20px)" : "30px", height: isMobile ? "clamp(11px, 1.3vw, 16px)" : "30px" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
                       </svg>
-                      <div style={{ fontSize: "clamp(9px, 0.9vw, 11px)", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.15, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
+                      <div style={{ fontSize: isMobile ? "clamp(9px, 0.9vw, 11px)" : "18px", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.15, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
                     </div>
                   );
                 })}
@@ -451,17 +451,17 @@ export function OrderScreen({
           <div style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
             {/* אשר ושלח — ממוקם בגבול הימני של עמודת ההזמנה */}
             <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 24px",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 60px",
               border: "none", borderLeft: `1px solid ${T.barLine}`, cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
-              background: T.gold, color: "#fff", fontWeight: 800, fontSize: 13, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.55 : 1,
+              background: T.gold, color: "#fff", fontWeight: 800, fontSize: 16, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.55 : 1,
             }}>
               <span style={{ fontSize: 18 }}>✓</span>{submitting ? "שולח..." : "אשר ושלח"}
             </button>
             <div style={{ flex: 1 }} />
             {/* סה"כ */}
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "left", padding: "0 22px", borderRight: `1px solid ${T.barLine}` }}>
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "left", padding: "0 40px", borderRight: `1px solid ${T.barLine}` }}>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)" }}>סה״כ לתשלום</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
             </div>
           </div>
         )}
@@ -583,12 +583,12 @@ function ExistingRow({ item, allergens, isMobile, courseBadge, onVoid }: { item:
   const badge = isMobile ? 20 : 30;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 5 : 10, padding: isMobile ? "2px 8px" : "8px 12px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
-      <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 11 : 14, flexShrink: 0 }}>{courseBadge(item.course)}</div>
+      <div style={{ width: isMobile ? badge : 40, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 11 : 14, flexShrink: 0 }}>{courseBadge(item.course)}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? 12 : 16, fontWeight: 600, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
         <div style={{ fontSize: isMobile ? 10 : 12, color: warn ? "#c0392b" : "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
       </div>
-      <div style={{ fontSize: isMobile ? 15 : 22, fontWeight: 600, color: "#1a1612", minWidth: isMobile ? 28 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <div style={{ fontSize: isMobile ? 15 : 25, fontWeight: 600, color: "#1a1612", minWidth: isMobile ? 28 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
       <button onClick={onVoid} title="ביטול (דרוש אישור מנהל)" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#f4f1ed", color: "#b91c1c", cursor: "pointer", fontSize: isMobile ? 12 : 14, flexShrink: 0 }}>🔒</button>
     </div>
   );
@@ -606,14 +606,14 @@ function CartRow({ item, warn, isMobile, courseBadge, onQty, onNotes }: { item: 
         <span style={{ fontSize: isMobile ? 14 : 17, fontWeight: 800, minWidth: isMobile ? 18 : 22, textAlign: "center", color: "#1a1612" }}>{item.quantity}</span>
         <button onClick={() => onQty(item.quantity + 1)} style={{ ...qBtn, width: qBtnSz, height: qBtnSz }}>+</button>
       </div>
-      <div style={{ fontSize: isMobile ? 15 : 22, fontWeight: 600, color: "#1a1612", minWidth: isMobile ? 28 : 48, textAlign: "center", margin: "0 4px", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <div style={{ fontSize: isMobile ? 15 : 25, fontWeight: 600, color: "#1a1612", minWidth: isMobile ? 28 : 48, textAlign: "center", margin: "0 4px", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
       <button onClick={() => onQty(0)} title="הסר" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#fdecea", color: "#e53e3e", cursor: "pointer", fontSize: isMobile ? 14 : 16, fontWeight: 900, flexShrink: 0 }}>✕</button>
     </div>
   );
   return (
     <div style={{ padding: isMobile ? "2px 8px" : "8px 12px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 5 : 10 }}>
-        <div title={`קורס ${courseBadge(item.course)}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 11 : 14, flexShrink: 0, cursor: "default" }}>{courseBadge(item.course)}</div>
+        <div title={`קורס ${courseBadge(item.course)}`} style={{ width: isMobile ? badge : 40, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 11 : 14, flexShrink: 0, cursor: "default" }}>{courseBadge(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 12 : 16, fontWeight: 600, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: isMobile ? 10 : 12, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
