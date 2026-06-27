@@ -7,6 +7,8 @@ import { idbGet, idbSet } from "@/lib/waiter-db";
 import { useOffline } from "@/hooks/useOffline";
 import { outboxAdd, newKey } from "@/lib/outbox";
 import Receipt from "./Receipt";
+import { bluetoothPrint, isBluetoothSupported } from "@/lib/bluetooth-print";
+import type { PrintReceiptData } from "@/lib/bluetooth-print";
 
 // ── Types ──────────────────────────────────────────────────────────
 export type OrderItemDetail = {
@@ -98,6 +100,7 @@ export function TableOverlay({
   const [removingItem, setRemovingItem]   = useState<string | null>(null);
   const [servingItem, setServingItem]     = useState<string | null>(null);
   const [billWarning, setBillWarning]     = useState(false);
+  const [btPrinting, setBtPrinting]       = useState(false);
 
   useEffect(() => {
     if (!isOccupied || !orderId) return;
@@ -130,6 +133,22 @@ export function TableOverlay({
     );
     if (openItems.length > 0) { setBillWarning(true); return; }
     router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1&returnTo=/admin/waiter-pos`);
+  }
+
+  async function handleBillPrint(ord: OrderDetail) {
+    const VAT_RATE = 0.18;
+    const printableItems = ord.items.filter(i => !i.voidedAt && i.itemStatus !== "CANCELLED");
+    const totalInclVat = printableItems.filter(i => !i.isComped).reduce((s, i) => s + i.price * i.quantity, 0);
+    const vatAmount = totalInclVat - totalInclVat / (1 + VAT_RATE);
+    const data: PrintReceiptData = {
+      restaurantName, tableNum, orderNumber: ord.orderNumber,
+      waiterName, coversCount: ord.coversCount,
+      items: printableItems.map(i => ({ name: i.itemName, quantity: i.quantity, price: i.price, isComped: i.isComped })),
+      totalInclVat, vatAmount, totalExVat: totalInclVat - vatAmount,
+      notes: ord.notes,
+    };
+    setBtPrinting(true);
+    try { await bluetoothPrint(data); } catch { /* ignore */ } finally { setBtPrinting(false); }
   }
 
   async function toggleComp(itemId: string) {
@@ -639,12 +658,14 @@ export function TableOverlay({
                 ➕ הוסף מנות
               </button>
               <div style={{ display: "flex", gap: 8, direction: "rtl" }}>
-                <button onClick={() => {
+                <button onClick={async () => {
                     if (order && onRequestBill) onRequestBill(order);
                     onStatusChange("bill_requested");
+                    if (order && isBluetoothSupported()) void handleBillPrint(order);
                   }}
-                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#c2410c", fontFamily: "inherit" }}>
-                  🧾 מבקש חשבון
+                  disabled={btPrinting}
+                  style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #fed7aa", background: "#fff7ed", fontSize: 13, fontWeight: 800, cursor: btPrinting ? "wait" : "pointer", color: "#c2410c", fontFamily: "inherit" }}>
+                  {btPrinting ? "⏳ מדפיס..." : "🧾 מבקש חשבון"}
                 </button>
                 <button onClick={handleCloseBill}
                   disabled={isOffline}

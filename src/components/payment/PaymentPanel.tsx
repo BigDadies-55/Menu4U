@@ -4,6 +4,8 @@ import { T } from "@/lib/ui";
 import { useState, useEffect } from "react";
 import { ManagerPinModal } from "@/app/admin/waiter-pos/ManagerPinModal";
 import type { Order, OrderItem } from "./types";
+import { bluetoothPrint, isBluetoothSupported } from "@/lib/bluetooth-print";
+import type { PrintReceiptData } from "@/lib/bluetooth-print";
 
 export type { Order, OrderItem, OrderItemModifier } from "./types";
 
@@ -77,6 +79,9 @@ export function PaymentPanel({
   const [splitMethod, setSplitMethod] = useState<"cash" | "card" | "app">("cash");
   const [splitBusy, setSplitBusy] = useState(false);
   const [splitErr, setSplitErr] = useState<string | null>(null);
+
+  const [btPrinting, setBtPrinting] = useState(false);
+  const [btMsg, setBtMsg] = useState("");
 
   // Loyalty club flow
   type ClubStep = "idle" | "phone" | "searching" | "found" | "not_found" | "redeeming" | "done";
@@ -299,6 +304,30 @@ export function PaymentPanel({
       setSplitErr("שגיאת תקשורת");
     } finally {
       setSplitBusy(false);
+    }
+  }
+
+  async function handleBlePrint() {
+    const bleItems = validOrders.flatMap(o => o.items)
+      .filter(i => !i.voidedAt)
+      .map(i => ({ name: i.item.name, quantity: i.quantity, price: i.price, isComped: i.isComped ?? false }));
+    const data: PrintReceiptData = {
+      restaurantName, tableNum: tableNumber, orderNumber: null,
+      waiterName: "", coversCount: null,
+      items: bleItems,
+      totalInclVat: total, vatAmount, totalExVat: total - vatAmount,
+      notes: validOrders[0]?.notes ?? null,
+    };
+    setBtMsg(""); setBtPrinting(true);
+    try {
+      await bluetoothPrint(data);
+      setBtMsg("✓");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "";
+      setBtMsg(msg.includes("cancelled") ? "" : "⚠");
+    } finally {
+      setBtPrinting(false);
+      setTimeout(() => setBtMsg(""), 3000);
     }
   }
 
@@ -940,18 +969,37 @@ export function PaymentPanel({
 
             {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <button
-                type="button"
-                onClick={printReceipt}
-                style={{
-                  width: "100%", padding: "10px 0", borderRadius: 12,
-                  border: "2px solid #e5e7eb", background: "#fff",
-                  color: T.text, fontWeight: 700, fontSize: 14, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                }}
-              >
-                🖨 הדפס חשבון
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={printReceipt}
+                  style={{
+                    flex: 1, padding: "10px 0", borderRadius: 12,
+                    border: "2px solid #e5e7eb", background: "#fff",
+                    color: T.text, fontWeight: 700, fontSize: 14, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                >
+                  🖨 הדפס
+                </button>
+                {isBluetoothSupported() && (
+                  <button
+                    type="button"
+                    onClick={handleBlePrint}
+                    disabled={btPrinting}
+                    style={{
+                      flex: 1, padding: "10px 0", borderRadius: 12,
+                      border: "2px solid #e5e7eb", background: "#fff",
+                      color: T.text, fontWeight: 700, fontSize: 14,
+                      cursor: btPrinting ? "wait" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      opacity: btPrinting ? 0.6 : 1,
+                    }}
+                  >
+                    {btPrinting ? "⏳" : btMsg || "🖨️"} BLE
+                  </button>
+                )}
+              </div>
               <div style={{ display: "flex", gap: 8 }}>
                 {loyaltyDiscount === 0 && (clubStep === "idle" || clubStep === "done") && (
                   <button
