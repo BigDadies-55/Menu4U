@@ -76,10 +76,11 @@ export function OrderScreen({
   const [voidItem, setVoidItem] = useState<{ id: string; name: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isPhone, setIsPhone] = useState(false);
   const [secondaryOpen, setSecondaryOpen] = useState(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => { setIsMobile(window.innerWidth < 768); setIsPhone(window.innerWidth < 480); };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -280,28 +281,28 @@ export function OrderScreen({
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0c0c12", display: "flex", flexDirection: "column", fontFamily: "'Heebo', sans-serif", direction: "rtl" }}>
 
       {/* ══ TOP BAR — full-bleed, equal spacing between cells ══ */}
-      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: 64, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
-        <button onClick={onClose} title="חזרה" style={{ width: 62, height: "100%", border: "none", background: T.gold, color: "#fff", fontSize: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 22px" }}>
+      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: 54, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
+        <button onClick={onClose} title="חזרה" style={{ width: 52, height: "100%", border: "none", background: T.gold, color: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>הזמנה</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: T.gold }}>#{order?.orderNumber ?? "—"}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)" }}>הזמנה</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: T.gold }}>#{order?.orderNumber ?? "—"}</div>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>אזור ישיבה</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{areaName ?? `שולחן ${tableNum}`}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)" }}>אזור ישיבה</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{areaName ?? `שולחן ${tableNum}`}</div>
           </div>
           <div style={{ textAlign: "center", opacity: avgPerDiner > 60 ? 1 : 0.35 }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>ממוצע לסועד {avgPerDiner > 60 ? "😊" : ""}</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: avgPerDiner > 60 ? "#34d399" : "rgba(255,255,255,0.6)" }}>₪{avgPerDiner.toFixed(0)}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)" }}>ממוצע לסועד {avgPerDiner > 60 ? "😊" : ""}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: avgPerDiner > 60 ? "#34d399" : "rgba(255,255,255,0.6)" }}>₪{avgPerDiner.toFixed(0)}</div>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>סועדים</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>👤 {covers}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)" }}>סועדים</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>👤 {covers}</div>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: T.gold }}>{shiftName ?? "משמרת"}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>{waiterName ?? ""}</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: T.gold }}>{shiftName ?? "משמרת"}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>{waiterName ?? ""}</div>
           </div>
         </div>
       </div>
@@ -309,25 +310,25 @@ export function OrderScreen({
       {/* ══ BODY: 20% categories | 30% dishes | 50% order ══ */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
-        {/* ── Categories (right, 20% / 17% mobile) ── */}
-        <div style={{ width: isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
+        {/* ── Categories (right, 20% / 17% mobile / 22% phone) ── */}
+        <div style={{ width: isPhone ? "22%" : isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
           {loadingMenu ? (
             <div style={{ padding: 20, color: "#888", fontSize: 13 }}>טוען...</div>
           ) : categories.map(c => (
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
-              display: "block", width: "100%", textAlign: "right", padding: isMobile ? "14px 10px" : "19px 22px", border: "none",
+              display: "block", width: "100%", textAlign: "right", padding: isMobile ? "10px 8px" : "13px 16px", border: "none",
               borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
-              fontSize: isMobile ? 13 : 16, fontWeight: activeCat === c.id ? 800 : 600,
+              fontSize: isMobile ? 12 : 14, fontWeight: activeCat === c.id ? 800 : 600,
               background: activeCat === c.id ? T.gold : "transparent",
               color: activeCat === c.id ? "#fff" : "#1a1612",
             }}>{c.name}</button>
           ))}
         </div>
 
-        {/* ── Dishes (middle, 30%) ── */}
-        <div style={{ width: isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
-          <div style={{ padding: "10px 12px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "8px 12px", fontSize: 12, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />
+        {/* ── Dishes (middle, 30% / 25% mobile / 35% phone) ── */}
+        <div style={{ width: isPhone ? "35%" : isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
+          <div style={{ padding: "7px 10px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "6px 10px", fontSize: 11, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />
           </div>
           <div style={{ flex: 1, overflowY: "auto" }}>
             {menuError ? (
@@ -345,14 +346,14 @@ export function OrderScreen({
                       borderLeft: "1px solid #eee", borderBottom: "1px solid #eee",
                       boxShadow: qty > 0 ? `inset 0 0 0 2px ${T.gold}` : "none",
                       cursor: "pointer", position: "relative", aspectRatio: "1 / 1",
-                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, padding: 4, minWidth: 0,
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: 2, minWidth: 0,
                     }}>
                       {qty > 0 && <div style={{ position: "absolute", top: 4, left: 4, background: T.gold, color: "#fff", borderRadius: 99, minWidth: 18, height: 18, padding: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, zIndex: 2 }}>×{qty}</div>}
                       {/* Dome (cloche) — coloured by allergen status: red=contains / green=allowed / grey=no table allergens */}
                       <svg style={{ width: "clamp(20px, 2.4vw, 30px)", height: "clamp(16px, 2vw, 24px)" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
                       </svg>
-                      <div style={{ fontSize: "clamp(11px, 1.35vw, 15px)", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
+                      <div style={{ fontSize: "clamp(10px, 1.1vw, 13px)", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
                     </div>
                   );
                 })}
@@ -387,7 +388,7 @@ export function OrderScreen({
       </div>
 
       {/* ══ BOTTOM BAR ══ */}
-      <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 66, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
+      <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 58, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
         <BCell icon="👤＋" label="סועדים" onClick={() => setCoversOpen(true)} active={false} />
         <BCell icon="⚠️" label="אלרגנים" onClick={() => setAllergensOpen(true)} active={allergens.length > 0} />
         {/* Print + Payment — less frequent, secondary placement */}
@@ -400,16 +401,16 @@ export function OrderScreen({
           </>
         )}
         <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 26px",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, padding: "0 20px",
           border: "none", cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
-          background: T.gold, color: "#fff", fontWeight: 800, fontSize: 13, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.55 : 1,
+          background: T.gold, color: "#fff", fontWeight: 800, fontSize: 12, opacity: (cart.length === 0 && courseNums.length === 0) ? 0.55 : 1,
         }}>
-          <span style={{ fontSize: 18 }}>✓</span>{submitting ? "שולח..." : "אשר ושלח"}
+          <span style={{ fontSize: 16 }}>✓</span>{submitting ? "שולח..." : "אשר ושלח"}
         </button>
         <div style={{ flex: 1 }} />
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "left", padding: "0 22px", borderRight: `1px solid ${T.barLine}` }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>סה״כ לתשלום</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)" }}>סה״כ לתשלום</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
         </div>
       </div>
 
@@ -453,13 +454,22 @@ export function OrderScreen({
 
       {/* ══ Covers stepper ══ */}
       {coversOpen && (
-        <Popup onClose={() => setCoversOpen(false)} title="כמות סועדים" width={380}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, padding: "10px 0" }}>
-            <button onClick={() => setCovers(c => Math.max(1, c - 1))} style={stepBtn}>−</button>
-            <span style={{ fontSize: 40, fontWeight: 900, minWidth: 60, textAlign: "center", color: "#1a1612" }}>{covers}</span>
-            <button onClick={() => setCovers(c => c + 1)} style={stepBtn}>+</button>
-          </div>
-        </Popup>
+        <CoversPopup
+          covers={covers}
+          onConfirm={async (newCovers) => {
+            setCovers(newCovers);
+            setCoversOpen(false);
+            const currentOrderId = orderId ?? order?.id;
+            if (currentOrderId) {
+              await fetch(`/api/admin/orders/${currentOrderId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ coversCount: newCovers }),
+              });
+            }
+          }}
+          onClose={() => setCoversOpen(false)}
+        />
       )}
 
       {/* ══ Allergens editor ══ */}
@@ -509,12 +519,12 @@ export function OrderScreen({
 function BCell({ icon, label, onClick, active, disabled }: { icon: string; label: string; onClick: () => void; active?: boolean; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "0 22px",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 16px",
       border: "none", borderLeft: "1px solid rgba(255,255,255,0.08)", cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
       background: active ? "rgba(200,161,58,0.16)" : "transparent",
-      color: active ? "#d4a017" : "#e6e6e6", fontWeight: 600, fontSize: 12, opacity: disabled ? 0.4 : 1,
+      color: active ? "#d4a017" : "#e6e6e6", fontWeight: 600, fontSize: 11, opacity: disabled ? 0.4 : 1,
     }}>
-      <span style={{ fontSize: 18 }}>{icon}</span>{label}
+      <span style={{ fontSize: 16 }}>{icon}</span>{label}
     </button>
   );
 }
@@ -523,23 +533,23 @@ function BCell({ icon, label, onClick, active, disabled }: { icon: string; label
 function ExistingRow({ item, allergens, isMobile, courseBadge, onVoid }: { item: OrderItemDetail; allergens: string[]; isMobile: boolean; courseBadge: (c: number) => string; onVoid: () => void }) {
   const warn = item.itemAllergens.some(a => allergens.includes(a));
   const statusHe: Record<string, string> = { PENDING: "ממתין", PREPARING: "מכין 🍳", DONE: "מוכן ✓", SERVED: "הוגש", CANCELLED: "בוטל" };
-  const badge = isMobile ? 24 : 28;
+  const badge = isMobile ? 20 : 24;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10, padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
-      <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0 }}>{courseBadge(item.course)}</div>
+    <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 5 : 8, padding: isMobile ? "2px 8px" : "3px 10px", borderBottom: "1px solid #f0ebe4", background: item.isComped ? "#f7f7f5" : undefined }}>
+      <div style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #cbcbcb", background: "#fff", color: "#7a7a7a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 11 : 13, flexShrink: 0 }}>{courseBadge(item.course)}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
-        <div style={{ fontSize: 11, color: warn ? "#c0392b" : "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
+        <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.itemName} {item.quantity > 1 && <span style={{ color: "#9b8f82" }}>× {item.quantity}</span>}</div>
+        <div style={{ fontSize: 10, color: warn ? "#c0392b" : "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{warn ? "⚠️ אלרגן" : (statusHe[item.itemStatus] ?? "")}{item.heldUntilFired ? " · ממתין לשחרור" : ""}</div>
       </div>
-      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
-      <button onClick={onVoid} title="ביטול (דרוש אישור מנהל)" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#f4f1ed", color: "#b91c1c", cursor: "pointer", fontSize: 13, flexShrink: 0 }}>🔒</button>
+      <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 28 : 40, textAlign: "left", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <button onClick={onVoid} title="ביטול (דרוש אישור מנהל)" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#f4f1ed", color: "#b91c1c", cursor: "pointer", fontSize: 12, flexShrink: 0 }}>🔒</button>
     </div>
   );
 }
 
 function CartRow({ item, warn, isMobile, courseBadge, onQty, onNotes }: { item: CartItem; warn: boolean; isMobile: boolean; courseBadge: (c: number) => string; onQty: (q: number) => void; onNotes: (n: string) => void }) {
   const [notesOpen, setNotesOpen] = useState(!!item.notes);
-  const badge = isMobile ? 24 : 28;
+  const badge = isMobile ? 20 : 24;
   const controls = (
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
       <button onClick={() => setNotesOpen(o => !o)} title="הערה" style={{ width: badge, height: badge, borderRadius: 8, border: "1px solid #e3ded5", background: "#fff", cursor: "pointer", fontSize: 13, color: "#6b6258", flexShrink: 0 }}>✎</button>
@@ -549,16 +559,16 @@ function CartRow({ item, warn, isMobile, courseBadge, onQty, onNotes }: { item: 
         <button onClick={() => onQty(item.quantity + 1)} style={qBtn}>+</button>
       </div>
       {/* price sits between the quantity and the X, with spacing */}
-      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 34 : 48, textAlign: "center", margin: "0 8px", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
+      <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 500, color: "#1a1612", minWidth: isMobile ? 28 : 40, textAlign: "center", margin: "0 6px", flexShrink: 0 }}>{(item.price * item.quantity).toFixed(0)}</div>
       <button onClick={() => onQty(0)} title="הסר" style={{ width: badge, height: badge, borderRadius: 8, border: "none", background: "#fdecea", color: "#e53e3e", cursor: "pointer", fontSize: 14, fontWeight: 900, flexShrink: 0 }}>✕</button>
     </div>
   );
   return (
-    <div style={{ padding: isMobile ? "3px 10px" : "4px 14px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10 }}>
-        <div title={`קורס ${courseBadge(item.course)}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 12 : 15, flexShrink: 0, cursor: "default" }}>{courseBadge(item.course)}</div>
+    <div style={{ padding: isMobile ? "2px 8px" : "3px 10px", borderBottom: "1px solid #f0ebe4", background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 5 : 8 }}>
+        <div title={`קורס ${courseBadge(item.course)}`} style={{ width: badge, height: badge, borderRadius: "50% 0 50% 0", border: "1.5px solid #d8c48a", background: "rgba(200,161,58,0.12)", color: "#9c7a12", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isMobile ? 11 : 13, flexShrink: 0, cursor: "default" }}>{courseBadge(item.course)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
+          <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 500, color: "#1a1612", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name} {warn && <span style={{ fontSize: 10, color: "#c0392b" }}>⚠️</span>}</div>
           {item.modifiers.length > 0 && <div style={{ fontSize: 10, color: "#9b8f82", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.modifiers.map(m => m.label).join(" · ")}</div>}
           {item.notes && <div style={{ fontSize: 10, color: "#9c7a12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📝 {item.notes}</div>}
         </div>
@@ -580,6 +590,34 @@ function Popup({ title, children, onClose, width = 460 }: { title: string; child
           <button onClick={onClose} style={{ background: "#f0ede8", border: "none", borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#555" }}>✕</button>
         </div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+function CoversPopup({ covers, onConfirm, onClose }: { covers: number; onConfirm: (n: number) => Promise<void>; onClose: () => void }) {
+  const [val, setVal] = useState(covers);
+  const [saving, setSaving] = useState(false);
+  const T = { gold: "#d4a017" };
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} dir="rtl" style={{ background: "#fff", color: "#1a1612", borderRadius: 18, padding: 22, width: "min(96vw, 380px)", fontFamily: "'Heebo', sans-serif" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, borderBottom: "2px solid #c8a13a", paddingBottom: 12 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1612" }}>כמות סועדים</div>
+          <button onClick={onClose} style={{ background: "#f0ede8", border: "none", borderRadius: 8, width: 34, height: 34, fontSize: 18, cursor: "pointer", color: "#555" }}>✕</button>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, padding: "10px 0 20px" }}>
+          <button onClick={() => setVal(v => Math.max(1, v - 1))} style={stepBtn}>−</button>
+          <span style={{ fontSize: 40, fontWeight: 900, minWidth: 60, textAlign: "center", color: "#1a1612" }}>{val}</span>
+          <button onClick={() => setVal(v => v + 1)} style={stepBtn}>+</button>
+        </div>
+        <button
+          onClick={async () => { setSaving(true); await onConfirm(val); setSaving(false); }}
+          disabled={saving}
+          style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.gold, color: "#fff", fontWeight: 800, fontSize: 15, cursor: saving ? "default" : "pointer", fontFamily: "inherit", opacity: saving ? 0.7 : 1 }}
+        >
+          {saving ? "שומר..." : "✓ אישור"}
+        </button>
       </div>
     </div>
   );

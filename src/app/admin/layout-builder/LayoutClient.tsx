@@ -3,6 +3,7 @@
 import { T } from "@/lib/ui";
 import React, { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { AssistantWidget } from "@/components/admin/AssistantWidget";
 
 /* ══════════════════════════════ Types ══ */
 type TableStatus = "free" | "reserved" | "seated" | "vip";
@@ -2218,6 +2219,7 @@ export default function LayoutClient({ restaurants }: { restaurants: Restaurant[
       )}
 
       {toast && <Toast msg={toast} />}
+      <AssistantWidget page="layout-builder" />
     </div>
   );
 }

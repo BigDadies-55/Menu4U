@@ -53,6 +53,37 @@ async function ensureOrderItemColumns() {
   } catch { /* ignore */ }
 }
 
+export async function PATCH(req: Request, { params }: { params: Promise<{ orderId: string }> }) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { orderId } = await params;
+  const body = await req.json();
+  const { coversCount } = body;
+
+  if (coversCount === undefined || typeof coversCount !== "number" || coversCount < 1) {
+    return NextResponse.json({ error: "coversCount must be a positive number" }, { status: 400 });
+  }
+
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (session.user.role !== "SUPER_ADMIN") {
+    const access = await prisma.restaurantUser.findUnique({
+      where: { userId_restaurantId: { userId: session.user.id, restaurantId: order.restaurantId } },
+    });
+    if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "coversCount" INTEGER`);
+  } catch { /* already exists */ }
+
+  await prisma.order.update({ where: { id: orderId }, data: { coversCount } });
+
+  return NextResponse.json({ success: true, coversCount });
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

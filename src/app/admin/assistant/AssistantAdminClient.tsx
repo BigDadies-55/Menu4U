@@ -6,10 +6,11 @@ type Entry = { id: string; page: string; question: string; answer: string; tags:
 type Unanswered = { id: string; page: string; question: string; count: number; updatedAt: string };
 type Stats = { total: number; thumbsUp: number; thumbsDown: number };
 
-const PAGE_OPTIONS = ["shifts", "orders", "menus", "users", "settings", "dashboard", "general"];
+const PAGE_OPTIONS = ["shifts", "orders", "menus", "users", "settings", "dashboard", "layout-builder", "general"];
 const PAGE_LABELS: Record<string, string> = {
   shifts: "משמרות", orders: "הזמנות", menus: "תפריט",
-  users: "משתמשים", settings: "הגדרות", dashboard: "דשבורד", general: "כללי",
+  users: "משתמשים", settings: "הגדרות", dashboard: "דשבורד",
+  "layout-builder": "פריסת שולחנות", general: "כללי",
 };
 
 const EMPTY_FORM = { page: "shifts", question: "", answer: "", tags: "", isDefault: false };
