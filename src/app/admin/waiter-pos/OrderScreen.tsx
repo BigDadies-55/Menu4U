@@ -6,7 +6,6 @@ import type { CartItemModifier } from "./OrderPanel";
 import type { OrderDetail, OrderItemDetail } from "./TableOverlay";
 import { ALLERGEN_LIST } from "@/lib/allergens";
 import { ManagerPinModal } from "./ManagerPinModal";
-import Receipt from "./Receipt";
 import { idbSet, idbGet } from "@/lib/waiter-db";
 import { newKey, newTempId } from "@/lib/outbox";
 
@@ -71,13 +70,11 @@ export function OrderScreen({
   const [coversOpen, setCoversOpen] = useState(false);
   const [allergensOpen, setAllergensOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
-  const [printOpen, setPrintOpen] = useState(false);
   const [firingCourse, setFiringCourse] = useState<number | null>(null);
   const [voidItem, setVoidItem] = useState<{ id: string; name: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isPhone, setIsPhone] = useState(false);
-  const [secondaryOpen, setSecondaryOpen] = useState(false);
 
   useEffect(() => {
     const check = () => { setIsMobile(window.innerWidth < 768); setIsPhone(window.innerWidth < 480); };
@@ -247,10 +244,6 @@ export function OrderScreen({
     await refreshOrder(order.id);
   }
 
-  function goPayment() {
-    router.push(`/admin/cashier?tableNumber=${encodeURIComponent(tableNum)}&restaurantId=${encodeURIComponent(restaurantId)}&waiter=1&returnTo=/admin/waiter-pos`);
-  }
-
   // ── Derived ──
   const activeCategory = categories.find(c => c.id === activeCat);
   const filteredItems = (activeCategory?.items ?? []).filter(item => !search || item.name.toLowerCase().includes(search.toLowerCase()));
@@ -391,15 +384,6 @@ export function OrderScreen({
       <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 58, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
         <BCell icon="👤＋" label="סועדים" onClick={() => setCoversOpen(true)} active={false} />
         <BCell icon="⚠️" label="אלרגנים" onClick={() => setAllergensOpen(true)} active={allergens.length > 0} />
-        {/* Print + Payment — less frequent, secondary placement */}
-        {isMobile ? (
-          <BCell icon="⋯" label="עוד" onClick={() => setSecondaryOpen(o => !o)} active={secondaryOpen} />
-        ) : (
-          <>
-            <BCell icon="🖨" label="הדפס" onClick={() => order && setPrintOpen(true)} disabled={!order} />
-            <BCell icon="💳" label="תשלום" onClick={goPayment} disabled={!order} />
-          </>
-        )}
         <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, padding: "0 20px",
           border: "none", cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
@@ -413,20 +397,6 @@ export function OrderScreen({
           <div style={{ fontSize: 18, fontWeight: 900, color: T.gold, fontVariantNumeric: "tabular-nums" }}>₪{total.toFixed(1)}</div>
         </div>
       </div>
-
-      {/* ══ Mobile secondary menu (Print + Payment) ══ */}
-      {secondaryOpen && isMobile && (
-        <div onClick={() => setSecondaryOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 590 }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 66, right: 0, background: T.bar, border: `1px solid ${T.barLine}`, borderRadius: "12px 0 0 0", padding: "8px 0", display: "flex", flexDirection: "column", minWidth: 140 }}>
-            <button onClick={() => { setSecondaryOpen(false); order && setPrintOpen(true); }} disabled={!order} style={{ padding: "12px 20px", border: "none", background: "transparent", color: !order ? "rgba(255,255,255,0.3)" : "#e6e6e6", fontSize: 13, fontWeight: 600, cursor: !order ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🖨</span> הדפס
-            </button>
-            <button onClick={() => { setSecondaryOpen(false); goPayment(); }} disabled={!order} style={{ padding: "12px 20px", border: "none", background: "transparent", color: !order ? "rgba(255,255,255,0.3)" : "#e6e6e6", fontSize: 13, fontWeight: 600, cursor: !order ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
-              <span>💳</span> תשלום
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ══ Modifier picker — dark glass theme (matches the waiter NEW screen) ══ */}
       {modifierItem && (
@@ -507,10 +477,6 @@ export function OrderScreen({
       )}
       {actionLoading && <div style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 }}>מבצע...</div>}
 
-      {/* ══ Receipt print ══ */}
-      {printOpen && order && (
-        <Receipt order={order} tableNum={tableNum} restaurantName={restaurantName ?? "המסעדה"} waiterName={waiterName ?? ""} autoPrint onClose={() => setPrintOpen(false)} />
-      )}
     </div>
   );
 }
