@@ -91,9 +91,15 @@ export async function POST(req: Request) {
   `);
 
   const body = await req.json();
-  const { restaurantId, tableNumber, notes, items } = body;
+  const { restaurantId, orderType = "DINE_IN", tableNumber, customerName, customerPhone, notes, items } = body;
 
   if (!restaurantId) return NextResponse.json({ error: "restaurantId required" }, { status: 400 });
+  if (!["DINE_IN", "TAKEAWAY", "DELIVERY"].includes(orderType)) {
+    return NextResponse.json({ error: "Invalid orderType" }, { status: 400 });
+  }
+  if (orderType !== "DINE_IN" && !customerName) {
+    return NextResponse.json({ error: "customerName required for TAKEAWAY/DELIVERY" }, { status: 400 });
+  }
   if (!items || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "No items" }, { status: 400 });
   }
@@ -165,7 +171,10 @@ export async function POST(req: Request) {
   const order = await (prisma.order.create as any)({
     data: {
       restaurantId,
-      tableNumber: tableNumber ?? null,
+      orderType,
+      tableNumber: orderType === "DINE_IN" ? tableNumber ?? null : null,
+      customerName: orderType !== "DINE_IN" ? customerName ?? null : null,
+      customerPhone: orderType !== "DINE_IN" ? customerPhone ?? null : null,
       notes: notes ?? null,
       totalAmount,
       orderNumber,

@@ -29,6 +29,12 @@ enum OrderStatus {
   PAID
 }
 
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
 model User {
   id            String    @id @default(cuid())
   username      String    @unique
@@ -349,6 +355,7 @@ model Item {
 model Order {
   id            String      @id @default(cuid())
   restaurantId  String
+  orderType     OrderType   @default(DINE_IN)    // DINE_IN | TAKEAWAY | DELIVERY
   tableNumber    String?
   customerName   String?
   customerPhone  String?
