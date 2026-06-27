@@ -63,14 +63,22 @@ const DOTS = 384;    // printer width in dots (58 mm @ 203 dpi)
 const SS   = 2;      // super-sample: render 2× then downsample for sharper text
 const CW   = DOTS * SS;
 
-const NORM_PX  = 17 * SS;
-const LARGE_PX = 27 * SS;
-const LINE_GAP = 4  * SS;
-const MARGIN   = 6  * SS;
+// Fixed line heights — do NOT rely on actualBoundingBoxAscent (returns 0 when
+// the font isn't loaded yet in OffscreenCanvas, causing all lines to overlap).
+const NORM_PX  = 18 * SS;                       // font size, normal
+const LARGE_PX = 28 * SS;                       // font size, header
+const LINE_H   = Math.round(NORM_PX  * 1.7);   // normal line height
+const LARGE_H  = Math.round(LARGE_PX * 1.5);   // header line height
+const DASH_H   = Math.round(NORM_PX  * 0.9);   // thin separator height
+const BLANK_H  = LINE_H;                        // blank = one full line
+const MARGIN   = 8  * SS;
 
 function fnt(px: number, bold: boolean) {
   return `${bold ? "bold " : ""}${px}px 'Arial Hebrew', Arial, sans-serif`;
 }
+
+// Baseline position within a line slot (fraction of line height)
+const BASELINE = 0.76;
 
 type Spec =
   | { t: "center"; text: string; large?: boolean; bold?: boolean }
@@ -78,14 +86,23 @@ type Spec =
   | { t: "dash" }
   | { t: "blank" };
 
+function specLineH(s: Spec): number {
+  if (s.t === "dash")  return DASH_H;
+  if (s.t === "blank") return BLANK_H;
+  if (s.t === "center" && s.large) return LARGE_H;
+  return LINE_H;
+}
+
 function buildSpec(data: PrintReceiptData): Spec[] {
   const now  = new Date();
   const date = now.toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric" });
   const time = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
 
   const s: Spec[] = [
+    { t: "blank" },
     { t: "center", text: data.restaurantName, large: true, bold: true },
-    { t: "center", text: "חשבון" },
+    { t: "center", text: "חשבון", bold: true },
+    { t: "blank" },
     { t: "dash" },
     { t: "row", label: "תאריך:", value: `${date}  ${time}` },
     { t: "row", label: "שולחן:", value: `${data.tableNum}${data.orderNumber ? `  #${data.orderNumber}` : ""}` },
@@ -94,24 +111,32 @@ function buildSpec(data: PrintReceiptData): Spec[] {
     s.push({ t: "row", label: "מלצר:", value: `${data.waiterName}${data.coversCount ? `  ${data.coversCount}` : ""}` });
   }
   s.push({ t: "dash" });
+  s.push({ t: "blank" });
 
   for (const item of data.items) {
     const price = item.isComped ? "0.00" : (item.price * item.quantity).toFixed(2);
     const tag   = item.isComped ? " מתנה" : "";
     s.push({ t: "row", label: `${item.name.slice(0, 18)}${tag}`, value: `${price}  ${item.quantity}×` });
   }
+  s.push({ t: "blank" });
   s.push({ t: "dash" });
 
   s.push({ t: "row", label: 'לפני מע"מ:', value: data.totalExVat.toFixed(2) });
   s.push({ t: "row", label: 'מע"מ 18%:',  value: data.vatAmount.toFixed(2)   });
   s.push({ t: "dash" });
+  s.push({ t: "blank" });
   s.push({ t: "row", label: 'סה"כ לתשלום:', value: data.totalInclVat.toFixed(2), bold: true });
+  s.push({ t: "blank" });
   s.push({ t: "dash" });
 
-  if (data.notes) s.push({ t: "center", text: `הערה: ${data.notes}` });
+  if (data.notes) {
+    s.push({ t: "blank" });
+    s.push({ t: "center", text: `הערה: ${data.notes}` });
+  }
   s.push({ t: "blank" });
   s.push({ t: "center", text: "תודה על ביקורכם!", bold: true });
   s.push({ t: "center", text: "נשמח לראותכם שוב" });
+  s.push({ t: "blank" });
 
   return s;
 }
@@ -119,31 +144,19 @@ function buildSpec(data: PrintReceiptData): Spec[] {
 async function buildDoc(data: PrintReceiptData): Promise<Uint8Array> {
   const spec = buildSpec(data);
 
-  // ── Pass 1: measure line heights ──────────────────────────────────────────
-  const mc  = new OffscreenCanvas(CW, 10);
-  const mct = mc.getContext("2d")!;
-
-  const hh = spec.map(s => {
-    if (s.t === "dash")  return Math.round(NORM_PX * 0.7) + LINE_GAP;
-    if (s.t === "blank") return Math.round(NORM_PX * 0.5);
-    const px   = s.t === "center" && s.large ? LARGE_PX : NORM_PX;
-    const bold = s.bold ?? false;
-    mct.font   = fnt(px, bold);
-    const m    = mct.measureText("Aם");
-    return Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) + LINE_GAP;
-  });
-
-  const totalPx = NORM_PX + hh.reduce((a, b) => a + b, 0) + NORM_PX;
+  // Fixed heights — no font measurement needed
+  const hh      = spec.map(specLineH);
+  const totalPx = hh.reduce((a, b) => a + b, 0) + NORM_PX;
   const H       = Math.ceil(totalPx / SS) * SS;   // must be divisible by SS
 
-  // ── Pass 2: render ────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   const canvas = new OffscreenCanvas(CW, H);
   const ctx    = canvas.getContext("2d")!;
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, CW, H);
   ctx.fillStyle = "black";
 
-  let y = NORM_PX;
+  let y = 0;
 
   for (let i = 0; i < spec.length; i++) {
     const s  = spec[i];
@@ -152,18 +165,20 @@ async function buildDoc(data: PrintReceiptData): Promise<Uint8Array> {
     if (s.t === "blank") { y += lh; continue; }
 
     if (s.t === "dash") {
-      ctx.fillRect(MARGIN, y + Math.round(lh * 0.35), CW - MARGIN * 2, SS);
+      const lineY = y + Math.round(lh * 0.5);
+      ctx.fillRect(MARGIN, lineY, CW - MARGIN * 2, SS);
       y += lh;
       continue;
     }
+
+    const baseline = y + Math.round(lh * BASELINE);
 
     if (s.t === "center") {
       const px = s.large ? LARGE_PX : NORM_PX;
       ctx.font      = fnt(px, s.bold ?? false);
       ctx.direction = "rtl";
       ctx.textAlign = "center";
-      const m = ctx.measureText(s.text);
-      ctx.fillText(s.text, CW / 2, y + m.actualBoundingBoxAscent);
+      ctx.fillText(s.text, CW / 2, baseline);
     }
 
     if (s.t === "row") {
@@ -172,14 +187,12 @@ async function buildDoc(data: PrintReceiptData): Promise<Uint8Array> {
       // Hebrew label — right edge, browser renders RTL naturally
       ctx.direction = "rtl";
       ctx.textAlign = "right";
-      const ml = ctx.measureText(s.label);
-      ctx.fillText(s.label, CW - MARGIN, y + ml.actualBoundingBoxAscent);
+      ctx.fillText(s.label, CW - MARGIN, baseline);
 
       // Numeric value — left edge, LTR
       ctx.direction = "ltr";
       ctx.textAlign = "left";
-      const mv = ctx.measureText(s.value);
-      ctx.fillText(s.value, MARGIN, y + mv.actualBoundingBoxAscent);
+      ctx.fillText(s.value, MARGIN, baseline);
     }
 
     y += lh;
