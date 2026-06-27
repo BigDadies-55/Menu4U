@@ -310,7 +310,7 @@ export function OrderScreen({
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#0c0c12", display: "flex", flexDirection: "column", fontFamily: "'Heebo', sans-serif", direction: "rtl" }}>
 
       {/* ══ TOP BAR ══ */}
-      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: isMobile ? 54 : 68, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
+      <div style={{ background: T.bar, borderBottom: `1px solid ${T.barLine}`, height: isMobile ? 54 : 80, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
         <button onClick={onClose} title="חזרה" style={{ width: isMobile ? 52 : 60, height: "100%", border: "none", background: T.gold, color: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>▶</button>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px" }}>
           {/* הזמנה — box wide enough for 5 digits */}
@@ -352,7 +352,7 @@ export function OrderScreen({
             <button key={c.id} onClick={() => setActiveCat(c.id)} style={{
               display: "flex", width: "100%",
               alignItems: "center", justifyContent: "center", textAlign: "center",
-              aspectRatio: isMobile ? "auto" : "5 / 2",
+              aspectRatio: isMobile ? "auto" : "5 / 3",
               padding: isMobile ? "5px 5px" : "6px 4px",
               border: "none", borderBottom: "1px solid #dcdcdc", cursor: "pointer", fontFamily: "inherit",
               fontSize: isMobile ? 10 : 18, fontWeight: activeCat === c.id ? 800 : 600,
@@ -391,7 +391,7 @@ export function OrderScreen({
                       <svg style={{ width: isMobile ? "clamp(14px, 1.6vw, 20px)" : "30px", height: isMobile ? "clamp(11px, 1.3vw, 16px)" : "30px" }} viewBox="0 0 48 40" fill="none" stroke={domeColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 34h40" /><path d="M8 34a16 16 0 0 1 32 0" /><line x1="24" y1="18" x2="24" y2="14" /><circle cx="24" cy="12" r="1.8" />
                       </svg>
-                      <div style={{ fontSize: isMobile ? "clamp(9px, 0.9vw, 11px)" : "18px", fontWeight: 600, color: "#333", textAlign: "center", lineHeight: 1.15, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
+                      <div style={{ fontSize: isMobile ? "clamp(9px, 0.9vw, 11px)" : "18px", fontWeight: isMobile ? 600 : 400, color: "#333", textAlign: "center", lineHeight: 1.15, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>{item.name}</div>
                     </div>
                   );
                 })}
