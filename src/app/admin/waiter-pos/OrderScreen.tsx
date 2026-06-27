@@ -310,8 +310,8 @@ export function OrderScreen({
       {/* ══ BODY: 20% categories | 30% dishes | 50% order ══ */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
-        {/* ── Categories (right, 20% / 17% mobile / 15% phone) ── */}
-        <div style={{ width: isPhone ? "15%" : isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
+        {/* ── Categories (right, 20% / 17% mobile / 17% phone) ── */}
+        <div style={{ width: isPhone ? "17%" : isMobile ? "17%" : "20%", background: "#ededed", borderLeft: "1px solid #dcdcdc", overflowY: "auto", flexShrink: 0 }}>
           {loadingMenu ? (
             <div style={{ padding: 20, color: "#888", fontSize: 13 }}>טוען...</div>
           ) : categories.map(c => (
@@ -325,8 +325,8 @@ export function OrderScreen({
           ))}
         </div>
 
-        {/* ── Dishes (middle, 30% / 25% mobile / 20% phone) ── */}
-        <div style={{ width: isPhone ? "20%" : isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
+        {/* ── Dishes (middle, 30% / 25% mobile / 23% phone) ── */}
+        <div style={{ width: isPhone ? "23%" : isMobile ? "25%" : "30%", background: "#fff", color: "#1a1612", display: "flex", flexDirection: "column", flexShrink: 0, borderLeft: "1px solid #e3ded5" }}>
           <div style={{ padding: "4px 5px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{ width: "100%", background: "#f7f6f3", border: "1px solid #e8e2da", borderRadius: 99, padding: "3px 8px", fontSize: 10, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: "#1a1612" }} />
           </div>
