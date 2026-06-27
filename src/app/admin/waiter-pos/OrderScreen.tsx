@@ -81,7 +81,11 @@ export function OrderScreen({
   const [isPhone, setIsPhone] = useState(false);
 
   useEffect(() => {
-    const check = () => { setIsMobile(window.innerWidth < 768); setIsPhone(window.innerWidth < 480); };
+    const check = () => {
+      const shortSide = Math.min(window.innerWidth, window.innerHeight);
+      setIsMobile(shortSide < 480);
+      setIsPhone(shortSide < 380);
+    };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
