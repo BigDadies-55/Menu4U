@@ -2,10 +2,14 @@
 // Tested UUID sets for common generic BLE thermal printers (Aliexpress etc.)
 
 const PRINTER_PROFILES = [
-  { service: "000018f0-0000-1000-8000-00805f9b34fb", char: "00002af1-0000-1000-8000-00805f9b34fb" },
-  { service: "0000ff00-0000-1000-8000-00805f9b34fb", char: "0000ff02-0000-1000-8000-00805f9b34fb" },
-  { service: "e7810a71-73ae-499d-8c15-faa9aef0c3f2", char: "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f" },
+  // ISSC Transparent UART — primary for Goojprt PT210 and similar
   { service: "49535343-fe7d-4ae5-8fa9-9fafd205e455", char: "49535343-8841-43f4-a8d4-ecbe34729bb3" },
+  // Standard 18F0 — secondary for PT210
+  { service: "000018f0-0000-1000-8000-00805f9b34fb", char: "00002af1-0000-1000-8000-00805f9b34fb" },
+  // FF00 — other generic printers
+  { service: "0000ff00-0000-1000-8000-00805f9b34fb", char: "0000ff02-0000-1000-8000-00805f9b34fb" },
+  // E7810A — Epson-style BLE
+  { service: "e7810a71-73ae-499d-8c15-faa9aef0c3f2", char: "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f" },
 ];
 
 // ESC/POS command bytes
@@ -40,8 +44,10 @@ export async function disconnectPrinter() {
 async function getChar(forceReconnect = false): Promise<BluetoothRemoteGATTCharacteristic> {
   if (!forceReconnect && cachedDevice?.gatt?.connected && cachedChar) return cachedChar;
 
+  // acceptAllDevices shows the full BLE scanner — many printers don't advertise
+  // their service UUIDs so a services-filter would hide them from the picker.
   const device = await navigator.bluetooth.requestDevice({
-    filters: PRINTER_PROFILES.map(p => ({ services: [p.service] })),
+    acceptAllDevices: true,
     optionalServices: PRINTER_PROFILES.map(p => p.service),
   });
 
