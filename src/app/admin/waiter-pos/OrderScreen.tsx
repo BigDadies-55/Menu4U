@@ -8,6 +8,8 @@ import { ALLERGEN_LIST } from "@/lib/allergens";
 import { ManagerPinModal } from "./ManagerPinModal";
 import { idbSet, idbGet } from "@/lib/waiter-db";
 import { newKey, newTempId } from "@/lib/outbox";
+import { bluetoothPrint, isBluetoothSupported } from "@/lib/bluetooth-print";
+import type { PrintReceiptData } from "@/lib/bluetooth-print";
 
 type ModifierOption = { id: string; label: string; priceAdd: number };
 type ModifierGroup  = { id: string; name: string; required: boolean; maxSelect: number; options: ModifierOption[] };
@@ -70,6 +72,8 @@ export function OrderScreen({
   const [coversOpen, setCoversOpen] = useState(false);
   const [allergensOpen, setAllergensOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [printMsg, setPrintMsg] = useState("");
   const [firingCourse, setFiringCourse] = useState<number | null>(null);
   const [voidItem, setVoidItem] = useState<{ id: string; name: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -228,6 +232,34 @@ export function OrderScreen({
     } finally { setSubmitting(false); }
   }
 
+  async function handleBluetoothPrint() {
+    if (!order || printing) return;
+    setPrinting(true);
+    setPrintMsg("מחבר...");
+    try {
+      const VAT_RATE = 0.18;
+      const printableItems = order.items.filter(i => !i.voidedAt && i.itemStatus !== "CANCELLED");
+      const totalInclVat   = printableItems.filter(i => !i.isComped).reduce((s, i) => s + i.price * i.quantity, 0);
+      const vatAmount      = totalInclVat - totalInclVat / (1 + VAT_RATE);
+      const data: PrintReceiptData = {
+        restaurantName, tableNum, orderNumber: order.orderNumber,
+        waiterName: waiterName ?? "", coversCount: order.coversCount,
+        items: printableItems.map(i => ({ name: i.itemName, quantity: i.quantity, price: i.price, isComped: i.isComped })),
+        totalInclVat, vatAmount, totalExVat: totalInclVat - vatAmount,
+        notes: order.notes,
+      };
+      setPrintMsg("מדפיס...");
+      await bluetoothPrint(data);
+      setPrintMsg("✓ הודפס");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "שגיאת הדפסה";
+      setPrintMsg(msg.includes("cancelled") ? "" : `⚠ ${msg}`);
+    } finally {
+      setPrinting(false);
+      setTimeout(() => setPrintMsg(""), 3000);
+    }
+  }
+
   async function fireCourse(course: number) {
     if (!order) return;
     setFiringCourse(course);
@@ -384,6 +416,9 @@ export function OrderScreen({
       <div style={{ background: T.bar, borderTop: `1px solid ${T.barLine}`, height: 58, flexShrink: 0, display: "flex", alignItems: "stretch", padding: 0 }}>
         <BCell icon="👤＋" label="סועדים" onClick={() => setCoversOpen(true)} active={false} />
         <BCell icon="⚠️" label="אלרגנים" onClick={() => setAllergensOpen(true)} active={allergens.length > 0} />
+        {isBluetoothSupported() && (
+          <BCell icon={printing ? "⏳" : "🖨️"} label={printing ? printMsg || "..." : printMsg || "הדפס"} onClick={handleBluetoothPrint} disabled={!order || printing} active={false} />
+        )}
         <button onClick={handleRelease} disabled={submitting || (cart.length === 0 && courseNums.length === 0)} style={{
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, padding: "0 20px",
           border: "none", cursor: submitting ? "default" : "pointer", fontFamily: "inherit",
