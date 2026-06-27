@@ -1,27 +1,12 @@
-// BLE Thermal Printer — ESC/POS over Web Bluetooth (UTF-8 + BiDi for Hebrew)
+// BLE Thermal Printer — Canvas raster over Web Bluetooth
+// ESC/POS font ROM has no Hebrew; canvas rendering does — we send pixels (GS v 0).
 
 const PRINTER_PROFILES = [
-  // ISSC Transparent UART — primary for Goojprt PT210 and similar
   { service: "49535343-fe7d-4ae5-8fa9-9fafd205e455", char: "49535343-8841-43f4-a8d4-ecbe34729bb3" },
-  // Standard 18F0 — secondary for PT210
   { service: "000018f0-0000-1000-8000-00805f9b34fb", char: "00002af1-0000-1000-8000-00805f9b34fb" },
-  // FF00 — other generic printers
   { service: "0000ff00-0000-1000-8000-00805f9b34fb", char: "0000ff02-0000-1000-8000-00805f9b34fb" },
-  // E7810A — Epson-style BLE
   { service: "e7810a71-73ae-499d-8c15-faa9aef0c3f2", char: "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f" },
 ];
-
-const CMD = {
-  INIT:        [0x1b, 0x40],
-  ALIGN_L:     [0x1b, 0x61, 0x00],
-  ALIGN_C:     [0x1b, 0x61, 0x01],
-  BOLD_ON:     [0x1b, 0x45, 0x01],
-  BOLD_OFF:    [0x1b, 0x45, 0x00],
-  SIZE_2X:     [0x1d, 0x21, 0x11],
-  SIZE_NORMAL: [0x1d, 0x21, 0x00],
-  CUT:         [0x1d, 0x56, 0x00],
-  LF:          [0x0a],
-};
 
 let cachedChar: BluetoothRemoteGATTCharacteristic | null = null;
 let cachedDevice: BluetoothDevice | null = null;
@@ -61,73 +46,13 @@ async function getChar(forceReconnect = false): Promise<BluetoothRemoteGATTChara
 }
 
 async function writeChunked(char: BluetoothRemoteGATTCharacteristic, data: Uint8Array) {
-  const CHUNK = 200;
+  const CHUNK = 400;
   for (let i = 0; i < data.length; i += CHUNK) {
     const slice = data.slice(i, i + CHUNK);
     try { await char.writeValueWithoutResponse(slice); }
     catch { await char.writeValue(slice); }
-    if (i + CHUNK < data.length) await new Promise(r => setTimeout(r, 30));
+    if (i + CHUNK < data.length) await new Promise(r => setTimeout(r, 20));
   }
-}
-
-// ── Bidirectional text — makes Hebrew print correctly on LTR thermal printers ──
-// Splits text into Hebrew (RTL) and other (LTR) segments.
-// Reverses the segment order and reverses each Hebrew segment individually.
-// Numbers and prices always remain LTR.
-function bidi(str: string): string {
-  type Seg = { text: string; rtl: boolean };
-  const segs: Seg[] = [];
-  let cur = "";
-  let curRtl = false;
-
-  for (const ch of str) {
-    const cp = ch.codePointAt(0) ?? 0;
-    const isRtl = cp >= 0x05b0 && cp <= 0x05ea; // Hebrew block (letters + nikud)
-    if (isRtl !== curRtl && cur.length > 0) {
-      segs.push({ text: cur, rtl: curRtl });
-      cur = "";
-    }
-    curRtl = isRtl;
-    cur += ch;
-  }
-  if (cur) segs.push({ text: cur, rtl: curRtl });
-
-  return segs
-    .reverse()
-    .map(s => s.rtl ? [...s.text].reverse().join("") : s.text)
-    .join("");
-}
-
-// ── ESC/POS byte builder ──
-class Doc {
-  private buf: number[] = [];
-
-  cmd(...cmds: number[][]) { cmds.forEach(c => this.buf.push(...c)); return this; }
-
-  // UTF-8 — PT210 and modern BLE printers handle it natively
-  text(str: string) {
-    this.buf.push(...new TextEncoder().encode(str));
-    return this;
-  }
-
-  line(str = "") { return this.text(str).cmd(CMD.LF); }
-
-  // Pure Hebrew line (header etc.) — reversed for LTR printer
-  hline(str: string) { return this.line(bidi(str)); }
-
-  // Two-column row for receipt:
-  //   value (price/number) → LEFT side   (reads correctly RTL)
-  //   label (Hebrew text)  → RIGHT side  (reversed for LTR printer)
-  // cols = printer character width (58mm printer ≈ 32 chars at normal font)
-  row(label: string, value: string, cols = 32) {
-    const processedLabel = bidi(label);
-    const gap = Math.max(1, cols - processedLabel.length - value.length);
-    return this.line(value + " ".repeat(gap) + processedLabel);
-  }
-
-  dashes(n = 32) { return this.line("-".repeat(n)); }
-
-  build() { return new Uint8Array(this.buf); }
 }
 
 export interface PrintReceiptData {
@@ -143,59 +68,148 @@ export interface PrintReceiptData {
   notes?: string | null;
 }
 
+// ── Canvas raster receipt builder ─────────────────────────────────────────────
+// Renders to an offscreen canvas (the browser's text engine handles Hebrew RTL),
+// converts to 1-bit bitmap, wraps in ESC/POS GS v 0 raster image command.
 function buildDoc(data: PrintReceiptData): Uint8Array {
-  const now = new Date();
+  const DOTS_W  = 384;          // 58 mm paper at 203 dpi
+  const BYTES_W = DOTS_W / 8;  // 48 bytes per row
+  const M       = 8;            // horizontal margin (px)
+  const LH      = 22;           // normal line height
+  const LH_L    = 30;           // large line height
+  const GAP     = 12;           // blank-gap height
+
+  type Row =
+    | { t: "line"; text: string; right?: string; bold?: boolean; large?: boolean; center?: boolean }
+    | { t: "dash" }
+    | { t: "gap"  };
+
+  const now  = new Date();
   const date = now.toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric" });
   const time = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
-  const doc = new Doc();
 
-  doc.cmd(CMD.INIT);
+  const rows: Row[] = [];
+  const add = (r: Row) => rows.push(r);
 
-  // ── Header ──
-  doc.cmd(CMD.ALIGN_C, CMD.BOLD_ON, CMD.SIZE_2X);
-  doc.hline(data.restaurantName);
-  doc.cmd(CMD.SIZE_NORMAL, CMD.BOLD_OFF);
-  doc.hline("חשבון");
-  doc.cmd(CMD.ALIGN_L);
-  doc.dashes();
-
-  // ── Meta: value LEFT, label RIGHT ──
-  doc.row(`תאריך:`, date + "  " + time);
-  doc.row(`שולחן:`, `${data.tableNum}${data.orderNumber ? `  #${data.orderNumber}` : ""}`);
-  doc.row(`מלצר:`,  `${data.waiterName}${data.coversCount ? `  ${data.coversCount} סועדים` : ""}`);
-  doc.dashes();
-
-  // ── Items ──
-  for (const item of data.items) {
-    const qty   = `${item.quantity}x`;
-    const price = item.isComped ? bidi("מתנה") : `${(item.price * item.quantity).toFixed(2)}`;
-    const name  = bidi(item.name.slice(0, 20));
-    // Print: price LEFT, "qty name" RIGHT
-    const label = name + " " + qty;
-    const gap   = Math.max(1, 32 - label.length - price.length);
-    doc.line(price + " ".repeat(gap) + label);
+  add({ t: "line", text: data.restaurantName, large: true, bold: true, center: true });
+  add({ t: "line", text: "חשבון", center: true });
+  add({ t: "dash" });
+  add({ t: "line", text: "תאריך:", right: `${date}  ${time}` });
+  add({ t: "line", text: "שולחן:", right: `${data.tableNum}${data.orderNumber ? `  #${data.orderNumber}` : ""}` });
+  if (data.waiterName || data.coversCount) {
+    add({ t: "line", text: "מלצר:", right: `${data.waiterName}${data.coversCount ? `  ${data.coversCount} סועדים` : ""}` });
   }
-  doc.dashes();
+  add({ t: "dash" });
 
-  // ── Totals ──
-  doc.row('לפני מע"מ:', data.totalExVat.toFixed(2));
-  doc.row('מע"מ 18%:',  data.vatAmount.toFixed(2));
-  doc.dashes();
-  doc.cmd(CMD.BOLD_ON);
-  doc.row('סה"כ לתשלום:', data.totalInclVat.toFixed(2));
-  doc.cmd(CMD.BOLD_OFF);
-  doc.dashes();
+  for (const item of data.items) {
+    const price = item.isComped ? "מתנה" : `${(item.price * item.quantity).toFixed(2)}`;
+    add({ t: "line", text: `${item.quantity}x ${item.name.slice(0, 18)}`, right: price });
+  }
+  add({ t: "dash" });
 
-  if (data.notes) doc.hline(`הערה: ${data.notes}`);
+  add({ t: "line", text: 'לפני מע"מ:',    right: data.totalExVat.toFixed(2) });
+  add({ t: "line", text: 'מע"מ 18%:',     right: data.vatAmount.toFixed(2) });
+  add({ t: "dash" });
+  add({ t: "line", text: 'סה"כ לתשלום:', right: data.totalInclVat.toFixed(2), bold: true });
+  add({ t: "dash" });
 
-  // ── Footer ──
-  doc.cmd(CMD.ALIGN_C);
-  doc.hline("תודה על ביקורכם!");
-  doc.hline("נשמח לראותכם שוב");
-  doc.cmd(CMD.LF, CMD.LF, CMD.LF);
-  doc.cmd(CMD.CUT);
+  if (data.notes) add({ t: "line", text: `הערה: ${data.notes}` });
 
-  return doc.build();
+  add({ t: "gap" });
+  add({ t: "line", text: "תודה על ביקורכם!", center: true });
+  add({ t: "line", text: "נשמח לראותכם שוב", center: true });
+  add({ t: "gap" }); add({ t: "gap" }); add({ t: "gap" });
+
+  // ── Canvas height ──
+  const H = rows.reduce((h, r) => {
+    if (r.t === "dash" || r.t === "gap") return h + GAP;
+    return h + ((r as { large?: boolean }).large ? LH_L : LH);
+  }, 8);
+
+  // ── Render ──
+  const canvas = document.createElement("canvas");
+  canvas.width  = DOTS_W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, DOTS_W, H);
+  ctx.fillStyle   = "#000";
+  ctx.strokeStyle = "#000";
+
+  let y = 4;
+  for (const row of rows) {
+    if (row.t === "gap") { y += GAP; continue; }
+    if (row.t === "dash") {
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(M, y + 5);
+      ctx.lineTo(DOTS_W - M, y + 5);
+      ctx.stroke();
+      ctx.restore();
+      y += GAP;
+      continue;
+    }
+
+    const sz     = row.large ? 20 : 14;
+    const lh     = row.large ? LH_L : LH;
+    const weight = (row.bold || row.large) ? "bold" : "normal";
+    ctx.font = `${weight} ${sz}px sans-serif`;
+    const base = y + sz + 2;
+
+    if (row.center) {
+      ctx.direction = "rtl";
+      ctx.textAlign = "center";
+      ctx.fillText(row.text, DOTS_W / 2, base);
+    } else if (row.right !== undefined) {
+      // Hebrew label on the RIGHT, numeric value on the LEFT
+      ctx.direction = "rtl";
+      ctx.textAlign = "right";
+      ctx.fillText(row.text, DOTS_W - M, base);
+      ctx.direction = "ltr";
+      ctx.textAlign = "left";
+      ctx.fillText(row.right, M, base);
+    } else {
+      ctx.direction = "rtl";
+      ctx.textAlign = "right";
+      ctx.fillText(row.text, DOTS_W - M, base);
+    }
+
+    y += lh;
+  }
+
+  // ── 1-bit conversion (dark pixel → printed dot) ──
+  const px     = ctx.getImageData(0, 0, DOTS_W, H).data;
+  const bitmap: number[] = [];
+  for (let row = 0; row < H; row++) {
+    for (let b = 0; b < BYTES_W; b++) {
+      let byte = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        const col = b * 8 + bit;
+        const i   = (row * DOTS_W + col) * 4;
+        if ((px[i] + px[i + 1] + px[i + 2]) / 3 < 128) byte |= 0x80 >> bit;
+      }
+      bitmap.push(byte);
+    }
+  }
+
+  // ── ESC/POS: INIT + GS v 0 raster image + feed + cut ──
+  const header = [
+    0x1b, 0x40,                              // ESC @ — init
+    0x1d, 0x76, 0x30, 0x00,                 // GS v 0, m=0 (normal density)
+    BYTES_W & 0xff, (BYTES_W >> 8) & 0xff,  // xL, xH — bytes per row
+    H       & 0xff, (H       >> 8) & 0xff,  // yL, yH — number of rows
+  ];
+  const footer = [0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x00]; // feed + cut
+
+  const out = new Uint8Array(header.length + bitmap.length + footer.length);
+  out.set(header, 0);
+  out.set(bitmap, header.length);
+  out.set(footer, header.length + bitmap.length);
+  return out;
 }
 
 export async function bluetoothPrint(data: PrintReceiptData, forceReconnect = false): Promise<void> {
